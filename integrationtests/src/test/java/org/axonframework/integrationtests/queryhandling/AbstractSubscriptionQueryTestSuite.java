@@ -232,6 +232,39 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                     .verify();
     }
 
+    @Deprecated
+    @Test
+    void testCompletingSubscriptionQueryExceptionallyDeprecated() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                TEST_PAYLOAD,
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+        RuntimeException toBeThrown = new RuntimeException();
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage,
+                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE),
+                                           Queues.SMALL_BUFFER_SIZE);
+        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
+            chatQueryHandler.emitter.completeExceptionally(String.class, TEST_PAYLOAD::equals, toBeThrown);
+            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update2");
+        }, 500, TimeUnit.MILLISECONDS);
+
+        // then
+        StepVerifier.create(result.initialResult().map(Message::getPayload))
+                    .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
+                    .verifyComplete();
+        StepVerifier.create(result.updates().map(Message::getPayload))
+                    .expectNext("Update1")
+                    .expectErrorMatches(toBeThrown::equals)
+                    .verify();
+    }
+
     @Test
     void testCompletingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
         // given
@@ -436,6 +469,76 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
                 queryBus.subscriptionQuery(queryMessage,
+                                           8);
+        List<String> initial1 = new ArrayList<>();
+        List<String> initial2 = new ArrayList<>();
+        List<String> update1 = new ArrayList<>();
+        List<String> update2 = new ArrayList<>();
+        List<String> update3 = new ArrayList<>();
+        result.initialResult().map(Message::getPayload).subscribe(initial1::addAll);
+        result.initialResult().map(Message::getPayload).subscribe(initial2::addAll);
+        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
+        result.updates().map(Message::getPayload).subscribe(update1::add);
+        result.updates().map(Message::getPayload).subscribe(update2::add);
+        for (int i = 2; i < 10; i++) {
+            chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update" + i);
+        }
+        result.updates().map(Message::getPayload).subscribe(update3::add);
+        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update10");
+        chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update11");
+        chatQueryHandler.emitter.complete(String.class, TEST_PAYLOAD::equals);
+
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
+        assertEquals(Arrays.asList("Update1",
+                                   "Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update1);
+        assertEquals(Arrays.asList("Update1",
+                                   "Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update2);
+        assertEquals(Arrays.asList("Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update3);
+    }
+
+    @Deprecated
+    @Test
+    void testSeveralSubscriptionsDeprecated() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                TEST_PAYLOAD,
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage,
+                                           new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
                                            8);
         List<String> initial1 = new ArrayList<>();
         List<String> initial2 = new ArrayList<>();
