@@ -150,7 +150,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
     @Deprecated
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize) {
-        return subscriptionQuery(query,updateBufferSize);
+        return subscriptionQuery(query, backpressure, updateBufferSize);
     }
 
     /**

@@ -316,7 +316,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             SubscriptionQueryBackpressure backPressure,
             int updateBufferSize
     ) {
-        return subscriptionQuery(query, updateBufferSize);
+        return subscriptionQuery(query, backPressure, updateBufferSize);
     }
 
     @Override

@@ -115,7 +115,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      ResponseType<U> updateResponseType,
                                                                      SubscriptionQueryBackpressure backpressure,
                                                                      int updateBufferSize) {
-        return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, updateBufferSize);
+        return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, backpressure, updateBufferSize);
     }
 
     @Override

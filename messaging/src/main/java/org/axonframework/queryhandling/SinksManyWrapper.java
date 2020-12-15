@@ -18,64 +18,55 @@ package org.axonframework.queryhandling;
 
 import reactor.core.Disposable;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Sinks;
 
 /**
- * Wrapper around {@link FluxSink}. Since project-reactor is not a required dependency in this Axon version, we need
+ * Wrapper around {@link Sinks.Many}. Since project-reactor is not a required dependency in this Axon version, we need
  * wrappers for backwards compatibility. As soon as dependency is no longer optional, this wrapper should be removed.
  *
  * @param <T> The value type
- * @author Milan Savic
+ * @author Stefan Dragisic
  * @since 3.3
- * @deprecated in through use of the {{@link SinksManyWrapper}}
  */
-@Deprecated
-class FluxSinkWrapper<T> implements SinkWrapper<T> {
+class SinksManyWrapper<T> implements SinkWrapper<T> {
 
-    private final FluxSink<T> fluxSink;
+    private final Sinks.Many<T> fluxSink;
 
     /**
      * Initializes this wrapper with delegate sink.
      *
      * @param fluxSink Delegate sink
      */
-    FluxSinkWrapper(FluxSink<T> fluxSink) {
+    SinksManyWrapper(Sinks.Many<T> fluxSink) {
         this.fluxSink = fluxSink;
     }
 
     /**
-     * Wrapper around {@link FluxSink#complete()}.
+     * Wrapper around {@link Sinks.Many#tryEmitComplete()} ()}.
      */
     @Override
     public void complete() {
-        fluxSink.complete();
+        fluxSink.tryEmitComplete();
     }
 
     /**
-     * Wrapper around {@link FluxSink#next(Object)}.
+     * Wrapper around {@link Sinks.Many#tryEmitNext(Object)}
      *
      * @param value to be passed to the delegate sink
      */
     @Override
     public void next(T value) {
-        fluxSink.next(value);
+        fluxSink.tryEmitNext(value).orThrow();
     }
 
     /**
-     * Wrapper around {@link FluxSink#error(Throwable)}.
+     * Wrapper around {@link Sinks.Many#tryEmitError(Throwable)}.
      *
      * @param t to be passed to the delegate sink
      */
     @Override
     public void error(Throwable t) {
-        fluxSink.error(t);
+        fluxSink.tryEmitError(t);
     }
 
-    /**
-     * Wrapper around {@link FluxSink#onDispose(Disposable)}.
-     *
-     * @param disposable to be passed to the delegate sink
-     */
-    public void onDispose(Disposable disposable) {
-        fluxSink.onDispose(disposable);
-    }
 }

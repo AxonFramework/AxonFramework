@@ -224,7 +224,26 @@ public class SimpleQueryBus implements QueryBus {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        return subscriptionQuery(query, updateBufferSize);
+
+        if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
+            throw new IllegalArgumentException("There is already a subscription with the given message identifier");
+        }
+
+        MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
+                .thenAccept(monoSink::success)
+                .exceptionally(t -> {
+                    logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
+                                 t);
+                    monoSink.error(t.getCause());
+                    return null;
+                }));
+
+        UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
+                .registerUpdateHandler(query, backpressure, updateBufferSize);
+
+        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
+                                                    updateHandlerRegistration.getUpdates(),
+                                                    updateHandlerRegistration.getRegistration());
     }
 
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(

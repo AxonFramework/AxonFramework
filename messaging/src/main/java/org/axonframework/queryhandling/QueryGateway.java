@@ -250,6 +250,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
                                  query,
                                  initialResponseType,
                                  updateResponseType,
+                                 backpressure,
                                  Queues.SMALL_BUFFER_SIZE);
     }
 

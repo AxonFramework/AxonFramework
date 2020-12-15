@@ -59,7 +59,13 @@ public interface SubscriptionQueryResult<I, U> extends Registration {
         initialResult().subscribe(initialResult -> {
             try {
                 initialResultConsumer.accept(initialResult);
-                updates().subscribe(updateConsumer);
+                updates().subscribe(i -> {
+                    try {
+                        updateConsumer.accept(i);
+                    } catch (Exception e) {
+                        cancel();
+                    }
+                });
             } catch (Exception e) {
                 cancel();
             }

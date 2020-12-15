@@ -25,7 +25,9 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
 
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers =
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
@@ -98,7 +100,19 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             SubscriptionQueryMessage<?, ?, ?> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
-        return registerUpdateHandler(query, updateBufferSize);
+        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
+        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
+        sink.onDispose(() -> updateHandlers.remove(query));
+        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
+        updateHandlers.put(query, fluxSinkWrapper);
+
+        Registration registration = () -> {
+            fluxSinkWrapper.complete();
+            return true;
+        };
+
+        return new UpdateHandlerRegistration<>(registration,
+                                               processor.replay(updateBufferSize).autoConnect());
     }
 
     @Override
@@ -112,12 +126,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                                                                         .doOnCancel(removeHandler)
                                                                         .doOnTerminate(removeHandler);
 
-        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
+        SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
 
-        updateHandlers.put(query, fluxSinkWrapper);
+        updateHandlers.put(query, sinksManyWrapper);
 
         Registration registration = () -> {
-            fluxSinkWrapper.complete();
+            sinksManyWrapper.complete();
             return true;
         };
 
@@ -168,11 +182,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @SuppressWarnings("unchecked")
-    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, FluxSinkWrapper<?> updateHandler,
+    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
         MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
         try {
-            ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
+            ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
             monitorCallback.reportSuccess();
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
@@ -199,7 +213,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
-                           FluxSinkWrapper<?> updateHandler) {
+                           SinkWrapper<?> updateHandler) {
         try {
             updateHandler.error(cause);
         } catch (Exception e) {
