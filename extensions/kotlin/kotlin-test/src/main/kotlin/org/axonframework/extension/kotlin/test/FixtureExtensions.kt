@@ -19,6 +19,7 @@ package org.axonframework.extension.kotlin.test
 import org.axonframework.test.aggregate.AggregateTestFixture
 import org.axonframework.test.aggregate.FixtureConfiguration
 import org.axonframework.test.aggregate.ResultValidator
+import org.axonframework.test.aggregate.TestExecutor
 import org.axonframework.test.saga.SagaTestFixture
 import kotlin.reflect.KClass
 
@@ -38,7 +39,7 @@ inline fun <reified T : Any> aggregateTestFixture() =
  * @return result validator.
  * @since 0.2.0
  */
-fun <T : Any> AggregateTestFixture<T>.whenever(command: Any): ResultValidator<T> = this.`when`(command)
+fun <T : Any> TestExecutor<T>.whenever(command: Any): ResultValidator<T> = this.`when`(command)
 
 /**
  * Alias for the `when` method to avoid name clash with Kotlin's `when`.
@@ -48,7 +49,7 @@ fun <T : Any> AggregateTestFixture<T>.whenever(command: Any): ResultValidator<T>
  * @return result validator.
  * @since 0.2.0
  */
-fun <T : Any> AggregateTestFixture<T>.whenever(command: Any, metaData: Map<String, Any>): ResultValidator<T> = this.`when`(command, metaData)
+fun <T : Any> TestExecutor<T>.whenever(command: Any, metaData: Map<String, Any>): ResultValidator<T> = this.`when`(command, metaData)
 
 /**
  * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
