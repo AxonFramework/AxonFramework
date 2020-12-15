@@ -16,8 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import reactor.core.Disposable;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Sinks;
 
 /**
@@ -26,7 +24,7 @@ import reactor.core.publisher.Sinks;
  *
  * @param <T> The value type
  * @author Stefan Dragisic
- * @since 3.3
+ * @since 4.5
  */
 class SinksManyWrapper<T> implements SinkWrapper<T> {
 
@@ -46,7 +44,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void complete() {
-        fluxSink.tryEmitComplete();
+        fluxSink.tryEmitComplete().orThrow();
     }
 
     /**
@@ -66,7 +64,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void error(Throwable t) {
-        fluxSink.tryEmitError(t);
+        fluxSink.tryEmitError(t).orThrow();
     }
 
 }

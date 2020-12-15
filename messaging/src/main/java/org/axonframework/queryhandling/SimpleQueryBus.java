@@ -229,22 +229,14 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
-                .thenAccept(monoSink::success)
-                .exceptionally(t -> {
-                    logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
-                                 t);
-                    monoSink.error(t.getCause());
-                    return null;
-                }));
+        MonoWrapper<QueryResponseMessage<I>> initialResult = getInitialResultMono(query);
 
         UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
                 .registerUpdateHandler(query, backpressure, updateBufferSize);
 
-        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
-                                                    updateHandlerRegistration.getUpdates(),
-                                                    updateHandlerRegistration.getRegistration());
+        return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
     }
+
 
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
@@ -254,7 +246,17 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
+        MonoWrapper<QueryResponseMessage<I>> initialResult = getInitialResultMono(query);
+
+        UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
+                .registerUpdateHandler(query, updateBufferSize);
+
+        return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
+    }
+
+    private <Q, I, U> MonoWrapper<QueryResponseMessage<I>> getInitialResultMono(
+            SubscriptionQueryMessage<Q, I, U> query) {
+        return MonoWrapper.create(monoSink -> query(query)
                 .thenAccept(monoSink::success)
                 .exceptionally(t -> {
                     logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
@@ -262,10 +264,11 @@ public class SimpleQueryBus implements QueryBus {
                     monoSink.error(t.getCause());
                     return null;
                 }));
+    }
 
-        UpdateHandlerRegistration<U> updateHandlerRegistration = queryUpdateEmitter
-                .registerUpdateHandler(query, updateBufferSize);
-
+    private <I, U> DefaultSubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> getSubscriptionQueryResult(
+            MonoWrapper<QueryResponseMessage<I>> initialResult,
+            UpdateHandlerRegistration<U> updateHandlerRegistration) {
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
                                                     updateHandlerRegistration.getUpdates(),
                                                     updateHandlerRegistration.getRegistration());

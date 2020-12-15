@@ -1,7 +1,11 @@
 package org.axonframework.queryhandling;
 
 /**
+ * Abstraction interface to bridge old FluxSink and SinksMany API
+ * with common API..
+ *
  * @author Stefan Dragisic
+ * @since 4.5
  */
 public interface SinkWrapper<T> {
 
