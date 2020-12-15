@@ -18,3 +18,5 @@ internal class ExampleAggregate {
         throw Exception()
     }
 }
+
+class ExampleSaga

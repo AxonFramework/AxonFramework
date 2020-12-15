@@ -28,7 +28,7 @@ import kotlin.reflect.KClass
  * @return aggregate test fixture.
  * @since 0.2.0
  */
-inline fun <reified T : Any> AggregateTestFixture<T>.aggregateTestFixture() =
+inline fun <reified T : Any> aggregateTestFixture() =
         AggregateTestFixture(T::class.java)
 
 /**
@@ -80,7 +80,7 @@ inline fun <T : Any, reified F : Any> FixtureConfiguration<T>.registerIgnoredFie
  * @return saga test fixture.
  * @since 0.2.0
  */
-inline fun <reified T : Any> SagaTestFixture<T>.sagaTestFixture() =
+inline fun <reified T : Any> sagaTestFixture() =
         SagaTestFixture(T::class.java)
 
 /**
