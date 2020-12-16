@@ -21,10 +21,12 @@ internal class FixtureExtensionsTest {
         fixture
                 // Call on an AggregateTestFixture instance
                 .whenever(ExampleCommand("id"))
+                .expectNoEvents()
 
         fixture
                 // Call on an AggregateTestFixture instance
                 .whenever(ExampleCommand("id"), mapOf())
+                .expectNoEvents()
     }
 
     @Test
@@ -32,21 +34,23 @@ internal class FixtureExtensionsTest {
         val fixture = aggregateTestFixture<ExampleAggregate>()
 
         fixture
-                .given()
+                .givenNoPriorActivity()
                 // Call on a ResultValidator instance
                 .whenever(ExampleCommand("id"))
+                .expectNoEvents()
 
         fixture
-                .given()
+                .givenNoPriorActivity()
                 // Call on a ResultValidator instance
                 .whenever(ExampleCommand("id"), mapOf())
+                .expectNoEvents()
     }
 
     @Test
     fun `Expect exception extension should accept a kotlin class`() {
         val fixture = aggregateTestFixture<ExampleAggregate>()
         fixture
-                .whenever(ExampleCommand("id"))
+                .whenever(ExampleCommandWithException("id"))
                 .expectException(Exception::class)
     }
 }
