@@ -65,6 +65,10 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         this.converter = builder.converter;
         this.revisionResolver = builder.revisionResolver;
 
+        if (builder.classLoader != null) {
+            this.xStream.setClassLoader(builder.classLoader);
+        }
+
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
@@ -272,6 +276,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private boolean lenientDeserialization = false;
+        private ClassLoader classLoader;
 
         /**
          * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
@@ -325,6 +330,18 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         public Builder converter(Converter converter) {
             assertNonNull(converter, "Converter may not be null");
             this.converter = converter;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ClassLoader} used as an override for default class loader in {@link XStream}.
+         *
+         * @param classLoader a {@link ClassLoader} used as a class loader in {@link XStream}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder classLoader(ClassLoader classLoader) {
+            assertNonNull(classLoader, "ClassLoader may not be null");
+            this.classLoader = classLoader;
             return this;
         }
 
