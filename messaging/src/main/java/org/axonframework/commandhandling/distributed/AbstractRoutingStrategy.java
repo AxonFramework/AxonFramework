@@ -17,53 +17,48 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Assert;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of the RoutingStrategy interface that uses a policy to prescribe what happens when a routing
- * cannot be resolved.
+ * Abstract implementation of the {@link RoutingStrategy} interface that includes a fallback {@code RoutingStrategy}
+ * which prescribes what happens when routing cannot be resolved by this implementation.
  *
  * @author Allard Buijze
  * @since 2.0
  */
 public abstract class AbstractRoutingStrategy implements RoutingStrategy {
 
-    private static final String STATIC_ROUTING_KEY = "unresolved";
-
-    private final UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy;
-    private final AtomicLong counter = new AtomicLong(0);
+    private final RoutingStrategy fallbackRoutingStrategy;
 
     /**
-     * Initializes the strategy using given {@code unresolvedRoutingKeyPolicy} prescribing what happens when a
-     * routing key cannot be resolved.
+     * Initializes the strategy using given {@link UnresolvedRoutingKeyPolicy} prescribing the fallback approach when
+     * this implementation cannot resolve a routing key.
      *
-     * @param unresolvedRoutingKeyPolicy The policy for unresolved routing keys.
+     * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
+     * @deprecated in favor of {@link #AbstractRoutingStrategy(RoutingStrategy)}
      */
-    public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        Assert.notNull(unresolvedRoutingKeyPolicy, () -> "unresolvedRoutingKeyPolicy may not be null");
-        this.unresolvedRoutingKeyPolicy = unresolvedRoutingKeyPolicy;
+    @Deprecated
+    public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy fallbackRoutingStrategy) {
+        this((RoutingStrategy) fallbackRoutingStrategy);
+    }
+
+    /**
+     * Initializes the strategy using given {@link RoutingStrategy} prescribing the fallback approach when this
+     * implementation cannot resolve a routing key.
+     *
+     * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
+     */
+    public AbstractRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+        assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
+        this.fallbackRoutingStrategy = fallbackRoutingStrategy;
     }
 
     @Override
     public String getRoutingKey(CommandMessage<?> command) {
         String routingKey = doResolveRoutingKey(command);
         if (routingKey == null) {
-            switch (unresolvedRoutingKeyPolicy) {
-                case ERROR:
-                    throw new CommandDispatchException(format("The command [%s] does not contain a routing key.",
-                                                              command.getCommandName()));
-                case RANDOM_KEY:
-                    return Long.toHexString(counter.getAndIncrement());
-                case STATIC_KEY:
-                    return STATIC_ROUTING_KEY;
-                default:
-                    throw new IllegalStateException("The configured UnresolvedRoutingPolicy of "
-                                                            + unresolvedRoutingKeyPolicy.name() + " is not supported.");
-            }
+            routingKey = fallbackRoutingStrategy.getRoutingKey(command);
         }
         return routingKey;
     }
@@ -71,8 +66,8 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
     /**
      * Resolve the Routing Key for the given {@code command}.
      *
-     * @param command The command to resolve the routing key for
-     * @return the String representing the Routing Key, or {@code null} if unresolved.
+     * @param command the command to resolve the routing key for
+     * @return the String representing the Routing Key, or {@code null} if unresolved
      */
     protected abstract String doResolveRoutingKey(CommandMessage<?> command);
 }

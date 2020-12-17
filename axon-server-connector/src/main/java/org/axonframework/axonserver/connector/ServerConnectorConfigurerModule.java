@@ -111,9 +111,9 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .configuration(c.getComponent(AxonServerConfiguration.class))
                                    .localSegment(localSegment)
                                    .serializer(c.messageSerializer())
-                                   .routingStrategy(
-                                           c.getComponent(RoutingStrategy.class, AnnotationRoutingStrategy::new)
-                                   )
+                                   .routingStrategy(c.getComponent(
+                                           RoutingStrategy.class, AnnotationRoutingStrategy::defaultStrategy
+                                   ))
                                    .priorityCalculator(c.getComponent(
                                            CommandPriorityCalculator.class,
                                            CommandPriorityCalculator::defaultCommandPriorityCalculator
