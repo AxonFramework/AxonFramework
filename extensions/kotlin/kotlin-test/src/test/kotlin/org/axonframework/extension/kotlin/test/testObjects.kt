@@ -5,6 +5,7 @@ import org.axonframework.commandhandling.RoutingKey
 import org.axonframework.modelling.command.AggregateIdentifier
 
 internal data class ExampleCommand(@RoutingKey val aggregateId: String)
+internal data class ExampleCommandWithException(@RoutingKey val aggregateId: String)
 
 internal class ExampleAggregate {
 
@@ -14,7 +15,12 @@ internal class ExampleAggregate {
     constructor()
 
     @CommandHandler
-    constructor(command: ExampleCommand) {
+    constructor(command: ExampleCommand)
+
+    @CommandHandler
+    constructor(command: ExampleCommandWithException) {
         throw Exception()
     }
 }
+
+class ExampleSaga
