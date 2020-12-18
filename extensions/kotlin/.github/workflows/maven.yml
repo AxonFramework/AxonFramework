@@ -1,32 +1,78 @@
-name: Kotlin Extension Build and Tests
+name: Kotlin Extension
 
-on: [push, pull_request]
+on:
+    push:
+        branches:
+            - master
+    pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [ 8, 11 ]
+    build:
+        name: Test and Build on JDK ${{ matrix.java-version }}
 
-    name: Build and tests on JDK ${{ matrix.java }}
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+        strategy:
+            matrix:
+                include:
+                    - java-version: 8
+                      sonar-enabled: false
+                    - java-version: 11
+                      sonar-enabled: true
 
-      - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{ matrix.java }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
 
-      - name: Cache .m2
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven
+            - name: Set up JDK ${{ matrix.java-version }}
+              uses: actions/setup-java@v1.4.3
+              with:
+                  java-version: ${{ matrix.java-version }}
 
-      - name: Build and verify
-        run: mvn clean verify
+            - name: Cache .m2
+              uses: actions/cache@v2.1.3
+              with:
+                  path: ~/.m2/repository
+                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-maven
+
+            - name: Maven operation with Sonar
+              if: matrix.sonar-enabled
+              run: |
+                  mvn -B -U -Pcoverage \
+                  clean verify \
+                  sonar:sonar \
+                  -Dsonar.projectKey=AxonFramework_extension-reactor \
+                  -Dsonar.organization=axonframework \
+                  -Dsonar.host.url=https://sonarcloud.io \
+                  -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Maven operation without Sonar
+              if: matrix.sonar-enabled != true
+              run: |
+                  mvn -B -U clean verify
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Notify success to Slack
+              if: success()
+              env:
+                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+              uses: voxmedia/github-action-slack-notify-build@v1.1.2
+              with:
+                  channel_id: CAGSEC92A
+                  status: SUCCESS
+                  color: good
+
+            - name: Notify failure to Slack
+              if: failure()
+              env:
+                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+              uses: voxmedia/github-action-slack-notify-build@v1.1.2
+              with:
+                  channel_id: CAGSEC92A
+                  status: FAILED
+                  color: danger
