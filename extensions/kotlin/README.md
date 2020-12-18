@@ -1,7 +1,8 @@
 # Axon Framework - Kotlin Extension
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin)
-[![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
+![Build Status](https://github.com/AxonFramework/extension-tracing/workflows/Kotlin%20Extension/badge.svg?branch=master)
 [![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_extension-kotlin&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_extension-kotlin)
+[![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
 
 _Note:_ This extension is still in an experimental stage.
 
