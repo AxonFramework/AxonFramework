@@ -334,7 +334,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         }
 
         /**
-         * Sets the {@link ClassLoader} used as an override for default class loader in {@link XStream}.
+         * Sets the {@link ClassLoader} used as an override for default {@code ClassLoader} used in the {@link XStream}.
+         * The same solution could thus be achieved by configuring the `XStream` instance directly.
          *
          * @param classLoader a {@link ClassLoader} used as a class loader in {@link XStream}
          * @return the current Builder instance, for fluent interfacing
