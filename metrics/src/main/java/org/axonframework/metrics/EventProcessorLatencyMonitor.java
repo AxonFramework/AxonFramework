@@ -23,6 +23,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,40 +33,29 @@ import java.util.concurrent.atomic.AtomicLong;
  * Measures the difference in message timestamps between the last ingested and the last processed message.
  *
  * @author Marijn van Zelst
+ * @author Allard Buijze
  * @since 3.0
  */
 public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>>, MetricSet {
 
-    private final AtomicLong lastReceivedTime = new AtomicLong(-1);
-    private final AtomicLong lastProcessedTime = new AtomicLong(-1);
-    private final AtomicLong processTime = new AtomicLong(0);
+    private final Clock clock;
+    private final AtomicLong processTime = new AtomicLong();
+
+    public EventProcessorLatencyMonitor() {
+        this(Clock.systemUTC());
+    }
+
+    public EventProcessorLatencyMonitor(Clock clock) {
+        this.clock = clock;
+    }
 
     @Override
     public MonitorCallback onMessageIngested(EventMessage<?> message) {
-        if (message == null) {
-            return NoOpMessageMonitorCallback.INSTANCE;
+        if (message != null) {
+            this.processTime.set(Duration.between(message.getTimestamp(), clock.instant()).toMillis());
         }
-        updateIfMaxValue(lastReceivedTime, message.getTimestamp().toEpochMilli());
-        return new MonitorCallback() {
-            @Override
-            public void reportSuccess() {
-                update();
-            }
+        return NoOpMessageMonitorCallback.INSTANCE;
 
-            @Override
-            public void reportFailure(Throwable cause) {
-                update();
-            }
-
-            @Override
-            public void reportIgnored() {
-                update();
-            }
-
-            private void update() {
-                updateIfMaxValue(lastProcessedTime, message.getTimestamp().toEpochMilli());
-            }
-        };
     }
 
     @Override
@@ -74,15 +65,4 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
         return metrics;
     }
 
-    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp) {
-        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) -> Math.max(newValue, currentValue));
-
-        long lastProcessed = this.lastProcessedTime.longValue();
-        long lastReceived = this.lastReceivedTime.longValue();
-        if (lastReceived == -1 || lastProcessed == -1) {
-            processTime.set(0L);
-        } else {
-            processTime.set(lastReceived - lastProcessed);
-        }
-    }
 }

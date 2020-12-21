@@ -22,15 +22,18 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class EventProcessorLatencyMonitorTest {
 
@@ -61,7 +64,7 @@ class EventProcessorLatencyMonitorTest {
         callbacks.get(firstEventMessage).reportSuccess();
 
         Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency").gauge());
-        assertEquals(1000, latencyGauge.value(), 0);
+        assertTrue(latencyGauge.value() >= 1000);
     }
 
     @Test
@@ -74,19 +77,23 @@ class EventProcessorLatencyMonitorTest {
                                                                                                                 .getSimpleName()));
 
         EventMessage<String> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.getTimestamp()).thenReturn(Instant.now());
         when(firstEventMessage.getPayloadType()).thenReturn(String.class);
 
         EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
+        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
         when(secondEventMessage.getPayloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
         callbacks.get(firstEventMessage).reportSuccess();
 
-        Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency").gauge());
-        assertEquals(1000, latencyGauge.value(), 0);
+        assertEquals(2, meterRegistry.find(METER_NAME_PREFIX + ".latency").gauges().size());
+
+        Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency")
+                                                                 .tags("payloadType", Integer.class.getSimpleName())
+                                                                 .gauge());
+        assertTrue(latencyGauge.value() >= 1000);
     }
 
     @Test
@@ -98,11 +105,11 @@ class EventProcessorLatencyMonitorTest {
                                                                                                          message.getPayloadType()
                                                                                                                 .getSimpleName()));
         EventMessage<String> firstEventMessage = mock(EventMessage.class);
-        when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
+        when(firstEventMessage.getTimestamp()).thenReturn(Instant.now().minusMillis(1000));
         when(firstEventMessage.getPayloadType()).thenReturn(String.class);
 
         EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
-        when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
+        when(secondEventMessage.getTimestamp()).thenReturn(Instant.now());
         when(secondEventMessage.getPayloadType()).thenReturn(Integer.class);
 
         Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
@@ -110,6 +117,6 @@ class EventProcessorLatencyMonitorTest {
         callbacks.get(firstEventMessage).reportFailure(null);
 
         Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency").gauge());
-        assertEquals(1000, latencyGauge.value(), 0);
+        assertTrue(latencyGauge.value() >= 1000);
     }
 }

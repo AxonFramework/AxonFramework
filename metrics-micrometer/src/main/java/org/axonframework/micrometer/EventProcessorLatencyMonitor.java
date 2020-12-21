@@ -16,6 +16,7 @@
 
 package org.axonframework.micrometer;
 
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -25,6 +26,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -33,6 +36,7 @@ import java.util.function.Function;
  *
  * @author Marijn van Zelst
  * @author Ivan Dugalic
+ * @author Allard Buijze
  * @since 4.1
  */
 public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {
@@ -41,21 +45,32 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
     private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
-    private final AtomicLong lastReceivedTime = new AtomicLong(-1);
-    private final AtomicLong lastProcessedTime = new AtomicLong(-1);
+    private final Clock clock;
+    private final ConcurrentMap<Tags, AtomicLong> gauges = new ConcurrentHashMap<>();
 
     private EventProcessorLatencyMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
         this(meterNamePrefix,
              meterRegistry,
-             message -> Tags.empty());
+             message -> Tags.empty(),
+             Clock.SYSTEM);
     }
 
-    private EventProcessorLatencyMonitor(String meterNamePrefix,
-                                         MeterRegistry meterRegistry,
-                                         Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+    /**
+     * Initialize the monitor with given properties.
+     *
+     * @param meterNamePrefix The prefix to use on this meter. It will be suffixed with ".latency".
+     * @param meterRegistry   The registry to register this meter with
+     * @param tagsBuilder     The function that provides the Tags to measure latency under for each message
+     * @param clock           The clock to use to measure time
+     */
+    protected EventProcessorLatencyMonitor(String meterNamePrefix,
+                                           MeterRegistry meterRegistry,
+                                           Function<Message<?>, Iterable<Tag>> tagsBuilder,
+                                           Clock clock) {
         this.meterNamePrefix = meterNamePrefix;
         this.meterRegistry = meterRegistry;
         this.tagsBuilder = tagsBuilder;
+        this.clock = clock;
     }
 
     /**
@@ -80,59 +95,23 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
      */
     public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
                                                             Function<Message<?>, Iterable<Tag>> tagsBuilder) {
-        return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry, tagsBuilder);
+        return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry, tagsBuilder, Clock.SYSTEM);
     }
 
+    @SuppressWarnings("PackageAccessibility")
     @Override
     public MonitorCallback onMessageIngested(EventMessage<?> message) {
-        if (message == null) {
-            return NoOpMessageMonitorCallback.INSTANCE;
+        if (message != null) {
+            Tags tags = Tags.of(tagsBuilder.apply(message));
+            AtomicLong actualCounter = gauges.computeIfAbsent(tags, k -> new AtomicLong());
+            actualCounter.set(clock.wallTime() - message.getTimestamp().toEpochMilli());
+
+            Gauge.builder(meterNamePrefix + ".latency", actualCounter::get)
+                 .tags(tags)
+                 .register(meterRegistry);
+
         }
-        final Iterable<Tag> tags = tagsBuilder.apply(message);
-        Gauge.builder(meterNamePrefix + ".latency",
-                      this,
-                      EventProcessorLatencyMonitor::calculateLatency)
-             .tags(tags)
-             .register(meterRegistry);
-
-        updateIfMaxValue(lastReceivedTime, message.getTimestamp().toEpochMilli());
-
-        return new MonitorCallback() {
-            @Override
-            public void reportSuccess() {
-                update();
-            }
-
-            @Override
-            public void reportFailure(Throwable cause) {
-                update();
-            }
-
-            @Override
-            public void reportIgnored() {
-                update();
-            }
-
-            private void update() {
-                updateIfMaxValue(lastProcessedTime, message.getTimestamp().toEpochMilli());
-            }
-        };
+        return NoOpMessageMonitorCallback.INSTANCE;
     }
 
-    private long calculateLatency() {
-        long lastProcessedTime = this.lastProcessedTime.longValue();
-        long lastReceivedTime = this.lastReceivedTime.longValue();
-        long processTime;
-        if (lastReceivedTime == -1 || lastProcessedTime == -1) {
-            processTime = 0;
-        } else {
-            processTime = lastReceivedTime - lastProcessedTime;
-        }
-        return processTime;
-    }
-
-    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp) {
-        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) ->
-                newValue > currentValue ? newValue : currentValue);
-    }
 }
