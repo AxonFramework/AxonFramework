@@ -35,7 +35,10 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +60,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 2.0
  */
 public class DistributedCommandBus implements CommandBus, Distributed<CommandBus> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * The initial load factor of this node when it is registered with the {@link CommandRouter}.
@@ -204,6 +209,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        logger.debug("Subscribing command with name [{}] to this distributed CommandBus. "
+                             + "Expect similar logging on the local segment.", commandName);
         Registration reg = connector.subscribe(commandName, handler);
         updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));
 
