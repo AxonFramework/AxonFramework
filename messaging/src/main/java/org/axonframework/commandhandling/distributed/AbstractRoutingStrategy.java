@@ -49,7 +49,7 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
      *
      * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
      */
-    public AbstractRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+    protected AbstractRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
         assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
         this.fallbackRoutingStrategy = fallbackRoutingStrategy;
     }
