@@ -121,7 +121,7 @@
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.4.14</version>
+            <version>1.4.15</version>
             <exclusions>
                 <exclusion>
                     <groupId>xpp3</groupId>
