@@ -42,7 +42,9 @@ class Oracle11SagaSqlSchemaTest {
     private static final String PASSWORD = "oracle";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2")
+            //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
+            .withEnv("oracle.jdbc.timezoneAsRegion", "false");
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
