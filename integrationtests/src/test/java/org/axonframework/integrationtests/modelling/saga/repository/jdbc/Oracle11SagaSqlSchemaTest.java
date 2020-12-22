@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.modelling.saga.repository.jdbc;
 import org.axonframework.modelling.saga.repository.jdbc.Oracle11SagaSqlSchema;
 import org.axonframework.modelling.saga.repository.jdbc.SagaSchema;
 import org.junit.jupiter.api.*;
-import org.opentest4j.TestAbortedException;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -50,16 +49,10 @@ class Oracle11SagaSqlSchemaTest {
     private SagaSchema sagaSchema;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         sagaSchema = new SagaSchema();
         testSubject = new Oracle11SagaSqlSchema(sagaSchema);
-        try {
-            connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), USERNAME, PASSWORD);
-        } catch (SQLException e) {
-            throw new TestAbortedException(
-                    "Ignoring test. Machine does not have a local Oracle 11 instance running", e
-            );
-        }
+        connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), USERNAME, PASSWORD);
     }
 
     @AfterEach

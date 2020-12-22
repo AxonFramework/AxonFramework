@@ -20,7 +20,6 @@ import com.mysql.cj.jdbc.MysqlDataSource;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.junit.jupiter.api.*;
-import org.opentest4j.TestAbortedException;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -49,16 +48,12 @@ class MysqlJdbcEventStorageEngineTest {
     private JdbcEventStorageEngine testSubject;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setUrl(MYSQL_CONTAINER.getJdbcUrl());
         dataSource.setUser(MYSQL_CONTAINER.getUsername());
         dataSource.setPassword(MYSQL_CONTAINER.getPassword());
-        try {
-            testSubject = createEngine(dataSource);
-        } catch (Exception e) {
-            throw new TestAbortedException("Ignoring this test, as no valid MySQL instance is configured", e);
-        }
+        testSubject = createEngine(dataSource);
     }
 
     /**

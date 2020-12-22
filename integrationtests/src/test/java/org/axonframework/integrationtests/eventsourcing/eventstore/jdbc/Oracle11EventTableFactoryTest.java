@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jdbc;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.Oracle11EventTableFactory;
 import org.junit.jupiter.api.*;
-import org.opentest4j.TestAbortedException;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -50,16 +49,10 @@ class Oracle11EventTableFactoryTest {
     private EventSchema eventSchema;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
-        try {
-            connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), USERNAME, PASSWORD);
-        } catch (SQLException e) {
-            throw new TestAbortedException(
-                    "Ignoring test. Machine does not have a local Oracle 11 instance running", e
-            );
-        }
+        connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), USERNAME, PASSWORD);
     }
 
     @AfterEach
