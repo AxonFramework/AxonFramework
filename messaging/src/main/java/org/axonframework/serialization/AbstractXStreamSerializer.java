@@ -65,10 +65,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         this.converter = builder.converter;
         this.revisionResolver = builder.revisionResolver;
 
-        if (builder.classLoader != null) {
-            this.xStream.setClassLoader(builder.classLoader);
-        }
-
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
@@ -367,6 +363,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
             if (lenientDeserialization) {
                 xStream.ignoreUnknownElements();
+            }
+            if (classLoader != null) {
+                xStream.setClassLoader(classLoader);
             }
         }
     }
