@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
@@ -268,6 +269,7 @@ public class JacksonSerializer implements Serializer {
         private ObjectMapper objectMapper = new ObjectMapper();
         private boolean lenientDeserialization = false;
         private boolean defaultTyping = false;
+        private ClassLoader classLoader;
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
@@ -312,18 +314,17 @@ public class JacksonSerializer implements Serializer {
         }
 
         /**
-         * This method is a no-op, as the classloader is no longer used by the serializer.
-         * <p>
-         * Instead, ensure the ObjectMapper is configured with the correct class loader.
+         * Sets the {@link ClassLoader} used as an override for default {@code ClassLoader} used in the {@link ObjectMapper}.
+         * The same solution could thus be achieved by configuring the `ObjectMapper` instance directly.
          *
          * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
          * @return the current Builder instance, for fluent interfacing
          * @see #objectMapper(ObjectMapper)
          * @see com.fasterxml.jackson.databind.type.TypeFactory#withClassLoader(ClassLoader)
-         * @deprecated Ensure the ObjectMapper is configured with the correct class loader instead
          */
-        @Deprecated
         public Builder classLoader(ClassLoader classLoader) {
+            assertNonNull(classLoader, "ClassLoader may not be null");
+            this.classLoader = classLoader;
             return this;
         }
 
@@ -367,6 +368,9 @@ public class JacksonSerializer implements Serializer {
             }
             if (defaultTyping) {
                 objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
+            }
+            if (classLoader != null) {
+                objectMapper.setTypeFactory(objectMapper.getTypeFactory().withClassLoader(classLoader));
             }
             return new JacksonSerializer(this);
         }
