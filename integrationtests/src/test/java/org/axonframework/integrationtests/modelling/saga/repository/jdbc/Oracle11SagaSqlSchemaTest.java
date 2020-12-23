@@ -26,6 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
@@ -42,9 +43,7 @@ class Oracle11SagaSqlSchemaTest {
     private static final String PASSWORD = "oracle";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2")
-            //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
-            .withEnv("oracle.jdbc.timezoneAsRegion", "false");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
@@ -54,7 +53,12 @@ class Oracle11SagaSqlSchemaTest {
     void setUp() throws SQLException {
         sagaSchema = new SagaSchema();
         testSubject = new Oracle11SagaSqlSchema(sagaSchema);
-        connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), USERNAME, PASSWORD);
+        Properties properties = new Properties();
+        properties.getProperty("user", USERNAME);
+        properties.getProperty("password", PASSWORD);
+        //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
+        properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
+        connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), properties);
     }
 
     @AfterEach
