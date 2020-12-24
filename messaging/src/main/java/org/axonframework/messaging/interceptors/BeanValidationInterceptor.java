@@ -16,16 +16,16 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -47,7 +47,7 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
 
     /**
      * Initializes a validation interceptor using a default ValidatorFactory (see {@link
-     * javax.validation.Validation#buildDefaultValidatorFactory()}).
+     * Validation#buildDefaultValidatorFactory()}).
      */
     public BeanValidationInterceptor() {
         this(Validation.buildDefaultValidatorFactory());
@@ -81,12 +81,12 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     /**
-     * Validate the given {@code message} using the given {@code validator}. The default implementation
-     * merely calls {@code validator.validate(message)}.
+     * Validate the given {@code message} using the given {@code validator}. The default implementation merely calls
+     * {@code validator.validate(message)}.
      * <p/>
-     * Subclasses may override this method to alter the validation behavior in specific cases. Although the
-     * {@code null} is accepted as return value to indicate that there are no constraint violations,
-     * implementations are encouraged to return an empty Set instead.
+     * Subclasses may override this method to alter the validation behavior in specific cases. Although the {@code null}
+     * is accepted as return value to indicate that there are no constraint violations, implementations are encouraged
+     * to return an empty Set instead.
      *
      * @param message   The message to validate
      * @param validator The validator provided by the validator factory

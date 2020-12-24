@@ -16,24 +16,23 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import javax.validation.Validation;
-import javax.validation.ValidatorFactory;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link BeanValidationInterceptor}.
+ *
  * @author Allard Buijze
  */
 class BeanValidationInterceptorTest {
@@ -99,6 +98,7 @@ class BeanValidationInterceptorTest {
 
     public static class JSR303AnnotatedInstance {
 
+        @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
         @Pattern(regexp = "ab.*")
         @NotNull
         private String notNull;
