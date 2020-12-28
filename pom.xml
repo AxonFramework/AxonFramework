@@ -81,12 +81,13 @@
             gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
             https://github.com/grpc/grpc-java/blob/master/SECURITY.md
         -->
+        <jakarta.el-api.version>4.0.0</jakarta.el-api.version>
+        <jakarta-el-impl.version>4.0.0</jakarta-el-impl.version>
+        <jakarta.validation-api.version>3.0.0</jakarta.validation-api.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
-        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
         <mysql-connector-java.version>8.0.22</mysql-connector-java.version>
@@ -94,7 +95,7 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-validator.version>6.1.7.Final</hibernate-validator.version>
+        <hibernate-validator.version>7.0.0.Final</hibernate-validator.version>
         <hibernate-entitymanager.version>5.4.27.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.10.19</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -339,11 +340,6 @@
                 <version>${dom4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.web</groupId>
-                <artifactId>el-impl</artifactId>
-                <version>${el-impl.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${javax.annotation-api.version}</version>
@@ -353,11 +349,23 @@
                 <artifactId>cache-api</artifactId>
                 <version>${javax.cache-api.version}</version>
             </dependency>
+
             <dependency>
-                <groupId>javax.el</groupId>
-                <artifactId>javax.el-api</artifactId>
-                <version>${javax.el-api.version}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${jakarta.validation-api.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.el</groupId>
+                <artifactId>jakarta.el-api</artifactId>
+                <version>${jakarta.el-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>${jakarta-el-impl.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
@@ -368,11 +376,7 @@
                 <artifactId>javax.persistence-api</artifactId>
                 <version>${javax.persistence-api.version}</version>
             </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax.validation-api.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
