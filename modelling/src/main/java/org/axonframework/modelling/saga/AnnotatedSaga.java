@@ -18,8 +18,8 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.modelling.saga.metamodel.SagaModel;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -43,9 +43,9 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
 
     /**
-     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
-     * {@code sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the
-     * description of the structure of the Saga.
+     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given {@code
+     * sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the description
+     * of the structure of the Saga.
      *
      * @param sagaId            The identifier of this Saga instance
      * @param associationValues The current associations of this Saga
@@ -118,7 +118,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
-            return  executeWithResult(() -> handler.handle(event, sagaInstance));
+            return executeWithResult(() -> handler.handle(event, sagaInstance));
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
@@ -131,9 +131,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     }
 
     private Boolean isEndingHandler(MessageHandlingMember<? super T> handler) {
-        return handler.unwrap(SagaMethodMessageHandlingMember.class)
-                      .map(SagaMethodMessageHandlingMember::isEndingHandler)
-                      .orElse(false);
+        return handler.hasAnnotation(EndSaga.class);
     }
 
     @Override
