@@ -73,6 +73,10 @@ public interface WrappedToken extends TrackingToken {
         }
     }
 
+    static TrackingToken advance(TrackingToken base, TrackingToken target) {
+        return base instanceof WrappedToken ? ((WrappedToken) base).advancedTo(target) : target;
+    }
+
     /**
      * Advance this token to the given {@code newToken}.
      *

@@ -197,6 +197,12 @@ public class EventBuffer implements TrackingEventStream {
         delegate.close();
     }
 
+    @Override
+    public boolean setOnAvailableCallback(Runnable callback) {
+        delegate.onAvailable(callback);
+        return true;
+    }
+
     private static class SimpleSpliterator<T> implements Spliterator<T> {
 
         private final Supplier<T> supplier;
