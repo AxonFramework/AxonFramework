@@ -16,9 +16,14 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngineTest;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -34,6 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
+    private static final EventMessage<Object> TEST_EVENT = GenericEventMessage.asEventMessage("test");
+
     private InMemoryEventStorageEngine testSubject;
 
     @BeforeEach
@@ -45,7 +52,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     @Test
     void testPublishedEventsEmittedToExistingStreams() {
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
-        testSubject.appendEvents(GenericEventMessage.asEventMessage("test"));
+        testSubject.appendEvents(TEST_EVENT);
 
         assertTrue(stream.findFirst().isPresent());
     }
@@ -54,12 +61,41 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     void testPublishedEventsEmittedToExistingStreams_WithOffset() {
         testSubject = new InMemoryEventStorageEngine(1);
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
-        testSubject.appendEvents(GenericEventMessage.asEventMessage("test"));
+        testSubject.appendEvents(TEST_EVENT);
 
         Optional<? extends TrackedEventMessage<?>> optionalResult = stream.findFirst();
         assertTrue(optionalResult.isPresent());
         OptionalLong optionalResultPosition = optionalResult.get().trackingToken().position();
         assertTrue(optionalResultPosition.isPresent());
         assertEquals(1, optionalResultPosition.getAsLong());
+    }
+
+    /**
+     * This test issues the publication of an {@link EventMessage} through the {@link EventStore}, as this guarantees
+     * the process of attaching the operation to the {@link UnitOfWork} are correctly invoked. This allows for
+     * validation of issue #1056 (https://github.com/AxonFramework/AxonFramework/issues/1056), which defines that we
+     * should ensure the usage of the {@link InMemoryEventStorageEngine} will rollback stored events correctly.
+     */
+    @Test
+    void testEventsAreNotStoredWhenTheUnitOfWorkIsRolledBack() {
+        // Given an EmbeddedEventStore and UnitOfWork...
+        EventStore eventStore = EmbeddedEventStore.builder()
+                                                  .storageEngine(testSubject)
+                                                  .build();
+        UnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
+
+        // when _only_ publishing...
+        eventStore.publish(TEST_EVENT);
+
+        // then there are no events in the storage engine, since the UnitOfWork is not committed yet.
+        Stream<? extends TrackedEventMessage<?>> eventStream = testSubject.readEvents(null, true);
+        assertEquals(0L, eventStream.count());
+
+        // When rolling back the UnitOfWork...
+        unitOfWork.rollback();
+
+        // then there are *still* no events in the storage engine.
+        eventStream = testSubject.readEvents(null, true);
+        assertEquals(0L, eventStream.count());
     }
 }
