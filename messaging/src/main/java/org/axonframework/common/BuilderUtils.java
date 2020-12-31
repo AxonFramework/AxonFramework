@@ -114,6 +114,6 @@ public abstract class BuilderUtils {
      * @param exceptionMessage the message for the exception.
      */
     public static void assertNonEmpty(String string, String exceptionMessage) {
-        assertThat(string, ObjectUtils::nonEmptyOrNull, exceptionMessage);
+        assertThat(string, StringUtils::nonEmptyOrNull, exceptionMessage);
     }
 }

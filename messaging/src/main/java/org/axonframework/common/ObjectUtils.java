@@ -16,7 +16,6 @@
 
 package org.axonframework.common;
 
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -27,8 +26,6 @@ import java.util.function.Supplier;
  * @since 3.0
  */
 public abstract class ObjectUtils {
-
-    private static final String EMPTY_STRING = "";
 
     private ObjectUtils() {
         // Utility class
@@ -123,17 +120,5 @@ public abstract class ObjectUtils {
         long leftTimeout = deadline - System.currentTimeMillis();
         leftTimeout = leftTimeout < 0 ? 0 : leftTimeout;
         return leftTimeout;
-    }
-
-    /**
-     * Validate whether the given {@link String} {@code s} is not {@code null} and not empty (where empty is defined as
-     * {@code ""}.
-     *
-     * @param s the {@link String} to validate whether it is not {@code null} and not empty
-     * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
-     * otherwise
-     */
-    public static boolean nonEmptyOrNull(String s) {
-        return Objects.nonNull(s) && !EMPTY_STRING.equals(s);
     }
 }
