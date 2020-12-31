@@ -27,8 +27,8 @@ public class HandlerAttributes {
     /**
      * Construct a handler attributes object based on the given {@code handlerAttributes} {@link Map}.
      *
-     * @param attributes a {@link Map} from handler type to attributes {@code Map} to base a {@link
-     *                          HandlerAttributes} on
+     * @param attributes a {@link Map} from handler type to attributes {@code Map} to base a {@link HandlerAttributes}
+     *                   on
      */
     public HandlerAttributes(Map<String, Map<String, Object>> attributes) {
         this.attributes = attributes;
@@ -62,7 +62,13 @@ public class HandlerAttributes {
      * @return all attributes for all handler types stored in this {@link HandlerAttributes} object
      */
     public Map<String, Map<String, Object>> getAll() {
-        return Collections.unmodifiableMap(attributes);
+        return Collections.unmodifiableMap(
+                attributes.entrySet().stream()
+                          .collect(Collectors.toMap(
+                                  Map.Entry::getKey,
+                                  entry -> Collections.unmodifiableMap(entry.getValue())
+                          ))
+        );
     }
 
     /**
