@@ -18,6 +18,7 @@ package org.axonframework.metrics;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Timer;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -25,12 +26,26 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link MessageTimerMonitor}.
+ *
+ * @author Marijn van Zelst
+ */
 class MessageTimerMonitorTest {
 
+    private TestClock testClock;
+    private MessageTimerMonitor testSubject;
+
+    @BeforeEach
+    void setUp() {
+        testClock = new TestClock();
+        testSubject = MessageTimerMonitor.builder()
+                                         .clock(testClock)
+                                         .build();
+    }
+
     @Test
-    void testSuccessMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    void testSuccessMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportSuccess();
@@ -49,9 +64,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testFailureMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    void testFailureMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportFailure(null);
@@ -70,9 +83,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testIgnoredMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    void testIgnoredMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportIgnored();
@@ -90,4 +101,15 @@ class MessageTimerMonitorTest {
         assertArrayEquals(new long[]{}, failureTimer.getSnapshot().getValues());
     }
 
+    @Test
+    void testBuildWithNullClockThrowsAxonConfigurationException() {
+        MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
+        assertThrows(AxonConfigurationException.class, () -> testSubject.clock(null));
+    }
+
+    @Test
+    void testBuildWithNullReservoirFactoryThrowsAxonConfigurationException() {
+        MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
+        assertThrows(AxonConfigurationException.class, () -> testSubject.reservoirFactory(null));
+    }
 }
