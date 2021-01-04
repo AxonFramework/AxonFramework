@@ -84,17 +84,7 @@
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-api</artifactId>
-        <version>${junit.jupiter.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-params</artifactId>
-        <version>${junit.jupiter.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
+        <artifactId>junit-jupiter</artifactId>
         <version>${junit.jupiter.version}</version>
       </dependency>
       <dependency>
@@ -117,7 +107,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
 
   <dependencies>
     <dependency>
@@ -144,17 +133,7 @@
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-params</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
+      <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -271,7 +250,6 @@
 
   </profiles>
 
-
   <build>
     <defaultGoal>clean install</defaultGoal>
     <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
@@ -306,7 +284,7 @@
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.6</version>
-        </plugin>       
+        </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
@@ -554,7 +532,7 @@
     </developer>
     <developer>
       <name>Steven van Beelen</name>
-      <email>steven.vanbeeelen@axoniq.io</email>
+      <email>steven.vanbeelen@axoniq.io</email>
       <organization>AxonIQ</organization>
       <organizationUrl>https://axoniq.io</organizationUrl>
       <roles>
