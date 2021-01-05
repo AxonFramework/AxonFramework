@@ -46,8 +46,8 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
     /**
      * Instantiate a Builder to be able to create a {@link LoggingQueryInvocationErrorHandler}.
      * <p>
-     * The {@link Logger} is defaulted to a {@link LoggerFactory#getLogger(Class)} call using
-     * {@code LoggingQueryInvocationErrorHandler.class}.
+     * The {@link Logger} is defaulted to a {@link LoggerFactory#getLogger(Class)} call using {@code
+     * LoggingQueryInvocationErrorHandler.class}.
      *
      * @return a Builder to be able to create a {@link LoggingQueryInvocationErrorHandler}
      */
@@ -73,7 +73,8 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
         /**
          * Sets the {@link Logger} to log errors with from query handlers. Defaults to the result of {@link
          * LoggerFactory#getLogger(Class)}, using {@code LoggingQueryInvocationErrorHandler.class} as input. Defaults to
-         * a {@link LoggerFactory#getLogger(Class)} call, providing the {@link LoggingQueryInvocationErrorHandler} type.
+         * a {@link LoggerFactory#getLogger(Class)} call, providing the {@link LoggingQueryInvocationErrorHandler}
+         * type.
          *
          * @param logger the {@link Logger} to log errors with from query handlers
          * @return the current Builder instance, for fluent interfacing

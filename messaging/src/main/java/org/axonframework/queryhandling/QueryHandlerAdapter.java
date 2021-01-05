@@ -24,11 +24,12 @@ import org.axonframework.common.Registration;
  * @since 3.1
  */
 public interface QueryHandlerAdapter {
+
     /**
-     * Subscribes query handlers to the given query bus
+     * Subscribes the query handlers of this {@link QueryHandlerAdapter} to the given {@link QueryBus}.
      *
-     * @param queryBus the query bus
-     * @return a handle to unsubscribe
+     * @param queryBus the query bus to subscribe
+     * @return a {@link Registration} to unsubscribe this {@link QueryHandlerAdapter}
      */
     Registration subscribe(QueryBus queryBus);
 }

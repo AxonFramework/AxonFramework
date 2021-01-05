@@ -172,8 +172,8 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
-         * Are invoked when a query is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked when a
+         * query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -184,8 +184,8 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s.
-         * Are invoked when a query is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link QueryMessage}s. Are invoked when a
+         * query is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a query is being dispatched
          * @return the current Builder instance, for fluent interfacing
