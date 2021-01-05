@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * A {@link MessageMonitor which creates {@link Timer} instances for the overall, success, failure and ignored time an
+ * A {@link MessageMonitor} which creates {@link Timer} instances for the overall, success, failure and ignored time an
  * ingested {@link Message} takes.
  *
  * @author Marijn van Zelst
