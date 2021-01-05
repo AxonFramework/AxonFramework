@@ -18,7 +18,15 @@ package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -504,10 +512,23 @@ public interface EventProcessingConfigurer {
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
 
     /**
+     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to be used by the {@link
+     * EventProcessor} corresponding to the given {@code name}.
+     *
+     * @param name                                       a {@link String} specifying the name of an {@link
+     *                                                   EventProcessor}
+     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
+            String name,
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    );
+
+    /**
      * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to use as the default.
      *
-     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
-     *                                                   {@link TrackingEventProcessorConfiguration}
+     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerTrackingEventProcessorConfiguration(

@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -63,10 +64,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link EventProcessingModule}.
+ *
+ * @author Allard Buijze
+ */
 @ExtendWith(MockitoExtension.class)
 class EventProcessingModuleTest {
 
@@ -515,6 +519,73 @@ class EventProcessingModuleTest {
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
     }
 
+    @Test
+    void testDefaultTrackingEventProcessingConfiguration(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException {
+        Object someHandler = new Object();
+        TrackingEventProcessorConfiguration testTepConfig =
+                TrackingEventProcessorConfiguration.forParallelProcessing(4);
+        configurer.eventProcessing()
+                  .usingTrackingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> someHandler)
+                  .registerEventHandler(config -> new TrackingEventHandler())
+                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
+        Configuration config = configurer.start();
+
+        Optional<TrackingEventProcessor> resultTrackingTep =
+                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        assertTrue(resultTrackingTep.isPresent());
+        TrackingEventProcessor trackingTep = resultTrackingTep.get();
+        int trackingTepSegmentsSize =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
+        assertEquals(4, trackingTepSegmentsSize);
+
+
+        Optional<TrackingEventProcessor> resultDefaultTep =
+                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
+        assertTrue(resultDefaultTep.isPresent());
+        TrackingEventProcessor defaultTep = resultDefaultTep.get();
+        int defaultTepSegmentsSize =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
+        assertEquals(4, defaultTepSegmentsSize);
+    }
+
+    @Test
+    void testCustomTrackingEventProcessingConfiguration(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException {
+        Object someHandler = new Object();
+        TrackingEventProcessorConfiguration testTepConfig =
+                TrackingEventProcessorConfiguration.forParallelProcessing(4);
+        configurer.eventProcessing()
+                  .usingTrackingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> someHandler)
+                  .registerEventHandler(config -> new TrackingEventHandler())
+                  .registerTrackingEventProcessorConfiguration("tracking", config -> testTepConfig);
+        Configuration config = configurer.start();
+
+        Optional<TrackingEventProcessor> resultTrackingTep =
+                config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        assertTrue(resultTrackingTep.isPresent());
+        TrackingEventProcessor trackingTep = resultTrackingTep.get();
+        int trackingTepSegmentsSize =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), trackingTep);
+        assertEquals(4, trackingTepSegmentsSize);
+
+        Optional<TrackingEventProcessor> resultDefaultTep =
+                config.eventProcessingConfiguration().eventProcessor("default", TrackingEventProcessor.class);
+        assertTrue(resultDefaultTep.isPresent());
+        TrackingEventProcessor defaultTep = resultDefaultTep.get();
+        int defaultTepSegmentsSize =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), defaultTep);
+        assertEquals(1, defaultTepSegmentsSize);
+    }
+
     private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
@@ -607,10 +678,10 @@ class EventProcessingModuleTest {
 
     @SuppressWarnings("unused")
     @ProcessingGroup("subscribing")
-    private class SubscribingEventHandler {
+    private static class SubscribingEventHandler {
 
         @EventHandler
-        public void handle(Integer event, UnitOfWork unitOfWork) {
+        public void handle(Integer event, UnitOfWork<?> unitOfWork) {
             throw new IllegalStateException();
         }
 
@@ -622,7 +693,7 @@ class EventProcessingModuleTest {
 
     @SuppressWarnings("unused")
     @ProcessingGroup("tracking")
-    private class TrackingEventHandler {
+    private static class TrackingEventHandler {
 
         @EventHandler
         public void handle(String event) {
@@ -630,7 +701,7 @@ class EventProcessingModuleTest {
         }
 
         @EventHandler
-        public void handle(Integer event, UnitOfWork unitOfWork) {
+        public void handle(Integer event, UnitOfWork<?> unitOfWork) {
             throw new IllegalStateException();
         }
 
@@ -640,7 +711,7 @@ class EventProcessingModuleTest {
         }
     }
 
-    private class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
+    private static class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
         private final CountDownLatch latch;
         private final AtomicInteger errorCounter = new AtomicInteger();

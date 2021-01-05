@@ -93,6 +93,7 @@ public class EventProcessingModule
     private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+    private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
 
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
@@ -531,9 +532,9 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer usingTrackingEventProcessors() {
-        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
-                trackingEventProcessor(name, eventHandlerInvoker, defaultTrackingEventProcessorConfiguration.get(),
-                                       defaultStreamableSource.get());
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> trackingEventProcessor(
+                name, eventHandlerInvoker, trackingEventProcessorConfig(name), defaultStreamableSource.get()
+        );
         return this;
     }
 
@@ -662,7 +663,19 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder) {
+            String name,
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    ) {
+        this.tepConfigs.put(name, new Component<>(() -> configuration,
+                                                  "trackingEventProcessorConfiguration",
+                                                  trackingEventProcessorConfigurationBuilder));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    ) {
         this.defaultTrackingEventProcessorConfiguration.update(trackingEventProcessorConfigurationBuilder);
         return this;
     }
@@ -674,12 +687,16 @@ public class EventProcessingModule
             return trackingEventProcessor(
                     name,
                     eventHandlerInvoker,
-                    defaultTrackingEventProcessorConfiguration.get(),
+                    trackingEventProcessorConfig(name),
                     defaultStreamableSource.get()
             );
         } else {
             return subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         }
+    }
+
+    private TrackingEventProcessorConfiguration trackingEventProcessorConfig(String name) {
+        return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
     }
 
     private SubscribingEventProcessor subscribingEventProcessor(String name,
