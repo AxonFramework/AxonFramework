@@ -70,22 +70,31 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
         assertEquals(1, optionalResultPosition.getAsLong());
     }
 
-    /**
-     * This test issues the publication of an {@link EventMessage} through the {@link EventStore}, as this guarantees
-     * the process of attaching the operation to the {@link UnitOfWork} are correctly invoked. This allows for
-     * validation of issue #1056 (https://github.com/AxonFramework/AxonFramework/issues/1056), which defines that we
-     * should ensure the usage of the {@link InMemoryEventStorageEngine} will rollback stored events correctly.
-     */
     @Test
-    void testEventsAreNotStoredWhenTheUnitOfWorkIsRolledBack() {
-        // Given an EmbeddedEventStore and UnitOfWork...
-        EventStore eventStore = EmbeddedEventStore.builder()
-                                                  .storageEngine(testSubject)
-                                                  .build();
+    void testEventsAreStoredOnCommitIfCurrentUnitOfWorkIsActive() {
         UnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
-        eventStore.publish(TEST_EVENT);
+        testSubject.appendEvents(TEST_EVENT);
+
+        // then there are no events in the storage engine, since the UnitOfWork is not committed yet.
+        Stream<? extends TrackedEventMessage<?>> eventStream = testSubject.readEvents(null, true);
+        assertEquals(0L, eventStream.count());
+
+        // When rolling back the UnitOfWork...
+        unitOfWork.commit();
+
+        // then there are *still* no events in the storage engine.
+        eventStream = testSubject.readEvents(null, true);
+        assertEquals(1L, eventStream.count());
+    }
+
+    @Test
+    void testEventsAreNotStoredWhenTheUnitOfWorkIsRolledBackIfCurrentUnitOfWorkIsActive() {
+        UnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
+
+        // when _only_ publishing...
+        testSubject.appendEvents(TEST_EVENT);
 
         // then there are no events in the storage engine, since the UnitOfWork is not committed yet.
         Stream<? extends TrackedEventMessage<?>> eventStream = testSubject.readEvents(null, true);
