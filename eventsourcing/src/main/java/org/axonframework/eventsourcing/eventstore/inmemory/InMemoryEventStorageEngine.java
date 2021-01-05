@@ -79,7 +79,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().onCommit(uow -> storeEvents(events));
+            CurrentUnitOfWork.get().onPrepareCommit(uow -> storeEvents(events));
         } else {
             storeEvents(events);
         }
