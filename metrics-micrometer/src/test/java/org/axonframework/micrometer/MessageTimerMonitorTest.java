@@ -19,6 +19,8 @@ package org.axonframework.micrometer;
 import io.micrometer.core.instrument.MockClock;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.distribution.HistogramSnapshot;
+import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.common.AxonConfigurationException;
@@ -195,6 +197,39 @@ class MessageTimerMonitorTest {
         assertTrue(failureTimer.stream()
                                .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue2"))
                                .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 1));
+    }
+
+    @Test
+    void testTimeCustomization() {
+        MessageTimerMonitor customTimerTestSubject =
+                testSubjectBuilder.timerCustomization(
+                        timerBuilder -> timerBuilder.publishPercentiles(0.5, 0.75, 0.95)
+                ).build();
+
+        EventMessage<Object> testEvent = asEventMessage(1);
+
+        Map<? super Message<?>, MessageMonitor.MonitorCallback> result =
+                customTimerTestSubject.onMessagesIngested(Collections.singletonList(testEvent));
+
+        mockedClock.addSeconds(1);
+        result.get(testEvent).reportSuccess();
+
+        Timer all = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".allTimer").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".successTimer").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".failureTimer").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".ignoredTimer").timer());
+
+        assertPercentiles(all.takeSnapshot());
+        assertPercentiles(successTimer.takeSnapshot());
+        assertPercentiles(failureTimer.takeSnapshot());
+        assertPercentiles(ignoredTimer.takeSnapshot());
+    }
+
+    void assertPercentiles(HistogramSnapshot resultHistogram) {
+        ValueAtPercentile[] resultPercentiles = resultHistogram.percentileValues();
+        assertEquals(0.5, resultPercentiles[0].percentile());
+        assertEquals(0.75, resultPercentiles[1].percentile());
+        assertEquals(0.95, resultPercentiles[2].percentile());
     }
 
     @Test

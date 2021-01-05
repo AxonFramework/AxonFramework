@@ -190,7 +190,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>>, MetricSe
          *                                    specifications
          */
         protected void validate() {
-            // Kept for overriding
+            // No assertions required, kept for overriding
         }
     }
 }
