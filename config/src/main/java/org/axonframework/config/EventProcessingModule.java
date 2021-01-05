@@ -77,6 +77,12 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
+    private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
+            TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                               .andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+    private static final Function<Class<?>, String> DEFAULT_PROCESSING_GROUP_FUNCTION =
+            c -> c.getSimpleName() + "Processor";
+
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
     private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
@@ -98,7 +104,8 @@ public class EventProcessingModule
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
-    private TypeProcessingGroupSelector typeFallback = TypeProcessingGroupSelector.defaultSelector(c -> c.getSimpleName() + "Processor");
+    private TypeProcessingGroupSelector typeFallback =
+            TypeProcessingGroupSelector.defaultSelector(DEFAULT_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
     private Configuration configuration;
@@ -271,9 +278,18 @@ public class EventProcessingModule
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
+            if (noSagaProcessorCustomization(sagaConfig.type(), processingGroup, processorName)) {
+                registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
+            }
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
                            .add(c -> sagaConfig.manager());
         });
+    }
+
+    private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
+        return DEFAULT_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
+                && processingGroup.equals(processorName)
+                && !tepConfigs.containsKey(processorName);
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
