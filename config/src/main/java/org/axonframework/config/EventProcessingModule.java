@@ -289,6 +289,7 @@ public class EventProcessingModule
     private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
         return DEFAULT_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
                 && processingGroup.equals(processorName)
+                && !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName);
     }
 
@@ -491,9 +492,11 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                                    Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingEventProcessor(name, source, c -> defaultTrackingEventProcessorConfiguration.get());
+    public EventProcessingConfigurer registerTrackingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source
+    ) {
+        return registerTrackingEventProcessor(name, source, c -> trackingEventProcessorConfig(name));
     }
 
     @Override
@@ -753,7 +756,7 @@ public class EventProcessingModule
      * Since class.getPackage() can be null e.g. for generated classes, the
      * package name is determined the old fashioned way based on the full
      * qualified class name.
-     * 
+     *
      * @param object
      *            {@link Object}
      * @return {@link String}

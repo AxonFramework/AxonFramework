@@ -672,6 +672,34 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomTrackingProcessorBuilder(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        TrackingEventProcessorConfiguration testTepConfig =
+                TrackingEventProcessorConfiguration.forParallelProcessing(3);
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor("ObjectProcessor", config -> mockedSource, config -> testTepConfig)
+                  .registerSaga(Object.class);
+        Configuration config = configurer.start();
+
+        Optional<TrackingEventProcessor> resultTep =
+                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
+        assertTrue(resultTep.isPresent());
+        TrackingEventProcessor tep = resultTep.get();
+        int tepSegmentsSize =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        assertEquals(3, tepSegmentsSize);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
+        tepInitialTokenBuilder.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
     void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomConfigInstance(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
