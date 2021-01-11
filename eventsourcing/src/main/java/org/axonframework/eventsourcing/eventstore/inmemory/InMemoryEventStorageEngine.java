@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -54,6 +55,7 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  */
 public class InMemoryEventStorageEngine implements EventStorageEngine {
 
+    @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
     private final Map<String, List<DomainEventMessage<?>>> snapshots = new ConcurrentHashMap<>();
     private final long offset;
@@ -76,11 +78,23 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().onPrepareCommit(uow -> storeEvents(events));
+        } else {
+            storeEvents(events);
+        }
+    }
+
+    private void storeEvents(List<? extends EventMessage<?>> events) {
         synchronized (this.events) {
             GlobalSequenceTrackingToken trackingToken = nextTrackingToken();
-            this.events.putAll(IntStream.range(0, events.size()).mapToObj(
-                    i -> asTrackedEventMessage((EventMessage<?>) events.get(i), trackingToken.offsetBy(i))).collect(
-                    Collectors.toMap(TrackedEventMessage::trackingToken, Function.identity())));
+            this.events.putAll(
+                    IntStream.range(0, events.size())
+                             .mapToObj(i -> asTrackedEventMessage(
+                                     (EventMessage<?>) events.get(i), trackingToken.offsetBy(i)
+                             ))
+                             .collect(Collectors.toMap(TrackedEventMessage::trackingToken, Function.identity()))
+            );
         }
     }
 
@@ -163,8 +177,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
      * @return the tracking token for the next event
      */
     protected GlobalSequenceTrackingToken nextTrackingToken() {
-        return events.isEmpty() ? new GlobalSequenceTrackingToken(offset) :
-               ((GlobalSequenceTrackingToken) events.lastKey()).next();
+        return events.isEmpty()
+                ? new GlobalSequenceTrackingToken(offset)
+                : ((GlobalSequenceTrackingToken) events.lastKey()).next();
     }
 
     private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
