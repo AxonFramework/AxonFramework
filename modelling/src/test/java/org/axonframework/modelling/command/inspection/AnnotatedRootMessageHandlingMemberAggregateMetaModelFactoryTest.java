@@ -69,9 +69,10 @@ import static org.mockito.Mockito.*;
  * invoked accordingly, regardless of aggregate hierarchy or use of polymorphism.
  * <p>
  * Furthermore the {@link MemberCommand} has an interceptor present on each level of the aggregate root (thus the {@link
- * RootAggregate}, {@link NodeAggregate} and {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate). Similar as
- * with event sourcing handlers, command interceptors for the same message essentially occur once on an entity. As such
- * the number of invocations on the command interceptor for the {@link MemberCommand} should be one.
+ * RootAggregate}, {@link NodeAggregate} and {@link LeafAggregate}/{@link OtherLeafAggregate} aggregate). Regardless of
+ * the handled message type by a {@link CommandHandlerInterceptor} annotated method, any matching interceptors will be
+ * invoked on any level of the aggregate's hierarchy. As such the number of invocations on the command interceptor for
+ * the {@link MemberCommand} should be three, matching the number of interceptor methods.
  *
  * @author Steven van Beelen
  */
@@ -175,9 +176,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelInvokesCommandInterceptorFunctionOnCommandHandlingFromParentAggregate()
-            throws Exception {
-        int expectedNumberOfMemberCommandInterceptorInvocations = 1;
+    void testCreatedAggregateModelInvokesAllCommandInterceptors() throws Exception {
+        int expectedNumberOfMemberCommandInterceptorInvocations = 3;
 
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
@@ -194,9 +194,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelInvokesCommandInterceptorFunctionOnCommandHandlingFromParentAggregateForPolymorphicAggregate()
-            throws Exception {
-        int expectedNumberOfMemberCommandInterceptorInvocations = 1;
+    void testCreatedAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
+        int expectedNumberOfMemberCommandInterceptorInvocations = 3;
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
