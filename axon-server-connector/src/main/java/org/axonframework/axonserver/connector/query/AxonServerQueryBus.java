@@ -118,6 +118,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService queryExecutor;
+    private final QueryHandler localSegmentAdapter;
     private final String context;
 
     /**
@@ -165,6 +166,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 ).reversed()
         );
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
+        localSegmentAdapter = new LocalSegmentAdapter(localSegment,
+                                                      updateEmitter,
+                                                      serializer,
+                                                      subscriptionSerializer,
+                                                      configuration.getClientId(),
+                                                      queryExecutor);
     }
 
     /**
@@ -180,63 +187,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
+        QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
                                            .queryChannel()
-                                           .registerQueryHandler(
-                                                   new QueryHandler() {
-                                                       @Override
-                                                       public void handle(QueryRequest query,
-                                                                          ReplyChannel<QueryResponse> responseHandler) {
-                                                           queryExecutor.submit(new QueryProcessingTask(
-                                                                   localSegment, query, responseHandler, serializer,
-                                                                   configuration.getClientId()
-                                                           ));
-                                                       }
-
-                                                       @Override
-                                                       public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(
-                                                               SubscriptionQuery query,
-                                                               UpdateHandler sendUpdate
-                                                       ) {
-                                                           SubscriptionQueryBackpressure backpressure =
-                                                                   SubscriptionQueryBackpressure.defaultBackpressure();
-                                                           UpdateHandlerRegistration<Object> updateHandler =
-                                                                   updateEmitter.registerUpdateHandler(
-                                                                           subscriptionSerializer.deserialize(query),
-                                                                           backpressure,
-                                                                           1024
-                                                                   );
-
-                                                           updateHandler.getUpdates()
-                                                                        .doOnError(e -> {
-                                                                            ErrorMessage error =
-                                                                                    ExceptionSerializer.serialize(
-                                                                                            configuration.getClientId(),
-                                                                                            e
-                                                                                    );
-                                                                            String errorCode =
-                                                                                    ErrorCode.QUERY_EXECUTION_ERROR
-                                                                                            .errorCode();
-                                                                            QueryUpdate queryUpdate =
-                                                                                    QueryUpdate.newBuilder()
-                                                                                               .setErrorMessage(error)
-                                                                                               .setErrorCode(errorCode)
-                                                                                               .build();
-                                                                            sendUpdate.sendUpdate(queryUpdate);
-                                                                            sendUpdate.complete();
-                                                                        })
-                                                                        .doOnComplete(sendUpdate::complete)
-                                                                        .map(subscriptionSerializer::serialize)
-                                                                        .subscribe(sendUpdate::sendUpdate);
-                                                           return () -> {
-                                                               updateHandler.getRegistration().close();
-                                                               return CompletableFuture.completedFuture(null);
-                                                           };
-                                                       }
-                                                   },
-                                                   new QueryDefinition(queryName, responseType)
-                                           );
+                                           .registerQueryHandler(localSegmentAdapter, queryDefinition);
 
         return new AxonServerRegistration(localRegistration, serverRegistration::cancel);
     }
@@ -378,6 +333,70 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return shutdownLatch.initiateShutdown();
+    }
+
+    /**
+     * A {@link QueryHandler} implementation serving as a wrapper around the local {@link QueryBus} to push through the
+     * message handling and subscription query registration.
+     */
+    private static class LocalSegmentAdapter implements QueryHandler {
+
+        private final QueryBus localSegment;
+        private final QueryUpdateEmitter updateEmitter;
+        private final QuerySerializer serializer;
+        private final SubscriptionMessageSerializer subscriptionSerializer;
+        private final String clientId;
+        private final ExecutorService queryExecutor;
+
+        private LocalSegmentAdapter(QueryBus localSegment,
+                                    QueryUpdateEmitter updateEmitter,
+                                    QuerySerializer serializer,
+                                    SubscriptionMessageSerializer subscriptionSerializer,
+                                    String clientId,
+                                    ExecutorService queryExecutor) {
+            this.localSegment = localSegment;
+            this.updateEmitter = updateEmitter;
+            this.serializer = serializer;
+            this.subscriptionSerializer = subscriptionSerializer;
+            this.clientId = clientId;
+            this.queryExecutor = queryExecutor;
+        }
+
+        @Override
+        public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
+            queryExecutor.submit(new QueryProcessingTask(localSegment, query, responseHandler, serializer, clientId));
+        }
+
+        @Override
+        public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
+                                                                                     UpdateHandler sendUpdate) {
+            SubscriptionQueryBackpressure backpressure = SubscriptionQueryBackpressure.defaultBackpressure();
+            UpdateHandlerRegistration<Object> updateHandler = updateEmitter.registerUpdateHandler(
+                    subscriptionSerializer.deserialize(query),
+                    backpressure,
+                    1024
+            );
+
+            updateHandler.getUpdates()
+                         .doOnError(e -> {
+                             ErrorMessage error = ExceptionSerializer.serialize(clientId, e);
+                             String errorCode = ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
+                             QueryUpdate queryUpdate = QueryUpdate.newBuilder()
+                                                                  .setErrorMessage(error)
+                                                                  .setErrorCode(errorCode)
+                                                                  .build();
+                             sendUpdate.sendUpdate(queryUpdate);
+                             sendUpdate.complete();
+                         })
+                         .doOnComplete(sendUpdate::complete)
+                         .map(subscriptionSerializer::serialize)
+                         .subscribe(sendUpdate::sendUpdate);
+
+            return () -> {
+                updateHandler.getRegistration().close();
+                return CompletableFuture.completedFuture(null);
+            };
+        }
     }
 
     /**
