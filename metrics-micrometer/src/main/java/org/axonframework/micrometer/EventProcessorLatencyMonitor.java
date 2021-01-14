@@ -31,6 +31,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Measures the difference in message timestamps between the last ingested and the last processed message.
  *
@@ -41,61 +44,75 @@ import java.util.function.Function;
  */
 public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {
 
-
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
     private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
     private final Clock clock;
+
     private final ConcurrentMap<Tags, AtomicLong> gauges = new ConcurrentHashMap<>();
 
-    private EventProcessorLatencyMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        this(meterNamePrefix,
-             meterRegistry,
-             message -> Tags.empty(),
-             Clock.SYSTEM);
+    /**
+     * Instantiate a Builder to be able to create a {@link EventProcessorLatencyMonitor}.
+     * <p>
+     * The {@code tagsBuilder} is defaulted to a {@link Function} returning {@link Tags#empty()} and the {@link Clock}
+     * to a a {@link Clock#SYSTEM}. The {@code meterNamePrefix} and {@link MeterRegistry} are <b>hard requirements</b>
+     * and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link EventProcessorLatencyMonitor}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
-     * Initialize the monitor with given properties.
+     * Instantiate a {@link EventProcessorLatencyMonitor} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@code meterNamePrefix} and {@link MeterRegistry} are not {@code null} and will throw an
+     * {@link org.axonframework.common.AxonConfigurationException} if this is the case.
      *
-     * @param meterNamePrefix The prefix to use on this meter. It will be suffixed with ".latency".
-     * @param meterRegistry   The registry to register this meter with
-     * @param tagsBuilder     The function that provides the Tags to measure latency under for each message
-     * @param clock           The clock to use to measure time
+     * @param builder the {@link Builder} used to instantiate a {@link EventProcessorLatencyMonitor} instance
      */
-    protected EventProcessorLatencyMonitor(String meterNamePrefix,
-                                           MeterRegistry meterRegistry,
-                                           Function<Message<?>, Iterable<Tag>> tagsBuilder,
-                                           Clock clock) {
-        this.meterNamePrefix = meterNamePrefix;
-        this.meterRegistry = meterRegistry;
-        this.tagsBuilder = tagsBuilder;
-        this.clock = clock;
+    protected EventProcessorLatencyMonitor(Builder builder) {
+        builder.validate();
+        this.meterNamePrefix = builder.meterNamePrefix;
+        this.meterRegistry = builder.meterRegistry;
+        this.tagsBuilder = builder.tagsBuilder;
+        this.clock = builder.clock;
     }
 
     /**
-     * Creates an event processor latency monitor
+     * Build an {@link EventProcessorLatencyMonitor}
      *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @return The created event processor latency monitor
+     * @param meterNamePrefix the prefix for the meter name that will be created in the given {@code meterRegistry}
+     * @param meterRegistry   the meter registry used to create and register the meters
+     * @return the created {@link EventProcessorLatencyMonitor}
+     * @deprecated in favor of using the {@link #builder()}
      */
+    @Deprecated
     public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
-        return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry);
+        return builder().meterNamePrefix(meterNamePrefix)
+                        .meterRegistry(meterRegistry)
+                        .build();
     }
 
     /**
-     * Creates an event processor latency monitor.
+     * Build an {@link EventProcessorLatencyMonitor}.
      *
-     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
-     * @param meterRegistry   The meter registry used to create and register the meters
-     * @param tagsBuilder     The function used to construct the list of micrometer {@link Tag}, based on the ingested
+     * @param meterNamePrefix the prefix for the meter name that will be created in the given {@code meterRegistry}
+     * @param meterRegistry   the meter registry used to create and register the meters
+     * @param tagsBuilder     the function used to construct the list of micrometer {@link Tag}, based on the ingested
      *                        message
-     * @return The created event processor latency monitor
+     * @return the created {@link EventProcessorLatencyMonitor}
+     * @deprecated in favor of using the {@link #builder()}
      */
-    public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
+    @Deprecated
+    public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix,
+                                                            MeterRegistry meterRegistry,
                                                             Function<Message<?>, Iterable<Tag>> tagsBuilder) {
-        return new EventProcessorLatencyMonitor(meterNamePrefix, meterRegistry, tagsBuilder, Clock.SYSTEM);
+        return builder().meterNamePrefix(meterNamePrefix)
+                        .meterRegistry(meterRegistry)
+                        .tagsBuilder(tagsBuilder)
+                        .build();
     }
 
     @SuppressWarnings("PackageAccessibility")
@@ -109,9 +126,95 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
             Gauge.builder(meterNamePrefix + ".latency", actualCounter::get)
                  .tags(tags)
                  .register(meterRegistry);
-
         }
         return NoOpMessageMonitorCallback.INSTANCE;
     }
 
+    /**
+     * Builder class to instantiate a {@link EventProcessorLatencyMonitor}.
+     * <p>
+     * The {@code tagsBuilder} is defaulted to a {@link Function} returning {@link Tags#empty()} and the {@link Clock}
+     * to a a {@link Clock#SYSTEM}. The {@code meterNamePrefix} and {@link MeterRegistry} are <b>hard requirements</b>
+     * and as such should be provided.
+     */
+    public static class Builder {
+
+        private String meterNamePrefix;
+        private MeterRegistry meterRegistry;
+        private Function<Message<?>, Iterable<Tag>> tagsBuilder = message -> Tags.empty();
+        private Clock clock = Clock.SYSTEM;
+
+        /**
+         * Sets the name used to prefix the names of the {@link Gauge} instances created by this {@link
+         * MessageMonitor}.
+         *
+         * @param meterNamePrefix a {@link String} used to prefix the names of the {@link Gauge} instances created by
+         *                        this {@link MessageMonitor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder meterNamePrefix(String meterNamePrefix) {
+            assertNonEmpty(meterNamePrefix, "The meter name prefix may not be null or empty");
+            this.meterNamePrefix = meterNamePrefix;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link MeterRegistry} used to registered the {@link Gauge} instances to.
+         *
+         * @param meterRegistry the {@link MeterRegistry} used to registered the {@link Gauge} instances to
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            assertNonNull(meterRegistry, "MeterRegistry may not be null");
+            this.meterRegistry = meterRegistry;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Clock} used to define the processing duration of a given message being pushed through this
+         * {@link MessageMonitor}. Defaults to the {@link Clock#SYSTEM}.
+         *
+         * @param clock the {@link Clock} used to define the processing duration of a given message
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder clock(Clock clock) {
+            assertNonNull(clock, "Clock may not be null");
+            this.clock = clock;
+            return this;
+        }
+
+        /**
+         * Configures the {@link Function} used to deduce what the {@link Tag}s should be for a message being monitored.
+         * Defaults to a {@link Function} returning {@link Tags#empty()}.
+         *
+         * @param tagsBuilder a {@link Function} used to deduce what the {@link Tag}s should be for a message being
+         *                    monitored
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder tagsBuilder(Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+            assertNonNull(tagsBuilder, "TagsBuilder may not be null");
+            this.tagsBuilder = tagsBuilder;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link MessageTimerMonitor} as specified through this Builder.
+         *
+         * @return a {@link MessageTimerMonitor} as specified through this Builder
+         */
+        public EventProcessorLatencyMonitor build() {
+            return new EventProcessorLatencyMonitor(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws org.axonframework.common.AxonConfigurationException if one field is asserted to be incorrect
+         *                                                             according to the Builder's specifications
+         */
+        protected void validate() {
+            assertNonEmpty(meterNamePrefix, "The meter name prefix is a hard requirement and should be provided");
+            assertNonNull(meterRegistry, "The MeterRegistry is a hard requirement and should be provided");
+        }
+    }
 }

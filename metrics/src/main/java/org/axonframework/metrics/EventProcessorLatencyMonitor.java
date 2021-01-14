@@ -41,10 +41,18 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     private final Clock clock;
     private final AtomicLong processTime = new AtomicLong();
 
+    /**
+     * Construct an {@link EventProcessorLatencyMonitor} using a {@link Clock#systemUTC()}.
+     */
     public EventProcessorLatencyMonitor() {
         this(Clock.systemUTC());
     }
 
+    /**
+     * Construct an {@link EventProcessorLatencyMonitor} using the given {@code clock}.
+     *
+     * @param clock defines the {@link Clock} used by this {@link MessageMonitor} implementation
+     */
     public EventProcessorLatencyMonitor(Clock clock) {
         this.clock = clock;
     }
@@ -55,7 +63,6 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
             this.processTime.set(Duration.between(message.getTimestamp(), clock.instant()).toMillis());
         }
         return NoOpMessageMonitorCallback.INSTANCE;
-
     }
 
     @Override
@@ -64,5 +71,4 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
         metrics.put("latency", (Gauge<Long>) processTime::get); // NOSONAR
         return metrics;
     }
-
 }
