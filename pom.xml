@@ -483,7 +483,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <doclint>none</doclint>
                     <!-- These parameters are in preparation for resolution of this issue: -->
                     <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
                     <tags>
