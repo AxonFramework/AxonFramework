@@ -194,26 +194,30 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
 
     /**
-     * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the
-     * command bus to perform a task specified in the interceptor. For example by adding
-     * {@link MetaData} or throwing an exception based on the command.
+     * Register a {@link MessageDispatchInterceptor} for {@link CommandMessage}s which will be invoked before any
+     * command is dispatched on the {@link CommandBus} to perform a task specified in the interceptor. For example by
+     * adding {@link MetaData} or throwing an exception based on the command.
      *
-     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the command bus
+     * @param commandDispatchInterceptor the {@link MessageDispatchInterceptor} for {@link CommandMessage}s to be added
+     *                                   to this fixture's {@link CommandBus}
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor);
+            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
+    );
 
     /**
-     * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
-     * the command bus to perform a task specified in the interceptor. It could for example block the command for
-     * security reasons or add auditing to the command bus
+     * Register a {@link MessageHandlerInterceptor} for {@link CommandMessage}s which will be invoked before or after
+     * the command has been dispatched on the {@link CommandBus} to perform a task specified in the interceptor. It
+     * could for example block the command for security reasons or add auditing to the command bus
      *
-     * @param commandHandlerInterceptor the command handler interceptor to be added to the command bus
+     * @param commandHandlerInterceptor the {@link MessageHandlerInterceptor} for {@link CommandMessage}s to be added to
+     *                                  this fixture's {@link CommandBus}
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor);
+            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
+    );
 
     /**
      * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
