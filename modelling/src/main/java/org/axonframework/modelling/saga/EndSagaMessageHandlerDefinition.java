@@ -40,9 +40,11 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
         @Override
         public Object handle(Message<?> message, T target) throws Exception {
-            Object result = super.handle(message, target);
-            SagaLifecycle.end();
-            return result;
+            try {
+                return super.handle(message, target);
+            } finally {
+                SagaLifecycle.end();
+            }
         }
     }
 }

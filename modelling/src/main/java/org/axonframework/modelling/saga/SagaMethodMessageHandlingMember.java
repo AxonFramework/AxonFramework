@@ -35,35 +35,6 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     private final String associationKey;
     private final String associationPropertyName;
     private final AssociationResolver associationResolver;
-    private final boolean endingHandler;
-
-    /**
-     * Creates a SagaMethodMessageHandler.
-     *
-     * @param creationPolicy          The creation policy for the handlerMethod
-     * @param delegate                The message handler for the event
-     * @param associationKey          The association key configured for this handler
-     * @param associationPropertyName The association property name to look up in the message
-     * @param associationResolver     The association resolver configured for this handler
-     * @param endingHandler           Flag to indicate if an invocation of the given handler should end the saga
-     * @deprecated in favour of the constructor not providing the {@code endingHandler} parameter, since that parameter
-     * is no longer supported.
-     */
-    @Deprecated
-    public SagaMethodMessageHandlingMember(MessageHandlingMember<T> delegate,
-                                           SagaCreationPolicy creationPolicy,
-                                           String associationKey,
-                                           String associationPropertyName,
-                                           AssociationResolver associationResolver,
-                                           boolean endingHandler) {
-        super(delegate);
-        this.delegate = delegate;
-        this.creationPolicy = creationPolicy;
-        this.associationKey = associationKey;
-        this.associationPropertyName = associationPropertyName;
-        this.associationResolver = associationResolver;
-        this.endingHandler = endingHandler;
-    }
 
     /**
      * Creates a SagaMethodMessageHandler.
@@ -85,7 +56,6 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
         this.associationKey = associationKey;
         this.associationPropertyName = associationPropertyName;
         this.associationResolver = associationResolver;
-        this.endingHandler = false;
     }
 
     /**
@@ -126,6 +96,6 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
      */
     @Deprecated
     public boolean isEndingHandler() {
-        return endingHandler;
+        return false;
     }
 }
