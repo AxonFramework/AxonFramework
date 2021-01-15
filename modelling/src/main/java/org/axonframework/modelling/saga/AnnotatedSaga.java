@@ -123,15 +123,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
             throw e;
         } catch (Exception e) {
             throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
-        } finally {
-            if (isEndingHandler(handler)) {
-                doEnd();
-            }
         }
-    }
-
-    private Boolean isEndingHandler(MessageHandlingMember<? super T> handler) {
-        return handler.hasAnnotation(EndSaga.class);
     }
 
     @Override
