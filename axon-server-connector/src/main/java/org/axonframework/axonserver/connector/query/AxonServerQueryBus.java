@@ -166,12 +166,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 ).reversed()
         );
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
-        localSegmentAdapter = new LocalSegmentAdapter(localSegment,
-                                                      updateEmitter,
-                                                      serializer,
-                                                      subscriptionSerializer,
-                                                      configuration.getClientId(),
-                                                      queryExecutor);
+        localSegmentAdapter = new LocalSegmentAdapter();
     }
 
     /**
@@ -339,32 +334,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@link QueryBus} to push through the
      * message handling and subscription query registration.
      */
-    private static class LocalSegmentAdapter implements QueryHandler {
-
-        private final QueryBus localSegment;
-        private final QueryUpdateEmitter updateEmitter;
-        private final QuerySerializer serializer;
-        private final SubscriptionMessageSerializer subscriptionSerializer;
-        private final String clientId;
-        private final ExecutorService queryExecutor;
-
-        private LocalSegmentAdapter(QueryBus localSegment,
-                                    QueryUpdateEmitter updateEmitter,
-                                    QuerySerializer serializer,
-                                    SubscriptionMessageSerializer subscriptionSerializer,
-                                    String clientId,
-                                    ExecutorService queryExecutor) {
-            this.localSegment = localSegment;
-            this.updateEmitter = updateEmitter;
-            this.serializer = serializer;
-            this.subscriptionSerializer = subscriptionSerializer;
-            this.clientId = clientId;
-            this.queryExecutor = queryExecutor;
-        }
+    private class LocalSegmentAdapter implements QueryHandler {
 
         @Override
         public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-            queryExecutor.submit(new QueryProcessingTask(localSegment, query, responseHandler, serializer, clientId));
+            QueryProcessingTask processingTask = new QueryProcessingTask(
+                    localSegment, query, responseHandler, serializer, configuration.getClientId()
+            );
+            queryExecutor.submit(processingTask);
         }
 
         @Override
@@ -379,7 +356,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
             updateHandler.getUpdates()
                          .doOnError(e -> {
-                             ErrorMessage error = ExceptionSerializer.serialize(clientId, e);
+                             ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
                              QueryUpdate queryUpdate = QueryUpdate.newBuilder()
                                                                   .setErrorMessage(error)
