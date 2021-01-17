@@ -71,7 +71,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Single should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForSingle<String, ExampleQuery>(query = exampleQuery)
+        val queryResult = subjectGateway.querySingle<String, ExampleQuery>(query = exampleQuery)
         assertSame(queryResult, instanceReturnValue)
         verify(exactly = 1) {
             subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java))
@@ -80,7 +80,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Single should invoke query method and not require explicit generic types`() {
-        val queryResult:CompletableFuture<String> = subjectGateway.queryForSingle(query = exampleQuery)
+        val queryResult:CompletableFuture<String> = subjectGateway.querySingle(query = exampleQuery)
         assertSame(queryResult, instanceReturnValue)
         verify(exactly = 1) {
             subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java))
@@ -89,7 +89,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Optional should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForOptional<String, ExampleQuery>(query = exampleQuery)
+        val queryResult = subjectGateway.queryOptional<String, ExampleQuery>(query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -97,7 +97,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Optional should invoke query method and not require explicit generic types`() {
-        val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryForOptional(query = exampleQuery)
+        val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryOptional(query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -105,7 +105,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Multiple should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForMultiple<String, ExampleQuery>(query = exampleQuery)
+        val queryResult = subjectGateway.queryMany<String, ExampleQuery>(query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -113,7 +113,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query without queryName for Multiple should invoke query method and not require explicit generic types`() {
-        val queryResult: CompletableFuture<List<String>> = subjectGateway.queryForMultiple(query = exampleQuery)
+        val queryResult: CompletableFuture<List<String>> = subjectGateway.queryMany(query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -126,7 +126,7 @@ class QueryGatewayExtensionsTest {
             every { query(exampleQuery, match { i: AbstractResponseType<String?> -> i is InstanceResponseType }) } returns nullInstanceReturnValue
         }
 
-        val queryResult = nullableQueryGateway.queryForSingle<String?, ExampleQuery>(query = exampleQuery)
+        val queryResult = nullableQueryGateway.querySingle<String?, ExampleQuery>(query = exampleQuery)
 
         assertSame(queryResult, nullInstanceReturnValue)
         assertEquals(nullInstanceReturnValue.get(), null)
@@ -136,7 +136,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Single should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForSingle<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
+        val queryResult = subjectGateway.querySingle<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, instanceReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -144,7 +144,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Single should invoke query method and not require explicit generic types`() {
-        val queryResult: CompletableFuture<String> = subjectGateway.queryForSingle(queryName = queryName, query = exampleQuery)
+        val queryResult: CompletableFuture<String> = subjectGateway.querySingle(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, instanceReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -152,7 +152,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Optional should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForOptional<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
+        val queryResult = subjectGateway.queryOptional<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -160,7 +160,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Optional should invoke query method and not require explicit generic types`() {
-        val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryForOptional(queryName = queryName, query = exampleQuery)
+        val queryResult: CompletableFuture<Optional<String>> = subjectGateway.queryOptional(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, optionalReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -168,7 +168,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Multiple should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryForMultiple<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
+        val queryResult = subjectGateway.queryMany<String, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -176,7 +176,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query for Multiple should invoke query method and not require explicit generic types`() {
-        val queryResult: CompletableFuture<List<String>> = subjectGateway.queryForMultiple(queryName = queryName, query = exampleQuery)
+        val queryResult: CompletableFuture<List<String>> = subjectGateway.queryMany(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, listReturnValue)
         verify(exactly = 1) { subjectGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
@@ -189,7 +189,7 @@ class QueryGatewayExtensionsTest {
             every { query(queryName, exampleQuery, match { i: AbstractResponseType<String?> -> i is InstanceResponseType }) } returns nullInstanceReturnValue
         }
 
-        val queryResult = nullableQueryGateway.queryForSingle<String?, ExampleQuery>(queryName = queryName, query = exampleQuery)
+        val queryResult = nullableQueryGateway.querySingle<String?, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, nullInstanceReturnValue)
         assertEquals(nullInstanceReturnValue.get(), null)
@@ -198,7 +198,7 @@ class QueryGatewayExtensionsTest {
 
         @Test
         fun `ScatterGather for Single should invoke scatterGather method with correct generic parameters`() {
-            val result = subjectGateway.scatterGatherForSingle<String, ExampleQuery>(
+            val result = subjectGateway.scatterGather<String, ExampleQuery>(
                     query = exampleQuery,
                     timeout = timeout,
                     timeUnit = timeUnit
@@ -210,7 +210,7 @@ class QueryGatewayExtensionsTest {
 
         @Test
         fun `ScatterGather for Multiple should invoke scatterGather method with correct generic parameters`() {
-            val result = subjectGateway.scatterGatherForMultiple<String, ExampleQuery>(
+            val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
                     query = exampleQuery,
                     timeout = timeout,
                     timeUnit = timeUnit
@@ -222,7 +222,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `ScatterGather for Optional should invoke scatterGather method with correct generic parameters`() {
-        val result = subjectGateway.scatterGatherForOptional<String, ExampleQuery>(
+        val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
                 query = exampleQuery,
                 timeout = timeout,
                 timeUnit = timeUnit
@@ -234,7 +234,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `ScatterGather for Single should invoke scatterGather method with explicit query name`() {
-        val result = subjectGateway.scatterGatherForSingle<String, ExampleQuery>(
+        val result = subjectGateway.scatterGather<String, ExampleQuery>(
                 queryName = queryName,
                 query = exampleQuery,
                 timeout = timeout,
@@ -247,7 +247,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `ScatterGather for Multiple should invoke scatterGather method with explicit query name`() {
-        val result = subjectGateway.scatterGatherForMultiple<String, ExampleQuery>(
+        val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
                 queryName = queryName,
                 query = exampleQuery,
                 timeout = timeout,
@@ -260,7 +260,7 @@ class QueryGatewayExtensionsTest {
 
     @Test
     fun `ScatterGather for Optional should invoke scatterGather method with explicit query name`() {
-        val result = subjectGateway.scatterGatherForOptional<String, ExampleQuery>(
+        val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
                 queryName = queryName,
                 query = exampleQuery,
                 timeout = timeout,

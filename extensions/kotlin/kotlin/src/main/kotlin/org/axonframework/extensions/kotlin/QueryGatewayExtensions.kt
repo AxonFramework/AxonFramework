@@ -23,6 +23,12 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 
 /**
+ * Query Gateway extensions.
+ *
+ * @author Henrique Sena
+ */
+
+/**
  * Reified version of [QueryGateway.query]
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
  * @param query Query to send
@@ -32,7 +38,7 @@ import java.util.stream.Stream
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForMultiple(query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
     return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -47,7 +53,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForMultiple(query: Q): Compl
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForMultiple(queryName: String, query: Q): CompletableFuture<List<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
 
@@ -61,7 +67,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForMultiple(queryName: Strin
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForSingle(query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.querySingle(query: Q): CompletableFuture<R> {
     return this.query(query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -76,7 +82,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForSingle(query: Q): Complet
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForSingle(queryName: String, query: Q): CompletableFuture<R> {
+inline fun <reified R, reified Q> QueryGateway.querySingle(queryName: String, query: Q): CompletableFuture<R> {
     return this.query(queryName, query, ResponseTypes.instanceOf(R::class.java))
 }
 
@@ -90,7 +96,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForSingle(queryName: String,
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForOptional(query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): CompletableFuture<Optional<R>> {
     return this.query(query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
 
@@ -105,7 +111,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(query: Q): Compl
  * @see QueryGateway.query
  * @see ResponseTypes
  */
-inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
+inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))
 }
 
@@ -122,7 +128,7 @@ inline fun <reified R, reified Q> QueryGateway.queryForOptional(queryName: Strin
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: Long,
                                                                       timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
@@ -141,7 +147,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(query: Q, 
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
                                                                       timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
@@ -159,7 +165,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForSingle(queryName:
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
                                                                         timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
@@ -178,7 +184,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(query: Q
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
                                                                         timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
@@ -196,7 +202,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForMultiple(queryNam
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
                                                                         timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
@@ -215,7 +221,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(query: Q
  * @see ResponseTypes
  * @since 0.2.0
  */
-inline fun <reified R, reified Q> QueryGateway.scatterGatherForOptional(queryName: String, query: Q, timeout: Long,
+inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
                                                                         timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
