@@ -16,11 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +26,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 
 /**
  * EventStorageEngine implementation that combines the streams of two event storage engines. The first event storage
@@ -94,7 +94,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         DomainEventStream historic = historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber);
         return new ConcatenatingDomainEventStream(historic, aggregateIdentifier,
-                                                  (id, seq) -> activeStorage.readEvents(aggregateIdentifier, seq));
+                                                  (id, seq) -> activeStorage.readEvents(aggregateIdentifier, Math.max(seq, firstSequenceNumber)));
     }
 
     @Override
