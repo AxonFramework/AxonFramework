@@ -86,16 +86,4 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     public SagaCreationPolicy getCreationPolicy() {
         return creationPolicy;
     }
-
-    /**
-     * Indicates whether this handler is one that ends the Saga lifecycle
-     *
-     * @return {@code true} if the Saga lifecycle ends unconditionally after this call, otherwise {@code false}
-     * @deprecated in favor of the dedicated {@link EndSagaMessageHandlerDefinition} and {@link
-     * EndSagaMessageHandlerDefinition.EndSageMessageHandlingMember}
-     */
-    @Deprecated
-    public boolean isEndingHandler() {
-        return false;
-    }
 }
