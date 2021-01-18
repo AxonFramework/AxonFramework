@@ -32,7 +32,7 @@ import kotlin.test.fail
  *
  * @author Stefan Andjelkovic
  */
-class ResultDiscriminatorCommandCallbackTest {
+internal class ResultDiscriminatorCommandCallbackTest {
     private val command = ExampleCommand("1")
     private val commandMessage: CommandMessage<ExampleCommand> = GenericCommandMessage.asCommandMessage(command)
     private val responsePayloadUUID = UUID.randomUUID().toString()

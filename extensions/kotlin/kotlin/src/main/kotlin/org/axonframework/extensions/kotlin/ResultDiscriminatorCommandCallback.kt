@@ -21,20 +21,21 @@ import org.axonframework.commandhandling.CommandResultMessage
 import org.axonframework.messaging.MetaData
 
 /**
- * Implementation of the [CommandCallback] that is appropriate for dedicated [onError] and [onSuccess] callbacks
+ * Implementation of the [CommandCallback] that is appropriate for dedicated [onError] and [onSuccess] callbacks.
  * @param onError Callback to handle failed execution. Defaults to an empty function
  * @param onSuccess Callback to handle successful execution. Defaults to an empty function
  * @param [R] the type of result of the command handling
  * @param [C] the type of payload of the command
  * @see CommandCallback
  * @author Stefan Andjelkovic
+ * @since 0.1.0
  */
-internal class ResultDiscriminatorCommandCallback<C, R>(
+class ResultDiscriminatorCommandCallback<C, R>(
     val onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit,
     val onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit
 ) : CommandCallback<C, R> {
     override fun onResult(commandMessage: CommandMessage<out C>, commandResultMessage: CommandResultMessage<out R>) {
-        val metaData = commandResultMessage.metaData ?: MetaData.emptyInstance()
+        val metaData: MetaData = commandResultMessage.metaData ?: MetaData.emptyInstance()
         if (commandResultMessage.isExceptional) {
             onError(commandMessage, commandResultMessage.exceptionResult(), metaData)
         } else {
