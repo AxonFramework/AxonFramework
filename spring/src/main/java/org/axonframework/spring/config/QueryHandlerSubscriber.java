@@ -17,6 +17,7 @@ package org.axonframework.spring.config;
 
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
+import org.axonframework.spring.config.event.QueryHandlersSubscribedEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -27,28 +28,41 @@ import java.util.Collection;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
- * Registers Spring beans that implement {@link QueryHandlerAdapter} with the query bus.
- * @since 3.1
- * @author Marc Gathier
+ * Registers Spring beans that implement {@link QueryHandlerAdapter} with the {@link QueryBus}.
  *
+ * @author Marc Gathier
+ * @since 3.1
  */
 public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
+
     private ApplicationContext applicationContext;
-    private boolean started;
-    private Collection<QueryHandlerAdapter> queryHandlers;
     private QueryBus queryBus;
+    private Collection<QueryHandlerAdapter> queryHandlers;
+    private boolean started;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
-    public void setQueryHandlers(Collection<QueryHandlerAdapter> queryHandlers) {
-        this.queryHandlers = queryHandlers;
-    }
-
+    /**
+     * Sets the {@link QueryBus} to use when subscribing query handlers. If not set the {@code QueryBus} is taken from
+     * Spring's {@link ApplicationContext}.
+     *
+     * @param queryBus the {@link QueryBus} to use when subscribing query handlers
+     */
     public void setQueryBus(QueryBus queryBus) {
         this.queryBus = queryBus;
+    }
+
+    /**
+     * Sets the query handlers to subscribe to the {@link QueryBus}. If not set the query handlers are taken from
+     * Spring's {@link ApplicationContext} by scanning for beans of type {@link QueryHandlerAdapter}.
+     *
+     * @param queryHandlers query handlers to subscribe to the {@link QueryBus}
+     */
+    public void setQueryHandlers(Collection<QueryHandlerAdapter> queryHandlers) {
+        this.queryHandlers = queryHandlers;
     }
 
     @Override
@@ -64,13 +78,14 @@ public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLif
 
     @Override
     public void start() {
-        if (queryBus == null && !beansOfTypeIncludingAncestors( applicationContext, QueryBus.class ).isEmpty()) {
+        if (queryBus == null && !beansOfTypeIncludingAncestors(applicationContext, QueryBus.class).isEmpty()) {
             queryBus = applicationContext.getBean(QueryBus.class);
         }
         if (queryHandlers == null) {
-            queryHandlers = beansOfTypeIncludingAncestors( applicationContext, QueryHandlerAdapter.class ).values();
+            queryHandlers = beansOfTypeIncludingAncestors(applicationContext, QueryHandlerAdapter.class).values();
         }
         queryHandlers.forEach(queryHandler -> queryHandler.subscribe(queryBus));
+        applicationContext.publishEvent(new QueryHandlersSubscribedEvent(this));
         this.started = true;
     }
 
@@ -86,6 +101,6 @@ public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLif
 
     @Override
     public int getPhase() {
-        return Integer.MIN_VALUE/2;
+        return Integer.MIN_VALUE / 2;
     }
 }

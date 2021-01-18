@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.spring.config.event.CommandHandlersSubscribedEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -29,16 +30,19 @@ import java.util.Collection;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
- * Registers Spring beans that implement both MessageHandler and SupportedCommandNamesAware with the command bus.
+ * Registers Spring beans that contain {@link MessageHandler}s for the {@link org.axonframework.commandhandling.CommandMessage}
+ * with the {@link CommandBus}.
  *
  * @author Allard Buijze
+ * @since 3.0
  */
 public class CommandHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
 
     private ApplicationContext applicationContext;
-    private boolean started;
-    private Collection<MessageHandler> commandHandlers;
     private CommandBus commandBus;
+    @SuppressWarnings("rawtypes")
+    private Collection<MessageHandler> commandHandlers;
+    private boolean started;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -46,10 +50,10 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
     }
 
     /**
-     * Sets the command bus to use when subscribing command handlers. If not set the command bus is taken from Spring's
-     * application context.
+     * Sets the {@link CommandBus} to use when subscribing command handlers. If not set the {@code CommandBus} is taken
+     * from Spring's application context.
      *
-     * @param commandBus the command bus to use when subscribing handlers
+     * @param commandBus the {@link CommandBus} to use when subscribing handlers
      */
     public void setCommandBus(CommandBus commandBus) {
         this.commandBus = commandBus;
@@ -61,6 +65,7 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
      *
      * @param commandHandlers command handlers to subscribe to the command bus
      */
+    @SuppressWarnings("rawtypes")
     public void setCommandHandlers(Collection<MessageHandler> commandHandlers) {
         this.commandHandlers = commandHandlers;
     }
@@ -85,15 +90,16 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
         if (commandHandlers == null) {
             commandHandlers = beansOfTypeIncludingAncestors(applicationContext, MessageHandler.class).values();
         }
-        commandHandlers.stream().filter(commandHandler -> commandHandler instanceof CommandMessageHandler)
-                .forEach(commandHandler -> {
-                    for (String commandName : ((CommandMessageHandler) commandHandler).supportedCommandNames()) {
-                        commandBus.subscribe(commandName, commandHandler);
-                    }
-                });
+        commandHandlers.stream()
+                       .filter(commandHandler -> commandHandler instanceof CommandMessageHandler)
+                       .forEach(commandHandler -> {
+                           for (String commandName : ((CommandMessageHandler) commandHandler).supportedCommandNames()) {
+                               commandBus.subscribe(commandName, commandHandler);
+                           }
+                       });
+        applicationContext.publishEvent(new CommandHandlersSubscribedEvent(this));
         this.started = true;
     }
-
 
     @Override
     public void stop() {

@@ -19,31 +19,39 @@ package org.axonframework.spring.config;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.ModuleConfiguration;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.axonframework.spring.config.event.EventHandlersSubscribedEvent;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.annotation.Order;
 
 import java.util.Arrays;
 import java.util.function.Function;
 
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link EventHandlerRegistrar}.
+ *
+ * @author Allard Buijze
+ */
 class EventHandlerRegistrarTest {
 
     private AxonConfiguration axonConfig;
-    private ModuleConfiguration eventConfiguration;
     private EventProcessingConfigurer eventConfigurer;
+    private ApplicationEventPublisher eventPublisher;
+
     private EventHandlerRegistrar testSubject;
 
     @BeforeEach
     void setUp() {
         axonConfig = mock(AxonConfiguration.class);
-        eventConfiguration = mock(ModuleConfiguration.class);
         eventConfigurer = mock(EventProcessingConfigurer.class);
-        testSubject = new EventHandlerRegistrar(axonConfig, eventConfiguration, eventConfigurer);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        testSubject = new EventHandlerRegistrar(
+                axonConfig, mock(ModuleConfiguration.class), eventConfigurer, eventPublisher
+        );
     }
 
     @Test
@@ -54,6 +62,8 @@ class EventHandlerRegistrarTest {
         inOrder.verify(eventConfigurer).registerEventHandler(returns(OrderedBean.class));
         inOrder.verify(eventConfigurer).registerEventHandler(returns(LateOrderedBean.class));
         inOrder.verify(eventConfigurer).registerEventHandler(returns(UnorderedBean.class));
+
+        verify(eventPublisher).publishEvent(isA(EventHandlersSubscribedEvent.class));
     }
 
     private Function<Configuration, Object> returns(Class<?> type) {
@@ -76,5 +86,4 @@ class EventHandlerRegistrarTest {
     public static class LateOrderedBean {
 
     }
-
 }
