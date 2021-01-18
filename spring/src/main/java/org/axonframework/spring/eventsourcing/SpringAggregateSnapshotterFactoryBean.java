@@ -29,6 +29,7 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.spring.config.annotation.SpringHandlerDefinitionBean;
 import org.axonframework.spring.config.annotation.SpringHandlerEnhancerDefinitionBean;
@@ -85,6 +86,7 @@ public class SpringAggregateSnapshotterFactoryBean
         if (parameterResolverFactory == null) {
             parameterResolverFactory = MultiParameterResolverFactory
                     .ordered(ClasspathParameterResolverFactory.forClass(getObjectType()),
+                             new SpringBeanDependencyResolverFactory(applicationContext),
                              new SpringBeanParameterResolverFactory(applicationContext));
         }
 
