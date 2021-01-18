@@ -5,15 +5,15 @@ everybody, we've set up a number of guidelines to follow.
 
 There are different ways in which you can contribute to the framework:
 
-  1. You can report any bugs, feature requests or ideas about improvements on GitHub: https://github.com/AxonFramework/AxonFramework/issues/.
+  1. You can report any bugs, feature requests or ideas about improvements on GitHub: https://github.com/AxonFramework/extension-kotlin/issues/.
      All ideas are welcome. Please be as exact as possible when reporting bugs. This will help us reproduce and thus solve
      the problem faster.
   2. If you have created a component for your own application that you think might be useful to include in the
      framework, send us a pull request (or patch or a zip containing the source code). We will evaluate it and try to
      fit it in the framework. Please make sure code is properly documented using javadoc. This helps us to understand
      what is going on.
-  3. If you know of any other way you think you can help us, do not hesitate to send a message to the
-     [Axon Framework mailinglist](axonframework@googlegroups.com).
+  3. If you know of any other way you think you can help us, do not hesitate to join and start a conversation on
+     [AxonIQ's discussion platform](https://discuss.axoniq.io/).
 
 ## Code contributions
 

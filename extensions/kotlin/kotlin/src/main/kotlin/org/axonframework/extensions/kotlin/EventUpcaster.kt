@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.axonframework.extensions.kotlin
 
 import org.axonframework.serialization.SimpleSerializedType
@@ -22,6 +23,7 @@ import kotlin.reflect.KClass
 
 /**
  * Helpers for event upcaster.
+ * @since 0.1.0
  */
 object EventUpcaster {
     /**

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.axonframework.extensions.kotlin
 
 import org.axonframework.commandhandling.CommandMessage
@@ -24,12 +25,13 @@ import org.axonframework.messaging.MetaData
  * @param command The command to send
  * @param onError Callback to handle failed execution
  * @param onSuccess Callback to handle successful execution
- * @param [R] the type of result of the command handling
- * @param [C] the type of payload of the command
+ * @param R the type of result of the command handling
+ * @param C the type of payload of the command
  * @see CommandGateway.send
+ * @since 0.1.0
  */
-fun <C : Any, R : Any?> CommandGateway.send(
+inline fun <reified C : Any, reified R : Any?> CommandGateway.send(
     command: C,
-    onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
-    onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
+    noinline onSuccess: (commandMessage: CommandMessage<out C>, result: R, metaData: MetaData) -> Unit = { _, _, _ -> },
+    noinline onError: (commandMessage: CommandMessage<out C>, exception: Throwable, metaData: MetaData) -> Unit = { _, _, _ -> }
 ): Unit = this.send(command, ResultDiscriminatorCommandCallback<C, R>(onSuccess, onError))

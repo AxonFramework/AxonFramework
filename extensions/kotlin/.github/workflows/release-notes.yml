@@ -1,0 +1,33 @@
+# Trigger the workflow on milestone events
+on: 
+  milestone:
+    types: [closed]
+name: Milestone Closure
+jobs:
+  create-release-notes:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@master
+    - name: Create Release Notes Markdown
+      uses: docker://decathlon/release-notes-generator-action:2.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        OUTPUT_FOLDER: temp_release_notes
+        USE_MILESTONE_TITLE: "true"
+    - name: Get the name of the created Release Notes file and extract Version
+      run: |
+        RELEASE_NOTES_FILE=$(ls temp_release_notes/*.md | head -n 1)
+        echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_ENV
+        VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+    - name: Create a Draft Release Notes on GitHub
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      with:
+        tag_name: axon-kotlin-${{ env.VERSION }}
+        release_name:  Axon Kotlin Extension v${{ env.VERSION }}
+        body_path: ${{ env.RELEASE_NOTES_FILE }}
+        draft: true
