@@ -20,12 +20,15 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.spring.config.event.EventHandlersSubscribedEvent;
+import org.axonframework.spring.config.event.QueryHandlersSubscribedEvent;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.annotation.Order;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.function.Function;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -64,6 +67,14 @@ class EventHandlerRegistrarTest {
         inOrder.verify(eventConfigurer).registerEventHandler(returns(UnorderedBean.class));
 
         verify(eventPublisher).publishEvent(isA(EventHandlersSubscribedEvent.class));
+    }
+
+    @Test
+    void testSetEventHandlersDoesNothingIfThereAreNoEventHandlers() {
+        testSubject.setEventHandlers(new ArrayList<>());
+
+        verify(eventPublisher, times(0)).publishEvent(any(EventHandlersSubscribedEvent.class));
+        verifyNoInteractions(eventConfigurer);
     }
 
     private Function<Configuration, Object> returns(Class<?> type) {

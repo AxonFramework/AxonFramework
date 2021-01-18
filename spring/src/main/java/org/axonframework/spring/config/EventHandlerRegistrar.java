@@ -77,7 +77,9 @@ public class EventHandlerRegistrar implements InitializingBean {
     public void setEventHandlers(List<Object> beans) {
         AnnotationAwareOrderComparator.sort(beans);
         beans.forEach(b -> eventProcessingConfigurer.registerEventHandler(c -> b));
-        eventPublisher.publishEvent(new EventHandlersSubscribedEvent(this));
+        if (!beans.isEmpty()) {
+            eventPublisher.publishEvent(new EventHandlersSubscribedEvent(this));
+        }
     }
 
     @Override

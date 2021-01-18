@@ -34,16 +34,25 @@ class CommandHandlerSubscriberTest {
         testSubject = new CommandHandlerSubscriber();
         testSubject.setApplicationContext(applicationContext);
         testSubject.setCommandBus(commandBus);
-        testSubject.setCommandHandlers(Collections.singletonList(commandMessageHandler));
     }
 
     @Test
     void testStart() {
+        testSubject.setCommandHandlers(Collections.singletonList(commandMessageHandler));
+
         testSubject.start();
 
         verify(commandBus).subscribe(TEST_COMMAND_NAME, commandMessageHandler);
         verify(commandBus).subscribe(OTHER_TEST_COMMAND_NAME, commandMessageHandler);
         verify(applicationContext).publishEvent(isA(CommandHandlersSubscribedEvent.class));
+    }
+
+    @Test
+    void testStartDoesNothingIfThereAreNoQueryHandlers() {
+        testSubject.start();
+
+        verify(applicationContext, times(0)).publishEvent(any(CommandHandlersSubscribedEvent.class));
+        verifyNoInteractions(commandBus);
     }
 
     private static class TestCommandMessageHandler implements CommandMessageHandler {

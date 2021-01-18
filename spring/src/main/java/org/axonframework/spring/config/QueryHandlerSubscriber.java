@@ -85,7 +85,10 @@ public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLif
             queryHandlers = beansOfTypeIncludingAncestors(applicationContext, QueryHandlerAdapter.class).values();
         }
         queryHandlers.forEach(queryHandler -> queryHandler.subscribe(queryBus));
-        applicationContext.publishEvent(new QueryHandlersSubscribedEvent(this));
+
+        if (!queryHandlers.isEmpty()) {
+            applicationContext.publishEvent(new QueryHandlersSubscribedEvent(this));
+        }
         this.started = true;
     }
 

@@ -97,7 +97,10 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
                                commandBus.subscribe(commandName, commandHandler);
                            }
                        });
-        applicationContext.publishEvent(new CommandHandlersSubscribedEvent(this));
+
+        if (!commandHandlers.isEmpty()) {
+            applicationContext.publishEvent(new CommandHandlersSubscribedEvent(this));
+        }
         this.started = true;
     }
 
