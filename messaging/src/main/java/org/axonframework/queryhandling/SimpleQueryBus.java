@@ -239,7 +239,7 @@ public class SimpleQueryBus implements QueryBus {
         return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
     }
 
-
+    @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize) {
