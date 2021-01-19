@@ -237,8 +237,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
-     * @deprecated in through use of {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType)}}
-     * To set backpressure strategy, use some of {@code onBackpressure..} operators directly on updates flux
+     * @deprecated in favour of using {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType)}}.
+     * To set a backpressure strategy, use one of the {@code onBackpressure..} operators on the updates flux directly.
      * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
