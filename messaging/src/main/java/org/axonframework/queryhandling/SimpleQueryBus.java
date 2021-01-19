@@ -47,7 +47,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,6 +71,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
+    @SuppressWarnings("rawtypes")
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
@@ -112,6 +112,7 @@ public class SimpleQueryBus implements QueryBus {
     public <R> Registration subscribe(String queryName,
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
+        //noinspection rawtypes
         CopyOnWriteArrayList<QuerySubscription> handlers =
                 subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
         QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
@@ -120,8 +121,7 @@ public class SimpleQueryBus implements QueryBus {
         return () -> unsubscribe(queryName, querySubscription);
     }
 
-    private boolean unsubscribe(String queryName,
-                                QuerySubscription querySubscription) {
+    private <R> boolean unsubscribe(String queryName, QuerySubscription<R> querySubscription) {
         subscriptions.computeIfPresent(queryName, (key, handlers) -> {
             handlers.remove(querySubscription);
             if (handlers.isEmpty()) {
@@ -225,8 +225,8 @@ public class SimpleQueryBus implements QueryBus {
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
-            int updateBufferSize) {
-
+            int updateBufferSize
+    ) {
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
@@ -281,22 +281,22 @@ public class SimpleQueryBus implements QueryBus {
         return queryUpdateEmitter;
     }
 
-    @SuppressWarnings("unchecked")
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(
             UnitOfWork<QueryMessage<Q, R>> uow,
-            MessageHandler<? super QueryMessage<?, R>> handler) {
+            MessageHandler<? super QueryMessage<?, R>> handler
+    ) {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
             if (queryResponse instanceof CompletableFuture) {
-                return ((CompletableFuture) queryResponse).thenCompose(
+                return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
             } else if (queryResponse instanceof Future) {
                 return CompletableFuture.supplyAsync(() -> {
                     try {
                         return GenericQueryResponseMessage.asNullableResponseMessage(
                                 responseType.responseMessagePayloadType(),
-                                responseType.convert(((Future) queryResponse).get()));
+                                responseType.convert(((Future<?>) queryResponse).get()));
                     } catch (InterruptedException | ExecutionException e) {
                         throw new QueryExecutionException("Error happened while trying to execute query handler", e);
                     }
@@ -366,7 +366,7 @@ public class SimpleQueryBus implements QueryBus {
         return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                             .stream()
                             .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
-                            .map((Function<QuerySubscription, MessageHandler>) QuerySubscription::getQueryHandler)
+                            .map(QuerySubscription::getQueryHandler)
                             .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
                             .collect(Collectors.toList());
     }

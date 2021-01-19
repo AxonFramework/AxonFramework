@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.junit.jupiter.api.*;
@@ -165,6 +166,14 @@ class FixtureTest_Deadlines {
                .expectNoScheduledEvents();
     }
 
+    @Test
+    void testDeadlineHandlerEndsSagaLifecycle() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(new TriggerSagaStartEvent(AGGREGATE_ID, "sagaEndingDeadline"))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(0);
+    }
+
     private static class ResetAllTriggeredEvent {
 
         private final String identifier;
@@ -200,7 +209,7 @@ class FixtureTest_Deadlines {
         @StartSaga
         @SagaEventHandler(associationProperty = "identifier")
         public void on(TriggerSagaStartEvent event, @Timestamp Instant timestamp, DeadlineManager deadlineManager) {
-            deadlineName = "deadlineName";
+            deadlineName = event.getDeadlineName();
             deadlineId = deadlineManager.schedule(
                     Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, "deadlineDetails"
             );
@@ -229,6 +238,11 @@ class FixtureTest_Deadlines {
         @DeadlineHandler(deadlineName = "payloadless-deadline")
         public void handle() {
             // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+        }
+
+        @EndSaga
+        @DeadlineHandler(deadlineName = "sagaEndingDeadline")
+        public void sagaEndingDeadline() {
         }
     }
 }

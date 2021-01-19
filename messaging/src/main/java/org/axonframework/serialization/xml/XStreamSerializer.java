@@ -183,6 +183,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         }
 
         @Override
+        public Builder classLoader(ClassLoader classLoader) {
+            super.classLoader(classLoader);
+            return this;
+        }
+
+        @Override
         public Builder lenientDeserialization() {
             super.lenientDeserialization();
             return this;

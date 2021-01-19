@@ -57,6 +57,7 @@ import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.modelling.command.inspection.MethodCreationPolicyDefinition;
 import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.EndSagaMessageHandlerDefinition;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
 import org.axonframework.modelling.saga.StartSaga;
@@ -321,7 +322,8 @@ public class SpringAxonAutoConfigurerTest {
                         MethodCreationPolicyDefinition.class,
                         MethodCreationPolicyDefinition.class,
                         MyHandlerEnhancerDefinition.class,
-                        MessageHandlerInterceptorDefinition.class
+                        MessageHandlerInterceptorDefinition.class,
+                        EndSagaMessageHandlerDefinition.class
                 ),
                 enhancerClasses
         );

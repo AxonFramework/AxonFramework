@@ -31,16 +31,16 @@ import java.util.stream.Stream;
 
 /**
  * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
- * un-subscribe to specific queries (identified by their {@link QueryMessage#getQueryName()} and
- * {@link QueryMessage#getResponseType()} on the query bus. There may be multiple handlers for each combination of
+ * un-subscribe to specific queries (identified by their {@link QueryMessage#getQueryName()} and {@link
+ * QueryMessage#getResponseType()} on the query bus. There may be multiple handlers for each combination of
  * queryName/responseType.
  *
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 3.1
  */
-public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<?,?>>,
-                                  MessageDispatchInterceptorSupport<QueryMessage<?,?>> {
+public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<?, ?>>,
+                                  MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
 
     /**
      * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
@@ -54,12 +54,12 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
     <R> Registration subscribe(String queryName, Type responseType, MessageHandler<? super QueryMessage<?, R>> handler);
 
     /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName
-     * and responseType. This method returns all values returned by the Query Handler as a Collection. This may or may
-     * not be the exact collection as defined in the Query Handler.
+     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
+     * responseType. This method returns all values returned by the Query Handler as a Collection. This may or may not
+     * be the exact collection as defined in the Query Handler.
      * <p>
-     * If the Query Handler defines a single return object (i.e. not a collection or array), that object is returned
-     * as the sole entry in a singleton collection.
+     * If the Query Handler defines a single return object (i.e. not a collection or array), that object is returned as
+     * the sole entry in a singleton collection.
      * <p>
      * When no handlers are available that can answer the given {@code query}, the returned CompletableFuture will be
      * completed with a {@link NoHandlerForQueryException}.
@@ -72,14 +72,15 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
 
     /**
-     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s queryName/responseType.
-     * Returns a stream of results which blocks until all handlers have processed the request or when the timeout occurs.
+     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s
+     * queryName/responseType. Returns a stream of results which blocks until all handlers have processed the request or
+     * when the timeout occurs.
      * <p>
      * If no handlers are available to provide a result, or when all available handlers throw an exception while
      * attempting to do so, the returned Stream is empty.
      * <p>
-     * Note that any terminal operation (such as {@link Stream#forEach(Consumer)}) on the Stream may cause it to
-     * block until the {@code timeout} has expired, awaiting additional data to include in the stream.
+     * Note that any terminal operation (such as {@link Stream#forEach(Consumer)}) on the Stream may cause it to block
+     * until the {@code timeout} has expired, awaiting additional data to include in the stream.
      *
      * @param query   the query
      * @param timeout time to wait for results

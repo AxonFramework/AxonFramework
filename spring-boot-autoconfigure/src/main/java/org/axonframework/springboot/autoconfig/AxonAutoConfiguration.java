@@ -165,11 +165,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             case XSTREAM:
             case DEFAULT:
             default:
-                XStreamSerializer xStreamSerializer = XStreamSerializer.builder()
-                                                                       .revisionResolver(revisionResolver)
-                                                                       .build();
-                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
-                return xStreamSerializer;
+                return XStreamSerializer.builder()
+                                        .revisionResolver(revisionResolver)
+                                        .classLoader(beanClassLoader)
+                                        .build();
         }
     }
 

@@ -272,6 +272,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private boolean lenientDeserialization = false;
+        private ClassLoader classLoader;
 
         /**
          * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
@@ -329,6 +330,19 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         }
 
         /**
+         * Sets the {@link ClassLoader} used as an override for default {@code ClassLoader} used in the {@link XStream}.
+         * The same solution could thus be achieved by configuring the `XStream` instance directly.
+         *
+         * @param classLoader a {@link ClassLoader} used as a class loader in {@link XStream}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder classLoader(ClassLoader classLoader) {
+            assertNonNull(classLoader, "ClassLoader may not be null");
+            this.classLoader = classLoader;
+            return this;
+        }
+
+        /**
          * Configures the underlying XStream instance to be lenient when deserializing data into Java objects.
          * Specifically sets the {@link XStream#ignoreUnknownElements()}.
          *
@@ -349,6 +363,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
             if (lenientDeserialization) {
                 xStream.ignoreUnknownElements();
+            }
+            if (classLoader != null) {
+                xStream.setClassLoader(classLoader);
             }
         }
     }

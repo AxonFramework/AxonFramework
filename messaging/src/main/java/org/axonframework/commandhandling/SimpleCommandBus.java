@@ -185,6 +185,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        logger.debug("Subscribing command with name [{}]", commandName);
         assertNonNull(handler, "handler may not be null");
         subscriptions.compute(commandName, (k, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {

@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
@@ -25,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Properties describing the settings for Event Processors.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 @ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
@@ -61,7 +63,11 @@ public class EventProcessorProperties {
     public static class ProcessorSettings {
 
         /**
-         * Sets the source for this processor. Defaults to streaming from/subscribing to the Event Bus.
+         * Sets the source for this processor.
+         * <p>
+         * Defaults to streaming from the {@link org.axonframework.eventsourcing.eventstore.EventStore} when the {@link
+         * #mode} is set to {@link Mode#TRACKING} and to subscribing to the {@link org.axonframework.eventhandling.EventBus}
+         * when the {@link #mode} is set to {@link Mode#SUBSCRIBING}.
          */
         private String source;
 
@@ -78,14 +84,14 @@ public class EventProcessorProperties {
 
         /**
          * The interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
-         *
+         * <p>
          * Defaults to 5000 milliseconds.
          */
         private long tokenClaimInterval = 5000;
 
         /**
          * The time unit of tokens claim interval.
-         *
+         * <p>
          * Defaults to {@link TimeUnit#MILLISECONDS}.
          */
         private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
@@ -110,8 +116,8 @@ public class EventProcessorProperties {
         private String sequencingPolicy;
 
         /**
-         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the
-         * {@link org.axonframework.eventhandling.EventBus} is used as source.
+         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the {@link
+         * org.axonframework.eventhandling.EventBus} is used as source.
          *
          * @return the name of the bean that should be used as source for Event Messages.
          */
@@ -177,10 +183,11 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
-         * Defaults to 5000 milliseconds.
+         * Sets the time to wait after a failed attempt to claim any token, before making another attempt. Defaults to
+         * 5000 milliseconds.
          *
-         * @param tokenClaimInterval the interval between attempts to claim tokens by a {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+         * @param tokenClaimInterval the interval between attempts to claim tokens by a {@link
+         *                           org.axonframework.eventhandling.TrackingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
@@ -239,8 +246,8 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the maximum size of a processing batch. This is the number of events that a processor in "tracking"
-         * mode will attempt to read and process within a single Unit of Work / Transaction. Defaults to 1.
+         * Sets the maximum size of a processing batch. This is the number of events that a processor in "tracking" mode
+         * will attempt to read and process within a single Unit of Work / Transaction. Defaults to 1.
          *
          * @param batchSize the maximum size of a processing batch.
          */
@@ -259,8 +266,8 @@ public class EventProcessorProperties {
 
         /**
          * Sets the name of the bean that defines the Sequencing Policy for this processor. The Sequencing Policy
-         * describes which Events must be handled sequentially, and which can be handled concurrently. Defaults to
-         * a "SequentialPerAggregatePolicy".
+         * describes which Events must be handled sequentially, and which can be handled concurrently. Defaults to a
+         * "SequentialPerAggregatePolicy".
          *
          * @param sequencingPolicy the name of the bean that defines the Sequencing Policy for this processor.
          */

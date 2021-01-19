@@ -497,6 +497,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {
                 return handler;
