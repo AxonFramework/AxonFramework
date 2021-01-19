@@ -214,7 +214,9 @@ public class SimpleQueryBus implements QueryBus {
                        }).filter(Objects::nonNull);
     }
 
-    /***
+    /**
+     * {@inheritDoc}
+     * <p>
      * @deprecated in through use of {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}
      */
     @SuppressWarnings("unchecked")
