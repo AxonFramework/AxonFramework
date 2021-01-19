@@ -40,7 +40,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     /**
-     * Wrapper around {@link Sinks.Many#tryEmitComplete()} ()}.
+     * Wrapper around {@link Sinks.Many#tryEmitComplete()}, followed by {@link Sinks.Many#orThrow()}.
      */
     @Override
     public void complete() {
