@@ -1,8 +1,8 @@
 package org.axonframework.queryhandling;
 
 /**
- * Abstraction interface to bridge old FluxSink and SinksMany API
- * with common API..
+ * Abstraction interface to bridge old {@code FluxSink} and {@link SinksMany} API
+ * with a common API.
  *
  * @author Stefan Dragisic
  * @since 4.5
