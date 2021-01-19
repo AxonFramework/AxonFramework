@@ -100,12 +100,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         updateHandlers.put(query, fluxSinkWrapper);
 
         Registration registration = () -> {
-            fluxSinkWrapper.complete();
+            updateHandlers.remove(query);
             return true;
         };
 
         return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect());
+                                               processor.replay(updateBufferSize).autoConnect(),
+                                               fluxSinkWrapper::complete);
     }
 
     @Override

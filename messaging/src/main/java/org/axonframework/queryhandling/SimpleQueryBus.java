@@ -239,7 +239,10 @@ public class SimpleQueryBus implements QueryBus {
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
                                                     updateHandlerRegistration.getUpdates(),
-                                                    updateHandlerRegistration.getRegistration());
+                                                    () -> {
+                                                        updateHandlerRegistration.complete();
+                                                        return true;
+                                                    });
     }
 
     @Override
