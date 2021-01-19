@@ -144,7 +144,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <Q>              the payload type of the query
      * @param <I>              the response type of the query
      * @param <U>              the incremental response types of the query
-     * @deprecated in through use of {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
+     * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
      * @return query result containing initial result and incremental updates
      */
     @Deprecated
