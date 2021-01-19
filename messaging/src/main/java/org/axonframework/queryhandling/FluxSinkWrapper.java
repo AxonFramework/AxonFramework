@@ -26,7 +26,7 @@ import reactor.core.publisher.FluxSink;
  * @param <T> The value type
  * @author Milan Savic
  * @since 3.3
- * @deprecated in through use of the {{@link SinksManyWrapper}}
+ * @deprecated in favour of using the {{@link SinksManyWrapper}}
  */
 @Deprecated
 class FluxSinkWrapper<T> implements SinkWrapper<T> {
