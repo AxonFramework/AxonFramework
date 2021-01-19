@@ -105,7 +105,7 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     /**
-     * @deprecated in through use of the {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
+     * @deprecated in favour of using {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
      */
     @Deprecated
     @Override
