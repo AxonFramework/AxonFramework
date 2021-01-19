@@ -92,7 +92,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     /**
-     * @deprecated in through use of the {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
+     * {@inheritDoc}
+     * <p>
+     * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     @Override
