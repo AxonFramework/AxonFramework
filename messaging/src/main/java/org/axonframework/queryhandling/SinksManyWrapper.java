@@ -48,7 +48,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     /**
-     * Wrapper around {@link Sinks.Many#tryEmitNext(Object)}
+     * Wrapper around {@link Sinks.Many#tryEmitNext(Object)}.
      *
      * @param value to be passed to the delegate sink
      */
