@@ -104,6 +104,10 @@ public class DefaultQueryGateway implements QueryGateway {
                        .map(QueryResponseMessage::getPayload);
     }
 
+    /**
+     * @deprecated in favour of using {{@link #subscriptionQuery(String, Object, ResponseType, ResponseType, int)}}
+     */
+    @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
                                                                      Q query,
@@ -111,12 +115,42 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      ResponseType<U> updateResponseType,
                                                                      SubscriptionQueryBackpressure backpressure,
                                                                      int updateBufferSize) {
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = getSubscriptionQueryMessage(
+                queryName, query, initialResponseType, updateResponseType);
+
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
+                queryBus.subscriptionQuery(interceptedQuery, backpressure, updateBufferSize);
+
+        return getSubscriptionQueryResult(result);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                                     Q query,
+                                                                     ResponseType<I> initialResponseType,
+                                                                     ResponseType<U> updateResponseType,
+                                                                     int updateBufferSize) {
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = getSubscriptionQueryMessage(
+                queryName, query, initialResponseType, updateResponseType);
+
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
+                queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
+
+        return getSubscriptionQueryResult(result);
+    }
+
+    private <Q, I, U> SubscriptionQueryMessage<?, I, U> getSubscriptionQueryMessage(String queryName, Q query,
+                                                                                    ResponseType<I> initialResponseType,
+                                                                                    ResponseType<U> updateResponseType) {
         SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
                 asMessage(query), queryName, initialResponseType, updateResponseType
         );
         SubscriptionQueryMessage<?, I, U> interceptedQuery = processInterceptors(subscriptionQueryMessage);
-        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
-                queryBus.subscriptionQuery(interceptedQuery, backpressure, updateBufferSize);
+        return interceptedQuery;
+    }
+
+    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
+            SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result) {
         return new DefaultSubscriptionQueryResult<>(
                 result.initialResult()
                       .filter(initialResult -> Objects.nonNull(initialResult.getPayload()))
@@ -128,6 +162,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 result
         );
     }
+
 
     @Override
     public Registration registerDispatchInterceptor(

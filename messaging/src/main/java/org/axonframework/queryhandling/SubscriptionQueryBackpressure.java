@@ -24,7 +24,9 @@ import reactor.core.publisher.FluxSink;
  *
  * @author Milan Savic
  * @since 3.3
+ * @deprecated since 3.4.0 Reactor version, Sinks API does not use FluxSink.OverflowStrategy
  */
+@Deprecated
 public class SubscriptionQueryBackpressure {
 
     private final FluxSink.OverflowStrategy overflowStrategy;

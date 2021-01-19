@@ -199,12 +199,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                SubscriptionQuery query,
                                                                UpdateHandler sendUpdate
                                                        ) {
-                                                           SubscriptionQueryBackpressure backpressure =
-                                                                   SubscriptionQueryBackpressure.defaultBackpressure();
+
                                                            UpdateHandlerRegistration<Object> updateHandler =
                                                                    updateEmitter.registerUpdateHandler(
                                                                            subscriptionSerializer.deserialize(query),
-                                                                           backpressure,
                                                                            1024
                                                                    );
 
@@ -308,10 +306,24 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * @deprecated in through use of {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
+     */
+    @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backPressure,
+            int updateBufferSize
+    ) {
+        return subscriptionQuery(query, updateBufferSize);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
         shutdownLatch.ifShuttingDown(String.format(
