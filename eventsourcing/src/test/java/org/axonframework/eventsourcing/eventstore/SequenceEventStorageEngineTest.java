@@ -16,11 +16,19 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.longThat;
-import static org.mockito.Mockito.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -28,12 +36,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.axonframework.eventhandling.*;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.longThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SequenceEventStorageEngineTest {
     private EventStorageEngine activeStorage;
@@ -369,6 +392,4 @@ class SequenceEventStorageEngineTest {
         inOrder.verify(historicStorage).readEvents("aggregate", 2);
         inOrder.verify(activeStorage).readEvents("aggregate", 2);
     }
-
-    // TODO: Create test for batching issue as well?
 }
