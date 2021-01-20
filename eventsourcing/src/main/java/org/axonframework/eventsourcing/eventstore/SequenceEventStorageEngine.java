@@ -133,13 +133,14 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         return tokenFromActiveStorage;
     }
 
-    private class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private static class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
 
         private final Spliterator<? extends TrackedEventMessage<?>> historicSpliterator;
         private final boolean mayBlock;
-        private Spliterator<? extends TrackedEventMessage<?>> active;
-        private TrackingToken lastToken;
         private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
+
+        private TrackingToken lastToken;
+        private Spliterator<? extends TrackedEventMessage<?>> active;
 
         public ConcatenatingSpliterator(TrackingToken initialToken,
                                         Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
@@ -169,13 +170,14 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         }
     }
 
-    private class ConcatenatingDomainEventStream implements DomainEventStream {
+    private static class ConcatenatingDomainEventStream implements DomainEventStream {
 
         private final DomainEventStream historic;
         private final String aggregateIdentifier;
         private final long firstSequenceNumber;
-        private DomainEventStream actual;
         private final BiFunction<String, Long, DomainEventStream> domainEventStream;
+
+        private DomainEventStream actual;
 
         public ConcatenatingDomainEventStream(DomainEventStream historic,
                                               String aggregateIdentifier,
