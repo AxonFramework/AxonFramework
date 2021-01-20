@@ -691,6 +691,48 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    @DirtiesContext
+    void testProcessorSetsAndUnsetsErrorState() throws Exception {
+        eventBus = spy(eventBus);
+
+        tokenStore = new InMemoryTokenStore();
+        eventBus.publish(createEvents(5));
+        AtomicBoolean fail = new AtomicBoolean(true);
+        when(eventBus.openStream(any())).then(invocationOnMock -> {
+           if (fail.get()) throw new MockException();
+           return invocationOnMock.callRealMethod();
+        });
+
+        List<EventMessage<?>> acknowledgedEvents = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(5);
+        doAnswer(invocation -> {
+            acknowledgedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch.countDown();
+            return null;
+        }).when(mockHandler).handle(any());
+
+        testSubject = TrackingEventProcessor.builder()
+                                            .name("test")
+                                            .eventHandlerInvoker(eventHandlerInvoker)
+                                            .messageSource(eventBus)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
+        testSubject.start();
+        // Give it a bit of time to start
+        Thread.sleep(200);
+        Optional<EventTrackerStatus> healthy = testSubject.processingStatus().values().stream().filter(s -> !s
+                .isErrorState()).findFirst();
+        assertThat("no healthy processor when open stream fails", !healthy.isPresent());
+        fail.set(false);
+        assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
+        assertEquals(5, acknowledgedEvents.size());
+        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(s -> s
+                .isErrorState()).findFirst();
+        assertThat("no processor in error state when open stream succeeds again", !inErrorState.isPresent());
+    }
+
+    @Test
     void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);

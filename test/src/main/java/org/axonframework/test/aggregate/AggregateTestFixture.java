@@ -120,14 +120,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final Class<T> aggregateType;
     private final Set<Class<? extends T>> subtypes = new HashSet<>();
     private final SimpleCommandBus commandBus;
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
     private final EventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
     private RepositoryProvider repositoryProvider;
     private IdentifierValidatingRepository<T> repository;
-    private StubDeadlineManager deadlineManager;
+    private final StubDeadlineManager deadlineManager;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
     private Deque<DomainEventMessage<?>> storedEvents;
@@ -238,15 +236,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor) {
-        this.commandDispatchInterceptors.add(commandDispatchInterceptor);
+            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
+    ) {
+        this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor) {
-        this.commandHandlerInterceptors.add(commandHandlerInterceptor);
+            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
+    ) {
+        this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
         return this;
     }
 
@@ -484,7 +484,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void finalizeConfiguration() {
         registerAggregateCommandHandlers();
-        registerCommandInterceptors();
         explicitCommandHandlersSet = true;
     }
 
@@ -542,11 +541,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             registerRepositoryProvider(new DefaultRepositoryProvider());
         }
         return repositoryProvider;
-    }
-
-    private void registerCommandInterceptors() {
-        commandDispatchInterceptors.forEach(commandBus::registerDispatchInterceptor);
-        commandHandlerInterceptors.forEach(commandBus::registerHandlerInterceptor);
     }
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter, Aggregate<T> workingAggregate) {

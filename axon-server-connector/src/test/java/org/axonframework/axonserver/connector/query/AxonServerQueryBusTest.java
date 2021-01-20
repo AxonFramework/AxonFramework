@@ -21,6 +21,7 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.query.QueryChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
+import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
@@ -44,9 +45,8 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,20 +62,9 @@ import java.util.concurrent.TimeUnit;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -85,19 +74,19 @@ import static org.mockito.Mockito.when;
 class AxonServerQueryBusTest {
 
     private static final String TEST_QUERY = "testQuery";
-    public static final String CONTEXT = "default-test";
+    private static final String CONTEXT = "default-test";
 
-    private AxonServerConnectionManager axonServerConnectionManager;
     private final QueryBus localSegment = mock(QueryBus.class);
     private final Serializer serializer = XStreamSerializer.defaultSerializer();
     private final TargetContextResolver<QueryMessage<?, ?>> targetContextResolver = spy(new TestTargetContextResolver<>());
 
-    private AxonServerQueryBus testSubject;
-    private AxonServerConnection mockConnection;
+    private AxonServerConnectionManager axonServerConnectionManager;
     private QueryChannel mockQueryChannel;
 
+    private AxonServerQueryBus testSubject;
+
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         AxonServerConfiguration configuration = new AxonServerConfiguration();
         configuration.setContext(CONTEXT);
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
@@ -112,17 +101,17 @@ class AxonServerQueryBusTest {
                                         .targetContextResolver(targetContextResolver)
                                         .build();
 
-        mockConnection = mock(AxonServerConnection.class);
+        AxonServerConnection mockConnection = mock(AxonServerConnection.class);
         mockQueryChannel = mock(QueryChannel.class);
 
         when(axonServerConnectionManager.getConnection(anyString())).thenReturn(mockConnection);
         when(axonServerConnectionManager.getConnection()).thenReturn(mockConnection);
 
         when(mockConnection.queryChannel()).thenReturn(mockQueryChannel);
-        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> CompletableFuture.completedFuture(null));
+        when(mockQueryChannel.registerQueryHandler(any(), any()))
+                .thenReturn(() -> CompletableFuture.completedFuture(null));
 
         when(localSegment.subscribe(any(), any(), any())).thenReturn(() -> true);
-
     }
 
     @AfterEach
@@ -138,6 +127,26 @@ class AxonServerQueryBusTest {
         assertNotNull(result);
         verify(axonServerConnectionManager).getConnection(CONTEXT);
         verify(mockQueryChannel).registerQueryHandler(any(), eq(new QueryDefinition(TEST_QUERY, String.class)));
+    }
+
+    @Test
+    void testSeveralSubscribeInvocationsUseSameQueryHandlerInstance() {
+        QueryDefinition firstExpectedQueryDefinition = new QueryDefinition(TEST_QUERY, String.class);
+        QueryDefinition secondExpectedQueryDefinition = new QueryDefinition("testIntegerQuery", Integer.class);
+
+        ArgumentCaptor<QueryHandler> queryHandlerCaptor = ArgumentCaptor.forClass(QueryHandler.class);
+
+        Registration resultOne = testSubject.subscribe(TEST_QUERY, String.class, q -> "test");
+        assertNotNull(resultOne);
+        verify(mockQueryChannel).registerQueryHandler(queryHandlerCaptor.capture(), eq(firstExpectedQueryDefinition));
+
+        Registration resultTwo = testSubject.subscribe("testIntegerQuery", Integer.class, q -> 1337);
+        assertNotNull(resultTwo);
+        verify(mockQueryChannel).registerQueryHandler(queryHandlerCaptor.capture(), eq(secondExpectedQueryDefinition));
+
+        List<QueryHandler> resultQueryHandlers = queryHandlerCaptor.getAllValues();
+        assertEquals(2, resultQueryHandlers.size());
+        assertEquals(resultQueryHandlers.get(0), resultQueryHandlers.get(1));
     }
 
     @Test
@@ -170,8 +179,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(),
-                                                                                              "Faking exception result")));
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(
+                stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
+        ));
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
@@ -191,8 +201,8 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscribeHandler() {
-
-        when(mockQueryChannel.registerQueryHandler(any(), any())).thenReturn(() -> CompletableFuture.completedFuture(null));
+        when(mockQueryChannel.registerQueryHandler(any(), any()))
+                .thenReturn(() -> CompletableFuture.completedFuture(null));
 
         Registration result = testSubject.subscribe(TEST_QUERY, String.class, q -> "test: " + q.getPayloadType());
 
@@ -237,7 +247,9 @@ class AxonServerQueryBusTest {
         testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
 
         verify(targetContextResolver).resolveContext(testQuery);
-        verify(mockQueryChannel).query(argThat(r -> r.getResponseType().getType().equals(InstanceResponseType.class.getName())));
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getResponseType().getType().equals(InstanceResponseType.class.getName())
+        ));
     }
 
     @Test
@@ -255,8 +267,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
+        MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor =
+                (unitOfWork, interceptorChain) -> interceptorChain.proceed();
 
-        MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor = (unitOfWork, interceptorChain) -> interceptorChain.proceed();
         testSubject.registerHandlerInterceptor(interceptor);
 
         verify(localSegment).registerHandlerInterceptor(interceptor);
@@ -315,7 +328,7 @@ class AxonServerQueryBusTest {
                             .build();
     }
 
-    private QueryResponse stubErrorResponse(String errorCode, String message) {
+    private QueryResponse stubErrorResponse(String errorCode, @SuppressWarnings("SameParameterValue") String message) {
         return QueryResponse.newBuilder()
                             .setRequestIdentifier("request")
                             .setMessageIdentifier(UUID.randomUUID().toString())
