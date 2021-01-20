@@ -40,8 +40,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     /**
-     * Wrapper around {@link Sinks.Many#tryEmitComplete()}.
-     * Throws exception on failure cases.}.
+     * Wrapper around {@link Sinks.Many#tryEmitComplete()}. Throws exception on failure cases.}.
      */
     @Override
     public void complete() {
@@ -49,8 +48,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     /**
-     * Wrapper around {@link Sinks.Many#tryEmitNext(Object)}.
-     * Throws exception on failure cases.
+     * Wrapper around {@link Sinks.Many#tryEmitNext(Object)}. Throws exception on failure cases.
      *
      * @param value to be passed to the delegate sink
      */
@@ -60,8 +58,7 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     }
 
     /**
-     * Wrapper around {@link Sinks.Many#tryEmitError(Throwable)}.
-     * Throws exception on failure cases.
+     * Wrapper around {@link Sinks.Many#tryEmitError(Throwable)}. Throws exception on failure cases.
      *
      * @param t to be passed to the delegate sink
      */
@@ -69,5 +66,4 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
     public void error(Throwable t) {
         fluxSink.tryEmitError(t).orThrow();
     }
-
 }

@@ -263,25 +263,22 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
      * the {@link QueryBus} instead.
      *
-     * @param queryName           A {@link String} describing query to be executed
-     * @param query               The {@code query} to be sent
-     * @param initialResponseType The initial response type used for this query
-     * @param updateResponseType  The update response type used for this query
-     * @param <Q>                 The type of the query
-     * @param <I>                 The type of the initial response
-     * @param <U>                 The type of the incremental update
+     * @param queryName           a {@link String} describing query to be executed
+     * @param query               the {@code query} to be sent
+     * @param initialResponseType the initial response type used for this query
+     * @param updateResponseType  the update response type used for this query
+     * @param <Q>                 the type of the query
+     * @param <I>                 the type of the initial response
+     * @param <U>                 the type of the incremental update
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                                      Q query,
                                                                       ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
-        return subscriptionQuery(queryName,
-                query,
-                initialResponseType,
-                updateResponseType,
-                Queues.SMALL_BUFFER_SIZE);
+        return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, Queues.SMALL_BUFFER_SIZE);
     }
 
     /**
@@ -311,7 +308,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
-    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                              Q query,
                                                               ResponseType<I> initialResponseType,
                                                               ResponseType<U> updateResponseType,
                                                               SubscriptionQueryBackpressure backpressure,
@@ -326,20 +324,21 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * QueryGateway. If you require the {@code null} to be returned for the initial and update results, we suggest using
      * the {@link QueryBus} instead.
      *
-     * @param queryName           A {@link String} describing query to be executed
-     * @param query               The {@code query} to be sent
-     * @param initialResponseType The initial response type used for this query
-     * @param updateResponseType  The update response type used for this query
-     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the flux
+     * @param queryName           a {@link String} describing query to be executed
+     * @param query               the {@code query} to be sent
+     * @param initialResponseType the initial response type used for this query
+     * @param updateResponseType  the update response type used for this query
+     * @param updateBufferSize    the size of buffer which accumulates updates before subscription to the flux
      *                            is made
-     * @param <Q>                 The type of the query
-     * @param <I>                 The type of the initial response
-     * @param <U>                 The type of the incremental update
+     * @param <Q>                 the type of the query
+     * @param <I>                 the type of the initial response
+     * @param <U>                 the type of the incremental update
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
+                                                              Q query,
                                                               ResponseType<I> initialResponseType,
                                                               ResponseType<U> updateResponseType,
                                                               int updateBufferSize);

@@ -93,15 +93,14 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     /**
      * {@inheritDoc}
-     * <p>
+     *
      * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
-            SubscriptionQueryMessage<?, ?, ?> query,
-            SubscriptionQueryBackpressure backpressure,
-            int updateBufferSize) {
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+                                                                  SubscriptionQueryBackpressure backpressure,
+                                                                  int updateBufferSize) {
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
@@ -113,14 +112,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             return true;
         };
 
-        return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect());
+        return new UpdateHandlerRegistration<>(registration, processor.replay(updateBufferSize).autoConnect());
     }
 
     @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
-            SubscriptionQueryMessage<?, ?, ?> query,
-            int updateBufferSize) {
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+                                                                  int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
 
         Runnable removeHandler = () -> updateHandlers.remove(query);
@@ -137,8 +134,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             return true;
         };
 
-        return new UpdateHandlerRegistration<>(registration,
-                                               updateMessageFlux);
+        return new UpdateHandlerRegistration<>(registration, updateMessageFlux);
     }
 
     @Override

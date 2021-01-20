@@ -169,8 +169,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
                                                            int updateBufferSize);
 
     /**
-     * Registers an Update Handler for given {@code query} with given {@code
-     * updateBufferSize}.
+     * Registers an Update Handler for given {@code query} with given {@code updateBufferSize}.
      *
      * @param query            the subscription query for which we register an Update Handler
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is

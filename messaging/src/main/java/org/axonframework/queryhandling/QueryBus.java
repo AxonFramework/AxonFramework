@@ -16,8 +16,8 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -100,14 +100,11 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * <p>
      * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
      * interrupted.
-     * </p>
      * <p>
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
      * destination.
-     * </p>
      * <p>
-     * The size of buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
-     * </p>
+     * The buffer size which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
      *
      * @param query the query
      * @param <Q>   the payload type of the query
@@ -116,7 +113,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return query result containing initial result and incremental updates
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query) {
+            SubscriptionQueryMessage<Q, I, U> query
+    ) {
         return subscriptionQuery(query, Queues.SMALL_BUFFER_SIZE);
     }
 
@@ -150,7 +148,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      */
     @Deprecated
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize) {
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize
+    ) {
         return subscriptionQuery(query, backpressure, updateBufferSize);
     }
 
@@ -163,11 +162,9 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * <p>
      * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
      * interrupted.
-     * </p>
      * <p>
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
      * destination.
-     * </p>
      *
      * @param query            the query
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
@@ -178,7 +175,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return query result containing initial result and incremental updates
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize) {
+            SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
+    ) {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
 
             @Override
