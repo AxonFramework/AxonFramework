@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - master
+            - axon-kotlin-*.*.x
     pull_request:
 
 jobs:
@@ -15,64 +16,78 @@ jobs:
         strategy:
             matrix:
                 include:
-                    - java-version: 8
-                      sonar-enabled: false
-                    - java-version: 11
-                      sonar-enabled: true
+                    -   java-version: 8
+                        sonar-enabled: false
+                        deploy: true
+                    -   java-version: 11
+                        sonar-enabled: true
+                        deploy: false
 
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+            -   name: Checkout code
+                uses: actions/checkout@v2
 
-            - name: Set up JDK ${{ matrix.java-version }}
-              uses: actions/setup-java@v1.4.3
-              with:
-                  java-version: ${{ matrix.java-version }}
+            -   name: Set up JDK ${{ matrix.java-version }}
+                uses: actions/setup-java@v1.4.3
+                with:
+                    java-version: ${{ matrix.java-version }}
+                    server-id: sonatype
+                    server-username: MAVEN_USERNAME
+                    server-password: MAVEN_PASSWORD
 
-            - name: Cache .m2
-              uses: actions/cache@v2.1.3
-              with:
-                  path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-                  restore-keys: |
-                      ${{ runner.os }}-maven
+            -   name: Cache .m2
+                uses: actions/cache@v2.1.3
+                with:
+                    path: ~/.m2/repository
+                    key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+                    restore-keys: |
+                        ${{ runner.os }}-maven
 
-            - name: Maven operation with Sonar
-              if: matrix.sonar-enabled
-              run: |
-                  mvn -B -U -Pcoverage \
-                  clean verify \
-                  sonar:sonar \
-                  -Dsonar.projectKey=AxonFramework_extension-reactor \
-                  -Dsonar.organization=axonframework \
-                  -Dsonar.host.url=https://sonarcloud.io \
-                  -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            -   name: Maven operation with Sonar
+                if: matrix.sonar-enabled
+                run: |
+                    mvn -B -U -Pcoverage \
+                    clean verify \
+                    sonar:sonar \
+                    -Dsonar.projectKey=AxonFramework_extension-reactor \
+                    -Dsonar.organization=axonframework \
+                    -Dsonar.host.url=https://sonarcloud.io \
+                    -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Maven operation without Sonar
-              if: matrix.sonar-enabled != true
-              run: |
-                  mvn -B -U clean verify
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            -   name: Maven operation without Sonar
+                if: matrix.sonar-enabled != true
+                run: |
+                    mvn -B -U clean verify
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Notify success to Slack
-              if: success()
-              env:
-                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-              uses: voxmedia/github-action-slack-notify-build@v1.1.2
-              with:
-                  channel_id: CAGSEC92A
-                  status: SUCCESS
-                  color: good
+            -   name: Deploy to Sonatype
+                if: github.github.head_ref == null && success() && matrix.deploy
+                run: |
+                    ./mvnw -B -U deploy -DskipTests=true
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}
+                    MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASS }}
 
-            - name: Notify failure to Slack
-              if: failure()
-              env:
-                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-              uses: voxmedia/github-action-slack-notify-build@v1.1.2
-              with:
-                  channel_id: CAGSEC92A
-                  status: FAILED
-                  color: danger
+            -   name: Notify success to Slack
+                if: success()
+                env:
+                    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+                uses: voxmedia/github-action-slack-notify-build@v1.1.2
+                with:
+                    channel_id: CAGSEC92A
+                    status: SUCCESS
+                    color: good
+
+            -   name: Notify failure to Slack
+                if: failure()
+                env:
+                    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+                uses: voxmedia/github-action-slack-notify-build@v1.1.2
+                with:
+                    channel_id: CAGSEC92A
+                    status: FAILED
+                    color: danger
