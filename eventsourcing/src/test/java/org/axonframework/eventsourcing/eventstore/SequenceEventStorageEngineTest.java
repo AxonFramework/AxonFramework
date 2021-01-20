@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.longThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyList;
@@ -64,8 +65,8 @@ class SequenceEventStorageEngineTest {
 
     @BeforeEach
     void setUp() {
-        activeStorage = mock(EventStorageEngine.class);
-        historicStorage = mock(EventStorageEngine.class);
+        activeStorage = mock(EventStorageEngine.class, "activeStorage");
+        historicStorage = mock(EventStorageEngine.class, "historicStorage");
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 
         when(historicStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
@@ -300,5 +301,95 @@ class SequenceEventStorageEngineTest {
 
         Stream<? extends TrackedEventMessage<?>> stream4 = testSubject.readEvents(secondBatch.get(1).trackingToken(), true);
         assertFalse(stream4.findFirst().isPresent());
+    }
+
+    @Test
+    void testAggregateEventsAreReadFromFirstSequenceNumber() {
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>("type", "aggregate", 2, "test3");
+
+        when(historicStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1));
+        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 0))).thenReturn(DomainEventStream.empty());
+
+        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l < 2))).thenReturn(DomainEventStream.of(snapshotEvent, event3));
+        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+
+        // Emulate readEvents from org.axonframework.eventsourcing.eventstore.AbstractEventStore.readEvents(java.lang.String) after snapshot
+        DomainEventStream actual = testSubject.readEvents("aggregate", 2);
+
+        verify(activeStorage, never()).readEvents(anyString(), anyLong());
+
+        assertTrue(actual.hasNext());
+        assertSame(event3, actual.peek());
+        assertSame(event3, actual.next());
+        assertEquals(2L, (long) actual.getLastSequenceNumber());
+
+        assertFalse(actual.hasNext());
+
+        InOrder inOrder = Mockito.inOrder(historicStorage, activeStorage);
+        inOrder.verify(historicStorage).readEvents("aggregate", 2);
+        inOrder.verify(activeStorage).readEvents("aggregate", 2);
+    }
+
+    @Test
+    void testAggregateEventsAreReadFromFirstSequenceNumberHistoricOnly() {
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
+        DomainEventMessage<String> event3 = new GenericDomainEventMessage<>("type", "aggregate", 2, "test3");
+
+        when(historicStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
+        when(historicStorage.readEvents(eq("aggregate"), eq(1L))).thenReturn(DomainEventStream.of(snapshotEvent, event3));
+        when(historicStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+
+        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+
+        // Emulate readEvents from org.axonframework.eventsourcing.eventstore.AbstractEventStore.readEvents(java.lang.String) after snapshot
+        DomainEventStream actual = testSubject.readEvents("aggregate", 2);
+
+        verify(activeStorage, never()).readEvents(anyString(), anyLong());
+
+        assertTrue(actual.hasNext());
+        assertSame(event3, actual.peek());
+        assertSame(event3, actual.next());
+        assertEquals(2L, (long) actual.getLastSequenceNumber());
+
+        assertFalse(actual.hasNext());
+
+        InOrder inOrder = Mockito.inOrder(historicStorage, activeStorage);
+        inOrder.verify(historicStorage).readEvents("aggregate", 2);
+        inOrder.verify(activeStorage).readEvents("aggregate", 3);
+    }
+
+    @Test
+    void testAggregateEventsAreReadFromFirstSequenceNumberActiveOnly() {
+        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
+        DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>("type", "aggregate", 1, "test3");
+        DomainEventMessage<String> event3  = new GenericDomainEventMessage<>("type", "aggregate", 2, "test4");
+
+        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+
+        when(activeStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
+        when(activeStorage.readEvents(eq("aggregate"), eq(1L))).thenReturn(DomainEventStream.of(snapshotEvent, event3));
+        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+
+        // Emulate readEvents from org.axonframework.eventsourcing.eventstore.AbstractEventStore.readEvents(java.lang.String) after snapshot
+        DomainEventStream actual = testSubject.readEvents("aggregate", 2);
+
+        verify(activeStorage, never()).readEvents(anyString(), anyLong());
+
+        assertTrue(actual.hasNext());
+        assertSame(event3, actual.peek());
+        assertSame(event3, actual.next());
+        assertEquals(2L, (long) actual.getLastSequenceNumber());
+
+        assertFalse(actual.hasNext());
+
+        InOrder inOrder = Mockito.inOrder(historicStorage, activeStorage);
+        inOrder.verify(historicStorage).readEvents("aggregate", 2);
+        inOrder.verify(activeStorage).readEvents("aggregate", 2);
     }
 }

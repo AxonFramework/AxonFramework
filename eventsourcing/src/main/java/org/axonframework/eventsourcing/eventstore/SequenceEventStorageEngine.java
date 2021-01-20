@@ -93,7 +93,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         DomainEventStream historic = historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber);
-        return new ConcatenatingDomainEventStream(historic, aggregateIdentifier,
+        return new ConcatenatingDomainEventStream(historic, aggregateIdentifier, firstSequenceNumber,
                                                   (id, seq) -> activeStorage.readEvents(aggregateIdentifier, seq));
     }
 
@@ -173,14 +173,17 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
         private final DomainEventStream historic;
         private final String aggregateIdentifier;
+        private final long firstSequenceNumber;
         private DomainEventStream actual;
         private final BiFunction<String, Long, DomainEventStream> domainEventStream;
 
         public ConcatenatingDomainEventStream(DomainEventStream historic,
                                               String aggregateIdentifier,
+                                              long firstSequenceNumber,
                                               BiFunction<String, Long, DomainEventStream> domainEventStream) {
             this.historic = historic;
             this.aggregateIdentifier = aggregateIdentifier;
+            this.firstSequenceNumber = firstSequenceNumber;
             this.domainEventStream = domainEventStream;
         }
 
@@ -201,7 +204,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
         private long nextSequenceNumber() {
             Long lastSequenceNumber = historic.getLastSequenceNumber();
-            return lastSequenceNumber == null ? 0 : lastSequenceNumber + 1;
+            return lastSequenceNumber == null ? firstSequenceNumber : lastSequenceNumber + 1;
         }
 
         @Override
