@@ -65,7 +65,7 @@ jobs:
 
       - name: Deploy to Sonatype
         # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
-        if: github.github.head_ref == null && success() && matrix.deploy && ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        if: ${{ github.github.head_ref == null && success() && matrix.deploy && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           ./mvnw -B -U deploy -DskipTests=true
         env:
@@ -75,7 +75,7 @@ jobs:
 
       - name: Notify success to Slack
         # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
-        if: success() && ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        if:  ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v1.1.2
@@ -86,7 +86,7 @@ jobs:
 
       - name: Notify failure to Slack
         # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
-        if: failure() && ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        if: ${{ failure() && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v1.1.2
