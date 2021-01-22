@@ -73,6 +73,7 @@ public interface WrappedToken extends TrackingToken {
         }
     }
 
+    // TODO: 22-01-21 keep/remove?
     static TrackingToken advance(TrackingToken base, TrackingToken target) {
         return base instanceof WrappedToken ? ((WrappedToken) base).advancedTo(target) : target;
     }

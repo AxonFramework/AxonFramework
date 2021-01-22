@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
+// TODO: 22-01-21 add javadoc
 public class Coordinator {
 
     private static final Logger logger = LoggerFactory.getLogger(Coordinator.class);
