@@ -41,6 +41,12 @@ public class TrackingEventProcessorInfoMessage {
     private TrackingEventProcessorInfoMessage() {
     }
 
+    /**
+     * Create an {@link EventProcessorInfo} based on the given {@code eventProcessor}.
+     *
+     * @param eventProcessor the {@link SegmentedEventProcessor} to base an {@link EventProcessorInfo} on
+     * @return a {@link EventProcessorInfo} based on the given {@code eventProcessor}
+     */
     public static EventProcessorInfo describe(SegmentedEventProcessor eventProcessor) {
         List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
                                                         .values()
