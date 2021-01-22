@@ -86,7 +86,7 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
 public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final RecordingCommandBus commandBus;
-    private EventBus eventBus;
+    private final EventBus eventBus;
     private final StubEventScheduler eventScheduler;
     private final StubDeadlineManager deadlineManager;
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
@@ -526,7 +526,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        private final String aggregateIdentifier, type;
+        private final String aggregateIdentifier;
+        private final String type;
         private int sequenceNumber = 0;
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {

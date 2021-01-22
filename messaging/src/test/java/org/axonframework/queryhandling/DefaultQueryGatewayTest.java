@@ -256,7 +256,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void testSubscriptionQuery() {
-        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+        when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
         testSubject.subscriptionQuery("subscription", instanceOf(String.class), instanceOf(String.class));
@@ -265,7 +265,7 @@ class DefaultQueryGatewayTest {
         ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
                 ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
 
-        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
         assertEquals("subscription", result.getPayload());
@@ -282,7 +282,7 @@ class DefaultQueryGatewayTest {
     void testSubscriptionQuerySpecifyingQueryName() {
         String expectedQueryName = "myQueryName";
 
-        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+        when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
         testSubject.subscriptionQuery(expectedQueryName, "subscription", String.class, String.class);
@@ -291,7 +291,7 @@ class DefaultQueryGatewayTest {
         ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
                 ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
 
-        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
         assertEquals("subscription", result.getPayload());
@@ -309,7 +309,7 @@ class DefaultQueryGatewayTest {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
-        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+        when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
 
@@ -321,7 +321,7 @@ class DefaultQueryGatewayTest {
         ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
                 ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
 
-        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), any(), anyInt());
+        verify(mockBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
 
         SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
         assertEquals("subscription", result.getPayload());
@@ -353,7 +353,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
-        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())),
                         Flux.empty(),
@@ -371,7 +371,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
-        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)),
                         Flux.empty(),
@@ -386,7 +386,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void testNullUpdatesOfSubscriptionQuerySkipped() {
-        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+        when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.empty(),
                         Flux.just(new GenericSubscriptionQueryUpdateMessage<>(String.class, null)),

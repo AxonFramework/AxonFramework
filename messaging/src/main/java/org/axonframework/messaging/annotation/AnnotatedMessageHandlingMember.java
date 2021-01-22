@@ -54,6 +54,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
      */
+    @SuppressWarnings("rawtypes")
     public AnnotatedMessageHandlingMember(Executable executable, Class<? extends Message> messageType,
                                           Class<?> explicitPayloadType,
                                           ParameterResolverFactory parameterResolverFactory) {

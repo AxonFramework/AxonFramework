@@ -25,6 +25,7 @@ import java.lang.reflect.Type;
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
  * @author Allard Buijze
+ * @since 3.1
  */
 public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 

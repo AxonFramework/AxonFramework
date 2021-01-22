@@ -55,17 +55,17 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
             Message<R> message = (Message<R>) result;
             return new GenericQueryResponseMessage<>(message.getPayload(), message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage(result);
+            return new GenericQueryResponseMessage<>((R) result);
         }
     }
 
     /**
      * Creates a QueryResponseMessage for the given {@code result} with a {@code declaredType} as the result type.
      * Providing both the result type and the result allows the creation of a nullable response message, as the
-     * implementation does not have to check the type itself, which could result in a
-     * {@link java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned
-     * directly. Otherwise a new QueryResponseMessage is created with the declared type as the result type and the
-     * result as payload.
+     * implementation does not have to check the type itself, which could result in a {@link
+     * java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned directly.
+     * Otherwise a new QueryResponseMessage is created with the declared type as the result type and the result as
+     * payload.
      *
      * @param declaredType The declared type of the Query Response Message to be created.
      * @param result       The result of a Query, to be wrapped in a QueryResponseMessage
@@ -88,7 +88,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
             Message<R> message = (Message<R>) result;
             return new GenericQueryResponseMessage<>(message.getPayload(), message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage(declaredType, result);
+            return new GenericQueryResponseMessage<>(declaredType, (R) result);
         }
     }
 

@@ -323,6 +323,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements Se
                     eventStream = ensureEventStreamOpened(eventStream, segment);
                     processBatch(segment, eventStream);
                     errorWaitTime = 1;
+                    TrackerStatus trackerStatus = activeSegments.get(segment.getSegmentId());
+                    if (trackerStatus.isErrorState()) {
+                        TrackerStatus validStatus =
+                                activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.unmarkError());
+                        trackerStatusChangeListener.onEventTrackerStatusChange(
+                                singletonMap(segment.getSegmentId(), validStatus)
+                        );
+                    }
                 } catch (UnableToClaimTokenException e) {
                     logger.info("Segment is owned by another node. Releasing thread to process another segment...");
                     releaseSegment(segment.getSegmentId());

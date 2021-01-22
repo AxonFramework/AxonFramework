@@ -23,13 +23,14 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
- * Encapsulates the identifying fields of a Query Handler when one is subscribed to the
- * {@link org.axonframework.queryhandling.QueryBus}. As such contains the response type of the query handler and the
- * complete handler itself.
- * The first is typically used by the QueryBus to select the right query handler when a query comes in.
+ * Encapsulates the identifying fields of a Query Handler when one is subscribed to the {@link
+ * org.axonframework.queryhandling.QueryBus}. As such contains the response type of the query handler and the complete
+ * handler itself. The first is typically used by the QueryBus to select the right query handler when a query comes in.
  * The latter is used to perform the actual query.
  *
  * @param <R> the type of response this query subscription contains
+ * @author Steven van Beelen
+ * @since 3.2
  */
 class QuerySubscription<R> {
 
@@ -57,16 +58,14 @@ class QuerySubscription<R> {
     }
 
     /**
-     * Check if this {@link QuerySubscription} can handle the given {@code queryResponseType}, by calling the
-     * {@link ResponseType#matches(Type)} function on it and providing the
-     * set {@code responseType} of this subscription.
+     * Check if this {@link QuerySubscription} can handle the given {@code queryResponseType}, by calling the {@link
+     * ResponseType#matches(Type)} function on it and providing the set {@code responseType} of this subscription.
      *
-     * @param queryResponseType a {@link ResponseType} to match this
-     *                          subscriptions it's {@code responseType} against
-     * @return true of the given {@code queryResponseType} its
-     * {@link ResponseType#matches(Type)} returns true, false if otherwise
+     * @param queryResponseType a {@link ResponseType} to match this subscriptions it's {@code responseType} against
+     * @return true of the given {@code queryResponseType} its {@link ResponseType#matches(Type)} returns true, false if
+     * otherwise
      */
-    public boolean canHandle(ResponseType queryResponseType) {
+    public boolean canHandle(ResponseType<?> queryResponseType) {
         return queryResponseType.matches(responseType);
     }
 
@@ -92,7 +91,7 @@ class QuerySubscription<R> {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final QuerySubscription other = (QuerySubscription) obj;
+        final QuerySubscription<?> other = (QuerySubscription<?>) obj;
         return Objects.equals(this.responseType, other.responseType)
                 && Objects.equals(this.queryHandler, other.queryHandler);
     }

@@ -149,7 +149,10 @@ public class GlobalMetricRegistry {
     public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName) {
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(MessageTimerMonitor.buildMonitor(eventProcessorName, registry));
-        monitors.add(EventProcessorLatencyMonitor.buildMonitor(eventProcessorName, registry));
+        monitors.add(EventProcessorLatencyMonitor.builder()
+                                                 .meterNamePrefix(eventProcessorName)
+                                                 .meterRegistry(registry)
+                                                 .build());
         monitors.add(CapacityMonitor.buildMonitor(eventProcessorName, registry));
         monitors.add(MessageCountingMonitor.buildMonitor(eventProcessorName, registry));
         return new MultiMessageMonitor<>(monitors);
@@ -260,7 +263,11 @@ public class GlobalMetricRegistry {
                                                                           Function<Message<?>, Iterable<Tag>> tagsBuilder) {
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(MessageTimerMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
-        monitors.add(EventProcessorLatencyMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
+        monitors.add(EventProcessorLatencyMonitor.builder()
+                                                 .meterNamePrefix(eventProcessorName)
+                                                 .meterRegistry(registry)
+                                                 .tagsBuilder(tagsBuilder)
+                                                 .build());
         monitors.add(CapacityMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
         monitors.add(MessageCountingMonitor.buildMonitor(eventProcessorName, registry, tagsBuilder));
         return new MultiMessageMonitor<>(monitors);

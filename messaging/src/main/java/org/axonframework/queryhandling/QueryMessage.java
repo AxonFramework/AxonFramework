@@ -47,8 +47,8 @@ public interface QueryMessage<T, R> extends Message<T> {
      * </ul>
      *
      * @param payloadOrMessage the object to base the {@code queryName} on
-     * @return the {@link QueryMessage#getQueryName()}, the name of {@link Message#getPayloadType()} or the result of {@link
-     * Class#getName()}, depending on the type of the {@code payloadOrMessage}
+     * @return the {@link QueryMessage#getQueryName()}, the name of {@link Message#getPayloadType()} or the result of
+     * {@link Class#getName()}, depending on the type of the {@code payloadOrMessage}
      */
     static String queryName(Object payloadOrMessage) {
         if (payloadOrMessage instanceof QueryMessage) {

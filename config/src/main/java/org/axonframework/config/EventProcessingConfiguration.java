@@ -66,8 +66,8 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Returns the {@link EventProcessor} with the given {@code name} if present, matching the given
-     * {@code expectedType}.
+     * Returns the {@link EventProcessor} with the given {@code name} if present, matching the given {@code
+     * expectedType}.
      *
      * @param name         a {@link String} specifying the name of the {@link EventProcessor} to return
      * @param expectedType the type of the {@link EventProcessor} to return
@@ -88,8 +88,8 @@ public interface EventProcessingConfiguration {
     <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup);
 
     /**
-     * Returns an {@link EventProcessor} by the given {@code processingGroup} if present, matching the given
-     * {@code expectedType}.
+     * Returns an {@link EventProcessor} by the given {@code processingGroup} if present, matching the given {@code
+     * expectedType}.
      *
      * @param processingGroup a {@link String} specifying the processing group of an {@link EventProcessor}
      * @param expectedType    the type of the {@link EventProcessor} to return
@@ -143,20 +143,20 @@ public interface EventProcessingConfiguration {
     SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup);
 
     /**
-     * Returns the {@link RollbackConfiguration} tied to the given {@code processingGroup}.
+     * Returns the {@link RollbackConfiguration} tied to the given {@code processorName}.
      *
-     * @param processingGroup a {@link String} specifying a processing group
-     * @return the {@link RollbackConfiguration} belonging to the given {@code processingGroup}
+     * @param processorName a {@link String} specifying a processing group
+     * @return the {@link RollbackConfiguration} belonging to the given {@code processorName}
      */
-    RollbackConfiguration rollbackConfiguration(String processingGroup);
+    RollbackConfiguration rollbackConfiguration(String processorName);
 
     /**
-     * Returns the {@link ErrorHandler} tied to the given {@code processingGroup}.
+     * Returns the {@link ErrorHandler} tied to the given {@code processorName}.
      *
-     * @param processingGroup a {@link String} specifying a processing group
-     * @return the {@link ErrorHandler} belonging to the given {@code processingGroup}
+     * @param processorName a {@link String} specifying a processing group
+     * @return the {@link ErrorHandler} belonging to the given {@code processorName}
      */
-    ErrorHandler errorHandler(String processingGroup);
+    ErrorHandler errorHandler(String processorName);
 
     /**
      * Returns a {@link SagaStore} registered within this configuration.
@@ -173,8 +173,8 @@ public interface EventProcessingConfiguration {
     List<SagaConfiguration<?>> sagaConfigurations();
 
     /**
-     * Returns the {@link SagaConfiguration} for the given {@code sagaType}. If no configuration has been provided for
-     * a Saga of this type, {@code null} is returned.
+     * Returns the {@link SagaConfiguration} for the given {@code sagaType}. If no configuration has been provided for a
+     * Saga of this type, {@code null} is returned.
      *
      * @param sagaType the type of Saga to return the configuration for.
      * @param <T>      the type of Saga
@@ -182,7 +182,9 @@ public interface EventProcessingConfiguration {
      */
     @SuppressWarnings("unchecked")
     default <T> SagaConfiguration<T> sagaConfiguration(Class<T> sagaType) {
-        return (SagaConfiguration<T>) sagaConfigurations().stream().filter(c -> sagaType.equals(c.type())).findFirst().orElse(null);
+        return (SagaConfiguration<T>) sagaConfigurations().stream()
+                                                          .filter(c -> sagaType.equals(c.type())).findFirst()
+                                                          .orElse(null);
     }
 
     /**
@@ -196,18 +198,18 @@ public interface EventProcessingConfiguration {
     MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType, String componentName);
 
     /**
-     * Returns the {@link TokenStore} tied to the given {@code processingGroup}.
+     * Returns the {@link TokenStore} tied to the given {@code processorName}.
      *
      * @param processorName a {@link String} specifying a event processor
-     * @return the {@link TokenStore} belonging to the given {@code processingGroup}
+     * @return the {@link TokenStore} belonging to the given {@code processorName}
      */
     TokenStore tokenStore(String processorName);
 
     /**
-     * Returns the {@link TransactionManager} tied to the given {@code processingGroup}.
+     * Returns the {@link TransactionManager} tied to the given {@code processorName}.
      *
-     * @param processingGroup a {@link String} specifying a processing group
-     * @return the {@link TransactionManager}belonging to the given {@code processingGroup}
+     * @param processorName a {@link String} specifying a processing group
+     * @return the {@link TransactionManager}belonging to the given {@code processorName}
      */
-    TransactionManager transactionManager(String processingGroup);
+    TransactionManager transactionManager(String processorName);
 }

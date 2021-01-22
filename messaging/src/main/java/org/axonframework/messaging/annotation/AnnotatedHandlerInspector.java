@@ -318,9 +318,9 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Returns a {@link Set} of all types which have been expected for handlers.
+     * Returns a {@link Set} of all types which have been inspected for handlers.
      *
-     * @return a {@link Set} of all types which have been expected for handlers
+     * @return a {@link Set} of all types which have been inspected for handlers
      */
     public Set<Class<?>> getAllInspectedTypes() {
         Set<Class<?>> inspectedTypes = new HashSet<>();

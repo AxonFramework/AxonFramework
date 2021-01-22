@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - axon-*.*.x
   pull_request:
 
 jobs:
@@ -17,8 +18,10 @@ jobs:
         include:
           - java-version: 8
             sonar-enabled: false
+            deploy: true
           - java-version: 11
             sonar-enabled: true
+            deploy: false
 
     steps:
       - name: Checkout code
@@ -28,6 +31,9 @@ jobs:
         uses: actions/setup-java@v1.4.3
         with:
           java-version: ${{ matrix.java-version }}
+          server-id: sonatype
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
 
       - name: Cache .m2
         uses: actions/cache@v2.1.3
@@ -57,8 +63,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Deploy to Sonatype
+        # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
+        if: ${{ github.github.head_ref == null && success() && matrix.deploy && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          ./mvnw -B -U deploy -DskipTests=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}
+          MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASS }}
+
       - name: Notify success to Slack
-        if: success()
+        # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
+        if:  ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v1.1.2
@@ -68,7 +85,8 @@ jobs:
           color: good
 
       - name: Notify failure to Slack
-        if: failure()
+        # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
+        if: ${{ failure() && github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v1.1.2

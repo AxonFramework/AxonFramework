@@ -19,13 +19,19 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
+import org.axonframework.eventhandling.DomainEventData;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
+import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -34,8 +40,10 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.serialization.Revision;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.config.utils.TestSerializer.secureXStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -159,9 +167,38 @@ public class AggregateConfigurerTest {
         assertEquals(testFilter, testSubject.snapshotFilter());
     }
 
+    @Test
+    void testSnapshotFilterDefaultsToAllowAll() {
+        assertEquals(SnapshotFilter.allowAll(), testSubject.snapshotFilter());
+    }
+
+    @Test
+    void testAggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
+        DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
+                TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
+        );
+        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, secureXStreamSerializer());
+
+        AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
+                new AggregateConfigurer<>(TestAggregateWithRevision.class);
+
+        SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
+
+        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertTrue(result.allow(testDomainEventData));
+    }
+
     private static class TestAggregate {
 
         TestAggregate() {
+            // No-op constructor
+        }
+    }
+
+    @Revision("some-revision")
+    private static class TestAggregateWithRevision {
+
+        TestAggregateWithRevision() {
             // No-op constructor
         }
     }

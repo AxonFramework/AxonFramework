@@ -22,15 +22,12 @@ import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,23 +35,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+/**
+ * Test class validating the {@link AnnotationQueryHandlerAdapter}.
+ *
+ * @author Marc Gathier
+ */
 class AnnotationQueryHandlerAdapterTest {
 
     private AnnotationQueryHandlerAdapter<?> testSubject;
 
-    @Mock
-    private QueryBus queryBus;
+    private final QueryBus queryBus = mock(QueryBus.class);
 
     @BeforeEach
     void setUp() {
@@ -62,7 +55,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void subscribe() {
+    void testSubscribe() {
         when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
         Registration registration = testSubject.subscribe(queryBus);
 
@@ -73,19 +66,23 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void subscribeFailsForHandlerWithInvalidParameters() {
-        assertThrows(UnsupportedHandlerException.class,
-                () -> new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler()));
+    void testSubscribeFailsForHandlerWithInvalidParameters() {
+        assertThrows(
+                UnsupportedHandlerException.class,
+                () -> new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler())
+        );
     }
 
     @Test
-    void subscribeFailsForHandlerWithVoidReturnType() {
-        assertThrows(UnsupportedHandlerException.class,
-                () -> new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler()));
+    void testSubscribeFailsForHandlerWithVoidReturnType() {
+        assertThrows(
+                UnsupportedHandlerException.class,
+                () -> new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler())
+        );
     }
 
     @Test
-    void testRunQuery() throws Exception {
+    void testHandleQuery() throws Exception {
         String testResponse = "hello";
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
@@ -95,40 +92,56 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testRunQueryWithException() throws Exception {
-        GenericQueryMessage<String, Integer> message = new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
-        assertThrows(MockException.class, () -> testSubject.handle(message));
+    void testHandleQueryWithException() {
+        QueryMessage<String, Integer> testQuery =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
+
+        assertThrows(MockException.class, () -> testSubject.handle(testQuery));
     }
 
     @Test
-    void testRunQueryWithEmptyOptional() throws Exception {
-        Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class)));
-        assertNull(actual);
+    void testHandleQueryWithEmptyOptional() throws Exception {
+        QueryMessage<String, String> testQuery =
+                new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class));
+
+        assertNull(testSubject.handle(testQuery));
     }
 
     @Test
-    void testRunQueryWithProvidedOptional() throws Exception {
-        Object actual = testSubject.handle(new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class)));
-        assertEquals("hello", actual);
+    void testHandleQueryWithProvidedOptional() throws Exception {
+        QueryMessage<String, String> testQuery =
+                new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class));
+
+        assertEquals("hello", testSubject.handle(testQuery));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    void testRunQueryForCollection() throws Exception {
+    void testHandleQueryForCollection() throws Exception {
         int testResponse = 5;
         QueryMessage<Integer, List<String>> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));
 
+        //noinspection unchecked
         Collection<String> result = (Collection<String>) testSubject.handle(testQueryMessage);
 
         assertEquals(testResponse, result.size());
     }
 
     @Test
+    void testHandleQueryThrowsNoHandlerForQueryException() {
+        QueryMessage<Long, List<String>> testQueryMessage =
+                new GenericQueryMessage<>(42L, ResponseTypes.multipleInstancesOf(String.class));
+
+        assertThrows(NoHandlerForQueryException.class, () -> testSubject.handle(testQueryMessage));
+    }
+
+    @Test
     void testInterceptMessages() throws Exception {
         List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();
         List<QueryMessage<?, ?>> withoutInterceptor = new ArrayList<>();
-        testSubject = new AnnotationQueryHandlerAdapter<>(new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor));
+        testSubject = new AnnotationQueryHandlerAdapter<>(
+                new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor)
+        );
 
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>("Hi", "Hello", ResponseTypes.instanceOf(String.class));
@@ -140,8 +153,19 @@ class AnnotationQueryHandlerAdapterTest {
         assertEquals(Collections.singletonList(testQueryMessage), withoutInterceptor);
     }
 
+    @Test
+    void testCanHandleMessage() {
+        QueryMessage<String, Integer> testIntegerQuery =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
+        QueryMessage<String, Long> testLongQuery =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Long.class));
+
+        assertTrue(testSubject.canHandle(testIntegerQuery));
+        assertFalse(testSubject.canHandle(testLongQuery));
+    }
+
     @SuppressWarnings("unused")
-    private class MyQueryHandler {
+    private static class MyQueryHandler {
 
         @QueryHandler
         public String echo(String echo) {
@@ -174,7 +198,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @SuppressWarnings("unused")
-    private class MySecondQueryHandler {
+    private static class MySecondQueryHandler {
 
         @QueryHandler
         public String echo(MetaData metaData, String echo) {
@@ -183,14 +207,15 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @SuppressWarnings("unused")
-    private class MyThirdQueryHandler {
+    private static class MyThirdQueryHandler {
 
         @QueryHandler
         public void echo(String echo) {
         }
     }
 
-    private class MyInterceptingQueryHandler extends MyQueryHandler {
+    @SuppressWarnings("unused")
+    private static class MyInterceptingQueryHandler extends MyQueryHandler {
 
         private final List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain;
         private final List<QueryMessage<?, ?>> interceptedWithInterceptorChain;
@@ -211,6 +236,5 @@ class AnnotationQueryHandlerAdapterTest {
             interceptedWithInterceptorChain.add(query);
             return chain.proceed();
         }
-
     }
 }

@@ -22,8 +22,6 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 
-import java.util.UUID;
-
 /**
  * @author Allard Buijze
  */
@@ -33,7 +31,10 @@ public class StubAggregate {
     private String identifier;
 
     public StubAggregate() {
-        identifier = UUID.randomUUID().toString();
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public StubAggregate(Object identifier) {

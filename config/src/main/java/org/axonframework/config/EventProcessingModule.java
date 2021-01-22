@@ -350,18 +350,18 @@ public class EventProcessingModule
     }
 
     @Override
-    public RollbackConfiguration rollbackConfiguration(String componentName) {
+    public RollbackConfiguration rollbackConfiguration(String processorName) {
         ensureInitialized();
-        return rollbackConfigurations.containsKey(componentName)
-                ? rollbackConfigurations.get(componentName).get()
+        return rollbackConfigurations.containsKey(processorName)
+                ? rollbackConfigurations.get(processorName).get()
                 : defaultRollbackConfiguration.get();
     }
 
     @Override
-    public ErrorHandler errorHandler(String componentName) {
+    public ErrorHandler errorHandler(String processorName) {
         ensureInitialized();
-        return errorHandlers.containsKey(componentName)
-                ? errorHandlers.get(componentName).get()
+        return errorHandlers.containsKey(processorName)
+                ? errorHandlers.get(processorName).get()
                 : defaultErrorHandler.get();
     }
 
@@ -406,10 +406,10 @@ public class EventProcessingModule
     }
 
     @Override
-    public TransactionManager transactionManager(String processingGroup) {
+    public TransactionManager transactionManager(String processorName) {
         ensureInitialized();
-        return transactionManagers.containsKey(processingGroup)
-                ? transactionManagers.get(processingGroup).get()
+        return transactionManagers.containsKey(processorName)
+                ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
     }
 

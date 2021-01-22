@@ -28,6 +28,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Stub platform service to tap into the {@link PlatformInboundInstruction} being sent.
@@ -41,6 +42,7 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
 
     private final List<ClientIdentification> clientIdentificationRequests = new CopyOnWriteArrayList<>();
     private final List<Heartbeat> heartbeatMessages = new CopyOnWriteArrayList<>();
+    private final AtomicInteger completedCounter = new AtomicInteger(0);
 
     public PlatformService(int port) {
         this.port = port;
@@ -68,14 +70,22 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
         return Collections.unmodifiableList(heartbeatMessages);
     }
 
+    public int getNumberOfCompletedStreams() {
+        return completedCounter.get();
+    }
+
     @Override
     public StreamObserver<PlatformInboundInstruction> openStream(
-            StreamObserver<PlatformOutboundInstruction> responseObserver) {
+            StreamObserver<PlatformOutboundInstruction> responseObserver
+    ) {
         return new StreamObserver<PlatformInboundInstruction>() {
             @Override
             public void onNext(PlatformInboundInstruction platformInboundInstruction) {
+
                 if (platformInboundInstruction.hasRegister()) {
-                    clientIdentificationRequests.add(platformInboundInstruction.getRegister());
+                    ClientIdentification register = platformInboundInstruction.getRegister();
+                    System.out.println(register);
+                    clientIdentificationRequests.add(register);
                 } else if (platformInboundInstruction.hasHeartbeat()) {
                     heartbeatMessages.add(platformInboundInstruction.getHeartbeat());
                 }
@@ -88,7 +98,7 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
 
             @Override
             public void onCompleted() {
-
+                completedCounter.incrementAndGet();
             }
         };
     }

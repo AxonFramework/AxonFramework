@@ -693,7 +693,7 @@ public class DefaultConfigurer implements Configurer {
                                     "One of the start handlers in phase [%d] failed with the following exception:",
                                     currentLifecyclePhase
                             ),
-                            e.getCause()
+                            e
                     );
                 }
         );
@@ -712,8 +712,8 @@ public class DefaultConfigurer implements Configurer {
         invokeLifecycleHandlers(
                 shutdownHandlers,
                 e -> logger.warn(
-                        "One of the shutdown handlers in phase [{}] failed with the following exception: {}",
-                        currentLifecyclePhase, e.getCause()
+                        "One of the shutdown handlers in phase [{}] failed with the following exception: ",
+                        currentLifecyclePhase, e
                 )
         );
 

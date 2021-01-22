@@ -121,8 +121,8 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends GenericResultMessa
     }
 
     /**
-     * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
-     * the message's payload, metadata and identifier.
+     * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for the
+     * message's payload, metadata and identifier.
      *
      * @param delegate the message delegate
      */
