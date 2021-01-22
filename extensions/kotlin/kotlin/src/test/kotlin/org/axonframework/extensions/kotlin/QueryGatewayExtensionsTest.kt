@@ -24,16 +24,15 @@ import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.queryhandling.QueryGateway
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import java.util.concurrent.TimeUnit
+import java.util.stream.Stream
+import kotlin.test.*
 
 /**
  * Tests Query Gateway extensions.
  *
  * @author Stefan Andjelkovic
+ * @author Henrique Sena
  */
 internal class QueryGatewayExtensionsTest {
 
@@ -43,6 +42,11 @@ internal class QueryGatewayExtensionsTest {
     private val optionalReturnValue: CompletableFuture<Optional<String>> = CompletableFuture.completedFuture(Optional.of("Value"))
     private val listReturnValue: CompletableFuture<List<String>> = CompletableFuture.completedFuture(listOf("Value", "Second value"))
     private val subjectGateway = mockk<QueryGateway>()
+    private val timeout: Long = 1000
+    private val timeUnit = TimeUnit.SECONDS
+    private val streamInstanceReturnValue = Stream.of("Value")
+    private val streamMultipleReturnValue = Stream.of(listOf("Value", "Second Value"))
+    private val streamOptionalReturnValue = Stream.of(Optional.of("Value"))
 
     @BeforeTest
     fun before() {
@@ -52,6 +56,12 @@ internal class QueryGatewayExtensionsTest {
         every { subjectGateway.query(queryName, exampleQuery, matchInstanceResponseType<String>()) } returns instanceReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchOptionalResponseType<String>()) } returns optionalReturnValue
         every { subjectGateway.query(queryName, exampleQuery, matchMultipleInstancesResponseType<String>()) } returns listReturnValue
+        every { subjectGateway.scatterGather(exampleQuery, matchInstanceResponseType<String>(), timeout, timeUnit) } returns streamInstanceReturnValue
+        every { subjectGateway.scatterGather(exampleQuery, matchMultipleInstancesResponseType<String>(), timeout, timeUnit) } returns streamMultipleReturnValue
+        every { subjectGateway.scatterGather(exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) } returns streamOptionalReturnValue
+        every { subjectGateway.scatterGather(queryName, exampleQuery, matchInstanceResponseType<String>(), timeout, timeUnit) } returns streamInstanceReturnValue
+        every { subjectGateway.scatterGather(queryName, exampleQuery, matchMultipleInstancesResponseType<String>(), timeout, timeUnit) } returns streamMultipleReturnValue
+        every { subjectGateway.scatterGather(queryName, exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) } returns streamOptionalReturnValue
     }
 
     @AfterTest
@@ -117,9 +127,9 @@ internal class QueryGatewayExtensionsTest {
         }
 
         val queryResult = nullableQueryGateway.query<String?, ExampleQuery>(query = exampleQuery)
-
+      
         assertSame(queryResult, nullInstanceReturnValue)
-        assertTrue(nullInstanceReturnValue.get() == null)
+        assertEquals(nullInstanceReturnValue.get(), null)
         verify(exactly = 1) { nullableQueryGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
 
@@ -181,8 +191,83 @@ internal class QueryGatewayExtensionsTest {
         val queryResult = nullableQueryGateway.query<String?, ExampleQuery>(queryName = queryName, query = exampleQuery)
 
         assertSame(queryResult, nullInstanceReturnValue)
-        assertTrue(nullInstanceReturnValue.get() == null)
+        assertEquals(nullInstanceReturnValue.get(), null)
         verify(exactly = 1) { nullableQueryGateway.query(queryName, exampleQuery, matchExpectedResponseType(String::class.java)) }
+    }
+
+        @Test
+        fun `ScatterGather for Single should invoke scatterGather method with correct generic parameters`() {
+            val result = subjectGateway.scatterGather<String, ExampleQuery>(
+                    query = exampleQuery,
+                    timeout = timeout,
+                    timeUnit = timeUnit
+            )
+
+            assertSame(result, streamInstanceReturnValue)
+            verify(exactly = 1) { subjectGateway.scatterGather(exampleQuery, matchExpectedResponseType(String::class.java), timeout, timeUnit) }
+        }
+
+        @Test
+        fun `ScatterGather for Multiple should invoke scatterGather method with correct generic parameters`() {
+            val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
+                    query = exampleQuery,
+                    timeout = timeout,
+                    timeUnit = timeUnit
+            )
+
+            assertSame(result, streamMultipleReturnValue)
+            verify(exactly = 1) { subjectGateway.scatterGather(exampleQuery, matchMultipleInstancesResponseType<String>(), timeout, timeUnit) }
+        }
+
+    @Test
+    fun `ScatterGather for Optional should invoke scatterGather method with correct generic parameters`() {
+        val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
+        )
+
+        assertSame(result, streamOptionalReturnValue)
+        verify(exactly = 1) { subjectGateway.scatterGather(exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) }
+    }
+
+    @Test
+    fun `ScatterGather for Single should invoke scatterGather method with explicit query name`() {
+        val result = subjectGateway.scatterGather<String, ExampleQuery>(
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
+        )
+
+        assertSame(result, streamInstanceReturnValue)
+        verify(exactly = 1) { subjectGateway.scatterGather(queryName, exampleQuery, matchExpectedResponseType(String::class.java), timeout, timeUnit) }
+    }
+
+    @Test
+    fun `ScatterGather for Multiple should invoke scatterGather method with explicit query name`() {
+        val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
+        )
+
+        assertSame(result, streamMultipleReturnValue)
+        verify(exactly = 1) { subjectGateway.scatterGather(queryName, exampleQuery, matchMultipleInstancesResponseType<String>(), timeout, timeUnit) }
+    }
+
+    @Test
+    fun `ScatterGather for Optional should invoke scatterGather method with explicit query name`() {
+        val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
+        )
+
+        assertSame(result, streamOptionalReturnValue)
+        verify(exactly = 1) { subjectGateway.scatterGather(queryName, exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) }
     }
 
 }

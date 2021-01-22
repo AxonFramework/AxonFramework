@@ -20,6 +20,14 @@ import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.stream.Stream
+
+/**
+ * Query Gateway extensions.
+ *
+ * @author Henrique Sena
+ */
 
 /**
  * Reified version of [QueryGateway.query]
@@ -112,4 +120,115 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(query: Q): Completa
  */
 inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, query: Q): CompletableFuture<Optional<R>> {
     return this.query(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java))
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather]
+ * which expects an Stream object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param query Query to send
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: Long,
+                                                                      timeUnit: TimeUnit): Stream<R> {
+    return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather] with explicit query name
+ * which expects an Stream object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param query Query to send
+ * @param queryName Name of the query
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
+                                                                      timeUnit: TimeUnit): Stream<R> {
+    return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather]
+ * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
+ * @param query Query to send
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
+                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+    return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather] with explicit query name
+ * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
+ * @param query Query to send
+ * @param queryName Name of the query
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
+                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+    return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather]
+ * which expects a collection as a response using [org.axonframework.messaging.responsetypes.OptionalResponseType]
+ * @param query Query to send
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
+                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+    return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
+}
+
+/**
+ * Reified version of [QueryGateway.scatterGather] with explicit query name
+ * which expects a collection as a response using [org.axonframework.messaging.responsetypes.OptionalResponseType]
+ * @param query Query to send
+ * @param queryName Name of the query
+ * @param timeout a timeout for the query
+ * @param timeUnit the selected TimeUnit for the given timeout
+ * @param [Q] the type of payload of the query
+ * @param [R] the response class contained in the given responseType
+ * @return [Stream] a stream of results
+ * @see QueryGateway.scatterGather
+ * @see ResponseTypes
+ * @since 0.2.0
+ */
+inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
+                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+    return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
