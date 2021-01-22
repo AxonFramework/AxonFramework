@@ -3,6 +3,13 @@ package org.axonframework.eventhandling;
 import java.util.Objects;
 import java.util.OptionalLong;
 
+/**
+ * Implementation of the {@link EventTrackerStatus}, providing simply modification methods to switch from one {@code
+ * EventTrackerStatus} value object to another.
+ *
+ * @author Allard Buijze
+ * @since 3.0
+ */
 public final class TrackerStatus implements EventTrackerStatus {
 
     private final Segment segment;
@@ -10,10 +17,30 @@ public final class TrackerStatus implements EventTrackerStatus {
     private final TrackingToken trackingToken;
     private final Throwable errorState;
 
+    /**
+     * Construct a {@link EventTrackerStatus} to portray the status of the given {@code segment} and {@code
+     * trackingToken}.
+     *
+     * @param segment       the {@link Segment} this {@link EventTrackerStatus} shares the status of
+     * @param trackingToken the {@link TrackingToken} this {@link EventTrackerStatus} shares the status of
+     */
     public TrackerStatus(Segment segment, TrackingToken trackingToken) {
         this(segment, false, trackingToken, null);
     }
 
+    /**
+     * Construct a {@link EventTrackerStatus} to portray the status of the given {@code segment} and {@code
+     * trackingToken}. The {@code caughtUp boolean} specifies whether the {@code trackingToken} reached the head of the
+     * stream at least once. A {@link Throwable} can be provided to signal this {@code EventTrackerStatus} is in an
+     * error state
+     *
+     * @param segment       the {@link Segment} this {@link EventTrackerStatus} shares the status of
+     * @param caughtUp      a {@code boolean} specifying whether this {@link EventTrackerStatus} reached the head of the
+     *                      stream at least once.
+     * @param trackingToken the {@link TrackingToken} this {@link EventTrackerStatus} shares the status of
+     * @param errorState    a {@link Throwable} defining the error status of this {@link EventTrackerStatus}. If {@code
+     *                      null}, the status is not in an error state
+     */
     public TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken, Throwable errorState) {
         this.segment = segment;
         this.caughtUp = caughtUp;
@@ -21,22 +48,93 @@ public final class TrackerStatus implements EventTrackerStatus {
         this.errorState = errorState;
     }
 
+    /**
+     * Returns this {@link TrackerStatus} if it is caught up, otherwise return a new instance with the caught up flag
+     * set to true.
+     *
+     * @return this {@link TrackerStatus} if it is caught up, otherwise return a new instance with the caught up flag
+     * set to true
+     */
     public TrackerStatus caughtUp() {
-        if (caughtUp) {
-            return this;
-        }
-        return new TrackerStatus(segment, true, trackingToken, null);
+        return caughtUp ? this : new TrackerStatus(segment, true, trackingToken, null);
     }
 
+    /**
+     * Advance this {@link TrackerStatus}' {@link TrackingToken} towards the given {@code trackingToken}. If this
+     * status' token is identical to the given token, return {@code this}. Otherwise create a new {@code TrackerStatus}
+     * instance using the given {@code trackingToken}.
+     *
+     * @param trackingToken the {@link TrackingToken} to advance this {@link TrackerStatus}' token towards, if they are
+     *                      not the same
+     * @return this {@link TrackerStatus} if the given {@code trackingToken} is identical to the current one, otherwise
+     * a new {@code TrackerStatus} instance with the given {@code trackingToken}
+     */
     public TrackerStatus advancedTo(TrackingToken trackingToken) {
-        if (Objects.equals(this.trackingToken, trackingToken)) {
-            return this;
-        }
+        return Objects.equals(this.trackingToken, trackingToken)
+                ? this : new TrackerStatus(segment, caughtUp, trackingToken, null);
+    }
+
+    /**
+     * Return a new {@link TrackerStatus} based on this status, setting the given {@code error} as the {@code
+     * errorState}.
+     *
+     * @param error the {@link Throwable} used to define the {@code errorState}
+     * @return a new {@link TrackerStatus} based on this status, setting the given {@code error} as the {@code
+     * errorState}
+     */
+    public TrackerStatus markError(Throwable error) {
+        return new TrackerStatus(segment, caughtUp, trackingToken, error);
+    }
+
+    /**
+     * Return a new {@link TrackerStatus} based on this status, removing the {@code errorState}.
+     *
+     * @return a new {@link TrackerStatus} based on this status, removing the {@code errorState}
+     */
+    public TrackerStatus unmarkError() {
         return new TrackerStatus(segment, caughtUp, trackingToken, null);
     }
 
-    public TrackerStatus markError(Throwable error) {
-        return new TrackerStatus(segment, caughtUp, trackingToken, error);
+    /**
+     * Return the {@link TrackingToken} this {@link EventTrackerStatus} portrays the status of.
+     *
+     * @return the {@link TrackingToken} this {@link EventTrackerStatus} portrays the status of
+     */
+    public TrackingToken getInternalTrackingToken() {
+        return trackingToken;
+    }
+
+    /**
+     * Splits the current status object to reflect the status of their underlying segments being split.
+     *
+     * @return an array with two status object, representing the status of the split segments.
+     */
+    public TrackerStatus[] split() {
+        Segment[] newSegments = segment.split();
+        TrackingToken tokenAtReset = null;
+        TrackingToken workingToken = trackingToken;
+        TrackingToken[] splitTokens = new TrackingToken[2];
+        if (workingToken instanceof ReplayToken) {
+            tokenAtReset = ((ReplayToken) workingToken).getTokenAtReset();
+            workingToken = ((ReplayToken) workingToken).lowerBound();
+        }
+        if (workingToken instanceof MergedTrackingToken) {
+            splitTokens[0] = ((MergedTrackingToken) workingToken).lowerSegmentToken();
+            splitTokens[1] = ((MergedTrackingToken) workingToken).upperSegmentToken();
+        } else {
+            splitTokens[0] = workingToken;
+            splitTokens[1] = workingToken;
+        }
+
+        if (tokenAtReset != null) {
+            // we were in a replay. Need to re-initialize the replay wrapper
+            splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
+            splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);
+        }
+        TrackerStatus[] newStatus = new TrackerStatus[2];
+        newStatus[0] = new TrackerStatus(newSegments[0], splitTokens[0]);
+        newStatus[1] = new TrackerStatus(newSegments[1], splitTokens[1]);
+        return newStatus;
     }
 
     @Override
@@ -79,9 +177,6 @@ public final class TrackerStatus implements EventTrackerStatus {
         return errorState;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public OptionalLong getCurrentPosition() {
         if (isReplaying()) {
@@ -102,43 +197,6 @@ public final class TrackerStatus implements EventTrackerStatus {
     @Override
     public OptionalLong getResetPosition() {
         return ReplayToken.getTokenAtReset(trackingToken);
-    }
-
-    public TrackingToken getInternalTrackingToken() {
-        return trackingToken;
-    }
-
-    /**
-     * Splits the current status object to reflect the status of their underlying segments being split.
-     *
-     * @return an array with two status object, representing the status of the split segments.
-     */
-    public TrackerStatus[] split() {
-        Segment[] newSegments = segment.split();
-        TrackingToken tokenAtReset = null;
-        TrackingToken workingToken = trackingToken;
-        TrackingToken[] splitTokens = new TrackingToken[2];
-        if (workingToken instanceof ReplayToken) {
-            tokenAtReset = ((ReplayToken) workingToken).getTokenAtReset();
-            workingToken = ((ReplayToken) workingToken).lowerBound();
-        }
-        if (workingToken instanceof MergedTrackingToken) {
-            splitTokens[0] = ((MergedTrackingToken) workingToken).lowerSegmentToken();
-            splitTokens[1] = ((MergedTrackingToken) workingToken).upperSegmentToken();
-        } else {
-            splitTokens[0] = workingToken;
-            splitTokens[1] = workingToken;
-        }
-
-        if (tokenAtReset != null) {
-            // we were in a replay. Need to re-initialize the replay wrapper
-            splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
-            splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);
-        }
-        TrackerStatus[] newStatus = new TrackerStatus[2];
-        newStatus[0] = new TrackerStatus(newSegments[0], splitTokens[0]);
-        newStatus[1] = new TrackerStatus(newSegments[1], splitTokens[1]);
-        return newStatus;
     }
 
     @Override
