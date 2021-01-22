@@ -583,6 +583,16 @@ class EventProcessingModuleTest {
         public void shutDown() {
             // noop
         }
+
+        @Override
+        public boolean isRunning() {
+            return true;
+        }
+
+        @Override
+        public boolean isError() {
+            return false;
+        }
     }
 
     @SuppressWarnings("WeakerAccess")

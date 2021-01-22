@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.SegmentedEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
 
@@ -37,7 +38,10 @@ public class TrackingEventProcessorInfoMessage {
 
     private static final String EVENT_PROCESSOR_MODE = "Tracking";
 
-    public static EventProcessorInfo describe(TrackingEventProcessor eventProcessor) {
+    private TrackingEventProcessorInfoMessage() {
+    }
+
+    public static EventProcessorInfo describe(SegmentedEventProcessor eventProcessor) {
         List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
                                                         .values()
                                                         .stream()
@@ -48,8 +52,8 @@ public class TrackingEventProcessorInfoMessage {
                                  .setProcessorName(eventProcessor.getName())
                                  .setTokenStoreIdentifier(eventProcessor.getTokenStoreIdentifier())
                                  .setMode(EVENT_PROCESSOR_MODE)
-                                 .setActiveThreads(eventProcessor.activeProcessorThreads())
-                                 .setAvailableThreads(eventProcessor.availableProcessorThreads())
+                                 .setActiveThreads(eventProcessor.processingStatus().size())
+                                 .setAvailableThreads(eventProcessor.maxCapacity())
                                  .setRunning(eventProcessor.isRunning())
                                  .setError(eventProcessor.isError())
                                  .addAllSegmentStatus(trackerInfo)

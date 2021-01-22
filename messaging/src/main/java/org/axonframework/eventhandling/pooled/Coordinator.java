@@ -5,6 +5,7 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -12,16 +13,18 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
+import java.util.function.UnaryOperator;
 
 public class Coordinator {
 
@@ -33,23 +36,27 @@ public class Coordinator {
     private final TransactionManager transactionManager;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final ScheduledExecutorService executorService;
+    private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private int errorWaitBackOff = 500;
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
 
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
+    private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
 
     public Coordinator(String name,
                        StreamableMessageSource<TrackedEventMessage<?>> messageSource,
                        TokenStore tokenStore,
                        TransactionManager transactionManager,
                        BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
-                       ScheduledExecutorService executorService) {
+                       ScheduledExecutorService executorService,
+                       BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
         this.name = name;
         this.messageSource = messageSource;
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
         this.workPackageFactory = workPackageFactory;
         this.executorService = executorService;
+        this.processingStatusUpdater = processingStatusUpdater;
     }
 
     public void start() {
@@ -61,6 +68,7 @@ public class Coordinator {
                 executorService.submit(new CoordinatorTask());
             } catch (Exception e) {
                 // a failure starting the processor. We need to stop immediately.
+                logger.warn("An error occurred while trying to attempt to start the Processor", e);
                 runState.updateAndGet(RunState::attemptStop).shutdownHandle.complete(null);
                 throw e;
             }
@@ -70,11 +78,24 @@ public class Coordinator {
     }
 
     public CompletableFuture<Void> stop() {
+        logger.info("Stopping processor");
         return runState.updateAndGet(RunState::attemptStop).shutdownHandle();
     }
 
-    public Set<Segment> activeSegments() {
-        return workPackages.values().stream().map(WorkPackage::getSegment).collect(Collectors.toSet());
+    public boolean isRunning() {
+        return runState.get().isRunning();
+    }
+
+    public boolean isError() {
+        return errorWaitBackOff > 500;
+    }
+
+    public void releaseUntil(int segmentId, Instant releaseDeadline) {
+        releasesDeadlines.put(segmentId, releaseDeadline);
+        WorkPackage workPackage = workPackages.get(segmentId);
+        if (workPackage != null) {
+            workPackage.abort(null);
+        }
     }
 
     private static class RunState {
@@ -189,6 +210,9 @@ public class Coordinator {
                 if (isSpaceAvailable() && stream.hasNextAvailable()) {
                     scheduleCoordinationTask(0, TimeUnit.MILLISECONDS);
                 } else if (isSpaceAvailable()) {
+                    // there is space, but no events to process. We caught up
+                    workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
+
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500, TimeUnit.MILLISECONDS);
                     } else {
@@ -207,15 +231,18 @@ public class Coordinator {
             TrackingToken baseToken = transactionManager.fetchInTransaction(() -> {
                 int[] segments = tokenStore.fetchSegments(name);
                 TrackingToken lowerBound = NoToken.INSTANCE;
-                for (int segment : segments) {
-                    try {
-                        TrackingToken token = tokenStore.fetchToken(name, segment);
-                        // TODO - Log a different message for the segments for which we already have a work package
-                        logger.info("Token for {} segment {} claimed: [{}]. Preparing work package", name, segment, token);
-                        WorkPackage workPackage = workPackages.computeIfAbsent(segment, k -> workPackageFactory.apply(Segment.computeSegment(segment, segments), token));
-                        lowerBound = lowerBound == null ? null : lowerBound.lowerBound(workPackage.lastDeliveredToken());
-                    } catch (UnableToClaimTokenException e) {
-                        // too bad. next
+                for (int segmentId : segments) {
+                    if (!workPackages.containsKey(segmentId)) {
+                        try {
+                            TrackingToken token = tokenStore.fetchToken(name, segmentId);
+                            // TODO - Log a different message for the segments for which we already have a work package
+                            logger.info("Token for {} segment {} claimed: [{}]. Preparing work package", name, segmentId, token);
+                            Segment segment = Segment.computeSegment(segmentId, segments);
+                            WorkPackage workPackage = workPackages.computeIfAbsent(segmentId, k -> workPackageFactory.apply(segment, token));
+                            lowerBound = lowerBound == null ? null : lowerBound.lowerBound(workPackage.lastDeliveredToken());
+                        } catch (UnableToClaimTokenException e) {
+                            // too bad. next
+                        }
                     }
                 }
                 return lowerBound;

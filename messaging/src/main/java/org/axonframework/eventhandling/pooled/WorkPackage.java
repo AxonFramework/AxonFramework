@@ -2,11 +2,10 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.ErrorContext;
-import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
@@ -24,10 +23,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
-class WorkPackage implements Runnable {
+class WorkPackage {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkPackage.class);
+    private static final int BATCH_SIZE = 100;
 
     private final String name;
     private final Segment segment;
@@ -36,7 +38,6 @@ class WorkPackage implements Runnable {
     private final ExecutorService executor;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
-    private final ErrorHandler errorHandler;
     private long lastClaimExtension;
     private final long claimExtensionThreshold;
 
@@ -47,6 +48,7 @@ class WorkPackage implements Runnable {
     private TrackingToken lastConsumedToken;
     private TrackingToken lastStoredToken;
     private final AtomicReference<CompletableFuture<Exception>> abortFlag = new AtomicReference<>();
+    private final Consumer<UnaryOperator<TrackerStatus>> status;
 
     public WorkPackage(String name,
                        Segment segment,
@@ -56,7 +58,7 @@ class WorkPackage implements Runnable {
                        ExecutorService executor,
                        TokenStore tokenStore,
                        TransactionManager transactionManager,
-                       ErrorHandler errorHandler) {
+                       Consumer<UnaryOperator<TrackerStatus>> statusUpdater) {
         this.name = name;
         this.segment = segment;
         this.lastDeliveredToken = initialToken;
@@ -65,23 +67,17 @@ class WorkPackage implements Runnable {
         this.executor = executor;
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
-        this.errorHandler = errorHandler;
         this.lastClaimExtension = System.currentTimeMillis();
+        this.lastConsumedToken = initialToken;
         // TODO make configurable
         this.claimExtensionThreshold = 5000;
+        this.status = statusUpdater;
     }
 
-    @Override
-    public void run() {
-        CompletableFuture<Exception> aborting = abortFlag.get();
-        if (aborting != null) {
-            aborting.complete(null);
-            return;
-        }
-
+    private void processEvents() {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         // handle a batch
-        while (batch.size() < 100 && !events.isEmpty()) {
+        while (batch.size() < BATCH_SIZE && !events.isEmpty()) {
             TrackedEventMessage<?> message = events.poll();
             lastConsumedToken = message.trackingToken();
             try {
@@ -89,21 +85,23 @@ class WorkPackage implements Runnable {
                     batch.add(message);
                 }
             } catch (Exception e) {
-                handleError(batch, e);
+                handleError(e);
             }
         }
 
         if (!batch.isEmpty()) {
             logger.debug("Processing a batch of {} messages", batch.size());
+            BatchingUnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
             try {
-                BatchingUnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.afterCommit(u -> status.accept(s -> s.advancedTo(lastConsumedToken)));
                 processor.processInUnitOfWork(batch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
-                handleError(batch, e);
+                handleError(e);
             }
         } else {
+            status.accept(s -> s.advancedTo(lastConsumedToken));
             // Empty batch, check for token extension time
             long now = System.currentTimeMillis();
             if (lastClaimExtension < now - claimExtensionThreshold) {
@@ -116,13 +114,6 @@ class WorkPackage implements Runnable {
                 lastClaimExtension = now;
             }
         }
-
-        if (!events.isEmpty()) {
-            scheduleWorker();
-        } else {
-            logger.debug("Queue is empty. Not scheduling work package {}", segment.getSegmentId());
-        }
-
     }
 
     /**
@@ -138,12 +129,9 @@ class WorkPackage implements Runnable {
         return abortFlag.get() != null;
     }
 
-    private void handleError(List<TrackedEventMessage<?>> batch, Exception cause) {
-        try {
-            errorHandler.handleError(new ErrorContext(name, cause, batch));
-        } catch (Exception exception) {
-            abortFlag.updateAndGet(e -> ObjectUtils.getOrDefault(e, () -> CompletableFuture.completedFuture(exception)));
-        }
+    private void handleError(Exception cause) {
+        status.accept(s -> s.markError(cause));
+        abortFlag.updateAndGet(e -> ObjectUtils.getOrDefault(e, () -> CompletableFuture.completedFuture(cause)));
     }
 
     private void storeToken(TrackingToken token) {
@@ -226,8 +214,18 @@ class WorkPackage implements Runnable {
         if (scheduled.compareAndSet(false, true)) {
             logger.debug("Scheduled work package {}", segment.getSegmentId());
             executor.submit(() -> {
+                CompletableFuture<Exception> aborting = abortFlag.get();
+                if (aborting != null) {
+                    status.accept(s -> null);
+                    aborting.complete(null);
+                    return;
+                }
+
+                processEvents();
                 scheduled.set(false);
-                run();
+                if (!events.isEmpty() || abortFlag.get() != null) {
+                    scheduleWorker();
+                }
             });
         }
     }

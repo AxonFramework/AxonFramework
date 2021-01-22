@@ -96,7 +96,7 @@ class PooledTrackingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.activeSegments().size());
+            assertEquals(8, testSubject.processingStatus().size());
         });
 
 
@@ -106,6 +106,7 @@ class PooledTrackingEventProcessorTest {
                                           .count();
             assertEquals(8, nonNullTokens);
         });
+        assertEquals(8, testSubject.processingStatus().size());
     }
 
     @Test
@@ -119,7 +120,7 @@ class PooledTrackingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.activeSegments().size());
+            assertEquals(8, testSubject.processingStatus().size());
         });
 
 
@@ -146,7 +147,7 @@ class PooledTrackingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.activeSegments().size());
+            assertEquals(8, testSubject.processingStatus().size());
         });
         assertEquals(8, tokenStore.fetchSegments("test").length);
 
@@ -163,8 +164,20 @@ class PooledTrackingEventProcessorTest {
         });
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(7, testSubject.activeSegments().size());
-            assertFalse(testSubject.activeSegments().stream().anyMatch(s -> s.getSegmentId() == 2));
+            assertEquals(7, testSubject.processingStatus().size());
+            assertFalse(testSubject.processingStatus().containsKey(2));
+        });
+    }
+
+    @Test
+    void testStatusIsUpdatedWithTrackingToken() {
+        testSubject.start();
+        Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
+
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            testSubject.processingStatus().values().forEach(status ->
+                                                                    assertEquals(5, status.getCurrentPosition().orElse(0))
+            );
         });
     }
 
@@ -173,10 +186,10 @@ class PooledTrackingEventProcessorTest {
         testSubject.start();
         Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.activeSegments().isEmpty()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
         testSubject.shutdownAsync().get(1, TimeUnit.SECONDS);
-        assertEquals(0, testSubject.activeSegments().size());
+        assertEquals(0, testSubject.processingStatus().size());
 
         assertFalse(executorService.isShutdown());
     }
@@ -209,7 +222,7 @@ class PooledTrackingEventProcessorTest {
         testSubject.start();
         Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
 
-        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.activeSegments().isEmpty()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
         CompletableFuture<Void> shutdownComplete = testSubject.shutdownAsync();
         assertThrows(IllegalStateException.class, () -> testSubject.start());

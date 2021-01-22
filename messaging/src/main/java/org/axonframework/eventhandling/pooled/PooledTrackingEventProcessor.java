@@ -6,9 +6,13 @@ import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SegmentedEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.lifecycle.Phase;
@@ -20,16 +24,20 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
  * A special type of Event Processor that tracks events from a {@link StreamableMessageSource}, similar to the
  * {@link org.axonframework.eventhandling.TrackingEventProcessor}, but that does all processing
  */
-public class PooledTrackingEventProcessor extends AbstractEventProcessor {
+public class PooledTrackingEventProcessor extends AbstractEventProcessor implements SegmentedEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(PooledTrackingEventProcessor.class);
 
@@ -42,12 +50,13 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+    private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
+    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
 
-    public PooledTrackingEventProcessor(PooledTrackingEventProcessor.Builder builder) {
+    private PooledTrackingEventProcessor(PooledTrackingEventProcessor.Builder builder) {
         super(builder);
         this.transactionManager = builder.transactionManager;
         this.workerExecutor = builder.workerExecutor;
-        ScheduledExecutorService coordinatorService = builder.coordinatorExecutor;
         this.name = builder.name();
         this.tokenStore = builder.tokenStore;
         this.errorHandler = PropagatingErrorHandler.instance();
@@ -59,7 +68,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
                                       tokenStore,
                                       transactionManager,
                                       this::spawnWorker,
-                                      coordinatorService);
+                                      builder.coordinatorExecutor,
+                                      (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)));
     }
 
     @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
@@ -79,6 +89,16 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
     }
 
     @Override
+    public boolean isRunning() {
+        return coordinator.isRunning();
+    }
+
+    @Override
+    public boolean isError() {
+        return coordinator.isError();
+    }
+
+    @Override
     public void shutDown() {
         shutdownAsync().join();
     }
@@ -89,8 +109,80 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
         return coordinator.stop();
     }
 
-    public Set<Segment> activeSegments() {
-        return coordinator.activeSegments();
+    @Override
+    public CompletableFuture<Boolean> splitSegment(int segmentId) {
+        return CompletableFuture.completedFuture(false);
+    }
+
+    @Override
+    public String getTokenStoreIdentifier() {
+        return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
+    }
+
+    private String calculateIdentifier() {
+        return transactionManager.fetchInTransaction(
+                () -> tokenStore.retrieveStorageIdentifier().orElse("--unknown--")
+        );
+    }
+
+    @Override
+    public CompletableFuture<Boolean> mergeSegment(int segmentId) {
+        return CompletableFuture.completedFuture(false);
+    }
+
+    @Override
+    public void releaseSegment(int segmentId) {
+        // TODO - Use twice the claim interval
+        releaseSegment(segmentId, 5000, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
+        coordinator.releaseUntil(segmentId, GenericEventMessage.clock.instant().plusMillis(unit.toMillis(releaseDuration)));
+    }
+
+    @Override
+    public void resetTokens() {
+        // TODO - implement
+    }
+
+    @Override
+    public <R> void resetTokens(R resetContext) {
+        // TODO - implement
+    }
+
+    @Override
+    public void resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
+        // TODO - implement
+    }
+
+    @Override
+    public <R> void resetTokens(Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier, R resetContext) {
+        // TODO - implement
+    }
+
+    @Override
+    public void resetTokens(TrackingToken startPosition) {
+        // TODO - implement
+    }
+
+    @Override
+    public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
+        // TODO - implement
+    }
+
+    @Override
+    public boolean supportsReset() {
+        return false;
+    }
+
+    @Override
+    public int maxCapacity() {
+        return Short.MAX_VALUE;
+    }
+
+    public Map<Integer, EventTrackerStatus> processingStatus() {
+        return Collections.unmodifiableMap(processingStatus);
     }
 
     public static Builder builder() {
@@ -98,6 +190,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
+        processingStatus.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, initialToken));
         return new WorkPackage(name,
                                segment,
                                initialToken,
@@ -106,7 +199,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor {
                                workerExecutor,
                                tokenStore,
                                transactionManager,
-                               errorHandler);
+                               u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status)));
     }
 
     public static class Builder extends AbstractEventProcessor.Builder {

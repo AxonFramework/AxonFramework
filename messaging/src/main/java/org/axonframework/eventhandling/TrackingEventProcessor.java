@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -89,7 +88,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends AbstractEventProcessor {
+public class TrackingEventProcessor extends AbstractEventProcessor implements SegmentedEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
@@ -218,6 +217,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param segmentId The identifier of the segment to split
      * @return a CompletableFuture providing the result of the split operation
      */
+    @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
@@ -243,6 +243,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the tokenStore was
      *                                                                                        unable to retrieve it
      */
+    @Override
     public String getTokenStoreIdentifier() {
         return tokenStoreIdentifier.updateAndGet(i -> i != null ? i : calculateIdentifier());
     }
@@ -275,6 +276,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param segmentId The identifier of the segment to merge into this one.
      * @return a CompletableFuture indicating whether the merge was executed successfully
      */
+    @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         if (!tokenStore.requiresExplicitSegmentInitialization()) {
@@ -574,6 +576,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @param segmentId the id of the segment to be blacklisted
      */
+    @Override
     public void releaseSegment(int segmentId) {
         releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
@@ -591,6 +594,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param blacklistDuration the amount of time to blacklist this segment for processing by this processor instance
      * @param unit              the unit of time used to express the {@code blacklistDuration}
      */
+    @Override
     public void releaseSegment(int segmentId, long blacklistDuration, TimeUnit unit) {
         segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(blacklistDuration));
     }
@@ -606,6 +610,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
      * processor can only reset the tokens if it is able to claim them all.
      */
+    @Override
     public void resetTokens() {
         resetTokens(initialTrackingTokenBuilder);
     }
@@ -621,6 +626,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param resetContext a {@code R} used to support the reset operation
      * @param <R>          the type of the provided {@code resetContext}
      */
+    @Override
     public <R> void resetTokens(R resetContext) {
         resetTokens(initialTrackingTokenBuilder, resetContext);
     }
@@ -637,6 +643,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @param initialTrackingTokenSupplier A function returning the token representing the position to reset to
      */
+    @Override
     public void resetTokens(
             Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
         resetTokens(initialTrackingTokenSupplier.apply(messageSource));
@@ -657,6 +664,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param resetContext                 a {@code R} used to support the reset operation
      * @param <R>                          the type of the provided {@code resetContext}
      */
+    @Override
     public <R> void resetTokens(
             Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
             R resetContext
@@ -676,6 +684,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @param startPosition the token representing the position to reset the processor to
      */
+    @Override
     public void resetTokens(TrackingToken startPosition) {
         resetTokens(startPosition, null);
     }
@@ -695,6 +704,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param resetContext  a {@code R} used to support the reset operation
      * @param <R>           the type of the provided {@code resetContext}
      */
+    @Override
     public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0,
@@ -720,27 +730,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @return {@code true} if resets are supported, {@code false} otherwise
      */
+    @Override
     public boolean supportsReset() {
         return eventHandlerInvoker().supportsReset();
     }
 
-    /**
-     * Indicates whether this processor is currently running (i.e. consuming events from a stream).
-     *
-     * @return {@code true} when running, otherwise {@code false}
-     */
+    @Override
     public boolean isRunning() {
         return state.get().isRunning();
     }
 
-    /**
-     * Indicates whether the processor has been paused due to an error. In such case, the processor has forcefully
-     * paused, as it wasn't able to automatically recover.
-     * <p>
-     * Note that this method also returns {@code false} when the processor was stooped using {@link #shutDown()}.
-     *
-     * @return {@code true} when paused due to an error, otherwise {@code false}
-     */
+    @Override
     public boolean isError() {
         return state.get() == State.PAUSED_ERROR;
     }
@@ -804,6 +804,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         return availableThreads.get();
     }
 
+    @Override
+    public int maxCapacity() {
+        return availableProcessorThreads();
+    }
+
     /**
      * Returns an approximation of the number of threads currently processing events.
      *
@@ -823,6 +828,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @return the status for each of the Segments processed by the current processor
      */
+    @Override
     public Map<Integer, EventTrackerStatus> processingStatus() {
         return Collections.unmodifiableMap(activeSegments);
     }
@@ -910,181 +916,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         boolean isRunning() {
             return allowProcessing;
-        }
-    }
-
-    private static final class TrackerStatus implements EventTrackerStatus {
-
-        private final Segment segment;
-        private final boolean caughtUp;
-        private final TrackingToken trackingToken;
-        private final Throwable errorState;
-
-        private TrackerStatus(Segment segment, TrackingToken trackingToken) {
-            this(segment, false, trackingToken, null);
-        }
-
-        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken, Throwable errorState) {
-            this.segment = segment;
-            this.caughtUp = caughtUp;
-            this.trackingToken = trackingToken;
-            this.errorState = errorState;
-        }
-
-        private TrackerStatus caughtUp() {
-            if (caughtUp) {
-                return this;
-            }
-            return new TrackerStatus(segment, true, trackingToken, null);
-        }
-
-        private TrackerStatus advancedTo(TrackingToken trackingToken) {
-            if (Objects.equals(this.trackingToken, trackingToken)) {
-                return this;
-            }
-            return new TrackerStatus(segment, caughtUp, trackingToken, null);
-        }
-
-        private TrackerStatus markError(Throwable error) {
-            return new TrackerStatus(segment, caughtUp, trackingToken, error);
-        }
-
-        @Override
-        public Segment getSegment() {
-            return segment;
-        }
-
-        @Override
-        public boolean isCaughtUp() {
-            return caughtUp;
-        }
-
-        @Override
-        public boolean isReplaying() {
-            return ReplayToken.isReplay(trackingToken);
-        }
-
-        @Override
-        public boolean isMerging() {
-            return MergedTrackingToken.isMergeInProgress(trackingToken);
-        }
-
-        @Override
-        public OptionalLong mergeCompletedPosition() {
-            return MergedTrackingToken.mergePosition(trackingToken);
-        }
-
-        @Override
-        public TrackingToken getTrackingToken() {
-            return WrappedToken.unwrapLowerBound(trackingToken);
-        }
-
-        @Override
-        public boolean isErrorState() {
-            return errorState != null;
-        }
-
-        @Override
-        public Throwable getError() {
-            return errorState;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public OptionalLong getCurrentPosition() {
-            if (isReplaying()) {
-                return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                                   .map(ReplayToken::position)
-                                   .orElse(OptionalLong.empty());
-            }
-
-            if (isMerging()) {
-                return WrappedToken.unwrap(trackingToken, MergedTrackingToken.class)
-                                   .map(MergedTrackingToken::position)
-                                   .orElse(OptionalLong.empty());
-            }
-
-            return (trackingToken == null) ? OptionalLong.empty() : trackingToken.position();
-        }
-
-        @Override
-        public OptionalLong getResetPosition() {
-            return ReplayToken.getTokenAtReset(trackingToken);
-        }
-
-        private TrackingToken getInternalTrackingToken() {
-            return trackingToken;
-        }
-
-        /**
-         * Splits the current status object to reflect the status of their underlying segments being split.
-         *
-         * @return an array with two status object, representing the status of the split segments.
-         */
-        public TrackerStatus[] split() {
-            Segment[] newSegments = segment.split();
-            TrackingToken tokenAtReset = null;
-            TrackingToken workingToken = trackingToken;
-            TrackingToken[] splitTokens = new TrackingToken[2];
-            if (workingToken instanceof ReplayToken) {
-                tokenAtReset = ((ReplayToken) workingToken).getTokenAtReset();
-                workingToken = ((ReplayToken) workingToken).lowerBound();
-            }
-            if (workingToken instanceof MergedTrackingToken) {
-                splitTokens[0] = ((MergedTrackingToken) workingToken).lowerSegmentToken();
-                splitTokens[1] = ((MergedTrackingToken) workingToken).upperSegmentToken();
-            } else {
-                splitTokens[0] = workingToken;
-                splitTokens[1] = workingToken;
-            }
-
-            if (tokenAtReset != null) {
-                // we were in a replay. Need to re-initialize the replay wrapper
-                splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
-                splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);
-            }
-            TrackerStatus[] newStatus = new TrackerStatus[2];
-            newStatus[0] = new TrackerStatus(newSegments[0], splitTokens[0]);
-            newStatus[1] = new TrackerStatus(newSegments[1], splitTokens[1]);
-            return newStatus;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            TrackerStatus that = (TrackerStatus) o;
-            return caughtUp == that.caughtUp &&
-                    Objects.equals(segment, that.segment) &&
-                    Objects.equals(trackingToken, that.trackingToken) &&
-                    Objects.equals(errorState, that.errorState);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(segment, caughtUp, trackingToken, errorState);
-        }
-
-        @Override
-        public String toString() {
-            return "TrackerStatus{" +
-                    "segment=" + getSegment() +
-                    ", caughtUp=" + isCaughtUp() +
-                    ", replaying=" + isReplaying() +
-                    ", merging=" + isMerging() +
-                    ", errorState=" + isErrorState() +
-                    ", error=" + getError() +
-                    ", trackingToken=" + getTrackingToken() +
-                    ", currentPosition=" + getCurrentPosition() +
-                    ", resetPosition=" + getResetPosition() +
-                    ", mergeCompletedPosition=" + mergeCompletedPosition()
-                    + "}";
         }
     }
 
