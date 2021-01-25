@@ -35,6 +35,7 @@ import java.util.List;
  *
  * @author Allard Buijze
  * @see SpringBeanParameterResolverFactory
+ * @see SpringBeanDependencyResolverFactory
  * @see ClasspathParameterResolverFactory
  * @since 2.3.1
  */
@@ -63,9 +64,8 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     @Override
     public void afterPropertiesSet() {
         factories.add(ClasspathParameterResolverFactory.forClassLoader(classLoader));
-        final SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
-        springBeanParameterResolverFactory.setApplicationContext(applicationContext);
-        factories.add(springBeanParameterResolverFactory);
+        factories.add(new SpringBeanDependencyResolverFactory(applicationContext));
+        factories.add(new SpringBeanParameterResolverFactory(applicationContext));
     }
 
     /**
@@ -75,6 +75,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
      *
      * @param additionalFactories The extra factories to register
      * @see SpringBeanParameterResolverFactory
+     * @see SpringBeanDependencyResolverFactory
      * @see ClasspathParameterResolverFactory
      */
     public void setAdditionalFactories(List<ParameterResolverFactory> additionalFactories) {
