@@ -80,7 +80,7 @@ public class EventProcessingModule
     private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
             TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                .andInitialTrackingToken(StreamableMessageSource::createHeadToken);
-    private static final Function<Class<?>, String> DEFAULT_PROCESSING_GROUP_FUNCTION =
+    private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
@@ -105,7 +105,7 @@ public class EventProcessingModule
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
     private TypeProcessingGroupSelector typeFallback =
-            TypeProcessingGroupSelector.defaultSelector(DEFAULT_PROCESSING_GROUP_FUNCTION);
+            TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
     private Configuration configuration;
@@ -287,7 +287,7 @@ public class EventProcessingModule
     }
 
     private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
-        return DEFAULT_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
+        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
                 && processingGroup.equals(processorName)
                 && !eventProcessorBuilders.containsKey(processorName)
                 && !tepConfigs.containsKey(processorName);
