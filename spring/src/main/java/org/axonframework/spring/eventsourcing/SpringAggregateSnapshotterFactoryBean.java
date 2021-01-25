@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -29,6 +28,7 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.spring.config.annotation.SpringHandlerDefinitionBean;

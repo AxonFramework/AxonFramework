@@ -31,8 +31,8 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.util.ClassUtils;
 
 /**
- * Creates and registers a bean definition for a Spring Context aware ParameterResolverFactory. It ensures that only
- * one such instance exists for each ApplicationContext.
+ * Creates and registers a bean definition for a Spring Context aware ParameterResolverFactory. It ensures that only one
+ * such instance exists for each ApplicationContext.
  *
  * @author Allard Buijze
  * @since 2.1
@@ -71,7 +71,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
     }
 
     private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean,
-                                                                          FactoryBean<ParameterResolverFactory> {
+            FactoryBean<ParameterResolverFactory> {
 
         private ClassLoader classLoader;
         private ParameterResolverFactory factory;

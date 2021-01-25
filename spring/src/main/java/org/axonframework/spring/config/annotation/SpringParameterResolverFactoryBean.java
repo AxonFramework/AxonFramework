@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values
- * as Spring Beans, in addition to the default behavior defined by Axon.
+ * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values as
+ * Spring Beans, in addition to the default behavior defined by Axon.
  *
  * @author Allard Buijze
  * @see SpringBeanParameterResolverFactory
@@ -69,8 +69,8 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     }
 
     /**
-     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default,
-     * the ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
+     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default, the
+     * ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
      * registered.
      *
      * @param additionalFactories The extra factories to register

@@ -26,7 +26,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.spring.config.AnnotationDriven;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,9 +49,9 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests the functionality of Spring dependency resolution at the application context level.
- * This covers both {@link SpringBeanDependencyResolverFactory} and {@link SpringBeanParameterResolverFactory},
- * which behave differently but exist within the same application context.
+ * Tests the functionality of Spring dependency resolution at the application context level. This covers both {@link
+ * SpringBeanDependencyResolverFactory} and {@link SpringBeanParameterResolverFactory}, which behave differently but
+ * exist within the same application context.
  *
  * @author Allard Buijze
  * @author Joel Feinstein
@@ -71,6 +71,7 @@ public class SpringBeanResolverFactoryTest {
 
     private static final AtomicInteger counter = new AtomicInteger();
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private ParameterResolverFactory parameterResolver;
 
@@ -107,15 +108,14 @@ public class SpringBeanResolverFactoryTest {
         // this should generate an error
         Object bean = applicationContext.getBean("missingResourceHandler");
         assertThrows(
-                UnsupportedHandlerException.class,
-                () -> new AnnotationEventHandlerAdapter(bean, parameterResolver));
-
+                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+        );
     }
 
     @Test
     void testMethodsAreProperlyInjected_NullableParameterType() throws Exception {
         new AnnotationEventHandlerAdapter(applicationContext.getBean("nullableResourceHandler"),
-                parameterResolver).handle(asEventMessage("Hi there"));
+                                          parameterResolver).handle(asEventMessage("Hi there"));
 
         assertEquals(1, counter.get());
     }
@@ -125,8 +125,8 @@ public class SpringBeanResolverFactoryTest {
         // this should generate an error
         Object bean = applicationContext.getBean("duplicateResourceHandler");
         assertThrows(
-                UnsupportedHandlerException.class,
-                () -> new AnnotationEventHandlerAdapter(bean, parameterResolver));
+                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+        );
     }
 
     @Test
@@ -167,9 +167,18 @@ public class SpringBeanResolverFactoryTest {
                 handler, applicationContext.getBean(ParameterResolverFactory.class)
         );
         // Spring dependency resolution will resolve at time of execution
-        assertThrows(
-                NoUniqueBeanDefinitionException.class,
-                () -> adapter.handle(asEventMessage("Hi there")));
+        assertThrows(NoUniqueBeanDefinitionException.class, () -> adapter.handle(asEventMessage("Hi there")));
+    }
+
+    @Test
+    @DirtiesContext
+    void testMethodsAreProperlyInjectedForDuplicateResourceHandlerWithAutowiredAndQualifier() throws Exception {
+        new AnnotationEventHandlerAdapter(
+                applicationContext.getBean("duplicateResourceHandlerWithAutowiredAndQualifier"),
+                parameterResolver).handle(asEventMessage("Hi there")
+        );
+
+        assertEquals(1, counter.get());
     }
 
     public interface DuplicateResourceWithPrimary {
@@ -238,6 +247,12 @@ public class SpringBeanResolverFactoryTest {
 
         @Lazy
         @Bean
+        public DuplicateResourceHandlerWithAutowiredAndQualifier duplicateResourceHandlerWithAutowiredAndQualifier() {
+            return new DuplicateResourceHandlerWithAutowiredAndQualifier();
+        }
+
+        @Lazy
+        @Bean
         public PrototypeResourceHandler prototypeResourceHandler() {
             return new PrototypeResourceHandler();
         }
@@ -299,6 +314,7 @@ public class SpringBeanResolverFactoryTest {
 
     }
 
+    @SuppressWarnings("unused")
     public static class MissingResourceHandler {
 
         @EventHandler
@@ -307,6 +323,7 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class NullableResourceHandler {
 
         @EventHandler
@@ -315,6 +332,7 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DuplicateResourceHandler {
 
         @EventHandler
@@ -323,6 +341,7 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DuplicateResourceHandlerWithPrimary {
 
         @EventHandler
@@ -331,6 +350,7 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DuplicateResourceHandlerWithQualifier {
 
         @EventHandler
@@ -339,6 +359,7 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DuplicateResourceHandlerWithQualifierAndPrimary {
 
         @EventHandler
@@ -349,15 +370,26 @@ public class SpringBeanResolverFactoryTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class DuplicateResourceHandlerWithAutowired {
 
         @EventHandler
-        public void handle(String message,
-                           @Autowired DuplicateResource resource) {
+        public void handle(String message, @Autowired DuplicateResource resource) {
             counter.incrementAndGet();
         }
     }
 
+    @SuppressWarnings("unused")
+    public static class DuplicateResourceHandlerWithAutowiredAndQualifier {
+
+        @EventHandler
+        public void handle(String message,
+                           @Autowired @Qualifier("qualifiedByName") DuplicateResourceWithQualifier resource) {
+            counter.incrementAndGet();
+        }
+    }
+
+    @SuppressWarnings("unused")
     public static class PrototypeResourceHandler {
 
         private PrototypeResource resource;

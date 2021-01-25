@@ -18,37 +18,30 @@ package org.axonframework.spring.config.annotation;
 
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.command.EntityId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.NonNull;
 
-import java.lang.reflect.*;
-import java.util.Map;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
- * ParameterResolverFactory implementation that resolves parameters using Spring dependency resolution.
- * Mark a parameter as {@link org.springframework.beans.factory.annotation.Autowired} to resolve said parameter
- * using Spring dependency resolution.
+ * ParameterResolverFactory implementation that resolves parameters using Spring dependency resolution. Mark a parameter
+ * as {@link org.springframework.beans.factory.annotation.Autowired} to resolve said parameter using Spring dependency
+ * resolution.
  *
  * @author Joel Feinstein
- * @since 4.5
  * @see Autowired
+ * @since 4.5
  */
 @Priority(Priority.HIGH)
 public class SpringBeanDependencyResolverFactory implements ParameterResolverFactory {
@@ -66,8 +59,8 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
 
     @Override
     public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        final Optional<Boolean> ann = AnnotationUtils.findAnnotationAttribute(
-                parameters[parameterIndex], Autowired.class, "required");
+        final Optional<Boolean> ann =
+                AnnotationUtils.findAnnotationAttribute(parameters[parameterIndex], Autowired.class, "required");
 
         if (!ann.isPresent()) {
             return null;
@@ -83,7 +76,9 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
         }
 
         final DependencyDescriptor dependencyDescriptor = new DependencyDescriptor(methodParameter, required);
-        return new SpringBeanDependencyResolver(applicationContext.getAutowireCapableBeanFactory(), dependencyDescriptor);
+        return new SpringBeanDependencyResolver(
+                applicationContext.getAutowireCapableBeanFactory(), dependencyDescriptor
+        );
     }
 
     private static class SpringBeanDependencyResolver implements ParameterResolver<Object> {
@@ -91,7 +86,8 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
         private final AutowireCapableBeanFactory beanFactory;
         private final DependencyDescriptor dependencyDescriptor;
 
-        public SpringBeanDependencyResolver(AutowireCapableBeanFactory beanFactory, DependencyDescriptor dependencyDescriptor) {
+        public SpringBeanDependencyResolver(AutowireCapableBeanFactory beanFactory,
+                                            DependencyDescriptor dependencyDescriptor) {
             this.beanFactory = beanFactory;
             this.dependencyDescriptor = dependencyDescriptor;
         }
