@@ -54,9 +54,9 @@ public interface SegmentedEventProcessor extends EventProcessor {
      * If the processor is not actively processing the segment with given {@code segmentId}, claiming it will be ignored
      * for the given timeframe nonetheless.
      *
-     * @param segmentId       the id of the segment to be blacklisted
-     * @param releaseDuration the amount of time to blacklist this segment for processing by this processor instance
-     * @param unit            the unit of time used to express the {@code blacklistDuration}
+     * @param segmentId       the id of the segment to be released for the specified {@code releaseDuration}
+     * @param releaseDuration the amount of time to disregard {@code segmentId} for processing
+     * @param unit            the unit of time used to express the {@code releaseDuration}
      */
     void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit);
 
