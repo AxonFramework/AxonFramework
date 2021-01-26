@@ -27,6 +27,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -36,28 +37,42 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
- * A special type of Event Processor that tracks events from a {@link StreamableMessageSource}, similar to the {@link
- * org.axonframework.eventhandling.TrackingEventProcessor}, but that does all processing.
+ * A {@link SegmentedEventProcessor} implementation which pools it's resources to enhance processing speed. It utilizes
+ * a {@link Coordinator} as the means to stream events from a {@link StreamableMessageSource} and creates so called work
+ * packages. Every work package is in charge of a {@link Segment} of the entire event stream. It is the {@code
+ * Coordinator}'s job to retrieve the events from the source and provide the events to all the work packages it is in
+ * charge of.
+ * <p>
+ * This approach utilizes two threads pools. One to retrieve the events to provide them to the work packages and another
+ * to actual handle the events. Respectively, the coordinator thread pool and the work package thread pool. It is this
+ * approach which allows for greater parallelization and processing speed than the {@link
+ * org.axonframework.eventhandling.TrackingEventProcessor}.
+ * <p>
+ * If no {@link TrackingToken}s are present for this processor, the {@code PooledTrackingEventProcessor} will initialize
+ * them in a given segment count. By default it will create {@code 32} segments, which can be configured through the
+ * {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
  * @since 4.5
  */
 public class PooledTrackingEventProcessor extends AbstractEventProcessor implements SegmentedEventProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(PooledTrackingEventProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
-    private final int initialSegmentCount;
-    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
+    private final int initialSegmentCount;
+    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
+    private final long tokenClaimInterval;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -72,6 +87,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -113,12 +129,13 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.workerExecutor = builder.workerExecutor;
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
-        this.workerExecutor = builder.workerExecutor;
+        this.tokenClaimInterval = builder.tokenClaimInterval;
         this.coordinator = new Coordinator(
-                name, messageSource, tokenStore, transactionManager, this::spawnWorker, builder.coordinatorExecutor,
-                (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts))
+                name, messageSource, tokenStore, transactionManager, builder.coordinatorExecutor,
+                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts))
         );
     }
 
@@ -133,17 +150,6 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                 tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
             }
         });
-        coordinator.start();
-    }
-
-    @Override
-    public boolean isRunning() {
-        return coordinator.isRunning();
-    }
-
-    @Override
-    public boolean isError() {
-        return coordinator.isError();
     }
 
     @Override
@@ -154,7 +160,18 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     @Override
     public CompletableFuture<Void> shutdownAsync() {
+        logger.info("Stopping processor [{}]", name);
         return coordinator.stop();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return coordinator.isRunning();
+    }
+
+    @Override
+    public boolean isError() {
+        return coordinator.isError();
     }
 
     @Override
@@ -170,8 +187,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
     @Override
     public void releaseSegment(int segmentId) {
-        // TODO - Use twice the claim interval
-        releaseSegment(segmentId, 5000, TimeUnit.MILLISECONDS);
+        releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
 
     @Override
@@ -266,6 +282,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -283,12 +300,13 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
-        private int initialSegmentCount = 32;
-        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
-                StreamableMessageSource::createTailToken;
         // TODO: 22-01-21 Do we want a default executor service for both?
         private ScheduledExecutorService coordinatorExecutor;
         private ScheduledExecutorService workerExecutor;
+        private int initialSegmentCount = 32;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                StreamableMessageSource::createTailToken;
+        private long tokenClaimInterval = 5000;
 
         protected Builder() {
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -365,6 +383,34 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
+         * Specifies the {@link ScheduledExecutorService} used by the {@link Coordinator} of this {@link
+         * PooledTrackingEventProcessor}.
+         *
+         * @param coordinatorExecutor a {@link ScheduledExecutorService} to be used by the {@link Coordinator} of this
+         *                            {@link PooledTrackingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
+            assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
+            this.coordinatorExecutor = coordinatorExecutor;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link ScheduledExecutorService} provided to {@link WorkPackage}s created by this {@link
+         * PooledTrackingEventProcessor}.
+         *
+         * @param workerExecutor a {@link ScheduledExecutorService} provided to {@link WorkPackage}s created  by this
+         *                       {@link PooledTrackingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+            assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
+            this.workerExecutor = workerExecutor;
+            return this;
+        }
+
+        /**
          * Sets the initial segment count used to create segments on start up. Only used whenever there are not segments
          * stored in the configured {@link TokenStore} upon start up of this {@link SegmentedEventProcessor}. The given
          * value should at least be {@code 1}. Defaults to {@code 32}.
@@ -397,30 +443,17 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Specifies the {@link ScheduledExecutorService} used by the {@link Coordinator} of this {@link
-         * PooledTrackingEventProcessor}.
+         * Specifies the time in milliseconds the processor's coordinator should wait after a failed attempt to claim
+         * any segments for processing. Generally, this means all segments are claimed. Defaults to {@code 5000}
+         * milliseconds.
          *
-         * @param coordinatorExecutor a {@link ScheduledExecutorService} to be used by the {@link Coordinator} of this
-         *                            {@link PooledTrackingEventProcessor}
+         * @param tokenClaimInterval the time in milliseconds the processor's coordinator should wait after a failed
+         *                           attempt to claim any segments for processing
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
-            assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
-            this.coordinatorExecutor = coordinatorExecutor;
-            return this;
-        }
-
-        /**
-         * Specifies the {@link ScheduledExecutorService} provided to {@link WorkPackage}s created by this {@link
-         * PooledTrackingEventProcessor}.
-         *
-         * @param workerExecutor a {@link ScheduledExecutorService} provided to {@link WorkPackage}s created  by this
-         *                       {@link PooledTrackingEventProcessor}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
-            assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
-            this.workerExecutor = workerExecutor;
+        public Builder tokenClaimInterval(long tokenClaimInterval) {
+            assertStrictPositive(tokenClaimInterval, "The tokenClaimInterval should be a higher valuer than zero");
+            this.tokenClaimInterval = tokenClaimInterval;
             return this;
         }
 
