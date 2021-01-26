@@ -230,6 +230,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private Iterator<? extends T> iterator;
         private T lastItem;
         private int sizeOfLastBatch;
+        private boolean zeroItemsSeen = false;
+
 
         private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
                                        int batchSize,
@@ -243,11 +245,17 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
             Objects.requireNonNull(action);
+            if (this.zeroItemsSeen) {
+                return false;
+            }
             if (iterator == null || !iterator.hasNext()) {
                 if (iterator != null && batchSize > sizeOfLastBatch && !fetchUntilEmpty) {
                     return false;
                 }
                 List<? extends T> items = fetchFunction.apply(lastItem);
+                if (items.size() == 0) {
+                    this.zeroItemsSeen = true;
+                }
                 iterator = items.iterator();
                 if ((sizeOfLastBatch = items.size()) == 0) {
                     return false;
