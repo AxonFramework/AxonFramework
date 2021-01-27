@@ -213,26 +213,26 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         return CompletableFuture.completedFuture(false);
     }
 
-    // TODO: 22-01-21 implement
     @Override
     public boolean supportsReset() {
-        return false;
+        return eventHandlerInvoker().supportsReset();
     }
 
     @Override
     public void resetTokens() {
-        // TODO - implement
+        resetTokens(initialToken);
     }
 
     @Override
     public <R> void resetTokens(R resetContext) {
-        // TODO - implement
+        resetTokens(initialToken, resetContext);
     }
 
     @Override
     public void resetTokens(
-            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier) {
-        // TODO - implement
+            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier
+    ) {
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
     }
 
     @Override
@@ -240,17 +240,21 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
             Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
             R resetContext
     ) {
-        // TODO - implement
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
     }
 
     @Override
     public void resetTokens(TrackingToken startPosition) {
-        // TODO - implement
+        resetTokens(startPosition, null);
     }
 
     @Override
     public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
-        // TODO - implement
+        // TODO - assert support reset
+        // TODO: 26-01-21 assert coordinator not running
+        // TODO: 26-01-21 claim all segments
+        // TODO: 26-01-21 performReset on EventHAndlerInvoker
+        // TODO: 26-01-21 adjusts tokens to reset tokens
     }
 
     @Override
