@@ -79,9 +79,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     /**
      * Instantiate a {@link QuartzEventScheduler} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link Scheduler}, {@link EventBus}, {@link EventJobDataBinder} and
-     * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
-     * them is {@code null}.
+     * Will assert that the {@link Scheduler}, {@link EventBus} and {@link TransactionManager} are not {@code null},
+     * and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * If the {@link EventJobDataBinder is {@code null} it is defaulted to a {@link DirectEventJobDataBinder }
      * The EventBus, TransactionManager and EventJobDataBinder will be tied to the Scheduler's context. If this
      * initialization step fails, this will too result in an AxonConfigurationException.
      *
@@ -91,7 +91,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         builder.validate();
         scheduler = builder.scheduler;
         eventBus = builder.eventBus;
-        jobDataBinder = builder.jobDataBinder;
+        jobDataBinder = builder.jobDataBinder != null ? builder.jobDataBinder : new DirectEventJobDataBinder();
         transactionManager = builder.transactionManager;
 
         try {
@@ -340,15 +340,14 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     /**
      * Builder class to instantiate a {@link QuartzEventScheduler}.
      * <p>
-     * The {@link EventJobDataBinder} is defaulted to an {@link DirectEventJobDataBinder}, and the
-     * {@link TransactionManager} defaults to a {@link NoTransactionManager}.
+     * The {@link TransactionManager} defaults to a {@link NoTransactionManager}.
      * The {@link Scheduler} and {@link EventBus} are a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
         private Scheduler scheduler;
         private EventBus eventBus;
-        private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
+        private EventJobDataBinder jobDataBinder;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         /**
