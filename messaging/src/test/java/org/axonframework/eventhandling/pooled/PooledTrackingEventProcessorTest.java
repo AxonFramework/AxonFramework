@@ -72,8 +72,8 @@ class PooledTrackingEventProcessorTest {
                                                   .eventHandlerInvoker(stubEventHandler)
                                                   .messageSource(stubMessageSource)
                                                   .transactionManager(NoTransactionManager.instance())
-                                                  .coordinatorExecutor(executorService)
-                                                  .workerExecutorService(executorService)
+                                                  .coordinatorExecutor(name -> executorService)
+                                                  .workerExecutorService(name -> executorService)
                                                   .initialSegmentCount(8)
                                                   .build();
     }

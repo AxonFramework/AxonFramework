@@ -1,6 +1,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -85,6 +87,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
+     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
+     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -96,8 +100,6 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
      *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
-     *     <li>A {@link ScheduledExecutorService} used by the {@link Coordinator} of this processor.</li>
-     *     <li>A {@link ScheduledExecutorService} given to the {@link WorkPackage}s created by this processor.</li>
      * </ul>
      *
      * @return a Builder to be able to create a {@link PooledTrackingEventProcessor}
@@ -111,13 +113,11 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      * <p>
      * Will assert the following for their presence prior to constructing this processor:
      * <ul>
-     *     <li>The Event Processor' {@code name}.</li>
+     *     <li>The Event Processor's {@code name}.</li>
      *     <li>An {@link EventHandlerInvoker}.</li>
      *     <li>A {@link StreamableMessageSource}.</li>
      *     <li>A {@link TokenStore}.</li>
      *     <li>A {@link TransactionManager}.</li>
-     *     <li>A {@link ScheduledExecutorService} for the {@link Coordinator}.</li>
-     *     <li>A {@link ScheduledExecutorService} for the created {@link WorkPackage}s.</li>
      * </ul>
      * If any of these is not present or does no comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
@@ -129,12 +129,16 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
-        this.workerExecutor = builder.workerExecutor;
+        this.workerExecutor = builder.workerExecutorBuilder.apply(name);
+        assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
+
+        ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
+        assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinator = new Coordinator(
-                name, messageSource, tokenStore, transactionManager, builder.coordinatorExecutor,
+                name, messageSource, tokenStore, transactionManager, coordinatorExecutor,
                 this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts))
         );
     }
@@ -280,6 +284,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
+     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
+     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -291,8 +297,6 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
      *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
-     *     <li>A {@link ScheduledExecutorService} used by the {@link Coordinator} of this processor.</li>
-     *     <li>A {@link ScheduledExecutorService} given to the {@link WorkPackage}s created by this processor.</li>
      * </ul>
      */
     public static class Builder extends AbstractEventProcessor.Builder {
@@ -300,9 +304,10 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
-        // TODO: 22-01-21 Do we want a default executor service for both?
-        private ScheduledExecutorService coordinatorExecutor;
-        private ScheduledExecutorService workerExecutor;
+        private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
+                name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + name + "]"));
+        private Function<String, ScheduledExecutorService> workerExecutorBuilder =
+                name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + name + "]"));
         private int initialSegmentCount = 32;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
@@ -383,30 +388,37 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Specifies the {@link ScheduledExecutorService} used by the {@link Coordinator} of this {@link
-         * PooledTrackingEventProcessor}.
+         * Specifies a {@link Function} creating a {@link ScheduledExecutorService} used by the coordinator of this
+         * {@link PooledTrackingEventProcessor}, based on the {@link #name()}. Defaults to a {@code
+         * ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this processors
+         * name.
          *
-         * @param coordinatorExecutor a {@link ScheduledExecutorService} to be used by the {@link Coordinator} of this
-         *                            {@link PooledTrackingEventProcessor}
+         * @param coordinatorExecutorBuilder a {@link Function} creating a {@link ScheduledExecutorService} to be used
+         *                                   by the the coordinator of this {@link PooledTrackingEventProcessor}, based
+         *                                   on the {@link #name()}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
-            assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
-            this.coordinatorExecutor = coordinatorExecutor;
+        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
+            assertNonNull(coordinatorExecutorBuilder,
+                          "The Coordinator's ScheduledExecutorService builder may not be null");
+            this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
             return this;
         }
 
         /**
-         * Specifies the {@link ScheduledExecutorService} provided to {@link WorkPackage}s created by this {@link
-         * PooledTrackingEventProcessor}.
+         * Specifies a {@link Function} creating a {@link ScheduledExecutorService} to be provided to the {@link
+         * WorkPackage}s created by this {@link PooledTrackingEventProcessor}, based on the {@link #name()}. Defaults to
+         * a {@code ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this
+         * processors name.
          *
-         * @param workerExecutor a {@link ScheduledExecutorService} provided to {@link WorkPackage}s created  by this
-         *                       {@link PooledTrackingEventProcessor}
+         * @param workerExecutorBuilder a {@link Function} creating a {@link ScheduledExecutorService} to be provided to
+         *                              the {@link WorkPackage}s created by this {@link PooledTrackingEventProcessor},
+         *                              based on the {@link #name()}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
-            assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
-            this.workerExecutor = workerExecutor;
+        public Builder workerExecutorService(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+            assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
+            this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
         }
 
@@ -472,13 +484,6 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(
-                    coordinatorExecutor,
-                    "The Coordinator's ScheduledExecutorService is a hard requirement and should be provided"
-            );
-            assertNonNull(
-                    workerExecutor, "The Worker's ScheduledExecutorService is a hard requirement and should be provided"
-            );
         }
 
         /**
