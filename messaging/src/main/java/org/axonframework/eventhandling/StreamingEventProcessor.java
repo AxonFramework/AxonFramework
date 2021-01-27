@@ -10,10 +10,10 @@ import java.util.function.Function;
 
 
 /**
- * An {@link EventProcessor} which can process an event stream in segments. Segmenting the stream of events allows for
+ * An {@link EventProcessor} which processes an event stream in segments. Segmenting the stream of events allows for
  * parallelization of event processing, effectively enhancing the processing speed.
  * <p>
- * A {@link SegmentedEventProcessor} uses a {@link TokenStore} to store the progress of each of the segments it is
+ * A {@link StreamingEventProcessor} uses a {@link TokenStore} to store the progress of each of the segments it is
  * processing. Furthermore, it allows for segment interactions like:
  * <ul>
  *     <li>{@link #releaseSegment(int)} - release a segment processed by this processor</li>
@@ -27,12 +27,12 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 4.5
  */
-public interface SegmentedEventProcessor extends EventProcessor {
+public interface StreamingEventProcessor extends EventProcessor {
 
     /**
-     * Returns the unique identifier of the {@link TokenStore} used by this {@link SegmentedEventProcessor}.
+     * Returns the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}.
      *
-     * @return the unique identifier of the {@link TokenStore} used by this {@link SegmentedEventProcessor}
+     * @return the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}
      * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the {@link TokenStore}
      *                                                                                        was unable to retrieve it
      */
@@ -98,7 +98,7 @@ public interface SegmentedEventProcessor extends EventProcessor {
     CompletableFuture<Boolean> mergeSegment(int segmentId);
 
     /**
-     * Indicates whether this {@link SegmentedEventProcessor} supports a "reset". Generally, a reset is supported if at
+     * Indicates whether this {@link StreamingEventProcessor} supports a "reset". Generally, a reset is supported if at
      * least one of the Event Handling Components assigned to this processor supports it, and no handlers explicitly
      * prevent the resets.
      * <p>

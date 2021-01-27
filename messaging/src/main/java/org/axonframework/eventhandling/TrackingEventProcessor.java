@@ -80,14 +80,14 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * TokenStore}. To replay from a specific point, {@link #resetTokens(Function)} can be utilized to define the new point
  * to start at.
  * <p>
- * Note, the {@link #getName()} of this {@link SegmentedEventProcessor} is used to obtain the tracking token from the
+ * Note, the {@link #getName()} of this {@link StreamingEventProcessor} is used to obtain the tracking token from the
  * {@code TokenStore}, so take care when renaming a {@link TrackingEventProcessor}.
  *
  * @author Rene de Waele
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends AbstractEventProcessor implements SegmentedEventProcessor {
+public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 

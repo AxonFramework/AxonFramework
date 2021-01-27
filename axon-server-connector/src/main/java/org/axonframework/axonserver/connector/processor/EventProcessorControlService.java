@@ -24,7 +24,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SegmentedEventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.StartHandler;
@@ -111,8 +111,8 @@ public class EventProcessorControlService {
     }
 
     public Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
-        if (processor instanceof SegmentedEventProcessor) {
-            return () -> TrackingEventProcessorInfoMessage.describe((SegmentedEventProcessor) processor);
+        if (processor instanceof StreamingEventProcessor) {
+            return () -> TrackingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
         } else if (processor instanceof SubscribingEventProcessor) {
             return () -> subscribingProcessorInfo(processor);
         } else {
@@ -148,12 +148,12 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> releaseSegment(int segmentId) {
             try {
-                if (!(processor instanceof SegmentedEventProcessor)) {
-                    logger.info("Release segment requested for processor [{}] which is not a Segmented Event Processor",
+                if (!(processor instanceof StreamingEventProcessor)) {
+                    logger.info("Release segment requested for processor [{}] which is not a Streaming Event Processor",
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    ((SegmentedEventProcessor) processor).releaseSegment(segmentId);
+                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
                 }
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
@@ -164,12 +164,12 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> splitSegment(int segmentId) {
             try {
-                if (!(processor instanceof SegmentedEventProcessor)) {
-                    logger.info("Split segment requested for processor [{}] which is not a Segmented Event Processor",
+                if (!(processor instanceof StreamingEventProcessor)) {
+                    logger.info("Split segment requested for processor [{}] which is not a Streaming Event Processor",
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    return ((SegmentedEventProcessor) processor)
+                    return ((StreamingEventProcessor) processor)
                             .splitSegment(segmentId)
                             .thenApply(result -> {
                                 if (Boolean.TRUE.equals(result)) {
@@ -190,13 +190,13 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> mergeSegment(int segmentId) {
             try {
-                if (!(processor instanceof SegmentedEventProcessor)) {
+                if (!(processor instanceof StreamingEventProcessor)) {
                     logger.warn(
-                            "Merge segment request received for processor [{}] which is not a Segmented Event Processor",
+                            "Merge segment request received for processor [{}] which is not a Streaming Event Processor",
                             name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    return ((SegmentedEventProcessor) processor)
+                    return ((StreamingEventProcessor) processor)
                             .mergeSegment(segmentId)
                             .thenApply(result -> {
                                 if (Boolean.TRUE.equals(result)) {

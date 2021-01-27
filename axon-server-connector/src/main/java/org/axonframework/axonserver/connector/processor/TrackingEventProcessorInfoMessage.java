@@ -20,7 +20,7 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.EventTrackerStatus;
-import org.axonframework.eventhandling.SegmentedEventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
 
@@ -44,10 +44,10 @@ public class TrackingEventProcessorInfoMessage {
     /**
      * Create an {@link EventProcessorInfo} based on the given {@code eventProcessor}.
      *
-     * @param eventProcessor the {@link SegmentedEventProcessor} to base an {@link EventProcessorInfo} on
+     * @param eventProcessor the {@link StreamingEventProcessor} to base an {@link EventProcessorInfo} on
      * @return a {@link EventProcessorInfo} based on the given {@code eventProcessor}
      */
-    public static EventProcessorInfo describe(SegmentedEventProcessor eventProcessor) {
+    public static EventProcessorInfo describe(StreamingEventProcessor eventProcessor) {
         List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
                                                         .values()
                                                         .stream()

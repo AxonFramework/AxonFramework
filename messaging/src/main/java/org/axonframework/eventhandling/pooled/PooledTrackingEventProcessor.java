@@ -11,7 +11,7 @@ import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.SegmentedEventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
@@ -42,7 +42,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
- * A {@link SegmentedEventProcessor} implementation which pools it's resources to enhance processing speed. It utilizes
+ * A {@link StreamingEventProcessor} implementation which pools it's resources to enhance processing speed. It utilizes
  * a {@link Coordinator} as the means to stream events from a {@link StreamableMessageSource} and creates so called work
  * packages. Every work package is in charge of a {@link Segment} of the entire event stream. It is the {@code
  * Coordinator}'s job to retrieve the events from the source and provide the events to all the work packages it is in
@@ -60,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Allard Buijze
  * @since 4.5
  */
-public class PooledTrackingEventProcessor extends AbstractEventProcessor implements SegmentedEventProcessor {
+public class PooledTrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -412,7 +412,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
         /**
          * Sets the initial segment count used to create segments on start up. Only used whenever there are not segments
-         * stored in the configured {@link TokenStore} upon start up of this {@link SegmentedEventProcessor}. The given
+         * stored in the configured {@link TokenStore} upon start up of this {@link StreamingEventProcessor}. The given
          * value should at least be {@code 1}. Defaults to {@code 32}.
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
