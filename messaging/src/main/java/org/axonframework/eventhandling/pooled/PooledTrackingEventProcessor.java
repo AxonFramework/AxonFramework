@@ -75,6 +75,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final long tokenClaimInterval;
+    private final int maxCapacity;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -92,6 +93,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -134,6 +136,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
+        this.maxCapacity = builder.maxCapacity;
 
         ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
@@ -257,9 +260,15 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         // TODO: 26-01-21 adjusts tokens to reset tokens
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The maximum capacity of the {@link PooledTrackingEventProcessor} defaults to {@link Short#MAX_VALUE}. If
+     * required, this value can be adjusted through the {@link Builder#maxCapacity(int)} method.
+     */
     @Override
     public int maxCapacity() {
-        return Short.MAX_VALUE;
+        return maxCapacity;
     }
 
     @Override
@@ -293,6 +302,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -316,6 +326,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
         private long tokenClaimInterval = 5000;
+        private int maxCapacity = Short.MAX_VALUE;
 
         protected Builder() {
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -436,7 +447,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialSegmentCount(int initialSegmentCount) {
-            assertStrictPositive(initialSegmentCount, "The initialSegmentCount should be a higher valuer than zero");
+            assertStrictPositive(initialSegmentCount, "The initial segment count should be a higher valuer than zero");
             this.initialSegmentCount = initialSegmentCount;
             return this;
         }
@@ -468,8 +479,21 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder tokenClaimInterval(long tokenClaimInterval) {
-            assertStrictPositive(tokenClaimInterval, "The tokenClaimInterval should be a higher valuer than zero");
+            assertStrictPositive(tokenClaimInterval, "Token claim interval should be a higher valuer than zero");
             this.tokenClaimInterval = tokenClaimInterval;
+            return this;
+        }
+
+        /**
+         * Defines the maximum segment capacity of this {@link StreamingEventProcessor}, as will be returned by the
+         * {@link #maxCapacity()}  method. Defaults to {@link Short#MAX_VALUE}.
+         *
+         * @param maxCapacity the maximum segment capacity of this {@link StreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder maxCapacity(int maxCapacity) {
+            assertStrictPositive(maxCapacity, "Max capacity should be a higher valuer than zero");
+            this.maxCapacity = maxCapacity;
             return this;
         }
 
