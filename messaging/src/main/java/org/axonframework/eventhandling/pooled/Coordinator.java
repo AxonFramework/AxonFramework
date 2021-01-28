@@ -54,6 +54,7 @@ class Coordinator {
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
+    private final int batchSize;
     private final long tokenClaimInterval;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
@@ -75,6 +76,7 @@ class Coordinator {
      * @param executorService         a {@link ScheduledExecutorService} used to run this coordinators tasks with
      * @param workPackageFactory      factory method to construct work packages
      * @param processingStatusUpdater lambda used to update the processing status per work package
+     * @param batchSize               the maximum number of events to process in a single batch
      * @param tokenClaimInterval      the time in milliseconds this coordinator will wait to reattempt claiming segments
      *                                for processing
      */
@@ -85,6 +87,7 @@ class Coordinator {
                        ScheduledExecutorService executorService,
                        BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
                        BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
+                       int batchSize,
                        long tokenClaimInterval) {
         this.name = name;
         this.messageSource = messageSource;
@@ -93,6 +96,7 @@ class Coordinator {
         this.workPackageFactory = workPackageFactory;
         this.executorService = executorService;
         this.processingStatusUpdater = processingStatusUpdater;
+        this.batchSize = batchSize;
         this.tokenClaimInterval = tokenClaimInterval;
     }
 
@@ -235,6 +239,8 @@ class Coordinator {
      */
     private class CoordinatorTask implements Runnable {
 
+        private static final int MAX_EVENT_TO_FETCH = 1024;
+
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
@@ -368,15 +374,6 @@ class Coordinator {
                                .allMatch(WorkPackage::hasRemainingCapacity);
         }
 
-        private void scheduleCoordinationTask(long delay) {
-            if (scheduledGate.compareAndSet(false, true)) {
-                executorService.schedule(() -> {
-                    scheduledGate.set(false);
-                    this.run();
-                }, delay, TimeUnit.MILLISECONDS);
-            }
-        }
-
         /**
          * Start coordinating work to the {@link WorkPackage}s. This means retrieving events from the {@link
          * StreamableMessageSource}, schedule these events to all the {@code WorkPackage}s and finally validate if any
@@ -387,9 +384,8 @@ class Coordinator {
          */
         private void coordinateWorkPackages() throws InterruptedException {
             logger.debug("Coordinator [{}] is coordinating work to all its work packages.", name);
-            // TODO: 26-01-21 should fetch size be configurable?
-            // Base on the Max of (batchsize times 10) and 1024
-            for (int fetched = 0; fetched < 1024 && isSpaceAvailable() && stream.hasNextAvailable(); fetched++) {
+            int maxToFetch = Math.max(batchSize * 10, MAX_EVENT_TO_FETCH);
+            for (int fetched = 0; fetched < maxToFetch && isSpaceAvailable() && stream.hasNextAvailable(); fetched++) {
                 TrackedEventMessage<?> event = stream.nextAvailable();
                 for (WorkPackage workPackage : workPackages.values()) {
                     workPackage.scheduleEvent(event);
@@ -406,8 +402,13 @@ class Coordinator {
             scheduleCoordinationTask(0);
         }
 
-        private void startCoordinationTask() {
-            scheduleCoordinationTask(0);
+        private void scheduleCoordinationTask(long delay) {
+            if (scheduledGate.compareAndSet(false, true)) {
+                executorService.schedule(() -> {
+                    scheduledGate.set(false);
+                    this.run();
+                }, delay, TimeUnit.MILLISECONDS);
+            }
         }
 
         private void scheduleDelayedCoordinationTask(long delay) {

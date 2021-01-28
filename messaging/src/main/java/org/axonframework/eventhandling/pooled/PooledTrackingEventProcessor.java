@@ -93,6 +93,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      * </ul>
@@ -143,7 +144,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinator = new Coordinator(
                 name, messageSource, tokenStore, transactionManager, coordinatorExecutor,
-                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
+                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)),
+                builder.batchSize, tokenClaimInterval
         );
     }
 
@@ -309,6 +311,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      * </ul>
@@ -333,6 +336,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private int initialSegmentCount = 32;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
+        private int batchSize = 1;
         private long tokenClaimInterval = 5000;
         private int maxCapacity = Short.MAX_VALUE;
 
@@ -474,6 +478,18 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
             this.initialToken = initialToken;
+            return this;
+        }
+
+        /**
+         * Defines the number of events to process in a single batch. Defaults to {@code 1}.
+         *
+         * @param batchSize the number of events to process in a single batch
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder batchSize(int batchSize) {
+            assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
+            this.batchSize = batchSize;
             return this;
         }
 
