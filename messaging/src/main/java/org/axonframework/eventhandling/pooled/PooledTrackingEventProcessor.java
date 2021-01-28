@@ -60,6 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 4.5
  */
 public class PooledTrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
@@ -142,21 +143,22 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinator = new Coordinator(
                 name, messageSource, tokenStore, transactionManager, coordinatorExecutor,
-                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts))
+                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
         );
     }
 
     @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     @Override
     public void start() {
-        logger.info("PooledTrackingEventProcessor {} starting", name);
+        logger.info("Starting PooledTrackingEventProcessor [{}].", name);
         transactionManager.executeInTransaction(() -> {
             int[] ints = tokenStore.fetchSegments(name);
             if (ints == null || ints.length == 0) {
-                logger.info("Initializing segments for {} ({} segments)", name, 8);
+                logger.info("Initializing segments for processor [{}] ({} segments)", name, 8);
                 tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
             }
         });
+        coordinator.start();
     }
 
     @Override
