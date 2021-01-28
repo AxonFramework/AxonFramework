@@ -204,15 +204,21 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         );
     }
 
-    // TODO: 22-01-21 implement
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
+        // TODO: 26-01-21 return false if the Coordinator does not have this work package
+        // TODO: 26-01-21 If has WP, abort WP and initialize new segments with remaining claim
+        // TODO: 26-01-21 If dont have WP but can claim...
+        // TODO: 26-01-21 release afterwards regardless
         return CompletableFuture.completedFuture(false);
     }
 
-    // TODO: 22-01-21 implement
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
+        // TODO: 26-01-21 Check which segments to merge based on the given segmentId
+        // TODO: 26-01-21 return false if the Coordinator does not have this work package and cannot claim it
+        // TODO: 26-01-21 If dont have WP but can claim...
+        // TODO: 26-01-21 release (both) afterwards regardless
         return CompletableFuture.completedFuture(false);
     }
 
