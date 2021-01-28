@@ -233,7 +233,17 @@ class Coordinator {
     }
 
     /**
-     * A {@link Runnable} defining the entire coordination process delt with by a {@link Coordinator}.
+     * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
+     * sense means:
+     * <ol>
+     *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
+     *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
+     *     <li>Reading events from the stream.</li>
+     *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
+     *     <li>Releasing claims of aborted {@code WorkPackages}.</li>
+     *     <li>Rescheduling itself to be picked up at a reasonable point in time.</li>
+     * </ol>
      */
     private class CoordinatorTask implements Runnable {
 
