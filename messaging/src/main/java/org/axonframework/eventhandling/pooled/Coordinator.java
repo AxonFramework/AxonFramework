@@ -58,11 +58,9 @@ class Coordinator {
     private final long tokenClaimInterval;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
-
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
-    private int errorWaitBackOff = 500;
-    // TODO: 26-01-21 use to check whether to reuse found segments on startWorkPackages
     private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
+    private int errorWaitBackOff = 500;
 
     /**
      * Constructs a {@link Coordinator}.
@@ -323,6 +321,10 @@ class Coordinator {
                 int[] segments = tokenStore.fetchSegments(name);
                 TrackingToken lowerBound = NoToken.INSTANCE;
                 for (int segmentId : segments) {
+                    if (shouldNotClaimSegment(segmentId)) {
+                        logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
+                        continue;
+                    }
                     if (workPackages.containsKey(segmentId)) {
                         logger.debug("No need to fetch segment [{}] as it is already owned by coordinator [{}].",
                                      segmentId, name);
@@ -339,6 +341,7 @@ class Coordinator {
                         lowerBound = lowerBound == null
                                 ? null
                                 : lowerBound.lowerBound(workPackage.lastDeliveredToken());
+                        releasesDeadlines.remove(segmentId);
                     } catch (UnableToClaimTokenException e) {
                         logger.debug("Unable to claim the token for segment[{}]. It is owned by another process.",
                                      segmentId);
@@ -346,6 +349,10 @@ class Coordinator {
                 }
                 return lowerBound;
             });
+        }
+
+        private boolean shouldNotClaimSegment(int segmentId) {
+            return releasesDeadlines.containsKey(segmentId) && releasesDeadlines.get(segmentId).isAfter(Instant.now());
         }
 
         private void openStream(TrackingToken trackingToken) {
