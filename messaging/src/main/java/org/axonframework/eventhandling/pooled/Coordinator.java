@@ -244,8 +244,10 @@ class Coordinator {
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
-        private BlockingStream<TrackedEventMessage<?>> stream;
+        private BlockingStream<TrackedEventMessage<?>> eventStream;
+        private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
+        private long unclaimedSegmentValidationThreshold;
 
         @Override
         public void run() {
@@ -261,10 +263,11 @@ class Coordinator {
                 return;
             }
 
-            if (stream == null) {
-                // TODO - Also execute this when last check for unclaimed segments was beyond to define threshold (tokenClaimInterval)
-                TrackingToken baseToken = startWorkPackages();
-                openStream(baseToken);
+            if (eventStream == null || unclaimedSegmentValidationThreshold <= Instant.now().toEpochMilli()) {
+                TrackingToken newWorkLowerBound = startNewWorkPackages();
+                unclaimedSegmentValidationThreshold = Instant.now().toEpochMilli() + tokenClaimInterval;
+                TrackingToken overallLowerBound = newWorkLowerBound.lowerBound(lastScheduledToken);
+                openStream(overallLowerBound);
             }
 
             if (workPackages.isEmpty()) {
@@ -280,7 +283,7 @@ class Coordinator {
                 errorWaitBackOff = 500;
                 processingGate.set(false);
 
-                if (isSpaceAvailable() && stream.hasNextAvailable()) {
+                if (isSpaceAvailable() && eventStream.hasNextAvailable()) {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
@@ -310,62 +313,65 @@ class Coordinator {
                                .thenRun(workPackages::clear);
         }
 
-        private TrackingToken startWorkPackages() {
+        /**
+         * Start new {@link WorkPackage}s for each segment this task is able to claim for its processor.
+         *
+         * @return the lower bound {@link TrackingToken} based on all the newly fetched segments
+         */
+        private TrackingToken startNewWorkPackages() {
             return transactionManager.fetchInTransaction(() -> {
                 int[] segments = tokenStore.fetchSegments(name);
                 TrackingToken lowerBound = NoToken.INSTANCE;
                 for (int segmentId : segments) {
-                    if (!workPackages.containsKey(segmentId)) {
-                        try {
-                            TrackingToken token = tokenStore.fetchToken(name, segmentId);
-                            logger.debug("Token for {} segment {} claimed: [{}]. Preparing work package.",
-                                         name, segmentId, token);
-                            Segment segment = Segment.computeSegment(segmentId, segments);
-                            WorkPackage workPackage = workPackages.computeIfAbsent(
-                                    segmentId, k -> workPackageFactory.apply(segment, token)
-                            );
-                            lowerBound = lowerBound == null
-                                    ? null
-                                    : lowerBound.lowerBound(workPackage.lastDeliveredToken());
-                        } catch (UnableToClaimTokenException e) {
-                            logger.debug("Unable to claim the token for segment[{}]. It is owned by another process.",
-                                         segmentId);
-                        }
-                    } else {
-                        logger.debug("Not need to fetch token for segment [{}]", segmentId);
-                        // TODO: 26-01-21 Shouldn't we adjust the base token here too?
-                        //  What if the new found segments are all ahead of the current packages?
+                    if (workPackages.containsKey(segmentId)) {
+                        logger.debug("No need to fetch segment [{}] as it is already owned by coordinator [{}].",
+                                     segmentId, name);
+                        continue;
+                    }
+
+                    try {
+                        TrackingToken token = tokenStore.fetchToken(name, segmentId);
+                        logger.debug("Token for segment [{}] on processor [{}] claimed: [{}]. Preparing work package.",
+                                     segmentId, name, token);
+                        Segment segment = Segment.computeSegment(segmentId, segments);
+                        WorkPackage workPackage =
+                                workPackages.computeIfAbsent(segmentId, k -> workPackageFactory.apply(segment, token));
+                        lowerBound = lowerBound == null
+                                ? null
+                                : lowerBound.lowerBound(workPackage.lastDeliveredToken());
+                    } catch (UnableToClaimTokenException e) {
+                        logger.debug("Unable to claim the token for segment[{}]. It is owned by another process.",
+                                     segmentId);
                     }
                 }
                 return lowerBound;
             });
         }
 
-        private void openStream(TrackingToken baseToken) {
-            if (!NoToken.INSTANCE.equals(baseToken)) { // We calculated a proper token to open the stream from
-                if (stream != null) { // We already had a stream open, so let's close the old one
-                    // TODO: 26-01-21 should this ever happen?
-                    // Yes,, if we have claimed new tokens
-                    stream.close();
-                    stream = null;
-                }
-
-                try {
-                    // TODO: 26-01-21 store last read token, to make a nice lowerbound
-                    // Make this lowerbound check
-                    stream = messageSource.openStream(baseToken);
-                    this.availabilityCallbackSupported = stream.setOnAvailableCallback(this::startCoordinationTask);
-                    if (!availabilityCallbackSupported) {
-                        startCoordinationTask();
-                    } else {
-                        scheduleDelayedCoordinationTask(tokenClaimInterval);
-                    }
-                } catch (Exception e) {
-                    abortAndScheduleRetry(e);
-                }
-            } else {
+        private void openStream(TrackingToken trackingToken) {
+            if (NoToken.INSTANCE.equals(trackingToken)) {
                 logger.debug("Coordinator [{}] is not in charge of any segments. Will retry in {} milliseconds.",
                              name, tokenClaimInterval);
+                return;
+            }
+
+            // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
+            if (eventStream != null) {
+                eventStream.close();
+                eventStream = null;
+            }
+
+            try {
+                eventStream = messageSource.openStream(trackingToken);
+                logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
+                availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::startCoordinationTask);
+                if (!availabilityCallbackSupported) {
+                    startCoordinationTask();
+                } else {
+                    scheduleDelayedCoordinationTask(tokenClaimInterval);
+                }
+            } catch (Exception e) {
+                abortAndScheduleRetry(e);
             }
         }
 
@@ -385,11 +391,14 @@ class Coordinator {
         private void coordinateWorkPackages() throws InterruptedException {
             logger.debug("Coordinator [{}] is coordinating work to all its work packages.", name);
             int maxToFetch = Math.max(batchSize * 10, MAX_EVENT_TO_FETCH);
-            for (int fetched = 0; fetched < maxToFetch && isSpaceAvailable() && stream.hasNextAvailable(); fetched++) {
-                TrackedEventMessage<?> event = stream.nextAvailable();
+            for (int fetched = 0;
+                 fetched < maxToFetch && isSpaceAvailable() && eventStream.hasNextAvailable();
+                 fetched++) {
+                TrackedEventMessage<?> event = eventStream.nextAvailable();
                 for (WorkPackage workPackage : workPackages.values()) {
                     workPackage.scheduleEvent(event);
                 }
+                lastScheduledToken = event.trackingToken();
             }
 
             // If a work package has been aborted by something else than the Coordinator. We should abandon it.
@@ -438,7 +447,7 @@ class Coordinator {
                         executorService.schedule(new CoordinatorTask(), errorWaitBackOff, TimeUnit.MILLISECONDS);
                     }
             );
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(eventStream);
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
