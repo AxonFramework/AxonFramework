@@ -376,11 +376,6 @@ class Coordinator {
                 eventStream = messageSource.openStream(trackingToken);
                 logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
                 availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::startCoordinationTask);
-                if (!availabilityCallbackSupported) {
-                    startCoordinationTask();
-                } else {
-                    scheduleDelayedCoordinationTask(tokenClaimInterval);
-                }
             } catch (Exception e) {
                 abortAndScheduleRetry(e);
             }
