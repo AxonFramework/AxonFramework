@@ -286,15 +286,12 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
         processingStatus.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, initialToken));
-        return new WorkPackage(name,
-                               segment,
-                               initialToken,
-                               this::processInUnitOfWork,
-                               this::canHandle,
-                               workerExecutor,
-                               tokenStore,
-                               transactionManager,
-                               u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status)));
+        return new WorkPackage(
+                name, tokenStore, transactionManager, workerExecutor,
+                this::canHandle, this::processInUnitOfWork,
+                segment, initialToken,
+                u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status))
+        );
     }
 
     /**

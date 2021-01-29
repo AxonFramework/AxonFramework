@@ -41,6 +41,7 @@ import java.util.function.UnaryOperator;
  * @author Allard Buijze
  * @author Steven van Beelen
  * @see PooledTrackingEventProcessor
+ * @see WorkPackage
  * @since 4.5
  */
 class Coordinator {
