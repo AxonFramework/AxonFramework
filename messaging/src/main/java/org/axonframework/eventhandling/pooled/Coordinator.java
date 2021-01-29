@@ -54,7 +54,6 @@ class Coordinator {
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
-    private final int batchSize;
     private final long tokenClaimInterval;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
@@ -74,7 +73,6 @@ class Coordinator {
      * @param executorService         a {@link ScheduledExecutorService} used to run this coordinators tasks with
      * @param workPackageFactory      factory method to construct work packages
      * @param processingStatusUpdater lambda used to update the processing status per work package
-     * @param batchSize               the maximum number of events to process in a single batch
      * @param tokenClaimInterval      the time in milliseconds this coordinator will wait to reattempt claiming segments
      *                                for processing
      */
@@ -85,7 +83,6 @@ class Coordinator {
                        ScheduledExecutorService executorService,
                        BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
                        BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
-                       int batchSize,
                        long tokenClaimInterval) {
         this.name = name;
         this.messageSource = messageSource;
@@ -94,7 +91,6 @@ class Coordinator {
         this.workPackageFactory = workPackageFactory;
         this.executorService = executorService;
         this.processingStatusUpdater = processingStatusUpdater;
-        this.batchSize = batchSize;
         this.tokenClaimInterval = tokenClaimInterval;
     }
 
@@ -246,8 +242,6 @@ class Coordinator {
      * </ol>
      */
     private class CoordinatorTask implements Runnable {
-
-        private static final int MAX_EVENT_TO_FETCH = 1024;
 
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
@@ -407,9 +401,8 @@ class Coordinator {
          */
         private void coordinateWorkPackages() throws InterruptedException {
             logger.debug("Coordinator [{}] is coordinating work to all its work packages.", name);
-            int maxToFetch = Math.max(batchSize * 10, MAX_EVENT_TO_FETCH);
             for (int fetched = 0;
-                 fetched < maxToFetch && isSpaceAvailable() && eventStream.hasNextAvailable();
+                 fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
                 for (WorkPackage workPackage : workPackages.values()) {

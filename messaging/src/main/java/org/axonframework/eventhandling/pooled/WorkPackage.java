@@ -31,6 +31,7 @@ class WorkPackage {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkPackage.class);
     private static final int BATCH_SIZE = 100;
+    static final int BUFFER_SIZE = 1024;
 
     private final String name;
     private final Segment segment;
