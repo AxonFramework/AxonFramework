@@ -1,5 +1,6 @@
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
@@ -11,6 +12,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -29,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -264,11 +268,23 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
     @Override
     public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
-        // TODO - assert support reset
-        // TODO: 26-01-21 assert coordinator not running
-        // TODO: 26-01-21 claim all segments
-        // TODO: 26-01-21 performReset on EventHAndlerInvoker
-        // TODO: 26-01-21 adjusts tokens to reset tokens
+        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
+        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
+
+        transactionManager.executeInTransaction(() -> {
+            // Find all segments and fetch all tokens
+            int[] segments = tokenStore.fetchSegments(getName());
+            TrackingToken[] tokens = Arrays.stream(segments)
+                                           .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
+                                           .toArray(TrackingToken[]::new);
+            // Perform the reset on the EventHandlerInvoker
+            eventHandlerInvoker().performReset(resetContext);
+            // Update all tokens towards ReplayTokens
+            IntStream.range(0, tokens.length)
+                     .forEach(i -> tokenStore.storeToken(
+                             ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]
+                     ));
+        });
     }
 
     /**
