@@ -175,7 +175,7 @@ class WorkPackage {
 
     private void processEvents() {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
-        while (eventBatch.size() < BATCH_SIZE && !events.isEmpty()) {
+        while (!isAbortTriggered() && eventBatch.size() < BATCH_SIZE && !events.isEmpty()) {
             TrackedEventMessage<?> event = events.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, event.trackingToken());
             try {
@@ -194,17 +194,17 @@ class WorkPackage {
             try {
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.afterCommit(u -> segmentStatusUpdater.accept(s -> s.advancedTo(lastConsumedToken)));
+                unitOfWork.afterCommit(u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken)));
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
                 handleError(e);
             }
         } else {
-            segmentStatusUpdater.accept(s -> s.advancedTo(lastConsumedToken));
+            segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             // Empty batch, check for token extension time
             long now = System.currentTimeMillis();
             if (lastClaimExtension < now - claimExtensionThreshold) {
-                logger.info("Extending claims for {} segment {}", name, segment.getSegmentId());
+                logger.debug("Extending claim on segment for Work Package [{}]-[{}].", name, segment.getSegmentId());
 
                 Runnable tokenOperation = lastStoredToken == lastConsumedToken
                         ? () -> tokenStore.extendClaim(name, segment.getSegmentId())
@@ -216,9 +216,8 @@ class WorkPackage {
     }
 
     private void handleError(Exception cause) {
-        segmentStatusUpdater.accept(s -> s.markError(cause));
+        segmentStatusUpdater.accept(status -> status.markError(cause));
         abortFlag.updateAndGet(e -> getOrDefault(e, () -> CompletableFuture.completedFuture(cause)));
-        // TODO: 26-01-21 find way to release claim
     }
 
     private void storeToken(TrackingToken token) {
