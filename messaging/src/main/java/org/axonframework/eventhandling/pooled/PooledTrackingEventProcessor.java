@@ -77,6 +77,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final long tokenClaimInterval;
     private final int maxCapacity;
+    private final long claimExtensionThreshold;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -95,6 +96,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
+     *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -138,6 +140,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.maxCapacity = builder.maxCapacity;
+        this.claimExtensionThreshold = builder.claimExtensionThreshold;
 
         ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
@@ -289,7 +292,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         return new WorkPackage(
                 name, tokenStore, transactionManager, workerExecutor,
                 this::canHandle, this::processInUnitOfWork,
-                segment, initialToken,
+                segment, initialToken, claimExtensionThreshold,
                 u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status))
         );
     }
@@ -308,6 +311,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
+     *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -332,6 +336,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                 StreamableMessageSource::createTailToken;
         private long tokenClaimInterval = 5000;
         private int maxCapacity = Short.MAX_VALUE;
+        private long claimExtensionThreshold = 5000;
 
         protected Builder() {
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -499,6 +504,23 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         public Builder maxCapacity(int maxCapacity) {
             assertStrictPositive(maxCapacity, "Max capacity should be a higher valuer than zero");
             this.maxCapacity = maxCapacity;
+            return this;
+        }
+
+        /**
+         * Specifies a time in milliseconds the work packages of this processor should extend the claim on a {@link
+         * TrackingToken}. The threshold will only be met in absence of regular event processing, since that updates the
+         * {@code TrackingToken} automatically. Defaults to {@code 5000} milliseconds.
+         *
+         * @param claimExtensionThreshold a time in milliseconds the work packages of this processor should extend the
+         *                                claim on a {@link TrackingToken}.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder claimExtensionThreshold(long claimExtensionThreshold) {
+            assertStrictPositive(
+                    claimExtensionThreshold, "The claim extension threshold should be a higher valuer than zero"
+            );
+            this.claimExtensionThreshold = claimExtensionThreshold;
             return this;
         }
 

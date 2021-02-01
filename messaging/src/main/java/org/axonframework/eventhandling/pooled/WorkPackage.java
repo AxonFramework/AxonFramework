@@ -79,18 +79,22 @@ class WorkPackage {
     /**
      * Constructs a {@link WorkPackage}.
      *
-     * @param name                 the name of the processor this {@link WorkPackage} processes events for
-     * @param tokenStore           the storage solution of {@link TrackingToken}s. Used to extend claims on and update
-     *                             the {@code initialToken}
-     * @param transactionManager   a {@link TransactionManager} used to invoke {@link TokenStore} operations and event
-     *                             processing inside a transaction
-     * @param executorService      a {@link ScheduledExecutorService} used to run this work package's tasks in
-     * @param eventValidator       validates whether a buffered event should be handled by this package's {@code
-     *                             segment}
-     * @param batchProcessor       processes a batch of events
-     * @param segment              the {@link Segment} this work package is in charge of
-     * @param initialToken         the initial {@link TrackingToken} when this package starts processing events
-     * @param segmentStatusUpdater lambda to be invoked whenever the status of this package's {@code segment} changes
+     * @param name                    the name of the processor this {@link WorkPackage} processes events for
+     * @param tokenStore              the storage solution of {@link TrackingToken}s. Used to extend claims on and
+     *                                update the {@code initialToken}
+     * @param transactionManager      a {@link TransactionManager} used to invoke {@link TokenStore} operations and
+     *                                event processing inside a transaction
+     * @param executorService         a {@link ScheduledExecutorService} used to run this work package's tasks in
+     * @param eventValidator          validates whether a buffered event should be handled by this package's {@code
+     *                                segment}
+     * @param batchProcessor          processes a batch of events
+     * @param segment                 the {@link Segment} this work package is in charge of
+     * @param initialToken            the initial {@link TrackingToken} when this package starts processing events
+     * @param claimExtensionThreshold the time in milliseconds after which the claim of the {@link TrackingToken} will
+     *                                be extended. Will only be used in absence of regular token updates through event
+     *                                processing
+     * @param segmentStatusUpdater    lambda to be invoked whenever the status of this package's {@code segment}
+     *                                changes
      */
     public WorkPackage(String name,
                        TokenStore tokenStore,
@@ -100,6 +104,7 @@ class WorkPackage {
                        BatchProcessor batchProcessor,
                        Segment segment,
                        TrackingToken initialToken,
+                       long claimExtensionThreshold,
                        Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
         this.name = name;
         this.tokenStore = tokenStore;
@@ -108,8 +113,8 @@ class WorkPackage {
         this.eventValidator = eventValidator;
         this.batchProcessor = batchProcessor;
         this.segment = segment;
-        this.claimExtensionThreshold = 5000; // TODO make configurable
         this.lastDeliveredToken = initialToken;
+        this.claimExtensionThreshold = claimExtensionThreshold;
         this.segmentStatusUpdater = segmentStatusUpdater;
 
         this.lastConsumedToken = initialToken;
