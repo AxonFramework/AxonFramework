@@ -49,8 +49,8 @@ class WorkPackage {
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final ScheduledExecutorService executorService;
-    private final HandlerValidator handlerValidator;
-    private final BatchProcessor eventBatchProcessor;
+    private final EventValidator eventValidator;
+    private final BatchProcessor batchProcessor;
     private final Segment segment;
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
@@ -69,8 +69,8 @@ class WorkPackage {
                        TokenStore tokenStore,
                        TransactionManager transactionManager,
                        ScheduledExecutorService executorService,
-                       HandlerValidator handlerValidator,
-                       BatchProcessor eventBatchProcessor,
+                       EventValidator eventValidator,
+                       BatchProcessor batchProcessor,
                        Segment segment,
                        TrackingToken initialToken,
                        Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
@@ -78,8 +78,8 @@ class WorkPackage {
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
         this.executorService = executorService;
-        this.handlerValidator = handlerValidator;
-        this.eventBatchProcessor = eventBatchProcessor;
+        this.eventValidator = eventValidator;
+        this.batchProcessor = batchProcessor;
         this.segment = segment;
         this.claimExtensionThreshold = 5000; // TODO make configurable
         this.lastDeliveredToken = initialToken;
@@ -147,7 +147,7 @@ class WorkPackage {
             TrackedEventMessage<?> event = events.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, event.trackingToken());
             try {
-                if (handlerValidator.canHandle(event, segment)) {
+                if (eventValidator.shouldHandle(event, segment)) {
                     eventBatch.add(event);
                 }
             } catch (Exception e) {
@@ -163,7 +163,7 @@ class WorkPackage {
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.afterCommit(u -> segmentStatusUpdater.accept(s -> s.advancedTo(lastConsumedToken)));
-                eventBatchProcessor.processInUnitOfWork(eventBatch, unitOfWork, Collections.singleton(segment));
+                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
                 handleError(e);
             }
@@ -267,34 +267,43 @@ class WorkPackage {
     }
 
     /**
-     * TODO fill class level javadoc
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} should be handled within the
+     * given {@link Segment}.
      */
     @FunctionalInterface
-    public interface BatchProcessor {
+    interface EventValidator {
 
         /**
-         * @param eventMessages
-         * @param unitOfWork
-         * @param processingSegments
-         * @throws Exception
+         * Indicates whether the work package should handle the given {@code eventMessage} for the given {@code
+         * segment}.
+         *
+         * @param eventMessage the message for which to identify if the work package should handle it
+         * @param segment      the segment for which the event should be processed
+         * @return {@code true} if the event message should be handled, otherwise {@code false}
+         * @throws Exception when validating if the given {@code eventMessage} fails
          */
-        void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                 UnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 Collection<Segment> processingSegments) throws Exception;
+        boolean shouldHandle(TrackedEventMessage<?> eventMessage, Segment segment) throws Exception;
     }
 
     /**
-     * TODO fill class level javadoc
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
      */
     @FunctionalInterface
-    public interface HandlerValidator {
+    interface BatchProcessor {
 
         /**
-         * @param eventMessage
-         * @param segment
-         * @return
-         * @throws Exception
+         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
+         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
+         * {@code eventMessages} should be processed.
+         *
+         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
+         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
+         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
+         *                           given {@code unitOfWork}
+         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
          */
-        boolean canHandle(TrackedEventMessage<?> eventMessage, Segment segment) throws Exception;
+        void processBatch(List<? extends EventMessage<?>> eventMessages,
+                          UnitOfWork<? extends EventMessage<?>> unitOfWork,
+                          Collection<Segment> processingSegments) throws Exception;
     }
 }
