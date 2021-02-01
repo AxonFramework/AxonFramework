@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.pooled.PooledTrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
@@ -696,6 +697,37 @@ public class EventProcessingModule
             Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     ) {
         this.defaultTrackingEventProcessorConfiguration.update(trackingEventProcessorConfigurationBuilder);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerPooledTrackingEventProcessor(
+            String name,
+            BiFunction<Configuration, PooledTrackingEventProcessor.Builder, PooledTrackingEventProcessor.Builder> processorCustomization
+    ) {
+        registerEventProcessor(name, (n, c, ehi) -> {
+            if (!(c.eventBus() instanceof StreamableMessageSource)) {
+                throw new AxonConfigurationException(
+                        "Cannot create Pooled Tracking Event Processor '" + name + "'. " +
+                                "The available EventBus does not support streaming event processors."
+                );
+            }
+            // noinspection unchecked,unchecked
+            StreamableMessageSource<TrackedEventMessage<?>> messageSource =
+                    (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus();
+
+            PooledTrackingEventProcessor.Builder processorBuilder =
+                    PooledTrackingEventProcessor.builder()
+                                                .name(n)
+                                                .eventHandlerInvoker(ehi)
+                                                .rollbackConfiguration(rollbackConfiguration(n))
+                                                .errorHandler(errorHandler(n))
+                                                .messageMonitor(messageMonitor(PooledTrackingEventProcessor.class, n))
+                                                .messageSource(messageSource)
+                                                .tokenStore(tokenStore(n))
+                                                .transactionManager(transactionManager(n));
+            return processorCustomization.apply(c, processorBuilder).build();
+        });
         return this;
     }
 
