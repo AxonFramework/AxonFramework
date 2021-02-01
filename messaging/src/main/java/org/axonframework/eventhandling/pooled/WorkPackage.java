@@ -30,7 +30,18 @@ import java.util.function.UnaryOperator;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * TODO fill class level javadoc
+ * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
+ * event should be handled through a {@link EventValidator} and after that processing a collection of events in the
+ * {@link BatchProcessor}.
+ * <p>
+ * Events are received through the {@link #scheduleEvent(TrackedEventMessage)} operation, delegated by a {@link
+ * Coordinator}. Receiving event(s) means this job will be scheduled to process these events through a {@link
+ * ScheduledExecutorService}. As there are local threads and outside threads invoking methods on the {@link
+ * WorkPackage}, several methods have threading notes describing what can invoke them safely.
+ * <p>
+ * Since the {@code WorkPackage} is in charge of a {@code Segment}, it maintains the claim on the matching {@link
+ * TrackingToken}. In absence of new events, it will also {@link TokenStore#extendClaim(String, int)} on the {@code
+ * TrackingToken}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -65,6 +76,22 @@ class WorkPackage {
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private final AtomicReference<CompletableFuture<Exception>> abortFlag = new AtomicReference<>();
 
+    /**
+     * Constructs a {@link WorkPackage}.
+     *
+     * @param name                 the name of the processor this {@link WorkPackage} processes events for
+     * @param tokenStore           the storage solution of {@link TrackingToken}s. Used to extend claims on and update
+     *                             the {@code initialToken}
+     * @param transactionManager   a {@link TransactionManager} used to invoke {@link TokenStore} operations and event
+     *                             processing inside a transaction
+     * @param executorService      a {@link ScheduledExecutorService} used to run this work package's tasks in
+     * @param eventValidator       validates whether a buffered event should be handled by this package's {@code
+     *                             segment}
+     * @param batchProcessor       processes a batch of events
+     * @param segment              the {@link Segment} this work package is in charge of
+     * @param initialToken         the initial {@link TrackingToken} when this package starts processing events
+     * @param segmentStatusUpdater lambda to be invoked whenever the status of this package's {@code segment} changes
+     */
     public WorkPackage(String name,
                        TokenStore tokenStore,
                        TransactionManager transactionManager,
