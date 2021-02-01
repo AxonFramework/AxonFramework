@@ -55,16 +55,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * The event store can be tracked by multiple event processors simultaneously. To prevent that each event processor
  * needs to read from the storage engine individually the embedded event store contains a cache of the most recent
  * events. This cache is shared between the streams of various event processors. So, assuming an event processor
- * processes events fast enough and is not far behind the head of the event log it will not need a private connection
- * to the underlying data store. The size of the cache (in number of events) is configurable.
- * This 'event consumption optimization' might in some scenarios not be desirable, as it will spin up additional threads
- * and perform some locking operations. Hence it is switchable by using the
- * {@link Builder#optimizeEventConsumption(boolean)} upon creation. Additionally, this can also be turned off by
- * providing a system property with key {@code optimize-event-consumption}.
+ * processes events fast enough and is not far behind the head of the event log it will not need a private connection to
+ * the underlying data store. The size of the cache (in number of events) is configurable. This 'event consumption
+ * optimization' might in some scenarios not be desirable, as it will spin up additional threads and perform some
+ * locking operations. Hence it is switchable by using the {@link Builder#optimizeEventConsumption(boolean)} upon
+ * creation. Additionally, this can also be turned off by providing a system property with key {@code
+ * optimize-event-consumption}.
  * <p>
  * The embedded event store automatically fetches new events from the store if there is at least one registered tracking
- * event processor present. It will do so after new events are committed to the store, as well as periodically as
- * events may have been committed by other nodes or applications. This periodic fetch delay is configurable.
+ * event processor present. It will do so after new events are committed to the store, as well as periodically as events
+ * may have been committed by other nodes or applications. This periodic fetch delay is configurable.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -90,8 +90,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
     /**
      * Instantiate a {@link EmbeddedEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if it is {@code null}.
+     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an {@link
+     * AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link EmbeddedEventStore} instance
      */
@@ -370,8 +370,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
             if ((nextNode = nextNode()) == null && timeout > 0) {
                 consumerLock.lock();
                 try {
-                    consumableEventsCondition.await(timeout, timeUnit);
-                    nextNode = nextNode();
+                    if (consumableEventsCondition.await(timeout, timeUnit)) {
+                        nextNode = nextNode();
+                    }
                 } finally {
                     consumerLock.unlock();
                 }
@@ -493,7 +494,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         // Default to optimize event consumption of no property has been set
         private static boolean fetchEventConsumptionSystemPropertyOrDefault() {
-            String optimizeEventConsumptionSystemProperty = System.getProperty(OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY);
+            String optimizeEventConsumptionSystemProperty = System.getProperty(
+                    OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY);
             return optimizeEventConsumptionSystemProperty == null ||
                     Boolean.TRUE.toString().equalsIgnoreCase(optimizeEventConsumptionSystemProperty);
         }
@@ -530,7 +532,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * current application have meanwhile been committed. If the current application commits events then those
          * events are fetched without delay.
          * <p>
-         * Defaults to {@code 1000}. Together with the {@link Builder#timeUnit}, this will define the exact fetch delay.
+         * Defaults to {@code 1000}. Together with the {@link Builder#timeUnit}, this will define the exact fetch
+         * delay.
          *
          * @param fetchDelay a {@code long} specifying the time to wait before fetching new events from the backing
          *                   storage engine while tracking after a previous stream was fetched and read
@@ -575,8 +578,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         /**
-         * Sets the {@link ThreadFactory} used to create threads for consuming, producing and cleaning up. Defaults to
-         * a {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
+         * Sets the {@link ThreadFactory} used to create threads for consuming, producing and cleaning up. Defaults to a
+         * {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
          *
          * @param threadFactory a {@link ThreadFactory} used to create threads for consuming, producing and cleaning up
          * @return the current Builder instance, for fluent interfacing
@@ -589,11 +592,11 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         /**
          * Sets whether event consumption should be optimized between Event Stream. If set to {@code true}, distinct
-         * Event Consumers will read events from the same stream as soon as they reach the head of the stream. If
-         * {@code false}, they will stay on a private stream. The latter means more database resources will be used, but
-         * no side threads are created to fill the consumer cache nor locking is done on consumer threads. This field
-         * can also be configured by providing a system property with key {@code optimize-event-consumption}. Defaults
-         * to {@code true}.
+         * Event Consumers will read events from the same stream as soon as they reach the head of the stream. If {@code
+         * false}, they will stay on a private stream. The latter means more database resources will be used, but no
+         * side threads are created to fill the consumer cache nor locking is done on consumer threads. This field can
+         * also be configured by providing a system property with key {@code optimize-event-consumption}. Defaults to
+         * {@code true}.
          *
          * @param optimizeEventConsumption a {@code boolean} defining whether to optimize event consumption of threads
          *                                 by introducing a Event Cache Production thread tailing the head of the stream

@@ -47,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
@@ -79,9 +80,8 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     /**
      * Instantiate a {@link QuartzEventScheduler} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link Scheduler}, {@link EventBus}, {@link EventJobDataBinder} and
-     * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
-     * them is {@code null}.
+     * Will assert that the {@link Scheduler} and {@link EventBus} are not {@code null},
+     * and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      * The EventBus, TransactionManager and EventJobDataBinder will be tied to the Scheduler's context. If this
      * initialization step fails, this will too result in an AxonConfigurationException.
      *
@@ -91,7 +91,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         builder.validate();
         scheduler = builder.scheduler;
         eventBus = builder.eventBus;
-        jobDataBinder = builder.jobDataBinder;
+        jobDataBinder = builder.jobDataBinderSupplier.get();
         transactionManager = builder.transactionManager;
 
         try {
@@ -348,7 +348,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
         private Scheduler scheduler;
         private EventBus eventBus;
-        private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
+        private Supplier<EventJobDataBinder> jobDataBinderSupplier = DirectEventJobDataBinder::new;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         /**
@@ -385,7 +385,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          */
         public Builder jobDataBinder(EventJobDataBinder jobDataBinder) {
             assertNonNull(jobDataBinder, "EventJobDataBinder may not be null");
-            this.jobDataBinder = jobDataBinder;
+            this.jobDataBinderSupplier = () -> jobDataBinder;
             return this;
         }
 
