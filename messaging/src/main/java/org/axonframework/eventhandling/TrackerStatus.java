@@ -107,17 +107,32 @@ public final class TrackerStatus implements EventTrackerStatus {
     /**
      * Splits the current status object to reflect the status of their underlying segments being split.
      *
-     * @return an array with two status object, representing the status of the split segments.
+     * @return an array with two status objects, representing the status of the split segments
      */
     public TrackerStatus[] split() {
+        return split(this.segment, this.trackingToken);
+    }
+
+    /**
+     * Split the given {@code segment} and {@code trackingToken} in two. Constructs an array containing two {@link
+     * TrackerStatus}s objects based on the split.
+     *
+     * @param segment       the {@link Segment} to split in two
+     * @param trackingToken the {@link TrackingToken} to split in two
+     * @return an array of two {@link TrackerStatus}s objects based on the split of the given {@code segment} and {@code
+     * trackingToken}
+     */
+    public static TrackerStatus[] split(Segment segment, TrackingToken trackingToken) {
         Segment[] newSegments = segment.split();
         TrackingToken tokenAtReset = null;
         TrackingToken workingToken = trackingToken;
         TrackingToken[] splitTokens = new TrackingToken[2];
+
         if (workingToken instanceof ReplayToken) {
             tokenAtReset = ((ReplayToken) workingToken).getTokenAtReset();
             workingToken = ((ReplayToken) workingToken).lowerBound();
         }
+
         if (workingToken instanceof MergedTrackingToken) {
             splitTokens[0] = ((MergedTrackingToken) workingToken).lowerSegmentToken();
             splitTokens[1] = ((MergedTrackingToken) workingToken).upperSegmentToken();
@@ -127,10 +142,11 @@ public final class TrackerStatus implements EventTrackerStatus {
         }
 
         if (tokenAtReset != null) {
-            // we were in a replay. Need to re-initialize the replay wrapper
+            // We were in a replay; need to re-initialize the replay wrapper.
             splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
             splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);
         }
+
         TrackerStatus[] newStatus = new TrackerStatus[2];
         newStatus[0] = new TrackerStatus(newSegments[0], splitTokens[0]);
         newStatus[1] = new TrackerStatus(newSegments[1], splitTokens[1]);

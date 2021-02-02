@@ -238,6 +238,15 @@ class WorkPackage {
     }
 
     /**
+     * Returns the {@link Segment} that this {@link WorkPackage} is processing events for.
+     *
+     * @return the {@link Segment} that this {@link WorkPackage} is processing events for
+     */
+    public Segment segment() {
+        return segment;
+    }
+
+    /**
      * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was delivered in the last {@link
      * #scheduleEvent(TrackedEventMessage)} call.
      * <p>
@@ -248,16 +257,17 @@ class WorkPackage {
      * WorkPackage}
      */
     public TrackingToken lastDeliveredToken() {
-        return this.lastDeliveredToken;
+        return lastDeliveredToken;
     }
 
     /**
-     * Returns the {@link Segment} that this {@link WorkPackage} is processing events for.
+     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was last processed by this work
+     * package.
      *
-     * @return the {@link Segment} that this {@link WorkPackage} is processing events for
+     * @return the {@link TrackingToken} of the {@link TrackedEventMessage} that was last processed by this work package
      */
-    public Segment getSegment() {
-        return segment;
+    public TrackingToken lastStoredToken() {
+        return lastStoredToken;
     }
 
     /**

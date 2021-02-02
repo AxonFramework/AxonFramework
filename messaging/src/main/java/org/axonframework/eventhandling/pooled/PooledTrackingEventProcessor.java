@@ -215,11 +215,15 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
-        // TODO: 26-01-21 return false if the Coordinator does not have this work package
-        // TODO: 26-01-21 If has WP, abort WP and initialize new segments with remaining claim
-        // TODO: 26-01-21 If dont have WP but can claim...
-        // TODO: 26-01-21 release afterwards regardless
-        return CompletableFuture.completedFuture(false);
+        if (!tokenStore.requiresExplicitSegmentInitialization()) {
+            CompletableFuture<Boolean> result = new CompletableFuture<>();
+            result.completeExceptionally(new UnsupportedOperationException(
+                    "TokenStore must require explicit initialization to safely split tokens."
+            ));
+            return result;
+        }
+
+        return coordinator.splitSegment(segmentId);
     }
 
     @Override

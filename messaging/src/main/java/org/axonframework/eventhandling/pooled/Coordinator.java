@@ -162,8 +162,8 @@ class Coordinator {
      * @see StreamingEventProcessor#releaseSegment(int, long, TimeUnit)
      */
     public void releaseUntil(int segmentId, Instant releaseDuration) {
-        logger.debug("Coordinator [{}] will disregard segment [{}] for processing until {}.",
-                     name, segmentId, releaseDuration);
+        logger.info("Coordinator [{}] will disregard segment [{}] for processing until {}.",
+                    name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
         WorkPackage workPackage = workPackages.get(segmentId);
         if (workPackage != null) {
@@ -175,6 +175,61 @@ class Coordinator {
         }
     }
 
+    /**
+     * Instructs this coordinator to split the segment for the given {@code segmentId}.
+     * <p>
+     * If this coordinator is currently in charge of the specified segment, the {@link WorkPackage} will be aborted and
+     * subsequently its segment split. When this coordinator is not in charge of the specified {@code segmentId}, it
+     * will try to claim the segment's {@link TrackingToken} and then split it.
+     * <p>
+     * In either way, the segment's claim (if present) will be released, so that another thread can proceed with
+     * processing it.
+     *
+     * @param segmentId the identifier of the segment to split
+     * @return a {@link CompletableFuture} providing the result of the split operation
+     */
+    public CompletableFuture<Boolean> splitSegment(int segmentId) {
+        logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
+        // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
+        WorkPackage workPackage = workPackages.remove(segmentId);
+        CompletableFuture<Boolean> result = workPackage != null ? abortAndSplit(workPackage) : claimAndSplit(segmentId);
+        return result.exceptionally(e -> {
+            logger.warn("Coordinator [{}] failed to split segment [{}].", name, segmentId, e);
+            return false;
+        });
+    }
+
+    private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
+        return workPackage.abort(null)
+                          .thenApply(e -> splitAndRelease(workPackage.segment(), workPackage.lastStoredToken()));
+    }
+
+    private CompletableFuture<Boolean> claimAndSplit(int segmentId) {
+        return CompletableFuture.completedFuture(transactionManager.fetchInTransaction(() -> {
+            try {
+                int[] segments = tokenStore.fetchSegments(name);
+                Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
+                TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentId);
+                return splitAndRelease(segmentToSplit, tokenToSplit);
+            } catch (UnableToClaimTokenException e) {
+                logger.debug("Unable to claim the token for segment[{}] for splitting.", segmentId);
+                return false;
+            }
+        }));
+    }
+
+    private boolean splitAndRelease(Segment segmentToSplit, TrackingToken tokenToSplit) {
+        TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
+        transactionManager.executeInTransaction(() -> {
+            tokenStore.initializeSegment(
+                    splitStatuses[1].getTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
+            );
+            tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
+        });
+        logger.info("Coordinator [{}] successfully split segment [{}].",
+                    name, splitStatuses[0].getSegment().getSegmentId());
+        return true;
+    }
 
     /**
      * Status holder for this service. Defines whether it is running, has been started (to ensure double {@link
@@ -459,11 +514,11 @@ class Coordinator {
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
             return work.abort(cause)
                        .thenAccept(e -> logger.debug(
-                               "Worker [{}] has aborted. Releasing claim.", work.getSegment().getSegmentId(), e
+                               "Worker [{}] has aborted. Releasing claim.", work.segment().getSegmentId(), e
                        ))
-                       .thenRun(() -> workPackages.remove(work.getSegment().getSegmentId(), work))
+                       .thenRun(() -> workPackages.remove(work.segment().getSegmentId(), work))
                        .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.getSegment().getSegmentId())
+                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
                        ));
         }
     }
