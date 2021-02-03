@@ -194,7 +194,9 @@ class WorkPackage {
             try {
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.afterCommit(u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken)));
+                unitOfWork.afterCommit(
+                        u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
+                );
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
                 handleError(e);
@@ -261,16 +263,6 @@ class WorkPackage {
     }
 
     /**
-     * Returns the {@link TrackingToken} of the {@link TrackedEventMessage} that was last processed by this work
-     * package.
-     *
-     * @return the {@link TrackingToken} of the {@link TrackedEventMessage} that was last processed by this work package
-     */
-    public TrackingToken lastStoredToken() {
-        return lastStoredToken;
-    }
-
-    /**
      * Indicates whether an abort has been triggered for this {@link WorkPackage}. When {@code true}, any events
      * scheduled for processing by this {@code WorkPackage} are likely to be ignored.
      * <p>
@@ -305,6 +297,19 @@ class WorkPackage {
         // Reschedule the worker to ensure the abort flag is processed
         scheduleWorker();
         return abortTask;
+    }
+
+    /**
+     * Mark this {@link WorkPackage} to stop processing events. The returned {@link CompletableFuture} is completed with
+     * the {@link TrackingToken} of the last processed {@link TrackedEventMessage}.
+     * <p>
+     * Note that this approach aborts the work package, which cannot be restarted afterwards.
+     *
+     * @return a {@link CompletableFuture} is completed with the {@link TrackingToken} of the last processed {@link
+     * TrackedEventMessage}
+     */
+    public CompletableFuture<TrackingToken> stopPackage() {
+        return abort(null).thenApply(e -> lastStoredToken);
     }
 
     /**

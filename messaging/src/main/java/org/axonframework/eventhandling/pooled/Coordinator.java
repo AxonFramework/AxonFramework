@@ -201,8 +201,8 @@ class Coordinator {
     }
 
     private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
-        return workPackage.abort(null)
-                          .thenApply(e -> splitAndRelease(workPackage.segment(), workPackage.lastStoredToken()));
+        return workPackage.stopPackage()
+                          .thenApply(token -> splitAndRelease(workPackage.segment(), token));
     }
 
     private CompletableFuture<Boolean> claimAndSplit(int segmentId) {
@@ -282,13 +282,10 @@ class Coordinator {
     }
 
     private CompletableFuture<TrackingToken> tokenFor(int segmentId) {
-        if (workPackages.containsKey(segmentId)) {
-            WorkPackage workPackage = workPackages.remove(segmentId);
-            return workPackage.abort(null).thenApply(e -> workPackage.lastStoredToken());
-        }
-        return CompletableFuture.completedFuture(
-                transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(name, segmentId))
-        );
+        return workPackages.containsKey(segmentId)
+                ? workPackages.remove(segmentId).stopPackage()
+                : CompletableFuture.completedFuture(transactionManager.fetchInTransaction(
+                () -> tokenStore.fetchToken(name, segmentId)));
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
