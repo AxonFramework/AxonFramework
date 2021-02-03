@@ -34,8 +34,8 @@ class SplitInstruction extends CoordinatorInstruction {
     private final String name;
     private final int segmentId;
     private final Map<Integer, WorkPackage> workPackages;
-    private final TransactionManager transactionManager;
     private final TokenStore tokenStore;
+    private final TransactionManager transactionManager;
 
     /**
      * Constructs a {@link SplitInstruction}.
@@ -48,21 +48,21 @@ class SplitInstruction extends CoordinatorInstruction {
      * @param workPackages       the collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                           queried for the presence of the given {@code segmentId}
      * @param tokenStore         the storage solution for {@link TrackingToken}s. Used to claim the {@code segmentId} if
-     *                           it is no present in the {@code workPackages} and to store the split segment
+     *                           it is not present in the {@code workPackages} and to store the split segment
      * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a
-     *                           transaction
      */
     SplitInstruction(CompletableFuture<Boolean> result,
                      String name,
                      int segmentId,
                      Map<Integer, WorkPackage> workPackages,
-                     TokenStore tokenStore, TransactionManager transactionManager) {
+                     TokenStore tokenStore,
+                     TransactionManager transactionManager) {
         super(result);
         this.name = name;
         this.segmentId = segmentId;
         this.workPackages = workPackages;
-        this.transactionManager = transactionManager;
         this.tokenStore = tokenStore;
+        this.transactionManager = transactionManager;
     }
 
     /**
@@ -83,11 +83,6 @@ class SplitInstruction extends CoordinatorInstruction {
             logger.warn("Coordinator [{}] failed to split segment [{}].", name, segmentId, e);
             return false;
         }).whenComplete(super::complete);
-    }
-
-    @Override
-    String description() {
-        return "Split Instruction for segment [" + segmentId + "]";
     }
 
     private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
@@ -120,5 +115,10 @@ class SplitInstruction extends CoordinatorInstruction {
         logger.info("Coordinator [{}] successfully split segment [{}].",
                     name, splitStatuses[0].getSegment().getSegmentId());
         return true;
+    }
+
+    @Override
+    String description() {
+        return "Split Instruction for segment [" + segmentId + "]";
     }
 }
