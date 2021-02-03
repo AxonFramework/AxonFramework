@@ -228,11 +228,15 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
-        // TODO: 26-01-21 Check which segments to merge based on the given segmentId
-        // TODO: 26-01-21 return false if the Coordinator does not have this work package and cannot claim it
-        // TODO: 26-01-21 If dont have WP but can claim...
-        // TODO: 26-01-21 release (both) afterwards regardless
-        return CompletableFuture.completedFuture(false);
+        if (!tokenStore.requiresExplicitSegmentInitialization()) {
+            CompletableFuture<Boolean> result = new CompletableFuture<>();
+            result.completeExceptionally(new UnsupportedOperationException(
+                    "TokenStore must require explicit initialization to safely merge tokens."
+            ));
+            return result;
+        }
+
+        return coordinator.mergeSegment(segmentId);
     }
 
     @Override

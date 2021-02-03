@@ -3,6 +3,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.MergedTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -228,6 +229,83 @@ class Coordinator {
         });
         logger.info("Coordinator [{}] successfully split segment [{}].",
                     name, splitStatuses[0].getSegment().getSegmentId());
+        return true;
+    }
+
+    /**
+     * Instructs this coordinator to merge the segment for the given {@code segmentId}.
+     * <p>
+     * If this coordinator is currently in charge of the {@code segmentId} and the segment to merge it with, both {@link
+     * WorkPackage}s will be aborted, after which the merge will start. When this coordinator is not in charge of one of
+     * the two segments, it will try to claim either segment's {@link TrackingToken} and perform the merge then.
+     * <p>
+     * In either approach, this operation will delete one of the segments and release the claim on the other, so that
+     * another thread can proceed with processing it.
+     *
+     * @param segmentId the identifier of the segment to merge
+     * @return a {@link CompletableFuture} indicating whether the merge was executed successfully
+     */
+    public CompletableFuture<Boolean> mergeSegment(int segmentId) {
+        logger.debug("Coordinator [{}] will perform merge instruction for segment [{}].", name, segmentId);
+
+        int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
+        Segment thisSegment = Segment.computeSegment(segmentId, segments);
+        int thatSegmentId = thisSegment.mergeableSegmentId();
+        if (segmentId == thatSegmentId) {
+            logger.debug("Coordinator [{}] cannot merge segment [{}]. "
+                                 + "A merge request can only be fulfilled if there is more than one segment.",
+                         name, segmentId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
+        if (!thisSegment.isMergeableWith(thatSegment)) {
+            logger.debug("Coordinator [{}] cannot merge segment [{}] with [{}]. "
+                                 + "Segment [{}] and [{}] cannot be merged with one another.",
+                         name, segmentId, thatSegmentId, segmentId, thatSegmentId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        return tokenFor(thisSegment.getSegmentId()).thenCombine(
+                tokenFor(thatSegment.getSegmentId()),
+                (thisToken, thatToken) -> mergeSegments(thisSegment, thisToken, thatSegment, thatToken)
+        ).exceptionally(e -> {
+            if (e instanceof UnableToClaimTokenException) {
+                logger.debug("Coordinator [{}] cannot merge segment [{}] with [{}]. "
+                                     + "It could not claim segment [{}] or [{}] for merging.",
+                             name, segmentId, thatSegmentId, segmentId, thatSegmentId, e);
+            } else {
+                logger.warn("Coordinator [{}] failed merging segment [{}] with [{}].", name, segmentId, e);
+            }
+            return false;
+        });
+    }
+
+    private CompletableFuture<TrackingToken> tokenFor(int segmentId) {
+        if (workPackages.containsKey(segmentId)) {
+            WorkPackage workPackage = workPackages.remove(segmentId);
+            return workPackage.abort(null).thenApply(e -> workPackage.lastStoredToken());
+        }
+        return CompletableFuture.completedFuture(
+                transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(name, segmentId))
+        );
+    }
+
+    private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
+                                  Segment thatSegment, TrackingToken thatToken) {
+        Segment mergedSegment = thisSegment.mergedWith(thatSegment);
+        // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
+        int tokenToDelete = (mergedSegment.getSegmentId() == thisSegment.getSegmentId()) ? thatSegment
+                .getSegmentId() : thisSegment.getSegmentId();
+        TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
+                ? new MergedTrackingToken(thatToken, thisToken)
+                : new MergedTrackingToken(thisToken, thatToken);
+
+        transactionManager.executeInTransaction(() -> {
+            tokenStore.deleteToken(name, tokenToDelete);
+            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
+            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
+        });
         return true;
     }
 

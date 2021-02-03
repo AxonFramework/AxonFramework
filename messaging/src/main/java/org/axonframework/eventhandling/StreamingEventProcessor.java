@@ -92,7 +92,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      *     return status.getSegment().mergeableSegmentId();
      * </pre>
      *
-     * @param segmentId the identifier of the segment to merge into this one.
+     * @param segmentId the identifier of the segment to merge
      * @return a {@link CompletableFuture} indicating whether the merge was executed successfully
      */
     CompletableFuture<Boolean> mergeSegment(int segmentId);
