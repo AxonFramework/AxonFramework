@@ -18,8 +18,10 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +64,7 @@ class Coordinator {
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
+    private final Queue<CoordinatorInstruction> coordinatorInstructions = new ConcurrentLinkedQueue<>();
 
     /**
      * Constructs a {@link Coordinator}.
@@ -190,46 +193,11 @@ class Coordinator {
      * @return a {@link CompletableFuture} providing the result of the split operation
      */
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
-        logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
-        // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
-        WorkPackage workPackage = workPackages.remove(segmentId);
-        CompletableFuture<Boolean> result = workPackage != null ? abortAndSplit(workPackage) : claimAndSplit(segmentId);
-        return result.exceptionally(e -> {
-            logger.warn("Coordinator [{}] failed to split segment [{}].", name, segmentId, e);
-            return false;
-        });
-    }
-
-    private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
-        return workPackage.stopPackage()
-                          .thenApply(token -> splitAndRelease(workPackage.segment(), token));
-    }
-
-    private CompletableFuture<Boolean> claimAndSplit(int segmentId) {
-        return CompletableFuture.completedFuture(transactionManager.fetchInTransaction(() -> {
-            try {
-                int[] segments = tokenStore.fetchSegments(name);
-                Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
-                TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentId);
-                return splitAndRelease(segmentToSplit, tokenToSplit);
-            } catch (UnableToClaimTokenException e) {
-                logger.debug("Unable to claim the token for segment[{}] for splitting.", segmentId);
-                return false;
-            }
-        }));
-    }
-
-    private boolean splitAndRelease(Segment segmentToSplit, TrackingToken tokenToSplit) {
-        TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
-        transactionManager.executeInTransaction(() -> {
-            tokenStore.initializeSegment(
-                    splitStatuses[1].getTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
-            );
-            tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
-        });
-        logger.info("Coordinator [{}] successfully split segment [{}].",
-                    name, splitStatuses[0].getSegment().getSegmentId());
-        return true;
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        coordinatorInstructions.add(
+                new SplitInstruction(result, name, segmentId, workPackages, tokenStore, transactionManager)
+        );
+        return result;
     }
 
     /**
@@ -364,6 +332,7 @@ class Coordinator {
      * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
      * sense means:
      * <ol>
+     *     <li>Validating if there are {@link CoordinatorInstruction}s to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
      *     <li>Reading events from the stream.</li>
@@ -394,6 +363,12 @@ class Coordinator {
                 logger.debug("Releasing claims for processor [{}].", name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle.complete(null));
                 return;
+            }
+
+            if (!coordinatorInstructions.isEmpty()) {
+                CoordinatorInstruction instruction = coordinatorInstructions.remove();
+                logger.debug("Coordinator [{}] found a instruction [{}] to run.", name, instruction.description());
+                instruction.run();
             }
 
             if (eventStream == null || unclaimedSegmentValidationThreshold <= Instant.now().toEpochMilli()) {
