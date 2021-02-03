@@ -214,64 +214,11 @@ class Coordinator {
      * @return a {@link CompletableFuture} indicating whether the merge was executed successfully
      */
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
-        logger.debug("Coordinator [{}] will perform merge instruction for segment [{}].", name, segmentId);
-
-        int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
-        Segment thisSegment = Segment.computeSegment(segmentId, segments);
-        int thatSegmentId = thisSegment.mergeableSegmentId();
-        if (segmentId == thatSegmentId) {
-            logger.debug("Coordinator [{}] cannot merge segment [{}]. "
-                                 + "A merge request can only be fulfilled if there is more than one segment.",
-                         name, segmentId);
-            return CompletableFuture.completedFuture(false);
-        }
-
-        Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
-        if (!thisSegment.isMergeableWith(thatSegment)) {
-            logger.debug("Coordinator [{}] cannot merge segment [{}] with [{}]. "
-                                 + "Segment [{}] and [{}] cannot be merged with one another.",
-                         name, segmentId, thatSegmentId, segmentId, thatSegmentId);
-            return CompletableFuture.completedFuture(false);
-        }
-
-        return tokenFor(thisSegment.getSegmentId()).thenCombine(
-                tokenFor(thatSegment.getSegmentId()),
-                (thisToken, thatToken) -> mergeSegments(thisSegment, thisToken, thatSegment, thatToken)
-        ).exceptionally(e -> {
-            if (e instanceof UnableToClaimTokenException) {
-                logger.debug("Coordinator [{}] cannot merge segment [{}] with [{}]. "
-                                     + "It could not claim segment [{}] or [{}] for merging.",
-                             name, segmentId, thatSegmentId, segmentId, thatSegmentId, e);
-            } else {
-                logger.warn("Coordinator [{}] failed merging segment [{}] with [{}].", name, segmentId, e);
-            }
-            return false;
-        });
-    }
-
-    private CompletableFuture<TrackingToken> tokenFor(int segmentId) {
-        return workPackages.containsKey(segmentId)
-                ? workPackages.remove(segmentId).stopPackage()
-                : CompletableFuture.completedFuture(transactionManager.fetchInTransaction(
-                () -> tokenStore.fetchToken(name, segmentId)));
-    }
-
-    private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
-                                  Segment thatSegment, TrackingToken thatToken) {
-        Segment mergedSegment = thisSegment.mergedWith(thatSegment);
-        // We want to keep the token with the segmentId obtained by the merge operation, and to delete the other
-        int tokenToDelete = (mergedSegment.getSegmentId() == thisSegment.getSegmentId()) ? thatSegment
-                .getSegmentId() : thisSegment.getSegmentId();
-        TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
-                ? new MergedTrackingToken(thatToken, thisToken)
-                : new MergedTrackingToken(thisToken, thatToken);
-
-        transactionManager.executeInTransaction(() -> {
-            tokenStore.deleteToken(name, tokenToDelete);
-            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
-            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
-        });
-        return true;
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        coordinatorInstructions.add(
+                new MergeInstruction(result, name, segmentId, workPackages, tokenStore, transactionManager)
+        );
+        return result;
     }
 
     /**
