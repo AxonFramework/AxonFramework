@@ -66,8 +66,7 @@ class WorkPackage {
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
 
-    // For use only by event delivery threads
-    private TrackingToken lastDeliveredToken;
+    private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
     private TrackingToken lastStoredToken;
     private long lastClaimExtension;
@@ -75,6 +74,7 @@ class WorkPackage {
     private final Queue<TrackedEventMessage<?>> events = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private final AtomicReference<CompletableFuture<Exception>> abortFlag = new AtomicReference<>();
+    private final AtomicReference<Exception> abortException = new AtomicReference<>();
 
     /**
      * Constructs a {@link WorkPackage}.
@@ -159,7 +159,7 @@ class WorkPackage {
                 logger.debug("Work Package [{}]-[{}] should be aborted. Will shutdown this work package.",
                              segment.getSegmentId(), name);
                 segmentStatusUpdater.accept(previousStatus -> null);
-                aborting.complete(null);
+                aborting.complete(abortException.get());
                 return;
             }
 
@@ -184,6 +184,8 @@ class WorkPackage {
                 }
             } catch (Exception e) {
                 handleError(e);
+                lastConsumedToken = lastStoredToken;
+                return;
             }
         }
 
@@ -290,9 +292,17 @@ class WorkPackage {
      */
     public CompletableFuture<Exception> abort(Exception abortReason) {
         CompletableFuture<Exception> abortTask = abortFlag.updateAndGet(
-                currentReason -> currentReason == null
-                        ? new CompletableFuture<Exception>().thenApply(ex -> getOrDefault(ex, abortReason))
-                        : currentReason
+                currentFlag -> {
+                    if (currentFlag == null) {
+                        abortException.set(abortReason);
+                        return new CompletableFuture<>();
+                    } else {
+                        abortException.updateAndGet(
+                                currentReason -> currentReason == null ? abortReason : currentReason
+                        );
+                        return currentFlag;
+                    }
+                }
         );
         // Reschedule the worker to ensure the abort flag is processed
         scheduleWorker();
