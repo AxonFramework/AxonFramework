@@ -108,7 +108,7 @@ class Coordinator {
         if (newState.wasStarted()) {
             logger.info("Starting coordinator for processor [{}].", name);
             try {
-                executorService.submit(new CoordinatorTask());
+                executorService.submit(new CoordinationTask());
             } catch (Exception e) {
                 // A failure starting the processor. We need to stop immediately.
                 logger.warn("An error occurred while trying to attempt to start the coordinator for processor [{}].",
@@ -288,7 +288,7 @@ class Coordinator {
      *     <li>Rescheduling itself to be picked up at a reasonable point in time.</li>
      * </ol>
      */
-    private class CoordinatorTask implements Runnable {
+    private class CoordinationTask implements Runnable {
 
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
@@ -502,7 +502,7 @@ class Coordinator {
                         logger.debug(
                                 "Work packages have aborted. Scheduling new fetcher to run in {}ms", errorWaitBackOff
                         );
-                        executorService.schedule(new CoordinatorTask(), errorWaitBackOff, TimeUnit.MILLISECONDS);
+                        executorService.schedule(new CoordinationTask(), errorWaitBackOff, TimeUnit.MILLISECONDS);
                     }
             );
             IOUtils.closeQuietly(eventStream);
