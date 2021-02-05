@@ -3,7 +3,6 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.MergedTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -64,7 +63,7 @@ class Coordinator {
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
-    private final Queue<CoordinatorInstruction> coordinatorInstructions = new ConcurrentLinkedQueue<>();
+    private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
 
     /**
      * Constructs a {@link Coordinator}.
@@ -194,9 +193,7 @@ class Coordinator {
      */
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorInstructions.add(
-                new SplitInstruction(result, name, segmentId, workPackages, tokenStore, transactionManager)
-        );
+        coordinatorTasks.add(new SplitTask(result, name, segmentId, workPackages, tokenStore, transactionManager));
         return result;
     }
 
@@ -215,9 +212,7 @@ class Coordinator {
      */
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        coordinatorInstructions.add(
-                new MergeInstruction(result, name, segmentId, workPackages, tokenStore, transactionManager)
-        );
+        coordinatorTasks.add(new MergeTask(result, name, segmentId, workPackages, tokenStore, transactionManager));
         return result;
     }
 
@@ -279,7 +274,7 @@ class Coordinator {
      * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
      * sense means:
      * <ol>
-     *     <li>Validating if there are {@link CoordinatorInstruction}s to run, and run a single one if there are any.</li>
+     *     <li>Validating if there are {@link CoordinatorTask}s to run, and run a single one if there are any.</li>
      *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
      *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
      *     <li>Reading events from the stream.</li>
@@ -312,8 +307,8 @@ class Coordinator {
                 return;
             }
 
-            if (!coordinatorInstructions.isEmpty()) {
-                CoordinatorInstruction instruction = coordinatorInstructions.remove();
+            if (!coordinatorTasks.isEmpty()) {
+                CoordinatorTask instruction = coordinatorTasks.remove();
                 logger.debug("Coordinator [{}] found a instruction [{}] to run.", name, instruction.description());
                 instruction.run();
             }

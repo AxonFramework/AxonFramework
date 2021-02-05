@@ -18,11 +18,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SplitInstruction}.
+ * Test class validating the {@link SplitTask}.
  *
  * @author Steven van Beelen
  */
-class SplitInstructionTest {
+class SplitTaskTest {
 
     private static final String PROCESSOR_NAME = "test";
     private static final int SEGMENT_ID = Segment.ROOT_SEGMENT.getSegmentId();
@@ -31,7 +31,7 @@ class SplitInstructionTest {
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
 
-    private SplitInstruction testSubject;
+    private SplitTask testSubject;
 
     private final WorkPackage workPackage = mock(WorkPackage.class);
 
@@ -39,7 +39,7 @@ class SplitInstructionTest {
     void setUp() {
         result = new CompletableFuture<>();
 
-        testSubject = new SplitInstruction(
+        testSubject = new SplitTask(
                 result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, NoTransactionManager.instance()
         );
     }
@@ -103,19 +103,14 @@ class SplitInstructionTest {
     }
 
     @Test
-    void testRunReturnsFalseThroughOtherException() throws ExecutionException, InterruptedException {
-        when(workPackage.segment()).thenReturn(Segment.ROOT_SEGMENT);
-        when(workPackage.stopPackage())
-                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)));
-        workPackages.put(SEGMENT_ID, workPackage);
-
-        doThrow(new IllegalStateException("some exception")).when(tokenStore)
-                                                            .initializeSegment(any(), eq(PROCESSOR_NAME), anyInt());
+    void testRunCompletesExceptionallyThroughOtherException() {
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME))).thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
 
         assertTrue(result.isDone());
-        assertFalse(result.get());
+        assertTrue(result.isCompletedExceptionally());
+        assertThrows(ExecutionException.class, () -> result.get());
     }
 
     @Test

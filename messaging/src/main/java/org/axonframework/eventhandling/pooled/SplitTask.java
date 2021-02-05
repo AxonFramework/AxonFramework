@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A {@link CoordinatorInstruction} implementation dedicated to splitting a {@link Segment}.
+ * A {@link CoordinatorTask} implementation dedicated to splitting a {@link Segment}.
  * <p>
  * If the {@link Coordinator} owning this instruction is currently in charge of the specified segment, the {@link
  * WorkPackage} will be aborted and subsequently its segment split. When the {@code Coordinator} is not in charge of the
@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  * @see Coordinator
  * @since 4.5
  */
-class SplitInstruction extends CoordinatorInstruction {
+class SplitTask extends CoordinatorTask {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -38,7 +38,7 @@ class SplitInstruction extends CoordinatorInstruction {
     private final TransactionManager transactionManager;
 
     /**
-     * Constructs a {@link SplitInstruction}.
+     * Constructs a {@link SplitTask}.
      *
      * @param result             the {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once {@link
      *                           #run()} has finalized
@@ -51,13 +51,13 @@ class SplitInstruction extends CoordinatorInstruction {
      *                           it is not present in the {@code workPackages} and to store the split segment
      * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a
      */
-    SplitInstruction(CompletableFuture<Boolean> result,
-                     String name,
-                     int segmentId,
-                     Map<Integer, WorkPackage> workPackages,
-                     TokenStore tokenStore,
-                     TransactionManager transactionManager) {
-        super(result);
+    SplitTask(CompletableFuture<Boolean> result,
+              String name,
+              int segmentId,
+              Map<Integer, WorkPackage> workPackages,
+              TokenStore tokenStore,
+              TransactionManager transactionManager) {
+        super(result, name);
         this.name = name;
         this.segmentId = segmentId;
         this.workPackages = workPackages;
@@ -73,16 +73,11 @@ class SplitInstruction extends CoordinatorInstruction {
      * segmentId} can be claimed.
      */
     @Override
-    public void run() {
+    public CompletableFuture<Boolean> task() throws Exception {
         logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
-        CompletableFuture<Boolean> result = workPackage != null ? abortAndSplit(workPackage) : claimAndSplit(segmentId);
-
-        result.exceptionally(e -> {
-            logger.warn("Coordinator [{}] failed to split segment [{}].", name, segmentId, e);
-            return false;
-        }).whenComplete(super::complete);
+        return workPackage != null ? abortAndSplit(workPackage) : claimAndSplit(segmentId);
     }
 
     private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
