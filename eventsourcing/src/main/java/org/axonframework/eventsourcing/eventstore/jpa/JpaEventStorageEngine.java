@@ -169,8 +169,11 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
             long globalSequence = (Long) entry[0];
+            String aggregateIdentifier = (String) entry[2];
+            String eventIdentifier = (String) entry[4];
             GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
-                    (String) entry[1], (String) entry[2], (long) entry[3], (String) entry[4], entry[5],
+                    (String) entry[1], eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
+                    (long) entry[3], eventIdentifier, entry[5],
                     (String) entry[6], (String) entry[7], entry[8], entry[9]
             );
 

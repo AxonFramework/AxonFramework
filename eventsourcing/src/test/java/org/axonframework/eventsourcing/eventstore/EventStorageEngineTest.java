@@ -63,6 +63,16 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
+    void testAppendAndReadNonDomainEvent() {
+        testSubject.appendEvents(new GenericEventMessage<>("Hello world"));
+
+        List<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false)
+                                                                   .collect(toList());
+        assertEquals(1, actual.size());
+        assertFalse(actual.get(0) instanceof DomainEventMessage);
+    }
+
+    @Test
     void testStoreAndLoadEventsArray() {
         testSubject.appendEvents(createEvent(0), createEvent(1));
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
