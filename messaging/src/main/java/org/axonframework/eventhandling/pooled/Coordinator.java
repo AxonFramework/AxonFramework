@@ -3,6 +3,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -313,10 +314,14 @@ class Coordinator {
                 instruction.run();
             }
 
-            if (eventStream == null || unclaimedSegmentValidationThreshold <= Instant.now().toEpochMilli()) {
+            if (eventStream == null
+                    || unclaimedSegmentValidationThreshold <= GenericEventMessage.clock.instant().toEpochMilli()) {
                 TrackingToken newWorkLowerBound = startNewWorkPackages();
-                unclaimedSegmentValidationThreshold = Instant.now().toEpochMilli() + tokenClaimInterval;
-                TrackingToken overallLowerBound = newWorkLowerBound.lowerBound(lastScheduledToken);
+                unclaimedSegmentValidationThreshold =
+                        GenericEventMessage.clock.instant().toEpochMilli() + tokenClaimInterval;
+                TrackingToken overallLowerBound = newWorkLowerBound == null
+                        ? null
+                        : newWorkLowerBound.lowerBound(lastScheduledToken);
                 openStream(overallLowerBound);
             }
 
@@ -404,7 +409,8 @@ class Coordinator {
         }
 
         private boolean shouldNotClaimSegment(int segmentId) {
-            return releasesDeadlines.containsKey(segmentId) && releasesDeadlines.get(segmentId).isAfter(Instant.now());
+            return releasesDeadlines.containsKey(segmentId)
+                    && releasesDeadlines.get(segmentId).isAfter(GenericEventMessage.clock.instant());
         }
 
         private void openStream(TrackingToken trackingToken) {
@@ -416,6 +422,8 @@ class Coordinator {
 
             // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
             if (eventStream != null) {
+                logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
+                             name, trackingToken);
                 eventStream.close();
                 eventStream = null;
             }
@@ -435,10 +443,14 @@ class Coordinator {
         }
 
         /**
-         * Start coordinating work to the {@link WorkPackage}s. This means retrieving events from the {@link
-         * StreamableMessageSource}, schedule these events to all the {@code WorkPackage}s and finally validate if any
-         * of the {@code WorkPackage}s aborted their work. If any aborted their work, this {@link Coordinator} will
-         * abandon the {@code WorkPackage} and release the claim on the token.
+         * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the {@link
+         * StreamableMessageSource}, schedule these events to all the {@code WorkPackage}s.
+         * <p>
+         * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this {@link
+         * Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
+         * <p>
+         * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
+         * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
          *
          * @throws InterruptedException from {@link StreamableMessageSource#openStream(TrackingToken)}
          */
@@ -458,6 +470,10 @@ class Coordinator {
             workPackages.values().stream()
                         .filter(WorkPackage::isAbortTriggered)
                         .forEach(workPackage -> abortWorkPackage(workPackage, null));
+
+            // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
+            workPackages.values()
+                        .forEach(WorkPackage::scheduleWorker);
         }
 
         private void startCoordinationTask() {

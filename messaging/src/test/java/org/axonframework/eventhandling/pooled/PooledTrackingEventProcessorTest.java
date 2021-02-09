@@ -14,9 +14,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,72 +34,71 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link PooledTrackingEventProcessor}.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ */
 class PooledTrackingEventProcessorTest {
+
+    private static final String PROCESSOR_NAME = "test";
 
     private PooledTrackingEventProcessor testSubject;
     private EventHandlerInvoker stubEventHandler;
     private InMemoryMessageSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
-    private ScheduledExecutorService executorService;
+    private ScheduledExecutorService coordinatorExecutor;
+    private ScheduledExecutorService workerExecutor;
 
     @BeforeEach
     void setUp() {
         stubMessageSource = new InMemoryMessageSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = new InMemoryTokenStore();
-        executorService = Executors.newScheduledThreadPool(2);
-        testSubject = PooledTrackingEventProcessor.builder().name("test")
-                                                  .errorHandler(PropagatingErrorHandler.instance())
-                                                  .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                                  .tokenStore(tokenStore)
+        coordinatorExecutor = Executors.newScheduledThreadPool(1);
+        workerExecutor = Executors.newScheduledThreadPool(8);
+
+        testSubject = PooledTrackingEventProcessor.builder()
+                                                  .name(PROCESSOR_NAME)
                                                   .eventHandlerInvoker(stubEventHandler)
+                                                  .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                                                  .errorHandler(PropagatingErrorHandler.instance())
                                                   .messageSource(stubMessageSource)
+                                                  .tokenStore(tokenStore)
                                                   .transactionManager(NoTransactionManager.instance())
-                                                  .coordinatorExecutor(name -> executorService)
-                                                  .workerExecutorService(name -> executorService)
+                                                  .coordinatorExecutor(name -> coordinatorExecutor)
+                                                  .workerExecutorService(name -> workerExecutor)
                                                   .initialSegmentCount(8)
+                                                  .claimExtensionThreshold(1000)
                                                   .build();
     }
 
     @AfterEach
     void tearDown() {
         testSubject.shutDown();
-
-        executorService.shutdown();
+        coordinatorExecutor.shutdown();
+        workerExecutor.shutdown();
     }
 
     @Test
     void testStartingProcessorClaimsAllAvailableTokens() {
-        List<EventMessage<Integer>> events = IntStream.range(0, 100).mapToObj(GenericEventMessage::new).collect(Collectors.toList());
-        when(stubEventHandler.canHandle(any(), any())).thenAnswer(i -> i.getArgument(0, EventMessage.class).getPayload().equals(i.getArgument(1, Segment.class).getSegmentId()));
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
-
+        List<EventMessage<Integer>> events = IntStream.range(0, 100)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
         events.forEach(stubMessageSource::publishMessage);
+        mockEventHandlerInvoker();
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.processingStatus().size());
-        });
-
-
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
         assertWithin(2, TimeUnit.SECONDS, () -> {
-            long nonNullTokens = IntStream.range(0, 8).mapToObj(i -> tokenStore.fetchToken(testSubject.getName(), i))
+            long nonNullTokens = IntStream.range(0, 8)
+                                          .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
                                           .filter(Objects::nonNull)
                                           .count();
             assertEquals(8, nonNullTokens);
@@ -111,24 +108,21 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testAllTokensUpdatedToLatestValue() {
-        List<EventMessage<Integer>> events = IntStream.range(0, 100).mapToObj(GenericEventMessage::new).collect(Collectors.toList());
-        when(stubEventHandler.canHandle(any(), any())).thenAnswer(i -> i.getArgument(0, EventMessage.class).getPayload().equals(i.getArgument(1, Segment.class).getSegmentId()));
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
-
+        List<EventMessage<Integer>> events = IntStream.range(0, 100)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
         events.forEach(stubMessageSource::publishMessage);
+        mockEventHandlerInvoker();
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.processingStatus().size());
-        });
-
-
-        assertWithin(2, TimeUnit.SECONDS, () -> {
-            long lowestToken = IntStream.range(0, 8).mapToObj(i -> tokenStore.fetchToken(testSubject.getName(), i))
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertWithin(6, TimeUnit.SECONDS, () -> {
+            long lowestToken = IntStream.range(0, 8)
+                                        .mapToObj(i -> tokenStore.fetchToken(testSubject.getName(), i))
                                         .mapToLong(this::tokenPosition)
-                                        .min().orElse(-1);
-
+                                        .min()
+                                        .orElse(-1);
             assertEquals(100, lowestToken);
         });
     }
@@ -139,17 +133,19 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testExceptionWhileHandlingEventAbortsWorker() throws Exception {
-        List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).collect(Collectors.toList());
-        when(stubEventHandler.canHandle(any(), any())).thenAnswer(i -> i.getArgument(0, EventMessage.class).getPayload().equals(i.getArgument(1, Segment.class).getSegmentId()));
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
-        doThrow(new RuntimeException("Simulating worker failure")).doNothing().when(stubEventHandler).handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+        List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
+                                                   .map(GenericEventMessage::new)
+                                                   .collect(Collectors.toList());
+        mockEventHandlerInvoker();
+        doThrow(new RuntimeException("Simulating worker failure"))
+                .doNothing()
+                .when(stubEventHandler)
+                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(8, testSubject.processingStatus().size());
-        });
-        assertEquals(8, tokenStore.fetchSegments("test").length);
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
 
         verify(stubEventHandler, never()).canHandle(any(), any());
 
@@ -157,7 +153,10 @@ class PooledTrackingEventProcessorTest {
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
             try {
-                verify(stubEventHandler).handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), argThat(s -> s.getSegmentId() == events.get(2).getPayload()));
+                verify(stubEventHandler).handle(
+                        argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
+                        argThat(s -> s.getSegmentId() == events.get(2).getPayload())
+                );
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -172,71 +171,88 @@ class PooledTrackingEventProcessorTest {
     @Test
     void testStatusIsUpdatedWithTrackingToken() {
         testSubject.start();
-        Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            testSubject.processingStatus().values().forEach(status ->
-                                                                    assertEquals(5, status.getCurrentPosition().orElse(0))
-            );
-        });
+        Stream.of(1, 2, 2, 4, 5)
+              .map(GenericEventMessage::new)
+              .forEach(stubMessageSource::publishMessage);
+
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> testSubject.processingStatus().values().forEach(
+                        status -> assertEquals(5, status.getCurrentPosition().orElse(0))
+                )
+        );
     }
 
     @Test
-    void testShutdownCompletesAfterAbortingWorkPackages() throws InterruptedException, ExecutionException, TimeoutException {
+    void testShutdownCompletesAfterAbortingWorkPackages()
+            throws InterruptedException, ExecutionException, TimeoutException {
         testSubject.start();
         Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
         testSubject.shutdownAsync().get(1, TimeUnit.SECONDS);
-        assertEquals(0, testSubject.processingStatus().size());
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.processingStatus().size()));
 
-        assertFalse(executorService.isShutdown());
+        assertFalse(coordinatorExecutor.isShutdown());
+        assertFalse(workerExecutor.isShutdown());
     }
 
     @Test
-    void stoppingUnstartedProcessorReturnsCompletedFuture() {
+    void testShutdownProcessorWhichHasNotStartedYetReturnsCompletedFuture() {
         assertTrue(testSubject.shutdownAsync().isDone());
     }
 
     @Test
-    void stoppingProcessorTwiceReturnsSameFuture() {
+    void testShutdownProcessorAsyncTwiceReturnsSameFuture() {
         testSubject.start();
 
-        CompletableFuture<Void> future1 = testSubject.shutdownAsync();
-        CompletableFuture<Void> future2 = testSubject.shutdownAsync();
+        CompletableFuture<Void> resultOne = testSubject.shutdownAsync();
+        CompletableFuture<Void> resultTwo = testSubject.shutdownAsync();
 
-        assertSame(future1, future2);
-
+        assertSame(resultOne, resultTwo);
     }
 
     @Test
     void testStartFailsWhenShutdownIsInProgress() throws Exception {
-        // use a CountDownLatch to Block worker threads from actually doing work (and shutting down successfully)
-        CountDownLatch cdl = new CountDownLatch(1);
+        // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
+        CountDownLatch latch = new CountDownLatch(1);
         doAnswer(i -> {
-            cdl.await();
+            latch.await();
             return i.callRealMethod();
-        }).when(stubEventHandler).handle(any(), any());
+        }).when(stubEventHandler)
+          .handle(any(), any());
 
         testSubject.start();
-        Stream.of(1, 2, 2, 4, 5).map(GenericEventMessage::new).forEach(stubMessageSource::publishMessage);
+
+        Stream.of(1, 2, 2, 4, 5)
+              .map(GenericEventMessage::new)
+              .forEach(stubMessageSource::publishMessage);
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
         CompletableFuture<Void> shutdownComplete = testSubject.shutdownAsync();
         assertThrows(IllegalStateException.class, () -> testSubject.start());
-        // unblock the Worker threads
-        cdl.countDown();
+        // Unblock the Worker threads
+        latch.countDown();
         shutdownComplete.get(1, TimeUnit.SECONDS);
 
-        // this is allowed
+        // This is allowed
         assertDoesNotThrow(() -> testSubject.start());
+    }
 
+
+    private void mockEventHandlerInvoker() {
+        when(stubEventHandler.canHandle(any(), any())).thenAnswer(
+                answer -> answer.getArgument(0, EventMessage.class)
+                                .getPayload()
+                                .equals(answer.getArgument(1, Segment.class).getSegmentId())
+        );
+        when(stubEventHandler.canHandleType(any())).thenReturn(true);
     }
 
     private static class InMemoryMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
-
 
         private final List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
 
@@ -255,14 +271,18 @@ class PooledTrackingEventProcessorTest {
                 }
 
                 @Override
-                public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+                public boolean hasNextAvailable(int timeout, TimeUnit unit) {
                     return peek().isPresent();
                 }
 
                 @Override
-                public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-                    TrackedEventMessage<?> next = peek().orElseThrow(() -> new RuntimeException("The processor should never perform a blocking call"));
-                    this.lastToken = (int) next.trackingToken().position().orElseThrow(() -> new UnsupportedOperationException("Not supported"));
+                public TrackedEventMessage<?> nextAvailable() {
+                    TrackedEventMessage<?> next = peek().orElseThrow(
+                            () -> new RuntimeException("The processor should never perform a blocking call")
+                    );
+                    this.lastToken = (int) next.trackingToken()
+                                               .position()
+                                               .orElseThrow(() -> new UnsupportedOperationException("Not supported"));
                     return next;
                 }
 
@@ -300,6 +320,5 @@ class PooledTrackingEventProcessorTest {
             int nextToken = messages.size();
             messages.add(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(nextToken + 1), message));
         }
-
     }
 }

@@ -134,7 +134,8 @@ class WorkPackage {
         if (lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken())) {
             return;
         }
-        logger.debug("Assigned event [{}] to work package [{}].", event.getIdentifier(), segment.getSegmentId());
+        logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
+                     event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
         events.add(event);
         lastDeliveredToken = event.trackingToken();
@@ -220,11 +221,13 @@ class WorkPackage {
     }
 
     private void handleError(Exception cause) {
+        logger.warn("Work Package [{}]-[{}] is handling error [{}].", name, segment.getSegmentId(), cause);
         segmentStatusUpdater.accept(status -> status.markError(cause));
         abortFlag.updateAndGet(e -> getOrDefault(e, () -> CompletableFuture.completedFuture(cause)));
     }
 
     private void storeToken(TrackingToken token) {
+        logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         tokenStore.storeToken(token, name, segment.getSegmentId());
         lastStoredToken = token;
         lastClaimExtension = System.currentTimeMillis();
