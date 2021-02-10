@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -433,8 +434,17 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
             String commandMessageAggregateId = commandMessageVersionedId.getIdentifier();
 
-            Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, factoryMethod);
-            Object commandResult = instance.handle(command);
+            AtomicReference<Object> resultReference = new AtomicReference<>();
+            AtomicBoolean newInstanceCreated = new AtomicBoolean(false);
+
+            Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, () -> {
+                T newInstance = factoryMethod.call();
+                resultReference.set(handler.handle(command, newInstance));
+                newInstanceCreated.set(true);
+                return newInstance;
+            });
+
+            Object commandResult = newInstanceCreated.get() ? resultReference.get() : instance.handle(command);
             Object aggregateId = instance.identifier();
 
             assertThat(
@@ -443,6 +453,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                     "Identifier must be set after handling the message"
             );
             return commandResult;
+        }
+
+        public boolean handlerHasVoidReturnType() {
+            return handler.unwrap(Method.class)
+                          .map(Method::getReturnType)
+                          .filter(void.class::equals)
+                          .isPresent();
         }
 
         @Override

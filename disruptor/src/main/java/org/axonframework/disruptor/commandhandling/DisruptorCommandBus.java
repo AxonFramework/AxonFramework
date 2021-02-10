@@ -975,6 +975,11 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+            return CommandHandlerInvoker.<T>getRepository(type).loadOrCreate(aggregateIdentifier, factoryMethod);
+        }
+
+        @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
             CompletableFuture future = new CompletableFuture();
             send(message, scopeDescription, future);
