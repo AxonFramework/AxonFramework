@@ -435,16 +435,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             String commandMessageAggregateId = commandMessageVersionedId.getIdentifier();
 
             AtomicReference<Object> resultReference = new AtomicReference<>();
-            AtomicBoolean newInstanceCreated = new AtomicBoolean(false);
+            AtomicBoolean commandHandled = new AtomicBoolean(false);
 
             Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, () -> {
                 T newInstance = factoryMethod.call();
                 resultReference.set(handler.handle(command, newInstance));
-                newInstanceCreated.set(true);
+                commandHandled.set(true);
                 return newInstance;
             });
 
-            Object commandResult = newInstanceCreated.get() ? resultReference.get() : instance.handle(command);
+            Object commandResult = commandHandled.get() ? resultReference.get() : instance.handle(command);
             Object aggregateId = instance.identifier();
 
             assertThat(
