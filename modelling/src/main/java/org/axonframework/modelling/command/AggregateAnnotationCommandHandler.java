@@ -455,13 +455,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             return commandResult;
         }
 
-        public boolean handlerHasVoidReturnType() {
-            return handler.unwrap(Method.class)
-                          .map(Method::getReturnType)
-                          .filter(void.class::equals)
-                          .isPresent();
-        }
-
         @Override
         public boolean canHandle(CommandMessage<?> message) {
             return handler.canHandle(message);
