@@ -38,7 +38,7 @@ abstract class CoordinatorTask {
      */
     void run() {
         try {
-            task().whenComplete(this::complete);
+            task().whenComplete(this::complete).join();
         } catch (Exception e) {
             complete(null, e);
         }
