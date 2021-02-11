@@ -9,6 +9,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -334,6 +335,124 @@ class PooledTrackingEventProcessorTest {
         setTestSubject(createTestSubject(builder -> builder.tokenStore(tokenStore)));
 
         assertEquals(expectedIdentifier, testSubject.getTokenStoreIdentifier());
+    }
+
+    @Test
+    void testSupportReset() {
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+
+        assertTrue(testSubject.supportsReset());
+
+        when(stubEventHandler.supportsReset()).thenReturn(false);
+
+        assertFalse(testSubject.supportsReset());
+    }
+
+    @Test
+    void testResetTokensFailsIfTheProcessorIsStillRunning() {
+        testSubject.start();
+
+        assertThrows(IllegalStateException.class, () -> testSubject.resetTokens());
+    }
+
+    @Test
+    void testResetTokens() {
+        int expectedSegmentCount = 2;
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
+                                                           .initialToken(source -> expectedToken)));
+
+        // Start and stop the processor to initialize the tracking tokens
+        testSubject.start();
+        testSubject.shutDown();
+
+        testSubject.resetTokens();
+
+        verify(stubEventHandler).performReset(null);
+
+        int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
+        assertEquals(expectedSegmentCount, segments.length);
+        // The token stays the same, as the original and token after reset are identical.
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+    }
+
+    @Test
+    void testResetTokensWithContext() {
+        int expectedSegmentCount = 2;
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
+        String expectedContext = "my-context";
+
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
+                                                           .initialToken(source -> expectedToken)));
+
+        // Start and stop the processor to initialize the tracking tokens
+        testSubject.start();
+        testSubject.shutDown();
+
+        testSubject.resetTokens(expectedContext);
+
+        verify(stubEventHandler).performReset(expectedContext);
+
+        int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
+        assertEquals(expectedSegmentCount, segments.length);
+        // The token stays the same, as the original and token after reset are identical.
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+    }
+
+    @Test
+    void testResetTokensFromDefinedPosition() {
+        TrackingToken testToken = new GlobalSequenceTrackingToken(42);
+
+        int expectedSegmentCount = 2;
+        TrackingToken expectedToken = ReplayToken.createReplayToken(testToken, null);
+
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
+                                                           .initialToken(source -> testToken)));
+
+        // Start and stop the processor to initialize the tracking tokens
+        testSubject.start();
+        testSubject.shutDown();
+
+        testSubject.resetTokens(StreamableMessageSource::createTailToken);
+
+        verify(stubEventHandler).performReset(null);
+
+        int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
+        assertEquals(expectedSegmentCount, segments.length);
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
+    }
+
+    @Test
+    void testResetTokensFromDefinedPositionAndWithResetContext() {
+        TrackingToken testToken = new GlobalSequenceTrackingToken(42);
+
+        int expectedSegmentCount = 2;
+        TrackingToken expectedToken = ReplayToken.createReplayToken(testToken, null);
+        String expectedContext = "my-context";
+
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
+                                                           .initialToken(source -> testToken)));
+
+        // Start and stop the processor to initialize the tracking tokens
+        testSubject.start();
+        testSubject.shutDown();
+
+        testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
+
+        verify(stubEventHandler).performReset(expectedContext);
+
+        int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
+        assertEquals(expectedSegmentCount, segments.length);
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
+        assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }
 
     @Test
