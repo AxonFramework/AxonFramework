@@ -303,9 +303,9 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 return load(aggregateIdentifier);
             } catch (AggregateNotFoundException ex) {
                 return newInstance(factoryMethod);
-            } catch (Throwable ex) {
-                logger.debug("Exception occurred while trying to load/create an aggregate. ", ex);
-                throw ex;
+            } catch (Exception e) {
+                logger.debug("Exception occurred while trying to load/create an aggregate. ", e);
+                throw e;
             }
         }
 
