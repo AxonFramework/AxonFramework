@@ -161,7 +161,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         transactionManager.executeInTransaction(() -> {
             int[] ints = tokenStore.fetchSegments(name);
             if (ints == null || ints.length == 0) {
-                logger.info("Initializing segments for processor [{}] ({} segments)", name, 8);
+                logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
                 tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
             }
         });
