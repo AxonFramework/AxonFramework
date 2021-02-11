@@ -27,11 +27,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -66,19 +66,34 @@ class PooledTrackingEventProcessorTest {
         coordinatorExecutor = Executors.newScheduledThreadPool(1);
         workerExecutor = Executors.newScheduledThreadPool(8);
 
-        testSubject = PooledTrackingEventProcessor.builder()
-                                                  .name(PROCESSOR_NAME)
-                                                  .eventHandlerInvoker(stubEventHandler)
-                                                  .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                                  .errorHandler(PropagatingErrorHandler.instance())
-                                                  .messageSource(stubMessageSource)
-                                                  .tokenStore(tokenStore)
-                                                  .transactionManager(NoTransactionManager.instance())
-                                                  .coordinatorExecutor(name -> coordinatorExecutor)
-                                                  .workerExecutorService(name -> workerExecutor)
-                                                  .initialSegmentCount(8)
-                                                  .claimExtensionThreshold(1000)
-                                                  .build();
+        setTestSubject(createTestSubject());
+    }
+
+    private void setTestSubject(PooledTrackingEventProcessor testSubject) {
+        this.testSubject = testSubject;
+    }
+
+    private PooledTrackingEventProcessor createTestSubject() {
+        return createTestSubject(builder -> builder);
+    }
+
+    private PooledTrackingEventProcessor createTestSubject(
+            UnaryOperator<PooledTrackingEventProcessor.Builder> customization
+    ) {
+        PooledTrackingEventProcessor.Builder processorBuilder =
+                PooledTrackingEventProcessor.builder()
+                                            .name(PROCESSOR_NAME)
+                                            .eventHandlerInvoker(stubEventHandler)
+                                            .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                                            .errorHandler(PropagatingErrorHandler.instance())
+                                            .messageSource(stubMessageSource)
+                                            .tokenStore(tokenStore)
+                                            .transactionManager(NoTransactionManager.instance())
+                                            .coordinatorExecutor(name -> coordinatorExecutor)
+                                            .workerExecutorService(name -> workerExecutor)
+                                            .initialSegmentCount(8)
+                                            .claimExtensionThreshold(1000);
+        return customization.apply(processorBuilder).build();
     }
 
     @AfterEach
@@ -90,41 +105,25 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testStartShutsDownImmediatelyIfCoordinatorExecutorThrowsAnException() {
-        ScheduledExecutorService spiedCoordinatorExecutor = spy(Executors.newScheduledThreadPool(1));
+        ScheduledExecutorService spiedCoordinatorExecutor = spy(coordinatorExecutor);
         doThrow(new IllegalArgumentException("Some exception")).when(spiedCoordinatorExecutor)
                                                                .submit(any(Runnable.class));
 
-        PooledTrackingEventProcessor customCoordinatorExecutorTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.instance())
-                                            .coordinatorExecutor(name -> spiedCoordinatorExecutor)
-                                            .build();
+        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(name -> spiedCoordinatorExecutor)));
 
-        assertThrows(IllegalArgumentException.class, customCoordinatorExecutorTestSubject::start);
-        assertFalse(customCoordinatorExecutorTestSubject.isRunning());
+        assertThrows(IllegalArgumentException.class, testSubject::start);
+        assertFalse(testSubject.isRunning());
     }
 
     @Test
     void testSecondStartInvocationIsIgnored() {
-        ScheduledExecutorService spiedCoordinatorExecutor = spy(Executors.newScheduledThreadPool(1));
+        ScheduledExecutorService spiedCoordinatorExecutor = spy(coordinatorExecutor);
 
-        PooledTrackingEventProcessor customCoordinatorExecutorTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.instance())
-                                            .coordinatorExecutor(name -> spiedCoordinatorExecutor)
-                                            .build();
+        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(name -> spiedCoordinatorExecutor)));
 
-        customCoordinatorExecutorTestSubject.start();
+        testSubject.start();
         // The second invocation does not cause the Coordinator to schedule another CoordinationTask.
-        customCoordinatorExecutorTestSubject.start();
+        testSubject.start();
         verify(spiedCoordinatorExecutor, times(1)).submit(any(Runnable.class));
     }
 
@@ -311,32 +310,19 @@ class PooledTrackingEventProcessorTest {
         StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryMessageSource());
         when(spiedMessageSource.openStream(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
                                                   .thenCallRealMethod();
-        PooledTrackingEventProcessor customSourceTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                            .errorHandler(PropagatingErrorHandler.instance())
-                                            .messageSource(spiedMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.instance())
-                                            .coordinatorExecutor(name -> coordinatorExecutor)
-                                            .workerExecutorService(name -> workerExecutor)
-                                            .initialSegmentCount(8)
-                                            .claimExtensionThreshold(1000)
-                                            .build();
+        setTestSubject(createTestSubject(builder -> builder.messageSource(spiedMessageSource)));
 
-        assertFalse(customSourceTestSubject.isError());
+        assertFalse(testSubject.isError());
 
-        customSourceTestSubject.start();
+        testSubject.start();
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(customSourceTestSubject.isError()));
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.isError()));
 
         // After one exception the Coordinator#errorWaitBackOff is 1 second. After this, the Coordinator should proceed.
         Stream.of(1, 2, 2, 4, 5)
               .map(GenericEventMessage::new)
               .forEach(stubMessageSource::publishMessage);
-        assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(customSourceTestSubject.isError()));
+        assertWithin(1500, TimeUnit.MILLISECONDS, () -> assertFalse(testSubject.isError()));
     }
 
     @Test
@@ -345,16 +331,9 @@ class PooledTrackingEventProcessorTest {
 
         TokenStore tokenStore = mock(TokenStore.class);
         when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(expectedIdentifier));
-        PooledTrackingEventProcessor customTokenStoreTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.INSTANCE)
-                                            .build();
+        setTestSubject(createTestSubject(builder -> builder.tokenStore(tokenStore)));
 
-        assertEquals(expectedIdentifier, customTokenStoreTestSubject.getTokenStoreIdentifier());
+        assertEquals(expectedIdentifier, testSubject.getTokenStoreIdentifier());
     }
 
     @Test
@@ -365,16 +344,9 @@ class PooledTrackingEventProcessorTest {
     @Test
     void testMaxCapacityReturnsConfiguredCapacity() {
         int expectedMaxCapacity = 500;
-        PooledTrackingEventProcessor customCapacityTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.instance())
-                                            .maxCapacity(expectedMaxCapacity)
-                                            .build();
-        assertEquals(expectedMaxCapacity, customCapacityTestSubject.maxCapacity());
+        setTestSubject(createTestSubject(builder -> builder.maxCapacity(expectedMaxCapacity)));
+
+        assertEquals(expectedMaxCapacity, testSubject.maxCapacity());
     }
 
     @Test
