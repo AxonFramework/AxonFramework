@@ -321,10 +321,7 @@ class Coordinator {
 
                 try {
                     TrackingToken newWorkToken = startNewWorkPackages();
-                    TrackingToken overallLowerBound = newWorkToken == null
-                            ? null
-                            : lastScheduledToken.lowerBound(newWorkToken);
-                    openStream(overallLowerBound);
+                    openStream(constructLowerBound(newWorkToken));
                 } catch (Exception e) {
                     logger.warn("Exception occurred while Coordinator [{}] starting work packages"
                                         + " and defining the point to start in the event stream.", name);
@@ -419,6 +416,25 @@ class Coordinator {
         private boolean shouldNotClaimSegment(int segmentId) {
             return releasesDeadlines.containsKey(segmentId)
                     && releasesDeadlines.get(segmentId).isAfter(GenericEventMessage.clock.instant());
+        }
+
+        /**
+         * Constructs the lower bound position out of the given {@code trackingToken} and the {@code
+         * lastScheduledToken}. When the given token is a {@link NoToken}, invoking {@link
+         * NoToken#lowerBound(TrackingToken)} ensure {@code lastScheduledToken} will be returned. When it is not a
+         * {@code NoToken}, the lower bound operation on the {@code lastScheduledToken} will be the result.
+         * <p>
+         * This approach ensures that the {@link TrackingToken#lowerBound(TrackingToken)} operations is performed on
+         * tokens for which the lower bound can be calculated between them.
+         *
+         * @param trackingToken the {@link TrackingToken} compared with the {@code lastScheduledToken} to calculate the
+         *                      lower bound
+         * @return the lower bound position from the given {@code trackingToken} and the {@code lastScheduledToken}
+         */
+        private TrackingToken constructLowerBound(TrackingToken trackingToken) {
+            return NoToken.INSTANCE.equals(trackingToken)
+                    ? trackingToken.lowerBound(lastScheduledToken)
+                    : lastScheduledToken.lowerBound(trackingToken);
         }
 
         private void openStream(TrackingToken trackingToken) {
