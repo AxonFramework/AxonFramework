@@ -338,6 +338,133 @@ class PooledTrackingEventProcessorTest {
     }
 
     @Test
+    void testReleaseSegmentMakesTheTokenUnclaimedForTwiceTheTokenClaimInterval() {
+        // Given...
+        int testSegmentId = 0;
+        int testTokenClaimInterval = 500;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the release.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+
+        // When...
+        testSubject.releaseSegment(testSegmentId);
+
+        assertWithin(50, TimeUnit.MILLISECONDS, () -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+        // Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
+        assertWithin(
+                (testTokenClaimInterval * 2) + 50, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+    }
+
+    @Test
+    void testSplitSegmentIsNotSupported() {
+        TokenStore tokenStoreWhichCannotSplitSegments = mock(TokenStore.class);
+        when(tokenStoreWhichCannotSplitSegments.requiresExplicitSegmentInitialization()).thenReturn(false);
+        setTestSubject(createTestSubject(builder -> builder.tokenStore(tokenStoreWhichCannotSplitSegments)));
+
+        CompletableFuture<Boolean> result = testSubject.splitSegment(0);
+
+        assertTrue(result.isDone());
+        assertTrue(result.isCompletedExceptionally());
+        result.exceptionally(exception -> {
+            assertTrue(exception.getClass().isAssignableFrom(UnsupportedOperationException.class));
+            return null;
+        });
+    }
+
+    @Test
+    void testSplitSegment() {
+        // Given...
+        int testSegmentId = 0;
+        int testTokenClaimInterval = 500;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)
+                                                           .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the split.
+        assertWithin(
+                500, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+
+        // When...
+        CompletableFuture<Boolean> result = testSubject.splitSegment(testSegmentId);
+
+        // Assert the SplitTask is done and completed successfully.
+        assertWithin(testTokenClaimInterval * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(result.isCompletedExceptionally());
+        // Assert the Coordinator has set two WorkPackages on the segments.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(1))
+        );
+    }
+
+    @Test
+    void testMergeSegmentIsNotSupported() {
+        TokenStore tokenStoreWhichCannotMergeSegments = mock(TokenStore.class);
+        when(tokenStoreWhichCannotMergeSegments.requiresExplicitSegmentInitialization()).thenReturn(false);
+        setTestSubject(createTestSubject(builder -> builder.tokenStore(tokenStoreWhichCannotMergeSegments)));
+
+        CompletableFuture<Boolean> result = testSubject.mergeSegment(0);
+
+        assertTrue(result.isDone());
+        assertTrue(result.isCompletedExceptionally());
+        result.exceptionally(exception -> {
+            assertTrue(exception.getClass().isAssignableFrom(UnsupportedOperationException.class));
+            return null;
+        });
+    }
+
+    @Test
+    void testMergeSegment() {
+        // Given...
+        int testSegmentId = 0;
+        int testSegmentIdToMerge = 1;
+        int testTokenClaimInterval = 500;
+
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(2)
+                                                           .tokenClaimInterval(testTokenClaimInterval)));
+        testSubject.start();
+        // Assert the single WorkPackage is in progress prior to invoking the merge.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> {
+                    assertNotNull(testSubject.processingStatus().get(testSegmentId));
+                    assertNotNull(testSubject.processingStatus().get(testSegmentIdToMerge));
+                }
+        );
+
+        // When...
+        CompletableFuture<Boolean> result = testSubject.mergeSegment(testSegmentId);
+
+        // Assert the MergeTask is done and completed successfully.
+        assertWithin(testTokenClaimInterval * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(result.isCompletedExceptionally());
+        // Assert the Coordinator has only one WorkPackage at work now.
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNotNull(testSubject.processingStatus().get(testSegmentId))
+        );
+        assertWithin(
+                testTokenClaimInterval, TimeUnit.MILLISECONDS,
+                () -> assertNull(testSubject.processingStatus().get(testSegmentIdToMerge))
+        );
+
+    }
+
+    @Test
     void testSupportReset() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
 
