@@ -106,7 +106,7 @@ class Coordinator {
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
         if (newState.wasStarted()) {
-            logger.info("Starting coordinator for processor [{}].", name);
+            logger.info("Starting Coordinator for processor [{}].", name);
             try {
                 executorService.submit(new CoordinationTask());
             } catch (Exception e) {
@@ -304,7 +304,7 @@ class Coordinator {
             if (!runState.get().isRunning()) {
                 logger.debug("Stopped processing. Runnable flag is false.");
                 logger.debug("Releasing claims for processor [{}].", name);
-                abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle.complete(null));
+                abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
                 return;
             }
 
@@ -316,13 +316,20 @@ class Coordinator {
 
             if (eventStream == null
                     || unclaimedSegmentValidationThreshold <= GenericEventMessage.clock.instant().toEpochMilli()) {
-                TrackingToken newWorkLowerBound = startNewWorkPackages();
                 unclaimedSegmentValidationThreshold =
                         GenericEventMessage.clock.instant().toEpochMilli() + tokenClaimInterval;
-                TrackingToken overallLowerBound = newWorkLowerBound == null
-                        ? null
-                        : newWorkLowerBound.lowerBound(lastScheduledToken);
-                openStream(overallLowerBound);
+
+                try {
+                    TrackingToken newWorkToken = startNewWorkPackages();
+                    TrackingToken overallLowerBound = newWorkToken == null
+                            ? null
+                            : lastScheduledToken.lowerBound(newWorkToken);
+                    openStream(overallLowerBound);
+                } catch (Exception e) {
+                    logger.warn("Exception occurred while Coordinator [{}] starting work packages"
+                                        + " and defining the point to start in the event stream.", name);
+                    abortAndScheduleRetry(e);
+                }
             }
 
             if (workPackages.isEmpty()) {
@@ -356,6 +363,7 @@ class Coordinator {
                     scheduleCoordinationTask(100);
                 }
             } catch (Exception e) {
+                logger.warn("Exception occurred while Coordinator [{}] was coordinating the work packages.", name);
                 abortAndScheduleRetry(e);
             }
         }
@@ -420,19 +428,20 @@ class Coordinator {
                 return;
             }
 
-            // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
-            if (eventStream != null) {
-                logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
-                             name, trackingToken);
-                eventStream.close();
-                eventStream = null;
-            }
-
             try {
+                // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
+                if (eventStream != null) {
+                    logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
+                                 name, trackingToken);
+                    eventStream.close();
+                    eventStream = null;
+                }
+
                 eventStream = messageSource.openStream(trackingToken);
                 logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
                 availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::startCoordinationTask);
             } catch (Exception e) {
+                logger.warn("Exception occurred while Coordinator [{}] tried to close/open an Event Stream.", name);
                 abortAndScheduleRetry(e);
             }
         }
@@ -501,11 +510,7 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.warn(
-                    "Exception occurred while trying to fetch events for processing. "
-                            + "Releasing claims and rescheduling for processing in {}ms",
-                    errorWaitBackOff, cause
-            );
+            logger.warn("Releasing claims and rescheduling the coordination task in {}ms", errorWaitBackOff, cause);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).thenRun(
