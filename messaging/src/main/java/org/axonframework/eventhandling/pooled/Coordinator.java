@@ -329,7 +329,7 @@ class Coordinator {
                     openStream(constructLowerBound(newWorkToken));
                 } catch (Exception e) {
                     logger.warn("Exception occurred while Coordinator [{}] starting work packages"
-                                        + " and defining the point to start in the event stream.", name);
+                                        + " and opening the event stream.", name);
                     abortAndScheduleRetry(e);
                 }
             }
@@ -449,22 +449,17 @@ class Coordinator {
                 return;
             }
 
-            try {
-                // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
-                if (eventStream != null) {
-                    logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
-                                 name, trackingToken);
-                    eventStream.close();
-                    eventStream = null;
-                }
-
-                eventStream = messageSource.openStream(trackingToken);
-                logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
-                availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::startCoordinationTask);
-            } catch (Exception e) {
-                logger.warn("Exception occurred while Coordinator [{}] tried to close/open an Event Stream.", name);
-                abortAndScheduleRetry(e);
+            // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
+            if (eventStream != null) {
+                logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
+                             name, trackingToken);
+                eventStream.close();
+                eventStream = null;
             }
+
+            eventStream = messageSource.openStream(trackingToken);
+            logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
+            availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
         }
 
         private boolean isSpaceAvailable() {
