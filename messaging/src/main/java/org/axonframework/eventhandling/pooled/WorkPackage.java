@@ -313,19 +313,6 @@ class WorkPackage {
     }
 
     /**
-     * Mark this {@link WorkPackage} to stop processing events. The returned {@link CompletableFuture} is completed with
-     * the {@link TrackingToken} of the last processed {@link TrackedEventMessage}.
-     * <p>
-     * Note that this approach aborts the work package, which cannot be restarted afterwards.
-     *
-     * @return a {@link CompletableFuture} is completed with the {@link TrackingToken} of the last processed {@link
-     * TrackedEventMessage}
-     */
-    public CompletableFuture<TrackingToken> stopPackage() {
-        return abort(null).thenApply(e -> lastStoredToken);
-    }
-
-    /**
      * Functional interface defining a validation if a given {@link TrackedEventMessage} should be handled within the
      * given {@link Segment}.
      */

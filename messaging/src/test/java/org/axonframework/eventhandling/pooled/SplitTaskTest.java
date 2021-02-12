@@ -54,7 +54,8 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
-        when(workPackage.stopPackage()).thenReturn(CompletableFuture.completedFuture(testTokenToSplit));
+        when(workPackage.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
@@ -91,7 +92,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testRunReturnsFalseThroughUnableToClaimTokenException() throws ExecutionException, InterruptedException {
+    void testRunCompletesExceptionallyThroughUnableToClaimTokenException() {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(new int[]{SEGMENT_ID});
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
@@ -99,7 +100,8 @@ class SplitTaskTest {
         testSubject.run();
 
         assertTrue(result.isDone());
-        assertFalse(result.get());
+        assertTrue(result.isCompletedExceptionally());
+        assertThrows(ExecutionException.class, () -> result.get());
     }
 
     @Test

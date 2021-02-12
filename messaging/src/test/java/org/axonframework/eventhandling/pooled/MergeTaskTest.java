@@ -68,10 +68,12 @@ class MergeTaskTest {
         TrackingToken testTokenToBeMerged = new GlobalSequenceTrackingToken(1);
 
         when(workPackageOne.segment()).thenReturn(SEGMENT_ZERO);
-        when(workPackageOne.stopPackage()).thenReturn(CompletableFuture.completedFuture(testTokenToMerge));
+        when(workPackageOne.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(testTokenToMerge);
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
         when(workPackageTwo.segment()).thenReturn(SEGMENT_ONE);
-        when(workPackageTwo.stopPackage()).thenReturn(CompletableFuture.completedFuture(testTokenToBeMerged));
+        when(workPackageTwo.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED)).thenReturn(testTokenToBeMerged);
         workPackages.put(SEGMENT_TO_BE_MERGED, workPackageTwo);
 
         ArgumentCaptor<TrackingToken> mergedTokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
@@ -121,7 +123,8 @@ class MergeTaskTest {
         TrackingToken testTokenToBeMerged = new GlobalSequenceTrackingToken(1);
 
         when(workPackageOne.segment()).thenReturn(SEGMENT_ZERO);
-        when(workPackageOne.stopPackage()).thenReturn(CompletableFuture.completedFuture(testTokenToMerge));
+        when(workPackageOne.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(testTokenToMerge);
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED)).thenReturn(testTokenToBeMerged);
 
@@ -143,7 +146,7 @@ class MergeTaskTest {
     }
 
     @Test
-    void testRunReturnsFalseThroughUnableToClaimTokenExceptionOnFetch() throws ExecutionException, InterruptedException {
+    void testRunCompletesExceptionallyThroughUnableToClaimTokenExceptionOnFetch() {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
@@ -151,18 +154,20 @@ class MergeTaskTest {
         testSubject.run();
 
         assertTrue(result.isDone());
-        assertFalse(result.get());
+        assertTrue(result.isCompletedExceptionally());
+        assertThrows(ExecutionException.class, () -> result.get());
     }
 
     @Test
-    void testRunReturnsFalseThroughUnableToClaimTokenExceptionOnDelete() throws ExecutionException, InterruptedException {
+    void testRunCompletesExceptionallyThroughUnableToClaimTokenExceptionOnDelete() {
         when(workPackageOne.segment()).thenReturn(SEGMENT_ZERO);
-        when(workPackageOne.stopPackage())
-                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)));
+        when(workPackageOne.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(new GlobalSequenceTrackingToken(0));
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
         when(workPackageTwo.segment()).thenReturn(SEGMENT_ONE);
-        when(workPackageTwo.stopPackage())
-                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(1)));
+        when(workPackageTwo.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED))
+                .thenReturn(new GlobalSequenceTrackingToken(1));
         workPackages.put(SEGMENT_TO_BE_MERGED, workPackageTwo);
 
         doThrow(new UnableToClaimTokenException("some exception")).when(tokenStore)
@@ -171,18 +176,20 @@ class MergeTaskTest {
         testSubject.run();
 
         assertTrue(result.isDone());
-        assertFalse(result.get());
+        assertTrue(result.isCompletedExceptionally());
+        assertThrows(ExecutionException.class, () -> result.get());
     }
 
     @Test
     void testRunCompletesExceptionallyThroughOtherException() {
         when(workPackageOne.segment()).thenReturn(SEGMENT_ZERO);
-        when(workPackageOne.stopPackage())
-                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)));
+        when(workPackageOne.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(new GlobalSequenceTrackingToken(0));
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
         when(workPackageTwo.segment()).thenReturn(SEGMENT_ONE);
-        when(workPackageTwo.stopPackage())
-                .thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(1)));
+        when(workPackageTwo.abort(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED))
+                .thenReturn(new GlobalSequenceTrackingToken(1));
         workPackages.put(SEGMENT_TO_BE_MERGED, workPackageTwo);
 
         doThrow(new IllegalStateException("some exception")).when(tokenStore)

@@ -35,13 +35,17 @@ abstract class CoordinatorTask {
     /**
      * Runs the {@link #task()} of this {@link CoordinatorTask}. Ensures the outcome is correctly reflected through
      * invoking the {@link #complete(Boolean, Throwable)}.
+     *
+     * @return the {@link CompletableFuture} provided in the constructor, to attach tasks to be performed after
+     * completion
      */
-    void run() {
+    CompletableFuture<Boolean> run() {
         try {
-            task().whenComplete(this::complete).join();
+            task().whenComplete(this::complete);
         } catch (Exception e) {
             complete(null, e);
         }
+        return result;
     }
 
     /**
@@ -51,7 +55,7 @@ abstract class CoordinatorTask {
      * true} and {@code false} respectively
      * @throws Exception if the instructions fails to perform its task
      */
-    abstract CompletableFuture<Boolean> task() throws Exception;
+    protected abstract CompletableFuture<Boolean> task() throws Exception;
 
     /**
      * Completes this {@link CoordinatorTask}'s {@link CompletableFuture}. If the given {@code throwable} is not null,

@@ -5,7 +5,6 @@ import org.axonframework.eventhandling.MergedTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +75,7 @@ class MergeTask extends CoordinatorTask {
      * TrackingToken}(s) for the segments can be claimed.
      */
     @Override
-    CompletableFuture<Boolean> task() {
+    protected CompletableFuture<Boolean> task() {
         logger.debug("Coordinator [{}] will perform merge instruction for segment [{}].", name, segmentId);
 
         int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
@@ -97,26 +96,26 @@ class MergeTask extends CoordinatorTask {
             return CompletableFuture.completedFuture(false);
         }
 
-        try {
-            CompletableFuture<TrackingToken> thisTokenFuture = tokenFor(thisSegment.getSegmentId());
-            CompletableFuture<TrackingToken> thatTokenFuture = tokenFor(thatSegment.getSegmentId());
-            return thisTokenFuture.thenCombine(
-                    thatTokenFuture,
-                    (thisToken, thatToken) -> mergeSegments(thisSegment, thisToken, thatSegment, thatToken)
-            );
-        } catch (UnableToClaimTokenException e) {
-            logger.debug("Coordinator [{}] cannot merge segments [{}] and [{}]. It failed to claim either.",
-                         name, segmentId, thatSegmentId, e);
-            return CompletableFuture.completedFuture(false);
-        }
+
+        CompletableFuture<TrackingToken> thisTokenFuture = tokenFor(thisSegment.getSegmentId());
+        CompletableFuture<TrackingToken> thatTokenFuture = tokenFor(thatSegment.getSegmentId());
+        return thisTokenFuture.thenCombine(
+                thatTokenFuture,
+                (thisToken, thatToken) -> mergeSegments(thisSegment, thisToken, thatSegment, thatToken)
+        );
     }
 
     private CompletableFuture<TrackingToken> tokenFor(int segmentId) {
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         return workPackages.containsKey(segmentId)
-                ? workPackages.remove(segmentId).stopPackage()
-                : CompletableFuture.completedFuture(transactionManager.fetchInTransaction(
-                () -> tokenStore.fetchToken(name, segmentId)));
+                ? workPackages.remove(segmentId)
+                              .abort(null)
+                              .thenApply(e -> fetchTokenInTransaction(segmentId))
+                : CompletableFuture.completedFuture(fetchTokenInTransaction(segmentId));
+    }
+
+    private TrackingToken fetchTokenInTransaction(int segmentId) {
+        return transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(name, segmentId));
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
@@ -129,18 +128,13 @@ class MergeTask extends CoordinatorTask {
                 ? new MergedTrackingToken(thatToken, thisToken)
                 : new MergedTrackingToken(thisToken, thatToken);
 
-        try {
-            transactionManager.executeInTransaction(() -> {
-                tokenStore.deleteToken(name, tokenToDelete);
-                tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
-                tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
-            });
-        } catch (UnableToClaimTokenException e) {
-            logger.debug("Coordinator [{}] cannot merge segments [{}] and [{}]. "
-                                 + "It failed to claim either for deletion or storage.",
-                         name, thisSegment.getSegmentId(), thatSegment.getSegmentId(), e);
-            return false;
-        }
+        transactionManager.executeInTransaction(() -> {
+            tokenStore.deleteToken(name, tokenToDelete);
+            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
+            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
+        });
+        logger.info("Coordinator [{}] successfully merged segment [{}] with segment [{}].",
+                    name, thisSegment.getSegmentId(), thatSegment.getSegmentId());
         return true;
     }
 

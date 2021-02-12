@@ -5,7 +5,6 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +72,7 @@ class SplitTask extends CoordinatorTask {
      * segmentId} can be claimed.
      */
     @Override
-    public CompletableFuture<Boolean> task() throws Exception {
+    protected CompletableFuture<Boolean> task() throws Exception {
         logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
@@ -81,34 +80,31 @@ class SplitTask extends CoordinatorTask {
     }
 
     private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
-        return workPackage.stopPackage()
-                          .thenApply(token -> splitAndRelease(workPackage.segment(), token));
+        return workPackage.abort(null)
+                          .thenApply(e -> splitAndRelease(workPackage.segment()));
     }
 
     private CompletableFuture<Boolean> claimAndSplit(int segmentId) {
-        return CompletableFuture.completedFuture(transactionManager.fetchInTransaction(() -> {
-            try {
-                int[] segments = tokenStore.fetchSegments(name);
-                Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
-                TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentId);
-                return splitAndRelease(segmentToSplit, tokenToSplit);
-            } catch (UnableToClaimTokenException e) {
-                logger.debug("Unable to claim the token for segment[{}] for splitting.", segmentId);
-                return false;
-            }
-        }));
+        return CompletableFuture.completedFuture(
+                transactionManager.fetchInTransaction(() -> {
+                    int[] segments = tokenStore.fetchSegments(name);
+                    Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
+                    return splitAndRelease(segmentToSplit);
+                })
+        );
     }
 
-    private boolean splitAndRelease(Segment segmentToSplit, TrackingToken tokenToSplit) {
-        TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
+    private boolean splitAndRelease(Segment segmentToSplit) {
         transactionManager.executeInTransaction(() -> {
+            TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
+            TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
             tokenStore.initializeSegment(
                     splitStatuses[1].getTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
             );
             tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
+            logger.info("Coordinator [{}] successfully split segment [{}].",
+                        name, splitStatuses[0].getSegment().getSegmentId());
         });
-        logger.info("Coordinator [{}] successfully split segment [{}].",
-                    name, splitStatuses[0].getSegment().getSegmentId());
         return true;
     }
 

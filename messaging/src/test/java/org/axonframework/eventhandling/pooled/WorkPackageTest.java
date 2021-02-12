@@ -256,7 +256,9 @@ class WorkPackageTest {
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         assertWithin(
                 500, TimeUnit.MILLISECONDS,
-                () -> verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()))
+                () -> verify(tokenStore).storeToken(
+                        tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId())
+                )
         );
         assertEquals(expectedToken, tokenCaptor.getValue());
     }
@@ -318,30 +320,6 @@ class WorkPackageTest {
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
         assertEquals(originalAbortReason, result.get());
-    }
-
-    @Test
-    void testStopPackageReturnsLastProcessedEventsToken() {
-        // Make sure we have at least let it store something once.
-        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        TrackedEventMessage<String> expectedEvent =
-                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
-        testSubject.scheduleEvent(expectedEvent);
-        // Make sure it has been processed...
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent, processedEvents.get(0));
-
-        // ...prior to stopping the package.
-        CompletableFuture<TrackingToken> result = testSubject.stopPackage();
-
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> {
-            try {
-                assertEquals(expectedToken, result.get());
-            } catch (InterruptedException | ExecutionException e) {
-                // Shouldn't happen at all...
-            }
-        });
     }
 
     private class TestEventValidator implements WorkPackage.EventValidator {

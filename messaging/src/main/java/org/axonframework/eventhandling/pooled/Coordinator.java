@@ -309,9 +309,14 @@ class Coordinator {
             }
 
             if (!coordinatorTasks.isEmpty()) {
-                CoordinatorTask instruction = coordinatorTasks.remove();
-                logger.debug("Coordinator [{}] found a instruction [{}] to run.", name, instruction.description());
-                instruction.run();
+                CoordinatorTask task = coordinatorTasks.remove();
+                logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.description());
+                task.run()
+                    .whenComplete((result, exception) -> {
+                        processingGate.set(false);
+                        scheduleImmediateCoordinationTask();
+                    });
+                return;
             }
 
             if (eventStream == null
@@ -346,7 +351,7 @@ class Coordinator {
                     // All work package have space available to handle events and there are still events on the stream.
                     // We should thus start this process again immediately.
                     // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
-                    startCoordinationTask();
+                    scheduleImmediateCoordinationTask();
                 } else if (isSpaceAvailable()) {
                     // There is space, but no events to process. We caught up.
                     workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
@@ -501,7 +506,7 @@ class Coordinator {
                         .forEach(WorkPackage::scheduleWorker);
         }
 
-        private void startCoordinationTask() {
+        private void scheduleImmediateCoordinationTask() {
             scheduleCoordinationTask(0);
         }
 
