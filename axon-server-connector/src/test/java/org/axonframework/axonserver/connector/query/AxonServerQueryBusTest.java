@@ -42,7 +42,9 @@ import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
@@ -54,6 +56,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -306,6 +309,48 @@ class AxonServerQueryBusTest {
                 )
         );
     }
+
+    @Test
+    void testSubscriptionQueryShutdownOldAPi() {
+        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery1 =
+                new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
+
+        UpdateHandlerRegistration<Object> objectUpdateHandlerRegistration = testSubject.queryUpdateEmitter()
+                                                                                       .registerUpdateHandler(
+                                                                                               testSubscriptionQuery1,
+                                                                                               SubscriptionQueryBackpressure.defaultBackpressure(),
+                                                                                               1);
+
+
+        testSubject.shutdownDispatching();
+
+        Set<SubscriptionQueryMessage<?, ?, ?>> subscriptionQueryMessages = testSubject.queryUpdateEmitter()
+                                                                                      .activeSubscriptions();
+
+        assertEquals(subscriptionQueryMessages.size(),0);
+    }
+
+    @Test
+    void testSubscriptionQueryShutdown() {
+        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery1 =
+                new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
+
+        UpdateHandlerRegistration<Object> objectUpdateHandlerRegistration = testSubject.queryUpdateEmitter()
+                                                                                       .registerUpdateHandler(
+                                                                                               testSubscriptionQuery1,
+                                                                                               1);
+
+        //ensure there is actual subscription
+        objectUpdateHandlerRegistration.getUpdates().subscribe();
+
+        testSubject.shutdownDispatching();
+
+        Set<SubscriptionQueryMessage<?, ?, ?>> subscriptionQueryMessages = testSubject.queryUpdateEmitter()
+                                                                                      .activeSubscriptions();
+
+        assertEquals(subscriptionQueryMessages.size(),0);
+    }
+
 
     @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {

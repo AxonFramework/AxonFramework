@@ -341,7 +341,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        return shutdownLatch.initiateShutdown();
+        return shutdownLatch.initiateShutdown()
+                .thenRun(()-> updateEmitter.complete(p-> true));
     }
 
     /**

@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
@@ -122,14 +123,20 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                                                                   int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
 
+        //In new Sinks Many API, complete signal will be propagated only if there are active subscriptions
+        //There is no onDispose signal on a Sink
+        //So we must ensure that we update handlers map
+        //only if someone actually subscribes to message flux
+        AtomicReference<SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> > sinkReference = new AtomicReference<>();
+
         Runnable removeHandler = () -> updateHandlers.remove(query);
+
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                                                                        .doOnCancel(removeHandler)
-                                                                        .doOnTerminate(removeHandler);
+                                                                        .doOnSubscribe(subscription -> updateHandlers.put(query, sinkReference.get()))
+                                                                        .doFinally(signalType->removeHandler.run());
 
         SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
-
-        updateHandlers.put(query, sinksManyWrapper);
+        sinkReference.set(sinksManyWrapper);
 
         Registration registration = () -> {
             removeHandler.run();
