@@ -20,3 +20,5 @@ events/
 
 # MacOS makes this one
 .DS_Store
+
+.repository
