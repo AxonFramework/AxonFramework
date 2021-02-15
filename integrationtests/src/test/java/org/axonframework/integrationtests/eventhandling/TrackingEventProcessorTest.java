@@ -994,7 +994,7 @@ class TrackingEventProcessorTest {
 
         testSubject.start();
         eventBus.publish(createEvents(4));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         assertEquals(0, handledInRedelivery.size());
         assertFalse(testSubject.processingStatus().get(segmentId).isReplaying());
         assertFalse(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
