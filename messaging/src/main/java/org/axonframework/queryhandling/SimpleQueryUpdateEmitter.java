@@ -174,11 +174,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                             SubscriptionQueryUpdateMessage<U> update) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(uh -> doEmit(query, uh, update)));
+        synchronized (this) {
+            updateHandlers.keySet()
+                          .stream()
+                          .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                          .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                    .ifPresent(uh -> doEmit(query, uh, update)));
+        }
     }
 
     @SuppressWarnings("unchecked")
