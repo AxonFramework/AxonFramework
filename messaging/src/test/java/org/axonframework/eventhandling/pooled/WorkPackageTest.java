@@ -216,12 +216,15 @@ class WorkPackageTest {
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
         assertEquals(expectedToken, tokenCaptor.getValue());
 
-        // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents
-        testSubjectWithShortThreshold.scheduleWorker();
-
         assertWithin(
                 500, TimeUnit.MILLISECONDS,
-                () -> verify(tokenStore).extendClaim(PROCESSOR_NAME, segment.getSegmentId())
+                () -> {
+                    // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents.
+                    // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
+                    // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
+                    testSubjectWithShortThreshold.scheduleWorker();
+                    verify(tokenStore, atLeastOnce()).extendClaim(PROCESSOR_NAME, segment.getSegmentId());
+                }
         );
     }
 
@@ -254,11 +257,17 @@ class WorkPackageTest {
         assertEquals(expectedEvent, validatedEvents.get(0));
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+
         assertWithin(
                 500, TimeUnit.MILLISECONDS,
-                () -> verify(tokenStore).storeToken(
-                        tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId())
-                )
+                () -> {
+                    // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents.
+                    // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
+                    // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
+                    testSubjectWithShortThreshold.scheduleWorker();
+                    verify(tokenStore, atLeastOnce())
+                            .storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+                }
         );
         assertEquals(expectedToken, tokenCaptor.getValue());
     }
