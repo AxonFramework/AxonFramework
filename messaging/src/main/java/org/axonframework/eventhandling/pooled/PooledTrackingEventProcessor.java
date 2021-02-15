@@ -147,7 +147,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
         this.coordinator = new Coordinator(
                 name, messageSource, tokenStore, transactionManager, builder.coordinatorExecutorBuilder.apply(name),
-                this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
+                this::spawnWorker, (i, up) -> processingStatus.computeIfPresent(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
         );
     }
 
@@ -309,12 +309,12 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        processingStatus.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, initialToken));
+        TrackerStatus initialStatus = new TrackerStatus(segment, initialToken);
         return new WorkPackage(
                 name, tokenStore, transactionManager, workerExecutor,
                 this::canHandle, this::processInUnitOfWork,
                 segment, initialToken, claimExtensionThreshold,
-                u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status))
+                u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status == null ? initialStatus : status))
         );
     }
 
