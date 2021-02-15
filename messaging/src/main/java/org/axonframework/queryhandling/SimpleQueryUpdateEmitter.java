@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -64,7 +65,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
 
-    private ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, Registration> registrations =
+    private final ConcurrentMap<String, Registration> registrations =
             new ConcurrentHashMap<>();
 
     /**
@@ -111,14 +112,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
         Registration registration = () -> {
             updateHandlers.remove(query);
-            registrations.remove(query);
+            registrations.remove(query.getIdentifier());
             return true;
         };
 
         updateHandlers.put(query, fluxSinkWrapper);
-        registrations.put(query,registration);
-
-
+        registrations.put(query.getIdentifier(), registration);
 
         return new UpdateHandlerRegistration<>(registration,
                                                processor.replay(updateBufferSize).autoConnect(),
@@ -134,26 +133,28 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         //There is no onDispose signal on a Sink
         //So we must ensure that we update handlers map
         //only if someone actually subscribes to message flux
-        AtomicReference<SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> > sinkReference = new AtomicReference<>();
+        AtomicReference<SinksManyWrapper<SubscriptionQueryUpdateMessage<U>>> sinkReference = new AtomicReference<>();
 
-        Runnable removeHandler = () -> updateHandlers.remove(query);
+        Runnable removeHandler = () -> {
+            updateHandlers.remove(query);
+            registrations.remove(query.getIdentifier());
+        };
 
         Registration registration = () -> {
             removeHandler.run();
-            registrations.remove(query);
             return true;
         };
 
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
                                                                         .doOnSubscribe(subscription -> {
-                                                                            updateHandlers.put(query, sinkReference.get());
-                                                                            registrations.put(query,registration);
+                                                                            updateHandlers.put(query,
+                                                                                               sinkReference.get());
+                                                                            registrations.put(query.getIdentifier(), registration);
                                                                         })
-                                                                        .doFinally(signalType->removeHandler.run());
+                                                                        .doFinally(signalType -> removeHandler.run());
 
         SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
         sinkReference.set(sinksManyWrapper);
-
 
 
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
@@ -297,8 +298,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void closeActiveSubscriptions() {
-       registrations.values().forEach(Registration::close);
+    public CompletableFuture<Void> close() {
+        registrations.values().forEach(Registration::close);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
