@@ -139,17 +139,14 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
-        assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.maxCapacity = builder.maxCapacity;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
 
-        ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
-        assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinator = new Coordinator(
-                name, messageSource, tokenStore, transactionManager, coordinatorExecutor,
+                name, messageSource, tokenStore, transactionManager, builder.coordinatorExecutorBuilder.apply(name),
                 this::spawnWorker, (i, up) -> processingStatus.compute(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
         );
     }
@@ -437,37 +434,32 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Specifies a {@link Function} creating a {@link ScheduledExecutorService} used by the coordinator of this
-         * {@link PooledTrackingEventProcessor}, based on the {@link #name()}. Defaults to a {@code
-         * ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this processors
-         * name.
+         * Specifies the {@link ScheduledExecutorService} used by the coordinator of this {@link
+         * PooledTrackingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
+         * {@link AxonThreadFactory} incorporating this processors name.
          *
-         * @param coordinatorExecutorBuilder a {@link Function} creating a {@link ScheduledExecutorService} to be used
-         *                                   by the the coordinator of this {@link PooledTrackingEventProcessor}, based
-         *                                   on the {@link #name()}
+         * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
+         *                            {@link PooledTrackingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
-            assertNonNull(coordinatorExecutorBuilder,
-                          "The Coordinator's ScheduledExecutorService builder may not be null");
-            this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
+        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
+            assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
+            this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
             return this;
         }
 
         /**
-         * Specifies a {@link Function} creating a {@link ScheduledExecutorService} to be provided to the {@link
-         * WorkPackage}s created by this {@link PooledTrackingEventProcessor}, based on the {@link #name()}. Defaults to
-         * a {@code ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this
-         * processors name.
+         * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
+         * {@link PooledTrackingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and
+         * an {@link AxonThreadFactory} incorporating this processors name.
          *
-         * @param workerExecutorBuilder a {@link Function} creating a {@link ScheduledExecutorService} to be provided to
-         *                              the {@link WorkPackage}s created by this {@link PooledTrackingEventProcessor},
-         *                              based on the {@link #name()}
+         * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
+         *                       by this {@link PooledTrackingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutorService(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
-            assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
-            this.workerExecutorBuilder = workerExecutorBuilder;
+        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+            assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
+            this.workerExecutorBuilder = ignored -> workerExecutor;
             return this;
         }
 

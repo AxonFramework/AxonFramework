@@ -90,8 +90,8 @@ class PooledTrackingEventProcessorTest {
                                             .messageSource(stubMessageSource)
                                             .tokenStore(tokenStore)
                                             .transactionManager(NoTransactionManager.instance())
-                                            .coordinatorExecutor(name -> coordinatorExecutor)
-                                            .workerExecutorService(name -> workerExecutor)
+                                            .coordinatorExecutor(coordinatorExecutor)
+                                            .workerExecutorService(workerExecutor)
                                             .initialSegmentCount(8)
                                             .claimExtensionThreshold(1000);
         return customization.apply(processorBuilder).build();
@@ -110,7 +110,7 @@ class PooledTrackingEventProcessorTest {
         doThrow(new IllegalArgumentException("Some exception")).when(spiedCoordinatorExecutor)
                                                                .submit(any(Runnable.class));
 
-        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(name -> spiedCoordinatorExecutor)));
+        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(spiedCoordinatorExecutor)));
 
         assertThrows(IllegalArgumentException.class, testSubject::start);
         assertFalse(testSubject.isRunning());
@@ -120,7 +120,7 @@ class PooledTrackingEventProcessorTest {
     void testSecondStartInvocationIsIgnored() {
         ScheduledExecutorService spiedCoordinatorExecutor = spy(coordinatorExecutor);
 
-        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(name -> spiedCoordinatorExecutor)));
+        setTestSubject(createTestSubject(builder -> builder.coordinatorExecutor(spiedCoordinatorExecutor)));
 
         testSubject.start();
         // The second invocation does not cause the Coordinator to schedule another CoordinationTask.
@@ -219,6 +219,45 @@ class PooledTrackingEventProcessorTest {
         );
         when(stubEventHandler.canHandleType(any())).thenReturn(true);
     }
+
+    @Test
+    void testCoordinatorIsTriggeredThroughEventAvailabilityCallback() throws Exception {
+        List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
+                                                   .map(GenericEventMessage::new)
+                                                   .collect(Collectors.toList());
+        mockEventHandlerInvoker();
+        doThrow(new RuntimeException("Simulating worker failure"))
+                .doNothing()
+                .when(stubEventHandler)
+                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
+
+        verify(stubEventHandler, never()).canHandle(any(), any());
+
+        events.forEach(e -> stubMessageSource.publishMessage(e));
+
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            try {
+                verify(stubEventHandler).handle(
+                        argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
+                        argThat(s -> s.getSegmentId() == events.get(2).getPayload())
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertEquals(7, testSubject.processingStatus().size());
+            assertFalse(testSubject.processingStatus().containsKey(2));
+        });
+    }
+
+
 
     @Test
     void testShutdownCompletesAfterAbortingWorkPackages()
@@ -674,40 +713,10 @@ class PooledTrackingEventProcessorTest {
     }
 
     @Test
-    void testBuildWithNullCoordinatorExecutorThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(new InMemoryTokenStore())
-                                            .transactionManager(NoTransactionManager.INSTANCE);
-
-        assertThrows(
-                AxonConfigurationException.class, () -> builderTestSubject.coordinatorExecutor(name -> null).build()
-        );
-    }
-
-    @Test
     void testBuildWithNullWorkerExecutorBuilderThrowsAxonConfigurationException() {
         PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.workerExecutorService(null));
-    }
-
-    @Test
-    void testBuildWithNullWorkerExecutorThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(new InMemoryTokenStore())
-                                            .transactionManager(NoTransactionManager.INSTANCE);
-
-        assertThrows(
-                AxonConfigurationException.class, () -> builderTestSubject.workerExecutorService(name -> null).build()
-        );
     }
 
     @Test
