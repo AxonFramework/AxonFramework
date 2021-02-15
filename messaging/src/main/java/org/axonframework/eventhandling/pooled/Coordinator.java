@@ -65,6 +65,7 @@ class Coordinator {
     private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
+    private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
 
     /**
      * Constructs a {@link Coordinator}.
@@ -108,7 +109,9 @@ class Coordinator {
         if (newState.wasStarted()) {
             logger.info("Starting Coordinator for processor [{}].", name);
             try {
-                executorService.submit(new CoordinationTask());
+                CoordinationTask task = new CoordinationTask();
+                executorService.submit(task);
+                this.coordinationTask.set(task);
             } catch (Exception e) {
                 // A failure starting the processor. We need to stop immediately.
                 logger.warn("An error occurred while trying to attempt to start the coordinator for processor [{}].",
@@ -131,8 +134,13 @@ class Coordinator {
      */
     public CompletableFuture<Void> stop() {
         logger.info("Stopping coordinator for processor [{}].", name);
-        return runState.updateAndGet(RunState::attemptStop)
-                       .shutdownHandle();
+        CompletableFuture<Void> handle = runState.updateAndGet(RunState::attemptStop)
+                                                                .shutdownHandle();
+        CoordinationTask task = coordinationTask.getAndSet(null);
+        if (task != null) {
+            task.scheduleImmediateCoordinationTask();
+        }
+        return handle;
     }
 
     /**
@@ -143,6 +151,17 @@ class Coordinator {
     public boolean isRunning() {
         return runState.get()
                        .isRunning();
+    }
+
+    /**
+     * Schedules the Coordinator for processing. Use this method after assigning tasks to or setting flags on the
+     * coordinator to have it respond to those changes.
+     */
+    private void scheduleCoordinator() {
+        CoordinationTask coordinator = coordinationTask.get();
+        if (coordinator != null) {
+            coordinator.scheduleImmediateCoordinationTask();
+        }
     }
 
     /**
@@ -169,6 +188,7 @@ class Coordinator {
         logger.debug("Coordinator [{}] will release segment [{}] for processing until {}.",
                     name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
+        scheduleCoordinator();
     }
 
     /**
@@ -187,6 +207,7 @@ class Coordinator {
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         coordinatorTasks.add(new SplitTask(result, name, segmentId, workPackages, tokenStore, transactionManager));
+        scheduleCoordinator();
         return result;
     }
 
