@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 
@@ -55,7 +56,8 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
      * available. This method will block indefinitely, until a result is available, or until the Thread is interrupted.
      * When the thread is interrupted, this method returns {@code null}. If command execution resulted in an exception,
-     * it is wrapped in a {@link CommandExecutionException}.
+     * it is wrapped in a {@link CommandExecutionException}. If command dispatching failed,
+     * {@link CommandDispatchException} is thrown instead.
      * <p/>
      * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
      * the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements {@link
@@ -69,6 +71,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for the
      * command to execute
      * @throws CommandExecutionException when an exception occurred while processing the command
+     * @throws CommandDispatchException when an exception occurred while dispatching the command
      */
     <R> R sendAndWait(Object command);
 
@@ -77,6 +80,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * available. This method will block until a result is available, or the given {@code timeout} was reached, or until
      * the Thread is interrupted. When the timeout is reached or the thread is interrupted, this method returns {@code
      * null}. If command execution resulted in an exception, it is wrapped in a {@link CommandExecutionException}.
+     * If command dispatching failed, {@link CommandDispatchException} is thrown instead.
      * <p/>
      * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
      * the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements {@link
@@ -92,6 +96,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for the
      * command to execute
      * @throws CommandExecutionException when an exception occurred while processing the command
+     * @throws CommandDispatchException when an exception occurred while dispatching the command
      */
     <R> R sendAndWait(Object command, long timeout, TimeUnit unit);
 
