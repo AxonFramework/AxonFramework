@@ -408,6 +408,7 @@ class Coordinator {
                 for (int segmentId : segments) {
                     if (isSegmentBlockedFromClaim(segmentId)) {
                         logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
+                        processingStatusUpdater.accept(segmentId, u -> null);
                         continue;
                     }
                     if (workPackages.containsKey(segmentId)) {
@@ -428,6 +429,7 @@ class Coordinator {
                                 : lowerBound.lowerBound(workPackage.lastDeliveredToken());
                         releasesDeadlines.remove(segmentId);
                     } catch (UnableToClaimTokenException e) {
+                        processingStatusUpdater.accept(segmentId, u -> null);
                         logger.debug("Unable to claim the token for segment[{}]. It is owned by another process.",
                                      segmentId);
                     }
@@ -437,8 +439,8 @@ class Coordinator {
         }
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.containsKey(segmentId)
-                    && releasesDeadlines.get(segmentId).isAfter(GenericEventMessage.clock.instant());
+            return releasesDeadlines.getOrDefault(segmentId, Instant.EPOCH)
+                                    .isAfter(GenericEventMessage.clock.instant());
         }
 
         /**
