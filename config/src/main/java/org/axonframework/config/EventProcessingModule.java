@@ -706,15 +706,19 @@ public class EventProcessingModule
             BiFunction<Configuration, PooledTrackingEventProcessor.Builder, PooledTrackingEventProcessor.Builder> processorCustomization
     ) {
         registerEventProcessor(name, (n, c, ehi) -> {
-            if (!(c.eventBus() instanceof StreamableMessageSource)) {
-                throw new AxonConfigurationException(
-                        "Cannot create Pooled Tracking Event Processor '" + name + "'. " +
-                                "The available EventBus does not support streaming event processors."
-                );
+            StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+            try {
+                messageSource = defaultStreamableSource.get();
+            } catch (ClassCastException e) {
+                if (!(c.eventBus() instanceof StreamableMessageSource)) {
+                    throw new AxonConfigurationException(
+                            "Cannot create Pooled Tracking Event Processor '" + name + "'. " +
+                                    "The available EventBus does not support streaming event processors."
+                    );
+                }
+                //noinspection unchecked
+                messageSource = (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus();
             }
-            // noinspection unchecked,unchecked
-            StreamableMessageSource<TrackedEventMessage<?>> messageSource =
-                    (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus();
 
             PooledTrackingEventProcessor.Builder processorBuilder =
                     PooledTrackingEventProcessor.builder()

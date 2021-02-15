@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -38,7 +39,10 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.pooled.PooledTrackingEventProcessor;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
@@ -46,12 +50,14 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -729,6 +735,86 @@ class EventProcessingModuleTest {
         verify(mockedSourceForVerification, times(0)).createHeadToken();
     }
 
+    @Test
+    void testConfigurePooledTrackingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
+        String testName = "pooled-tracking";
+        // This configurer does no contain an EventStore or other StreamableMessageSource.
+        configurer.eventProcessing()
+                  .registerPooledTrackingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledTrackingEventHandler());
+        assertThrows(LifecycleHandlerInvocationException.class, () -> configurer.start());
+    }
+
+    @Test
+    void testConfigurePooledTrackingEventProcessor(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-tracking";
+        TokenStore testTokenStore = new InMemoryTokenStore();
+
+        configurer.eventProcessing()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerPooledTrackingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledTrackingEventHandler())
+                  .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
+                  .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
+                  .registerTokenStore(testName, config -> testTokenStore)
+                  .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
+        Configuration config = configurer.start();
+
+        Optional<PooledTrackingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledTrackingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledTrackingEventProcessor result = optionalResult.get();
+        assertEquals(testName, result.getName());
+        assertEquals(
+                RollbackConfigurationType.ANY_THROWABLE,
+                getField(AbstractEventProcessor.class, "rollbackConfiguration", result)
+        );
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        assertEquals(mockedSource, getField("messageSource", result));
+        assertEquals(testTokenStore, getField("tokenStore", result));
+        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
+    }
+
+    @Test
+    void testConfigurePooledTrackingEventProcessorWithCustomization() throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-tracking";
+        int testCapacity = 24;
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledTrackingEventProcessor(
+                          testName, (config, builder) -> builder.maxCapacity(testCapacity)
+                  )
+                  .registerEventHandler(config -> new PooledTrackingEventHandler());
+        Configuration config = configurer.start();
+
+        Optional<PooledTrackingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledTrackingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledTrackingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertTrue(EmbeddedEventStore.class.isAssignableFrom(getField("messageSource", result).getClass()));
+    }
+
+    private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
+        return getField(object.getClass(), fieldName, object);
+    }
+
+    private <C, O, R> R getField(Class<C> clazz,
+                                 String fieldName,
+                                 O object) throws NoSuchFieldException, IllegalAccessException {
+        Field field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        //noinspection unchecked
+        return (R) field.get(object);
+    }
+
     private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
@@ -861,6 +947,16 @@ class EventProcessingModuleTest {
         @EventHandler
         public void handle(Boolean event) {
             throw new IllegalStateException();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @ProcessingGroup("pooled-tracking")
+    private static class PooledTrackingEventHandler {
+
+        @EventHandler
+        public void handle(String event) {
+
         }
     }
 
