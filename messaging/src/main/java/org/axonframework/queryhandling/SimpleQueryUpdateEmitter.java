@@ -64,6 +64,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
 
+    private ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, Registration> registrations =
+            new ConcurrentHashMap<>();
+
     /**
      * Instantiate a {@link SimpleQueryUpdateEmitter} based on the fields contained in the {@link Builder}.
      *
@@ -106,12 +109,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
-        updateHandlers.put(query, fluxSinkWrapper);
-
         Registration registration = () -> {
             updateHandlers.remove(query);
+            registrations.remove(query);
             return true;
         };
+
+        updateHandlers.put(query, fluxSinkWrapper);
+        registrations.put(query,registration);
+
+
 
         return new UpdateHandlerRegistration<>(registration,
                                                processor.replay(updateBufferSize).autoConnect(),
@@ -131,17 +138,23 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
         Runnable removeHandler = () -> updateHandlers.remove(query);
 
+        Registration registration = () -> {
+            removeHandler.run();
+            registrations.remove(query);
+            return true;
+        };
+
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                                                                        .doOnSubscribe(subscription -> updateHandlers.put(query, sinkReference.get()))
+                                                                        .doOnSubscribe(subscription -> {
+                                                                            updateHandlers.put(query, sinkReference.get());
+                                                                            registrations.put(query,registration);
+                                                                        })
                                                                         .doFinally(signalType->removeHandler.run());
 
         SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
         sinkReference.set(sinksManyWrapper);
 
-        Registration registration = () -> {
-            removeHandler.run();
-            return true;
-        };
+
 
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
@@ -281,6 +294,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
+    }
+
+    @Override
+    public void closeActiveSubscriptions() {
+       registrations.values().forEach(Registration::close);
     }
 
     /**

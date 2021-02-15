@@ -189,4 +189,10 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     default Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.emptySet();
     }
+
+    /**
+     * Closes all local running subscription queries.
+     *
+     */
+    void closeActiveSubscriptions();
 }
