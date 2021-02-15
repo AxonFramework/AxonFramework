@@ -5,6 +5,7 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -221,43 +222,43 @@ class PooledTrackingEventProcessorTest {
     }
 
     @Test
-    void testCoordinatorIsTriggeredThroughEventAvailabilityCallback() throws Exception {
-        List<EventMessage<Integer>> events = Stream.of(1, 2, 2, 4, 5)
-                                                   .map(GenericEventMessage::new)
-                                                   .collect(Collectors.toList());
+    void testCoordinationIsTriggeredThroughEventAvailabilityCallback() {
+        boolean streamCallbackSupported = true;
+        //noinspection ConstantConditions
+        InMemoryMessageSource testMessageSource = new InMemoryMessageSource(streamCallbackSupported);
+        setTestSubject(createTestSubject(builder -> builder.messageSource(testMessageSource)));
         mockEventHandlerInvoker();
-        doThrow(new RuntimeException("Simulating worker failure"))
-                .doNothing()
-                .when(stubEventHandler)
-                .handle(argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())), any());
+
+        Stream.of(0, 1, 2, 3)
+              .map(GenericEventMessage::new)
+              .forEach(testMessageSource::publishMessage);
 
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
-        assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
-
-        verify(stubEventHandler, never()).canHandle(any(), any());
-
-        events.forEach(e -> stubMessageSource.publishMessage(e));
-
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            try {
-                verify(stubEventHandler).handle(
-                        argThat(em -> em.getIdentifier().equals(events.get(2).getIdentifier())),
-                        argThat(s -> s.getSegmentId() == events.get(2).getPayload())
-                );
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            long lowestToken = testSubject.processingStatus().values().stream()
+                                          .map(status -> status.getCurrentPosition().orElse(-1))
+                                          .min(Long::compareTo)
+                                          .orElse(-1L);
+
+            assertEquals(4, lowestToken);
         });
 
+        Stream.of(4, 5, 6, 7)
+              .map(GenericEventMessage::new)
+              .forEach(testMessageSource::publishMessage);
+        testMessageSource.runOnAvailableCallback();
+
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(7, testSubject.processingStatus().size());
-            assertFalse(testSubject.processingStatus().containsKey(2));
+            long lowestToken = testSubject.processingStatus().values().stream()
+                                          .map(status -> status.getCurrentPosition().orElse(-1))
+                                          .min(Long::compareTo)
+                                          .orElse(-1L);
+
+            assertEquals(8, lowestToken);
         });
     }
-
-
 
     @Test
     void testShutdownCompletesAfterAbortingWorkPackages()
@@ -500,7 +501,6 @@ class PooledTrackingEventProcessorTest {
                 testTokenClaimInterval, TimeUnit.MILLISECONDS,
                 () -> assertNull(testSubject.processingStatus().get(testSegmentIdToMerge))
         );
-
     }
 
     @Test
@@ -764,6 +764,16 @@ class PooledTrackingEventProcessorTest {
         private static final EventMessage<String> FAIL_EVENT = GenericEventMessage.asEventMessage(FAIL_PAYLOAD);
 
         private List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
+        private final boolean streamCallbackSupported;
+        private Runnable onAvailableCallback = null;
+
+        private InMemoryMessageSource() {
+            this(false);
+        }
+
+        private InMemoryMessageSource(boolean streamCallbackSupported) {
+            this.streamCallbackSupported = streamCallbackSupported;
+        }
 
         @Override
         public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
@@ -804,6 +814,12 @@ class PooledTrackingEventProcessorTest {
                 public void close() {
                     clearAllMessages();
                 }
+
+                @Override
+                public boolean setOnAvailableCallback(Runnable callback) {
+                    onAvailableCallback = callback;
+                    return streamCallbackSupported;
+                }
             };
         }
 
@@ -837,6 +853,10 @@ class PooledTrackingEventProcessorTest {
 
         private synchronized void clearAllMessages() {
             messages = new CopyOnWriteArrayList<>();
+        }
+
+        private void runOnAvailableCallback() {
+            onAvailableCallback.run();
         }
     }
 }
