@@ -166,17 +166,9 @@ class Coordinator {
      * @see StreamingEventProcessor#releaseSegment(int, long, TimeUnit)
      */
     public void releaseUntil(int segmentId, Instant releaseDuration) {
-        logger.info("Coordinator [{}] will disregard segment [{}] for processing until {}.",
+        logger.debug("Coordinator [{}] will release segment [{}] for processing until {}.",
                     name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
-        WorkPackage workPackage = workPackages.get(segmentId);
-        if (workPackage != null) {
-            workPackage.abort(null)
-                       .thenRun(() -> logger.info("Released segment [{}] until {}", segmentId, releaseDuration));
-        } else {
-            logger.debug("Coordinator [{}] does not have to release segment [{}] as it is not in charge of it.",
-                         name, segmentId);
-        }
     }
 
     /**
@@ -308,6 +300,11 @@ class Coordinator {
                 return;
             }
 
+            workPackages.forEach((segment, workPackage) -> {
+                if (isSegmentBlockedFromClaim(segment)) {
+                    abortWorkPackage(workPackage, null);
+                }
+            });
             if (!coordinatorTasks.isEmpty()) {
                 CoordinatorTask task = coordinatorTasks.remove();
                 logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.description());
@@ -388,7 +385,7 @@ class Coordinator {
                 int[] segments = tokenStore.fetchSegments(name);
                 TrackingToken lowerBound = NoToken.INSTANCE;
                 for (int segmentId : segments) {
-                    if (shouldNotClaimSegment(segmentId)) {
+                    if (isSegmentBlockedFromClaim(segmentId)) {
                         logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
                         continue;
                     }
@@ -418,7 +415,7 @@ class Coordinator {
             });
         }
 
-        private boolean shouldNotClaimSegment(int segmentId) {
+        private boolean isSegmentBlockedFromClaim(int segmentId) {
             return releasesDeadlines.containsKey(segmentId)
                     && releasesDeadlines.get(segmentId).isAfter(GenericEventMessage.clock.instant());
         }
