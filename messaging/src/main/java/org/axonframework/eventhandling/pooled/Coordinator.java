@@ -9,7 +9,6 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -31,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+
+import static org.axonframework.eventhandling.WrappedToken.unwrapLowerBound;
 
 /**
  * Coordinator for the {@link PooledTrackingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
@@ -138,7 +139,7 @@ class Coordinator {
     public CompletableFuture<Void> stop() {
         logger.info("Stopping coordinator for processor [{}].", name);
         CompletableFuture<Void> handle = runState.updateAndGet(RunState::attemptStop)
-                                                                .shutdownHandle();
+                                                 .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
         if (task != null) {
             task.scheduleImmediateCoordinationTask();
@@ -189,7 +190,7 @@ class Coordinator {
      */
     public void releaseUntil(int segmentId, Instant releaseDuration) {
         logger.debug("Coordinator [{}] will release segment [{}] for processing until {}.",
-                    name, segmentId, releaseDuration);
+                     name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
         scheduleCoordinator();
     }
@@ -325,11 +326,11 @@ class Coordinator {
                 return;
             }
 
-            workPackages.forEach((segment, workPackage) -> {
-                if (isSegmentBlockedFromClaim(segment)) {
-                    abortWorkPackage(workPackage, null);
-                }
-            });
+            workPackages.entrySet().stream()
+                        .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
+                        .map(Map.Entry::getValue)
+                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+
             if (!coordinatorTasks.isEmpty()) {
                 CoordinatorTask task = coordinatorTasks.remove();
                 logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.description());
@@ -432,7 +433,7 @@ class Coordinator {
                                 workPackages.computeIfAbsent(segmentId, k -> workPackageFactory.apply(segment, token));
                         lowerBound = lowerBound == null
                                 ? null
-                                : lowerBound.lowerBound(WrappedToken.unwrapLowerBound(workPackage.lastDeliveredToken()));
+                                : lowerBound.lowerBound(unwrapLowerBound(workPackage.lastDeliveredToken()));
                         releasesDeadlines.remove(segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
