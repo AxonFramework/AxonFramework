@@ -636,11 +636,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                                       GapAwareTrackingToken previousToken) throws SQLException {
         long globalSequence = resultSet.getLong(schema.globalIndexColumn());
 
+        String aggregateIdentifier = resultSet.getString(schema.aggregateIdentifierColumn());
+        String eventIdentifier = resultSet.getString(schema.eventIdentifierColumn());
         GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
                 resultSet.getString(schema.typeColumn()),
-                resultSet.getString(schema.aggregateIdentifierColumn()),
+                eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
                 resultSet.getLong(schema.sequenceNumberColumn()),
-                resultSet.getString(schema.eventIdentifierColumn()),
+                eventIdentifier,
                 readTimeStamp(resultSet, schema.timestampColumn()),
                 resultSet.getString(schema.payloadTypeColumn()),
                 resultSet.getString(schema.payloadRevisionColumn()),

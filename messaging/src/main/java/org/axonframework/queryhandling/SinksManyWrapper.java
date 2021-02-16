@@ -44,7 +44,12 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void complete() {
-        fluxSink.tryEmitComplete().orThrow();
+        Sinks.EmitResult result;
+        //noinspection StatementWithEmptyBody
+        while ((result = fluxSink.tryEmitComplete()) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+            // busy spin
+        }
+        result.orThrow();
     }
 
     /**
@@ -54,7 +59,12 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void next(T value) {
-        fluxSink.tryEmitNext(value).orThrow();
+        Sinks.EmitResult result;
+        //noinspection StatementWithEmptyBody
+        while ((result = fluxSink.tryEmitNext(value)) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+            // busy spin
+        }
+        result.orThrow();
     }
 
     /**
@@ -64,6 +74,12 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void error(Throwable t) {
-        fluxSink.tryEmitError(t).orThrow();
+        Sinks.EmitResult result;
+        //noinspection StatementWithEmptyBody
+        while ((result = fluxSink.tryEmitError(t)) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+            // busy spin
+        }
+        result.orThrow();
+
     }
 }

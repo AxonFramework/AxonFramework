@@ -70,7 +70,7 @@
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.14.0</log4j.version>
         <spring.version>5.3.3</spring.version>
-        <spring-security.version>5.4.2</spring-security.version>
+        <spring-security.version>5.4.4</spring-security.version>
         <spring.boot.version>2.4.2</spring.boot.version>
         <mockito.version>3.7.7</mockito.version>
         <projectreactor.version>3.4.2</projectreactor.version>
@@ -96,9 +96,9 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-validator.version>7.0.0.Final</hibernate-validator.version>
-        <hibernate-entitymanager.version>5.4.27.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.10.19</byte-buddy.version>
+        <hibernate-validator.version>7.0.1.Final</hibernate-validator.version>
+        <hibernate-entitymanager.version>5.4.28.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.10.20</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.8.0</commons-io.version>
         <javassist.version>3.27.0-GA</javassist.version>
@@ -106,11 +106,11 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
         <postgresql.version>42.2.18</postgresql.version>
-        <junit4.version>4.13.1</junit4.version>
-        <junit.jupiter.version>5.7.0</junit.jupiter.version>
-        <axonserver-connector-java.version>4.4.6</axonserver-connector-java.version>
+        <junit4.version>4.13.2</junit4.version>
+        <junit.jupiter.version>5.7.1</junit.jupiter.version>
+        <axonserver-connector-java.version>4.4.7</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.15.1</testcontainers.version>
+        <testcontainers.version>1.15.2</testcontainers.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>5.1.1</felix.bundle.plugin.version>
