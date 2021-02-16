@@ -9,6 +9,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -353,6 +354,7 @@ class Coordinator {
                     logger.warn("Exception occurred while Coordinator [{}] starting work packages"
                                         + " and opening the event stream.", name);
                     abortAndScheduleRetry(e);
+                    return;
                 }
             }
 
@@ -430,7 +432,7 @@ class Coordinator {
                                 workPackages.computeIfAbsent(segmentId, k -> workPackageFactory.apply(segment, token));
                         lowerBound = lowerBound == null
                                 ? null
-                                : lowerBound.lowerBound(workPackage.lastDeliveredToken());
+                                : lowerBound.lowerBound(WrappedToken.unwrapLowerBound(workPackage.lastDeliveredToken()));
                         releasesDeadlines.remove(segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
