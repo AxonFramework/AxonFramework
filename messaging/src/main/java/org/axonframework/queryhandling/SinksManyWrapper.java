@@ -54,7 +54,12 @@ class SinksManyWrapper<T> implements SinkWrapper<T> {
      */
     @Override
     public void next(T value) {
-        fluxSink.tryEmitNext(value).orThrow();
+        Sinks.EmitResult result;
+        //noinspection StatementWithEmptyBody
+        while ((result = fluxSink.tryEmitNext(value)) == Sinks.EmitResult.FAIL_NON_SERIALIZED) {
+            // busy spin
+        }
+        result.orThrow();
     }
 
     /**
