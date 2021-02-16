@@ -395,7 +395,10 @@ class PooledTrackingEventProcessorTest {
         // When...
         testSubject.releaseSegment(testSegmentId);
 
-        assertWithin(50, TimeUnit.MILLISECONDS, () -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+        assertWithin(
+                testTokenClaimInterval + 50, TimeUnit.MILLISECONDS,
+                () -> assertNull(testSubject.processingStatus().get(testSegmentId))
+        );
         // Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
         assertWithin(
                 (testTokenClaimInterval * 2) + 50, TimeUnit.MILLISECONDS,
