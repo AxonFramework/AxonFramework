@@ -50,6 +50,8 @@ import java.util.function.UnaryOperator;
 class Coordinator {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    // not sure if this is accurate, but it's as close as we can get
+    private static final Instant BIG_BANG = Instant.MIN;
 
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
@@ -227,6 +229,7 @@ class Coordinator {
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         coordinatorTasks.add(new MergeTask(result, name, segmentId, workPackages, tokenStore, transactionManager));
+        scheduleCoordinator();
         return result;
     }
 
@@ -330,6 +333,7 @@ class Coordinator {
                 CoordinatorTask task = coordinatorTasks.remove();
                 logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.description());
                 task.run()
+                    .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
                         processingGate.set(false);
                         scheduleImmediateCoordinationTask();
@@ -439,7 +443,7 @@ class Coordinator {
         }
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.getOrDefault(segmentId, Instant.EPOCH)
+            return releasesDeadlines.getOrDefault(segmentId, BIG_BANG)
                                     .isAfter(GenericEventMessage.clock.instant());
         }
 
