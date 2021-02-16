@@ -184,8 +184,8 @@ class WorkPackage {
                     eventBatch.add(event);
                 }
             } catch (Exception e) {
-                handleError(e);
                 lastConsumedToken = lastStoredToken;
+                abort(e);
                 return;
             }
         }
@@ -202,7 +202,7 @@ class WorkPackage {
                 );
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
-                handleError(e);
+                abort(e);
             }
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
@@ -218,12 +218,6 @@ class WorkPackage {
                 lastClaimExtension = now;
             }
         }
-    }
-
-    private void handleError(Exception cause) {
-        logger.warn("Work Package [{}]-[{}] is handling error [{}].", name, segment.getSegmentId(), cause);
-        segmentStatusUpdater.accept(status -> status.markError(cause));
-        abortFlag.updateAndGet(e -> getOrDefault(e, () -> CompletableFuture.completedFuture(cause)));
     }
 
     private void storeToken(TrackingToken token) {
@@ -294,6 +288,10 @@ class WorkPackage {
      * processing
      */
     public CompletableFuture<Exception> abort(Exception abortReason) {
+        if (abortReason != null) {
+            logger.warn("Exception during processing in Work Package [{}]-[{}]. Aborting...", name, segment.getSegmentId(), abortReason);
+            segmentStatusUpdater.accept(status -> status.isErrorState() ? status : status.markError(abortReason));
+        }
         CompletableFuture<Exception> abortTask = abortFlag.updateAndGet(
                 currentFlag -> {
                     if (currentFlag == null) {
