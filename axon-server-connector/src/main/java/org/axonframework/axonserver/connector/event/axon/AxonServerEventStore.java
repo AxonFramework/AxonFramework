@@ -73,7 +73,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.*;
+import static java.util.Spliterator.CONCURRENT;
+import static java.util.Spliterator.DISTINCT;
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -342,6 +345,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
+        private static final boolean WITHOUT_SNAPSHOTS = false;
 
         private final AxonServerConfiguration configuration;
         private final AxonServerConnectionManager connectionManager;
@@ -371,8 +375,8 @@ public class AxonServerEventStore extends AbstractEventStore {
             this.builder = builder;
             this.context = context;
 
-            this.snapshotSerializer = new GrpcMetaDataAwareSerializer(getSnapshotSerializer());
-            this.eventSerializer = new GrpcMetaDataAwareSerializer(getEventSerializer());
+            this.snapshotSerializer = new GrpcMetaDataAwareSerializer(super.getSnapshotSerializer());
+            this.eventSerializer = new GrpcMetaDataAwareSerializer(super.getEventSerializer());
         }
 
         /**
@@ -459,7 +463,8 @@ public class AxonServerEventStore extends AbstractEventStore {
                                      logger.warn("Error occurred while creating a snapshot", e);
                                  } else if (c != null) {
                                      if (c.getSuccess()) {
-                                         logger.info("Snapshot created");
+                                         logger.debug("Snapshot created for aggregate type {}, identifier {}",
+                                                      snapshot.getType(), snapshot.getAggregateIdentifier());
                                      } else {
                                          logger.warn("Snapshot creation failed for unknown reason. "
                                                              + "Check server logs for details.");
@@ -475,12 +480,12 @@ public class AxonServerEventStore extends AbstractEventStore {
             EventChannel eventChannel = connectionManager.getConnection(context).eventChannel();
 
             AggregateEventStream aggregateStream;
-            if (firstSequenceNumber > 0) {
+            if (firstSequenceNumber >= 0) {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, firstSequenceNumber);
             } else if (firstSequenceNumber == ALLOW_SNAPSHOTS_MAGIC_VALUE && !snapshotFilterSet) {
-                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, true);
-            } else {
                 aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier);
+            } else {
+                aggregateStream = eventChannel.openAggregateStream(aggregateIdentifier, WITHOUT_SNAPSHOTS);
             }
 
             return aggregateStream.asStream().map(GrpcBackedDomainEventData::new);
@@ -653,6 +658,16 @@ public class AxonServerEventStore extends AbstractEventStore {
                     return true;
                 }
             }, false);
+        }
+
+        @Override
+        public Serializer getSnapshotSerializer() {
+            return this.snapshotSerializer;
+        }
+
+        @Override
+        public Serializer getEventSerializer() {
+            return this.eventSerializer;
         }
 
         private static class Builder extends AbstractEventStorageEngine.Builder {

@@ -21,8 +21,8 @@ import org.axonframework.messaging.ResultMessage;
 import java.util.Map;
 
 /**
- * Message that contains the results of a Query. Results are represented as a Collection of result objects. When
- * a query resulted in a single result object, that object is contained as the sole element of the collection.
+ * Message that contains the results of a Query. Results are represented as a Collection of result objects. When a query
+ * resulted in a single result object, that object is contained as the sole element of the collection.
  *
  * @param <T> The type of object resulting from the query
  * @author Allard Buijze

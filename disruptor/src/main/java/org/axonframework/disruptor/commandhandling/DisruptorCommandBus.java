@@ -497,6 +497,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {
                 return handler;
@@ -971,6 +972,11 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
+        }
+
+        @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+            return CommandHandlerInvoker.<T>getRepository(type).loadOrCreate(aggregateIdentifier, factoryMethod);
         }
 
         @Override

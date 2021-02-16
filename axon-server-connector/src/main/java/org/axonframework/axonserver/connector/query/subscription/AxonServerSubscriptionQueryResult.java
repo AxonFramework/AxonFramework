@@ -24,6 +24,7 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
 /**
@@ -58,7 +59,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                         fluxSink.next(next);
                     } else {
                         if (result.updates().isClosed()) {
-                            fluxSink.complete();
+                            completeFlux(fluxSink, result.updates().getError().orElse(null));
                         }
                         break;
                     }
@@ -80,7 +81,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                     logger.trace("Not sending update to Flux Sink. Not enough info requested");
                 }
                 if (result.updates().isClosed()) {
-                    fluxSink.complete();
+                    completeFlux(fluxSink, result.updates().getError().orElse(null));
                 }
             });
         }).doOnError(e -> result.updates().close())
@@ -90,6 +91,14 @@ public class AxonServerSubscriptionQueryResult<I, U>
                                  .onErrorMap(GrpcExceptionParser::parse)
                                  .map(subscriptionSerializer::deserialize);
         this.result = result;
+    }
+
+    private void completeFlux(FluxSink<QueryUpdate> fluxSink, Throwable error) {
+        if (error != null) {
+            fluxSink.error(error);
+        } else {
+            fluxSink.complete();
+        }
     }
 
     @Override

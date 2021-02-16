@@ -93,7 +93,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         DomainEventStream historic = historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber);
-        return new ConcatenatingDomainEventStream(historic, aggregateIdentifier,
+        return new ConcatenatingDomainEventStream(historic, aggregateIdentifier, firstSequenceNumber,
                                                   (id, seq) -> activeStorage.readEvents(aggregateIdentifier, seq));
     }
 
@@ -133,13 +133,14 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         return tokenFromActiveStorage;
     }
 
-    private class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private static class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
 
         private final Spliterator<? extends TrackedEventMessage<?>> historicSpliterator;
         private final boolean mayBlock;
-        private Spliterator<? extends TrackedEventMessage<?>> active;
-        private TrackingToken lastToken;
         private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
+
+        private TrackingToken lastToken;
+        private Spliterator<? extends TrackedEventMessage<?>> active;
 
         public ConcatenatingSpliterator(TrackingToken initialToken,
                                         Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
@@ -169,18 +170,22 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         }
     }
 
-    private class ConcatenatingDomainEventStream implements DomainEventStream {
+    private static class ConcatenatingDomainEventStream implements DomainEventStream {
 
         private final DomainEventStream historic;
         private final String aggregateIdentifier;
-        private DomainEventStream actual;
+        private final long firstSequenceNumber;
         private final BiFunction<String, Long, DomainEventStream> domainEventStream;
+
+        private DomainEventStream actual;
 
         public ConcatenatingDomainEventStream(DomainEventStream historic,
                                               String aggregateIdentifier,
+                                              long firstSequenceNumber,
                                               BiFunction<String, Long, DomainEventStream> domainEventStream) {
             this.historic = historic;
             this.aggregateIdentifier = aggregateIdentifier;
+            this.firstSequenceNumber = firstSequenceNumber;
             this.domainEventStream = domainEventStream;
         }
 
@@ -201,7 +206,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
         private long nextSequenceNumber() {
             Long lastSequenceNumber = historic.getLastSequenceNumber();
-            return lastSequenceNumber == null ? 0 : lastSequenceNumber + 1;
+            return lastSequenceNumber == null ? firstSequenceNumber : lastSequenceNumber + 1;
         }
 
         @Override

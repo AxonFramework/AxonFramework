@@ -26,8 +26,10 @@ import reactor.core.publisher.FluxSink;
  * @param <T> The value type
  * @author Milan Savic
  * @since 3.3
+ * @deprecated in favour of using the {{@link SinksManyWrapper}}
  */
-class FluxSinkWrapper<T> {
+@Deprecated
+class FluxSinkWrapper<T> implements SinkWrapper<T> {
 
     private final FluxSink<T> fluxSink;
 
@@ -43,6 +45,7 @@ class FluxSinkWrapper<T> {
     /**
      * Wrapper around {@link FluxSink#complete()}.
      */
+    @Override
     public void complete() {
         fluxSink.complete();
     }
@@ -52,6 +55,7 @@ class FluxSinkWrapper<T> {
      *
      * @param value to be passed to the delegate sink
      */
+    @Override
     public void next(T value) {
         fluxSink.next(value);
     }
@@ -61,6 +65,7 @@ class FluxSinkWrapper<T> {
      *
      * @param t to be passed to the delegate sink
      */
+    @Override
     public void error(Throwable t) {
         fluxSink.error(t);
     }

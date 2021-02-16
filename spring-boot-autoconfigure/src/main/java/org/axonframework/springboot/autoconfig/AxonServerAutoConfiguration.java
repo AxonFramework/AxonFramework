@@ -134,7 +134,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public RoutingStrategy routingStrategy() {
-        return new AnnotationRoutingStrategy();
+        return AnnotationRoutingStrategy.defaultStrategy();
     }
 
     @Bean

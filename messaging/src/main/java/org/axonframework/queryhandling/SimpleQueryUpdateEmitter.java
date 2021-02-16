@@ -26,7 +26,9 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
  *
  * @author Milan Savic
+ * @author Stefan Dragisic
  * @since 4.0
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
@@ -55,7 +58,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
 
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers =
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
@@ -88,11 +91,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated in favour of using {{@link #registerUpdateHandler(SubscriptionQueryMessage, int)}}
+     */
+    @Deprecated
     @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(
-            SubscriptionQueryMessage<?, ?, ?> query,
-            SubscriptionQueryBackpressure backpressure,
-            int updateBufferSize) {
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+                                                                  SubscriptionQueryBackpressure backpressure,
+                                                                  int updateBufferSize) {
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
@@ -100,12 +108,35 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         updateHandlers.put(query, fluxSinkWrapper);
 
         Registration registration = () -> {
-            fluxSinkWrapper.complete();
+            updateHandlers.remove(query);
             return true;
         };
 
         return new UpdateHandlerRegistration<>(registration,
-                                               processor.replay(updateBufferSize).autoConnect());
+                                               processor.replay(updateBufferSize).autoConnect(),
+                                               fluxSinkWrapper::complete);
+    }
+
+    @Override
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+                                                                  int updateBufferSize) {
+        Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
+
+        Runnable removeHandler = () -> updateHandlers.remove(query);
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
+                                                                        .doOnCancel(removeHandler)
+                                                                        .doOnTerminate(removeHandler);
+
+        SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
+
+        updateHandlers.put(query, sinksManyWrapper);
+
+        Registration registration = () -> {
+            removeHandler.run();
+            return true;
+        };
+
+        return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
 
     @Override
@@ -143,19 +174,19 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                             SubscriptionQueryUpdateMessage<U> update) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(uh -> doEmit(query, uh, update)));
+            updateHandlers.keySet()
+                          .stream()
+                          .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                          .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                    .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
     @SuppressWarnings("unchecked")
-    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, FluxSinkWrapper<?> updateHandler,
+    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
         MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
         try {
-            ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
+            ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
             monitorCallback.reportSuccess();
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
@@ -182,7 +213,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
-                           FluxSinkWrapper<?> updateHandler) {
+                           SinkWrapper<?> updateHandler) {
         try {
             updateHandler.error(cause);
         } catch (Exception e) {

@@ -30,16 +30,21 @@ public class UpdateHandlerRegistration<U> {
 
     private final Registration registration;
     private final Flux<SubscriptionQueryUpdateMessage<U>> updates;
+    private final Runnable completeHandler;
 
     /**
      * Constructs a {@link UpdateHandlerRegistration} with given {@code registration} and {@code updates}.
      *
-     * @param registration used to cancel the registration
-     * @param updates      used to subscribe to updates stream
+     * @param registration    used to cancel the registration
+     * @param updates         used to subscribe to updates stream
+     * @param completeHandler handler invoked on {@link #complete()}
      */
-    public UpdateHandlerRegistration(Registration registration, Flux<SubscriptionQueryUpdateMessage<U>> updates) {
+    public UpdateHandlerRegistration(Registration registration,
+                                     Flux<SubscriptionQueryUpdateMessage<U>> updates,
+                                     Runnable completeHandler) {
         this.registration = registration;
         this.updates = updates;
+        this.completeHandler = completeHandler;
     }
 
     /**
@@ -58,5 +63,13 @@ public class UpdateHandlerRegistration<U> {
      */
     public Flux<SubscriptionQueryUpdateMessage<U>> getUpdates() {
         return updates;
+    }
+
+    /**
+     * Completes the {@link #getUpdates()} {@link Flux}. The consumer can use this method to indicate it is no longer
+     * interested in updates.
+     */
+    public void complete() {
+        completeHandler.run();
     }
 }

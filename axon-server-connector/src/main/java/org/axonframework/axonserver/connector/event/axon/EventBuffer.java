@@ -91,9 +91,7 @@ public class EventBuffer implements TrackingEventStream {
         this.serializer = serializer;
         this.disableEventBlacklisting = disableEventBlacklisting;
         this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
-                StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
-                new GrpcMetaDataAwareSerializer(serializer),
-                getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
+                StreamSupport.stream(new SimpleSpliterator<>(this::poll), false), serializer, upcasterChain
         ).iterator();
 
         delegate.onAvailable(() -> {

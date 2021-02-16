@@ -16,16 +16,16 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.ConstraintViolation;
 import org.axonframework.common.AxonNonTransientException;
 
-import javax.validation.ConstraintViolation;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Exception indicating that a Message has been refused due to a structural validation failure. Typically, resending
- * the same message will result in the exact same exception.
+ * Exception indicating that a Message has been refused due to a structural validation failure. Typically, resending the
+ * same message will result in the exact same exception.
  * <p/>
  * Provides a set of JSR303 constraint violations that provide details about the exact failure of the message.
  *
@@ -43,8 +43,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
      * @param violations The violations that were detected
      */
     public JSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
-        super("One or more JSR303 constraints were violated: " + System.lineSeparator()
-            + convert(violations));
+        super("One or more JSR303 constraints were violated: " + System.lineSeparator() + convert(violations));
         this.violations = violations;
     }
 
@@ -66,7 +65,8 @@ public class JSR303ViolationException extends AxonNonTransientException {
      *
      * </pre>
      * <pre>property notNull in class my.some.TheClass may not be null</pre>
-     * @param violations set of violations that were detected when the execption was thrown
+     *
+     * @param violations set of violations that were detected when the exception was thrown
      * @return a human readable string describing the violations
      */
     protected static String convert(Set<ConstraintViolation<Object>> violations) {

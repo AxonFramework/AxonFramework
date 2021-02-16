@@ -17,11 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.eventsourcing.utils.MockException;
-import org.axonframework.eventsourcing.utils.StubAggregate;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.LockAwareAggregate;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -30,18 +25,35 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.utils.MockException;
+import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.LockAwareAggregate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -109,6 +121,18 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
+    void testLoadOrCreateNewAggregate() throws Exception {
+        startAndGetUnitOfWork();
+        Aggregate<StubAggregate> aggregate = testSubject.loadOrCreate("id1", StubAggregate::new);
+        aggregate.execute(s -> s.setIdentifier("id1"));
+
+        CurrentUnitOfWork.commit();
+
+        assertNotNull(cache.get("id1"));
+        verify(cache, never()).put(isNull(), any());
+    }
+
+    @Test
     void testLoadDeletedAggregate() throws Exception {
         String identifier = "aggregateId";
 
@@ -157,7 +181,7 @@ class CachingEventSourcingRepositoryTest {
 
         @Override
         public StubAggregate doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-            return new StubAggregate(aggregateIdentifier);
+            return new StubAggregate();
         }
 
         @Override

@@ -77,6 +77,12 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
+    private static final TrackingEventProcessorConfiguration DEFAULT_SAGA_TEP_CONFIG =
+            TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                               .andInitialTrackingToken(StreamableMessageSource::createHeadToken);
+    private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
+            c -> c.getSimpleName() + "Processor";
+
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
     private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
@@ -93,11 +99,13 @@ public class EventProcessingModule
     private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+    private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
 
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
-    private TypeProcessingGroupSelector typeFallback = TypeProcessingGroupSelector.defaultSelector(c -> c.getSimpleName() + "Processor");
+    private TypeProcessingGroupSelector typeFallback =
+            TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
 
     private Configuration configuration;
@@ -270,9 +278,19 @@ public class EventProcessingModule
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
             String processorName = processorNameForProcessingGroup(processingGroup);
+            if (noSagaProcessorCustomization(sagaConfig.type(), processingGroup, processorName)) {
+                registerTrackingEventProcessorConfiguration(processorName, config -> DEFAULT_SAGA_TEP_CONFIG);
+            }
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>())
                            .add(c -> sagaConfig.manager());
         });
+    }
+
+    private boolean noSagaProcessorCustomization(Class<?> type, String processingGroup, String processorName) {
+        return DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION.apply(type).equals(processingGroup)
+                && processingGroup.equals(processorName)
+                && !eventProcessorBuilders.containsKey(processorName)
+                && !tepConfigs.containsKey(processorName);
     }
 
     private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
@@ -350,18 +368,18 @@ public class EventProcessingModule
     }
 
     @Override
-    public RollbackConfiguration rollbackConfiguration(String componentName) {
+    public RollbackConfiguration rollbackConfiguration(String processorName) {
         ensureInitialized();
-        return rollbackConfigurations.containsKey(componentName)
-                ? rollbackConfigurations.get(componentName).get()
+        return rollbackConfigurations.containsKey(processorName)
+                ? rollbackConfigurations.get(processorName).get()
                 : defaultRollbackConfiguration.get();
     }
 
     @Override
-    public ErrorHandler errorHandler(String componentName) {
+    public ErrorHandler errorHandler(String processorName) {
         ensureInitialized();
-        return errorHandlers.containsKey(componentName)
-                ? errorHandlers.get(componentName).get()
+        return errorHandlers.containsKey(processorName)
+                ? errorHandlers.get(processorName).get()
                 : defaultErrorHandler.get();
     }
 
@@ -406,10 +424,10 @@ public class EventProcessingModule
     }
 
     @Override
-    public TransactionManager transactionManager(String processingGroup) {
+    public TransactionManager transactionManager(String processorName) {
         ensureInitialized();
-        return transactionManagers.containsKey(processingGroup)
-                ? transactionManagers.get(processingGroup).get()
+        return transactionManagers.containsKey(processorName)
+                ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
     }
 
@@ -474,9 +492,11 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                                    Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingEventProcessor(name, source, c -> defaultTrackingEventProcessorConfiguration.get());
+    public EventProcessingConfigurer registerTrackingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source
+    ) {
+        return registerTrackingEventProcessor(name, source, c -> trackingEventProcessorConfig(name));
     }
 
     @Override
@@ -531,9 +551,9 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer usingTrackingEventProcessors() {
-        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
-                trackingEventProcessor(name, eventHandlerInvoker, defaultTrackingEventProcessorConfiguration.get(),
-                                       defaultStreamableSource.get());
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> trackingEventProcessor(
+                name, eventHandlerInvoker, trackingEventProcessorConfig(name), defaultStreamableSource.get()
+        );
         return this;
     }
 
@@ -662,7 +682,19 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder) {
+            String name,
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    ) {
+        this.tepConfigs.put(name, new Component<>(() -> configuration,
+                                                  "trackingEventProcessorConfiguration",
+                                                  trackingEventProcessorConfigurationBuilder));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+    ) {
         this.defaultTrackingEventProcessorConfiguration.update(trackingEventProcessorConfigurationBuilder);
         return this;
     }
@@ -674,12 +706,16 @@ public class EventProcessingModule
             return trackingEventProcessor(
                     name,
                     eventHandlerInvoker,
-                    defaultTrackingEventProcessorConfiguration.get(),
+                    trackingEventProcessorConfig(name),
                     defaultStreamableSource.get()
             );
         } else {
             return subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
         }
+    }
+
+    private TrackingEventProcessorConfiguration trackingEventProcessorConfig(String name) {
+        return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
     }
 
     private SubscribingEventProcessor subscribingEventProcessor(String name,
@@ -720,7 +756,7 @@ public class EventProcessingModule
      * Since class.getPackage() can be null e.g. for generated classes, the
      * package name is determined the old fashioned way based on the full
      * qualified class name.
-     * 
+     *
      * @param object
      *            {@link Object}
      * @return {@link String}

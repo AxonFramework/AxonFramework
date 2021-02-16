@@ -180,7 +180,7 @@ public class TrackingEventProcessorIntegrationTest {
     void testUnhandledEventsAreFilteredOutOfTheBlockingStream() throws InterruptedException {
         publishEvent(UsedEvent.INSTANCE, UnusedEvent.INSTANCE, UsedEvent.INSTANCE, UsedEvent.INSTANCE);
 
-        assertTrue(countDownLatch1.await(2, TimeUnit.SECONDS));
+        assertTrue(countDownLatch1.await(5, TimeUnit.SECONDS));
 
         Set<Class<?>> ignoredClasses = ignoredMessages.get().stream()
                                                       .map(TrackedEventMessage::getPayloadType)

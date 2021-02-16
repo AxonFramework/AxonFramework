@@ -37,19 +37,28 @@ import static java.lang.String.format;
  */
 public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    private Map<Class<? extends AssociationResolver>, AssociationResolver> associationResolverMap;
+    private final Map<Class<? extends AssociationResolver>, AssociationResolver> associationResolverMap;
 
+    /**
+     * Constructs a default {@link SagaMethodMessageHandlerDefinition}.
+     */
     public SagaMethodMessageHandlerDefinition() {
         this.associationResolverMap = new HashMap<>();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<Map<String, Object>> annotationAttributes = original.annotationAttributes(SagaEventHandler.class);
-        SagaCreationPolicy creationPolicy = original.annotationAttributes(StartSaga.class)
-                .map(attr -> ((boolean)attr.getOrDefault("forceNew", false)) ? SagaCreationPolicy.ALWAYS : SagaCreationPolicy.IF_NONE_FOUND).orElse(SagaCreationPolicy.NONE);
+        SagaCreationPolicy creationPolicy =
+                original.annotationAttributes(StartSaga.class)
+                        .map(
+                                attr -> ((boolean) attr.getOrDefault("forceNew", false))
+                                        ? SagaCreationPolicy.ALWAYS
+                                        : SagaCreationPolicy.IF_NONE_FOUND
+                        )
+                        .orElse(SagaCreationPolicy.NONE);
 
+        //noinspection unchecked
         return annotationAttributes
                 .map(attr -> doWrapHandler(original, creationPolicy, (String) attr.get("keyName"),
                                            (String) attr.get("associationProperty"),
@@ -64,9 +73,9 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
         String associationKey = associationKey(associationKeyName, associationPropertyName);
         AssociationResolver associationResolver = findAssociationResolver(associationResolverClass);
         associationResolver.validate(associationPropertyName, original);
-        boolean endingHandler = original.hasAnnotation(EndSaga.class);
-        return new SagaMethodMessageHandlingMember<>(original, creationPolicy, associationKey, associationPropertyName,
-                                                     associationResolver, endingHandler);
+        return new SagaMethodMessageHandlingMember<>(
+                original, creationPolicy, associationKey, associationPropertyName, associationResolver
+        );
     }
 
     private String associationKey(String keyName, String associationProperty) {
@@ -74,18 +83,21 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     }
 
     private AssociationResolver findAssociationResolver(Class<? extends AssociationResolver> associationResolverClass) {
-        return this.associationResolverMap.computeIfAbsent(associationResolverClass, this::instantiateAssociationResolver);
+        return this.associationResolverMap.computeIfAbsent(
+                associationResolverClass, this::instantiateAssociationResolver
+        );
     }
 
     private AssociationResolver instantiateAssociationResolver(
-            Class<? extends AssociationResolver> associationResolverClass) {
+            Class<? extends AssociationResolver> associationResolverClass
+    ) {
         try {
             return associationResolverClass.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new AxonConfigurationException(format(
                     "`AssociationResolver` %s must define an accessible no-args constructor.",
-                    associationResolverClass.getName()), e
-            );
+                    associationResolverClass.getName()
+            ), e);
         }
     }
 }

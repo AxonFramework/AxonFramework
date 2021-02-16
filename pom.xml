@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
@@ -68,35 +69,36 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.14.0</log4j.version>
-        <spring.version>5.3.1</spring.version>
-        <spring-security.version>5.4.1</spring-security.version>
-        <spring.boot.version>2.4.0</spring.boot.version>
-        <mockito.version>3.6.0</mockito.version>
-        <projectreactor.version>3.3.10.RELEASE</projectreactor.version>
-        <micrometer.version>1.6.1</micrometer.version>
-        <dropwizard.metrics.version>4.1.15</dropwizard.metrics.version>
-        <jackson.version>2.11.3</jackson.version>
+        <spring.version>5.3.3</spring.version>
+        <spring-security.version>5.4.4</spring-security.version>
+        <spring.boot.version>2.4.2</spring.boot.version>
+        <mockito.version>3.7.7</mockito.version>
+        <projectreactor.version>3.4.3</projectreactor.version>
+        <micrometer.version>1.6.3</micrometer.version>
+        <dropwizard.metrics.version>4.1.17</dropwizard.metrics.version>
+        <jackson.version>2.12.1</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.
             gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
             https://github.com/grpc/grpc-java/blob/master/SECURITY.md
         -->
+        <jakarta.el-api.version>4.0.0</jakarta.el-api.version>
+        <jakarta-el-impl.version>4.0.1</jakarta-el-impl.version>
+        <jakarta.validation-api.version>3.0.0</jakarta.validation-api.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
-        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.2</disruptor.version>
-        <mysql-connector-java.version>8.0.22</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.23</mysql-connector-java.version>
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-validator.version>6.1.6.Final</hibernate-validator.version>
-        <hibernate-entitymanager.version>5.4.24.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.10.18</byte-buddy.version>
+        <hibernate-validator.version>7.0.1.Final</hibernate-validator.version>
+        <hibernate-entitymanager.version>5.4.28.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.10.20</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.8.0</commons-io.version>
         <javassist.version>3.27.0-GA</javassist.version>
@@ -104,10 +106,11 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
         <postgresql.version>42.2.18</postgresql.version>
-        <junit4.version>4.13.1</junit4.version>
-        <junit.jupiter.version>5.7.0</junit.jupiter.version>
-        <axonserver-connector-java.version>4.4.4</axonserver-connector-java.version>
+        <junit4.version>4.13.2</junit4.version>
+        <junit.jupiter.version>5.7.1</junit.jupiter.version>
+        <axonserver-connector-java.version>4.4.7</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
+        <testcontainers.version>1.15.2</testcontainers.version>
 
         <!-- plugin versions -->
         <felix.bundle.plugin.version>5.1.1</felix.bundle.plugin.version>
@@ -119,17 +122,7 @@
         <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -338,11 +331,6 @@
                 <version>${dom4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.web</groupId>
-                <artifactId>el-impl</artifactId>
-                <version>${el-impl.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${javax.annotation-api.version}</version>
@@ -352,11 +340,23 @@
                 <artifactId>cache-api</artifactId>
                 <version>${javax.cache-api.version}</version>
             </dependency>
+
             <dependency>
-                <groupId>javax.el</groupId>
-                <artifactId>javax.el-api</artifactId>
-                <version>${javax.el-api.version}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${jakarta.validation-api.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.el</groupId>
+                <artifactId>jakarta.el-api</artifactId>
+                <version>${jakarta.el-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>${jakarta-el-impl.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
@@ -367,11 +367,7 @@
                 <artifactId>javax.persistence-api</artifactId>
                 <version>${javax.persistence-api.version}</version>
             </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax.validation-api.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
@@ -384,17 +380,7 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${junit.jupiter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${junit.jupiter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
+                <artifactId>junit-jupiter</artifactId>
                 <version>${junit.jupiter.version}</version>
             </dependency>
             <dependency>
@@ -497,7 +483,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <doclint>none</doclint>
                     <!-- These parameters are in preparation for resolution of this issue: -->
                     <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
                     <tags>

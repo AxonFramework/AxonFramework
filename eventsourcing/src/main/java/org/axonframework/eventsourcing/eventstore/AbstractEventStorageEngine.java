@@ -74,13 +74,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return upcastAndDeserializeTrackedEvents(input, eventSerializer, upcasterChain);
+        return upcastAndDeserializeTrackedEvents(input, getEventSerializer(), upcasterChain);
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return upcastAndDeserializeDomainEvents(input, eventSerializer, upcasterChain);
+        return upcastAndDeserializeDomainEvents(input, getEventSerializer(), upcasterChain);
     }
 
     @Override
@@ -88,7 +88,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         return readSnapshotData(aggregateIdentifier)
                 .filter(snapshotFilter::allow)
                 .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
-                                                                  snapshotSerializer,
+                                                                  getSnapshotSerializer(),
                                                                   upcasterChain
                 ))
                 .flatMap(DomainEventStream::asStream)
@@ -98,12 +98,12 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
-        appendEvents(events, eventSerializer);
+        appendEvents(events, getEventSerializer());
     }
 
     @Override
     public void storeSnapshot(DomainEventMessage<?> snapshot) {
-        storeSnapshot(snapshot, snapshotSerializer);
+        storeSnapshot(snapshot, getSnapshotSerializer());
     }
 
     /**

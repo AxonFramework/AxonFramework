@@ -36,21 +36,28 @@ import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTy
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
- * Definition of handlers that can handle QueryMessages. These handlers are wrapped with a QueryHandlingMember that
- * exposes query-specific handler information.
+ * Definition of handlers that can handle {@link QueryMessage}s. These handlers are wrapped with a {@link
+ * QueryHandlingMember} that exposes query-specific handler information.
+ *
+ * @author Allard Buijze
+ * @since 3.1
  */
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(QueryHandler.class)
                        .map(attr -> (MessageHandlingMember<T>)
-                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
+                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember<>(
+                                       original, attr
+                               )
+                       )
                        .orElse(original);
     }
 
-    private class MethodQueryMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements QueryHandlingMember<T> {
+    private static class MethodQueryMessageHandlingMember<T>
+            extends WrappedMessageHandlingMember<T>
+            implements QueryHandlingMember<T> {
 
         private final String queryName;
         private final Type resultType;
@@ -111,13 +118,12 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             return type;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean canHandle(Message<?> message) {
             return super.canHandle(message)
                     && message instanceof QueryMessage
-                    && queryName.equals(((QueryMessage) message).getQueryName())
-                    && ((QueryMessage) message).getResponseType().matches(resultType);
+                    && queryName.equals(((QueryMessage<?, ?>) message).getQueryName())
+                    && ((QueryMessage<?, ?>) message).getResponseType().matches(resultType);
         }
 
         @Override

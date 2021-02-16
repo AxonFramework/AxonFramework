@@ -357,6 +357,65 @@ class DisruptorCommandBusTest {
         assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
     }
 
+
+
+    @Test
+    void testCreateOrUpdateAggregateWithPreviousAggregate() {
+        eventStore.storedEvents.clear();
+        testSubject = DisruptorCommandBus.builder()
+                                         .bufferSize(8)
+                                         .producerType(ProducerType.SINGLE)
+                                         .waitStrategy(new SleepingWaitStrategy())
+                                         .invokerThreadCount(2)
+                                         .publisherThreadCount(3)
+                                         .build();
+
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateOrUpdateCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+
+
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)));
+
+        testSubject.stop();
+
+        DomainEventMessage lastEvent = eventStore.storedEvents.get(aggregateIdentifier);
+
+        // we expect 3 events, 1 from aggregate constructor, 2 from doSomething method invocation
+        assertEquals(2, lastEvent.getSequenceNumber());
+        assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
+    }
+
+
+    @Test
+    void testCreateOrUpdateAggregateWithoutPreviousAggregate() {
+        eventStore.storedEvents.clear();
+        testSubject = DisruptorCommandBus.builder()
+                                         .bufferSize(8)
+                                         .producerType(ProducerType.SINGLE)
+                                         .waitStrategy(new SleepingWaitStrategy())
+                                         .invokerThreadCount(2)
+                                         .publisherThreadCount(3)
+                                         .build();
+
+        testSubject.subscribe(CreateOrUpdateCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+
+
+        testSubject.dispatch(asCommandMessage(new CreateOrUpdateCommand(aggregateIdentifier)));
+
+        testSubject.stop();
+
+        DomainEventMessage lastEvent = eventStore.storedEvents.get(aggregateIdentifier);
+
+        // we expect 2 events, 1 from aggregate constructor, one from doSomething method invocation
+        assertEquals(1, lastEvent.getSequenceNumber());
+        assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
+    }
+
     @Test
     void testCommandReturnsAValue() {
         eventStore.storedEvents.clear();
@@ -719,6 +778,13 @@ class DisruptorCommandBusTest {
         }
     }
 
+    private static class CreateOrUpdateCommand extends StubCommand {
+
+        public CreateOrUpdateCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
+        }
+    }
+
     private static class UnknownCommand extends StubCommand {
 
         public UnknownCommand(Object aggregateIdentifier) {
@@ -740,6 +806,10 @@ class DisruptorCommandBusTest {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
                 repository.newInstance(() -> new StubAggregate(payload.getAggregateIdentifier()))
+                          .execute(StubAggregate::doSomething);
+
+            } else if ((CreateOrUpdateCommand.class.isAssignableFrom(command.getPayloadType()))) {
+                repository.loadOrCreate(payload.getAggregateIdentifier(),() -> new StubAggregate(payload.getAggregateIdentifier()))
                           .execute(StubAggregate::doSomething);
             } else {
                 Aggregate<StubAggregate> aggregate = repository.load(payload.getAggregateIdentifier());

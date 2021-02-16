@@ -18,32 +18,47 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.Oracle11EventTableFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
+import org.junit.jupiter.api.*;
+import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
+/**
+ * Integration test class validating the {@link Oracle11EventTableFactory}.
+ *
+ * @author Joris van der Kallen
+ */
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
+@Testcontainers
 class Oracle11EventTableFactoryTest {
+
+    private static final String USERNAME = "system";
+    private static final String PASSWORD = "oracle";
+
+    @Container
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
 
     private Oracle11EventTableFactory testSubject;
     private Connection connection;
     private EventSchema eventSchema;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
-        try {
-            connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "system", "oracle");
-        } catch (SQLException e) {
-            throw new TestAbortedException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
-        }
+        Properties properties = new Properties();
+        properties.getProperty("user", USERNAME);
+        properties.getProperty("password", PASSWORD);
+        //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
+        properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
+        connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), properties);
     }
 
     @AfterEach
@@ -55,25 +70,25 @@ class Oracle11EventTableFactoryTest {
     void testCreateDomainEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createDomainEventTable(connection, eventSchema)
-                .execute();
+                   .execute();
         connection.prepareStatement("SELECT * FROM " + eventSchema.domainEventTable())
-                .execute();
+                  .execute();
 
         connection.prepareStatement("DROP TABLE " + eventSchema.domainEventTable())
-                .execute();
+                  .execute();
         connection.prepareStatement("DROP SEQUENCE " + eventSchema.domainEventTable() + "_seq")
-                .execute();
+                  .execute();
     }
 
     @Test
     void testCreateSnapshotEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createSnapshotEventTable(connection, eventSchema)
-                .execute();
+                   .execute();
         connection.prepareStatement("SELECT * FROM " + eventSchema.snapshotTable())
-                .execute();
+                  .execute();
 
         connection.prepareStatement("DROP TABLE " + eventSchema.snapshotTable())
-                .execute();
+                  .execute();
     }
 }

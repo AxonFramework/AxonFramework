@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -30,6 +31,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Distributed;
@@ -41,12 +43,14 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.serialization.Revision;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -178,7 +182,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         );
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> SnapshotFilter.allowAll());
+        snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
+            Optional<String> revisionValue =
+                    AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision");
+            return revisionValue.isPresent()
+                    ? new RevisionSnapshotFilter(revisionValue.get())
+                    : SnapshotFilter.allowAll();
+        });
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
         cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);

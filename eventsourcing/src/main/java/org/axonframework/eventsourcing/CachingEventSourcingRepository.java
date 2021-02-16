@@ -16,15 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-
-import java.util.concurrent.Callable;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -80,14 +78,6 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
         super.validateOnLoad(aggregate, expectedVersion);
-    }
-
-    @Override
-    protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
-        EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
-        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
-        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
-        return aggregate;
     }
 
     @Override

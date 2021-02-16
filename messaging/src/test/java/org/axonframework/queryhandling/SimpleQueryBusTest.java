@@ -19,7 +19,6 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -28,11 +27,9 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
@@ -52,21 +49,14 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atMost;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link SimpleQueryBus}.
+ *
+ * @author Marc Gathier
+ */
 class SimpleQueryBusTest {
 
     private static final String TRACE_ID = "traceId";
@@ -101,18 +91,16 @@ class SimpleQueryBusTest {
     public void testHandlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
         testSubject.subscribe("test", String.class, q -> q.getPayload().toString());
 
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<QueryMessage<?, ?>>() {
-            @Override
-            public Object handle(UnitOfWork<? extends QueryMessage<?, ?>> unitOfWork, InterceptorChain interceptorChain) throws Exception {
-                throw new RuntimeException("Faking");
-            }
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+            throw new RuntimeException("Faking");
         });
 
-        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(new GenericQueryMessage<>("hello", "test", ResponseTypes.instanceOf(String.class)));
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(
+                new GenericQueryMessage<>("hello", "test", ResponseTypes.instanceOf(String.class))
+        );
 
         assertTrue(result.isDone());
         assertTrue(result.get().isExceptional());
-
     }
 
     @Test
@@ -252,7 +240,7 @@ class SimpleQueryBusTest {
             return "reply";
         };
         testSubject.subscribe("query", String.class, failingHandler);
-        //noinspection Convert2MethodRef
+        //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef
         testSubject.subscribe("query", String.class, message -> failingHandler.handle(message));
         testSubject.subscribe("query", String.class, passingHandler);
 
@@ -504,9 +492,9 @@ class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("Hello, World", singleStringResponse);
-        Set<Object> resulst = testSubject.scatterGather(testQueryMessage, 0, TimeUnit.SECONDS).collect(toSet());
+        Set<Object> results = testSubject.scatterGather(testQueryMessage, 0, TimeUnit.SECONDS).collect(toSet());
 
-        assertEquals(1, resulst.size());
+        assertEquals(1, results.size());
         verify(messageMonitor, times(1)).onMessageIngested(any());
         verify(monitorCallback, times(1)).reportSuccess();
         verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
@@ -605,29 +593,42 @@ class SimpleQueryBusTest {
 
     @Test
     void testSubscriptionQueryReportsExceptionInInitialResult() {
-        testSubject.subscribe(String.class.getName(), String.class, q -> {throw new MockException();});
+        testSubject.subscribe(String.class.getName(), String.class, q -> {
+            throw new MockException();
+        });
 
-        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result = testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("test", ResponseTypes.instanceOf(String.class), ResponseTypes.instanceOf(String.class)));
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result = testSubject
+                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                         ResponseTypes.instanceOf(String.class),
+                                                                         ResponseTypes.instanceOf(String.class)));
         Mono<QueryResponseMessage<String>> initialResult = result.initialResult();
+        //noinspection ConstantConditions
         assertFalse(initialResult.map(r -> false).onErrorReturn(MockException.class::isInstance, true).block(),
-                "Exception by handler should be reported in result, not on Mono");
+                    "Exception by handler should be reported in result, not on Mono");
+        //noinspection ConstantConditions
         assertTrue(initialResult.block().isExceptional());
     }
 
     @Test
     void testQueryReportsExceptionInResponseMessage() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, q -> {throw new MockException();});
+        testSubject.subscribe(String.class.getName(), String.class, q -> {
+            throw new MockException();
+        });
 
-        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(new GenericQueryMessage<>("test", ResponseTypes.instanceOf(String.class)));
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(
+                new GenericQueryMessage<>("test", ResponseTypes.instanceOf(String.class))
+        );
         assertFalse(result.thenApply(r -> false).exceptionally(MockException.class::isInstance).get(),
-                "Exception by handler should be reported in result, not on Mono");
+                    "Exception by handler should be reported in result, not on Mono");
         assertTrue(result.get().isExceptional());
     }
 
     @Test
     void testQueryHandlerDeclaresFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "futureMethod").getGenericReturnType();
-        testSubject.subscribe(String.class.getName(), responseType, (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
+        testSubject.subscribe(String.class.getName(),
+                              responseType,
+                              (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
@@ -639,7 +640,9 @@ class SimpleQueryBusTest {
     @Test
     void testQueryHandlerDeclaresCompletableFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "completableFutureMethod").getGenericReturnType();
-        testSubject.subscribe(String.class.getName(), responseType, (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
+        testSubject.subscribe(String.class.getName(),
+                              responseType,
+                              (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
 
         QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
@@ -649,12 +652,12 @@ class SimpleQueryBusTest {
     }
 
     @SuppressWarnings("unused")
-    public Future<String> futureMethod(){
+    public Future<String> futureMethod() {
         return null;
     }
 
     @SuppressWarnings("unused")
-    public CompletableFuture<String> completableFutureMethod(){
+    public CompletableFuture<String> completableFutureMethod() {
         return null;
     }
 }

@@ -297,6 +297,18 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             return aggregate;
         }
 
+        @Override
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+            try {
+                return load(aggregateIdentifier);
+            } catch (AggregateNotFoundException ex) {
+                return newInstance(factoryMethod);
+            } catch (Exception e) {
+                logger.debug("Exception occurred while trying to load/create an aggregate. ", e);
+                throw e;
+            }
+        }
+
         private void removeFromCache(String aggregateIdentifier) {
             EventSourcedAggregate<T> removed = firstLevelCache.remove(aggregateIdentifier);
             if (removed != null) {
