@@ -289,9 +289,15 @@ class WorkPackage {
      */
     public CompletableFuture<Exception> abort(Exception abortReason) {
         if (abortReason != null) {
-            logger.warn("Exception during processing in Work Package [{}]-[{}]. Aborting...", name, segment.getSegmentId(), abortReason);
-            segmentStatusUpdater.accept(status -> status.isErrorState() ? status : status.markError(abortReason));
+            logger.warn("Exception during processing in Work Package [{}]-[{}]. Aborting...",
+                        name, segment.getSegmentId(), abortReason);
+            segmentStatusUpdater.accept(
+                    status -> status != null
+                            ? status.isErrorState() ? status : status.markError(abortReason)
+                            : null
+            );
         }
+
         CompletableFuture<Exception> abortTask = abortFlag.updateAndGet(
                 currentFlag -> {
                     if (currentFlag == null) {
