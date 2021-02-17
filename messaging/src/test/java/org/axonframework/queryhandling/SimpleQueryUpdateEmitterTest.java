@@ -9,7 +9,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -46,7 +45,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testConcurrentUpdateEmitting() throws InterruptedException {
+    void testConcurrentUpdateEmitting() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -58,16 +57,13 @@ class SimpleQueryUpdateEmitterTest {
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
-            executors.submit(() -> {
-                testSubject.emit(q -> true, "Update");
-            });
+            executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
         executors.shutdown();
         StepVerifier.create(registration.getUpdates())
                     .expectNextCount(100)
                     .then(() -> testSubject.complete(q -> true))
                     .verifyComplete();
-
     }
 
     @Test
