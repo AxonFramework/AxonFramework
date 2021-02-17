@@ -38,7 +38,10 @@ import org.junit.runners.model.Statement;
  *         lifecycle.getAppliedEvents();
  *     }
  * </pre>
+ *
+ * @deprecated in favor of {@link org.junit.jupiter.api.extension.RegisterExtension} which should be used with Junit 5
  */
+@Deprecated
 public class StubAggregateLifecycleRule extends StubAggregateLifecycle implements TestRule {
 
     @Override
