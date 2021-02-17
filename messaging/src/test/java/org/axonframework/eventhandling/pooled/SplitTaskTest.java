@@ -106,7 +106,7 @@ class SplitTaskTest {
 
     @Test
     void testRunCompletesExceptionallyThroughOtherException() {
-        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME))).thenThrow(new IllegalStateException("some exception"));
+        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
 
@@ -117,7 +117,7 @@ class SplitTaskTest {
 
     @Test
     void testDescription() {
-        String result = testSubject.description();
+        String result = testSubject.getDescription();
         assertNotNull(result);
         assertTrue(result.contains("Split"));
     }

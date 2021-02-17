@@ -193,7 +193,7 @@ class MergeTaskTest {
         workPackages.put(SEGMENT_TO_BE_MERGED, workPackageTwo);
 
         doThrow(new IllegalStateException("some exception")).when(tokenStore)
-                                                            .deleteToken(eq(PROCESSOR_NAME), eq(SEGMENT_TO_BE_MERGED));
+                                                            .deleteToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED);
 
         testSubject.run();
 
@@ -204,7 +204,7 @@ class MergeTaskTest {
 
     @Test
     void testDescription() {
-        String result = testSubject.description();
+        String result = testSubject.getDescription();
         assertNotNull(result);
         assertTrue(result.contains("Merge"));
     }

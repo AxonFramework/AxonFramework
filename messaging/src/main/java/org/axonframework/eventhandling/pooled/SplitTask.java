@@ -72,7 +72,7 @@ class SplitTask extends CoordinatorTask {
      * segmentId} can be claimed.
      */
     @Override
-    protected CompletableFuture<Boolean> task() throws Exception {
+    protected CompletableFuture<Boolean> task() {
         logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
@@ -109,7 +109,7 @@ class SplitTask extends CoordinatorTask {
     }
 
     @Override
-    String description() {
+    String getDescription() {
         return "Split Instruction for segment [" + segmentId + "]";
     }
 }

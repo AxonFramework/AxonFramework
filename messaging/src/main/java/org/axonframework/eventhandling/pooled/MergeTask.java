@@ -139,7 +139,7 @@ class MergeTask extends CoordinatorTask {
     }
 
     @Override
-    String description() {
+    String getDescription() {
         return "Merge Instruction for segment [" + segmentId + "]";
     }
 }

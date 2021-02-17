@@ -146,8 +146,9 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
 
         this.coordinator = new Coordinator(
-                name, messageSource, tokenStore, transactionManager, builder.coordinatorExecutorBuilder.apply(name),
-                this::spawnWorker, (i, up) -> processingStatus.computeIfPresent(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
+                name, messageSource, tokenStore, transactionManager,
+                builder.coordinatorExecutorBuilder.apply(name), this::spawnWorker,
+                (i, up) -> processingStatus.computeIfPresent(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
         );
     }
 
@@ -312,9 +313,10 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         TrackerStatus initialStatus = new TrackerStatus(segment, initialToken);
         return new WorkPackage(
                 name, tokenStore, transactionManager, workerExecutor,
-                this::canHandle, this::processInUnitOfWork,
-                segment, initialToken, claimExtensionThreshold,
-                u -> processingStatus.compute(segment.getSegmentId(), (s, status) -> u.apply(status == null ? initialStatus : status))
+                this::canHandle, this::processInUnitOfWork, segment, initialToken, claimExtensionThreshold,
+                u -> processingStatus.compute(
+                        segment.getSegmentId(), (s, status) -> u.apply(status == null ? initialStatus : status)
+                )
         );
     }
 
@@ -349,9 +351,9 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
-                name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + name + "]"));
+                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + n + "]"));
         private Function<String, ScheduledExecutorService> workerExecutorBuilder =
-                name -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + name + "]"));
+                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + n + "]"));
         private int initialSegmentCount = 32;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -86,14 +87,14 @@ class Coordinator {
      * @param tokenClaimInterval      the time in milliseconds this coordinator will wait to reattempt claiming segments
      *                                for processing
      */
-    public Coordinator(String name,
-                       StreamableMessageSource<TrackedEventMessage<?>> messageSource,
-                       TokenStore tokenStore,
-                       TransactionManager transactionManager,
-                       ScheduledExecutorService executorService,
-                       BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
-                       BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
-                       long tokenClaimInterval) {
+    protected Coordinator(String name,
+                          StreamableMessageSource<TrackedEventMessage<?>> messageSource,
+                          TokenStore tokenStore,
+                          TransactionManager transactionManager,
+                          ScheduledExecutorService executorService,
+                          BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
+                          BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
+                          long tokenClaimInterval) {
         this.name = name;
         this.messageSource = messageSource;
         this.tokenStore = tokenStore;
@@ -118,8 +119,6 @@ class Coordinator {
                 this.coordinationTask.set(task);
             } catch (Exception e) {
                 // A failure starting the processor. We need to stop immediately.
-                logger.warn("An error occurred while trying to attempt to start the coordinator for processor [{}].",
-                            name, e);
                 runState.updateAndGet(RunState::attemptStop)
                         .shutdownHandle()
                         .complete(null);
@@ -333,7 +332,7 @@ class Coordinator {
 
             if (!coordinatorTasks.isEmpty()) {
                 CoordinatorTask task = coordinatorTasks.remove();
-                logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.description());
+                logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.getDescription());
                 task.run()
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
@@ -410,17 +409,14 @@ class Coordinator {
          */
         private TrackingToken startNewWorkPackages() {
             return transactionManager.fetchInTransaction(() -> {
-                int[] segments = tokenStore.fetchSegments(name);
+                int[] segments = Arrays.stream(tokenStore.fetchSegments(name))
+                                       .filter(segmentId -> !workPackages.containsKey(segmentId))
+                                       .toArray();
                 TrackingToken lowerBound = NoToken.INSTANCE;
                 for (int segmentId : segments) {
                     if (isSegmentBlockedFromClaim(segmentId)) {
                         logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        continue;
-                    }
-                    if (workPackages.containsKey(segmentId)) {
-                        logger.debug("No need to fetch segment [{}] as it is already owned by coordinator [{}].",
-                                     segmentId, name);
                         continue;
                     }
 

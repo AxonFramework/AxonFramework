@@ -53,9 +53,8 @@ abstract class CoordinatorTask {
      *
      * @return a {@link CompletableFuture} of {@link Boolean}, marking success or failure of the instruction with {@code
      * true} and {@code false} respectively
-     * @throws Exception if the instructions fails to perform its task
      */
-    protected abstract CompletableFuture<Boolean> task() throws Exception;
+    protected abstract CompletableFuture<Boolean> task();
 
     /**
      * Completes this {@link CoordinatorTask}'s {@link CompletableFuture}. If the given {@code throwable} is not null,
@@ -69,7 +68,7 @@ abstract class CoordinatorTask {
      */
     void complete(Boolean outcome, Throwable throwable) {
         if (throwable != null) {
-            logger.warn("Coordinator [{}] failed to run instruction - {}.", name, description(), throwable);
+            logger.warn("Coordinator [{}] failed to run instruction - {}.", name, getDescription(), throwable);
             result.completeExceptionally(throwable);
         } else {
             result.complete(outcome);
@@ -81,5 +80,5 @@ abstract class CoordinatorTask {
      *
      * @return a short description of this {@link CoordinatorTask}
      */
-    abstract String description();
+    abstract String getDescription();
 }

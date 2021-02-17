@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-import static org.axonframework.common.ObjectUtils.getOrDefault;
-
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
  * event should be handled through a {@link EventValidator} and after that processing a collection of events in the
@@ -96,16 +94,16 @@ class WorkPackage {
      * @param segmentStatusUpdater    lambda to be invoked whenever the status of this package's {@code segment}
      *                                changes
      */
-    public WorkPackage(String name,
-                       TokenStore tokenStore,
-                       TransactionManager transactionManager,
-                       ScheduledExecutorService executorService,
-                       EventValidator eventValidator,
-                       BatchProcessor batchProcessor,
-                       Segment segment,
-                       TrackingToken initialToken,
-                       long claimExtensionThreshold,
-                       Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
+    protected WorkPackage(String name,
+                          TokenStore tokenStore,
+                          TransactionManager transactionManager,
+                          ScheduledExecutorService executorService,
+                          EventValidator eventValidator,
+                          BatchProcessor batchProcessor,
+                          Segment segment,
+                          TrackingToken initialToken,
+                          long claimExtensionThreshold,
+                          Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
         this.name = name;
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
@@ -292,9 +290,12 @@ class WorkPackage {
             logger.warn("Exception during processing in Work Package [{}]-[{}]. Aborting...",
                         name, segment.getSegmentId(), abortReason);
             segmentStatusUpdater.accept(
-                    status -> status != null
-                            ? status.isErrorState() ? status : status.markError(abortReason)
-                            : null
+                    status -> {
+                        if (status != null) {
+                            return status.isErrorState() ? status : status.markError(abortReason);
+                        }
+                        return null;
+                    }
             );
         }
 
