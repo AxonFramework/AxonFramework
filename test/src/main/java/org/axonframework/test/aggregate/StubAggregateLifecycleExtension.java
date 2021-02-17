@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ package org.axonframework.test.aggregate;
 import org.junit.jupiter.api.extension.*;
 
 /**
- * Implementation of StubAggregateLifecycle that can be used as an {@link org.junit.jupiter.api.extension.RegisterExtension} annotated method or field in a
- * test class. In that case, the JUnit lifecycle will automatically register and unregister the StubAggregateLifecycle.
+ * Implementation of StubAggregateLifecycle that can be used as an {@link org.junit.jupiter.api.extension.RegisterExtension}
+ * annotated method or field in a test class. In that case, the JUnit lifecycle will automatically register and
+ * unregister the StubAggregateLifecycle.
  * <p>
  * Usage example:
  * <pre>
@@ -37,8 +38,7 @@ import org.junit.jupiter.api.extension.*;
  * </pre>
  */
 public class StubAggregateLifecycleExtension extends StubAggregateLifecycle
-        implements AfterEachCallback, BeforeEachCallback{
-
+        implements AfterEachCallback, BeforeEachCallback {
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
@@ -49,5 +49,4 @@ public class StubAggregateLifecycleExtension extends StubAggregateLifecycle
     public void afterEach(ExtensionContext extensionContext) throws Exception {
         close();
     }
-
 }

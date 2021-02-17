@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
 
 package org.axonframework.test.aggregate;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.Assert.*;
 
-public class StubAggregateLifecycleExtensionTest {
+class StubAggregateLifecycleExtensionTest {
 
     @RegisterExtension
     static StubAggregateLifecycleExtension testSubject = new StubAggregateLifecycleExtension();
 
     @Test
-    public void testAppliedEventsArePassedToActiveLifecycle() {
-
+    void testAppliedEventsArePassedToActiveLifecycle() {
         apply("test");
 
         assertEquals(1, testSubject.getAppliedEvents().size());
@@ -39,11 +38,10 @@ public class StubAggregateLifecycleExtensionTest {
     }
 
     @Test
-    public void testMarkDeletedIsRegisteredWithActiveLifecycle() {
+    void testMarkDeletedIsRegisteredWithActiveLifecycle() {
         markDeleted();
 
         assertEquals(0, testSubject.getAppliedEvents().size());
         assertTrue(testSubject.isMarkedDeleted());
     }
-
 }
