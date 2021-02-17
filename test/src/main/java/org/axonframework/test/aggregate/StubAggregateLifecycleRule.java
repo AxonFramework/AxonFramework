@@ -39,7 +39,7 @@ import org.junit.runners.model.Statement;
  *     }
  * </pre>
  *
- * @deprecated in favor of {@link org.junit.jupiter.api.extension.RegisterExtension} which should be used with Junit 5
+ * @deprecated in favor of {@link org.axonframework.test.aggregate.StubAggregateLifecycleExtension} to be used in combination with Junit 5
  */
 @Deprecated
 public class StubAggregateLifecycleRule extends StubAggregateLifecycle implements TestRule {
