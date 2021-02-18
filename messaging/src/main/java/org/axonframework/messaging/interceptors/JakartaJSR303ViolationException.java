@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.ConstraintViolation;
 import org.axonframework.common.AxonNonTransientException;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.validation.ConstraintViolation;
 
 /**
  * Exception indicating that a {@link org.axonframework.messaging.Message} has been refused due to a structural
@@ -30,11 +31,10 @@ import javax.validation.ConstraintViolation;
  * Provides a set of JSR303 {@link ConstraintViolation}s that provide details about the exact failure of the message.
  *
  * @author Allard Buijze
- * @since 1.1
+ * @author Steven van Beelen
+ * @since 4.5
  */
-public class JSR303ViolationException extends AxonNonTransientException {
-
-    private static final long serialVersionUID = -1585918243998401966L;
+public class JakartaJSR303ViolationException extends AxonNonTransientException implements Serializable {
 
     private final Set<ConstraintViolation<Object>> violations;
 
@@ -43,7 +43,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
      *
      * @param violations the violations that were detected
      */
-    public JSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
+    public JakartaJSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
         super("One or more JSR303 constraints were violated: " + System.lineSeparator() + convert(violations));
         this.violations = violations;
     }

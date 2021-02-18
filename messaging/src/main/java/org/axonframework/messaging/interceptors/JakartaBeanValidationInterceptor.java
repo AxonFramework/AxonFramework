@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -25,23 +29,20 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a
- * {@link JSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be used as
- * a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
+ * {@link JakartaJSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be
+ * used as a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
  * <p>
- * Note that this interceptor is javax compliant, not jakarta. For jakarta, please use the {@link
- * JakartaBeanValidationInterceptor} instead.
+ * Note that this interceptor is jakarta compliant, not javax. For javax, please use the {@link
+ * BeanValidationInterceptor} instead.
  *
  * @author Allard Buijze
- * @since 1.1
+ * @author Steven van Beelen
+ * @since 4.5
  */
-public class BeanValidationInterceptor<T extends Message<?>>
+public class JakartaBeanValidationInterceptor<T extends Message<?>>
         implements MessageHandlerInterceptor<T>, MessageDispatchInterceptor<T> {
 
     private final ValidatorFactory validatorFactory;
@@ -49,9 +50,9 @@ public class BeanValidationInterceptor<T extends Message<?>>
     /**
      * Initializes a validation interceptor using a default {@link ValidatorFactory}.
      *
-     * @see Validation#buildDefaultValidatorFactory()
+     * @see Validation#buildDefaultValidatorFactory().
      */
-    public BeanValidationInterceptor() {
+    public JakartaBeanValidationInterceptor() {
         this(Validation.buildDefaultValidatorFactory());
     }
 
@@ -60,7 +61,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
      *
      * @param validatorFactory the factory providing {@link Validator} instances for this interceptor
      */
-    public BeanValidationInterceptor(ValidatorFactory validatorFactory) {
+    public JakartaBeanValidationInterceptor(ValidatorFactory validatorFactory) {
         this.validatorFactory = validatorFactory;
     }
 
@@ -76,7 +77,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
             if (violations != null && !violations.isEmpty()) {
-                throw new JSR303ViolationException(violations);
+                throw new JakartaJSR303ViolationException(violations);
             }
             return message;
         };

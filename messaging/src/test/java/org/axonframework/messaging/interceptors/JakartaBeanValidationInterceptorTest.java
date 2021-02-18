@@ -16,7 +16,10 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.apache.bval.jsr.ApacheValidationProvider;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -24,32 +27,24 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
-import javax.validation.Validation;
-import javax.validation.ValidatorFactory;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link BeanValidationInterceptor}.
+ * Test class validating the {@link JakartaBeanValidationInterceptor}.
  *
- * @author Allard Buijze
+ * @author Steven van Beelen
  */
-class BeanValidationInterceptorTest {
+class JakartaJakartaBeanValidationInterceptorTest {
 
-    private BeanValidationInterceptor<Message<?>> testSubject;
+    private JakartaBeanValidationInterceptor<Message<?>> testSubject;
 
     private InterceptorChain interceptorChain;
     private UnitOfWork<Message<?>> uow;
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory validatorFactory = Validation.byProvider(ApacheValidationProvider.class)
-                                                      .configure()
-                                                      .buildValidatorFactory();
-        testSubject = new BeanValidationInterceptor<>(validatorFactory);
+        testSubject = new JakartaBeanValidationInterceptor<>();
 
         interceptorChain = mock(InterceptorChain.class);
         uow = new DefaultUnitOfWork<>(null);
@@ -66,11 +61,11 @@ class BeanValidationInterceptorTest {
 
     @Test
     void testValidateAnnotatedObject_IllegalNullValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance(null)));
+        uow.transformMessage(m -> new GenericMessage<Object>(new JakartaJSR303AnnotatedInstance(null)));
         try {
             testSubject.handle(uow, interceptorChain);
             fail("Expected exception");
-        } catch (JSR303ViolationException e) {
+        } catch (JakartaJSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
         }
         verify(interceptorChain, never()).proceed();
@@ -78,7 +73,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void testValidateAnnotatedObject_LegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(new JSR303AnnotatedInstance("abc")));
+        uow.transformMessage(m -> new GenericMessage<>(new JakartaJSR303AnnotatedInstance("abc")));
 
         testSubject.handle(uow, interceptorChain);
 
@@ -87,35 +82,34 @@ class BeanValidationInterceptorTest {
 
     @Test
     void testValidateAnnotatedObject_IllegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("bea")));
-
+        uow.transformMessage(m -> new GenericMessage<Object>(new JakartaJSR303AnnotatedInstance("bea")));
         try {
-            testSubject.handle(uow, interceptorChain);
+            testSubject.handle(
+                    uow, interceptorChain);
             fail("Expected exception");
-        } catch (JSR303ViolationException e) {
+        } catch (JakartaJSR303ViolationException e) {
             assertFalse(e.getViolations().isEmpty());
         }
-
         verify(interceptorChain, never()).proceed();
     }
 
     @Test
     void testCustomValidatorFactory() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("abc")));
+        uow.transformMessage(m -> new GenericMessage<Object>(new JakartaJSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
-        testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);
+        testSubject = new JakartaBeanValidationInterceptor<>(mockValidatorFactory);
         testSubject.handle(uow, interceptorChain);
         verify(mockValidatorFactory).getValidator();
     }
 
-    public static class JSR303AnnotatedInstance {
+    public static class JakartaJSR303AnnotatedInstance {
 
         @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
         @Pattern(regexp = "ab.*")
         @NotNull
         private String notNull;
 
-        public JSR303AnnotatedInstance(String notNull) {
+        public JakartaJSR303AnnotatedInstance(String notNull) {
             this.notNull = notNull;
         }
     }
