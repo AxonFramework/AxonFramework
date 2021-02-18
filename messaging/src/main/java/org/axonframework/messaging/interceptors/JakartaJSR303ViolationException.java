@@ -19,7 +19,6 @@ package org.axonframework.messaging.interceptors;
 import jakarta.validation.ConstraintViolation;
 import org.axonframework.common.AxonNonTransientException;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -34,7 +33,9 @@ import java.util.TreeSet;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class JakartaJSR303ViolationException extends AxonNonTransientException implements Serializable {
+public class JakartaJSR303ViolationException extends AxonNonTransientException {
+
+    private static final long serialVersionUID = -5270875989991156642L;
 
     private final Set<ConstraintViolation<Object>> violations;
 
