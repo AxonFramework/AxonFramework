@@ -70,11 +70,11 @@
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.14.0</log4j.version>
         <spring.version>5.3.4</spring.version>
-        <spring-security.version>5.4.4</spring-security.version>
+        <spring-security.version>5.4.5</spring-security.version>
         <spring.boot.version>2.4.2</spring.boot.version>
         <mockito.version>3.7.7</mockito.version>
         <projectreactor.version>3.4.3</projectreactor.version>
-        <micrometer.version>1.6.3</micrometer.version>
+        <micrometer.version>1.6.4</micrometer.version>
         <dropwizard.metrics.version>4.1.17</dropwizard.metrics.version>
         <jackson.version>2.12.1</jackson.version>
         <!--
