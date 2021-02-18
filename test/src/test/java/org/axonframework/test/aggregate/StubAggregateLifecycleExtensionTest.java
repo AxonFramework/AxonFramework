@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class StubAggregateLifecycleExtensionTest {
 
