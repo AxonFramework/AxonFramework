@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,33 @@
 
 package org.axonframework.test.aggregate;
 
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.rules.*;
+import org.junit.runner.*;
+import org.junit.runners.model.*;
 
 /**
- * Implementation of StubAggregateLifecycle that can be used as an {@link org.junit.Rule} annotated method or field
- * in a test class. In that case, the JUnit lifecycle will automatically register and unregister the
- * StubAggregateLifecycle.
- *
+ * Implementation of StubAggregateLifecycle that can be used as an {@link org.junit.Rule} annotated method or field in a
+ * test class. In that case, the JUnit lifecycle will automatically register and unregister the {@link
+ * StubAggregateLifecycle}.
+ * <p>
  * Usage example:
  * <pre>
- *     &#064;Rule
- *     public StubAggregateLifecycleRule lifecycle = new StubAggregateLifecycleRule();
+ * &#064;Rule
+ * public StubAggregateLifecycleRule lifecycle = new StubAggregateLifecycleRule();
  *
- *     &#064;Test
- *     public void testMethod() {
- *         ... perform tests ...
+ * &#064;Test
+ * public void testMethod() {
+ *     ... perform tests ...
  *
- *         // get applied events from lifecycle to validate some more
- *         lifecycle.getAppliedEvents();
- *     }
+ *     // get applied events from lifecycle to validate some more
+ *     lifecycle.getAppliedEvents();
+ * }
  * </pre>
+ *
+ * @deprecated in favor of {@link org.axonframework.test.aggregate.StubAggregateLifecycleExtension} to be used in
+ * combination with Junit 5
  */
+@Deprecated
 public class StubAggregateLifecycleRule extends StubAggregateLifecycle implements TestRule {
 
     @Override
@@ -55,5 +59,4 @@ public class StubAggregateLifecycleRule extends StubAggregateLifecycle implement
             }
         };
     }
-
 }
