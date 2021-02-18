@@ -23,25 +23,30 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link StubAggregateLifecycleExtension}.
+ *
+ * @author Stefan Dragisic
+ */
 class StubAggregateLifecycleExtensionTest {
 
     @RegisterExtension
-    static StubAggregateLifecycleExtension testSubject = new StubAggregateLifecycleExtension();
+    static final StubAggregateLifecycleExtension TEST_SUBJECT = new StubAggregateLifecycleExtension();
 
     @Test
     void testAppliedEventsArePassedToActiveLifecycle() {
         apply("test");
 
-        assertEquals(1, testSubject.getAppliedEvents().size());
-        assertEquals("test", testSubject.getAppliedEventPayloads().get(0));
-        assertEquals("test", testSubject.getAppliedEvents().get(0).getPayload());
+        assertEquals(1, TEST_SUBJECT.getAppliedEvents().size());
+        assertEquals("test", TEST_SUBJECT.getAppliedEventPayloads().get(0));
+        assertEquals("test", TEST_SUBJECT.getAppliedEvents().get(0).getPayload());
     }
 
     @Test
     void testMarkDeletedIsRegisteredWithActiveLifecycle() {
         markDeleted();
 
-        assertEquals(0, testSubject.getAppliedEvents().size());
-        assertTrue(testSubject.isMarkedDeleted());
+        assertEquals(0, TEST_SUBJECT.getAppliedEvents().size());
+        assertTrue(TEST_SUBJECT.isMarkedDeleted());
     }
 }

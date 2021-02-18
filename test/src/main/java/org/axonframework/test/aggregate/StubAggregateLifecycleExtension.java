@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,22 @@ package org.axonframework.test.aggregate;
 import org.junit.jupiter.api.extension.*;
 
 /**
- * Implementation of {@link StubAggregateLifecycle} that can be used as an {@link org.junit.jupiter.api.extension.RegisterExtension} annotated method or field in a
- * test class. In that case, the JUnit lifecycle will automatically register and unregister the {@code StubAggregateLifecycle}.
+ * Implementation of {@link StubAggregateLifecycle} that can be used as an {@link org.junit.jupiter.api.extension.RegisterExtension}
+ * annotated method or field in a test class. In that case, the JUnit lifecycle will automatically register and
+ * unregister the {@code StubAggregateLifecycle}.
  * <p>
  * Usage example:
  * <pre>
- *     &#064;RegisterExtension
- *     public StubAggregateLifecycleExtension lifecycle = new StubAggregateLifecycleExtension();
+ * &#064;RegisterExtension
+ * public StubAggregateLifecycleExtension lifecycle = new StubAggregateLifecycleExtension();
  *
- *     &#064;Test
- *     public void testMethod() {
- *         ... perform tests ...
+ * &#064;Test
+ * public void testMethod() {
+ *     ... perform tests ...
  *
- *         // get applied events from lifecycle to validate some more
- *         lifecycle.getAppliedEvents();
- *     }
+ *     // get applied events from lifecycle to validate some more
+ *     lifecycle.getAppliedEvents();
+ * }
  * </pre>
  */
 public class StubAggregateLifecycleExtension extends StubAggregateLifecycle
