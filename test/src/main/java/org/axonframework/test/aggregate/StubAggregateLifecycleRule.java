@@ -38,7 +38,10 @@ import org.junit.runners.model.Statement;
  *         lifecycle.getAppliedEvents();
  *     }
  * </pre>
+ *
+ * @deprecated in favor of {@link org.axonframework.test.aggregate.StubAggregateLifecycleExtension} to be used in combination with Junit 5
  */
+@Deprecated
 public class StubAggregateLifecycleRule extends StubAggregateLifecycle implements TestRule {
 
     @Override
