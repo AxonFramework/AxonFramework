@@ -157,5 +157,10 @@ class HandlerComparatorTest {
         public Optional<Map<String, Object>> attributes(String handlerType) {
             return Optional.empty();
         }
+
+        @Override
+        public Optional<Object> attribute(String attributeKey) {
+            return Optional.empty();
+        }
     }
 }

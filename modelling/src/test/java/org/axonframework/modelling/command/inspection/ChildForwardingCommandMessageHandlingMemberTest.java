@@ -1,6 +1,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.annotation.HandlerAttributeDictionary;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.junit.jupiter.api.*;
@@ -64,5 +65,19 @@ class ChildForwardingCommandMessageHandlingMemberTest {
         assertEquals(creationPolicyAttributes, result.get());
 
         verify(childMember).attributes("CreationPolicy");
+    }
+
+    @Test
+    void testAttributeIsDelegatedToChildHandler() {
+        AggregateCreationPolicy expectedPolicy = AggregateCreationPolicy.NEVER;
+        when(childMember.attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY))
+                .thenReturn(Optional.of(expectedPolicy));
+
+        Optional<Object> result = testSubject.attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY);
+
+        assertTrue(result.isPresent());
+        assertEquals(expectedPolicy, result.get());
+
+        verify(childMember).attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY);
     }
 }

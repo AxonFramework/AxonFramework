@@ -63,6 +63,18 @@ class AnnotatedMessageHandlingMemberTest {
         assertEquals(expectedMessageHandlerAttributes, result.get());
     }
 
+    @Test
+    void testAttributeReturnsNonEmptyOptionalForMatchingAttributeKey() {
+        Optional<Object> resultMessageType = testSubject.attribute(HandlerAttributeDictionary.MESSAGE_TYPE);
+        Optional<Object> resultPayloadType = testSubject.attribute(HandlerAttributeDictionary.PAYLOAD_TYPE);
+
+        assertTrue(resultMessageType.isPresent());
+        assertEquals(EventMessage.class, resultMessageType.get());
+
+        assertTrue(resultPayloadType.isPresent());
+        assertEquals(Object.class, resultPayloadType.get());
+    }
+
     @SuppressWarnings("unused")
     private static class AnnotatedHandler {
 

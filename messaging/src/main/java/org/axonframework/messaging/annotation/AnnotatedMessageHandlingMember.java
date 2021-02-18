@@ -190,6 +190,11 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
                 ? Optional.ofNullable(attributes.get(handlerType)) : Optional.empty();
     }
 
+    @Override
+    public Optional<Object> attribute(String attributeKey) {
+        return Optional.ofNullable(attributes.getAllPrefixed().get(attributeKey));
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <H> Optional<H> unwrap(Class<H> handlerType) {

@@ -161,4 +161,9 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     public Optional<Map<String, Object>> attributes(String handlerType) {
         return childHandler.attributes(handlerType);
     }
+
+    @Override
+    public Optional<Object> attribute(String attributeKey) {
+        return childHandler.attribute(attributeKey);
+    }
 }

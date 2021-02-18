@@ -182,10 +182,26 @@ public interface MessageHandlingMember<T> {
      * also a Message Handler of type Event Message.
      *
      * @param handlerType the type of handler to retrieve the attributes for
-     * @return a non empty {@link Optional} of all attributes referencing the given {@code handlerType} if this handling
+     * @return a non-empty {@link Optional} of all attributes referencing the given {@code handlerType} if this handling
      * member is an implementation of the type. Otherwise an {@link Optional#empty()} will be returned
      */
     default Optional<Map<String, Object>> attributes(String handlerType) {
+        return Optional.empty();
+    }
+
+    /**
+     * Retrieve a single attributes for the given {@code attributeKey}. If this {@link MessageHandlingMember} does not
+     * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise a non-empty
+     * {@link Optional} containing the attribute will be provided.
+     * <p>
+     * When using the method, consider using the {@link HandlerAttributeDictionary} for a list of common handler
+     * attributes.
+     *
+     * @param attributeKey the key to retrieve an attribute for
+     * @return a non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise an
+     * {@link Optional#empty()} will be returned
+     */
+    default Optional<Object> attribute(String attributeKey) {
         return Optional.empty();
     }
 }

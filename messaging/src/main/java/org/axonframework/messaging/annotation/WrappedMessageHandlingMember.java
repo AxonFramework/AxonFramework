@@ -104,4 +104,9 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     public Optional<Map<String, Object>> attributes(String handlerType) {
         return delegate.attributes(handlerType);
     }
+
+    @Override
+    public Optional<Object> attribute(String attributeKey) {
+        return delegate.attribute(attributeKey);
+    }
 }
