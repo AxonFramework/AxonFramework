@@ -23,7 +23,6 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,7 +66,7 @@ class Coordinator {
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
-    private final ConcurrentMap<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
+    private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -319,9 +318,10 @@ class Coordinator {
             }
 
             if (!runState.get().isRunning()) {
-                logger.debug("Stopped processing. Runnable flag is false.");
-                logger.debug("Releasing claims for processor [{}].", name);
+                logger.debug("Stopped processing. Runnable flag is false.\n"
+                                     + "Releasing claims and closing the event stream for processor [{}].", name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
+                IOUtils.closeQuietly(eventStream);
                 return;
             }
 
@@ -409,11 +409,13 @@ class Coordinator {
          */
         private TrackingToken startNewWorkPackages() {
             return transactionManager.fetchInTransaction(() -> {
-                int[] segments = Arrays.stream(tokenStore.fetchSegments(name))
-                                       .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                       .toArray();
+                int[] segments = tokenStore.fetchSegments(name);
+                // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
+                int[] unClaimedSegments = Arrays.stream(segments)
+                                                .filter(segmentId -> !workPackages.containsKey(segmentId))
+                                                .toArray();
                 TrackingToken lowerBound = NoToken.INSTANCE;
-                for (int segmentId : segments) {
+                for (int segmentId : unClaimedSegments) {
                     if (isSegmentBlockedFromClaim(segmentId)) {
                         logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
                         processingStatusUpdater.accept(segmentId, u -> null);
@@ -549,15 +551,17 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.warn("Releasing claims and rescheduling the coordination task in {}ms", errorWaitBackOff, cause);
+            logger.warn("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff, cause);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).thenRun(
                     () -> {
-                        logger.debug(
-                                "Work packages have aborted. Scheduling new fetcher to run in {}ms", errorWaitBackOff
-                        );
-                        executorService.schedule(new CoordinationTask(), errorWaitBackOff, TimeUnit.MILLISECONDS);
+                        logger.debug("Work packages have aborted. Scheduling new Coordination task to run in {}ms",
+                                     errorWaitBackOff);
+                        // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
+                        CoordinationTask task = new CoordinationTask();
+                        executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
+                        coordinationTask.set(task);
                     }
             );
             IOUtils.closeQuietly(eventStream);

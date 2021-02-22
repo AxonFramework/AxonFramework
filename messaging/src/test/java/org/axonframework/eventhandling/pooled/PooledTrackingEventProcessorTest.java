@@ -5,7 +5,6 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -65,7 +64,7 @@ class PooledTrackingEventProcessorTest {
         stubMessageSource = new InMemoryMessageSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = new InMemoryTokenStore();
-        coordinatorExecutor = Executors.newScheduledThreadPool(1);
+        coordinatorExecutor = Executors.newScheduledThreadPool(2);
         workerExecutor = Executors.newScheduledThreadPool(8);
 
         setTestSubject(createTestSubject());
@@ -292,13 +291,11 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testStartFailsWhenShutdownIsInProgress() throws Exception {
+        when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
         // Use CountDownLatch to block worker threads from actually doing work, and thus shutting down successfully.
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(i -> {
-            latch.await();
-            return i.callRealMethod();
-        }).when(stubEventHandler)
-          .handle(any(), any());
+        doAnswer(i -> latch.await(10, TimeUnit.MILLISECONDS)).when(stubEventHandler)
+                                                             .handle(any(), any());
 
         testSubject.start();
 
