@@ -2,6 +2,7 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,7 +53,6 @@ class WorkPackage {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int BATCH_SIZE = 100;
     static final int BUFFER_SIZE = 1024;
 
     private final String name;
@@ -61,8 +62,10 @@ class WorkPackage {
     private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
     private final Segment segment;
+    private final int batchSize;
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+    private final Clock clock;
 
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
@@ -93,8 +96,10 @@ class WorkPackage {
         this.batchProcessor = builder.batchProcessor;
         this.segment = builder.segment;
         this.lastDeliveredToken = builder.initialToken;
+        this.batchSize = builder.batchSize;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
+        this.clock = builder.clock;
 
         this.lastConsumedToken = builder.initialToken;
         this.lastClaimExtension = System.currentTimeMillis();
@@ -155,7 +160,7 @@ class WorkPackage {
 
     private void processEvents() {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
-        while (!isAbortTriggered() && eventBatch.size() < BATCH_SIZE && !events.isEmpty()) {
+        while (!isAbortTriggered() && eventBatch.size() < batchSize && !events.isEmpty()) {
             TrackedEventMessage<?> event = events.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, event.trackingToken());
             try {
@@ -186,7 +191,7 @@ class WorkPackage {
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             // Empty batch, check for token extension time
-            long now = System.currentTimeMillis();
+            long now = clock.instant().toEpochMilli();
             if (lastClaimExtension < now - claimExtensionThreshold) {
                 logger.debug("Extending claim on segment for Work Package [{}]-[{}].", name, segment.getSegmentId());
 
@@ -203,7 +208,7 @@ class WorkPackage {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         tokenStore.storeToken(token, name, segment.getSegmentId());
         lastStoredToken = token;
-        lastClaimExtension = System.currentTimeMillis();
+        lastClaimExtension = clock.instant().toEpochMilli();
     }
 
     /**
@@ -352,8 +357,10 @@ class WorkPackage {
         private BatchProcessor batchProcessor;
         private Segment segment;
         private TrackingToken initialToken;
-        private long claimExtensionThreshold;
+        private int batchSize = 1;
+        private long claimExtensionThreshold = 5000;
         private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+        private Clock clock = GenericEventMessage.clock;
 
         /**
          * The {@code name} of the processor this {@link WorkPackage} processes events for.
@@ -447,8 +454,19 @@ class WorkPackage {
         }
 
         /**
+         * The amount of events to be processed in a single batch. Defaults to {@code 1};
+         *
+         * @param batchSize the amount of events to be processed in a single batch
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder batchSize(int batchSize) {
+            this.batchSize = batchSize;
+            return this;
+        }
+
+        /**
          * The time in milliseconds after which the claim of the {@link TrackingToken} will be extended. Will only be
-         * used in absence of regular token updates through event processing
+         * used in absence of regular token updates through event processing. Defaults to {@code 5000};
          *
          * @param claimExtensionThreshold the time in milliseconds after which the claim of the {@link TrackingToken}
          *                                will be extended
@@ -468,6 +486,18 @@ class WorkPackage {
          */
         Builder segmentStatusUpdater(Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
             this.segmentStatusUpdater = segmentStatusUpdater;
+            return this;
+        }
+
+        /**
+         * Defines the {@link Clock} used for time dependent operations. For example used to update whenever this {@link
+         * WorkPackage} updated the {@link TrackingToken} claim last. Defaults to {@link GenericEventMessage#clock}.
+         *
+         * @param clock the {@link Clock} used for time dependent operations
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder clock(Clock clock) {
+            this.clock = clock;
             return this;
         }
 

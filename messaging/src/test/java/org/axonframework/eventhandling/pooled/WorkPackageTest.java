@@ -78,6 +78,7 @@ class WorkPackageTest {
                                         .batchProcessor(batchProcessor)
                                         .segment(segment)
                                         .initialToken(initialTrackingToken)
+                                        .batchSize(1)
                                         .claimExtensionThreshold(5000)
                                         .segmentStatusUpdater(op -> {
                                             TrackerStatus update = op.apply(trackerStatus);

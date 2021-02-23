@@ -3,7 +3,6 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -16,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -63,6 +63,7 @@ class Coordinator {
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
+    private final Clock clock;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
@@ -85,6 +86,8 @@ class Coordinator {
      * @param processingStatusUpdater lambda used to update the processing status per work package
      * @param tokenClaimInterval      the time in milliseconds this coordinator will wait to reattempt claiming segments
      *                                for processing
+     * @param clock                   the {@link Clock} used for any time dependent operations in this {@link
+     *                                Coordinator}. For example used to define when to attempt claiming new tokens
      */
     protected Coordinator(String name,
                           StreamableMessageSource<TrackedEventMessage<?>> messageSource,
@@ -93,7 +96,8 @@ class Coordinator {
                           ScheduledExecutorService executorService,
                           BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
                           BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
-                          long tokenClaimInterval) {
+                          long tokenClaimInterval,
+                          Clock clock) {
         this.name = name;
         this.messageSource = messageSource;
         this.tokenStore = tokenStore;
@@ -102,6 +106,7 @@ class Coordinator {
         this.executorService = executorService;
         this.processingStatusUpdater = processingStatusUpdater;
         this.tokenClaimInterval = tokenClaimInterval;
+        this.clock = clock;
     }
 
     /**
@@ -342,10 +347,8 @@ class Coordinator {
                 return;
             }
 
-            if (eventStream == null
-                    || unclaimedSegmentValidationThreshold <= GenericEventMessage.clock.instant().toEpochMilli()) {
-                unclaimedSegmentValidationThreshold =
-                        GenericEventMessage.clock.instant().toEpochMilli() + tokenClaimInterval;
+            if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
+                unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
 
                 try {
                     TrackingToken newWorkToken = startNewWorkPackages();
@@ -445,7 +448,7 @@ class Coordinator {
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
             return releasesDeadlines.getOrDefault(segmentId, BIG_BANG)
-                                    .isAfter(GenericEventMessage.clock.instant());
+                                    .isAfter(clock.instant());
         }
 
         /**

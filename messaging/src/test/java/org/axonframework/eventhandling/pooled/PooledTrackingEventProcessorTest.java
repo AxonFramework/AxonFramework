@@ -758,6 +758,14 @@ class PooledTrackingEventProcessorTest {
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.claimExtensionThreshold(-1));
     }
 
+    @Test
+    void testBuildWithZeroOrNegativeBatchSizeThrowsAxonConfigurationException() {
+        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(0));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(-1));
+    }
+
     private static class InMemoryMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
         private static final String FAIL_PAYLOAD = "FAIL";

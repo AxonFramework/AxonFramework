@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -84,6 +85,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     private final long tokenClaimInterval;
     private final int maxCapacity;
     private final long claimExtensionThreshold;
+    private final int batchSize;
+    private final Clock clock;
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
@@ -103,6 +106,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
+     *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -146,11 +151,13 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.maxCapacity = builder.maxCapacity;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
+        this.batchSize = builder.batchSize;
+        this.clock = builder.clock;
 
         this.coordinator = new Coordinator(
                 name, messageSource, tokenStore, transactionManager,
                 builder.coordinatorExecutorBuilder.apply(name), this::spawnWorker, this::statusUpdater,
-                tokenClaimInterval
+                tokenClaimInterval, clock
         );
     }
 
@@ -321,10 +328,12 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                           .batchProcessor(this::processInUnitOfWork)
                           .segment(segment)
                           .initialToken(initialToken)
+                          .batchSize(batchSize)
                           .claimExtensionThreshold(claimExtensionThreshold)
                           .segmentStatusUpdater(singleStatusUpdater(
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
+                          .clock(clock)
                           .build();
     }
 
@@ -371,6 +380,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
+     *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -396,6 +407,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private long tokenClaimInterval = 5000;
         private int maxCapacity = Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
+        private int batchSize = 1;
+        private Clock clock = GenericEventMessage.clock;
 
         protected Builder() {
             rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE);
@@ -575,6 +588,37 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                     claimExtensionThreshold, "The claim extension threshold should be a higher valuer than zero"
             );
             this.claimExtensionThreshold = claimExtensionThreshold;
+            return this;
+        }
+
+        /**
+         * Specifies the number of events to be processed inside a single transaction. Defaults to a batch size of
+         * {@code 1}.
+         * <p>
+         * Increasing this value with increase the processing speed dramatically, but requires certainty that the
+         * operations performed during event handling can be rolled back.
+         *
+         * @param batchSize the number of events to be processed inside a single transaction
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder batchSize(int batchSize) {
+            assertStrictPositive(batchSize, "The batch size should be a higher valuer than zero");
+            this.batchSize = batchSize;
+            return this;
+        }
+
+        /**
+         * Defines the {@link Clock} used for time dependent operation by this {@link EventProcessor}. Used by the
+         * {@link Coordinator} and {@link WorkPackage} threads to decide when to perform certain tasks, like updating
+         * {@link TrackingToken} claims or when to unmark a {@link Segment} as "unclaimable". Defaults to {@link
+         * GenericEventMessage#clock}.
+         *
+         * @param clock the {@link Clock} used for time dependent operation by this {@link EventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder clock(Clock clock) {
+            assertNonNull(clock, "Clock may not be null");
+            this.clock = clock;
             return this;
         }
 
