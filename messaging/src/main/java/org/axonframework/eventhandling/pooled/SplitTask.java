@@ -76,7 +76,7 @@ class SplitTask extends CoordinatorTask {
         logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
-        return workPackage != null ? abortAndSplit(workPackage) : claimAndSplit(segmentId);
+        return workPackage != null ? abortAndSplit(workPackage) : fetchSegmentAndSplit(segmentId);
     }
 
     private CompletableFuture<Boolean> abortAndSplit(WorkPackage workPackage) {
@@ -84,7 +84,7 @@ class SplitTask extends CoordinatorTask {
                           .thenApply(e -> splitAndRelease(workPackage.segment()));
     }
 
-    private CompletableFuture<Boolean> claimAndSplit(int segmentId) {
+    private CompletableFuture<Boolean> fetchSegmentAndSplit(int segmentId) {
         return CompletableFuture.completedFuture(
                 transactionManager.fetchInTransaction(() -> {
                     int[] segments = tokenStore.fetchSegments(name);
@@ -110,6 +110,6 @@ class SplitTask extends CoordinatorTask {
 
     @Override
     String getDescription() {
-        return "Split Instruction for segment [" + segmentId + "]";
+        return "Split Task for segment [" + segmentId + "]";
     }
 }
