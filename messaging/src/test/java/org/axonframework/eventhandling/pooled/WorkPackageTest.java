@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -41,8 +41,8 @@ class WorkPackageTest {
     private static final String PROCESSOR_NAME = "test";
 
     private TokenStore tokenStore;
-    private ScheduledExecutorService scheduledExecutorService;
-    private TestEventValidator eventValidator;
+    private ExecutorService executorService;
+    private TestEventFilter eventFilter;
     private TestBatchProcessor batchProcessor;
     private Segment segment;
     private TrackingToken initialTrackingToken;
@@ -51,26 +51,26 @@ class WorkPackageTest {
 
     private TrackerStatus trackerStatus;
     private List<TrackerStatus> trackerStatusUpdates;
-    private Predicate<TrackedEventMessage<?>> eventValidatorPredicate;
+    private Predicate<TrackedEventMessage<?>> eventFilterPredicate;
     private Predicate<List<? extends EventMessage<?>>> batchProcessorPredicate;
 
     @BeforeEach
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
-        scheduledExecutorService = spy(Executors.newScheduledThreadPool(1));
-        eventValidator = new TestEventValidator();
+        executorService = spy(Executors.newScheduledThreadPool(1));
+        eventFilter = new TestEventFilter();
         batchProcessor = new TestBatchProcessor();
         segment = Segment.ROOT_SEGMENT;
         initialTrackingToken = new GlobalSequenceTrackingToken(0L);
 
         trackerStatus = new TrackerStatus(segment, initialTrackingToken);
         trackerStatusUpdates = new ArrayList<>();
-        eventValidatorPredicate = event -> true;
+        eventFilterPredicate = event -> true;
         batchProcessorPredicate = event -> true;
 
 
         testSubject = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), scheduledExecutorService, eventValidator,
+                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
                 batchProcessor, segment, initialTrackingToken, 5000,
                 op -> {
                     TrackerStatus update = op.apply(trackerStatus);
@@ -82,7 +82,7 @@ class WorkPackageTest {
 
     @AfterEach
     void tearDown() {
-        scheduledExecutorService.shutdown();
+        executorService.shutdown();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -96,7 +96,7 @@ class WorkPackageTest {
 
         testSubject.scheduleEvent(testEvent);
 
-        verifyNoInteractions(scheduledExecutorService);
+        verifyNoInteractions(executorService);
     }
 
     @Test
@@ -115,7 +115,7 @@ class WorkPackageTest {
         TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> testEvent =
                 new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("some-event"));
-        eventValidatorPredicate = event -> {
+        eventFilterPredicate = event -> {
             if (event.equals(testEvent)) {
                 throw new IllegalStateException("Some exception");
             }
@@ -170,7 +170,7 @@ class WorkPackageTest {
 
         testSubject.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> validatedEvents = eventValidator.getValidatedEvents();
+        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
         assertEquals(expectedEvent, validatedEvents.get(0));
 
@@ -193,7 +193,7 @@ class WorkPackageTest {
         // The short threshold ensures the packages assume the token should be reclaimed.
         int extremelyShortClaimExtensionThreshold = 1;
         WorkPackage testSubjectWithShortThreshold = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), scheduledExecutorService, eventValidator,
+                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
                 batchProcessor, segment, initialTrackingToken, extremelyShortClaimExtensionThreshold,
                 op -> {
                     TrackerStatus update = op.apply(trackerStatus);
@@ -236,7 +236,7 @@ class WorkPackageTest {
         // The short threshold ensures the packages assume the token should be reclaimed.
         int extremelyShortClaimExtensionThreshold = 1;
         WorkPackage testSubjectWithShortThreshold = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), scheduledExecutorService, eventValidator,
+                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
                 batchProcessor, segment, initialTrackingToken, extremelyShortClaimExtensionThreshold,
                 op -> {
                     TrackerStatus update = op.apply(trackerStatus);
@@ -245,14 +245,14 @@ class WorkPackageTest {
                 }
         );
         // Adjust the EventValidator to reject all events
-        eventValidatorPredicate = event -> false;
+        eventFilterPredicate = event -> false;
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
                 new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> validatedEvents = eventValidator.getValidatedEvents();
+        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
         assertEquals(expectedEvent, validatedEvents.get(0));
 
@@ -331,14 +331,14 @@ class WorkPackageTest {
         assertEquals(originalAbortReason, result.get());
     }
 
-    private class TestEventValidator implements WorkPackage.EventValidator {
+    private class TestEventFilter implements WorkPackage.EventFilter {
 
         private final List<EventMessage<?>> validatedEvents = new ArrayList<>();
 
         @Override
-        public boolean shouldHandle(TrackedEventMessage<?> eventMessage, Segment segment) {
+        public boolean canHandle(TrackedEventMessage<?> eventMessage, Segment segment) {
             validatedEvents.add(eventMessage);
-            return eventValidatorPredicate.test(eventMessage);
+            return eventFilterPredicate.test(eventMessage);
         }
 
         public List<EventMessage<?>> getValidatedEvents() {

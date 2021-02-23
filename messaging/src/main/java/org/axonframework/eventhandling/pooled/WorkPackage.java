@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -29,13 +29,13 @@ import java.util.function.UnaryOperator;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
- * event should be handled through a {@link EventValidator} and after that processing a collection of events in the
- * {@link BatchProcessor}.
+ * event can be handled through a {@link EventFilter} and after that processing a collection of events in the {@link
+ * BatchProcessor}.
  * <p>
  * Events are received through the {@link #scheduleEvent(TrackedEventMessage)} operation, delegated by a {@link
- * Coordinator}. Receiving event(s) means this job will be scheduled to process these events through a {@link
- * ScheduledExecutorService}. As there are local threads and outside threads invoking methods on the {@link
- * WorkPackage}, several methods have threading notes describing what can invoke them safely.
+ * Coordinator}. Receiving event(s) means this {@link WorkPackage} will be scheduled to process these events through an
+ * {@link ExecutorService}. As there are local threads and outside threads invoking methods on the {@code WorkPackage},
+ * several methods have threading notes describing what can invoke them safely.
  * <p>
  * Since the {@code WorkPackage} is in charge of a {@code Segment}, it maintains the claim on the matching {@link
  * TrackingToken}. In absence of new events, it will also {@link TokenStore#extendClaim(String, int)} on the {@code
@@ -57,8 +57,8 @@ class WorkPackage {
     private final String name;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
-    private final ScheduledExecutorService executorService;
-    private final EventValidator eventValidator;
+    private final ExecutorService executorService;
+    private final EventFilter eventFilter;
     private final BatchProcessor batchProcessor;
     private final Segment segment;
     private final long claimExtensionThreshold;
@@ -82,8 +82,8 @@ class WorkPackage {
      *                                update the {@code initialToken}
      * @param transactionManager      a {@link TransactionManager} used to invoke {@link TokenStore} operations and
      *                                event processing inside a transaction
-     * @param executorService         a {@link ScheduledExecutorService} used to run this work package's tasks in
-     * @param eventValidator          validates whether a buffered event should be handled by this package's {@code
+     * @param executorService         a {@link ExecutorService} used to run this work package's tasks in
+     * @param eventFilter             validates whether a buffered event can be handled by this package's {@code
      *                                segment}
      * @param batchProcessor          processes a batch of events
      * @param segment                 the {@link Segment} this work package is in charge of
@@ -97,8 +97,8 @@ class WorkPackage {
     protected WorkPackage(String name,
                           TokenStore tokenStore,
                           TransactionManager transactionManager,
-                          ScheduledExecutorService executorService,
-                          EventValidator eventValidator,
+                          ExecutorService executorService,
+                          EventFilter eventFilter,
                           BatchProcessor batchProcessor,
                           Segment segment,
                           TrackingToken initialToken,
@@ -108,7 +108,7 @@ class WorkPackage {
         this.tokenStore = tokenStore;
         this.transactionManager = transactionManager;
         this.executorService = executorService;
-        this.eventValidator = eventValidator;
+        this.eventFilter = eventFilter;
         this.batchProcessor = batchProcessor;
         this.segment = segment;
         this.lastDeliveredToken = initialToken;
@@ -178,7 +178,7 @@ class WorkPackage {
             TrackedEventMessage<?> event = events.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, event.trackingToken());
             try {
-                if (eventValidator.shouldHandle(event, segment)) {
+                if (eventFilter.canHandle(event, segment)) {
                     eventBatch.add(event);
                 }
             } catch (Exception e) {
@@ -318,22 +318,21 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} should be handled within the
-     * given {@link Segment}.
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled within the given
+     * {@link Segment}.
      */
     @FunctionalInterface
-    interface EventValidator {
+    interface EventFilter {
 
         /**
-         * Indicates whether the work package should handle the given {@code eventMessage} for the given {@code
-         * segment}.
+         * Indicates whether the work package can handle the given {@code eventMessage} for the given {@code segment}.
          *
-         * @param eventMessage the message for which to identify if the work package should handle it
-         * @param segment      the segment for which the event should be processed
-         * @return {@code true} if the event message should be handled, otherwise {@code false}
-         * @throws Exception when validating if the given {@code eventMessage} fails
+         * @param eventMessage the message for which to identify if the work package can handle it
+         * @param segment      the segment for which the event can be processed
+         * @return {@code true} if the event message can be handled, otherwise {@code false}
+         * @throws Exception when validating of the given {@code eventMessage} fails
          */
-        boolean shouldHandle(TrackedEventMessage<?> eventMessage, Segment segment) throws Exception;
+        boolean canHandle(TrackedEventMessage<?> eventMessage, Segment segment) throws Exception;
     }
 
     /**
