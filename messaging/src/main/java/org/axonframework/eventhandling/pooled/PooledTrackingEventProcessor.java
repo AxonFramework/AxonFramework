@@ -149,8 +149,8 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
         this.coordinator = new Coordinator(
                 name, messageSource, tokenStore, transactionManager,
-                builder.coordinatorExecutorBuilder.apply(name), this::spawnWorker,
-                (i, up) -> processingStatus.computeIfPresent(i, (s, ts) -> up.apply(ts)), tokenClaimInterval
+                builder.coordinatorExecutorBuilder.apply(name), this::spawnWorker, this::statusUpdater,
+                tokenClaimInterval
         );
     }
 
@@ -322,7 +322,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                           .segment(segment)
                           .initialToken(initialToken)
                           .claimExtensionThreshold(claimExtensionThreshold)
-                          .segmentStatusUpdater(statusUpdater(
+                          .segmentStatusUpdater(singleStatusUpdater(
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
                           .build();
@@ -337,11 +337,23 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *                      segmentId}
      * @return a {@link Consumer} of a {@link TrackerStatus} update method
      */
-    private Consumer<UnaryOperator<TrackerStatus>> statusUpdater(int segmentId, TrackerStatus initialStatus) {
+    private Consumer<UnaryOperator<TrackerStatus>> singleStatusUpdater(int segmentId, TrackerStatus initialStatus) {
         return statusUpdater -> processingStatus.compute(
                 segmentId,
                 (s, status) -> statusUpdater.apply(status == null ? initialStatus : status)
         );
+    }
+
+    /**
+     * Retrieves a {@link TrackerStatus} for the given {@code segmentId} for which the given {@code segmentUpdater}
+     * should be invoked.
+     *
+     * @param segmentId      the {@link Segment} identifier who's the {@link TrackerStatus} should be updated
+     * @param segmentUpdater the lambda which receives the current {@link TrackerStatus} and returns the updated {@code
+     *                       TrackerStatus}
+     */
+    private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
+        processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
     }
 
     /**
