@@ -75,47 +75,28 @@ class WorkPackage {
     private final AtomicReference<Exception> abortException = new AtomicReference<>();
 
     /**
-     * Constructs a {@link WorkPackage}.
+     * Instantiate a Builder to be able to create a {@link WorkPackage}. This builder <b>does not</b> validate the
+     * fields. Hence any fields provided should be validated by the user of the {@link WorkPackage.Builder}.
      *
-     * @param name                    the name of the processor this {@link WorkPackage} processes events for
-     * @param tokenStore              the storage solution of {@link TrackingToken}s. Used to extend claims on and
-     *                                update the {@code initialToken}
-     * @param transactionManager      a {@link TransactionManager} used to invoke {@link TokenStore} operations and
-     *                                event processing inside a transaction
-     * @param executorService         a {@link ExecutorService} used to run this work package's tasks in
-     * @param eventFilter             validates whether a buffered event can be handled by this package's {@code
-     *                                segment}
-     * @param batchProcessor          processes a batch of events
-     * @param segment                 the {@link Segment} this work package is in charge of
-     * @param initialToken            the initial {@link TrackingToken} when this package starts processing events
-     * @param claimExtensionThreshold the time in milliseconds after which the claim of the {@link TrackingToken} will
-     *                                be extended. Will only be used in absence of regular token updates through event
-     *                                processing
-     * @param segmentStatusUpdater    lambda to be invoked whenever the status of this package's {@code segment}
-     *                                changes
+     * @return a Builder to be able to create a {@link WorkPackage}
      */
-    protected WorkPackage(String name,
-                          TokenStore tokenStore,
-                          TransactionManager transactionManager,
-                          ExecutorService executorService,
-                          EventFilter eventFilter,
-                          BatchProcessor batchProcessor,
-                          Segment segment,
-                          TrackingToken initialToken,
-                          long claimExtensionThreshold,
-                          Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
-        this.name = name;
-        this.tokenStore = tokenStore;
-        this.transactionManager = transactionManager;
-        this.executorService = executorService;
-        this.eventFilter = eventFilter;
-        this.batchProcessor = batchProcessor;
-        this.segment = segment;
-        this.lastDeliveredToken = initialToken;
-        this.claimExtensionThreshold = claimExtensionThreshold;
-        this.segmentStatusUpdater = segmentStatusUpdater;
+    protected static Builder builder() {
+        return new Builder();
+    }
 
-        this.lastConsumedToken = initialToken;
+    private WorkPackage(Builder builder) {
+        this.name = builder.name;
+        this.tokenStore = builder.tokenStore;
+        this.transactionManager = builder.transactionManager;
+        this.executorService = builder.executorService;
+        this.eventFilter = builder.eventFilter;
+        this.batchProcessor = builder.batchProcessor;
+        this.segment = builder.segment;
+        this.lastDeliveredToken = builder.initialToken;
+        this.claimExtensionThreshold = builder.claimExtensionThreshold;
+        this.segmentStatusUpdater = builder.segmentStatusUpdater;
+
+        this.lastConsumedToken = builder.initialToken;
         this.lastClaimExtension = System.currentTimeMillis();
     }
 
@@ -355,5 +336,148 @@ class WorkPackage {
         void processBatch(List<? extends EventMessage<?>> eventMessages,
                           UnitOfWork<? extends EventMessage<?>> unitOfWork,
                           Collection<Segment> processingSegments) throws Exception;
+    }
+
+    /**
+     * Package private builder class to construct a {@link WorkPackage}. Not used for validation of the fields as is the
+     * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
+     */
+    static class Builder {
+
+        private String name;
+        private TokenStore tokenStore;
+        private TransactionManager transactionManager;
+        private ExecutorService executorService;
+        private EventFilter eventFilter;
+        private BatchProcessor batchProcessor;
+        private Segment segment;
+        private TrackingToken initialToken;
+        private long claimExtensionThreshold;
+        private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+
+        /**
+         * The {@code name} of the processor this {@link WorkPackage} processes events for.
+         *
+         * @param name the name of the processor this {@link WorkPackage} processes events for
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * The storage solution of {@link TrackingToken}s. Used to extend claims on and update the {@code
+         * initialToken}.
+         *
+         * @param tokenStore the storage solution of {@link TrackingToken}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder tokenStore(TokenStore tokenStore) {
+            this.tokenStore = tokenStore;
+            return this;
+        }
+
+        /**
+         * A {@link TransactionManager} used to invoke {@link TokenStore} operations and event processing inside a
+         * transaction.
+         *
+         * @param transactionManager a {@link TransactionManager} used to invoke {@link TokenStore} operations and event
+         *                           processing inside a transaction
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder transactionManager(TransactionManager transactionManager) {
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * A {@link ExecutorService} used to run this work package's tasks in.
+         *
+         * @param executorService a {@link ExecutorService} used to run this work package's tasks in
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder executorService(ExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Checks whether a buffered event can be handled by this package's {@code segment}.
+         *
+         * @param eventFilter checks whether a buffered event can be handled by this package's {@code segment}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder eventFilter(EventFilter eventFilter) {
+            this.eventFilter = eventFilter;
+            return this;
+        }
+
+        /**
+         * A processor of a batch of events.
+         *
+         * @param batchProcessor processes a batch of events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder batchProcessor(BatchProcessor batchProcessor) {
+            this.batchProcessor = batchProcessor;
+            return this;
+        }
+
+        /**
+         * The {@link Segment} this work package is in charge of.
+         *
+         * @param segment the {@link Segment} this work package is in charge of
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segment(Segment segment) {
+            this.segment = segment;
+            return this;
+        }
+
+        /**
+         * The initial {@link TrackingToken} when this package starts processing events.
+         *
+         * @param initialToken the initial {@link TrackingToken} when this package starts processing events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder initialToken(TrackingToken initialToken) {
+            this.initialToken = initialToken;
+            return this;
+        }
+
+        /**
+         * The time in milliseconds after which the claim of the {@link TrackingToken} will be extended. Will only be
+         * used in absence of regular token updates through event processing
+         *
+         * @param claimExtensionThreshold the time in milliseconds after which the claim of the {@link TrackingToken}
+         *                                will be extended
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder claimExtensionThreshold(long claimExtensionThreshold) {
+            this.claimExtensionThreshold = claimExtensionThreshold;
+            return this;
+        }
+
+        /**
+         * Lambda to be invoked whenever the status of this package's {@code segment} changes.
+         *
+         * @param segmentStatusUpdater lambda to be invoked whenever the status of this package's {@code segment}
+         *                             changes
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder segmentStatusUpdater(Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater) {
+            this.segmentStatusUpdater = segmentStatusUpdater;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link WorkPackage} as specified through this Builder.
+         *
+         * @return a {@link WorkPackage} as specified through this Builder
+         */
+        WorkPackage build() {
+            return new WorkPackage(this);
+        }
     }
 }

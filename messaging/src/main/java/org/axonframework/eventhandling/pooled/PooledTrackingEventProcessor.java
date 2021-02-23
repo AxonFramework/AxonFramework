@@ -40,7 +40,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -310,13 +312,35 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     }
 
     private WorkPackage spawnWorker(Segment segment, TrackingToken initialToken) {
-        TrackerStatus initialStatus = new TrackerStatus(segment, initialToken);
-        return new WorkPackage(
-                name, tokenStore, transactionManager, workerExecutor,
-                this::canHandle, this::processInUnitOfWork, segment, initialToken, claimExtensionThreshold,
-                u -> processingStatus.compute(
-                        segment.getSegmentId(), (s, status) -> u.apply(status == null ? initialStatus : status)
-                )
+        return WorkPackage.builder()
+                          .name(name)
+                          .tokenStore(tokenStore)
+                          .transactionManager(transactionManager)
+                          .executorService(workerExecutor)
+                          .eventFilter(this::canHandle)
+                          .batchProcessor(this::processInUnitOfWork)
+                          .segment(segment)
+                          .initialToken(initialToken)
+                          .claimExtensionThreshold(claimExtensionThreshold)
+                          .segmentStatusUpdater(statusUpdater(
+                                  segment.getSegmentId(), new TrackerStatus(segment, initialToken)
+                          ))
+                          .build();
+    }
+
+    /**
+     * A {@link Consumer} of a {@link TrackerStatus} update method. To be used by a {@link WorkPackage} to update the
+     * {@code TrackerStatus} of the {@link Segment} it is in charge of.
+     *
+     * @param segmentId     the {@link Segment} identifier for which the {@link TrackerStatus} should be updated
+     * @param initialStatus the initial {@link TrackerStatus} if there's no {@code TrackerStatus} for the given {@code
+     *                      segmentId}
+     * @return a {@link Consumer} of a {@link TrackerStatus} update method
+     */
+    private Consumer<UnaryOperator<TrackerStatus>> statusUpdater(int segmentId, TrackerStatus initialStatus) {
+        return statusUpdater -> processingStatus.compute(
+                segmentId,
+                (s, status) -> statusUpdater.apply(status == null ? initialStatus : status)
         );
     }
 

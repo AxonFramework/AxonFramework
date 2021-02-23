@@ -47,6 +47,7 @@ class WorkPackageTest {
     private Segment segment;
     private TrackingToken initialTrackingToken;
 
+    private WorkPackage.Builder testSubjectBuilder;
     private WorkPackage testSubject;
 
     private TrackerStatus trackerStatus;
@@ -68,16 +69,22 @@ class WorkPackageTest {
         eventFilterPredicate = event -> true;
         batchProcessorPredicate = event -> true;
 
-
-        testSubject = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
-                batchProcessor, segment, initialTrackingToken, 5000,
-                op -> {
-                    TrackerStatus update = op.apply(trackerStatus);
-                    trackerStatusUpdates.add(update);
-                    trackerStatus = update;
-                }
-        );
+        testSubjectBuilder = WorkPackage.builder()
+                                        .name(PROCESSOR_NAME)
+                                        .tokenStore(tokenStore)
+                                        .transactionManager(NoTransactionManager.instance())
+                                        .executorService(executorService)
+                                        .eventFilter(eventFilter)
+                                        .batchProcessor(batchProcessor)
+                                        .segment(segment)
+                                        .initialToken(initialTrackingToken)
+                                        .claimExtensionThreshold(5000)
+                                        .segmentStatusUpdater(op -> {
+                                            TrackerStatus update = op.apply(trackerStatus);
+                                            trackerStatusUpdates.add(update);
+                                            trackerStatus = update;
+                                        });
+        testSubject = testSubjectBuilder.build();
     }
 
     @AfterEach
@@ -192,15 +199,9 @@ class WorkPackageTest {
     void testScheduleEventExtendsTokenClaimAfterClaimThresholdExtension() {
         // The short threshold ensures the packages assume the token should be reclaimed.
         int extremelyShortClaimExtensionThreshold = 1;
-        WorkPackage testSubjectWithShortThreshold = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
-                batchProcessor, segment, initialTrackingToken, extremelyShortClaimExtensionThreshold,
-                op -> {
-                    TrackerStatus update = op.apply(trackerStatus);
-                    trackerStatusUpdates.add(update);
-                    trackerStatus = update;
-                }
-        );
+        WorkPackage testSubjectWithShortThreshold =
+                testSubjectBuilder.claimExtensionThreshold(extremelyShortClaimExtensionThreshold)
+                                  .build();
 
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
         TrackedEventMessage<String> expectedEvent =
@@ -235,15 +236,9 @@ class WorkPackageTest {
     void testScheduleEventUpdatesTokenAfterClaimThresholdExtension() {
         // The short threshold ensures the packages assume the token should be reclaimed.
         int extremelyShortClaimExtensionThreshold = 1;
-        WorkPackage testSubjectWithShortThreshold = new WorkPackage(
-                PROCESSOR_NAME, tokenStore, NoTransactionManager.instance(), executorService, eventFilter,
-                batchProcessor, segment, initialTrackingToken, extremelyShortClaimExtensionThreshold,
-                op -> {
-                    TrackerStatus update = op.apply(trackerStatus);
-                    trackerStatusUpdates.add(update);
-                    trackerStatus = update;
-                }
-        );
+        WorkPackage testSubjectWithShortThreshold =
+                testSubjectBuilder.claimExtensionThreshold(extremelyShortClaimExtensionThreshold)
+                                  .build();
         // Adjust the EventValidator to reject all events
         eventFilterPredicate = event -> false;
 
