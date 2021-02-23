@@ -193,15 +193,18 @@ class WorkPackage {
             // Empty batch, check for token extension time
             long now = clock.instant().toEpochMilli();
             if (lastClaimExtension < now - claimExtensionThreshold) {
-                logger.debug("Extending claim on segment for Work Package [{}]-[{}].", name, segment.getSegmentId());
-
                 Runnable tokenOperation = lastStoredToken == lastConsumedToken
-                        ? () -> tokenStore.extendClaim(name, segment.getSegmentId())
+                        ? this::extendClaim
                         : () -> storeToken(lastConsumedToken);
                 transactionManager.executeInTransaction(tokenOperation);
-                lastClaimExtension = now;
             }
         }
+    }
+
+    private void extendClaim() {
+        logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
+        tokenStore.extendClaim(name, segment.getSegmentId());
+        lastClaimExtension = clock.instant().toEpochMilli();
     }
 
     private void storeToken(TrackingToken token) {
