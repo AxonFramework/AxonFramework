@@ -81,21 +81,14 @@ class MergeTask extends CoordinatorTask {
         int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
         int thatSegmentId = thisSegment.mergeableSegmentId();
+        Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
+
         if (segmentId == thatSegmentId) {
             logger.debug("Coordinator [{}] cannot merge segment [{}]. "
                                  + "A merge request can only be fulfilled if there is more than one segment.",
                          name, segmentId);
             return CompletableFuture.completedFuture(false);
         }
-
-        Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
-        if (!thisSegment.isMergeableWith(thatSegment)) {
-            logger.debug("Coordinator [{}] cannot merge segment [{}] with [{}]. "
-                                 + "Segment [{}] and [{}] cannot be merged with one another.",
-                         name, segmentId, thatSegmentId, segmentId, thatSegmentId);
-            return CompletableFuture.completedFuture(false);
-        }
-
 
         CompletableFuture<TrackingToken> thisTokenFuture = tokenFor(thisSegment.getSegmentId());
         CompletableFuture<TrackingToken> thatTokenFuture = tokenFor(thatSegment.getSegmentId());
@@ -140,6 +133,6 @@ class MergeTask extends CoordinatorTask {
 
     @Override
     String getDescription() {
-        return "Merge Instruction for segment [" + segmentId + "]";
+        return "Merge Task for segment [" + segmentId + "]";
     }
 }
