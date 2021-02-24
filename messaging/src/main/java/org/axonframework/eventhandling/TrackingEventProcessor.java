@@ -275,7 +275,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         long errorWaitTime = 1;
         try {
             // only execute the loop when in running state, no processing instructions have been executed, and the
-            // segment is not blacklisted for release
+            // segment is not ignored for release
             while (state.get().isRunning() && !processInstructions(segment.getSegmentId())
                     && canClaimSegment(segment.getSegmentId())) {
                 try {
@@ -380,7 +380,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 if (canHandle(firstMessage, processingSegments)) {
                     batch.add(firstMessage);
                 } else {
-                    canBlacklist(eventStream, firstMessage);
+                    canIgnoreEvent(eventStream, firstMessage);
                     reportIgnored(firstMessage);
                 }
                 // besides checking batch sizes, we must also ensure that both the current message in the batch
@@ -393,7 +393,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
-                        canBlacklist(eventStream, trackedEventMessage);
+                        canIgnoreEvent(eventStream, trackedEventMessage);
                         reportIgnored(trackedEventMessage);
                     }
                 }
@@ -431,7 +431,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
                 } else {
-                    canBlacklist(eventStream, trackedEventMessage);
+                    canIgnoreEvent(eventStream, trackedEventMessage);
                     reportIgnored(trackedEventMessage);
                 }
             }
@@ -458,10 +458,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
     }
 
-    private void canBlacklist(BlockingStream<TrackedEventMessage<?>> eventStream,
-                              TrackedEventMessage<?> trackedEventMessage) {
+    private void canIgnoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
+                                TrackedEventMessage<?> trackedEventMessage) {
         if (!canHandleType(trackedEventMessage.getPayloadType())) {
-            eventStream.blacklist(trackedEventMessage);
+            eventStream.ignoreMessage(trackedEventMessage);
         }
     }
 
@@ -539,8 +539,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * {@inheritDoc}
      * <p>
-     * This will also blacklist this segment for twice the {@link TrackingEventProcessorConfiguration#getTokenClaimInterval()
-     * token claim interval}, to ensure it is not immediately reclaimed.
+     * This will also ignore the specified this segment for "re-claiming" for twice the {@link
+     * TrackingEventProcessorConfiguration#getTokenClaimInterval()} token claim interval.
      */
     @Override
     public void releaseSegment(int segmentId) {
@@ -548,8 +548,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     @Override
-    public void releaseSegment(int segmentId, long blacklistDuration, TimeUnit unit) {
-        segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(blacklistDuration));
+    public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
+        segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(releaseDuration));
     }
 
     private boolean canClaimSegment(int segmentId) {

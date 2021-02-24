@@ -31,7 +31,6 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
-
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Client-side buffer of messages received from the server. Once consumed from this buffer, the client is notified of a
@@ -67,7 +64,7 @@ public class EventBuffer implements TrackingEventStream {
     private final EventStream delegate;
     private final Iterator<TrackedEventMessage<?>> eventStream;
     private final Serializer serializer;
-    private final boolean disableEventBlacklisting;
+    private final boolean disableIgnoredEventFiltering;
 
     private TrackedEventMessage<?> peekEvent;
 
@@ -78,18 +75,19 @@ public class EventBuffer implements TrackingEventStream {
      * Initializes an Event Buffer, passing messages through given {@code upcasterChain} and deserializing events using
      * given {@code serializer}.
      *
-     * @param delegate                 the {@link EventStream} to delegate operations to
-     * @param upcasterChain            the upcasterChain to translate serialized representations before deserializing
-     * @param serializer               the serializer capable of deserializing incoming messages
-     * @param disableEventBlacklisting specifying whether events should or should not be included in the buffer
+     * @param delegate                     the {@link EventStream} to delegate operations to
+     * @param upcasterChain                the upcasterChain to translate serialized representations before
+     *                                     deserializing
+     * @param serializer                   the serializer capable of deserializing incoming messages
+     * @param disableIgnoredEventFiltering specifying whether events should or should not be included in the buffer
      */
     public EventBuffer(EventStream delegate,
                        EventUpcaster upcasterChain,
                        Serializer serializer,
-                       boolean disableEventBlacklisting) {
+                       boolean disableIgnoredEventFiltering) {
         this.delegate = delegate;
         this.serializer = serializer;
-        this.disableEventBlacklisting = disableEventBlacklisting;
+        this.disableIgnoredEventFiltering = disableIgnoredEventFiltering;
         this.eventStream = EventUtils.upcastAndDeserializeTrackedEvents(
                 StreamSupport.stream(new SimpleSpliterator<>(this::poll), false), serializer, upcasterChain
         ).iterator();
@@ -120,15 +118,15 @@ public class EventBuffer implements TrackingEventStream {
      * This implementation removes events from the stream based on the payload type of the given message.
      */
     @Override
-    public void blacklist(TrackedEventMessage<?> trackedEventMessage) {
-        if (!disableEventBlacklisting) {
+    public void ignoreMessage(TrackedEventMessage<?> ignoredMessage) {
+        if (!disableIgnoredEventFiltering) {
             SerializedType serializedType;
-            if (UnknownSerializedType.class.equals(trackedEventMessage.getPayloadType())) {
-                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) trackedEventMessage.getPayload();
+            if (UnknownSerializedType.class.equals(ignoredMessage.getPayloadType())) {
+                UnknownSerializedType unknownSerializedType = (UnknownSerializedType) ignoredMessage.getPayload();
                 serializedType = unknownSerializedType.serializedType();
                 delegate.excludePayloadType(serializedType.getName(), serializedType.getRevision());
             } else {
-                serializedType = serializer.typeForClass(trackedEventMessage.getPayloadType());
+                serializedType = serializer.typeForClass(ignoredMessage.getPayloadType());
             }
             delegate.excludePayloadType(serializedType.getName(), serializedType.getRevision());
         }
