@@ -154,11 +154,17 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
 
-        this.coordinator = new Coordinator(
-                name, messageSource, tokenStore, transactionManager,
-                builder.coordinatorExecutorBuilder.apply(name), this::spawnWorker, this::statusUpdater,
-                tokenClaimInterval, clock
-        );
+        this.coordinator = Coordinator.builder()
+                                      .name(name)
+                                      .messageSource(messageSource)
+                                      .tokenStore(tokenStore)
+                                      .transactionManager(transactionManager)
+                                      .executorService(builder.coordinatorExecutorBuilder.apply(name))
+                                      .workPackageFactory(this::spawnWorker)
+                                      .processingStatusUpdater(this::statusUpdater)
+                                      .tokenClaimInterval(tokenClaimInterval)
+                                      .clock(clock)
+                                      .build();
     }
 
     @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)

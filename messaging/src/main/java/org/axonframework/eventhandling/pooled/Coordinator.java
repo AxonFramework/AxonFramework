@@ -3,6 +3,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -73,40 +74,25 @@ class Coordinator {
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
 
     /**
-     * Constructs a {@link Coordinator}.
+     * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
+     * fields. Hence any fields provided should be validated by the user of the {@link Builder}.
      *
-     * @param name                    the name of the processor this service coordinates for
-     * @param messageSource           the source of events this coordinator should schedule per work package
-     * @param tokenStore              the storage solution for {@link TrackingToken}s. Used to find and claim unclaimed
-     *                                segments for a processor
-     * @param transactionManager      a {@link TransactionManager} used to invoke all {@link TokenStore} operations
-     *                                inside a transaction
-     * @param executorService         a {@link ScheduledExecutorService} used to run this coordinators tasks with
-     * @param workPackageFactory      factory method to construct work packages
-     * @param processingStatusUpdater lambda used to update the processing status per work package
-     * @param tokenClaimInterval      the time in milliseconds this coordinator will wait to reattempt claiming segments
-     *                                for processing
-     * @param clock                   the {@link Clock} used for any time dependent operations in this {@link
-     *                                Coordinator}. For example used to define when to attempt claiming new tokens
+     * @return a Builder to be able to create a {@link Coordinator}
      */
-    protected Coordinator(String name,
-                          StreamableMessageSource<TrackedEventMessage<?>> messageSource,
-                          TokenStore tokenStore,
-                          TransactionManager transactionManager,
-                          ScheduledExecutorService executorService,
-                          BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory,
-                          BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater,
-                          long tokenClaimInterval,
-                          Clock clock) {
-        this.name = name;
-        this.messageSource = messageSource;
-        this.tokenStore = tokenStore;
-        this.transactionManager = transactionManager;
-        this.workPackageFactory = workPackageFactory;
-        this.executorService = executorService;
-        this.processingStatusUpdater = processingStatusUpdater;
-        this.tokenClaimInterval = tokenClaimInterval;
-        this.clock = clock;
+    protected static Builder builder() {
+        return new Builder();
+    }
+
+    private Coordinator(Builder builder) {
+        this.name = builder.name;
+        this.messageSource = builder.messageSource;
+        this.tokenStore = builder.tokenStore;
+        this.transactionManager = builder.transactionManager;
+        this.workPackageFactory = builder.workPackageFactory;
+        this.executorService = builder.executorService;
+        this.processingStatusUpdater = builder.processingStatusUpdater;
+        this.tokenClaimInterval = builder.tokenClaimInterval;
+        this.clock = builder.clock;
     }
 
     /**
@@ -602,6 +588,136 @@ class Coordinator {
         @Override
         public boolean covers(TrackingToken other) {
             return false;
+        }
+    }
+
+    /**
+     * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
+     * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
+     */
+    static class Builder {
+
+        private String name;
+        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        private TokenStore tokenStore;
+        private TransactionManager transactionManager;
+        private ScheduledExecutorService executorService;
+        private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
+        private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
+        private long tokenClaimInterval = 5000;
+        private Clock clock = GenericEventMessage.clock;
+
+        /**
+         * The name of the processor this service coordinates for.
+         *
+         * @param name the name of the processor this service coordinates for
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * The source of events this coordinator should schedule per work package.
+         *
+         * @param messageSource the source of events this coordinator should schedule per work package
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+            this.messageSource = messageSource;
+            return this;
+        }
+
+        /**
+         * The storage solution for {@link TrackingToken}s. Used to find and claim unclaimed segments for a processor.
+         *
+         * @param tokenStore the storage solution for {@link TrackingToken}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder tokenStore(TokenStore tokenStore) {
+            this.tokenStore = tokenStore;
+            return this;
+        }
+
+        /**
+         * A {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a transaction.
+         *
+         * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
+         *                           inside a transaction
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder transactionManager(TransactionManager transactionManager) {
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
+         *
+         * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Factory method to construct a {@link WorkPackage} with.
+         *
+         * @param workPackageFactory factory method to construct a {@link WorkPackage} with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder workPackageFactory(BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory) {
+            this.workPackageFactory = workPackageFactory;
+            return this;
+        }
+
+        /**
+         * Lambda used to update the processing {@link TrackerStatus} per {@link WorkPackage}
+         *
+         * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per {@link
+         *                                WorkPackage}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder processingStatusUpdater(BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
+            this.processingStatusUpdater = processingStatusUpdater;
+            return this;
+        }
+
+        /**
+         * The time in milliseconds this coordinator will wait to reattempt claiming segments for processing.  Defaults
+         * to {@code 5000}.
+         *
+         * @param tokenClaimInterval the time in milliseconds this coordinator will wait to reattempt claiming segments
+         *                           for processing
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder tokenClaimInterval(long tokenClaimInterval) {
+            this.tokenClaimInterval = tokenClaimInterval;
+            return this;
+        }
+
+        /**
+         * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
+         * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
+         *
+         * @param clock a {@link Clock} used for any time dependent operations in this {@link Coordinator}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link Coordinator} as specified through this Builder.
+         *
+         * @return a {@link Coordinator} as specified through this Builder
+         */
+        Coordinator build() {
+            return new Coordinator(this);
         }
     }
 }
