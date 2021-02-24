@@ -161,6 +161,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                                       .transactionManager(transactionManager)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
+                                      .eventFilter(this::mustIgnoreEvent)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .clock(clock)
@@ -369,6 +370,22 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      */
     private void statusUpdater(int segmentId, UnaryOperator<TrackerStatus> segmentUpdater) {
         processingStatus.computeIfPresent(segmentId, (s, ts) -> segmentUpdater.apply(ts));
+    }
+
+    /**
+     * Checks whether the given {@code eventMessage} should be ignored. Does so by validating whether the {@link
+     * EventHandlerInvoker} is able to handled the given message. If it cannot, it will double up by marking the given
+     * message as ignored at the {@link MessageMonitor}.
+     *
+     * @param eventMessage the {@link TrackedEventMessage} to validate whether it must be ignored
+     * @return {@code true} if the given {@code eventMessage} must be ignored, {@code false} otherwise
+     */
+    private boolean mustIgnoreEvent(TrackedEventMessage<?> eventMessage) {
+        if (!canHandleType(eventMessage.getPayloadType())) {
+            reportIgnored(eventMessage);
+            return true;
+        }
+        return false;
     }
 
     /**

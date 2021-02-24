@@ -18,9 +18,11 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -211,13 +213,54 @@ class PooledTrackingEventProcessorTest {
         });
     }
 
-    private void mockEventHandlerInvoker() {
-        when(stubEventHandler.canHandle(any(), any())).thenAnswer(
-                answer -> answer.getArgument(0, EventMessage.class)
-                                .getPayload()
-                                .equals(answer.getArgument(1, Segment.class).getSegmentId())
-        );
-        when(stubEventHandler.canHandleType(any())).thenReturn(true);
+    @Test
+    void testEventsWhichMustBeIgnoredAreNotHandled() {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+
+        when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
+        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
+        when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
+
+        EventMessage<Integer> eventToIgnoreOne = GenericEventMessage.asEventMessage(1337);
+        EventMessage<Integer> eventToIgnoreTwo = GenericEventMessage.asEventMessage(42);
+        EventMessage<Integer> eventToIgnoreThree = GenericEventMessage.asEventMessage(9001);
+        List<Integer> eventsToIgnore = new ArrayList<>();
+        eventsToIgnore.add(eventToIgnoreOne.getPayload());
+        eventsToIgnore.add(eventToIgnoreTwo.getPayload());
+        eventsToIgnore.add(eventToIgnoreThree.getPayload());
+
+        EventMessage<String> eventToHandleOne = GenericEventMessage.asEventMessage("some-text");
+        EventMessage<String> eventToHandleTwo = GenericEventMessage.asEventMessage("some-other-text");
+        List<String> eventsToHandle = new ArrayList<>();
+        eventsToHandle.add(eventToHandleOne.getPayload());
+        eventsToHandle.add(eventToHandleTwo.getPayload());
+
+        stubMessageSource.publishMessage(eventToIgnoreOne);
+        stubMessageSource.publishMessage(eventToIgnoreTwo);
+        stubMessageSource.publishMessage(eventToIgnoreThree);
+        stubMessageSource.publishMessage(eventToHandleOne);
+        stubMessageSource.publishMessage(eventToHandleTwo);
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        // noinspection unchecked
+        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        verify(stubEventHandler, timeout(500).times(2)).canHandle(eventCaptor.capture(), any());
+
+        List<EventMessage<?>> handledEvents = eventCaptor.getAllValues();
+        assertEquals(2, handledEvents.size());
+        for (EventMessage<?> handledEvent : handledEvents) {
+            //noinspection SuspiciousMethodCalls
+            assertTrue(eventsToHandle.contains(handledEvent.getPayload()));
+        }
+
+        List<TrackedEventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
+        assertEquals(3, ignoredEvents.size());
+        for (TrackedEventMessage<?> ignoredMessage : ignoredEvents) {
+            //noinspection SuspiciousMethodCalls
+            assertTrue(eventsToIgnore.contains(ignoredMessage.getPayload()));
+        }
     }
 
     @Test
@@ -637,6 +680,7 @@ class PooledTrackingEventProcessorTest {
     @Test
     void testProcessingStatusIsUpdatedWithTrackingToken() {
         testSubject.start();
+        mockEventHandlerInvoker();
 
         Stream.of(1, 2, 2, 4, 5)
               .map(GenericEventMessage::new)
@@ -647,6 +691,15 @@ class PooledTrackingEventProcessorTest {
                 () -> testSubject.processingStatus().values().forEach(
                         status -> assertEquals(5, status.getCurrentPosition().orElse(0))
                 )
+        );
+    }
+
+    private void mockEventHandlerInvoker() {
+        when(stubEventHandler.canHandleType(any())).thenReturn(true);
+        when(stubEventHandler.canHandle(any(), any())).thenAnswer(
+                answer -> answer.getArgument(0, EventMessage.class)
+                                .getPayload()
+                                .equals(answer.getArgument(1, Segment.class).getSegmentId())
         );
     }
 
@@ -773,6 +826,7 @@ class PooledTrackingEventProcessorTest {
 
         private List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
         private final boolean streamCallbackSupported;
+        private List<TrackedEventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
         private Runnable onAvailableCallback = null;
 
         private InMemoryMessageSource() {
@@ -824,6 +878,11 @@ class PooledTrackingEventProcessorTest {
                 }
 
                 @Override
+                public void ignoreMessage(TrackedEventMessage<?> ignoredEvent) {
+                    ignoredEvents.add(ignoredEvent);
+                }
+
+                @Override
                 public boolean setOnAvailableCallback(Runnable callback) {
                     onAvailableCallback = callback;
                     return streamCallbackSupported;
@@ -861,6 +920,10 @@ class PooledTrackingEventProcessorTest {
 
         private synchronized void clearAllMessages() {
             messages = new CopyOnWriteArrayList<>();
+        }
+
+        public List<TrackedEventMessage<?>> getIgnoredEvents() {
+            return ignoredEvents;
         }
 
         private void runOnAvailableCallback() {

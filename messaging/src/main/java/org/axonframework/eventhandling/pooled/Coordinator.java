@@ -62,6 +62,7 @@ class Coordinator {
     private final TransactionManager transactionManager;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
+    private final EventFilter eventFilter;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
     private final Clock clock;
@@ -89,6 +90,7 @@ class Coordinator {
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
         this.workPackageFactory = builder.workPackageFactory;
+        this.eventFilter = builder.eventFilter;
         this.executorService = builder.executorService;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -499,9 +501,15 @@ class Coordinator {
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
-                for (WorkPackage workPackage : workPackages.values()) {
-                    workPackage.scheduleEvent(event);
+
+                if (eventFilter.mustIgnoreEvent(event)) {
+                    eventStream.ignoreMessage(event);
+                } else {
+                    for (WorkPackage workPackage : workPackages.values()) {
+                        workPackage.scheduleEvent(event);
+                    }
                 }
+
                 lastScheduledToken = event.trackingToken();
             }
 
@@ -592,6 +600,22 @@ class Coordinator {
     }
 
     /**
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} must be ignored by all {@link
+     * WorkPackage}s this {@link Coordinator} could ever service.
+     */
+    @FunctionalInterface
+    interface EventFilter {
+
+        /**
+         * Checks whether the given {@code eventMessage} must be ignored.
+         *
+         * @param eventMessage the {@link TrackedEventMessage} to validate whether it must be ignored
+         * @return {@code true} if the given {@code eventMessage} must be ignored, {@code false} otherwise
+         */
+        boolean mustIgnoreEvent(TrackedEventMessage<?> eventMessage);
+    }
+
+    /**
      * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
      * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
      */
@@ -603,6 +627,7 @@ class Coordinator {
         private TransactionManager transactionManager;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
+        private EventFilter eventFilter;
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
         private Clock clock = GenericEventMessage.clock;
@@ -671,6 +696,19 @@ class Coordinator {
          */
         Builder workPackageFactory(BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory) {
             this.workPackageFactory = workPackageFactory;
+            return this;
+        }
+
+        /**
+         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all {@link
+         * WorkPackage}s.
+         *
+         * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
+         *                    all {@link WorkPackage}s
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder eventFilter(EventFilter eventFilter) {
+            this.eventFilter = eventFilter;
             return this;
         }
 
