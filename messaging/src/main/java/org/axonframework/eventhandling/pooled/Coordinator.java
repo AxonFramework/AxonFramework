@@ -167,7 +167,7 @@ class Coordinator {
     }
 
     /**
-     * Instructs this coordinator to release segment for the given {@code segmentId}. Furthermore, it will not be
+     * Instructs this coordinator to release the segment with the given {@code segmentId}. Furthermore, it will be
      * ignored for "re-claiming" for the specified {@code releaseDuration}.
      * <p>
      * If the coordinator is not actively processing {@code segmentId}, it will be disregarded for processing for the
