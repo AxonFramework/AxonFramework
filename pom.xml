@@ -82,9 +82,13 @@
             gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
             https://github.com/grpc/grpc-java/blob/master/SECURITY.md
         -->
-        <jakarta.el-api.version>4.0.0</jakarta.el-api.version>
-        <jakarta-el-impl.version>4.0.1</jakarta-el-impl.version>
-        <jakarta.validation-api.version>3.0.0</jakarta.validation-api.version>
+
+        <!-- Validation -->
+        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
+        <el-impl.version>2.2</el-impl.version>
+        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+        <hibernate-validator.version>6.2.0.Final</hibernate-validator.version>
+
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <javax.inject.version>1</javax.inject.version>
@@ -96,13 +100,11 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-validator.version>7.0.1.Final</hibernate-validator.version>
         <hibernate-entitymanager.version>5.4.28.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.10.21</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.8.0</commons-io.version>
         <javassist.version>3.27.0-GA</javassist.version>
-        <el-impl.version>2.2</el-impl.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
         <postgresql.version>42.2.19</postgresql.version>
@@ -286,11 +288,6 @@
                 <version>${hibernate-entitymanager.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.validator</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>c3p0</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
@@ -341,20 +338,26 @@
                 <version>${javax.cache-api.version}</version>
             </dependency>
 
+            <!-- Validation -->
             <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${jakarta.validation-api.version}</version>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax.validation-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.el</groupId>
-                <artifactId>jakarta.el-api</artifactId>
-                <version>${jakarta.el-api.version}</version>
+                <groupId>javax.el</groupId>
+                <artifactId>javax.el-api</artifactId>
+                <version>${javax.el-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>${jakarta-el-impl.version}</version>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>el-impl</artifactId>
+                <version>${el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
             </dependency>
 
             <dependency>

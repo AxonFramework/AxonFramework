@@ -16,18 +16,18 @@
 
 package org.axonframework.messaging.interceptors;
 
-import jakarta.validation.ConstraintViolation;
 import org.axonframework.common.AxonNonTransientException;
 
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.validation.ConstraintViolation;
 
 /**
- * Exception indicating that a Message has been refused due to a structural validation failure. Typically, resending the
- * same message will result in the exact same exception.
- * <p/>
- * Provides a set of JSR303 constraint violations that provide details about the exact failure of the message.
+ * Exception indicating that a {@link org.axonframework.messaging.Message} has been refused due to a structural
+ * validation failure. Typically, resending the same message will result in the exact same exception.
+ * <p>
+ * Provides a set of JSR303 {@link ConstraintViolation}s that provide details about the exact failure of the message.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -35,12 +35,13 @@ import java.util.TreeSet;
 public class JSR303ViolationException extends AxonNonTransientException {
 
     private static final long serialVersionUID = -1585918243998401966L;
+
     private final Set<ConstraintViolation<Object>> violations;
 
     /**
      * Initializes an exception with the given {@code message} and {@code violations}.
      *
-     * @param violations The violations that were detected
+     * @param violations the violations that were detected
      */
     public JSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
         super("One or more JSR303 constraints were violated: " + System.lineSeparator() + convert(violations));
@@ -57,18 +58,18 @@ public class JSR303ViolationException extends AxonNonTransientException {
     }
 
     /**
-     * Convert the violations to a human readable format, sorted by class and property e.g.
+     * Convert the violations to a human readable format, sorted by class and property e.g.:
      * <pre>
      *   property ab in class my.some.Klass may not be null
      *   property cd in class my.some.OtherClass length must be between 0 and 3
      *   property cd in class my.some.OtherClass must match "ab.*"
-     *
+     *   property notNull in class my.some.TheClass may not be null
      * </pre>
-     * <pre>property notNull in class my.some.TheClass may not be null</pre>
      *
      * @param violations set of violations that were detected when the exception was thrown
      * @return a human readable string describing the violations
      */
+    @SuppressWarnings("DuplicatedCode")
     protected static String convert(Set<ConstraintViolation<Object>> violations) {
         // sort the violations on bean class and property name
         Set<String> sortedViolations = new TreeSet<>();
