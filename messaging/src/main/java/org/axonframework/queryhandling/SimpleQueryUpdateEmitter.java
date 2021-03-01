@@ -129,13 +129,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             return true;
         };
 
-        // In the Sinks Many API, the complete signal will be propagated only if there are active subscriptions.
-        // As there's no `onDispose` signal, we must ensure the handlers map is only updated on an actually subscription
-        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux =
-                sink.asFlux()
-                    .doOnSubscribe(subscription -> updateHandlers.put(query, sinksManyWrapper))
-                    .doFinally(signalType -> removeHandler.run());
-
+        updateHandlers.put(query, sinksManyWrapper);
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
+                                                                        .doFinally(signalType -> removeHandler.run());
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
 
@@ -174,11 +170,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                             SubscriptionQueryUpdateMessage<U> update) {
-            updateHandlers.keySet()
-                          .stream()
-                          .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                          .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                    .ifPresent(uh -> doEmit(query, uh, update)));
+        updateHandlers.keySet()
+                      .stream()
+                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
     @SuppressWarnings("unchecked")
