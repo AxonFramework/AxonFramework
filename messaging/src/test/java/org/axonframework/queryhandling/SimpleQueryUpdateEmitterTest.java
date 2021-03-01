@@ -7,6 +7,8 @@ import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -39,6 +41,28 @@ class SimpleQueryUpdateEmitterTest {
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
                     .expectNext("some-awesome-text")
+                    .verifyComplete();
+    }
+
+    @Test
+    void testConcurrentUpdateEmitting() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
+
+        ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (int i = 0; i < 100; i++) {
+            executors.submit(() -> testSubject.emit(q -> true, "Update"));
+        }
+        executors.shutdown();
+        StepVerifier.create(registration.getUpdates())
+                    .expectNextCount(100)
+                    .then(() -> testSubject.complete(q -> true))
                     .verifyComplete();
     }
 

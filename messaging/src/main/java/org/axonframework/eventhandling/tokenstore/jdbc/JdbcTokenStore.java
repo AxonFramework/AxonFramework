@@ -51,7 +51,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
+import static org.axonframework.common.jdbc.JdbcUtils.executeUpdate;
+import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
+import static org.axonframework.common.jdbc.JdbcUtils.listResults;
 
 /**
  * Implementation of a token store that uses JDBC to save and load tokens. Before using this store make sure the
@@ -264,17 +268,12 @@ public class JdbcTokenStore implements TokenStore {
     public void releaseClaim(String processorName, int segment) {
         Connection connection = getConnection();
         try {
-            int[] result = executeUpdates(connection, e -> {
-                                              throw new JdbcException(
-                                                      format("Could not load token for processor [%s] and segment " + "[%d]",
-                                                             processorName, segment), e);
-                                          },
-                                          c -> releaseClaim(c, processorName, segment));
-            if (result[0] < 1) {
-                logger.warn(
-                        "Releasing claim of token {}/{} failed. It was owned by another node.", processorName, segment
-                );
-            }
+            executeUpdates(connection, e -> {
+                               throw new JdbcException(
+                                       format("Could not load token for processor [%s] and segment " + "[%d]",
+                                              processorName, segment), e);
+                           },
+                           c -> releaseClaim(c, processorName, segment));
         } finally {
             closeQuietly(connection);
         }

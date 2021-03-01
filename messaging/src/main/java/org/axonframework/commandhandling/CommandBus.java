@@ -48,9 +48,9 @@ public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMess
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name. When the
      * command is processed, one of the callback's methods is called, depending on the result of the processing.
      * <p/>
-     * When the method returns, the only guarantee provided by the CommandBus implementation is that the command has
-     * been successfully received. Implementations are highly recommended to perform basic validation of the command
-     * before returning from this method call.
+     * There are no guarantees about the successful completion of command dispatching or handling after the method
+     * returns. Implementations are highly recommended to perform basic validation of the command before returning
+     * from this method call.
      * <p/>
      * Implementations must start a UnitOfWork when before dispatching the command, and either commit or rollback after
      * a successful or failed execution, respectively.

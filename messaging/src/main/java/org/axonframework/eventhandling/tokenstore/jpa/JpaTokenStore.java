@@ -151,17 +151,12 @@ public class JpaTokenStore implements TokenStore {
     public void releaseClaim(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        int updates = entityManager.createQuery(
+        entityManager.createQuery(
                 "UPDATE TokenEntry te SET te.owner = null " +
                         "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                        "AND te.segment = :segment"
-        ).setParameter("processorName", processorName).setParameter("segment", segment).setParameter("owner", nodeId)
+                        "AND te.segment = :segment")
+                     .setParameter("processorName", processorName).setParameter("segment", segment).setParameter("owner", nodeId)
                                    .executeUpdate();
-
-        if (updates == 0) {
-            logger.warn("Releasing claim of token {}/{} failed. It was not owned by {}", processorName, segment,
-                        nodeId);
-        }
     }
 
     @Override
