@@ -34,9 +34,6 @@ import javax.validation.ValidatorFactory;
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a
  * {@link JSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be used as
  * a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
- * <p>
- * Note that this interceptor is javax compliant, not jakarta. For jakarta, please use the {@link
- * JakartaBeanValidationInterceptor} instead.
  *
  * @author Allard Buijze
  * @since 1.1

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.apache.bval.jsr.ApacheValidationProvider;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -46,10 +45,7 @@ class BeanValidationInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory validatorFactory = Validation.byProvider(ApacheValidationProvider.class)
-                                                      .configure()
-                                                      .buildValidatorFactory();
-        testSubject = new BeanValidationInterceptor<>(validatorFactory);
+        testSubject = new BeanValidationInterceptor<>();
 
         interceptorChain = mock(InterceptorChain.class);
         uow = new DefaultUnitOfWork<>(null);
