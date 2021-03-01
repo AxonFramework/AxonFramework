@@ -461,7 +461,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private void canIgnoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
                                 TrackedEventMessage<?> trackedEventMessage) {
         if (!canHandleType(trackedEventMessage.getPayloadType())) {
-            eventStream.ignoreMessage(trackedEventMessage);
+            eventStream.blacklist(trackedEventMessage);
         }
     }
 

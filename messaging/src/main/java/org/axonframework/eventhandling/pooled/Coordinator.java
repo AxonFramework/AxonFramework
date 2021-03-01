@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.eventhandling.WrappedToken.unwrapLowerBound;
@@ -70,6 +71,7 @@ class Coordinator {
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
+    private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -94,6 +96,7 @@ class Coordinator {
         this.executorService = builder.executorService;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
+        this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.clock = builder.clock;
     }
 
@@ -502,11 +505,17 @@ class Coordinator {
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
 
-                if (eventFilter.mustIgnoreEvent(event)) {
-                    eventStream.ignoreMessage(event);
+                if (!eventFilter.canHandleTypeOf(event)) {
+                    eventStream.blacklist(event);
+                    ignoredMessageHandler.accept(event);
                 } else {
+                    boolean anyScheduled = false;
                     for (WorkPackage workPackage : workPackages.values()) {
-                        workPackage.scheduleEvent(event);
+                        boolean scheduled = workPackage.scheduleEvent(event);
+                        anyScheduled = anyScheduled || scheduled;
+                    }
+                    if (!anyScheduled) {
+                        ignoredMessageHandler.accept(event);
                     }
                 }
 
@@ -607,12 +616,15 @@ class Coordinator {
     interface EventFilter {
 
         /**
-         * Checks whether the given {@code eventMessage} must be ignored.
+         * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
+         * event handlers this processor coordinates.
          *
-         * @param eventMessage the {@link TrackedEventMessage} to validate whether it must be ignored
-         * @return {@code true} if the given {@code eventMessage} must be ignored, {@code false} otherwise
+         * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
+         *
+         * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
+         * otherwise
          */
-        boolean mustIgnoreEvent(TrackedEventMessage<?> eventMessage);
+        boolean canHandleTypeOf(TrackedEventMessage<?> eventMessage);
     }
 
     /**
@@ -631,6 +643,8 @@ class Coordinator {
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
         private Clock clock = GenericEventMessage.clock;
+        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -670,6 +684,7 @@ class Coordinator {
          *
          * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
          *                           inside a transaction
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder transactionManager(TransactionManager transactionManager) {
@@ -677,10 +692,16 @@ class Coordinator {
             return this;
         }
 
+        public Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
+            this.ignoredMessageHandler = ignoredMessageHandler;
+            return this;
+        }
+
         /**
          * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
          *
          * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder executorService(ScheduledExecutorService executorService) {

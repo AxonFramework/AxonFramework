@@ -97,19 +97,8 @@ public interface BlockingStream<M> extends AutoCloseable {
      * information for instance to filter similar messages.
      *
      * @param ignoredMessage the message containing the payload to blacklist
-     * @deprecated in favor of {@link #ignoreMessage(Object)}
      */
-    @Deprecated
     default void blacklist(M ignoredMessage) {
-    }
-
-    /**
-     * Report the stream that a specific message was ignored by the consumer. Stream implementation can use this
-     * information for instance to filter similar messages.
-     *
-     * @param ignoredMessage the message containing the payload to ignore
-     */
-    default void ignoreMessage(M ignoredMessage) {
     }
 
     /**

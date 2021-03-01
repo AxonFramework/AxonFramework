@@ -118,7 +118,7 @@ public class EventBuffer implements TrackingEventStream {
      * This implementation removes events from the stream based on the payload type of the given message.
      */
     @Override
-    public void ignoreMessage(TrackedEventMessage<?> ignoredMessage) {
+    public void blacklist(TrackedEventMessage<?> ignoredMessage) {
         if (!disableIgnoredEventFiltering) {
             SerializedType serializedType;
             if (UnknownSerializedType.class.equals(ignoredMessage.getPayloadType())) {

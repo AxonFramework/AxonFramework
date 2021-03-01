@@ -72,7 +72,7 @@ class WorkPackage {
     private TrackingToken lastStoredToken;
     private long lastClaimExtension;
 
-    private final Queue<TrackedEventMessage<?>> events = new ConcurrentLinkedQueue<>();
+    private final Queue<ProcessingEntry> processingQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean scheduled = new AtomicBoolean();
     private final AtomicReference<CompletableFuture<Exception>> abortFlag = new AtomicReference<>();
     private final AtomicReference<Exception> abortException = new AtomicReference<>();
@@ -113,17 +113,32 @@ class WorkPackage {
      * PooledTrackingEventProcessor}
      *
      * @param event the event to schedule for work in this work package
+     *
+     * @return {@code true} if this work package scheduled the event for execution, otherwise {@code false}
      */
-    public void scheduleEvent(TrackedEventMessage<?> event) {
+    public boolean scheduleEvent(TrackedEventMessage<?> event) {
         if (lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken())) {
-            return;
+            return false;
         }
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
                      event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
-        events.add(event);
+        boolean canHandle = canHandle(event);
+        processingQueue.add(new ProcessingEntry(event, canHandle));
         lastDeliveredToken = event.trackingToken();
+        // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
+
+        return canHandle;
+    }
+
+    private boolean canHandle(TrackedEventMessage<?> event) {
+        try {
+            return eventFilter.canHandle(event, segment);
+        } catch (Exception e) {
+            abort(e);
+            return false;
+        }
     }
 
     /**
@@ -150,7 +165,7 @@ class WorkPackage {
 
             processEvents();
             scheduled.set(false);
-            if (!events.isEmpty() || abortFlag.get() != null) {
+            if (!processingQueue.isEmpty() || abortFlag.get() != null) {
                 logger.debug("Rescheduling Work Package [{}]-[{}] since there are events left.",
                              segment.getSegmentId(), name);
                 scheduleWorker();
@@ -160,17 +175,11 @@ class WorkPackage {
 
     private void processEvents() {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
-        while (!isAbortTriggered() && eventBatch.size() < batchSize && !events.isEmpty()) {
-            TrackedEventMessage<?> event = events.poll();
-            lastConsumedToken = WrappedToken.advance(lastConsumedToken, event.trackingToken());
-            try {
-                if (eventFilter.canHandle(event, segment)) {
-                    eventBatch.add(event);
-                }
-            } catch (Exception e) {
-                lastConsumedToken = lastStoredToken;
-                abort(e);
-                return;
+        while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
+            ProcessingEntry entry = processingQueue.poll();
+            lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.eventMessage().trackingToken());
+            if (entry.canHandle()) {
+                eventBatch.add(entry.eventMessage());
             }
         }
 
@@ -222,7 +231,7 @@ class WorkPackage {
      * been reached
      */
     public boolean hasRemainingCapacity() {
-        return this.events.size() < BUFFER_SIZE;
+        return this.processingQueue.size() < BUFFER_SIZE;
     }
 
     /**
@@ -511,6 +520,24 @@ class WorkPackage {
          */
         WorkPackage build() {
             return new WorkPackage(this);
+        }
+    }
+
+    private static class ProcessingEntry {
+        private final TrackedEventMessage<?> eventMessage;
+        private final boolean canHandle;
+
+        public ProcessingEntry(TrackedEventMessage<?> eventMessage, boolean canHandle) {
+            this.eventMessage = eventMessage;
+            this.canHandle = canHandle;
+        }
+
+        public TrackedEventMessage<?> eventMessage() {
+            return eventMessage;
+        }
+
+        public boolean canHandle() {
+            return canHandle;
         }
     }
 }
