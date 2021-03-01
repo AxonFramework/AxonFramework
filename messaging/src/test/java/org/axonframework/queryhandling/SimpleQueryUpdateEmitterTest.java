@@ -110,29 +110,4 @@ class SimpleQueryUpdateEmitterTest {
                     .expectNext("some-awesome-text")
                     .verifyTimeout(Duration.ofMillis(500));
     }
-
-    @Test
-    void testCancelingAllRegistrationsDoesNotCompleteFluxOfUpdates() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "some-payload",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class)
-        );
-
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
-                queryMessage,
-                1024
-        );
-
-        result.getUpdates().subscribe();
-        testSubject.emit(any -> true, "some-awesome-text");
-        testSubject.close();
-
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
-                    .expectNext("some-awesome-text")
-                    .verifyTimeout(Duration.ofMillis(500));
-    }
-
-
 }

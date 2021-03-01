@@ -260,8 +260,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * @deprecated in favor of using the {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
+     *
+     * @deprecated in favor of using the {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     @Override
@@ -341,8 +341,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      */
     @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
-        return shutdownLatch.initiateShutdown()
-                .thenAccept(unused->updateEmitter.close());
+        return shutdownLatch.initiateShutdown();
     }
 
     /**

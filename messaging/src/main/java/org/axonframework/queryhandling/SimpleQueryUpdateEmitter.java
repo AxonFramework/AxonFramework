@@ -35,11 +35,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
@@ -64,9 +62,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             new ConcurrentHashMap<>();
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
-
-    private final ConcurrentMap<String, Registration> registrations =
-            new ConcurrentHashMap<>();
 
     /**
      * Instantiate a {@link SimpleQueryUpdateEmitter} based on the fields contained in the {@link Builder}.
@@ -110,14 +105,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
         FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
+        updateHandlers.put(query, fluxSinkWrapper);
+
         Registration registration = () -> {
             updateHandlers.remove(query);
-            registrations.remove(query.getIdentifier());
             return true;
         };
-
-        updateHandlers.put(query, fluxSinkWrapper);
-        registrations.put(query.getIdentifier(), registration);
 
         return new UpdateHandlerRegistration<>(registration,
                                                processor.replay(updateBufferSize).autoConnect(),
@@ -128,34 +121,20 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
                                                                   int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
+        SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
 
-        //In new Sinks Many API, complete signal will be propagated only if there are active subscriptions
-        //There is no onDispose signal on a Sink
-        //So we must ensure that we update handlers map
-        //only if someone actually subscribes to message flux
-        AtomicReference<SinksManyWrapper<SubscriptionQueryUpdateMessage<U>>> sinkReference = new AtomicReference<>();
-
-        Runnable removeHandler = () -> {
-            updateHandlers.remove(query);
-            registrations.remove(query.getIdentifier());
-        };
-
+        Runnable removeHandler = () -> updateHandlers.remove(query);
         Registration registration = () -> {
             removeHandler.run();
             return true;
         };
 
-        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                                                                        .doOnSubscribe(subscription -> {
-                                                                            updateHandlers.put(query,
-                                                                                               sinkReference.get());
-                                                                            registrations.put(query.getIdentifier(), registration);
-                                                                        })
-                                                                        .doFinally(signalType -> removeHandler.run());
-
-        SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
-        sinkReference.set(sinksManyWrapper);
-
+        // In the Sinks Many API, the complete signal will be propagated only if there are active subscriptions.
+        // As there's no `onDispose` signal, we must ensure the handlers map is only updated on an actually subscription
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux =
+                sink.asFlux()
+                    .doOnSubscribe(subscription -> updateHandlers.put(query, sinksManyWrapper))
+                    .doFinally(signalType -> removeHandler.run());
 
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
@@ -295,12 +274,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        registrations.values().forEach(Registration::close);
-        return CompletableFuture.completedFuture(null);
     }
 
     /**

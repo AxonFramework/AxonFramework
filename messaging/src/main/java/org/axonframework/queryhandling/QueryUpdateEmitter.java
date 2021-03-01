@@ -20,7 +20,6 @@ import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 /**
@@ -190,10 +189,4 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
     default Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.emptySet();
     }
-
-    /**
-     * Closes all local running subscription queries.
-     *
-     */
-    CompletableFuture<Void> close();
 }
