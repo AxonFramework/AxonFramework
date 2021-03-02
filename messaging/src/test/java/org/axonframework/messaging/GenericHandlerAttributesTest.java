@@ -2,6 +2,7 @@ package org.axonframework.messaging;
 
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +69,7 @@ class GenericHandlerAttributesTest {
     }
 
     @Test
-    void testWithAttributes() {
+    void testMergedWith() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
         Map<String, Object> testWithAttributes = new HashMap<>();
@@ -83,5 +84,26 @@ class GenericHandlerAttributesTest {
         GenericHandlerAttributes result = testSubject.mergedWith(testWithAttributes);
 
         assertEquals(expectedAttributes, result.getAll());
+    }
+
+    @Test
+    void testMergedWithReturnsThis() {
+        Map<String, Object> testAttributes = new HashMap<>();
+        testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
+
+        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(testAttributes);
+
+        assertEquals(testSubject, testSubject.mergedWith(Collections.emptyMap()));
+    }
+
+    @Test
+    void testMergedWithReturnsAdditionalAttributes() {
+        Map<String, Object> testAttributes = new HashMap<>();
+        testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
+        GenericHandlerAttributes expected = new GenericHandlerAttributes(testAttributes);
+
+        GenericHandlerAttributes testSubject = new GenericHandlerAttributes();
+
+        assertEquals(expected, testSubject.mergedWith(testAttributes));
     }
 }
