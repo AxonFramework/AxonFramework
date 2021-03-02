@@ -72,7 +72,7 @@ class AnnotatedHandlerAttributesTest {
 
         assertFalse(testSubject.isEmpty());
         assertTrue(testSubject.contains(HandlerAttributes.ALLOW_REPLAY));
-        assertEquals(testSubject.get(HandlerAttributes.ALLOW_REPLAY), true);
+        assertEquals(true, testSubject.get(HandlerAttributes.ALLOW_REPLAY));
         assertEquals(expected, testSubject.getAll());
     }
 
@@ -122,7 +122,7 @@ class AnnotatedHandlerAttributesTest {
 
         assertFalse(testSubject.isEmpty());
         assertTrue(testSubject.contains(CustomCommandHandler.class.getSimpleName() + ".additionalAttribute"));
-        assertEquals((int) testSubject.get(CustomCommandHandler.class.getSimpleName() + ".additionalAttribute"), 42);
+        assertEquals(42, (int) testSubject.get(CustomCommandHandler.class.getSimpleName() + ".additionalAttribute"));
         assertEquals(expected, testSubject.getAll());
     }
 
