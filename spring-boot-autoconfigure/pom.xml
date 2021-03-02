@@ -127,6 +127,13 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

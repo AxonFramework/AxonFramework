@@ -80,7 +80,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
 
         List<String> response = queryBus
-                .scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
+                .scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
                 .map(Message::getPayload)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
