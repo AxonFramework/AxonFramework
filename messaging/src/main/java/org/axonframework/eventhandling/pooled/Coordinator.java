@@ -509,7 +509,7 @@ class Coordinator {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
 
                 if (!eventFilter.canHandleTypeOf(event)) {
-                    eventStream.blacklist(event);
+                    eventStream.skipMessagesWithPayloadTypeOf(event);
                     ignoredMessageHandler.accept(event);
                 } else {
                     boolean anyScheduled = false;

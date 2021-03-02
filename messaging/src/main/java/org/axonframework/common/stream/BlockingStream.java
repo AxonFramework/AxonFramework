@@ -94,11 +94,11 @@ public interface BlockingStream<M> extends AutoCloseable {
 
     /**
      * Report the stream that a specific message was ignored by the consumer. Stream implementation can use this
-     * information for instance to filter similar messages.
+     * information for instance to filter messages with the same type of payload.
      *
-     * @param ignoredMessage the message containing the payload to blacklist
+     * @param ignoredMessage the message containing the payload to exclude from the stream
      */
-    default void blacklist(M ignoredMessage) {
+    default void skipMessagesWithPayloadTypeOf(M ignoredMessage) {
     }
 
     /**

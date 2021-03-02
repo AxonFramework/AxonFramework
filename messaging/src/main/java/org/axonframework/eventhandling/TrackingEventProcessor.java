@@ -380,8 +380,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 if (canHandle(firstMessage, processingSegments)) {
                     batch.add(firstMessage);
                 } else {
-                    canIgnoreEvent(eventStream, firstMessage);
-                    reportIgnored(firstMessage);
+                    ignoreEvent(eventStream, firstMessage);
                 }
                 // besides checking batch sizes, we must also ensure that both the current message in the batch
                 // and the next (if present) allow for processing with a batch
@@ -393,8 +392,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     if (canHandle(trackedEventMessage, processingSegments)) {
                         batch.add(trackedEventMessage);
                     } else {
-                        canIgnoreEvent(eventStream, trackedEventMessage);
-                        reportIgnored(trackedEventMessage);
+                        ignoreEvent(eventStream, trackedEventMessage);
                     }
                 }
                 if (batch.isEmpty()) {
@@ -431,8 +429,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
                 } else {
-                    canIgnoreEvent(eventStream, trackedEventMessage);
-                    reportIgnored(trackedEventMessage);
+                    ignoreEvent(eventStream, trackedEventMessage);
                 }
             }
 
@@ -458,11 +455,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
     }
 
-    private void canIgnoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
-                                TrackedEventMessage<?> trackedEventMessage) {
+    private void ignoreEvent(BlockingStream<TrackedEventMessage<?>> eventStream,
+                             TrackedEventMessage<?> trackedEventMessage) {
         if (!canHandleType(trackedEventMessage.getPayloadType())) {
-            eventStream.blacklist(trackedEventMessage);
+            eventStream.skipMessagesWithPayloadTypeOf(trackedEventMessage);
         }
+        reportIgnored(trackedEventMessage);
     }
 
     /**

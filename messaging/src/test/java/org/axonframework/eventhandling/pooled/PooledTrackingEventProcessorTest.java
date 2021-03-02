@@ -899,7 +899,7 @@ class PooledTrackingEventProcessorTest {
                 }
 
                 @Override
-                public void blacklist(TrackedEventMessage<?> ignoredEvent) {
+                public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredEvent) {
                     ignoredEvents.add(ignoredEvent);
                 }
 
