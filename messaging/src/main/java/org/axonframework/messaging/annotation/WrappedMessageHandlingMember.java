@@ -91,22 +91,12 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean isA(String handlerType) {
-        return delegate.isA(handlerType);
-    }
-
-    @Override
     public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
         return delegate.hasAnnotation(annotationType);
     }
 
     @Override
-    public Optional<Map<String, Object>> attributes(String handlerType) {
-        return delegate.attributes(handlerType);
-    }
-
-    @Override
-    public Optional<Object> attribute(String attributeKey) {
+    public <R> Optional<R> attribute(String attributeKey) {
         return delegate.attribute(attributeKey);
     }
 }

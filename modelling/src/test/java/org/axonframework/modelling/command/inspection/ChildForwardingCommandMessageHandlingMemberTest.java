@@ -1,14 +1,12 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.annotation.HandlerAttributeDictionary;
+import org.axonframework.messaging.annotation.HandlerAttributes;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,39 +43,16 @@ class ChildForwardingCommandMessageHandlingMemberTest {
     }
 
     @Test
-    void testIsAIsDelegatedToChildHandler() {
-        when(childMember.isA("EventSourcingHandler")).thenReturn(false);
-
-        assertFalse(testSubject.isA("EventSourcingHandler"));
-
-        verify(childMember).isA("EventSourcingHandler");
-    }
-
-    @Test
-    void testAttributesIsDelegatedToChildHandler() {
-        Map<String, Object> creationPolicyAttributes = new HashMap<>();
-        creationPolicyAttributes.put("creationPolicy", AggregateCreationPolicy.NEVER);
-        when(childMember.attributes("CreationPolicy")).thenReturn(Optional.of(creationPolicyAttributes));
-
-        Optional<Map<String, Object>> result = testSubject.attributes("CreationPolicy");
-
-        assertTrue(result.isPresent());
-        assertEquals(creationPolicyAttributes, result.get());
-
-        verify(childMember).attributes("CreationPolicy");
-    }
-
-    @Test
     void testAttributeIsDelegatedToChildHandler() {
         AggregateCreationPolicy expectedPolicy = AggregateCreationPolicy.NEVER;
-        when(childMember.attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY))
+        when(childMember.attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY))
                 .thenReturn(Optional.of(expectedPolicy));
 
-        Optional<Object> result = testSubject.attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY);
+        Optional<Object> result = testSubject.attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY);
 
         assertTrue(result.isPresent());
         assertEquals(expectedPolicy, result.get());
 
-        verify(childMember).attribute(HandlerAttributeDictionary.AGGREGATE_CREATION_POLICY);
+        verify(childMember).attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY);
     }
 }

@@ -31,20 +31,8 @@ class WrappedMessageHandlingMemberTest {
     }
 
     @Test
-    void testIsA() {
-        testSubject.isA("EventHandler");
-        verify(mockedHandlingMember).isA("EventHandler");
-    }
-
-    @Test
-    void testAttributes() {
-        testSubject.attributes("CommandHandler");
-        verify(mockedHandlingMember).attributes("CommandHandler");
-    }
-
-    @Test
     void testAttribute() {
-        testSubject.attribute(HandlerAttributeDictionary.COMMAND_ROUTING_KEY);
-        verify(mockedHandlingMember).attribute(HandlerAttributeDictionary.COMMAND_ROUTING_KEY);
+        testSubject.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
+        verify(mockedHandlingMember).attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
     }
 }

@@ -84,7 +84,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
             }
         }
         this.payloadType = supportedPayloadType;
-        this.attributes = HandlerAttributesUtils.handlerAttributes(executable);
+        this.attributes = new AnnotatedHandlerAttributes(executable);
     }
 
     @Override
@@ -175,24 +175,13 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
-    public boolean isA(String handlerType) {
-        return attributes.containsAttributesFor(handlerType);
-    }
-
-    @Override
     public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
         return AnnotationUtils.findAnnotationAttributes(executable, annotationType);
     }
 
     @Override
-    public Optional<Map<String, Object>> attributes(String handlerType) {
-        return attributes.containsAttributesFor(handlerType)
-                ? Optional.ofNullable(attributes.get(handlerType)) : Optional.empty();
-    }
-
-    @Override
-    public Optional<Object> attribute(String attributeKey) {
-        return Optional.ofNullable(attributes.getAllPrefixed().get(attributeKey));
+    public <R> Optional<R> attribute(String attributeKey) {
+        return Optional.ofNullable(attributes.get(attributeKey));
     }
 
     @SuppressWarnings("unchecked")

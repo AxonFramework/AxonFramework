@@ -144,22 +144,12 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public boolean isA(String handlerType) {
-            return false;
-        }
-
-        @Override
         public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
             return Optional.empty();
         }
 
         @Override
-        public Optional<Map<String, Object>> attributes(String handlerType) {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Object> attribute(String attributeKey) {
+        public <R> Optional<R> attribute(String attributeKey) {
             return Optional.empty();
         }
     }
