@@ -121,21 +121,17 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
                                                                   int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
-
-        Runnable removeHandler = () -> updateHandlers.remove(query);
-        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                                                                        .doOnCancel(removeHandler)
-                                                                        .doOnTerminate(removeHandler);
-
         SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
 
-        updateHandlers.put(query, sinksManyWrapper);
-
+        Runnable removeHandler = () -> updateHandlers.remove(query);
         Registration registration = () -> {
             removeHandler.run();
             return true;
         };
 
+        updateHandlers.put(query, sinksManyWrapper);
+        Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
+                                                                        .doFinally(signalType -> removeHandler.run());
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
 
@@ -174,11 +170,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                             SubscriptionQueryUpdateMessage<U> update) {
-            updateHandlers.keySet()
-                          .stream()
-                          .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                          .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                    .ifPresent(uh -> doEmit(query, uh, update)));
+        updateHandlers.keySet()
+                      .stream()
+                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
     @SuppressWarnings("unchecked")
