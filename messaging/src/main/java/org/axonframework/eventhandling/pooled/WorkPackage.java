@@ -113,8 +113,7 @@ class WorkPackage {
      * PooledTrackingEventProcessor}
      *
      * @param event the event to schedule for work in this work package
-     *
-     * @return {@code true} if this work package scheduled the event for execution, otherwise {@code false}
+     * @return {@code true} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}
      */
     public boolean scheduleEvent(TrackedEventMessage<?> event) {
         if (lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken())) {
@@ -523,7 +522,13 @@ class WorkPackage {
         }
     }
 
+    /**
+     * Container of a {@link TrackedEventMessage} and {@code boolean} whether the given {@code eventMessage} can be
+     * handled in this package. The combination constitutes to a processing entry the {@link WorkPackage} should
+     * ingest.
+     */
     private static class ProcessingEntry {
+
         private final TrackedEventMessage<?> eventMessage;
         private final boolean canHandle;
 

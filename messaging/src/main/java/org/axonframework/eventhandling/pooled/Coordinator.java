@@ -64,6 +64,7 @@ class Coordinator {
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
     private final EventFilter eventFilter;
+    private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
     private final Clock clock;
@@ -71,7 +72,6 @@ class Coordinator {
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
-    private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -91,12 +91,12 @@ class Coordinator {
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.executorService = builder.executorService;
         this.workPackageFactory = builder.workPackageFactory;
         this.eventFilter = builder.eventFilter;
-        this.executorService = builder.executorService;
+        this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
-        this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.clock = builder.clock;
     }
 
@@ -488,7 +488,10 @@ class Coordinator {
 
         /**
          * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the {@link
-         * StreamableMessageSource}, schedule these events to all the {@code WorkPackage}s.
+         * StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule these
+         * events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually handle
+         * the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of the
+         * {@code WorkPackage}s can handle the event it will be ignored.
          * <p>
          * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this {@link
          * Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
@@ -609,7 +612,7 @@ class Coordinator {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} must be ignored by all {@link
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all {@link
      * WorkPackage}s this {@link Coordinator} could ever service.
      */
     @FunctionalInterface
@@ -620,7 +623,6 @@ class Coordinator {
          * event handlers this processor coordinates.
          *
          * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
-         *
          * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
          * otherwise
          */
@@ -640,11 +642,11 @@ class Coordinator {
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
         private EventFilter eventFilter;
+        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
+        };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
         private Clock clock = GenericEventMessage.clock;
-        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
-        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -684,7 +686,6 @@ class Coordinator {
          *
          * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
          *                           inside a transaction
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder transactionManager(TransactionManager transactionManager) {
@@ -692,16 +693,10 @@ class Coordinator {
             return this;
         }
 
-        public Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
-            this.ignoredMessageHandler = ignoredMessageHandler;
-            return this;
-        }
-
         /**
          * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
          *
          * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder executorService(ScheduledExecutorService executorService) {
@@ -730,6 +725,20 @@ class Coordinator {
          */
         Builder eventFilter(EventFilter eventFilter) {
             this.eventFilter = eventFilter;
+            return this;
+        }
+
+
+        /**
+         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all {@link
+         * WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
+         *
+         * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
+         *                              this {@link Coordinator} controls
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
+            this.ignoredMessageHandler = ignoredMessageHandler;
             return this;
         }
 
