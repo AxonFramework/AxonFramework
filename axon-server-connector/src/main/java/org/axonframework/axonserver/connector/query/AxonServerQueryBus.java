@@ -260,8 +260,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * @deprecated in favor of using the {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
+     *
+     * @deprecated in favor of using the {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     @Override
