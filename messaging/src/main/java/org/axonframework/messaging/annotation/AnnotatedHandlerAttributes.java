@@ -1,10 +1,10 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.AbstractHandlerAttributes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,9 +25,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWit
  * @author Steven van Beelen
  * @since 4.5
  */
-public class AnnotatedHandlerAttributes implements HandlerAttributes {
-
-    private final Map<String, Object> attributes;
+public class AnnotatedHandlerAttributes extends AbstractHandlerAttributes {
 
     /**
      * Create an {@link AnnotatedHandlerAttributes} containing all attributes of annotations (meta-)annotated with
@@ -40,7 +38,11 @@ public class AnnotatedHandlerAttributes implements HandlerAttributes {
      * @param element the {@link AnnotatedElement} to extract handler attributes for
      */
     public AnnotatedHandlerAttributes(AnnotatedElement element) {
-        attributes = new HashMap<>();
+        super(constructHandlerAttributesFor(element));
+    }
+
+    private static Map<String, Object> constructHandlerAttributesFor(AnnotatedElement element) {
+        final Map<String, Object> attributes = new HashMap<>();
         Set<Class<? extends Annotation>> visitedAnnotations = new HashSet<>();
 
         for (Annotation annotation : element.getAnnotations()) {
@@ -60,31 +62,11 @@ public class AnnotatedHandlerAttributes implements HandlerAttributes {
                 }
             }
         }
+        return attributes;
     }
 
     private static String prefixedKey(String handlerType, String attributeName) {
         return handlerType + "." + attributeName;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <R> R get(String attributeKey) {
-        return (R) attributes.get(attributeKey);
-    }
-
-    @Override
-    public Map<String, Object> getAll() {
-        return Collections.unmodifiableMap(attributes);
-    }
-
-    @Override
-    public boolean contains(String attributeKey) {
-        return attributes.containsKey(attributeKey);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return attributes.isEmpty();
     }
 
     @Override

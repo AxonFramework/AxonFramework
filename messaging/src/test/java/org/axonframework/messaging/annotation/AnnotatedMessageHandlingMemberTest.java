@@ -3,6 +3,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.HandlerAttributes;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

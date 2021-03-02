@@ -1,4 +1,4 @@
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging;
 
 import org.junit.jupiter.api.*;
 

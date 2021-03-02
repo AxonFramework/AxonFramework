@@ -1,11 +1,12 @@
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging;
 
 import java.util.Map;
 
 /**
- * Container for message handler attributes. Typically used by {@link MessageHandlingMember} implementations. Stores
- * handler attributes in a {@link Map} of {@link String} to {@link Object}. Some default keys used by {@link
- * HandlerAttributes} implementations, like {@link #MESSAGE_TYPE} can be used to {@link #get(String)} entries.
+ * Container for message handler attributes. Typically used by {@link org.axonframework.messaging.annotation.MessageHandlingMember}
+ * implementations. Stores handler attributes in a {@link Map} of {@link String} to {@link Object}. Some default keys
+ * used by {@link HandlerAttributes} implementations, like {@link #MESSAGE_TYPE} can be used to {@link #get(String)}
+ * entries.
  *
  * @author Steven van Beelen
  * @since 4.5

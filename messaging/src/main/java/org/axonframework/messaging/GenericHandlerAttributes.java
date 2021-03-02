@@ -1,4 +1,4 @@
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging;
 
 
 import java.util.Collections;
@@ -12,9 +12,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class GenericHandlerAttributes implements HandlerAttributes {
-
-    private final Map<String, Object> attributes;
+public class GenericHandlerAttributes extends AbstractHandlerAttributes {
 
     /**
      * Constructs an empty {@link GenericHandlerAttributes}.
@@ -29,28 +27,7 @@ public class GenericHandlerAttributes implements HandlerAttributes {
      * @param attributes the attributes for this {@link HandlerAttributes} implementation
      */
     public GenericHandlerAttributes(Map<String, Object> attributes) {
-        this.attributes = attributes;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <R> R get(String attributeKey) {
-        return (R) attributes.get(attributeKey);
-    }
-
-    @Override
-    public Map<String, Object> getAll() {
-        return Collections.unmodifiableMap(attributes);
-    }
-
-    @Override
-    public boolean contains(String attributeKey) {
-        return attributes.containsKey(attributeKey);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return attributes.isEmpty();
+        super(attributes);
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 

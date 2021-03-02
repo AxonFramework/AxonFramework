@@ -11,8 +11,7 @@ import java.lang.annotation.Target;
  * As such it carries specific attributes which are important to the {@code MessageHandlingMember} in an annotation
  * driven Axon application.
  * <p>
- * These attributes can be extracted into a {@link HandlerAttributes} objects through the {@link
- * HandlerAttributesUtils}.
+ * These attributes can be extracted into an {@link AnnotatedHandlerAttributes} objects through its constructor.
  *
  * @author Steven van Beelen
  * @since 4.5

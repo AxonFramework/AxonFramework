@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
