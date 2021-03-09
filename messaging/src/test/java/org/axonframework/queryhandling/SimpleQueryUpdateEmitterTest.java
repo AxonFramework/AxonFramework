@@ -67,6 +67,30 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
+    void testConcurrentUpdateEmitting_WithBackpressure() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, SubscriptionQueryBackpressure.defaultBackpressure(), 128);
+
+        ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (int i = 0; i < 100; i++) {
+            executors.submit(() -> {
+                testSubject.emit(q -> true, "Update");
+            });
+        }
+        executors.shutdown();
+        StepVerifier.create(registration.getUpdates())
+                    .expectNextCount(100)
+                    .then(() -> testSubject.complete(q -> true))
+                    .verifyComplete();
+    }
+
+    @Test
     void testCancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
