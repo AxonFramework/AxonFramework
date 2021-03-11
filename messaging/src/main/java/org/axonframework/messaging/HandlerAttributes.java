@@ -114,4 +114,15 @@ public interface HandlerAttributes {
      * @return {@code true} if there are no attributes present, {@code false} otherwise
      */
     boolean isEmpty();
+
+    /**
+     * Returns a {@link HandlerAttributes}, merging the attributes in {@code this} instance with the given {@code
+     * attributes}. If {@code this} and {@code other} have identical entries, the values from {@code other} will take
+     * precedence.
+     *
+     * @param other the {@link HandlerAttributes} to group with {@code this} instance's attributes
+     * @return a {@link HandlerAttributes} combining {@code this} instance's attributes and the given {@code other}
+     * attributes
+     */
+    HandlerAttributes mergeWith(HandlerAttributes other);
 }

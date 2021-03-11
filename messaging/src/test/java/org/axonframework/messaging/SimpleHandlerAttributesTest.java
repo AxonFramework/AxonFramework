@@ -2,25 +2,24 @@ package org.axonframework.messaging;
 
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link GenericHandlerAttributes}.
+ * Test class validating the {@link SimpleHandlerAttributes}.
  *
  * @author Steven van Beelen
  */
-class GenericHandlerAttributesTest {
+class SimpleHandlerAttributesTest {
 
     private static final String ATTRIBUTE_KEY = "some-handler.some-attribute";
     private static final int ATTRIBUTE = 42;
 
     @Test
     void testConstructEmptyHandlerAttributes() {
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes();
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes();
 
         assertTrue(testSubject.isEmpty());
     }
@@ -30,7 +29,7 @@ class GenericHandlerAttributesTest {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(testAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
         assertFalse(testSubject.isEmpty());
         assertTrue(testSubject.contains(ATTRIBUTE_KEY));
@@ -42,7 +41,7 @@ class GenericHandlerAttributesTest {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(testAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
         assertEquals(ATTRIBUTE, (int) testSubject.get(ATTRIBUTE_KEY));
     }
@@ -52,7 +51,7 @@ class GenericHandlerAttributesTest {
         Map<String, Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(expectedAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(expectedAttributes);
 
         assertEquals(expectedAttributes, testSubject.getAll());
     }
@@ -62,7 +61,7 @@ class GenericHandlerAttributesTest {
         Map<String, Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(expectedAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(expectedAttributes);
 
         assertTrue(testSubject.contains(ATTRIBUTE_KEY));
         assertFalse(testSubject.contains("some-other-handler"));
@@ -72,16 +71,17 @@ class GenericHandlerAttributesTest {
     void testMergedWith() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
-        Map<String, Object> testWithAttributes = new HashMap<>();
-        testWithAttributes.put("some-other-key", 1729);
+        Map<String, Object> testOtherAttributes = new HashMap<>();
+        testOtherAttributes.put("some-other-key", 1729);
+        SimpleHandlerAttributes testOther = new SimpleHandlerAttributes(testOtherAttributes);
 
         Map<String, Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
         expectedAttributes.put("some-other-key", 1729);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(testAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
-        GenericHandlerAttributes result = testSubject.mergedWith(testWithAttributes);
+        HandlerAttributes result = testSubject.mergeWith(testOther);
 
         assertEquals(expectedAttributes, result.getAll());
     }
@@ -91,19 +91,21 @@ class GenericHandlerAttributesTest {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes(testAttributes);
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
-        assertEquals(testSubject, testSubject.mergedWith(Collections.emptyMap()));
+        assertEquals(testSubject, testSubject.mergeWith(new SimpleHandlerAttributes()));
     }
 
     @Test
     void testMergedWithReturnsAdditionalAttributes() {
-        Map<String, Object> testAttributes = new HashMap<>();
-        testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
-        GenericHandlerAttributes expected = new GenericHandlerAttributes(testAttributes);
+        Map<String, Object> testOtherAttributes = new HashMap<>();
+        testOtherAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
+        SimpleHandlerAttributes testOther = new SimpleHandlerAttributes(testOtherAttributes);
 
-        GenericHandlerAttributes testSubject = new GenericHandlerAttributes();
+        SimpleHandlerAttributes expected = new SimpleHandlerAttributes(testOtherAttributes);
 
-        assertEquals(expected, testSubject.mergedWith(testAttributes));
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes();
+
+        assertEquals(expected, testSubject.mergeWith(testOther));
     }
 }

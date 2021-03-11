@@ -1,7 +1,8 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.AbstractHandlerAttributes;
+import org.axonframework.messaging.HandlerAttributes;
+import org.axonframework.messaging.SimpleHandlerAttributes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -25,20 +26,25 @@ import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWit
  * @author Steven van Beelen
  * @since 4.5
  */
-public class AnnotatedHandlerAttributes extends AbstractHandlerAttributes {
+public class AnnotatedHandlerAttributes implements HandlerAttributes {
+
+    private final AnnotatedElement annotatedElement;
+    private final SimpleHandlerAttributes simpleHandlerAttributes;
 
     /**
      * Create an {@link AnnotatedHandlerAttributes} containing all attributes of annotations (meta-)annotated with
-     * {@link HasHandlerAttributes} on the given {@code element}. Each attribute will be stored based on the simple name
-     * of the annotation (meta-)annotated with {@code HasHandlerAttributes} combined with the attribute name.
+     * {@link HasHandlerAttributes} on the given {@code annotatedElement}. Each attribute will be stored based on the
+     * simple name of the annotation (meta-)annotated with {@code HasHandlerAttributes} combined with the attribute
+     * name.
      * <p>
      * The handler annotation name and attribute name are separated by dots. This leads to a key format of {@code
      * "[handlerType].[attributeName]"}.
      *
-     * @param element the {@link AnnotatedElement} to extract handler attributes for
+     * @param annotatedElement the {@link AnnotatedElement} to extract handler attributes for
      */
-    public AnnotatedHandlerAttributes(AnnotatedElement element) {
-        super(constructHandlerAttributesFor(element));
+    public AnnotatedHandlerAttributes(AnnotatedElement annotatedElement) {
+        this.annotatedElement = annotatedElement;
+        this.simpleHandlerAttributes = new SimpleHandlerAttributes(constructHandlerAttributesFor(annotatedElement));
     }
 
     private static Map<String, Object> constructHandlerAttributesFor(AnnotatedElement element) {
@@ -70,6 +76,31 @@ public class AnnotatedHandlerAttributes extends AbstractHandlerAttributes {
     }
 
     @Override
+    public <R> R get(String attributeKey) {
+        return simpleHandlerAttributes.get(attributeKey);
+    }
+
+    @Override
+    public Map<String, Object> getAll() {
+        return simpleHandlerAttributes.getAll();
+    }
+
+    @Override
+    public boolean contains(String attributeKey) {
+        return simpleHandlerAttributes.contains(attributeKey);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return simpleHandlerAttributes.isEmpty();
+    }
+
+    @Override
+    public HandlerAttributes mergeWith(HandlerAttributes other) {
+        return simpleHandlerAttributes.mergeWith(other);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -78,18 +109,21 @@ public class AnnotatedHandlerAttributes extends AbstractHandlerAttributes {
             return false;
         }
         AnnotatedHandlerAttributes that = (AnnotatedHandlerAttributes) o;
-        return Objects.equals(attributes, that.attributes);
+        return Objects.equals(annotatedElement, that.annotatedElement) && Objects.equals(
+                simpleHandlerAttributes,
+                that.simpleHandlerAttributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(attributes);
+        return Objects.hash(annotatedElement, simpleHandlerAttributes);
     }
 
     @Override
     public String toString() {
         return "AnnotatedHandlerAttributes{" +
-                "attributes=" + attributes +
+                "annotatedElement=" + annotatedElement +
+                ", simpleHandlerAttributes=" + simpleHandlerAttributes +
                 '}';
     }
 }
