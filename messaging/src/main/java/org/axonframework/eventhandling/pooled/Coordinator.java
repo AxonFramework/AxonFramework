@@ -9,6 +9,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -19,7 +20,9 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +36,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-import static org.axonframework.eventhandling.WrappedToken.unwrapLowerBound;
+import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
  * Coordinator for the {@link PooledTrackingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
@@ -107,7 +110,7 @@ class Coordinator {
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
         if (newState.wasStarted()) {
-            logger.info("Starting Coordinator for processor [{}].", name);
+            logger.debug("Starting Coordinator for processor [{}].", name);
             try {
                 CoordinationTask task = new CoordinationTask();
                 executorService.submit(task);
@@ -131,7 +134,7 @@ class Coordinator {
      * @return a CompletableFuture that completes when the shutdown process is finished
      */
     public CompletableFuture<Void> stop() {
-        logger.info("Stopping coordinator for processor [{}].", name);
+        logger.debug("Stopping coordinator for processor [{}].", name);
         CompletableFuture<Void> handle = runState.updateAndGet(RunState::attemptStop)
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
@@ -183,7 +186,7 @@ class Coordinator {
      * @see StreamingEventProcessor#releaseSegment(int, long, TimeUnit)
      */
     public void releaseUntil(int segmentId, Instant releaseDuration) {
-        logger.debug("Coordinator [{}] will release segment [{}] for processing until {}.",
+        logger.debug("Processor [{}] will release segment [{}] for processing until {}.",
                      name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
         scheduleCoordinator();
@@ -317,7 +320,7 @@ class Coordinator {
                 logger.debug("Stopped processing. Runnable flag is false.\n"
                                      + "Releasing claims and closing the event stream for processor [{}].", name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
-                IOUtils.closeQuietly(eventStream);
+                closeQuietly(eventStream);
                 return;
             }
 
@@ -328,7 +331,7 @@ class Coordinator {
 
             if (!coordinatorTasks.isEmpty()) {
                 CoordinatorTask task = coordinatorTasks.remove();
-                logger.debug("Coordinator [{}] found a task [{}] to run.", name, task.getDescription());
+                logger.debug("Processor [{}] found a task [{}] to run.", name, task.getDescription());
                 task.run()
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
@@ -342,11 +345,22 @@ class Coordinator {
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
 
                 try {
-                    TrackingToken newWorkToken = startNewWorkPackages();
-                    openStream(constructLowerBound(newWorkToken));
+                    Map<Segment, TrackingToken> newSegments = claimNewSegments();
+                    TrackingToken streamStartPosition = lastScheduledToken;
+                    for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
+                        Segment segment = entry.getKey();
+                        TrackingToken token = entry.getValue();
+                        streamStartPosition = streamStartPosition == null ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
+                        logger.debug("Processor [{}] claimed {} for processing.", name, segment);
+                        workPackages.computeIfAbsent(segment.getSegmentId(), k -> workPackageFactory.apply(segment, token));
+                    }
+                    if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
+                        logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                    }
+                    ensureOpenStream(streamStartPosition);
                 } catch (Exception e) {
-                    logger.warn("Exception occurred while Coordinator [{}] starting work packages"
-                                        + " and opening the event stream.", name);
+                    logger.warn("Exception occurred while Processor [{}] started work packages"
+                                        + " and opened the event stream.", name, e);
                     abortAndScheduleRetry(e);
                     return;
                 }
@@ -355,8 +369,11 @@ class Coordinator {
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
                 logger.debug("No Segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
+                lastScheduledToken = NoToken.INSTANCE;
+                closeQuietly(eventStream);
+                eventStream = null;
                 processingGate.set(false);
-                scheduleCoordinationTask(tokenClaimInterval);
+                scheduleDelayedCoordinationTask(tokenClaimInterval);
                 return;
             }
 
@@ -383,7 +400,7 @@ class Coordinator {
                     scheduleCoordinationTask(100);
                 }
             } catch (Exception e) {
-                logger.warn("Exception occurred while Coordinator [{}] was coordinating the work packages.", name);
+                logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
                 abortAndScheduleRetry(e);
             }
         }
@@ -397,88 +414,60 @@ class Coordinator {
         }
 
         /**
-         * Start new {@link WorkPackage}s for each segment this task is able to claim for its processor.
+         * Attempts to claim new segments.
          *
-         * @return the lower bound {@link TrackingToken} based on all the newly fetched segments
+         * @return a Map with each Token for newly claimed segment
          */
-        private TrackingToken startNewWorkPackages() {
-            return transactionManager.fetchInTransaction(() -> {
-                int[] segments = tokenStore.fetchSegments(name);
-                // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
-                int[] unClaimedSegments = Arrays.stream(segments)
-                                                .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                                .toArray();
-                TrackingToken lowerBound = NoToken.INSTANCE;
-                for (int segmentId : unClaimedSegments) {
-                    if (isSegmentBlockedFromClaim(segmentId)) {
-                        logger.debug("Segment [{}] is still marked to not be claimed by this coordinator.", segmentId);
-                        processingStatusUpdater.accept(segmentId, u -> null);
-                        continue;
-                    }
+        private Map<Segment, TrackingToken> claimNewSegments() {
+            Map<Segment, TrackingToken> newClaims = new HashMap<>();
+            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
 
-                    try {
-                        TrackingToken token = tokenStore.fetchToken(name, segmentId);
-                        logger.debug("Token for segment [{}] on processor [{}] claimed: [{}]. Preparing work package.",
-                                     segmentId, name, token);
-                        Segment segment = Segment.computeSegment(segmentId, segments);
-                        WorkPackage workPackage =
-                                workPackages.computeIfAbsent(segmentId, k -> workPackageFactory.apply(segment, token));
-                        lowerBound = lowerBound == null
-                                ? null
-                                : lowerBound.lowerBound(unwrapLowerBound(workPackage.lastDeliveredToken()));
-                        releasesDeadlines.remove(segmentId);
-                    } catch (UnableToClaimTokenException e) {
-                        processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Unable to claim the token for segment[{}]. It is owned by another process.",
-                                     segmentId);
-                    }
+            // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
+            int[] unClaimedSegments = Arrays.stream(segments)
+                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
+                                            .toArray();
+
+            for (int segmentId : unClaimedSegments) {
+                if (isSegmentBlockedFromClaim(segmentId)) {
+                    logger.debug("Segment {} is still marked to not be claimed by processor [{}].", segmentId, name);
+                    processingStatusUpdater.accept(segmentId, u -> null);
+                    continue;
                 }
-                return lowerBound;
-            });
+
+                try {
+                    TrackingToken token = transactionManager.fetchInTransaction(
+                            () -> tokenStore.fetchToken(name, segmentId)
+                    );
+                    newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                } catch (UnableToClaimTokenException e) {
+                    processingStatusUpdater.accept(segmentId, u -> null);
+                    logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
+                                 segmentId);
+                }
+            }
+
+            return newClaims;
         }
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.getOrDefault(segmentId, BIG_BANG)
-                                    .isAfter(clock.instant());
+            return releasesDeadlines.compute(segmentId, (i, current) -> current == null || clock.instant().isAfter(current) ? null : current) != null;
         }
 
-        /**
-         * Constructs the lower bound position out of the given {@code trackingToken} and the {@code
-         * lastScheduledToken}. When the given token is a {@link NoToken}, invoking {@link
-         * NoToken#lowerBound(TrackingToken)} ensure {@code lastScheduledToken} will be returned. When it is not a
-         * {@code NoToken}, the lower bound operation on the {@code lastScheduledToken} will be the result.
-         * <p>
-         * This approach ensures that the {@link TrackingToken#lowerBound(TrackingToken)} operations is performed on
-         * tokens for which the lower bound can be calculated between them.
-         *
-         * @param trackingToken the {@link TrackingToken} compared with the {@code lastScheduledToken} to calculate the
-         *                      lower bound
-         * @return the lower bound position from the given {@code trackingToken} and the {@code lastScheduledToken}
-         */
-        private TrackingToken constructLowerBound(TrackingToken trackingToken) {
-            return NoToken.INSTANCE.equals(trackingToken)
-                    ? trackingToken.lowerBound(lastScheduledToken)
-                    : lastScheduledToken.lowerBound(trackingToken);
-        }
-
-        private void openStream(TrackingToken trackingToken) {
-            if (NoToken.INSTANCE.equals(trackingToken)) {
-                logger.debug("Coordinator [{}] is not in charge of any segments. Will retry in {} milliseconds.",
-                             name, tokenClaimInterval);
-                return;
-            }
-
+        private void ensureOpenStream(TrackingToken trackingToken) {
             // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
-            if (eventStream != null) {
-                logger.debug("Coordinator [{}] will close the current stream, to be reopened with token [{}].",
-                             name, trackingToken);
-                eventStream.close();
+            if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
+                logger.debug("Processor [{}] will close the current stream.", name);
+                closeQuietly(eventStream);
                 eventStream = null;
+                lastScheduledToken = NoToken.INSTANCE;
             }
 
-            eventStream = messageSource.openStream(trackingToken);
-            logger.debug("Coordinator [{}] opened stream with tracking token [{}].", name, trackingToken);
-            availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+            if (eventStream == null && !workPackages.isEmpty()) {
+                eventStream = messageSource.openStream(trackingToken);
+                logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
+                availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                lastScheduledToken = trackingToken;
+            }
         }
 
         private boolean isSpaceAvailable() {
@@ -502,7 +491,7 @@ class Coordinator {
          * @throws InterruptedException from {@link StreamableMessageSource#openStream(TrackingToken)}
          */
         private void coordinateWorkPackages() throws InterruptedException {
-            logger.debug("Coordinator [{}] is coordinating work to all its work packages.", name);
+            logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
             for (int fetched = 0;
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
@@ -560,7 +549,7 @@ class Coordinator {
         }
 
         private void abortAndScheduleRetry(Exception cause) {
-            logger.warn("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff, cause);
+            logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).thenRun(
@@ -573,18 +562,21 @@ class Coordinator {
                         coordinationTask.set(task);
                     }
             );
-            IOUtils.closeQuietly(eventStream);
+            closeQuietly(eventStream);
         }
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
             return work.abort(cause)
-                       .thenAccept(e -> logger.debug(
-                               "Worker [{}] has aborted. Releasing claim.", work.segment().getSegmentId(), e
-                       ))
-                       .thenRun(() -> workPackages.remove(work.segment().getSegmentId(), work))
+                       .thenRun(() -> {
+                           if (workPackages.remove(work.segment().getSegmentId(), work)) {
+                               logger.debug("Processor [{}] released claim on {}.", name, work.segment());
+                           }
+                       })
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
                        ));
+
+
         }
     }
 

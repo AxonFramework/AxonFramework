@@ -73,7 +73,7 @@ class SplitTask extends CoordinatorTask {
      */
     @Override
     protected CompletableFuture<Boolean> task() {
-        logger.debug("Coordinator [{}] will perform split instruction for segment [{}].", name, segmentId);
+        logger.debug("Processor [{}] will perform split instruction for segment {}.", name, segmentId);
         // Remove WorkPackage so that the CoordinatorTask cannot find it to release its claim upon impending abortion.
         WorkPackage workPackage = workPackages.remove(segmentId);
         return workPackage != null ? abortAndSplit(workPackage) : fetchSegmentAndSplit(segmentId);
@@ -102,8 +102,8 @@ class SplitTask extends CoordinatorTask {
                     splitStatuses[1].getTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
             );
             tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
-            logger.info("Coordinator [{}] successfully split segment [{}].",
-                        name, splitStatuses[0].getSegment().getSegmentId());
+            logger.info("Processor [{}] successfully split {} into {} and {}.",
+                        name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment());
         });
         return true;
     }

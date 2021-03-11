@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.annotation.*;
 
+import javax.sound.midi.Track;
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
 import java.util.Objects;
@@ -55,6 +56,20 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
             @JsonProperty("lowerSegmentToken") TrackingToken lowerSegmentToken,
             @JsonProperty("upperSegmentToken") TrackingToken upperSegmentToken) {
         this(lowerSegmentToken, upperSegmentToken, false, false);
+    }
+
+    /**
+     * Create a merged token using the given {@code lowerSegmentToken} and {@code upperSegmentToken}.
+     *
+     * @param lowerSegmentToken the token of the half with the lower segment ID
+     * @param upperSegmentToken the token of the half with the higher segment ID
+     * @return a token representing the position of the merger of both tokens
+     */
+    public static TrackingToken merged(TrackingToken lowerSegmentToken, TrackingToken upperSegmentToken) {
+        if (Objects.equals(lowerSegmentToken, upperSegmentToken)) {
+            return lowerSegmentToken;
+        }
+        return new MergedTrackingToken(lowerSegmentToken, upperSegmentToken);
     }
 
     /**
@@ -138,6 +153,10 @@ public class MergedTrackingToken implements TrackingToken, Serializable, Wrapped
 
     @Override
     public boolean covers(TrackingToken other) {
+        if (lowerSegmentToken == null || upperSegmentToken == null) {
+            return other == null;
+        }
+
         return lowerSegmentToken.covers(other)
                 && upperSegmentToken.covers(other);
     }

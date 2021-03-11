@@ -76,7 +76,7 @@ class MergeTask extends CoordinatorTask {
      */
     @Override
     protected CompletableFuture<Boolean> task() {
-        logger.debug("Coordinator [{}] will perform merge instruction for segment [{}].", name, segmentId);
+        logger.debug("Processor [{}] will perform merge instruction for segment {}.", name, segmentId);
 
         int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
@@ -84,7 +84,7 @@ class MergeTask extends CoordinatorTask {
         Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
 
         if (segmentId == thatSegmentId) {
-            logger.debug("Coordinator [{}] cannot merge segment [{}]. "
+            logger.debug("Processor [{}] cannot merge segment {}. "
                                  + "A merge request can only be fulfilled if there is more than one segment.",
                          name, segmentId);
             return CompletableFuture.completedFuture(false);
@@ -118,21 +118,21 @@ class MergeTask extends CoordinatorTask {
         int tokenToDelete = mergedSegment.getSegmentId() == thisSegment.getSegmentId()
                 ? thatSegment.getSegmentId() : thisSegment.getSegmentId();
         TrackingToken mergedToken = thatSegment.getSegmentId() < thisSegment.getSegmentId()
-                ? new MergedTrackingToken(thatToken, thisToken)
-                : new MergedTrackingToken(thisToken, thatToken);
+                ? MergedTrackingToken.merged(thatToken, thisToken)
+                : MergedTrackingToken.merged(thisToken, thatToken);
 
         transactionManager.executeInTransaction(() -> {
             tokenStore.deleteToken(name, tokenToDelete);
             tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
             tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
         });
-        logger.info("Coordinator [{}] successfully merged segment [{}] with segment [{}].",
-                    name, thisSegment.getSegmentId(), thatSegment.getSegmentId());
+        logger.info("Processor [{}] successfully merged {} with {} into {}.",
+                    name, thisSegment, thatSegment, mergedSegment);
         return true;
     }
 
     @Override
     String getDescription() {
-        return "Merge Task for segment [" + segmentId + "]";
+        return "Merge Task for segment " + segmentId;
     }
 }

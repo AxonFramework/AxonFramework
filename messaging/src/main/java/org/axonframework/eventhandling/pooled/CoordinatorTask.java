@@ -68,7 +68,7 @@ abstract class CoordinatorTask {
      */
     void complete(Boolean outcome, Throwable throwable) {
         if (throwable != null) {
-            logger.warn("Coordinator [{}] failed to run instruction - {}.", name, getDescription(), throwable);
+            logger.warn("Processor [{}] failed to run instruction - {}.", name, getDescription(), throwable);
             result.completeExceptionally(throwable);
         } else {
             result.complete(outcome);

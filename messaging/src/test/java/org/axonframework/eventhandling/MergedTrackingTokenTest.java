@@ -148,6 +148,28 @@ class MergedTrackingTokenTest {
         assertEquals(MergedTrackingToken.mergePosition(testSubject).getAsLong(), 5);
     }
 
+    @Test
+    void testCoversWithNestedMergedNullTokens() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(null, null), null);
+
+        assertFalse(testSubject.covers(token(0)));
+        assertTrue(testSubject.covers(null));
+
+        GlobalSequenceTrackingToken advance = token(1);
+        assertSame(advance, testSubject.advancedTo(advance));
+    }
+
+    @Test
+    void testCoversWithNullTokens() {
+        MergedTrackingToken testSubject = new MergedTrackingToken(null, null);
+
+        assertFalse(testSubject.covers(token(0)));
+        assertTrue(testSubject.covers(null));
+
+        GlobalSequenceTrackingToken advance = token(1);
+        assertSame(advance, testSubject.advancedTo(advance));
+    }
+
     private GlobalSequenceTrackingToken token(int sequence) {
         return new GlobalSequenceTrackingToken(sequence);
     }
