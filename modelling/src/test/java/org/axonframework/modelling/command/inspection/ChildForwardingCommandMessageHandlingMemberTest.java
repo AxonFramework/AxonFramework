@@ -1,5 +1,6 @@
 package org.axonframework.modelling.command.inspection;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -40,6 +41,15 @@ class ChildForwardingCommandMessageHandlingMemberTest {
         assertTrue(testSubject.canHandleMessageType(CommandMessage.class));
 
         verify(childMember).canHandleMessageType(CommandMessage.class);
+    }
+
+    @Test
+    void testHasAnnotationIsDelegatedToChildHandler() {
+        when(childMember.hasAnnotation(any())).thenReturn(true);
+
+        assertTrue(testSubject.hasAnnotation(CommandHandler.class));
+
+        verify(childMember).hasAnnotation(CommandHandler.class);
     }
 
     @Test
