@@ -787,7 +787,7 @@ class EventProcessingModuleTest {
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledTrackingEventProcessor(
-                          testName, (config, builder) -> builder.maxCapacity(testCapacity)
+                          testName, (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledTrackingEventHandler());
         Configuration config = configurer.start();

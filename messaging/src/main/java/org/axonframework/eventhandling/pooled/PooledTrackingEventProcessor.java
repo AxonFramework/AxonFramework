@@ -83,7 +83,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final long tokenClaimInterval;
-    private final int maxCapacity;
+    private final int maxClaimedSegments;
     private final long claimExtensionThreshold;
     private final int batchSize;
     private final Clock clock;
@@ -149,7 +149,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
-        this.maxCapacity = builder.maxCapacity;
+        this.maxClaimedSegments = builder.maxClaimedSegments;
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
@@ -159,6 +159,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                                       .messageSource(messageSource)
                                       .tokenStore(tokenStore)
                                       .transactionManager(transactionManager)
+                                      .maxClaimedSegments(maxClaimedSegments)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
                                       .eventFilter(event -> canHandleType(event.getPayloadType()))
@@ -313,12 +314,12 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     /**
      * {@inheritDoc}
      * <p>
-     * The maximum capacity of the {@link PooledTrackingEventProcessor} defaults to {@link Short#MAX_VALUE}. If
-     * required, this value can be adjusted through the {@link Builder#maxCapacity(int)} method.
+     * The maximum capacity of the {@link PooledTrackingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
+     * required, this value can be adjusted through the {@link Builder#maxClaimedSegments(int)} method.
      */
     @Override
     public int maxCapacity() {
-        return maxCapacity;
+        return maxClaimedSegments;
     }
 
     @Override
@@ -383,10 +384,10 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
      *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
-     *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
+     *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
+     *     <li>The {@code maxClaimedSegments} (used by {@link #maxCapacity()}) defaults to {@value Short#MAX_VALUE}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
@@ -413,7 +414,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
         private long tokenClaimInterval = 5000;
-        private int maxCapacity = Short.MAX_VALUE;
+        private int maxClaimedSegments = Short.MAX_VALUE;
         private long claimExtensionThreshold = 5000;
         private int batchSize = 1;
         private Clock clock = GenericEventMessage.clock;
@@ -570,15 +571,16 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Defines the maximum segment capacity of this {@link StreamingEventProcessor}, as will be returned by the
-         * {@link #maxCapacity()}  method. Defaults to {@link Short#MAX_VALUE}.
+         * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim.
+         * Defaults to {@value Short#MAX_VALUE}.
          *
-         * @param maxCapacity the maximum segment capacity of this {@link StreamingEventProcessor}
+         * @param maxClaimedSegments the maximum number fo claimed segments for this {@link StreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder maxCapacity(int maxCapacity) {
-            assertStrictPositive(maxCapacity, "Max capacity should be a higher valuer than zero");
-            this.maxCapacity = maxCapacity;
+        public Builder maxClaimedSegments(int maxClaimedSegments) {
+            assertStrictPositive(maxClaimedSegments, "Max claimed segments should be a higher valuer than zero");
+            this.maxClaimedSegments = maxClaimedSegments;
             return this;
         }
 

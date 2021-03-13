@@ -693,7 +693,7 @@ class PooledTrackingEventProcessorTest {
     @Test
     void testMaxCapacityReturnsConfiguredCapacity() {
         int expectedMaxCapacity = 500;
-        setTestSubject(createTestSubject(builder -> builder.maxCapacity(expectedMaxCapacity)));
+        setTestSubject(createTestSubject(builder -> builder.maxClaimedSegments(expectedMaxCapacity)));
 
         assertEquals(expectedMaxCapacity, testSubject.maxCapacity());
     }
@@ -820,8 +820,8 @@ class PooledTrackingEventProcessorTest {
     void testBuildWithZeroOrNegativeMaxCapacityThrowsAxonConfigurationException() {
         PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxCapacity(0));
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxCapacity(-1));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(0));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(-1));
     }
 
     @Test

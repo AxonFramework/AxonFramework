@@ -1,6 +1,5 @@
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -57,8 +56,6 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
 class Coordinator {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    // not sure if this is accurate, but it's as close as we can get
-    private static final Instant BIG_BANG = Instant.MIN;
 
     private final String name;
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
@@ -75,6 +72,7 @@ class Coordinator {
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
+    private final int maxClaimedSegments;
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -101,6 +99,7 @@ class Coordinator {
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.clock = builder.clock;
+        this.maxClaimedSegments = builder.maxClaimedSegments;
     }
 
     /**
@@ -427,24 +426,26 @@ class Coordinator {
                                             .filter(segmentId -> !workPackages.containsKey(segmentId))
                                             .toArray();
 
+            int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
+
             for (int segmentId : unClaimedSegments) {
                 if (isSegmentBlockedFromClaim(segmentId)) {
                     logger.debug("Segment {} is still marked to not be claimed by processor [{}].", segmentId, name);
                     processingStatusUpdater.accept(segmentId, u -> null);
                     continue;
                 }
-
-                try {
-                    TrackingToken token = transactionManager.fetchInTransaction(
-                            () -> tokenStore.fetchToken(name, segmentId)
-                    );
-                    newClaims.put(Segment.computeSegment(segmentId, segments), token);
-                } catch (UnableToClaimTokenException e) {
-                    processingStatusUpdater.accept(segmentId, u -> null);
-                    logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
-                                 segmentId);
-                }
-            }
+                if (newClaims.size() < maxSegmentsToClaim) {
+                    try {
+                        TrackingToken token = transactionManager.fetchInTransaction(
+                                () -> tokenStore.fetchToken(name, segmentId)
+                        );
+                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                    } catch (UnableToClaimTokenException e) {
+                        processingStatusUpdater.accept(segmentId, u -> null);
+                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
+                                     segmentId);
+                    }
+                }            }
 
             return newClaims;
         }
@@ -639,6 +640,7 @@ class Coordinator {
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
         private Clock clock = GenericEventMessage.clock;
+        private int maxClaimedSegments;
 
         /**
          * The name of the processor this service coordinates for.
@@ -756,6 +758,17 @@ class Coordinator {
          */
         Builder tokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of segments this instance may claim.
+         * @param maxClaimedSegments   the maximum number of segments this instance may claim
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder maxClaimedSegments(int maxClaimedSegments) {
+            this.maxClaimedSegments = maxClaimedSegments;
             return this;
         }
 
