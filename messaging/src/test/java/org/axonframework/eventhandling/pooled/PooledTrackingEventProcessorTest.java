@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -125,6 +126,20 @@ class PooledTrackingEventProcessorTest {
         testSubject.shutDown();
         coordinatorExecutor.shutdown();
         workerExecutor.shutdown();
+    }
+
+    @Test
+    void testStartContinuesWhenTokenInitializationFails() {
+        InMemoryTokenStore spy = spy(tokenStore);
+        setTestSubject(createTestSubject(b -> {
+            return b.tokenStore(spy);
+        }));
+
+        doThrow(new RuntimeException("Simulated failure")).doCallRealMethod().when(spy).initializeTokenSegments(any(), anyInt(), any());
+
+        testSubject.start();
+
+        assertTrue(testSubject.isRunning());
     }
 
     @Test

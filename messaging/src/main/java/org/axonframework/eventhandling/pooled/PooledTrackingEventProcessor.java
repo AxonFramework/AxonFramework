@@ -63,7 +63,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * org.axonframework.eventhandling.TrackingEventProcessor}.
  * <p>
  * If no {@link TrackingToken}s are present for this processor, the {@code PooledTrackingEventProcessor} will initialize
- * them in a given segment count. By default it will create {@code 32} segments, which can be configured through the
+ * them in a given segment count. By default it will create {@code 16} segments, which can be configured through the
  * {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
@@ -101,7 +101,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
      *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
-     *     <li>The {@code initialSegmentCount} defaults to {@code 32}.</li>
+     *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
@@ -174,14 +174,23 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     @Override
     public void start() {
         logger.info("Starting PooledTrackingEventProcessor [{}].", name);
+        initializeTokenStore();
+        coordinator.start();
+    }
+
+    private void initializeTokenStore() {
         transactionManager.executeInTransaction(() -> {
-            int[] ints = tokenStore.fetchSegments(name);
-            if (ints == null || ints.length == 0) {
-                logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
-                tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
+            int[] segments = tokenStore.fetchSegments(name);
+            try {
+                if (segments == null || segments.length == 0) {
+                    logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
+                    tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
+                }
+            } catch (Exception e) {
+                logger.info("Error while initializing the Token Store. " +
+                                    "This may simply indicate concurrent attempts to initialize", e);
             }
         });
-        coordinator.start();
     }
 
     @Override
@@ -410,7 +419,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                 n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + n + "]"));
         private Function<String, ScheduledExecutorService> workerExecutorBuilder =
                 n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + n + "]"));
-        private int initialSegmentCount = 32;
+        private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
         private long tokenClaimInterval = 5000;
@@ -526,7 +535,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         /**
          * Sets the initial segment count used to create segments on start up. Only used whenever there are not segments
          * stored in the configured {@link TokenStore} upon start up of this {@link StreamingEventProcessor}. The given
-         * value should at least be {@code 1}. Defaults to {@code 32}.
+         * value should at least be {@code 1}. Defaults to {@code 16}.
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
