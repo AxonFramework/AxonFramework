@@ -17,14 +17,9 @@ public class SimpleHandlerAttributes implements HandlerAttributes {
     private final Map<String, Object> attributes;
 
     /**
-     * Constructs an empty {@link SimpleHandlerAttributes}.
-     */
-    public SimpleHandlerAttributes() {
-        this(Collections.emptyMap());
-    }
-
-    /**
-     * Constructs a {@link SimpleHandlerAttributes} using the given {@code attributes}.
+     * Constructs a {@link SimpleHandlerAttributes} using the given {@code attributes}. Changes made on the given {@code
+     * attributes} after construction of a {@code SimpleHandlerAttributes} are not reflected by the constructed
+     * instance.
      *
      * @param attributes the attributes for this {@link HandlerAttributes} implementation
      */
@@ -54,7 +49,7 @@ public class SimpleHandlerAttributes implements HandlerAttributes {
     }
 
     @Override
-    public HandlerAttributes mergeWith(HandlerAttributes other) {
+    public HandlerAttributes mergedWith(HandlerAttributes other) {
         if (other.isEmpty()) {
             return this;
         }

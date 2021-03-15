@@ -124,5 +124,5 @@ public interface HandlerAttributes {
      * @return a {@link HandlerAttributes} combining {@code this} instance's attributes and the given {@code other}
      * attributes
      */
-    HandlerAttributes mergeWith(HandlerAttributes other);
+    HandlerAttributes mergedWith(HandlerAttributes other);
 }

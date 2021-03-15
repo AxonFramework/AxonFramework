@@ -2,6 +2,7 @@ package org.axonframework.messaging;
 
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +20,7 @@ class SimpleHandlerAttributesTest {
 
     @Test
     void testConstructEmptyHandlerAttributes() {
-        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes();
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(Collections.emptyMap());
 
         assertTrue(testSubject.isEmpty());
     }
@@ -81,7 +82,7 @@ class SimpleHandlerAttributesTest {
 
         SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
-        HandlerAttributes result = testSubject.mergeWith(testOther);
+        HandlerAttributes result = testSubject.mergedWith(testOther);
 
         assertEquals(expectedAttributes, result.getAll());
     }
@@ -93,7 +94,7 @@ class SimpleHandlerAttributesTest {
 
         SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(testAttributes);
 
-        assertEquals(testSubject, testSubject.mergeWith(new SimpleHandlerAttributes()));
+        assertEquals(testSubject, testSubject.mergedWith(new SimpleHandlerAttributes(Collections.emptyMap())));
     }
 
     @Test
@@ -104,8 +105,8 @@ class SimpleHandlerAttributesTest {
 
         SimpleHandlerAttributes expected = new SimpleHandlerAttributes(testOtherAttributes);
 
-        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes();
+        SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(Collections.emptyMap());
 
-        assertEquals(expected, testSubject.mergeWith(testOther));
+        assertEquals(expected, testSubject.mergedWith(testOther));
     }
 }

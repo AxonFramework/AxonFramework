@@ -96,8 +96,8 @@ public class AnnotatedHandlerAttributes implements HandlerAttributes {
     }
 
     @Override
-    public HandlerAttributes mergeWith(HandlerAttributes other) {
-        return simpleHandlerAttributes.mergeWith(other);
+    public HandlerAttributes mergedWith(HandlerAttributes other) {
+        return simpleHandlerAttributes.mergedWith(other);
     }
 
     @Override
