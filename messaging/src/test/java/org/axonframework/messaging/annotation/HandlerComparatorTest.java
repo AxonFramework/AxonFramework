@@ -17,8 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -28,9 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HandlerComparatorTest {
 
@@ -142,13 +139,18 @@ class HandlerComparatorTest {
         }
 
         @Override
+        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+            return false;
+        }
+
+        @Override
         public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
             return Optional.empty();
         }
 
         @Override
-        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-            return false;
+        public <R> Optional<R> attribute(String attributeKey) {
+            return Optional.empty();
         }
     }
 }

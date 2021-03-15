@@ -16,17 +16,22 @@
 
 package org.axonframework.eventhandling;
 
-import java.lang.annotation.*;
+import org.axonframework.messaging.annotation.HasHandlerAttributes;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Annotation marking a Handler (or class) as being capable of handling replays, or not, depending on the value
- * passed.
+ * Annotation marking a Handler (or class) as being capable of handling replays, or not, depending on the value passed.
  * <p>
- * When placed on the type (class) level, the setting applies to all handlers that don't explicitly override it
- * on the method level.
+ * When placed on the type (class) level, the setting applies to all handlers that don't explicitly override it on the
+ * method level.
  * <p>
- * Marking methods as not allowing replay will not change the routing of a message (i.e. will not invoke another
- * handler method). Messages that would otherwise be handled by such handler are simply ignored.
+ * Marking methods as not allowing replay will not change the routing of a message (i.e. will not invoke another handler
+ * method). Messages that would otherwise be handled by such handler are simply ignored.
  *
  * @author Allard Buijze
  * @since 3.2
@@ -34,6 +39,7 @@ import java.lang.annotation.*;
 @Documented
 @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
+@HasHandlerAttributes
 public @interface AllowReplay {
 
     /**

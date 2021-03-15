@@ -1,5 +1,6 @@
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 
@@ -28,5 +29,11 @@ class WrappedMessageHandlingMemberTest {
     void testCanHandleMessageType() {
         testSubject.canHandleMessageType(QueryMessage.class);
         verify(mockedHandlingMember).canHandleMessageType(QueryMessage.class);
+    }
+
+    @Test
+    void testAttribute() {
+        testSubject.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
+        verify(mockedHandlingMember).attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
     }
 }

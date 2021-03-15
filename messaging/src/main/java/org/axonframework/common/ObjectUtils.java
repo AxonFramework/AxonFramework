@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 public abstract class ObjectUtils {
 
     private ObjectUtils() {
-        // prevent instantiation
+        // Utility class
     }
 
     /**

@@ -27,8 +27,6 @@ import java.util.function.Predicate;
  */
 public abstract class BuilderUtils {
 
-    private static final String EMPTY_STRING = "";
-
     private BuilderUtils() {
         // Utility class
     }
@@ -116,6 +114,6 @@ public abstract class BuilderUtils {
      * @param exceptionMessage the message for the exception.
      */
     public static void assertNonEmpty(String string, String exceptionMessage) {
-        assertThat(string, s -> Objects.nonNull(s) && !EMPTY_STRING.equals(s), exceptionMessage);
+        assertThat(string, StringUtils::nonEmptyOrNull, exceptionMessage);
     }
 }
