@@ -135,7 +135,8 @@ class WorkPackage {
         try {
             return eventFilter.canHandle(event, segment);
         } catch (Exception e) {
-            logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. Aborting Work Package...",
+            logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
+                                + "Aborting Work Package...",
                         segment.getSegmentId(), name, e);
             abort(e);
             return false;
@@ -197,7 +198,7 @@ class WorkPackage {
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } catch (Exception e) {
                 logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
-                             segment.getSegmentId(), name, e);
+                            segment.getSegmentId(), name, e);
                 abort(e);
             }
         } else {
@@ -289,7 +290,7 @@ class WorkPackage {
     public CompletableFuture<Exception> abort(Exception abortReason) {
         if (abortReason != null) {
             logger.debug("Abort request received for Work Package [{}]-[{}].",
-                        name, segment.getSegmentId(), abortReason);
+                         name, segment.getSegmentId(), abortReason);
             segmentStatusUpdater.accept(
                     status -> {
                         if (status != null) {

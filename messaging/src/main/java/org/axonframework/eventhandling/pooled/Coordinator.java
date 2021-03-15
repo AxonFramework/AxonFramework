@@ -68,11 +68,11 @@ class Coordinator {
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
     private final Clock clock;
+    private final int maxClaimedSegments;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
-    private final int maxClaimedSegments;
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
@@ -109,7 +109,7 @@ class Coordinator {
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
         if (newState.wasStarted()) {
-            logger.debug("Starting Coordinator for processor [{}].", name);
+            logger.debug("Starting Coordinator for Processor [{}].", name);
             try {
                 CoordinationTask task = new CoordinationTask();
                 executorService.submit(task);
@@ -133,7 +133,7 @@ class Coordinator {
      * @return a CompletableFuture that completes when the shutdown process is finished
      */
     public CompletableFuture<Void> stop() {
-        logger.debug("Stopping coordinator for processor [{}].", name);
+        logger.debug("Stopping Coordinator for Processor [{}].", name);
         CompletableFuture<Void> handle = runState.updateAndGet(RunState::attemptStop)
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
@@ -185,7 +185,7 @@ class Coordinator {
      * @see StreamingEventProcessor#releaseSegment(int, long, TimeUnit)
      */
     public void releaseUntil(int segmentId, Instant releaseDuration) {
-        logger.debug("Processor [{}] will release segment [{}] for processing until {}.",
+        logger.debug("Processor [{}] will release segment {} for processing until {}.",
                      name, segmentId, releaseDuration);
         releasesDeadlines.put(segmentId, releaseDuration);
         scheduleCoordinator();
@@ -317,7 +317,7 @@ class Coordinator {
 
             if (!runState.get().isRunning()) {
                 logger.debug("Stopped processing. Runnable flag is false.\n"
-                                     + "Releasing claims and closing the event stream for processor [{}].", name);
+                                     + "Releasing claims and closing the event stream for Processor [{}].", name);
                 abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
                 closeQuietly(eventStream);
                 return;
@@ -330,7 +330,7 @@ class Coordinator {
 
             if (!coordinatorTasks.isEmpty()) {
                 CoordinatorTask task = coordinatorTasks.remove();
-                logger.debug("Processor [{}] found a task [{}] to run.", name, task.getDescription());
+                logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
                 task.run()
                     .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
                     .whenComplete((result, exception) -> {
@@ -349,9 +349,11 @@ class Coordinator {
                     for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
                         Segment segment = entry.getKey();
                         TrackingToken token = entry.getValue();
-                        streamStartPosition = streamStartPosition == null ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
+                        streamStartPosition = streamStartPosition == null
+                                ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
                         logger.debug("Processor [{}] claimed {} for processing.", name, segment);
-                        workPackages.computeIfAbsent(segment.getSegmentId(), k -> workPackageFactory.apply(segment, token));
+                        workPackages.computeIfAbsent(segment.getSegmentId(),
+                                                     wp -> workPackageFactory.apply(segment, token));
                     }
                     if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
                         logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
@@ -367,7 +369,7 @@ class Coordinator {
 
             if (workPackages.isEmpty()) {
                 // We didn't start any work packages. Retry later.
-                logger.debug("No Segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
+                logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
                 lastScheduledToken = NoToken.INSTANCE;
                 closeQuietly(eventStream);
                 eventStream = null;
@@ -415,7 +417,7 @@ class Coordinator {
         /**
          * Attempts to claim new segments.
          *
-         * @return a Map with each Token for newly claimed segment
+         * @return a Map with each {@link TrackingToken} for newly claimed {@link Segment}
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
@@ -430,7 +432,7 @@ class Coordinator {
 
             for (int segmentId : unClaimedSegments) {
                 if (isSegmentBlockedFromClaim(segmentId)) {
-                    logger.debug("Segment {} is still marked to not be claimed by processor [{}].", segmentId, name);
+                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
                     processingStatusUpdater.accept(segmentId, u -> null);
                     continue;
                 }
@@ -445,17 +447,22 @@ class Coordinator {
                         logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
                                      segmentId);
                     }
-                }            }
+                }
+            }
 
             return newClaims;
         }
 
         private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.compute(segmentId, (i, current) -> current == null || clock.instant().isAfter(current) ? null : current) != null;
+            return releasesDeadlines.compute(
+                    segmentId,
+                    (i, current) -> current == null || clock.instant().isAfter(current) ? null : current
+            ) != null;
         }
 
         private void ensureOpenStream(TrackingToken trackingToken) {
-            // We already had a stream, thus we started new WorkPackages. Close old stream to start at the new position.
+            // We already had a stream and the token differs the last scheduled token, thus we started new WorkPackages.
+            // Close old stream to start at the new position, if we have Work Packages left.
             if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
                 logger.debug("Processor [{}] will close the current stream.", name);
                 closeQuietly(eventStream);
@@ -466,7 +473,8 @@ class Coordinator {
             if (eventStream == null && !workPackages.isEmpty()) {
                 eventStream = messageSource.openStream(trackingToken);
                 logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                availabilityCallbackSupported = eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                availabilityCallbackSupported =
+                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;
             }
         }
@@ -555,7 +563,7 @@ class Coordinator {
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
             abortWorkPackages(cause).thenRun(
                     () -> {
-                        logger.debug("Work packages have aborted. Scheduling new Coordination task to run in {}ms",
+                        logger.debug("Work packages have aborted. Scheduling new coordination task to run in {}ms",
                                      errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
@@ -576,8 +584,6 @@ class Coordinator {
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
                        ));
-
-
         }
     }
 
@@ -762,17 +768,6 @@ class Coordinator {
         }
 
         /**
-         * Sets the maximum number of segments this instance may claim.
-         * @param maxClaimedSegments   the maximum number of segments this instance may claim
-         *
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder maxClaimedSegments(int maxClaimedSegments) {
-            this.maxClaimedSegments = maxClaimedSegments;
-            return this;
-        }
-
-        /**
          * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
          * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
          *
@@ -781,6 +776,17 @@ class Coordinator {
          */
         Builder clock(Clock clock) {
             this.clock = clock;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of segments this instance may claim.
+         *
+         * @param maxClaimedSegments the maximum number of segments this instance may claim
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder maxClaimedSegments(int maxClaimedSegments) {
+            this.maxClaimedSegments = maxClaimedSegments;
             return this;
         }
 

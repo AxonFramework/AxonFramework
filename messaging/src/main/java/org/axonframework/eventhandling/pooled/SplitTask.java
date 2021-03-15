@@ -110,6 +110,6 @@ class SplitTask extends CoordinatorTask {
 
     @Override
     String getDescription() {
-        return "Split Task for segment [" + segmentId + "]";
+        return "Split Task for segment " + segmentId;
     }
 }

@@ -159,7 +159,6 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                                       .messageSource(messageSource)
                                       .tokenStore(tokenStore)
                                       .transactionManager(transactionManager)
-                                      .maxClaimedSegments(maxClaimedSegments)
                                       .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
                                       .eventFilter(event -> canHandleType(event.getPayloadType()))
@@ -167,6 +166,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
                                       .clock(clock)
+                                      .maxClaimedSegments(maxClaimedSegments)
                                       .build();
     }
 
@@ -188,7 +188,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
                 }
             } catch (Exception e) {
                 logger.info("Error while initializing the Token Store. " +
-                                    "This may simply indicate concurrent attempts to initialize", e);
+                                    "This may simply indicate concurrent attempts to initialize.", e);
             }
         });
     }
@@ -580,11 +580,10 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim.
-         * Defaults to {@value Short#MAX_VALUE}.
+         * Defines the maximum number of segment this {@link StreamingEventProcessor} may claim. Defaults to {@value
+         * Short#MAX_VALUE}.
          *
          * @param maxClaimedSegments the maximum number fo claimed segments for this {@link StreamingEventProcessor}
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxClaimedSegments(int maxClaimedSegments) {
