@@ -71,7 +71,7 @@ public class StreamingEventProcessorInfoMessage {
         } else if (streamingProcessorClass.isAssignableFrom(PooledStreamingEventProcessor.class)) {
             return "Pooled Streaming";
         } else {
-            return "Unknown Streaming";
+            return "Streaming";
         }
     }
 

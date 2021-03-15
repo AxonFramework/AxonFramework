@@ -769,15 +769,45 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessor(
+    void testConfigurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        TokenStore testTokenStore = new InMemoryTokenStore();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
+                  .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
+                  .registerTokenStore(testName, config -> testTokenStore)
+                  .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testName, result.getName());
+        assertEquals(
+                RollbackConfigurationType.ANY_THROWABLE,
+                getField(AbstractEventProcessor.class, "rollbackConfiguration", result)
+        );
+        assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
+        assertEquals(testTokenStore, getField("tokenStore", result));
+        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
+    }
+
+    @Test
+    void testConfigurePooledStreamingEventProcessorWithSource(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         TokenStore testTokenStore = new InMemoryTokenStore();
 
         configurer.eventProcessing()
-                  .configureDefaultStreamableMessageSource(config -> mockedSource)
-                  .registerPooledStreamingEventProcessor(testName)
+                  .registerPooledStreamingEventProcessor(testName, config -> mockedSource)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
@@ -803,15 +833,17 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessorWithCustomization()
-            throws NoSuchFieldException, IllegalAccessException {
+    void testConfigurePooledStreamingEventProcessorWithCustomization(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         int testCapacity = 24;
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                  .eventProcessing()
+        configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(
-                          testName, (config, builder) -> builder.maxClaimedSegments(testCapacity)
+                          testName,
+                          config -> mockedSource,
+                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
         Configuration config = configurer.start();
@@ -823,7 +855,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertTrue(EmbeddedEventStore.class.isAssignableFrom(getField("messageSource", result).getClass()));
+        assertEquals(mockedSource, getField("messageSource", result));
     }
 
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {

@@ -129,6 +129,7 @@ class EventProcessorConfigurationTest {
                 .withPropertyValues(
                         "axon.axonserver.enabled=false",
                         "axon.eventhandling.processors.second.mode=pooled",
+                        "axon.eventhandling.processors.second.initialSegmentCount=12",
                         "axon.eventhandling.processors.second.tokenClaimInterval=1000",
                         "axon.eventhandling.processors.second.tokenClaimIntervalTimeUnit=MINUTES",
                         "axon.eventhandling.processors.second.batchSize=1024"
@@ -147,6 +148,11 @@ class EventProcessorConfigurationTest {
                     EventProcessor pooledProcessor = processors.get("second");
                     assertNotNull(pooledProcessor);
                     assertEquals(PooledStreamingEventProcessor.class, pooledProcessor.getClass());
+
+                    int resultInitialSegmentCount = ReflectionUtils.getFieldValue(
+                            PooledStreamingEventProcessor.class.getDeclaredField("initialSegmentCount"), pooledProcessor
+                    );
+                    assertEquals(12, resultInitialSegmentCount);
 
                     long resultTokenClaimInterval = ReflectionUtils.getFieldValue(
                             PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), pooledProcessor

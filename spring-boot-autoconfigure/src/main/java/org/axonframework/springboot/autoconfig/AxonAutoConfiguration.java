@@ -262,7 +262,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
                         .forParallelProcessing(settings.getThreadCount())
                         .andBatchSize(settings.getBatchSize())
-                        .andInitialSegmentsCount(settings.getInitialSegmentCount())
+                        .andInitialSegmentsCount(initialSegmentCount(settings, 1))
                         .andTokenClaimInterval(settings.getTokenClaimInterval(),
                                                settings.getTokenClaimIntervalTimeUnit());
                 Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
@@ -271,16 +271,14 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             } else if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
                 eventProcessingConfigurer.registerPooledStreamingEventProcessor(
                         name,
+                        resolveMessageSource(applicationContext, settings),
                         (config, builder) -> {
-                            StreamableMessageSource<TrackedEventMessage<?>> messageSource =
-                                    resolveMessageSource(applicationContext, settings).apply(config);
-                            ScheduledExecutorService workExecutorService = Executors.newScheduledThreadPool(
+                            ScheduledExecutorService workerExecutorService = Executors.newScheduledThreadPool(
                                     settings.getThreadCount(), new AxonThreadFactory("WorkPackage[" + name + "]")
                             );
-
-                            return builder.messageSource(messageSource)
-                                          .workerExecutorService(workExecutorService)
-                                          .tokenClaimInterval(settings.tokenClaimIntervalMillis())
+                            return builder.workerExecutorService(workerExecutorService)
+                                          .initialSegmentCount(initialSegmentCount(settings, 16))
+                                          .tokenClaimInterval(tokenClaimIntervalMillis(settings))
                                           .batchSize(settings.getBatchSize());
                         }
                 );
@@ -295,6 +293,14 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 }
             }
         });
+    }
+
+    private int initialSegmentCount(EventProcessorProperties.ProcessorSettings settings, int defaultCount) {
+        return settings.getInitialSegmentCount() != null ? settings.getInitialSegmentCount() : defaultCount;
+    }
+
+    private long tokenClaimIntervalMillis(EventProcessorProperties.ProcessorSettings settings) {
+        return settings.getTokenClaimIntervalTimeUnit().toMillis(settings.getTokenClaimInterval());
     }
 
     @SuppressWarnings("unchecked")

@@ -555,23 +555,55 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerPooledStreamingEventProcessor(String name) {
-        return registerPooledStreamingEventProcessor(name, (config, builder) -> builder);
+        return registerPooledStreamingEventProcessor(name, c -> {
+            EventBus eventBus = c.eventBus();
+            if (!(eventBus instanceof StreamableMessageSource)) {
+                throw new AxonConfigurationException(
+                        "Cannot create Pooled Streaming Event Processor with name '" + name + "'. " +
+                                "The available EventBus does not support tracking processors."
+                );
+            }
+            //noinspection unchecked
+            return (StreamableMessageSource<TrackedEventMessage<?>>) eventBus;
+        });
     }
 
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
-     * receive the given {@code name}. The {@code processorCustomization} will be used to customize the {@code
+     * receive the given {@code name} and use the outcome of the {@code messageSource} as the {@link
+     * StreamableMessageSource}.
+     *
+     * @param name          a {@link String} specifying the name of the {@link PooledStreamingEventProcessor} being
+     *                      registered
+     * @param messageSource a {@link Function} that builds a {@link StreamableMessageSource}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer registerPooledStreamingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource
+    ) {
+        return registerPooledStreamingEventProcessor(name, messageSource, (config, builder) -> builder);
+    }
+
+    /**
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * receive the given {@code name}  and use the outcome of the {@code messageSource} as the {@link
+     * StreamableMessageSource}. The {@code processorCustomization} will be used to customize the {@code
      * PooledStreamingEventProcessor} upon construction.
      *
      * @param name                   a {@link String} specifying the name of the {@link PooledStreamingEventProcessor}
      *                               being registered
+     * @param messageSource          a {@link Function} that builds a {@link StreamableMessageSource}
      * @param processorCustomization allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link Configuration} can be used to extract components and
      *                               use them in the {@link PooledStreamingEventProcessor.Builder}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerPooledStreamingEventProcessor(String name,
-                                                                    PooledStreamingProcessorCustomization processorCustomization);
+    EventProcessingConfigurer registerPooledStreamingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            PooledStreamingProcessorCustomization processorCustomization
+    );
 
     /**
      * Contract which defines how to build an event processor.

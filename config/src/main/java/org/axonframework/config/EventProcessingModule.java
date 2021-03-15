@@ -561,7 +561,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
-                name, eventHandlerInvoker, conf, (config, builder) -> builder
+                name, eventHandlerInvoker, conf, defaultStreamableSource.get(), (config, builder) -> builder
         );
         return this;
     }
@@ -709,9 +709,15 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerPooledStreamingEventProcessor(String name,
-                                                                           PooledStreamingProcessorCustomization processorCustomization) {
-        registerEventProcessor(name, (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, processorCustomization));
+    public EventProcessingConfigurer registerPooledStreamingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            PooledStreamingProcessorCustomization processorCustomization
+    ) {
+        registerEventProcessor(
+                name,
+                (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, messageSource.apply(c), processorCustomization)
+        );
         return this;
     }
 
@@ -766,10 +772,13 @@ public class EventProcessingModule
                                      .build();
     }
 
-    private PooledStreamingEventProcessor pooledStreamingEventProcessor(String name,
-                                                                        EventHandlerInvoker eventHandlerInvoker,
-                                                                        Configuration config,
-                                                                        PooledStreamingProcessorCustomization processorCustomization) {
+    private PooledStreamingEventProcessor pooledStreamingEventProcessor(
+            String name,
+            EventHandlerInvoker eventHandlerInvoker,
+            Configuration config,
+            StreamableMessageSource<TrackedEventMessage<?>> messageSource,
+            PooledStreamingProcessorCustomization processorCustomization
+    ) {
         PooledStreamingEventProcessor.Builder processorBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(name)
@@ -777,39 +786,19 @@ public class EventProcessingModule
                                              .rollbackConfiguration(rollbackConfiguration(name))
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .messageSource(getStreamableMessageSource(config, name))
+                                             .messageSource(messageSource)
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name));
         return processorCustomization.apply(config, processorBuilder).build();
     }
 
-    private StreamableMessageSource<TrackedEventMessage<?>> getStreamableMessageSource(Configuration config,
-                                                                                       String name) {
-        StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-        try {
-            messageSource = defaultStreamableSource.get();
-        } catch (ClassCastException e) {
-            if (!(config.eventBus() instanceof StreamableMessageSource)) {
-                throw new AxonConfigurationException(
-                        "Cannot create Pooled Streaming Event Processor '" + name + "'. " +
-                                "The available EventBus does not support streaming event processors."
-                );
-            }
-            //noinspection unchecked
-            messageSource = (StreamableMessageSource<TrackedEventMessage<?>>) config.eventBus();
-        }
-        return messageSource;
-    }
-
     /**
      * Gets the package name from the class of the given object.
      * <p>
-     * Since class.getPackage() can be null e.g. for generated classes, the
-     * package name is determined the old fashioned way based on the full
-     * qualified class name.
+     * Since class.getPackage() can be null e.g. for generated classes, the package name is determined the old fashioned
+     * way based on the full qualified class name.
      *
-     * @param object
-     *            {@link Object}
+     * @param object {@link Object}
      * @return {@link String}
      */
     protected static String packageOfObject(Object object) {
