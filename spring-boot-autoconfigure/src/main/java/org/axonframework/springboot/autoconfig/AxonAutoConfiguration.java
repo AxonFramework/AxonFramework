@@ -23,11 +23,16 @@ import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.TagsConfiguration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -43,8 +48,18 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.queryhandling.*;
-import org.axonframework.serialization.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.JavaSerializer;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -66,6 +81,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 /**
@@ -236,27 +253,45 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Autowired
     public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
-        eventProcessorProperties.getProcessors().forEach((k, v) -> {
-
+        eventProcessorProperties.getProcessors().forEach((name, settings) -> {
             Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
-                    resolveSequencingPolicy(applicationContext, v);
-            eventProcessingConfigurer.registerSequencingPolicy(k, sequencingPolicy);
+                    resolveSequencingPolicy(applicationContext, settings);
+            eventProcessingConfigurer.registerSequencingPolicy(name, sequencingPolicy);
 
-            if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
+            if (settings.getMode() == EventProcessorProperties.Mode.TRACKING) {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
-                        .forParallelProcessing(v.getThreadCount())
-                        .andBatchSize(v.getBatchSize())
-                        .andInitialSegmentsCount(v.getInitialSegmentCount())
-                        .andTokenClaimInterval(v.getTokenClaimInterval(), v.getTokenClaimIntervalTimeUnit());
+                        .forParallelProcessing(settings.getThreadCount())
+                        .andBatchSize(settings.getBatchSize())
+                        .andInitialSegmentsCount(settings.getInitialSegmentCount())
+                        .andTokenClaimInterval(settings.getTokenClaimInterval(),
+                                               settings.getTokenClaimIntervalTimeUnit());
                 Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
-                        resolveMessageSource(applicationContext, v);
-                eventProcessingConfigurer.registerTrackingEventProcessor(k, messageSource, c -> config);
+                        resolveMessageSource(applicationContext, settings);
+                eventProcessingConfigurer.registerTrackingEventProcessor(name, messageSource, c -> config);
+            } else if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
+                eventProcessingConfigurer.registerPooledStreamingEventProcessor(
+                        name,
+                        (config, builder) -> {
+                            StreamableMessageSource<TrackedEventMessage<?>> messageSource =
+                                    resolveMessageSource(applicationContext, settings).apply(config);
+                            ScheduledExecutorService workExecutorService = Executors.newScheduledThreadPool(
+                                    settings.getThreadCount(), new AxonThreadFactory("WorkPackage[" + name + "]")
+                            );
+
+                            return builder.messageSource(messageSource)
+                                          .workerExecutorService(workExecutorService)
+                                          .tokenClaimInterval(settings.tokenClaimIntervalMillis())
+                                          .batchSize(settings.getBatchSize());
+                        }
+                );
             } else {
-                if (v.getSource() == null) {
-                    eventProcessingConfigurer.registerSubscribingEventProcessor(k);
+                if (settings.getSource() == null) {
+                    eventProcessingConfigurer.registerSubscribingEventProcessor(name);
                 } else {
-                    eventProcessingConfigurer.registerSubscribingEventProcessor(k, c -> applicationContext
-                            .getBean(v.getSource(), SubscribableMessageSource.class));
+                    eventProcessingConfigurer.registerSubscribingEventProcessor(
+                            name,
+                            c -> applicationContext.getBean(settings.getSource(), SubscribableMessageSource.class)
+                    );
                 }
             }
         });

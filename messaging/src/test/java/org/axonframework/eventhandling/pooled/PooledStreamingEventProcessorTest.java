@@ -45,16 +45,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link PooledTrackingEventProcessor}.
+ * Test class validating the {@link PooledStreamingEventProcessor}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class PooledTrackingEventProcessorTest {
+class PooledStreamingEventProcessorTest {
 
     private static final String PROCESSOR_NAME = "test";
 
-    private PooledTrackingEventProcessor testSubject;
+    private PooledStreamingEventProcessor testSubject;
     private EventHandlerInvoker stubEventHandler;
     private InMemoryMessageSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
@@ -75,30 +75,30 @@ class PooledTrackingEventProcessorTest {
         when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
     }
 
-    private void setTestSubject(PooledTrackingEventProcessor testSubject) {
+    private void setTestSubject(PooledStreamingEventProcessor testSubject) {
         this.testSubject = testSubject;
     }
 
-    private PooledTrackingEventProcessor createTestSubject() {
+    private PooledStreamingEventProcessor createTestSubject() {
         return createTestSubject(builder -> builder);
     }
 
-    private PooledTrackingEventProcessor createTestSubject(
-            UnaryOperator<PooledTrackingEventProcessor.Builder> customization
+    private PooledStreamingEventProcessor createTestSubject(
+            UnaryOperator<PooledStreamingEventProcessor.Builder> customization
     ) {
-        PooledTrackingEventProcessor.Builder processorBuilder =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                            .errorHandler(PropagatingErrorHandler.instance())
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(tokenStore)
-                                            .transactionManager(NoTransactionManager.instance())
-                                            .coordinatorExecutor(coordinatorExecutor)
-                                            .workerExecutorService(workerExecutor)
-                                            .initialSegmentCount(8)
-                                            .claimExtensionThreshold(1000);
+        PooledStreamingEventProcessor.Builder processorBuilder =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                                             .errorHandler(PropagatingErrorHandler.instance())
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(tokenStore)
+                                             .transactionManager(NoTransactionManager.instance())
+                                             .coordinatorExecutor(coordinatorExecutor)
+                                             .workerExecutorService(workerExecutor)
+                                             .initialSegmentCount(8)
+                                             .claimExtensionThreshold(1000);
         return customization.apply(processorBuilder).build();
     }
 
@@ -722,76 +722,76 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testBuildWithNullMessageSourceThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.messageSource(null));
     }
 
     @Test
     void testBuildWithoutMessageSourceThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .tokenStore(new InMemoryTokenStore())
-                                            .transactionManager(NoTransactionManager.INSTANCE);
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.INSTANCE);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
     void testBuildWithNullTokenStoreThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.tokenStore(null));
     }
 
     @Test
     void testBuildWithoutTokenStoreThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .transactionManager(NoTransactionManager.INSTANCE);
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .transactionManager(NoTransactionManager.INSTANCE);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
     void testBuildWithNullTransactionManagerThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.transactionManager(null));
     }
 
     @Test
     void testBuildWithoutTransactionManagerThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject =
-                PooledTrackingEventProcessor.builder()
-                                            .name(PROCESSOR_NAME)
-                                            .eventHandlerInvoker(stubEventHandler)
-                                            .messageSource(stubMessageSource)
-                                            .tokenStore(new InMemoryTokenStore());
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(new InMemoryTokenStore());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
     void testBuildWithNullCoordinatorExecutorBuilderThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.coordinatorExecutor(null));
     }
 
     @Test
     void testBuildWithNullWorkerExecutorBuilderThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.workerExecutorService(null));
     }
 
     @Test
     void testBuildWithZeroOrNegativeInitialSegmentCountThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.initialSegmentCount(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.initialSegmentCount(-1));
@@ -799,14 +799,14 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testBuildWithNullInitialTokenThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.initialToken(null));
     }
 
     @Test
     void testBuildWithZeroOrNegativeTokenClaimIntervalThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.tokenClaimInterval(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.tokenClaimInterval(-1));
@@ -814,7 +814,7 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testBuildWithZeroOrNegativeMaxCapacityThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxClaimedSegments(-1));
@@ -822,7 +822,7 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testBuildWithZeroOrNegativeClaimExtensionThresholdThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.claimExtensionThreshold(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.claimExtensionThreshold(-1));
@@ -830,7 +830,7 @@ class PooledTrackingEventProcessorTest {
 
     @Test
     void testBuildWithZeroOrNegativeBatchSizeThrowsAxonConfigurationException() {
-        PooledTrackingEventProcessor.Builder builderTestSubject = PooledTrackingEventProcessor.builder();
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(-1));

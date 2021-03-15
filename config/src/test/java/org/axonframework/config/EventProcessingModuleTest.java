@@ -39,7 +39,7 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
-import org.axonframework.eventhandling.pooled.PooledTrackingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -736,38 +736,61 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledTrackingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
-        String testName = "pooled-tracking";
+    void testDefaultPooledStreamingEventProcessingConfiguration(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) {
+        Object someHandler = new Object();
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> someHandler)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler());
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> resultPooledPsep =
+                config.eventProcessingConfiguration()
+                      .eventProcessor("pooled-streaming", PooledStreamingEventProcessor.class);
+        assertTrue(resultPooledPsep.isPresent());
+
+        Optional<PooledStreamingEventProcessor> resultDefaultPsep =
+                config.eventProcessingConfiguration().eventProcessor("default", PooledStreamingEventProcessor.class);
+        assertTrue(resultDefaultPsep.isPresent());
+    }
+
+    @Test
+    void testConfigurePooledStreamingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
+        String testName = "pooled-streaming";
         // This configurer does no contain an EventStore or other StreamableMessageSource.
         configurer.eventProcessing()
-                  .registerPooledTrackingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledTrackingEventHandler());
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler());
         assertThrows(LifecycleHandlerInvocationException.class, () -> configurer.start());
     }
 
     @Test
-    void testConfigurePooledTrackingEventProcessor(
+    void testConfigurePooledStreamingEventProcessor(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-tracking";
+        String testName = "pooled-streaming";
         TokenStore testTokenStore = new InMemoryTokenStore();
 
         configurer.eventProcessing()
                   .configureDefaultStreamableMessageSource(config -> mockedSource)
-                  .registerPooledTrackingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledTrackingEventHandler())
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
                   .registerTokenStore(testName, config -> testTokenStore)
                   .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
         Configuration config = configurer.start();
 
-        Optional<PooledTrackingEventProcessor> optionalResult =
+        Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledTrackingEventProcessor.class);
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
 
         assertTrue(optionalResult.isPresent());
-        PooledTrackingEventProcessor result = optionalResult.get();
+        PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testName, result.getName());
         assertEquals(
                 RollbackConfigurationType.ANY_THROWABLE,
@@ -780,24 +803,25 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledTrackingEventProcessorWithCustomization() throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-tracking";
+    void testConfigurePooledStreamingEventProcessorWithCustomization()
+            throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
         int testCapacity = 24;
 
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                   .eventProcessing()
-                  .registerPooledTrackingEventProcessor(
+                  .registerPooledStreamingEventProcessor(
                           testName, (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
-                  .registerEventHandler(config -> new PooledTrackingEventHandler());
+                  .registerEventHandler(config -> new PooledStreamingEventHandler());
         Configuration config = configurer.start();
 
-        Optional<PooledTrackingEventProcessor> optionalResult =
+        Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledTrackingEventProcessor.class);
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
 
         assertTrue(optionalResult.isPresent());
-        PooledTrackingEventProcessor result = optionalResult.get();
+        PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
         assertTrue(EmbeddedEventStore.class.isAssignableFrom(getField("messageSource", result).getClass()));
     }
@@ -951,8 +975,8 @@ class EventProcessingModuleTest {
     }
 
     @SuppressWarnings("unused")
-    @ProcessingGroup("pooled-tracking")
-    private static class PooledTrackingEventHandler {
+    @ProcessingGroup("pooled-streaming")
+    private static class PooledStreamingEventHandler {
 
         @EventHandler
         public void handle(String event) {

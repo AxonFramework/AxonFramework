@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.eventhandling.pooled.PooledTrackingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
@@ -559,6 +559,14 @@ public class EventProcessingModule
     }
 
     @Override
+    public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
+                name, eventHandlerInvoker, conf, (config, builder) -> builder
+        );
+        return this;
+    }
+
+    @Override
     public EventProcessingConfigurer registerSubscribingEventProcessor(String name,
                                                                        Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, ehi, messageSource.apply(c)));
@@ -701,37 +709,9 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerPooledTrackingEventProcessor(
-            String name,
-            BiFunction<Configuration, PooledTrackingEventProcessor.Builder, PooledTrackingEventProcessor.Builder> processorCustomization
-    ) {
-        registerEventProcessor(name, (n, c, ehi) -> {
-            StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-            try {
-                messageSource = defaultStreamableSource.get();
-            } catch (ClassCastException e) {
-                if (!(c.eventBus() instanceof StreamableMessageSource)) {
-                    throw new AxonConfigurationException(
-                            "Cannot create Pooled Tracking Event Processor '" + name + "'. " +
-                                    "The available EventBus does not support streaming event processors."
-                    );
-                }
-                //noinspection unchecked
-                messageSource = (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus();
-            }
-
-            PooledTrackingEventProcessor.Builder processorBuilder =
-                    PooledTrackingEventProcessor.builder()
-                                                .name(n)
-                                                .eventHandlerInvoker(ehi)
-                                                .rollbackConfiguration(rollbackConfiguration(n))
-                                                .errorHandler(errorHandler(n))
-                                                .messageMonitor(messageMonitor(PooledTrackingEventProcessor.class, n))
-                                                .messageSource(messageSource)
-                                                .tokenStore(tokenStore(n))
-                                                .transactionManager(transactionManager(n));
-            return processorCustomization.apply(c, processorBuilder).build();
-        });
+    public EventProcessingConfigurer registerPooledStreamingEventProcessor(String name,
+                                                                           PooledStreamingProcessorCustomization processorCustomization) {
+        registerEventProcessor(name, (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, processorCustomization));
         return this;
     }
 
@@ -784,6 +764,41 @@ public class EventProcessingModule
                                      .transactionManager(transactionManager(name))
                                      .trackingEventProcessorConfiguration(config)
                                      .build();
+    }
+
+    private PooledStreamingEventProcessor pooledStreamingEventProcessor(String name,
+                                                                        EventHandlerInvoker eventHandlerInvoker,
+                                                                        Configuration config,
+                                                                        PooledStreamingProcessorCustomization processorCustomization) {
+        PooledStreamingEventProcessor.Builder processorBuilder =
+                PooledStreamingEventProcessor.builder()
+                                             .name(name)
+                                             .eventHandlerInvoker(eventHandlerInvoker)
+                                             .rollbackConfiguration(rollbackConfiguration(name))
+                                             .errorHandler(errorHandler(name))
+                                             .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
+                                             .messageSource(getStreamableMessageSource(config, name))
+                                             .tokenStore(tokenStore(name))
+                                             .transactionManager(transactionManager(name));
+        return processorCustomization.apply(config, processorBuilder).build();
+    }
+
+    private StreamableMessageSource<TrackedEventMessage<?>> getStreamableMessageSource(Configuration config,
+                                                                                       String name) {
+        StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        try {
+            messageSource = defaultStreamableSource.get();
+        } catch (ClassCastException e) {
+            if (!(config.eventBus() instanceof StreamableMessageSource)) {
+                throw new AxonConfigurationException(
+                        "Cannot create Pooled Streaming Event Processor '" + name + "'. " +
+                                "The available EventBus does not support streaming event processors."
+                );
+            }
+            //noinspection unchecked
+            messageSource = (StreamableMessageSource<TrackedEventMessage<?>>) config.eventBus();
+        }
+        return messageSource;
     }
 
     /**

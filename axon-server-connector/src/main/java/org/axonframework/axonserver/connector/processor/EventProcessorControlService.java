@@ -112,7 +112,7 @@ public class EventProcessorControlService {
 
     public Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
         if (processor instanceof StreamingEventProcessor) {
-            return () -> TrackingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
+            return () -> StreamingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
         } else if (processor instanceof SubscribingEventProcessor) {
             return () -> subscribingProcessorInfo(processor);
         } else {

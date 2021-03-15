@@ -45,7 +45,7 @@ import java.util.function.UnaryOperator;
  *
  * @author Allard Buijze
  * @author Steven van Beelen
- * @see PooledTrackingEventProcessor
+ * @see PooledStreamingEventProcessor
  * @see Coordinator
  * @since 4.5
  */
@@ -110,7 +110,7 @@ class WorkPackage {
      * {@code event} if its {@link TrackingToken} is covered by the previously scheduled event.
      * <p>
      * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
-     * PooledTrackingEventProcessor}
+     * PooledStreamingEventProcessor}
      *
      * @param event the event to schedule for work in this work package
      * @return {@code true} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}
@@ -147,7 +147,7 @@ class WorkPackage {
      * Schedule this {@link WorkPackage} to process its batch of scheduled events in a dedicated thread.
      * <p>
      * <b>Threading note:</b> This method is safe to be called by both the {@link Coordinator} threads and {@link
-     * WorkPackage} threads of a {@link PooledTrackingEventProcessor}.
+     * WorkPackage} threads of a {@link PooledStreamingEventProcessor}.
      */
     public void scheduleWorker() {
         if (!scheduled.compareAndSet(false, true)) {

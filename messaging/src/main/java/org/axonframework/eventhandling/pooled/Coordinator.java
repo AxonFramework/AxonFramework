@@ -38,7 +38,7 @@ import java.util.function.UnaryOperator;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * Coordinator for the {@link PooledTrackingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
+ * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
  * package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and the
  * lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events are
  * scheduled one by one to <em>all</em> work packages coordinated by this service.
@@ -49,7 +49,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  *
  * @author Allard Buijze
  * @author Steven van Beelen
- * @see PooledTrackingEventProcessor
+ * @see PooledStreamingEventProcessor
  * @see WorkPackage
  * @since 4.5
  */

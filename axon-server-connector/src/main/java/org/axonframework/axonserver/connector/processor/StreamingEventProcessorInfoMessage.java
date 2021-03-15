@@ -23,22 +23,21 @@ import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
 /**
- * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link TrackingEventProcessor}.
+ * Supplier of {@link PlatformInboundInstruction} that represent the status of a {@link StreamingEventProcessor}.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class TrackingEventProcessorInfoMessage {
+public class StreamingEventProcessorInfoMessage {
 
-    private static final String EVENT_PROCESSOR_MODE = "Tracking";
-
-    private TrackingEventProcessorInfoMessage() {
+    private StreamingEventProcessorInfoMessage() {
     }
 
     /**
@@ -48,25 +47,35 @@ public class TrackingEventProcessorInfoMessage {
      * @return a {@link EventProcessorInfo} based on the given {@code eventProcessor}
      */
     public static EventProcessorInfo describe(StreamingEventProcessor eventProcessor) {
-        List<SegmentStatus> trackerInfo = eventProcessor.processingStatus()
-                                                        .values()
-                                                        .stream()
-                                                        .map(TrackingEventProcessorInfoMessage::buildTrackerInfo)
-                                                        .collect(toList());
+        List<SegmentStatus> segmentStatuses = eventProcessor.processingStatus()
+                                                            .values()
+                                                            .stream()
+                                                            .map(StreamingEventProcessorInfoMessage::buildSegmentStatus)
+                                                            .collect(toList());
 
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(eventProcessor.getName())
                                  .setTokenStoreIdentifier(eventProcessor.getTokenStoreIdentifier())
-                                 .setMode(EVENT_PROCESSOR_MODE)
+                                 .setMode(defineMode(eventProcessor.getClass()))
                                  .setActiveThreads(eventProcessor.processingStatus().size())
                                  .setAvailableThreads(eventProcessor.maxCapacity())
                                  .setRunning(eventProcessor.isRunning())
                                  .setError(eventProcessor.isError())
-                                 .addAllSegmentStatus(trackerInfo)
+                                 .addAllSegmentStatus(segmentStatuses)
                                  .build();
     }
 
-    private static SegmentStatus buildTrackerInfo(EventTrackerStatus status) {
+    private static String defineMode(Class<? extends StreamingEventProcessor> streamingProcessorClass) {
+        if (streamingProcessorClass.isAssignableFrom(TrackingEventProcessor.class)) {
+            return "Tracking";
+        } else if (streamingProcessorClass.isAssignableFrom(PooledStreamingEventProcessor.class)) {
+            return "Pooled Streaming";
+        } else {
+            return "Unknown Streaming";
+        }
+    }
+
+    private static SegmentStatus buildSegmentStatus(EventTrackerStatus status) {
         return SegmentStatus.newBuilder()
                             .setSegmentId(status.getSegment().getSegmentId())
                             .setCaughtUp(status.isCaughtUp())

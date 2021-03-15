@@ -51,13 +51,17 @@ public class EventProcessorProperties {
      */
     public enum Mode {
         /**
-         * Indicates a Tracking Processor should be used.
+         * Indicates a {@link org.axonframework.eventhandling.TrackingEventProcessor} should be used.
          */
         TRACKING,
         /**
-         * Indicates a Subscribing Processor should be used.
+         * Indicates a {@link org.axonframework.eventhandling.SubscribingEventProcessor} should be used.
          */
-        SUBSCRIBING
+        SUBSCRIBING,
+        /**
+         * Indicates a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor} should be used
+         */
+        POOLED
     }
 
     public static class ProcessorSettings {
@@ -200,6 +204,16 @@ public class EventProcessorProperties {
          */
         public TimeUnit getTokenClaimIntervalTimeUnit() {
             return tokenClaimIntervalTimeUnit;
+        }
+
+        /**
+         * Returns the token claim interval in millis, based on the configured token claim interval and token claim
+         * interval time unit.
+         *
+         * @return the token claim interval in millis
+         */
+        public long tokenClaimIntervalMillis() {
+            return tokenClaimIntervalTimeUnit.toMillis(tokenClaimInterval);
         }
 
         /**

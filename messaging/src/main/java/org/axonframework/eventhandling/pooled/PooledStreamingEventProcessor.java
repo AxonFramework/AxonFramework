@@ -62,7 +62,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * approach which allows for greater parallelization and processing speed than the {@link
  * org.axonframework.eventhandling.TrackingEventProcessor}.
  * <p>
- * If no {@link TrackingToken}s are present for this processor, the {@code PooledTrackingEventProcessor} will initialize
+ * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will initialize
  * them in a given segment count. By default it will create {@code 16} segments, which can be configured through the
  * {@link Builder#initialSegmentCount(int)}.
  *
@@ -70,7 +70,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledTrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
+public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -92,7 +92,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a Builder to be able to create a {@link PooledTrackingEventProcessor}.
+     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -118,14 +118,14 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
      * </ul>
      *
-     * @return a Builder to be able to create a {@link PooledTrackingEventProcessor}
+     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link PooledTrackingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert the following for their presence prior to constructing this processor:
      * <ul>
@@ -137,9 +137,9 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
      * </ul>
      * If any of these is not present or does no comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link PooledTrackingEventProcessor} instance
+     * @param builder the {@link Builder} used to instantiate a {@link PooledStreamingEventProcessor} instance
      */
-    protected PooledTrackingEventProcessor(PooledTrackingEventProcessor.Builder builder) {
+    protected PooledStreamingEventProcessor(PooledStreamingEventProcessor.Builder builder) {
         super(builder);
         this.name = builder.name();
         this.messageSource = builder.messageSource;
@@ -173,7 +173,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     @Override
     public void start() {
-        logger.info("Starting PooledTrackingEventProcessor [{}].", name);
+        logger.info("Starting PooledStreamingEventProcessor [{}].", name);
         initializeTokenStore();
         coordinator.start();
     }
@@ -323,7 +323,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     /**
      * {@inheritDoc}
      * <p>
-     * The maximum capacity of the {@link PooledTrackingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
+     * The maximum capacity of the {@link PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
      * required, this value can be adjusted through the {@link Builder#maxClaimedSegments(int)} method.
      */
     @Override
@@ -384,7 +384,7 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
     }
 
     /**
-     * Builder class to instantiate a {@link PooledTrackingEventProcessor}.
+     * Builder class to instantiate a {@link PooledStreamingEventProcessor}.
      * <p>
      * Upon initialization of this builder, the following fields are defaulted:
      * <ul>
@@ -504,11 +504,11 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
         /**
          * Specifies the {@link ScheduledExecutorService} used by the coordinator of this {@link
-         * PooledTrackingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
+         * PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
          * {@link AxonThreadFactory} incorporating this processors name.
          *
          * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
-         *                            {@link PooledTrackingEventProcessor}
+         *                            {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
@@ -519,11 +519,11 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
 
         /**
          * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledTrackingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and
+         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and
          * an {@link AxonThreadFactory} incorporating this processors name.
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
-         *                       by this {@link PooledTrackingEventProcessor}
+         *                       by this {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
@@ -641,12 +641,12 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Initializes a {@link PooledTrackingEventProcessor} as specified through this Builder.
+         * Initializes a {@link PooledStreamingEventProcessor} as specified through this Builder.
          *
-         * @return a {@link PooledTrackingEventProcessor} as specified through this Builder
+         * @return a {@link PooledStreamingEventProcessor} as specified through this Builder
          */
-        public PooledTrackingEventProcessor build() {
-            return new PooledTrackingEventProcessor(this);
+        public PooledStreamingEventProcessor build() {
+            return new PooledStreamingEventProcessor(this);
         }
 
         @Override
@@ -658,9 +658,9 @@ public class PooledTrackingEventProcessor extends AbstractEventProcessor impleme
         }
 
         /**
-         * Returns the name of this {@link PooledTrackingEventProcessor}.
+         * Returns the name of this {@link PooledStreamingEventProcessor}.
          *
-         * @return the name of this {@link PooledTrackingEventProcessor}
+         * @return the name of this {@link PooledStreamingEventProcessor}
          */
         protected String name() {
             return name;

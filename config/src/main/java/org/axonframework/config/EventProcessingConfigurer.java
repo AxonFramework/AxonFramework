@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.eventhandling.pooled.PooledTrackingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -248,6 +248,17 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingTrackingEventProcessors();
+
+    /**
+     * Defaults Event Processors builders to use {@link PooledStreamingEventProcessor}.
+     * <p>
+     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the {@code
+     * EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to
+     * force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
+     *
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer usingPooledStreamingEventProcessors();
 
     /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
@@ -537,32 +548,30 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Registers a {@link PooledTrackingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
      * receive the given {@code name}.
      *
-     * @param name a {@link String} specifying the name of the {@link PooledTrackingEventProcessor} being registered
+     * @param name a {@link String} specifying the name of the {@link PooledStreamingEventProcessor} being registered
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    default EventProcessingConfigurer registerPooledTrackingEventProcessor(String name) {
-        return registerPooledTrackingEventProcessor(name, (config, builder) -> builder);
+    default EventProcessingConfigurer registerPooledStreamingEventProcessor(String name) {
+        return registerPooledStreamingEventProcessor(name, (config, builder) -> builder);
     }
 
     /**
-     * Registers a {@link PooledTrackingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
+     * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
      * receive the given {@code name}. The {@code processorCustomization} will be used to customize the {@code
-     * PooledTrackingEventProcessor} upon construction.
+     * PooledStreamingEventProcessor} upon construction.
      *
-     * @param name                   a {@link String} specifying the name of the {@link PooledTrackingEventProcessor}
+     * @param name                   a {@link String} specifying the name of the {@link PooledStreamingEventProcessor}
      *                               being registered
-     * @param processorCustomization allows further customization of the {@link PooledTrackingEventProcessor} under
+     * @param processorCustomization allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link Configuration} can be used to extract components and
-     *                               use them in the {@link PooledTrackingEventProcessor.Builder}
+     *                               use them in the {@link PooledStreamingEventProcessor.Builder}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer registerPooledTrackingEventProcessor(
-            String name,
-            BiFunction<Configuration, PooledTrackingEventProcessor.Builder, PooledTrackingEventProcessor.Builder> processorCustomization
-    );
+    EventProcessingConfigurer registerPooledStreamingEventProcessor(String name,
+                                                                    PooledStreamingProcessorCustomization processorCustomization);
 
     /**
      * Contract which defines how to build an event processor.
@@ -581,5 +590,15 @@ public interface EventProcessingConfigurer {
          * @return an {@link EventProcessor}
          */
         EventProcessor build(String name, Configuration configuration, EventHandlerInvoker eventHandlerInvoker);
+    }
+
+    /**
+     * Contract defining {@link PooledStreamingEventProcessor.Builder} based customization when constructing a {@link
+     * PooledStreamingEventProcessor}.
+     */
+    @FunctionalInterface
+    interface PooledStreamingProcessorCustomization extends
+            BiFunction<Configuration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
+
     }
 }
