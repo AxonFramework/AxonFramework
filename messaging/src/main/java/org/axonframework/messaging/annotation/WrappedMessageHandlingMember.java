@@ -27,6 +27,8 @@ import java.util.Optional;
  * this class to provide additional functionality to the delegate member.
  *
  * @param <T> the entity type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public abstract class WrappedMessageHandlingMember<T> implements MessageHandlingMember<T> {
 
@@ -91,5 +93,10 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     @Override
     public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
         return delegate.hasAnnotation(annotationType);
+    }
+
+    @Override
+    public <R> Optional<R> attribute(String attributeKey) {
+        return delegate.attribute(attributeKey);
     }
 }

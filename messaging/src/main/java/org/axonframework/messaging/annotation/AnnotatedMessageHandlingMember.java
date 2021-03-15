@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
@@ -43,7 +44,8 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     private final int parameterCount;
     private final ParameterResolver<?>[] parameterResolvers;
     private final Executable executable;
-    private final Class<? extends Message> messageType;
+    private final Class<? extends Message<?>> messageType;
+    private final HandlerAttributes attributes;
 
     /**
      * Initializes a new instance that will invoke the given {@code executable} (method) on a target to handle a message
@@ -54,12 +56,13 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
      */
-    @SuppressWarnings("rawtypes")
-    public AnnotatedMessageHandlingMember(Executable executable, Class<? extends Message> messageType,
+    public AnnotatedMessageHandlingMember(Executable executable,
+                                          @SuppressWarnings("rawtypes") Class<? extends Message> messageType,
                                           Class<?> explicitPayloadType,
                                           ParameterResolverFactory parameterResolverFactory) {
         this.executable = executable;
-        this.messageType = messageType;
+        //noinspection unchecked
+        this.messageType = (Class<? extends Message<?>>) messageType;
         ReflectionUtils.ensureAccessible(this.executable);
         Parameter[] parameters = executable.getParameters();
         this.parameterCount = executable.getParameterCount();
@@ -82,6 +85,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
             }
         }
         this.payloadType = supportedPayloadType;
+        this.attributes = new AnnotatedHandlerAttributes(executable);
     }
 
     @Override
@@ -124,9 +128,8 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
      * @param message the message to check for
      * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
      */
-    @SuppressWarnings("unchecked")
     protected boolean parametersMatch(Message<?> message) {
-        for (ParameterResolver resolver : parameterResolvers) {
+        for (ParameterResolver<?> resolver : parameterResolvers) {
             if (!resolver.matches(message)) {
                 return false;
             }
@@ -140,7 +143,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
             if (executable instanceof Method) {
                 return ((Method) executable).invoke(target, resolveParameterValues(message));
             } else if (executable instanceof Constructor) {
-                return ((Constructor) executable).newInstance(resolveParameterValues(message));
+                return ((Constructor<?>) executable).newInstance(resolveParameterValues(message));
             } else {
                 throw new IllegalStateException("What kind of handler is this?");
             }
@@ -168,13 +171,18 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
+    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+        return AnnotationUtils.isAnnotationPresent(executable, annotationType);
+    }
+
+    @Override
     public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
         return AnnotationUtils.findAnnotationAttributes(executable, annotationType);
     }
 
     @Override
-    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-        return AnnotationUtils.isAnnotationPresent(executable, annotationType);
+    public <R> Optional<R> attribute(String attributeKey) {
+        return Optional.ofNullable(attributes.get(attributeKey));
     }
 
     @SuppressWarnings("unchecked")

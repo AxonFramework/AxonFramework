@@ -33,9 +33,10 @@ import java.lang.annotation.Target;
  * @author Allard Buijze
  * @since 3.0
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
-@Documented
+@HasHandlerAttributes
 public @interface MessageHandler {
 
     /**
