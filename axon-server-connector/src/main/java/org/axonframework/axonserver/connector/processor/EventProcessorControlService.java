@@ -124,6 +124,7 @@ public class EventProcessorControlService {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
+                                 .setIsStreamingProcessor(false)
                                  .build();
     }
 
@@ -131,6 +132,7 @@ public class EventProcessorControlService {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
+                                 .setIsStreamingProcessor(false)
                                  .build();
     }
 

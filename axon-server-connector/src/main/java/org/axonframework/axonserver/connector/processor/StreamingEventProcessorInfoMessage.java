@@ -62,6 +62,7 @@ public class StreamingEventProcessorInfoMessage {
                                  .setRunning(eventProcessor.isRunning())
                                  .setError(eventProcessor.isError())
                                  .addAllSegmentStatus(segmentStatuses)
+                                 .setIsStreamingProcessor(true)
                                  .build();
     }
 
