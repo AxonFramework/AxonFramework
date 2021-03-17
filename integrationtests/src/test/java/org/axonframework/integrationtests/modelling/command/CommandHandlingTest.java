@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -78,7 +78,7 @@ class CommandHandlingTest {
 
     private static class StubEventStore extends AbstractEventBus implements EventStore {
 
-        private List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
+        private final List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
 
         private StubEventStore(Builder builder) {
             super(builder);
@@ -95,7 +95,13 @@ class CommandHandlingTest {
 
         @Override
         protected void commit(List<? extends EventMessage<?>> events) {
-            storedEvents.addAll(events.stream().map(EventUtils::asDomainEventMessage).collect(Collectors.toList()));
+            storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
+        }
+
+        private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+            return event instanceof DomainEventMessage<?>
+                    ? (DomainEventMessage<T>) event
+                    : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
         }
 
         @Override
