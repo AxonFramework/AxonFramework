@@ -63,10 +63,12 @@ public abstract class EventUtils {
      * @param eventMessage the input event message
      * @param <T>          The type of payload in the message
      * @return the message converted to a domain event message
-     * @deprecated since this method is not used for external use. Instead if you have an {@link EventMessage}, check
-     * whether it is an instance of {@link DomainEventMessage} yes or no. If it is not, then you would use the {@link
-     * GenericDomainEventMessage} constructor, omitting the {@code type} field and using the {@code messageIdentifier}
-     * field as the {@code aggregateIdentifier}.
+     * @deprecated since this method is not used for external use. This method is intended to deduce whether a given
+     * {@link EventMessage} is a {@link DomainEventMessage} and if not, push it into being one by adjusting the fields.
+     * However, this is only intended to simplify the storage of events. This <em>does not</em> make a regular {@code
+     * EventMessage} a {@code DomainEventMessage} by any means. The <b>only</b> way to have a true {@link
+     * DomainEventMessage} is by publishing events from within an Aggregate, by using the {@code AggregateLifecycle}
+     * operations.
      */
     @Deprecated
     public static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> eventMessage) {
