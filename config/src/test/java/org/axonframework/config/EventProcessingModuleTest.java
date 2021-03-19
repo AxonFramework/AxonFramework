@@ -42,7 +42,6 @@ import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
@@ -833,13 +832,145 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessorWithCustomization(
+    void testConfigurePooledStreamingEventProcessorWithConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         int testCapacity = 24;
 
         configurer.eventProcessing()
+                  .registerPooledStreamingEventProcessor(
+                          testName,
+                          config -> mockedSource,
+                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
+                  )
+                  .registerEventHandler(config -> new PooledStreamingEventHandler());
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testRegisterPooledStreamingEventProcessorConfigurationIsUsedDuringAllPsepConstructions(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        Object testHandler = new Object();
+
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors()
+                  .registerPooledStreamingEventProcessorConfiguration((config, builder) -> builder.maxClaimedSegments(testCapacity))
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> testHandler);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+
+        optionalResult = config.eventProcessingConfiguration()
+                               .eventProcessor("default", PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testRegisterPooledStreamingEventProcessorConfigurationForNameIsUsedDuringSpecificPsepConstruction(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        Object testHandler = new Object();
+
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors()
+                  .registerPooledStreamingEventProcessorConfiguration(
+                          "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(testCapacity)
+                  )
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> testHandler);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+
+        optionalResult = config.eventProcessingConfiguration()
+                               .eventProcessor("default", PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        result = optionalResult.get();
+        assertEquals(Short.MAX_VALUE, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testRegisterPooledStreamingEventProcessorWithConfigurationOverridesDefaultPsepConfiguration(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        int incorrectCapacity = 1745;
+
+        configurer.eventProcessing()
+                  .registerPooledStreamingEventProcessorConfiguration(
+                          (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
+                  )
+                  .registerPooledStreamingEventProcessor(
+                          testName,
+                          config -> mockedSource,
+                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
+                  )
+                  .registerEventHandler(config -> new PooledStreamingEventHandler());
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testRegisterPooledStreamingEventProcessorWithConfigurationOverridesCustomPsepConfiguration(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        int incorrectCapacity = 1745;
+
+        configurer.eventProcessing()
+                  .registerPooledStreamingEventProcessorConfiguration(
+                          "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
+                  )
                   .registerPooledStreamingEventProcessor(
                           testName,
                           config -> mockedSource,

@@ -101,6 +101,7 @@ public class EventProcessingModule
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
+    private final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
@@ -166,6 +167,8 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
+    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration =
+            (config, builder) -> builder;
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -712,12 +715,29 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
-            PooledStreamingProcessorCustomization processorCustomization
+            PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         registerEventProcessor(
                 name,
-                (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, messageSource.apply(c), processorCustomization)
+                (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, messageSource.apply(c), processorConfiguration)
         );
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            String name,
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        psepConfigs.put(name, pooledStreamingProcessorConfiguration);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
         return this;
     }
 
@@ -777,9 +797,9 @@ public class EventProcessingModule
             EventHandlerInvoker eventHandlerInvoker,
             Configuration config,
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
-            PooledStreamingProcessorCustomization processorCustomization
+            PooledStreamingProcessorConfiguration processorConfiguration
     ) {
-        PooledStreamingEventProcessor.Builder processorBuilder =
+        PooledStreamingEventProcessor.Builder mainBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(name)
                                              .eventHandlerInvoker(eventHandlerInvoker)
@@ -789,7 +809,13 @@ public class EventProcessingModule
                                              .messageSource(messageSource)
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name));
-        return processorCustomization.apply(config, processorBuilder).build();
+        PooledStreamingEventProcessor.Builder customizedBuilder =
+                pooledStreamingProcessorConfig(name).apply(config, mainBuilder);
+        return processorConfiguration.apply(config, customizedBuilder).build();
+    }
+
+    private PooledStreamingProcessorConfiguration pooledStreamingProcessorConfig(String name) {
+        return psepConfigs.getOrDefault(name, defaultPooledStreamingProcessorConfiguration);
     }
 
     /**

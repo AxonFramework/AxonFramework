@@ -551,7 +551,7 @@ public interface EventProcessingConfigurer {
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
      * receive the given {@code name}.
      *
-     * @param name a {@link String} specifying the name of the {@link PooledStreamingEventProcessor} being registered
+     * @param name the name of the {@link PooledStreamingEventProcessor} being registered
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerPooledStreamingEventProcessor(String name) {
@@ -573,9 +573,9 @@ public interface EventProcessingConfigurer {
      * receive the given {@code name} and use the outcome of the {@code messageSource} as the {@link
      * StreamableMessageSource}.
      *
-     * @param name          a {@link String} specifying the name of the {@link PooledStreamingEventProcessor} being
-     *                      registered
-     * @param messageSource a {@link Function} that builds a {@link StreamableMessageSource}
+     * @param name          the name of the {@link PooledStreamingEventProcessor} being registered
+     * @param messageSource constructs a {@link StreamableMessageSource} to be used by the {@link
+     *                      PooledStreamingEventProcessor}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerPooledStreamingEventProcessor(
@@ -588,13 +588,17 @@ public interface EventProcessingConfigurer {
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
      * receive the given {@code name}  and use the outcome of the {@code messageSource} as the {@link
-     * StreamableMessageSource}. The {@code processorCustomization} will be used to customize the {@code
-     * PooledStreamingEventProcessor} upon construction.
+     * StreamableMessageSource}.
+     * <p>
+     * The {@code processorConfiguration} will be used to further configure the {@code PooledStreamingEventProcessor}
+     * upon construction. Note that the {@code processorConfiguration} will override any configuration set through the
+     * {@link #registerPooledStreamingEventProcessorConfiguration(PooledStreamingProcessorConfiguration)} and {@link
+     * #registerPooledStreamingEventProcessorConfiguration(String, PooledStreamingProcessorConfiguration)}.
      *
-     * @param name                   a {@link String} specifying the name of the {@link PooledStreamingEventProcessor}
-     *                               being registered
-     * @param messageSource          a {@link Function} that builds a {@link StreamableMessageSource}
-     * @param processorCustomization allows further customization of the {@link PooledStreamingEventProcessor} under
+     * @param name                   the name of the {@link PooledStreamingEventProcessor} being registered
+     * @param messageSource          constructs a {@link StreamableMessageSource} to be used by the {@link
+     *                               PooledStreamingEventProcessor}
+     * @param processorConfiguration allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link Configuration} can be used to extract components and
      *                               use them in the {@link PooledStreamingEventProcessor.Builder}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
@@ -602,7 +606,32 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
-            PooledStreamingProcessorCustomization processorCustomization
+            PooledStreamingProcessorConfiguration processorConfiguration
+    );
+
+    /**
+     * Register a default {@link PooledStreamingProcessorConfiguration} to be used when constructing every {@link
+     * PooledStreamingEventProcessor}.
+     *
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing every {@link
+     *                                              PooledStreamingEventProcessor}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    );
+
+    /**
+     * Register a {@link PooledStreamingProcessorConfiguration} to be used when constructing a {@link
+     * PooledStreamingEventProcessor} with {@code name}.
+     *
+     * @param name                                  the name of an {@link PooledStreamingEventProcessor}
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing a {@link PooledStreamingEventProcessor}
+     *                                              with the given {@code name}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            String name, PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     );
 
     /**
@@ -625,11 +654,11 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Contract defining {@link PooledStreamingEventProcessor.Builder} based customization when constructing a {@link
+     * Contract defining {@link PooledStreamingEventProcessor.Builder} based configuration when constructing a {@link
      * PooledStreamingEventProcessor}.
      */
     @FunctionalInterface
-    interface PooledStreamingProcessorCustomization extends
+    interface PooledStreamingProcessorConfiguration extends
             BiFunction<Configuration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
 
     }
