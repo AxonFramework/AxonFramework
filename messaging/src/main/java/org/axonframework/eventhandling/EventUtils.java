@@ -42,7 +42,7 @@ public abstract class EventUtils {
      * @param eventMessage  the message to convert
      * @param trackingToken the tracking token to use for the resulting message
      * @param <T>           the payload type of the event
-     * @return the message converted to a tracked event messge
+     * @return the message converted to a tracked event message
      */
     public static <T> TrackedEventMessage<T> asTrackedEventMessage(EventMessage<T> eventMessage,
                                                                    TrackingToken trackingToken) {
@@ -58,12 +58,19 @@ public abstract class EventUtils {
     /**
      * Convert a plain {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
      * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
-     * {@code null} type, aggegrateIdentifier equal to messageIdentifier and sequence number of 0L.
+     * {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of 0L.
      *
      * @param eventMessage the input event message
      * @param <T>          The type of payload in the message
      * @return the message converted to a domain event message
+     * @deprecated since this method is not used for external use. This method is intended to deduce whether a given
+     * {@link EventMessage} is a {@link DomainEventMessage} and if not, push it into being one by adjusting the fields.
+     * However, this is only intended to simplify the storage of events. This <em>does not</em> make a regular {@code
+     * EventMessage} a {@code DomainEventMessage} by any means. The <b>only</b> way to have a true {@link
+     * DomainEventMessage} is by publishing events from within an Aggregate, by using the {@code AggregateLifecycle}
+     * operations.
      */
+    @Deprecated
     public static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> eventMessage) {
         if (eventMessage instanceof DomainEventMessage<?>) {
             return (DomainEventMessage<T>) eventMessage;
@@ -73,8 +80,8 @@ public abstract class EventUtils {
     }
 
     /**
-     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and
-     * {@code upcasterChain}.
+     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and {@code
+     * upcasterChain}.
      * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
      * unknown classes are ignored if {@code skipUnknownTypes} is {@code true}
@@ -88,7 +95,8 @@ public abstract class EventUtils {
     public static Stream<TrackedEventMessage<?>> upcastAndDeserializeTrackedEvents(
             Stream<? extends TrackedEventData<?>> eventEntryStream,
             Serializer serializer,
-            EventUpcaster upcasterChain) {
+            EventUpcaster upcasterChain
+    ) {
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcastAndDeserialize(eventEntryStream, upcasterChain,
                                      entry -> new InitialEventRepresentation(entry, serializer));

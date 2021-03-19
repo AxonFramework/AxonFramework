@@ -46,7 +46,7 @@ jobs:
       - name: Maven operation with Sonar
         if: matrix.sonar-enabled
         run: |
-          mvn -B -U -Pcoverage \
+          mvn -B -U -Possrh -Pcoverage \
           clean verify \
           sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
@@ -59,7 +59,7 @@ jobs:
       - name: Maven operation without Sonar
         if: matrix.sonar-enabled != true
         run: |
-          mvn -B -U clean verify
+          mvn -B -U -Possrh clean verify
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

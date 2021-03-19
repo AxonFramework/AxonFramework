@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
@@ -58,7 +59,6 @@ import javax.sql.DataSource;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.eventhandling.EventUtils.asDomainEventMessage;
 
 /**
  * EventStorageEngine implementation that uses JPA to store and fetch events.
@@ -389,6 +389,24 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
         return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
+    }
+
+    /**
+     * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
+     * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
+     * {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of 0L.
+     * <p>
+     * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a {@link
+     * GenericDomainEventMessage}.
+     *
+     * @param event the input event message
+     * @param <T>   the type of payload in the message
+     * @return the message converted to a domain event message
+     */
+    private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+        return event instanceof DomainEventMessage<?>
+                ? (DomainEventMessage<T>) event
+                : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
     }
 
     /**

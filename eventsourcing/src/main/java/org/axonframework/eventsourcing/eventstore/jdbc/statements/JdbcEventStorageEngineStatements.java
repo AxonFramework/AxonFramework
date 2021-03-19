@@ -19,9 +19,12 @@ package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -34,7 +37,6 @@ import java.util.List;
 import java.util.SortedSet;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.eventhandling.EventUtils.asDomainEventMessage;
 
 /**
  * Class which holds the default {@link PreparedStatement} builder methods for use in the {@link
@@ -92,6 +94,7 @@ public abstract class JdbcEventStorageEngineStatements {
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
+    @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
     public static PreparedStatement appendEvents(Connection connection,
                                                  EventSchema schema,
                                                  Class<?> dataType,
@@ -99,10 +102,10 @@ public abstract class JdbcEventStorageEngineStatements {
                                                  Serializer serializer,
                                                  TimestampWriter timestampWriter)
             throws SQLException {
-        final String sql = "INSERT INTO " + schema.domainEventTable() + " (" + schema.domainEventFields()
-                + ") VALUES (?,?,?,?,?,?,?,?,?)";
+        final String sql = "INSERT INTO " + schema.domainEventTable() + " (" + schema.domainEventFields() + ") "
+                + "VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
-        for (EventMessage eventMessage : events) {
+        for (EventMessage<?> eventMessage : events) {
             DomainEventMessage<?> event = asDomainEventMessage(eventMessage);
             SerializedObject<?> payload = event.serializePayload(serializer, dataType);
             SerializedObject<?> metaData = event.serializeMetaData(serializer, dataType);
@@ -118,6 +121,24 @@ public abstract class JdbcEventStorageEngineStatements {
             statement.addBatch();
         }
         return statement;
+    }
+
+    /**
+     * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
+     * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
+     * {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of 0L.
+     * <p>
+     * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a {@link
+     * GenericDomainEventMessage}.
+     *
+     * @param event the input event message
+     * @param <T>   the type of payload in the message
+     * @return the message converted to a domain event message
+     */
+    private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+        return event instanceof DomainEventMessage<?>
+                ? (DomainEventMessage<T>) event
+                : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
     }
 
     /**
