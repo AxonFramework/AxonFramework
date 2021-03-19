@@ -131,7 +131,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
         updateHandlers.put(query, sinksManyWrapper);
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
-                                                                        .doFinally(signalType -> removeHandler.run());
+                                                                        .doOnCancel(removeHandler)
+                                                                        .doOnTerminate(removeHandler);
         return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
     }
 
