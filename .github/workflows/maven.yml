@@ -65,7 +65,7 @@ jobs:
 
       - name: Deploy to Sonatype
         # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
-        if: ${{ github.github.head_ref == null && success() && matrix.deploy && github.event.pull_request.head.repo.full_name == github.repository }}
+        if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           ./mvnw -B -U -Possrh deploy -DskipTests=true
         env:
