@@ -582,7 +582,7 @@ public interface EventProcessingConfigurer {
             String name,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource
     ) {
-        return registerPooledStreamingEventProcessor(name, messageSource, (config, builder) -> builder);
+        return registerPooledStreamingEventProcessor(name, messageSource, PooledStreamingProcessorConfiguration.noOp());
     }
 
     /**
@@ -666,12 +666,19 @@ public interface EventProcessingConfigurer {
          * configuration set by the {@code other} will override changes by {@code this} instance.
          *
          * @param other The configuration to apply after applying this
-         *
          * @return a configuration that applies both this and then the other configuration
          */
         default PooledStreamingProcessorConfiguration andThen(PooledStreamingProcessorConfiguration other) {
             return (config, builder) -> other.apply(config, this.apply(config, builder));
         }
 
+        /**
+         * A {@link PooledStreamingProcessorConfiguration} which does not add any configuration.
+         *
+         * @return a {@link PooledStreamingProcessorConfiguration} which does not add any configuration
+         */
+        static PooledStreamingProcessorConfiguration noOp() {
+            return (config, builder) -> builder;
+        }
     }
 }

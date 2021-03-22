@@ -51,11 +51,10 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -71,11 +70,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link EventProcessingModule}.
@@ -973,8 +969,9 @@ class EventProcessingModuleTest {
         int incorrectCapacity = 1729;
 
         configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessorConfiguration((config, builder) -> builder.batchSize(100)
-                                                                                                  .maxClaimedSegments(wrongCapacity))
+                  .registerPooledStreamingEventProcessorConfiguration(
+                          (config, builder) -> builder.batchSize(100).maxClaimedSegments(wrongCapacity)
+                  )
                   .registerPooledStreamingEventProcessorConfiguration(
                           "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
                   )

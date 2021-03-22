@@ -67,6 +67,7 @@ import static java.lang.String.format;
 import static java.util.Comparator.comparing;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp;
 
 /**
  * Event processing module configuration. Registers all configuration components within itself, builds the {@link
@@ -167,8 +168,7 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration =
-            (config, builder) -> builder;
+    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -564,7 +564,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
-                name, eventHandlerInvoker, conf, defaultStreamableSource.get(), (config, builder) -> builder
+                name, eventHandlerInvoker, conf, defaultStreamableSource.get(), noOp()
         );
         return this;
     }
@@ -799,7 +799,7 @@ public class EventProcessingModule
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
-        PooledStreamingEventProcessor.Builder mainBuilder =
+        PooledStreamingEventProcessor.Builder builder =
                 PooledStreamingEventProcessor.builder()
                                              .name(name)
                                              .eventHandlerInvoker(eventHandlerInvoker)
@@ -809,13 +809,10 @@ public class EventProcessingModule
                                              .messageSource(messageSource)
                                              .tokenStore(tokenStore(name))
                                              .transactionManager(transactionManager(name));
-        PooledStreamingEventProcessor.Builder customizedBuilder =
-                pooledStreamingProcessorConfig(name).apply(config, mainBuilder);
-        return processorConfiguration.apply(config, customizedBuilder).build();
-    }
-
-    private PooledStreamingProcessorConfiguration pooledStreamingProcessorConfig(String name) {
-        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, (c, b) -> b));
+        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
+                                                           .andThen(processorConfiguration)
+                                                           .apply(config, builder)
+                                                           .build();
     }
 
     /**
