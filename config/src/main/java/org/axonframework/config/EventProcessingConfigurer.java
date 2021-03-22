@@ -661,5 +661,17 @@ public interface EventProcessingConfigurer {
     interface PooledStreamingProcessorConfiguration extends
             BiFunction<Configuration, PooledStreamingEventProcessor.Builder, PooledStreamingEventProcessor.Builder> {
 
+        /**
+         * Returns a configuration that applies the given {@code other} configuration after applying {@code this}. Any
+         * configuration set by the {@code other} will override changes by {@code this} instance.
+         *
+         * @param other The configuration to apply after applying this
+         *
+         * @return a configuration that applies both this and then the other configuration
+         */
+        default PooledStreamingProcessorConfiguration andThen(PooledStreamingProcessorConfiguration other) {
+            return (config, builder) -> other.apply(config, this.apply(config, builder));
+        }
+
     }
 }

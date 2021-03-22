@@ -815,7 +815,7 @@ public class EventProcessingModule
     }
 
     private PooledStreamingProcessorConfiguration pooledStreamingProcessorConfig(String name) {
-        return psepConfigs.getOrDefault(name, defaultPooledStreamingProcessorConfiguration);
+        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, (c, b) -> b));
     }
 
     /**

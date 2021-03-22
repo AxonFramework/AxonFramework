@@ -51,10 +51,11 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -70,8 +71,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test class validating the {@link EventProcessingModule}.
@@ -965,9 +969,12 @@ class EventProcessingModuleTest {
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         int testCapacity = 24;
-        int incorrectCapacity = 1745;
+        int wrongCapacity = 42;
+        int incorrectCapacity = 1729;
 
         configurer.eventProcessing()
+                  .registerPooledStreamingEventProcessorConfiguration((config, builder) -> builder.batchSize(100)
+                                                                                                  .maxClaimedSegments(wrongCapacity))
                   .registerPooledStreamingEventProcessorConfiguration(
                           "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
                   )
@@ -977,7 +984,7 @@ class EventProcessingModuleTest {
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.start();
+        Configuration config = configurer.buildConfiguration();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -987,6 +994,7 @@ class EventProcessingModuleTest {
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
         assertEquals(mockedSource, getField("messageSource", result));
+        assertEquals(100, (int) getField("batchSize", result));
     }
 
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
