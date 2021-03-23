@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateMember;
@@ -50,6 +51,11 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
                                                               Map<String, Object> attributes,
                                                               Member member) {
         Class<?> entityClass = ReflectionUtils.getMemberValueType(member);
+        if (entityClass.isInterface()) {
+            throw new AxonConfigurationException(
+                    "Aggregate Member type should be a concrete implementation instead of [" + entityClass + "]."
+            );
+        }
         return declaringEntity.modelOf(entityClass);
     }
 
