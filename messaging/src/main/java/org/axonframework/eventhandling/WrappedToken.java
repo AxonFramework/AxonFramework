@@ -28,8 +28,8 @@ import java.util.Optional;
 public interface WrappedToken extends TrackingToken {
 
     /**
-     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token
-     * is a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
+     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token is
+     * a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
      * <p>
      * The returned token represents the minimal position described by the given token (which may express a range)
      *
@@ -41,8 +41,8 @@ public interface WrappedToken extends TrackingToken {
     }
 
     /**
-     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token
-     * is a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
+     * Extracts a raw token describing the current processing position of the given {@code token}. If the given token is
+     * a wrapped token, it will be unwrapped until the raw token (as received from the event stream) is reached.
      * <p>
      * The returned token represents the furthest position described by the given token (which may express a range)
      *
@@ -54,13 +54,13 @@ public interface WrappedToken extends TrackingToken {
     }
 
     /**
-     * Unwrap the given {@code token} until a token of given {@code tokenType} is exposed. Returns an empty optional
-     * if the given {@code token} is not a WrappedToken instance, or if it does not wrap a token of expected
-     * {@code tokenType}.
+     * Unwrap the given {@code token} until a token of given {@code tokenType} is exposed. Returns an empty optional if
+     * the given {@code token} is not a WrappedToken instance, or if it does not wrap a token of expected {@code
+     * tokenType}.
      *
-     * @param token The token to unwrap
+     * @param token     The token to unwrap
      * @param tokenType The type of token to reveal
-     * @param <R> The generic type of the token to reveal
+     * @param <R>       The generic type of the token to reveal
      * @return an optional with the unwrapped token, if found
      */
     static <R extends TrackingToken> Optional<R> unwrap(TrackingToken token, Class<R> tokenType) {
@@ -71,6 +71,21 @@ public interface WrappedToken extends TrackingToken {
         } else {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Advance the given {@code base} {@link TrackingToken} to the {@code target}. This method will return the {@code
+     * target} as is if the {@code base} is not an implementation of a {@link WrappedToken}. If it is a {@code
+     * WrappedToken}, it will invoke {@link #advancedTo(TrackingToken)} on the {@code base}, using the {@code target}.
+     *
+     * @param base   the {@link TrackingToken} to validate if it's a {@link WrappedToken} which can be {@link
+     *               #advancedTo(TrackingToken)}
+     * @param target the {@link TrackingToken} to advance the given {@code base} to
+     * @return the {@code target} if {@code base} does not implement {@link WrappedToken}, otherwise the result of
+     * invoking {@link #advancedTo(TrackingToken)} on the {@code base} using the {@code target}
+     */
+    static TrackingToken advance(TrackingToken base, TrackingToken target) {
+        return base instanceof WrappedToken ? ((WrappedToken) base).advancedTo(target) : target;
     }
 
     /**
@@ -89,8 +104,8 @@ public interface WrappedToken extends TrackingToken {
     TrackingToken lowerBound();
 
     /**
-     * Returns the token representing the furthest position in the stream described by this token.
-     * This is usually a position that has been (partially) processed before.
+     * Returns the token representing the furthest position in the stream described by this token. This is usually a
+     * position that has been (partially) processed before.
      *
      * @return the token representing the furthest position reached in the stream
      */

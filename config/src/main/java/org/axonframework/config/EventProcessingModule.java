@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
@@ -66,6 +67,7 @@ import static java.lang.String.format;
 import static java.util.Comparator.comparing;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.config.EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp;
 
 /**
  * Event processing module configuration. Registers all configuration components within itself, builds the {@link
@@ -100,6 +102,7 @@ public class EventProcessingModule
     private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
+    private final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
@@ -165,6 +168,7 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
+    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -558,6 +562,14 @@ public class EventProcessingModule
     }
 
     @Override
+    public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
+        this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
+                name, eventHandlerInvoker, conf, defaultStreamableSource.get(), noOp()
+        );
+        return this;
+    }
+
+    @Override
     public EventProcessingConfigurer registerSubscribingEventProcessor(String name,
                                                                        Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, ehi, messageSource.apply(c)));
@@ -699,6 +711,36 @@ public class EventProcessingModule
         return this;
     }
 
+    @Override
+    public EventProcessingConfigurer registerPooledStreamingEventProcessor(
+            String name,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            PooledStreamingProcessorConfiguration processorConfiguration
+    ) {
+        registerEventProcessor(
+                name,
+                (n, c, ehi) -> pooledStreamingEventProcessor(n, ehi, c, messageSource.apply(c), processorConfiguration)
+        );
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            String name,
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        psepConfigs.put(name, pooledStreamingProcessorConfiguration);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        this.defaultPooledStreamingProcessorConfiguration = pooledStreamingProcessorConfiguration;
+        return this;
+    }
+
     private EventProcessor defaultEventProcessor(String name,
                                                  Configuration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
@@ -750,15 +792,36 @@ public class EventProcessingModule
                                      .build();
     }
 
+    private PooledStreamingEventProcessor pooledStreamingEventProcessor(
+            String name,
+            EventHandlerInvoker eventHandlerInvoker,
+            Configuration config,
+            StreamableMessageSource<TrackedEventMessage<?>> messageSource,
+            PooledStreamingProcessorConfiguration processorConfiguration
+    ) {
+        PooledStreamingEventProcessor.Builder builder =
+                PooledStreamingEventProcessor.builder()
+                                             .name(name)
+                                             .eventHandlerInvoker(eventHandlerInvoker)
+                                             .rollbackConfiguration(rollbackConfiguration(name))
+                                             .errorHandler(errorHandler(name))
+                                             .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
+                                             .messageSource(messageSource)
+                                             .tokenStore(tokenStore(name))
+                                             .transactionManager(transactionManager(name));
+        return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
+                                                           .andThen(processorConfiguration)
+                                                           .apply(config, builder)
+                                                           .build();
+    }
+
     /**
      * Gets the package name from the class of the given object.
      * <p>
-     * Since class.getPackage() can be null e.g. for generated classes, the
-     * package name is determined the old fashioned way based on the full
-     * qualified class name.
+     * Since class.getPackage() can be null e.g. for generated classes, the package name is determined the old fashioned
+     * way based on the full qualified class name.
      *
-     * @param object
-     *            {@link Object}
+     * @param object {@link Object}
      * @return {@link String}
      */
     protected static String packageOfObject(Object object) {

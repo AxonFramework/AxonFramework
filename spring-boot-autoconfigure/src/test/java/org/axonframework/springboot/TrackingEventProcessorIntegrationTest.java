@@ -35,8 +35,10 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -51,6 +53,8 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -61,11 +65,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test for the {@link TrackingEventProcessor}.
@@ -145,7 +149,7 @@ public class TrackingEventProcessorIntegrationTest {
 
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertFalse(
-                                     ((TrackingEventProcessor) ep).isError(), "Processor ended with error"
+                                     ep.isError(), "Processor ended with error"
                              ));
     }
 
@@ -251,7 +255,7 @@ public class TrackingEventProcessorIntegrationTest {
         }
 
         @Override
-        public void blacklist(TrackedEventMessage<?> ignoredMessage) {
+        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
             ignoredMessages.updateAndGet(ignoredSet -> {
                 ignoredSet.add(ignoredMessage);
                 return ignoredSet;

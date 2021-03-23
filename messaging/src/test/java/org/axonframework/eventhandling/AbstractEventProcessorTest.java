@@ -25,10 +25,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 class AbstractEventProcessorTest {
@@ -95,6 +95,16 @@ class AbstractEventProcessorTest {
 
         @Override
         public void shutDown() {
+        }
+
+        @Override
+        public boolean isRunning() {
+            return true;
+        }
+
+        @Override
+        public boolean isError() {
+            return false;
         }
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {

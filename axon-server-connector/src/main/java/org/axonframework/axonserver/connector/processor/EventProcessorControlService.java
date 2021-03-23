@@ -24,8 +24,8 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
@@ -111,8 +111,8 @@ public class EventProcessorControlService {
     }
 
     public Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
-        if (processor instanceof TrackingEventProcessor) {
-            return () -> TrackingEventProcessorInfoMessage.describe((TrackingEventProcessor) processor);
+        if (processor instanceof StreamingEventProcessor) {
+            return () -> StreamingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
         } else if (processor instanceof SubscribingEventProcessor) {
             return () -> subscribingProcessorInfo(processor);
         } else {
@@ -124,6 +124,7 @@ public class EventProcessorControlService {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
+                                 .setIsStreamingProcessor(false)
                                  .build();
     }
 
@@ -131,6 +132,7 @@ public class EventProcessorControlService {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(eventProcessor.getName())
                                  .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
+                                 .setIsStreamingProcessor(false)
                                  .build();
     }
 
@@ -148,12 +150,12 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> releaseSegment(int segmentId) {
             try {
-                if (!(processor instanceof TrackingEventProcessor)) {
-                    logger.info("Release segment requested for processor [{}] which is not a Tracking Event Processor",
+                if (!(processor instanceof StreamingEventProcessor)) {
+                    logger.info("Release segment requested for processor [{}] which is not a Streaming Event Processor",
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    ((TrackingEventProcessor) processor).releaseSegment(segmentId);
+                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
                 }
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
@@ -164,12 +166,12 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> splitSegment(int segmentId) {
             try {
-                if (!(processor instanceof TrackingEventProcessor)) {
-                    logger.info("Split segment requested for processor [{}] which is not a Tracking Event Processor",
+                if (!(processor instanceof StreamingEventProcessor)) {
+                    logger.info("Split segment requested for processor [{}] which is not a Streaming Event Processor",
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    return ((TrackingEventProcessor) processor)
+                    return ((StreamingEventProcessor) processor)
                             .splitSegment(segmentId)
                             .thenApply(result -> {
                                 if (Boolean.TRUE.equals(result)) {
@@ -190,13 +192,13 @@ public class EventProcessorControlService {
         @Override
         public CompletableFuture<Boolean> mergeSegment(int segmentId) {
             try {
-                if (!(processor instanceof TrackingEventProcessor)) {
+                if (!(processor instanceof StreamingEventProcessor)) {
                     logger.warn(
-                            "Merge segment request received for processor [{}] which is not a Tracking Event Processor",
+                            "Merge segment request received for processor [{}] which is not a Streaming Event Processor",
                             name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    return ((TrackingEventProcessor) processor)
+                    return ((StreamingEventProcessor) processor)
                             .mergeSegment(segmentId)
                             .thenApply(result -> {
                                 if (Boolean.TRUE.equals(result)) {

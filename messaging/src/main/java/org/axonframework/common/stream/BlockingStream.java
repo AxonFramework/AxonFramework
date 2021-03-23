@@ -23,15 +23,16 @@ import java.util.stream.Stream;
 /**
  * Interface for a stream that can be polled for information using (optionally blocking) pull operations.
  *
- * @param <M> the type of Message contained in this stream
+ * @param <M> the type of {@link org.axonframework.messaging.Message} contained in this stream
  * @author Rene de Waele
  * @author Allard Buijze
+ * @since 3.0
  */
 public interface BlockingStream<M> extends AutoCloseable {
 
     /**
-     * Checks whether or not the next message in the stream is available. If so this method returns
-     * {@code true} immediately. If not it returns {@code false} immediately.
+     * Checks whether or not the next message in the stream is available. If so this method returns {@code true}
+     * immediately. If not it returns {@code false} immediately.
      *
      * @return true if a message is available or becomes available before the given timeout, false otherwise
      */
@@ -44,18 +45,17 @@ public interface BlockingStream<M> extends AutoCloseable {
     }
 
     /**
-     * Checks whether or not the next message in the stream is immediately available. If so, an Optional with
-     * the next message is returned (without moving the stream pointer), otherwise an empty Optional is returned.
+     * Checks whether or not the next message in the stream is immediately available. If so, an Optional with the next
+     * message is returned (without moving the stream pointer), otherwise an empty Optional is returned.
      *
      * @return the next event if immediately available
      */
     Optional<M> peek();
 
     /**
-     * Checks whether or not the next message in the stream is available. If a message is available when this
-     * method is invoked this method returns immediately. If not, this method will block until a message becomes
-     * available, returning {@code true} or until the given {@code timeout} expires, returning
-     * {@code false}.
+     * Checks whether or not the next message in the stream is available. If a message is available when this method is
+     * invoked this method returns immediately. If not, this method will block until a message becomes available,
+     * returning {@code true} or until the given {@code timeout} expires, returning {@code false}.
      * <p>
      * To check if the stream has messages available now, pass a zero {@code timeout}.
      *
@@ -80,11 +80,11 @@ public interface BlockingStream<M> extends AutoCloseable {
     void close();
 
     /**
-     * Returns this MessageStream as a {@link Stream} of Messages. Note that the returned Stream will
-     * start at the current position of this instance.
+     * Returns this MessageStream as a {@link Stream} of Messages. Note that the returned Stream will start at the
+     * current position of this instance.
      * <p>
-     * Note that iterating over the returned Stream may affect this MessageStream and vice versa. It is therefore
-     * not recommended to use this MessageStream after invoking this method.
+     * Note that iterating over the returned Stream may affect this MessageStream and vice versa. It is therefore not
+     * recommended to use this MessageStream after invoking this method.
      *
      * @return This MessageStream as a Stream of Messages
      */
@@ -94,10 +94,22 @@ public interface BlockingStream<M> extends AutoCloseable {
 
     /**
      * Report the stream that a specific message was ignored by the consumer. Stream implementation can use this
-     * information for instance to blacklist similar messages.
+     * information for instance to filter messages with the same type of payload.
      *
-     * @param ignoredMessage the message containing the payload to blacklist
+     * @param ignoredMessage the message containing the payload to exclude from the stream
      */
-    default void blacklist(M ignoredMessage) {
+    default void skipMessagesWithPayloadTypeOf(M ignoredMessage) {
+    }
+
+    /**
+     * Set a {@code callback} to be invoked once new messages are available on this stream. Returns {@code true} if this
+     * functionality is supported and {@code false otherwise}. When {@code true} is returned, the callee can expect the
+     * {@code callback} to be invoked immediately.
+     *
+     * @param callback a {@link Runnable}
+     * @return {@code true} if on available callback is supported and can thus be waited on, {@code false otherwise}
+     */
+    default boolean setOnAvailableCallback(Runnable callback) {
+        return false;
     }
 }

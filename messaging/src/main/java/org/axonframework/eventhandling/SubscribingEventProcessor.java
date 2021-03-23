@@ -103,6 +103,17 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
                 messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
     }
 
+    @Override
+    public boolean isRunning() {
+        return eventBusRegistration != null;
+    }
+
+    @Override
+    public boolean isError() {
+        // this implementation will never stop because of an error
+        return false;
+    }
+
     /**
      * Process the given messages. A Unit of Work must be created for this processing.
      * <p>
