@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -621,12 +622,13 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
             return Collections.unmodifiableMap(allEventHandlers);
         }
 
-        //backwards compatibility - if you don't specify a designated child,
-        //you should at least get handlers of its first registered parent (if any)
+        // Backwards compatibility - if you don't specify a designated child,
+        //  you should at least get handlers of its first registered parent (if any).
         private Stream<MessageHandlingMember<? super T>> handlers(
-                Map<Class<?>, List<MessageHandlingMember<? super T>>> handlers, Class<?> subtype) {
+                Map<Class<?>, List<MessageHandlingMember<? super T>>> handlers, Class<?> subtype
+        ) {
             Class<?> type = subtype;
-            while (!handlers.containsKey(type) && !type.equals(Object.class)) {
+            while (!handlers.containsKey(type) && !Objects.equals(type, Object.class) && type.getSuperclass() != null) {
                 type = type.getSuperclass();
             }
             return handlers.getOrDefault(type, Collections.emptyList()).stream();

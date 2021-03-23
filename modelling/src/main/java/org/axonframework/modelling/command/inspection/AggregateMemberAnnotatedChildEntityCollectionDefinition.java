@@ -65,6 +65,11 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                     )));
         }
 
+        if (entityType.isInterface()) {
+            throw new AxonConfigurationException(
+                    "Aggregate Member type should be a concrete implementation instead of [" + entityType + "]."
+            );
+        }
         return declaringEntity.modelOf(entityType);
     }
 
