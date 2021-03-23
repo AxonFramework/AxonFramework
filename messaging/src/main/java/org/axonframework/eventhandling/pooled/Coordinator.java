@@ -402,7 +402,13 @@ class Coordinator {
                 }
             } catch (Exception e) {
                 logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
-                abortAndScheduleRetry(e);
+                if (e instanceof InterruptedException) {
+                    logger.error(String.format("Processor [%s] was interrupted. Shutting down.", name), e);
+                    stop();
+                    Thread.currentThread().interrupt();
+                } else {
+                    abortAndScheduleRetry(e);
+                }
             }
         }
 
@@ -497,7 +503,7 @@ class Coordinator {
          * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
          * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
          *
-         * @throws InterruptedException from {@link StreamableMessageSource#openStream(TrackingToken)}
+         * @throws InterruptedException from {@link BlockingStream#nextAvailable()}
          */
         private void coordinateWorkPackages() throws InterruptedException {
             logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
