@@ -386,7 +386,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
-    private String getQueryExecutionErrorCode(Throwable e) {
+    private static String getQueryExecutionErrorCode(Throwable e) {
         if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
             return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
         }
@@ -435,7 +435,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                             QueryResponse response =
                                     QueryResponse.newBuilder()
                                                  .setErrorCode(getQueryExecutionErrorCode(e))
-                                                 .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                                                  .setErrorMessage(ex)
                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                  .build();
@@ -467,12 +466,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 logger.warn("Query Processor had an exception when processing query [{}]",
                             queryRequest.getQuery(), e);
             }
-        }
-        private String getQueryExecutionErrorCode(Throwable e) {
-            if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
-                return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
-            }
-            return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
         }
     }
 
