@@ -136,7 +136,7 @@ public class QuerySerializer {
 
         if (queryResponse.isExceptional()) {
             Throwable exceptionResult = queryResponse.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(getQueryExecutionErrorCode(exceptionResult));
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -150,6 +150,13 @@ public class QuerySerializer {
                               .setMessageIdentifier(queryResponse.getIdentifier())
                               .setRequestIdentifier(requestMessageId)
                               .build();
+    }
+
+    private String getQueryExecutionErrorCode(Throwable e) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
+            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
+        }
+        return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
     }
 
     /**

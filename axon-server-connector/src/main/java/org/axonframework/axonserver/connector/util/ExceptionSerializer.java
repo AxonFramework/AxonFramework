@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import org.axonframework.common.AxonNonTransientException;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -51,5 +52,19 @@ public abstract class ExceptionSerializer {
             builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         }
         return builder.build();
+    }
+
+    /**
+     * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
+     * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
+     * occur again.
+     *
+     * @param failure the exception that occurred while processing a command
+     * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
+     * retried, or {@code false} when the command has a chance of succeeding if it retried.
+     */
+    public static boolean isExplicitlyNonTransient(Throwable failure) {
+        return failure instanceof AxonNonTransientException
+                || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
     }
 }

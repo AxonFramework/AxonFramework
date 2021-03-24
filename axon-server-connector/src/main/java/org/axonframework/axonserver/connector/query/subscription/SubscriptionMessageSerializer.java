@@ -132,7 +132,7 @@ public class SubscriptionMessageSerializer {
         QueryUpdate.Builder updateMessageBuilder = QueryUpdate.newBuilder();
         if (subscriptionQueryUpdateMessage.isExceptional()) {
             Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
-            updateMessageBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            updateMessageBuilder.setErrorCode(getQueryExecutionErrorCode(exceptionResult));
             updateMessageBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -232,7 +232,7 @@ public class SubscriptionMessageSerializer {
                              .setRequestIdentifier(subscriptionId);
         if (initialResult.isExceptional()) {
             Throwable exceptionResult = initialResult.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(getQueryExecutionErrorCode(exceptionResult));
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -279,7 +279,7 @@ public class SubscriptionMessageSerializer {
                                                 .setErrorMessage(ExceptionSerializer.serialize(
                                                         configuration.getClientId(), cause
                                                 ))
-                                                .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                .setErrorCode(getQueryExecutionErrorCode(cause))
                                                 .setClientId(configuration.getClientId())
                                                 .setComponentName(configuration.getComponentName())
                                                 .build();
@@ -289,5 +289,12 @@ public class SubscriptionMessageSerializer {
                                          .setSubscriptionIdentifier(subscriptionId)
                                          .setCompleteExceptionally(exceptionallyCompletedQueryUpdate)
         ).build();
+    }
+
+    private String getQueryExecutionErrorCode(Throwable e) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
+            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
+        }
+        return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
     }
 }

@@ -19,12 +19,14 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.AxonServerException;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.command.AxonServerNonTransientRemoteCommandHandlingException;
+import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.common.AxonException;
-import org.junit.jupiter.api.Test;
+import org.axonframework.queryhandling.QueryExecutionException;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -38,7 +40,7 @@ class ErrorCodeTest {
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
         assertEquals("myMessage", exception.getMessage());
-        assertEquals("myCustomObject", ((CommandExecutionException)exception).getDetails().orElse("null"));
+        assertEquals("myCustomObject", ((CommandExecutionException) exception).getDetails().orElse("null"));
     }
 
     @Test
@@ -54,5 +56,25 @@ class ErrorCodeTest {
         RuntimeException exception = new RuntimeException("oops");
         AxonException axonException = ErrorCode.getFromCode("AXONIQ-4002").convert(exception);
         assertEquals(exception.getMessage(), axonException.getMessage());
+    }
+
+    @Test
+    void testConvert4005FromCodeAndMessage() {
+        ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4005");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
+        assertTrue(exception instanceof CommandExecutionException);
+        assertTrue(exception.getCause() instanceof AxonServerNonTransientRemoteCommandHandlingException);
+        assertEquals("myMessage", exception.getMessage());
+        assertEquals("myCustomObject", ((CommandExecutionException) exception).getDetails().orElse("null"));
+    }
+
+    @Test
+    void testConvert5003FromCodeAndMessage() {
+        ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-5003");
+        AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
+        assertTrue(exception instanceof QueryExecutionException);
+        assertTrue(exception.getCause() instanceof AxonServerNonTransientRemoteQueryHandlingException);
+        assertEquals("myMessage", exception.getMessage());
+        assertEquals("myCustomObject", ((QueryExecutionException) exception).getDetails().orElse("null"));
     }
 }

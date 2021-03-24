@@ -367,7 +367,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             updateHandler.getUpdates()
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
-                             String errorCode = ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
+                             String errorCode = getQueryExecutionErrorCode(e);
                              QueryUpdate queryUpdate = QueryUpdate.newBuilder()
                                                                   .setErrorMessage(error)
                                                                   .setErrorCode(errorCode)
@@ -384,6 +384,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 return CompletableFuture.completedFuture(null);
             };
         }
+    }
+
+    private String getQueryExecutionErrorCode(Throwable e) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
+            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
+        }
+        return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
     }
 
     /**
@@ -427,6 +434,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                             ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                             QueryResponse response =
                                     QueryResponse.newBuilder()
+                                                 .setErrorCode(getQueryExecutionErrorCode(e))
                                                  .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
                                                  .setErrorMessage(ex)
                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier())
@@ -452,13 +460,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             } catch (RuntimeException | OutOfDirectMemoryError e) {
                 ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                 responseHandler.sendLast(QueryResponse.newBuilder()
-                                                      .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                      .setErrorCode(getQueryExecutionErrorCode(e))
                                                       .setErrorMessage(ex)
                                                       .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                       .build());
                 logger.warn("Query Processor had an exception when processing query [{}]",
                             queryRequest.getQuery(), e);
             }
+        }
+        private String getQueryExecutionErrorCode(Throwable e) {
+            if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
+                return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
+            }
+            return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
         }
     }
 

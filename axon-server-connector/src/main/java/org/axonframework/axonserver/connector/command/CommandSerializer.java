@@ -125,7 +125,7 @@ public class CommandSerializer {
 
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(getErrorCode(throwable));
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
             commandResultMessage.exceptionDetails()
                                 .ifPresent(details -> responseBuilder.setPayload(objectSerializer.apply(details)));
@@ -134,6 +134,13 @@ public class CommandSerializer {
         }
 
         return responseBuilder.build();
+    }
+
+    private String getErrorCode(Throwable throwable) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
+            return ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
+        }
+        return ErrorCode.COMMAND_EXECUTION_ERROR.errorCode();
     }
 
     /**

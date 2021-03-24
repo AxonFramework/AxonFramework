@@ -18,7 +18,9 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import org.axonframework.axonserver.connector.command.AxonServerCommandDispatchException;
+import org.axonframework.axonserver.connector.command.AxonServerNonTransientRemoteCommandHandlingException;
 import org.axonframework.axonserver.connector.command.AxonServerRemoteCommandHandlingException;
+import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.query.AxonServerQueryDispatchException;
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
@@ -98,6 +100,14 @@ public enum ErrorCode {
                     new AxonServerRemoteCommandHandlingException(code, error)
             )
     ),
+    COMMAND_EXECUTION_NON_TRANSIENT_ERROR(
+            "AXONIQ-4005",
+            (code, error, details) -> new CommandExecutionException(
+                    error.getMessage(),
+                    new AxonServerNonTransientRemoteCommandHandlingException(code, error),
+                    details.get()
+            )
+    ),
 
     //Query errors
     NO_HANDLER_FOR_QUERY("AXONIQ-5000", (code, error, details) -> new NoHandlerForQueryException(error.getMessage())),
@@ -110,6 +120,14 @@ public enum ErrorCode {
             )
     ),
     QUERY_DISPATCH_ERROR("AXONIQ-5002", (code, error, details) -> new AxonServerQueryDispatchException(code, error)),
+    QUERY_EXECUTION_NON_TRANSIENT_ERROR(
+            "AXONIQ-5003",
+            (code, error, details) -> new QueryExecutionException(
+                    error.getMessage(),
+                    new AxonServerNonTransientRemoteQueryHandlingException(code, error),
+                    details.get()
+            )
+    ),
 
     // Internal errors
     DATAFILE_READ_ERROR(
