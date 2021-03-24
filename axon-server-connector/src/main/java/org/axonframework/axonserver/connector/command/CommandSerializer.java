@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.util.ErrorCodeDecider;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
@@ -125,7 +126,7 @@ public class CommandSerializer {
 
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
-            responseBuilder.setErrorCode(getErrorCode(throwable));
+            responseBuilder.setErrorCode(ErrorCodeDecider.getCommandExecutionErrorCode(throwable).errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
             commandResultMessage.exceptionDetails()
                                 .ifPresent(details -> responseBuilder.setPayload(objectSerializer.apply(details)));
@@ -134,13 +135,6 @@ public class CommandSerializer {
         }
 
         return responseBuilder.build();
-    }
-
-    private String getErrorCode(Throwable throwable) {
-        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
-            return ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
-        }
-        return ErrorCode.COMMAND_EXECUTION_ERROR.errorCode();
     }
 
     /**

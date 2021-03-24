@@ -27,8 +27,8 @@ import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.query.GrpcBackedResponseMessage;
+import org.axonframework.axonserver.connector.util.ErrorCodeDecider;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
@@ -132,7 +132,7 @@ public class SubscriptionMessageSerializer {
         QueryUpdate.Builder updateMessageBuilder = QueryUpdate.newBuilder();
         if (subscriptionQueryUpdateMessage.isExceptional()) {
             Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
-            updateMessageBuilder.setErrorCode(getQueryExecutionErrorCode(exceptionResult));
+            updateMessageBuilder.setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(exceptionResult).errorCode());
             updateMessageBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -232,7 +232,7 @@ public class SubscriptionMessageSerializer {
                              .setRequestIdentifier(subscriptionId);
         if (initialResult.isExceptional()) {
             Throwable exceptionResult = initialResult.exceptionResult();
-            responseBuilder.setErrorCode(getQueryExecutionErrorCode(exceptionResult));
+            responseBuilder.setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(exceptionResult).errorCode());
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -279,7 +279,7 @@ public class SubscriptionMessageSerializer {
                                                 .setErrorMessage(ExceptionSerializer.serialize(
                                                         configuration.getClientId(), cause
                                                 ))
-                                                .setErrorCode(getQueryExecutionErrorCode(cause))
+                                                .setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(cause).errorCode())
                                                 .setClientId(configuration.getClientId())
                                                 .setComponentName(configuration.getComponentName())
                                                 .build();
@@ -289,12 +289,5 @@ public class SubscriptionMessageSerializer {
                                          .setSubscriptionIdentifier(subscriptionId)
                                          .setCompleteExceptionally(exceptionallyCompletedQueryUpdate)
         ).build();
-    }
-
-    private String getQueryExecutionErrorCode(Throwable e) {
-        if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
-            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
-        }
-        return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
     }
 }

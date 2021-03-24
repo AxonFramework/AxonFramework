@@ -39,6 +39,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
+import org.axonframework.axonserver.connector.util.ErrorCodeDecider;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
@@ -367,7 +368,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             updateHandler.getUpdates()
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
-                             String errorCode = getQueryExecutionErrorCode(e);
+                             String errorCode = ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode();
                              QueryUpdate queryUpdate = QueryUpdate.newBuilder()
                                                                   .setErrorMessage(error)
                                                                   .setErrorCode(errorCode)
@@ -384,13 +385,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 return CompletableFuture.completedFuture(null);
             };
         }
-    }
-
-    private static String getQueryExecutionErrorCode(Throwable e) {
-        if (ExceptionSerializer.isExplicitlyNonTransient(e)) {
-            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode();
-        }
-        return ErrorCode.QUERY_EXECUTION_ERROR.errorCode();
     }
 
     /**
@@ -434,7 +428,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                             ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                             QueryResponse response =
                                     QueryResponse.newBuilder()
-                                                 .setErrorCode(getQueryExecutionErrorCode(e))
+                                                 .setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode())
                                                  .setErrorMessage(ex)
                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                  .build();
@@ -459,7 +453,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             } catch (RuntimeException | OutOfDirectMemoryError e) {
                 ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                 responseHandler.sendLast(QueryResponse.newBuilder()
-                                                      .setErrorCode(getQueryExecutionErrorCode(e))
+                                                      .setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode())
                                                       .setErrorMessage(ex)
                                                       .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                       .build());
