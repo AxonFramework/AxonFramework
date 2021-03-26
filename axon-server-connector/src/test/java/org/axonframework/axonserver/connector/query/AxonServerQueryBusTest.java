@@ -192,9 +192,9 @@ class AxonServerQueryBusTest {
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
         assertTrue(actual instanceof QueryExecutionException);
-        AxonServerRemoteQueryHandlingException queryDispatchException =
+        AxonServerRemoteQueryHandlingException remoteQueryHandlingException =
                 (AxonServerRemoteQueryHandlingException) actual.getCause();
-        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), queryDispatchException.getErrorCode());
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
     }
@@ -214,9 +214,9 @@ class AxonServerQueryBusTest {
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
         assertTrue(actual instanceof QueryExecutionException);
-        AxonServerNonTransientRemoteQueryHandlingException queryDispatchException =
+        AxonServerNonTransientRemoteQueryHandlingException remoteQueryHandlingException =
                 (AxonServerNonTransientRemoteQueryHandlingException) actual.getCause();
-        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), queryDispatchException.getErrorCode());
+        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
     }
