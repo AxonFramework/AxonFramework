@@ -498,9 +498,9 @@ class MultiStreamableMessageSourceTest {
         verify(streamTwo).setOnAvailableCallback(testCallback);
         verify(streamThree).setOnAvailableCallback(testCallback);
 
-        // "invoked" remains false, as the callback has been removed if one of the streams does not support it.
+        // "invoked" results in true, as the callback is not removed if one of the streams does not support it.
         streamOne.invokeCallback();
-        assertFalse(invoked.get());
+        assertTrue(invoked.get());
     }
 
     private static class CallbackSupportingBlockingStream implements BlockingStream<TrackedEventMessage<?>> {

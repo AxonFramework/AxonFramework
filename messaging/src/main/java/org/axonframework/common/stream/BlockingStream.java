@@ -105,6 +105,10 @@ public interface BlockingStream<M> extends AutoCloseable {
      * Set a {@code callback} to be invoked once new messages are available on this stream. Returns {@code true} if this
      * functionality is supported and {@code false} otherwise. When {@code true} is returned, the callee can expect the
      * {@code callback} to be invoked immediately.
+     * <p>
+     * Note that returning {@code false} does not define the given {@code callback} is never invoked. If the callee
+     * needs to be certain the {@code callback} is never invoked in case of {@code false}, a no-op {@link Runnable}
+     * should be provided.
      *
      * @param callback a {@link Runnable}
      * @return {@code true} if on available callback is supported and can thus be waited on, {@code false otherwise}

@@ -541,8 +541,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         /**
          * Set a {@code callback} to be invoked once new messages are available on any of the streams this {@link
          * BlockingStream} implementations contains. Returns {@code true} if this functionality is supported by all
-         * contained streams and {@code false} otherwise. When {@code true} is returned, the callee can expect the
-         * {@code callback} to be invoked immediately.
+         * contained streams and {@code false} otherwise.
          *
          * @param callback a {@link Runnable}
          * @return {@code true} if all contained {@link BlockingStream} implementations return true for {@link
@@ -550,17 +549,10 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         @Override
         public boolean setOnAvailableCallback(Runnable callback) {
-            Boolean allStreamsSupportCallback = messageStreams.stream()
-                                                              .map(stream -> stream.setOnAvailableCallback(callback))
-                                                              .reduce((resultOne, resultTwo) -> resultOne && resultTwo)
-                                                              .orElse(false);
-            if (allStreamsSupportCallback) {
-                return true;
-            } else {
-                messageStreams.forEach(stream -> stream.setOnAvailableCallback(() -> {
-                }));
-                return false;
-            }
+            return messageStreams.stream()
+                                 .map(stream -> stream.setOnAvailableCallback(callback))
+                                 .reduce((resultOne, resultTwo) -> resultOne && resultTwo)
+                                 .orElse(false);
         }
     }
 }
