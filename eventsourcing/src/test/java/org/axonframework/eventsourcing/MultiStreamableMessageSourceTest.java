@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -35,8 +36,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -386,5 +389,152 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.nextAvailable();
         assertEquals(pubToStreamC.getPayload(), singleEventStream.nextAvailable().getPayload());
         assertEquals(pubToStreamB.getPayload(), singleEventStream.nextAvailable().getPayload());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testSkipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
+        TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
+                new GlobalSequenceTrackingToken(1), GenericEventMessage.asEventMessage("some-payload")
+        );
+
+        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage<?>> streamOne = mock(BlockingStream.class);
+        when(sourceOne.openStream(any())).thenReturn(streamOne);
+
+        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        when(sourceTwo.openStream(any())).thenReturn(streamTwo);
+
+        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        when(sourceThree.openStream(any())).thenReturn(streamThree);
+
+        MultiStreamableMessageSource multiStream =
+                MultiStreamableMessageSource.builder()
+                                            .addMessageSource("one", sourceOne)
+                                            .addMessageSource("two", sourceTwo)
+                                            .addMessageSource("three", sourceThree)
+                                            .build();
+        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+
+        testSubject.skipMessagesWithPayloadTypeOf(testEvent);
+
+        verify(streamOne).skipMessagesWithPayloadTypeOf(testEvent);
+        verify(streamTwo).skipMessagesWithPayloadTypeOf(testEvent);
+        verify(streamThree).skipMessagesWithPayloadTypeOf(testEvent);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testSetOnAvailableCallbackReturnsTrueIfAllStreamsReturnTrue() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        Runnable testCallback = () -> invoked.set(true);
+
+        CallbackSupportingBlockingStream streamOne = spy(new CallbackSupportingBlockingStream());
+        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
+        when(sourceOne.openStream(any())).thenReturn(streamOne);
+
+        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        when(streamTwo.setOnAvailableCallback(any())).thenReturn(true);
+        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
+        when(sourceTwo.openStream(any())).thenReturn(streamTwo);
+
+        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        when(streamThree.setOnAvailableCallback(any())).thenReturn(true);
+        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
+        when(sourceThree.openStream(any())).thenReturn(streamThree);
+
+        MultiStreamableMessageSource multiStream =
+                MultiStreamableMessageSource.builder()
+                                            .addMessageSource("one", sourceOne)
+                                            .addMessageSource("two", sourceTwo)
+                                            .addMessageSource("three", sourceThree)
+                                            .build();
+        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+
+        assertTrue(testSubject.setOnAvailableCallback(testCallback));
+
+        verify(streamOne).setOnAvailableCallback(testCallback);
+        verify(streamTwo).setOnAvailableCallback(testCallback);
+        verify(streamThree).setOnAvailableCallback(testCallback);
+
+        streamOne.invokeCallback();
+        assertTrue(invoked.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testSetOnAvailableCallbackReturnsFalseIfOneStreamsReturnsFalse() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        Runnable testCallback = () -> invoked.set(true);
+
+        CallbackSupportingBlockingStream streamOne = spy(new CallbackSupportingBlockingStream());
+        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
+        when(sourceOne.openStream(any())).thenReturn(streamOne);
+
+        // Stream two does not support callbacks
+        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        when(streamTwo.setOnAvailableCallback(any())).thenReturn(false);
+        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
+        when(sourceTwo.openStream(any())).thenReturn(streamTwo);
+
+        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        when(streamThree.setOnAvailableCallback(any())).thenReturn(true);
+        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
+        when(sourceThree.openStream(any())).thenReturn(streamThree);
+
+        MultiStreamableMessageSource multiStream =
+                MultiStreamableMessageSource.builder()
+                                            .addMessageSource("one", sourceOne)
+                                            .addMessageSource("two", sourceTwo)
+                                            .addMessageSource("three", sourceThree)
+                                            .build();
+        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+
+        assertFalse(testSubject.setOnAvailableCallback(testCallback));
+
+        verify(streamOne).setOnAvailableCallback(testCallback);
+        verify(streamTwo).setOnAvailableCallback(testCallback);
+        verify(streamThree).setOnAvailableCallback(testCallback);
+
+        // "invoked" remains false, as the callback has been removed if one of the streams does not support it.
+        streamOne.invokeCallback();
+        assertFalse(invoked.get());
+    }
+
+    private static class CallbackSupportingBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
+
+        private Runnable callback;
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean setOnAvailableCallback(Runnable callback) {
+            this.callback = callback;
+            return true;
+        }
+
+        private void invokeCallback() {
+            callback.run();
+        }
     }
 }

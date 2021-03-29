@@ -103,7 +103,7 @@ public interface BlockingStream<M> extends AutoCloseable {
 
     /**
      * Set a {@code callback} to be invoked once new messages are available on this stream. Returns {@code true} if this
-     * functionality is supported and {@code false otherwise}. When {@code true} is returned, the callee can expect the
+     * functionality is supported and {@code false} otherwise. When {@code true} is returned, the callee can expect the
      * {@code callback} to be invoked immediately.
      *
      * @param callback a {@link Runnable}

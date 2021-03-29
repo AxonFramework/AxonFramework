@@ -308,6 +308,16 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         public Stream<TrackedEventMessage<?>> asStream() {
             return delegate.asStream();
         }
+
+        @Override
+        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
+            delegate.skipMessagesWithPayloadTypeOf(ignoredMessage);
+        }
+
+        @Override
+        public boolean setOnAvailableCallback(Runnable callback) {
+            return delegate.setOnAvailableCallback(callback);
+        }
     }
 
     /**
@@ -521,6 +531,36 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         @Override
         public void close() {
             messageStreams.forEach(SourceIdAwareBlockingStream::close);
+        }
+
+        @Override
+        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
+            messageStreams.forEach(stream -> stream.skipMessagesWithPayloadTypeOf(ignoredMessage));
+        }
+
+        /**
+         * Set a {@code callback} to be invoked once new messages are available on any of the streams this {@link
+         * BlockingStream} implementations contains. Returns {@code true} if this functionality is supported by all
+         * contained streams and {@code false} otherwise. When {@code true} is returned, the callee can expect the
+         * {@code callback} to be invoked immediately.
+         *
+         * @param callback a {@link Runnable}
+         * @return {@code true} if all contained {@link BlockingStream} implementations return true for {@link
+         * BlockingStream#setOnAvailableCallback(Runnable)}, {@code false otherwise}
+         */
+        @Override
+        public boolean setOnAvailableCallback(Runnable callback) {
+            Boolean allStreamsSupportCallback = messageStreams.stream()
+                                                              .map(stream -> stream.setOnAvailableCallback(callback))
+                                                              .reduce((resultOne, resultTwo) -> resultOne && resultTwo)
+                                                              .orElse(false);
+            if (allStreamsSupportCallback) {
+                return true;
+            } else {
+                messageStreams.forEach(stream -> stream.setOnAvailableCallback(() -> {
+                }));
+                return false;
+            }
         }
     }
 }
