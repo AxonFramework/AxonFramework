@@ -662,7 +662,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the name of this {@link PooledStreamingEventProcessor}
          */
-        protected String name() {
+        public String name() {
             return name;
         }
     }
