@@ -30,7 +30,7 @@ import java.util.Map;
  * @author Marc Gathier
  * @since 4.0
  */
-class GrpcMetaDataAwareSerializer implements Serializer {
+public final class GrpcMetaDataAwareSerializer implements Serializer {
 
     private final Serializer delegate;
     private final GrpcMetaDataConverter metaDataConverter;
