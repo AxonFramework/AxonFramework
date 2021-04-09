@@ -98,7 +98,7 @@
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hsqldb.version>2.5.0</hsqldb.version>
+        <hsqldb.version>2.6.0</hsqldb.version>
         <hibernate-entitymanager.version>5.4.30.Final</hibernate-entitymanager.version>
         <byte-buddy.version>1.10.22</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
