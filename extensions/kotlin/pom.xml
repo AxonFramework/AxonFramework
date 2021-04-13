@@ -36,7 +36,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.4.32</kotlin.version>
     <kotlin-logging.version>2.0.6</kotlin-logging.version>
-    <jackson-kotlin.version>2.12.2</jackson-kotlin.version>
+    <jackson-kotlin.version>2.12.3</jackson-kotlin.version>
     <mockk.version>1.11.0</mockk.version>
     <junit.jupiter.version>5.7.1</junit.jupiter.version>
     <slf4j.version>1.7.30</slf4j.version>
