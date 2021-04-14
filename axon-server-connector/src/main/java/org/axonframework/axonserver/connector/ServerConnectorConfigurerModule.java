@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
+import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
@@ -117,6 +118,10 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .priorityCalculator(c.getComponent(
                                            CommandPriorityCalculator.class,
                                            CommandPriorityCalculator::defaultCommandPriorityCalculator
+                                   ))
+                                   .loadFactorProvider(c.getComponent(
+                                           CommandLoadFactorProvider.class,
+                                           () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
                                    .build();

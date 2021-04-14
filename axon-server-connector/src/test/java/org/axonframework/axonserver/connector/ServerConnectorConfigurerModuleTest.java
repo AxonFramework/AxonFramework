@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,12 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
+import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,6 +31,11 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link ServerConnectorConfigurerModule}.
+ *
+ * @author Allard Buijze
+ */
 class ServerConnectorConfigurerModuleTest {
 
     @Test
@@ -68,5 +76,21 @@ class ServerConnectorConfigurerModuleTest {
         assertSame(configuration.queryBus().queryUpdateEmitter(), configuration.queryUpdateEmitter());
         assertSame(((AxonServerQueryBus) configuration.queryBus()).localSegment().queryUpdateEmitter(),
                    configuration.queryUpdateEmitter());
+    }
+
+    @Test
+    void testCustomCommandLoadFactorProvider() throws NoSuchFieldException {
+        CommandLoadFactorProvider expected = command -> 5000;
+        Configuration config =
+                DefaultConfigurer.defaultConfiguration()
+                                 .registerComponent(CommandLoadFactorProvider.class, c -> expected)
+                                 .buildConfiguration();
+
+        CommandBus commandBus = config.commandBus();
+        assertTrue(commandBus instanceof AxonServerCommandBus);
+        CommandLoadFactorProvider result = ReflectionUtils.getFieldValue(
+                AxonServerCommandBus.class.getDeclaredField("loadFactorProvider"), commandBus
+        );
+        assertEquals(expected, result);
     }
 }
