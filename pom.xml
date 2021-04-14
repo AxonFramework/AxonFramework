@@ -73,7 +73,7 @@
         <spring.boot.version>2.4.4</spring.boot.version>
         <mockito.version>3.9.0</mockito.version>
         <projectreactor.version>3.4.5</projectreactor.version>
-        <micrometer.version>1.6.5</micrometer.version>
+        <micrometer.version>1.6.6</micrometer.version>
         <dropwizard.metrics.version>4.1.19</dropwizard.metrics.version>
         <jackson.version>2.12.3</jackson.version>
         <!--
