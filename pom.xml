@@ -111,7 +111,7 @@
         <junit.jupiter.version>5.7.1</junit.jupiter.version>
         <axonserver-connector-java.version>4.5</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.15.2</testcontainers.version>
+        <testcontainers.version>1.15.3</testcontainers.version>
 
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.2</felix.maven-bundle-plugin.version>
