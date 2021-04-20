@@ -94,7 +94,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.3</disruptor.version>
-        <mysql-connector-java.version>8.0.23</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.24</mysql-connector-java.version>
         <ehcache.version>2.10.6</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
