@@ -79,6 +79,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -168,9 +169,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
                         ? objectMapperBeans.get("defaultAxonObjectMapper")
                         : objectMapperBeans.values().stream().findFirst()
-                                           .orElseThrow(() -> new NoClassDefFoundError(
-                                                   "com/fasterxml/jackson/databind/ObjectMapper"
-                                           ));
+                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
