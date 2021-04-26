@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,9 +185,20 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
             Optional<String> revisionValue =
                     AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision");
-            return revisionValue.isPresent()
-                    ? new RevisionSnapshotFilter(revisionValue.get())
-                    : SnapshotFilter.allowAll();
+            if (revisionValue.isPresent()) {
+                String declaredAggregateType =
+                        metaModel.get()
+                                 .declaredType(aggregate)
+                                 .orElseThrow(() -> new AxonConfigurationException(
+                                         "No declared type found for Aggregate [" + aggregate + "]"
+                                 ));
+                return RevisionSnapshotFilter.builder()
+                                             .type(declaredAggregateType)
+                                             .revision(revisionValue.get())
+                                             .build();
+            } else {
+                return SnapshotFilter.allowAll();
+            }
         });
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
