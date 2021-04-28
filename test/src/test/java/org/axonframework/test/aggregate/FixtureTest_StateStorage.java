@@ -43,7 +43,7 @@ class FixtureTest_StateStorage {
 
     @BeforeEach
     void setUp() {
-        fixture = new AggregateTestFixture<>(StateStoredAggregate.class);
+        fixture = new AggregateTestFixture<>(StateStoredAggregate.class, true);
     }
 
     @AfterEach
@@ -59,6 +59,14 @@ class FixtureTest_StateStorage {
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
                .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
+    }
+
+    @Test
+    void testCreateStateStoredAggregateWithCommand() {
+        fixture.givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
+                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
+                .expectEvents(new StubDomainEvent())
+                .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
     }
 
     @Test
