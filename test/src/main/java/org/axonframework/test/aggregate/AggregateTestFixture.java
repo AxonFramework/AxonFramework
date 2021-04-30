@@ -118,7 +118,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);
 
     private final Class<T> aggregateType;
-    private final boolean useStateStorage;
     private final Set<Class<? extends T>> subtypes = new HashSet<>();
     private final SimpleCommandBus commandBus;
     private final EventStore eventStore;
@@ -145,16 +144,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateType the aggregate to initialize the test fixture for
      */
     public AggregateTestFixture(Class<T> aggregateType) {
-        this(aggregateType, false);
-    }
-
-    /**
-     * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
-     *
-     * @param aggregateType the aggregate to initialize the test fixture for
-     * @param useStateStorage whether to use state storage or event sourcing
-     */
-    public AggregateTestFixture(Class<T> aggregateType, boolean useStateStorage) {
         deadlineManager = new StubDeadlineManager();
         commandBus = SimpleCommandBus.builder().build();
         eventStore = new RecordingEventStore();
@@ -162,7 +151,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         resources.add(eventStore);
         resources.add(deadlineManager);
         this.aggregateType = aggregateType;
-        this.useStateStorage = useStateStorage;
         clearGivenWhenState();
 
         registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(resources));
@@ -176,6 +164,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public final FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes) {
         this.subtypes.addAll(Arrays.asList(subtypes));
         return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> useStateStorage() {
+        return this.registerRepository(new InMemoryRepository<>(aggregateType,
+                                                                subtypes,
+                                                                eventStore,
+                                                                getParameterResolverFactory(),
+                                                                getHandlerDefinition(),
+                                                                getRepositoryProvider()));
     }
 
     @Override
@@ -323,9 +321,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenState(Supplier<T> aggregate) {
-        ensureRepositoryConfiguration();
         clearGivenWhenState();
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            if (repository == null) {
+                this.useStateStorage();
+            }
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -511,28 +511,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void ensureRepositoryConfiguration() {
-        if(repository != null) {
-            return;
-        }
-
-        if(this.useStateStorage) {
-            this.registerRepository(new InMemoryRepository<>(
-                    aggregateType,
-                    subtypes,
-                    eventStore,
-                    getParameterResolverFactory(),
-                    getHandlerDefinition(),
-                    getRepositoryProvider()));
-        } else {
+        if (repository == null) {
             AggregateModel<T> aggregateModel = aggregateModel();
-            this.registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                           .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
-                                                           .eventStore(eventStore)
-                                                           .parameterResolverFactory(getParameterResolverFactory())
-                                                           .handlerDefinition(getHandlerDefinition())
-                                                           .repositoryProvider(getRepositoryProvider())
-                                                           .build());
+            registerRepository(EventSourcingRepository.builder(aggregateType)
+                                                      .aggregateModel(aggregateModel)
+                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
+                                                      .eventStore(eventStore)
+                                                      .parameterResolverFactory(getParameterResolverFactory())
+                                                      .handlerDefinition(getHandlerDefinition())
+                                                      .repositoryProvider(getRepositoryProvider())
+                                                      .build());
         }
     }
 

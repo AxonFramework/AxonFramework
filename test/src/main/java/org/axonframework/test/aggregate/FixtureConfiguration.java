@@ -106,6 +106,14 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
 
     /**
+     * Configures the fixture for state stored aggregates.
+     * This will register an {@link org.axonframework.test.aggregate.AggregateTestFixture.InMemoryRepository} with the fixture
+     *
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> useStateStorage();
+
+    /**
      * Registers an arbitrary {@code repository} with the fixture. The repository must be wired
      * with the Event Store of this test fixture.
      * <p/>
