@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -30,27 +31,40 @@ import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link DomainEventEntry}.
+ *
  * @author Allard Buijze
  */
 class DomainEventEntryTest {
 
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+
     @Test
-    void testDomainEventEntry_WrapEventsCorrectly() {
-        Serializer serializer = XStreamSerializer.builder().build();
+    void testDomainEventEntryWrapEventsCorrectly() {
+        Instant testTimestamp = Instant.now();
 
-        String payload = "Payload";
-        MetaData metaData = new MetaData(Collections.singletonMap("Key", "Value"));
-        DomainEventMessage<String> event = new GenericDomainEventMessage<>("type", randomUUID().toString(), 2L, payload,
-                                                                           metaData, randomUUID().toString(),
-                                                                           Instant.now());
+        String expectedType = "type";
+        String expectedAggregateId = randomUUID().toString();
+        long expectedSequenceNumber = 2L;
+        String expectedPayload = "Payload";
+        MetaData expectedMetaData = new MetaData(Collections.singletonMap("Key", "Value"));
+        Instant expectedTimestamp = DateTimeUtils.parseInstant(DateTimeUtils.formatInstant(testTimestamp));
+        String expectedEventIdentifier = randomUUID().toString();
 
-        DomainEventEntry eventEntry = new DomainEventEntry(event, serializer);
+        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+                expectedType, expectedAggregateId, expectedSequenceNumber, expectedPayload, expectedMetaData,
+                expectedEventIdentifier, testTimestamp
+        );
 
-        assertEquals(event.getAggregateIdentifier(), eventEntry.getAggregateIdentifier());
-        assertEquals(event.getSequenceNumber(), eventEntry.getSequenceNumber());
-        assertEquals(event.getTimestamp(), eventEntry.getTimestamp());
-        assertEquals(payload, serializer.deserialize(eventEntry.getPayload()));
-        assertEquals(metaData, serializer.deserialize(eventEntry.getMetaData()));
-        assertEquals(byte[].class, eventEntry.getPayload().getContentType());
+        DomainEventEntry result = new DomainEventEntry(testEvent, serializer);
+
+        assertEquals(expectedType, result.getType());
+        assertEquals(expectedAggregateId, result.getAggregateIdentifier());
+        assertEquals(expectedSequenceNumber, result.getSequenceNumber());
+        assertEquals(expectedEventIdentifier, result.getEventIdentifier());
+        assertEquals(expectedTimestamp, result.getTimestamp());
+        assertEquals(expectedPayload, serializer.deserialize(result.getPayload()));
+        assertEquals(byte[].class, result.getPayload().getContentType());
+        assertEquals(expectedMetaData, serializer.deserialize(result.getMetaData()));
     }
 }
