@@ -93,7 +93,7 @@
         <javax.inject.version>1</javax.inject.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
-        <disruptor.version>3.4.3</disruptor.version>
+        <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.24</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
