@@ -318,7 +318,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenState(Supplier<T> aggregate) {
-        if(this.repository == null) {
+        if (this.repository == null) {
             this.useStateStorage();
         }
 
@@ -510,11 +510,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void ensureRepositoryConfiguration() {
-        if(repository != null) {
+        if (repository != null) {
             return;
         }
 
-        if(this.useStateStorage) {
+        if (this.useStateStorage) {
             this.registerRepository(new InMemoryRepository<>(
                     aggregateType,
                     subtypes,
@@ -525,13 +525,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         } else {
             AggregateModel<T> aggregateModel = aggregateModel();
             this.registerRepository(EventSourcingRepository.builder(aggregateType)
-                    .aggregateModel(aggregateModel)
-                    .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
-                    .eventStore(eventStore)
-                    .parameterResolverFactory(getParameterResolverFactory())
-                    .handlerDefinition(getHandlerDefinition())
-                    .repositoryProvider(getRepositoryProvider())
-                    .build());
+                                                           .aggregateModel(aggregateModel)
+                                                           .aggregateFactory(new GenericAggregateFactory<>(
+                                                                   aggregateModel))
+                                                           .eventStore(eventStore)
+                                                           .parameterResolverFactory(getParameterResolverFactory())
+                                                           .handlerDefinition(getHandlerDefinition())
+                                                           .repositoryProvider(getRepositoryProvider())
+                                                           .build());
         }
     }
 
