@@ -123,6 +123,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final EventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
+    private boolean useStateStorage;
     private RepositoryProvider repositoryProvider;
     private IdentifierValidatingRepository<T> repository;
     private final StubDeadlineManager deadlineManager;
@@ -168,12 +169,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> useStateStorage() {
-        return this.registerRepository(new InMemoryRepository<>(aggregateType,
-                                                                subtypes,
-                                                                eventStore,
-                                                                getParameterResolverFactory(),
-                                                                getHandlerDefinition(),
-                                                                getRepositoryProvider()));
+        this.useStateStorage = true;
+        return this;
     }
 
     @Override
@@ -321,11 +318,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenState(Supplier<T> aggregate) {
+        if(this.repository == null) {
+            this.useStateStorage();
+        }
+
+        ensureRepositoryConfiguration();
         clearGivenWhenState();
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
-            if (repository == null) {
-                this.useStateStorage();
-            }
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -511,16 +510,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void ensureRepositoryConfiguration() {
-        if (repository == null) {
+        if(repository != null) {
+            return;
+        }
+
+        if(this.useStateStorage) {
+            this.registerRepository(new InMemoryRepository<>(
+                    aggregateType,
+                    subtypes,
+                    eventStore,
+                    getParameterResolverFactory(),
+                    getHandlerDefinition(),
+                    getRepositoryProvider()));
+        } else {
             AggregateModel<T> aggregateModel = aggregateModel();
-            registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                      .aggregateModel(aggregateModel)
-                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
-                                                      .eventStore(eventStore)
-                                                      .parameterResolverFactory(getParameterResolverFactory())
-                                                      .handlerDefinition(getHandlerDefinition())
-                                                      .repositoryProvider(getRepositoryProvider())
-                                                      .build());
+            this.registerRepository(EventSourcingRepository.builder(aggregateType)
+                    .aggregateModel(aggregateModel)
+                    .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
+                    .eventStore(eventStore)
+                    .parameterResolverFactory(getParameterResolverFactory())
+                    .handlerDefinition(getHandlerDefinition())
+                    .repositoryProvider(getRepositoryProvider())
+                    .build());
         }
     }
 
