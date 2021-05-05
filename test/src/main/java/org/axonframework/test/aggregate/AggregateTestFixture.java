@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
@@ -313,7 +314,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenNoPriorActivity() {
-        return given(Collections.emptyList());
+        ensureRepositoryConfiguration();
+        clearGivenWhenState();
+        return this;
     }
 
     @Override
@@ -345,6 +348,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> andGiven(List<?> domainEvents) {
+        if (this.useStateStorage) {
+            throw new AxonConfigurationException(
+                    "Given events not supported, because the fixture is configured to use state storage");
+        }
+
         for (Object event : domainEvents) {
             Object payload = event;
             MetaData metaData = null;
