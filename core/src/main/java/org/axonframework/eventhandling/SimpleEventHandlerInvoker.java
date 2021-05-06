@@ -173,8 +173,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         for (EventListener listener : wrappedEventListeners) {
             try {
                 listener.handle(message);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 listenerInvocationErrorHandler.onError(e, message, listener);
+            } catch (Throwable e) {
+                listenerInvocationErrorHandler.onError(new RuntimeException(e), message, listener);
             }
         }
     }

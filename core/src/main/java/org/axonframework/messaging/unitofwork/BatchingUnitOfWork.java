@@ -73,12 +73,12 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
-        Exception exception = null;
+        Throwable exception = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
                 result = task.call();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 if (rollbackConfiguration.rollBackOn(e)) {
                     rollback(e);
                     throw e;
@@ -95,7 +95,11 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         }
         commit();
         if (exception != null) {
-            throw exception;
+            if (exception instanceof Exception) {
+                throw (Exception) exception;
+            } else {
+                throw new RuntimeException(exception);
+            }
         }
         return result;
     }

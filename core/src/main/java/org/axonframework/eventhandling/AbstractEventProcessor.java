@@ -116,7 +116,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) throws Exception {
         try {
             return eventHandlerInvoker.canHandle(eventMessage, segment);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
             return false;
         }
@@ -150,7 +150,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     }
                 }).proceed();
             }, rollbackConfiguration);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (unitOfWork.isRolledBack()) {
                 errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
             } else {

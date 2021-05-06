@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class ErrorContext {
     private final String eventProcessor;
-    private final Exception error;
+    private final Throwable error;
     private final List<? extends EventMessage<?>> failedEvents;
 
     /**
@@ -30,7 +30,7 @@ public class ErrorContext {
      * @param error          The error that was raised during processing
      * @param failedEvents   The list of events that triggered the error
      */
-    public ErrorContext(String eventProcessor, Exception error, List<? extends EventMessage<?>> failedEvents) {
+    public ErrorContext(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents) {
         this.eventProcessor = eventProcessor;
         this.error = error;
         this.failedEvents = failedEvents;
@@ -51,7 +51,11 @@ public class ErrorContext {
      * @return the error that was raised in the processor
      */
     public Exception error() {
-        return error;
+        if (error instanceof Exception) {
+            return (Exception) error;
+        } else {
+            return new RuntimeException(error);
+        }
     }
 
     /**
