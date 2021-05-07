@@ -233,6 +233,32 @@ public enum ErrorCode {
     }
 
     /**
+     * Returns an Query Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     * @param throwable The {@link Throwable} to inspect for transiency
+     * @return {@link ErrorCode} variation
+     */
+    public static ErrorCode getQueryExecutionErrorCode(Throwable throwable) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
+            return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR;
+        } else {
+            return ErrorCode.QUERY_EXECUTION_ERROR;
+        }
+    }
+
+    /**
+     * Returns an Command Execution ErrorCode variation based on the transiency of the given {@link Throwable}
+     * @param throwable The {@link Throwable} to inspect for transiency
+     * @return {@link ErrorCode} variation
+     */
+    public static ErrorCode getCommandExecutionErrorCode(Throwable throwable) {
+        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
+            return ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR;
+        } else {
+            return ErrorCode.COMMAND_EXECUTION_ERROR;
+        }
+    }
+
+    /**
      * Functional interface towards building an {@link AxonException} based on an {@code errorCode}, {@link
      * ErrorMessage} and the {@link Supplier} of an {@link Object}. This provides the option for users to specify more
      * thorough exception messages when it is serialized from one Axon client to another.

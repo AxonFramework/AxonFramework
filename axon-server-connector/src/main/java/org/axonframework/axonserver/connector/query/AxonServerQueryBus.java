@@ -368,7 +368,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             updateHandler.getUpdates()
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
-                             String errorCode = ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode();
+                             String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
                              QueryUpdate queryUpdate = QueryUpdate.newBuilder()
                                                                   .setErrorMessage(error)
                                                                   .setErrorCode(errorCode)
@@ -428,7 +428,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                             ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                             QueryResponse response =
                                     QueryResponse.newBuilder()
-                                                 .setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode())
+                                                 .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())
                                                  .setErrorMessage(ex)
                                                  .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                  .build();
@@ -453,7 +453,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             } catch (RuntimeException | OutOfDirectMemoryError e) {
                 ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
                 responseHandler.sendLast(QueryResponse.newBuilder()
-                                                      .setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(e).errorCode())
+                                                      .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())
                                                       .setErrorMessage(ex)
                                                       .setRequestIdentifier(queryRequest.getMessageIdentifier())
                                                       .build());

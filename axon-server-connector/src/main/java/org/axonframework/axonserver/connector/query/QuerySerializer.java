@@ -22,7 +22,7 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.util.ErrorCodeDecider;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
@@ -136,7 +136,7 @@ public class QuerySerializer {
 
         if (queryResponse.isExceptional()) {
             Throwable exceptionResult = queryResponse.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCodeDecider.getQueryExecutionErrorCode(exceptionResult).errorCode());
+            responseBuilder.setErrorCode(ErrorCode.getQueryExecutionErrorCode(exceptionResult).errorCode());
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );

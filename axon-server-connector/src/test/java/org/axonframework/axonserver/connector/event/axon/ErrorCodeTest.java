@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemote
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.common.AxonException;
 import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.serialization.SerializationException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,4 +78,29 @@ class ErrorCodeTest {
         assertEquals("myMessage", exception.getMessage());
         assertEquals("myCustomObject", ((QueryExecutionException) exception).getDetails().orElse("null"));
     }
+
+    @Test
+    void queryExecutionErrorCodeFromNonTransientException() {
+        ErrorCode errorCode = ErrorCode.getQueryExecutionErrorCode(new SerializationException("Fake exception"));
+        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR, errorCode);
+    }
+
+    @Test
+    void queryExecutionErrorCodeFromRuntimeException() {
+        ErrorCode errorCode = ErrorCode.getQueryExecutionErrorCode(new RuntimeException("Fake exception"));
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR, errorCode);
+    }
+
+    @Test
+    void commandExecutionErrorCodeFromNonTransientException() {
+        ErrorCode errorCode = ErrorCode.getCommandExecutionErrorCode(new SerializationException("Fake exception"));
+        assertEquals(ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR, errorCode);
+    }
+
+    @Test
+    void commandExecutionErrorCodeFromRuntimeException() {
+        ErrorCode errorCode = ErrorCode.getCommandExecutionErrorCode(new RuntimeException("Fake exception"));
+        assertEquals(ErrorCode.COMMAND_EXECUTION_ERROR, errorCode);
+    }
+
 }
