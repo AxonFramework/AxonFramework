@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link ErrorCodeDecider}
- * @author Milan Savic
+ * @author Stefan Andjelkovic
  */
 class ErrorCodeDeciderTest {
 

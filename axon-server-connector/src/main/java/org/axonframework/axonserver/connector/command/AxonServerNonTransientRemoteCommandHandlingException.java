@@ -38,7 +38,7 @@ public class AxonServerNonTransientRemoteCommandHandlingException extends Remote
      * @param errorMessage the message describing the exception on the remote end
      */
     public AxonServerNonTransientRemoteCommandHandlingException(String errorCode, ErrorMessage errorMessage) {
-        super(new RemoteExceptionDescription(errorMessage.getDetailsList()));
+        super(new RemoteExceptionDescription(errorMessage.getDetailsList(), true));
         this.errorCode = errorCode;
         this.server = errorMessage.getLocation();
     }
@@ -48,7 +48,7 @@ public class AxonServerNonTransientRemoteCommandHandlingException extends Remote
      *
      * @return the name of the server that reported the error
      */
-    public String getOriginServer() {
+    public String getServer() {
         return server;
     }
 

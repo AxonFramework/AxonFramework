@@ -102,11 +102,9 @@ public abstract class ReplyMessage implements Serializable {
     }
 
     private AxonException convertToRemoteException(RemoteExceptionDescription exceptionDescription) {
-        if(exceptionDescription.isPersistent()) {
-            return new RemoteNonTransientHandlingException(exceptionDescription);
-        } else {
-            return new RemoteHandlingException(exceptionDescription);
-        }
+        return exceptionDescription.isPersistent() ?
+                new RemoteNonTransientHandlingException(exceptionDescription) :
+                new RemoteHandlingException(exceptionDescription);
     }
 
     /**

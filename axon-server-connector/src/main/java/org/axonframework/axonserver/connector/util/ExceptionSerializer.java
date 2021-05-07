@@ -38,7 +38,8 @@ public abstract class ExceptionSerializer {
      *
      * @param clientLocation the name of the client were the {@link ErrorMessage} originates from
      * @param t              the {@link Throwable} to base this {@link ErrorMessage} on
-     * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the \
+     * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the
+     * {@link Throwable}
      */
     public static ErrorMessage serialize(String clientLocation, Throwable t) {
         ErrorMessage.Builder builder =
@@ -54,13 +55,11 @@ public abstract class ExceptionSerializer {
     }
 
     /**
-     * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
-     * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
-     * occur again.
+     * Indicates whether the given {@code failure} is clearly non-transient. Non-transient exceptions indicate
+     * that the handling of the message will fail in the same way if retried
      *
-     * @param failure the exception that occurred while processing a command
-     * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
-     * retried, or {@code false} when the command has a chance of succeeding if it retried.
+     * @param failure the exception that occurred while processing a message
+     * @return {@code true} if the exception is clearly non-transient
      */
     public static boolean isExplicitlyNonTransient(Throwable failure) {
         return failure instanceof AxonNonTransientException
