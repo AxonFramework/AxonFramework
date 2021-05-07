@@ -75,7 +75,7 @@ public class RemoteExceptionDescription implements Serializable {
 
     /**
      * Initialize a RemoteExceptionDescription with given {@code descriptions} describing the exception
-     * chain on the remote end of communication and an indicator whether the exception is
+     * chain on the remote end of communication. The {@code persistent} indicator defines whether the exception is
      * considered persistent or transient.
      *
      * @param descriptions a {@link List} of {@link String}s, each describing a single "cause" on the remote end
@@ -90,7 +90,8 @@ public class RemoteExceptionDescription implements Serializable {
     }
 
     /**
-     * Returns whether the exception is considered persistent or not
+     * Returns whether the exception is considered persistent or not.
+     *
      * @return the persistency indicator
      */
     public boolean isPersistent() {

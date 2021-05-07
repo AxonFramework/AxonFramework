@@ -7,8 +7,7 @@ import java.util.List;
 /**
  * Exception indicating that a non transient error has occurred while remotely handling a message.
  * <p/>
- * The sender of the message <strong>cannot</strong> assume that the message has not been handled. It may, if the type
- * of message or the infrastructure allows it, try to dispatch the message again.
+ * The sender of the message <strong>cannot</strong> assume that the message has not been handled.
  *
  * @author Stefan Andjelkovic
  * @since 4.5

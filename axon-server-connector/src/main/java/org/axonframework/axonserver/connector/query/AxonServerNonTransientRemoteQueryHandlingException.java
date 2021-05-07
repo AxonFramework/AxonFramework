@@ -31,11 +31,11 @@ public class AxonServerNonTransientRemoteQueryHandlingException extends RemoteNo
     private final String errorCode;
     private final String server;
 
-    /**
-     * Initialize a Query Handling exception from a remote source.
+     /**
+     * Initialize the exception with given {@code errorCode} and {@code errorMessage}.
      *
-     * @param errorCode a {@link String} defining the error code of this exception
-     * @param message   an {@link ErrorMessage} describing the exception
+     * @param errorCode    the code reported by the server
+     * @param errorMessage the message describing the exception on the remote end
      */
     public AxonServerNonTransientRemoteQueryHandlingException(String errorCode, ErrorMessage message) {
         super(new RemoteExceptionDescription(message.getDetailsList()));
@@ -44,18 +44,18 @@ public class AxonServerNonTransientRemoteQueryHandlingException extends RemoteNo
     }
 
     /**
-     * Return a {@link String} defining the error code.
+     * Returns the error code as reported by the server.
      *
-     * @return a {@link String} defining the error code
+     * @return the error code as reported by the server
      */
     public String getErrorCode() {
         return errorCode;
     }
 
     /**
-     * Return a {@link String} defining the location where the error originated.
+     * Returns the name of the server that reported the error.
      *
-     * @return a {@link String} defining the location where the error originated
+     * @return the name of the server that reported the error
      */
     public String getServer() {
         return server;
