@@ -14,6 +14,7 @@ import java.util.List;
  */
 public class RemoteNonTransientHandlingException extends AxonNonTransientException {
 
+    private static final long serialVersionUID = 7481427660341420212L;
     private final List<String> exceptionDescriptions;
 
     /**
