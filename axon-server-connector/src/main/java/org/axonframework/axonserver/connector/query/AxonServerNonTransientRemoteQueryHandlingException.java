@@ -21,7 +21,7 @@ import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteNonTransientHandlingException;
 
 /**
- * An AxonServer Non Transient Exception which is thrown if a Query Handling exception is non transient.
+ * Exception indicating a non-transient problem that was reported during query handling by the remote end of a connection.
  *
  * @author Stefan Andjelkovic
  * @since 4.5
