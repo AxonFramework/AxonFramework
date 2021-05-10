@@ -28,6 +28,7 @@ import org.axonframework.messaging.RemoteNonTransientHandlingException;
  */
 public class AxonServerNonTransientRemoteCommandHandlingException extends RemoteNonTransientHandlingException {
 
+    public static final boolean PERSISTENT = true;
     private final String errorCode;
     private final String server;
 
@@ -38,7 +39,7 @@ public class AxonServerNonTransientRemoteCommandHandlingException extends Remote
      * @param errorMessage the message describing the exception on the remote end
      */
     public AxonServerNonTransientRemoteCommandHandlingException(String errorCode, ErrorMessage errorMessage) {
-        super(new RemoteExceptionDescription(errorMessage.getDetailsList(), true));
+        super(new RemoteExceptionDescription(errorMessage.getDetailsList(), PERSISTENT));
         this.errorCode = errorCode;
         this.server = errorMessage.getLocation();
     }
