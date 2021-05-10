@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
@@ -519,14 +535,31 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and
-         * an {@link AxonThreadFactory} incorporating this processors name.
+         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread
+         * and an {@link AxonThreadFactory} incorporating this processors name.
+         *
+         * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
+         *                       by this {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
+         */
+        @Deprecated
+        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+            assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
+            this.workerExecutorBuilder = ignored -> workerExecutor;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
+         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread
+         * and an {@link AxonThreadFactory} incorporating this processors name.
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutor(ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
             return this;
