@@ -67,4 +67,16 @@ public abstract class ExceptionUtils {
     public static <T extends Throwable> Optional<T> findException(Throwable exception, Class<T> exceptionClass) {
         return findException(exception, exceptionClass::isInstance).map(e -> (T) e);
     }
+
+    /**
+     * Indicates whether the given {@code failure} is clearly non-transient. Non-transient exceptions indicate
+     * that the handling of the message will fail in the same way if retried
+     *
+     * @param failure the exception that occurred while processing a message
+     * @return {@code true} if the exception is clearly non-transient
+     */
+    public static boolean isExplicitlyNonTransient(Throwable failure) {
+        return failure instanceof AxonNonTransientException
+                || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
+    }
 }

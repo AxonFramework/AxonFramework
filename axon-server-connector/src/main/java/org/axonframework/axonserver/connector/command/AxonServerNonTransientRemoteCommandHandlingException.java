@@ -28,7 +28,7 @@ import org.axonframework.messaging.RemoteNonTransientHandlingException;
  */
 public class AxonServerNonTransientRemoteCommandHandlingException extends RemoteNonTransientHandlingException {
 
-    public static final boolean PERSISTENT = true;
+    private static final boolean PERSISTENT = true;
     private final String errorCode;
     private final String server;
 

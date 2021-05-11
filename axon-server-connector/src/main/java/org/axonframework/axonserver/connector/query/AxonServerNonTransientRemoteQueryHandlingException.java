@@ -28,7 +28,7 @@ import org.axonframework.messaging.RemoteNonTransientHandlingException;
  */
 public class AxonServerNonTransientRemoteQueryHandlingException extends RemoteNonTransientHandlingException {
 
-    public static final boolean PERSISTENT = true;
+    private static final boolean PERSISTENT = true;
     private final String errorCode;
     private final String server;
 
@@ -38,10 +38,10 @@ public class AxonServerNonTransientRemoteQueryHandlingException extends RemoteNo
      * @param errorCode    the code reported by the server
      * @param errorMessage the message describing the exception on the remote end
      */
-    public AxonServerNonTransientRemoteQueryHandlingException(String errorCode, ErrorMessage message) {
-        super(new RemoteExceptionDescription(message.getDetailsList(), PERSISTENT));
+    public AxonServerNonTransientRemoteQueryHandlingException(String errorCode, ErrorMessage errorMessage) {
+        super(new RemoteExceptionDescription(errorMessage.getDetailsList(), PERSISTENT));
         this.errorCode = errorCode;
-        this.server = message.getLocation();
+        this.server = errorMessage.getLocation();
     }
 
     /**

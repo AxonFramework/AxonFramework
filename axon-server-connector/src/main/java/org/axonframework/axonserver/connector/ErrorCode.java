@@ -27,6 +27,7 @@ import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonException;
+import org.axonframework.common.ExceptionUtils;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.EventPublicationFailedException;
 import org.axonframework.messaging.HandlerExecutionException;
@@ -238,7 +239,7 @@ public enum ErrorCode {
      * @return {@link ErrorCode} variation
      */
     public static ErrorCode getQueryExecutionErrorCode(Throwable throwable) {
-        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
+        if (ExceptionUtils.isExplicitlyNonTransient(throwable)) {
             return ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR;
         } else {
             return ErrorCode.QUERY_EXECUTION_ERROR;
@@ -251,7 +252,7 @@ public enum ErrorCode {
      * @return {@link ErrorCode} variation
      */
     public static ErrorCode getCommandExecutionErrorCode(Throwable throwable) {
-        if (ExceptionSerializer.isExplicitlyNonTransient(throwable)) {
+        if (ExceptionUtils.isExplicitlyNonTransient(throwable)) {
             return ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR;
         } else {
             return ErrorCode.COMMAND_EXECUTION_ERROR;

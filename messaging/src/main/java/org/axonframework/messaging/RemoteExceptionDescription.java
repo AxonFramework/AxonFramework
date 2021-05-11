@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.ExceptionUtils;
 
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
@@ -48,13 +48,8 @@ public class RemoteExceptionDescription implements Serializable {
      * @return a {@link List} of {@link String} describing the given {@link Exception}
      */
     public static RemoteExceptionDescription describing(Throwable exception) {
-        final boolean isPersistent = isExplicitlyNonTransient(exception);
+        final boolean isPersistent = ExceptionUtils.isExplicitlyNonTransient(exception);
         return new RemoteExceptionDescription(createDescription(exception, new ArrayList<>()), isPersistent);
-    }
-
-    private static boolean isExplicitlyNonTransient(Throwable exception) {
-        return exception instanceof AxonNonTransientException
-                || (exception.getCause() != null && isExplicitlyNonTransient(exception.getCause()));
     }
 
     private static List<String> createDescription(Throwable exception, List<String> descriptions) {
