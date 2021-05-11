@@ -332,8 +332,8 @@ public interface FixtureConfiguration<T> {
     TestExecutor<T> givenState(Supplier<T> aggregateState);
 
     /**
-     * Indicates that no relevant activity has occurred in the past. The behavior of this method is identical to giving
-     * no events in the {@link #given(java.util.List)} method.
+     * Indicates that no relevant activities like commands or events have occurred in the past.
+     * This also means that no previous state is present in the repository.
      *
      * @return a TestExecutor instance that can execute the test with this configuration
      *
