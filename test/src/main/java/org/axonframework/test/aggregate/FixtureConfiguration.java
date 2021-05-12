@@ -106,6 +106,15 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
 
     /**
+     * Configures the fixture for state stored aggregates.
+     * This will register an in-memory {@link org.axonframework.commandhandling.model.Repository} with this fixture.
+     * Should be used before calling {@link FixtureConfiguration#givenState(Supplier)} or {@link FixtureConfiguration#givenCommands(List)} (Supplier)}.
+     *
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> useStateStorage();
+
+    /**
      * Registers an arbitrary {@code repository} with the fixture. The repository must be wired
      * with the Event Store of this test fixture.
      * <p/>
@@ -323,8 +332,8 @@ public interface FixtureConfiguration<T> {
     TestExecutor<T> givenState(Supplier<T> aggregateState);
 
     /**
-     * Indicates that no relevant activity has occurred in the past. The behavior of this method is identical to giving
-     * no events in the {@link #given(java.util.List)} method.
+     * Indicates that no relevant activities like commands or events have occurred in the past.
+     * This also means that no previous state is present in the repository.
      *
      * @return a TestExecutor instance that can execute the test with this configuration
      *
