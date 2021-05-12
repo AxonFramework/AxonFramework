@@ -65,23 +65,21 @@ class FixtureTest_StateStorage {
 
     @Test
     void testGivenCommandsForStateStoredAggregate() {
-        fixture
-                .useStateStorage()
-                .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
-                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
-                .expectEvents(new StubDomainEvent())
-                .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
+        fixture.useStateStorage()
+               .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
+               .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
+               .expectEvents(new StubDomainEvent())
+               .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
     }
 
 
     @Test
     void testCreateStateStoredAggregateWithCommand() {
-        fixture
-                .useStateStorage()
-                .givenNoPriorActivity()
-                .when(new InitializeCommand(AGGREGATE_ID, "message"))
-                .expectEvents(new StubDomainEvent())
-                .expectState(aggregate -> assertEquals("message", aggregate.getMessage()));
+        fixture.useStateStorage()
+               .givenNoPriorActivity()
+               .when(new InitializeCommand(AGGREGATE_ID, "message"))
+               .expectEvents(new StubDomainEvent())
+               .expectState(aggregate -> assertEquals("message", aggregate.getMessage()));
     }
 
     @Test
@@ -130,8 +128,7 @@ class FixtureTest_StateStorage {
 
     @Test
     void testGivenWithStateStorageException() {
-        fixture
-                .useStateStorage();
+        fixture.useStateStorage();
 
         assertThrows(
                 AxonConfigurationException.class,
@@ -141,8 +138,7 @@ class FixtureTest_StateStorage {
 
     @Test
     void testGivenWithEventListAndStateStorageExpectException() {
-        fixture
-                .useStateStorage();
+        fixture.useStateStorage();
 
         assertThrows(
                 AxonConfigurationException.class,
