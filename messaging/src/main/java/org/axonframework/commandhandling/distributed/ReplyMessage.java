@@ -19,9 +19,11 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.AxonException;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteHandlingException;
+import org.axonframework.messaging.RemoteNonTransientHandlingException;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -92,11 +94,17 @@ public abstract class ReplyMessage implements Serializable {
 
         if (exceptionDescription != null) {
             return new GenericCommandResultMessage<>(new CommandExecutionException("The remote handler threw an exception",
-                                                                                   new RemoteHandlingException(exceptionDescription),
+                                                                                   convertToRemoteException(exceptionDescription),
                                                                                    payload),
                                                      metaData);
         }
         return new GenericCommandResultMessage<>(payload, metaData);
+    }
+
+    private AxonException convertToRemoteException(RemoteExceptionDescription exceptionDescription) {
+        return exceptionDescription.isPersistent() ?
+                new RemoteNonTransientHandlingException(exceptionDescription) :
+                new RemoteHandlingException(exceptionDescription);
     }
 
     /**

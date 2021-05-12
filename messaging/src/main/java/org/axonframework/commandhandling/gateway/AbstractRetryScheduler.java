@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,20 +56,6 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         builder.validate();
         this.retryExecutor = builder.retryExecutor;
         this.maxRetryCount = builder.maxRetryCount;
-    }
-
-    /**
-     * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
-     * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
-     * occur again.
-     *
-     * @param failure the exception that occurred while processing a command
-     * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
-     * retried, or {@code false} when the command has a chance of succeeding if it retried.
-     */
-    protected boolean isExplicitlyNonTransient(Throwable failure) {
-        return failure instanceof AxonNonTransientException
-                || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
     }
 
     /**
@@ -117,7 +103,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
                                  List<Class<? extends Throwable>[]> failures,
                                  Runnable dispatchTask) {
         int failureCount = failures.size();
-        if (!isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
+        if (!ExceptionUtils.isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
             if (logger.isInfoEnabled()) {
                 logger.info("Processing of Command [{}] resulted in an exception. Will retry {} more time(s)... "
                                     + "Exception was {}, {}",

@@ -136,7 +136,7 @@ public class QuerySerializer {
 
         if (queryResponse.isExceptional()) {
             Throwable exceptionResult = queryResponse.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(ErrorCode.getQueryExecutionErrorCode(exceptionResult).errorCode());
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );

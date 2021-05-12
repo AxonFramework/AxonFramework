@@ -192,9 +192,31 @@ class AxonServerQueryBusTest {
         assertTrue(result.get().isExceptional());
         Throwable actual = result.get().exceptionResult();
         assertTrue(actual instanceof QueryExecutionException);
-        AxonServerRemoteQueryHandlingException queryDispatchException =
+        AxonServerRemoteQueryHandlingException remoteQueryHandlingException =
                 (AxonServerRemoteQueryHandlingException) actual.getCause();
-        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), queryDispatchException.getErrorCode());
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
+
+        verify(targetContextResolver).resolveContext(testQuery);
+    }
+
+    @Test
+    void testQueryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(
+                stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), "Faking non transient exception result")
+        ));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
+
+        assertNotNull(result.get());
+        assertFalse(result.isCompletedExceptionally());
+
+        assertTrue(result.get().isExceptional());
+        Throwable actual = result.get().exceptionResult();
+        assertTrue(actual instanceof QueryExecutionException);
+        AxonServerNonTransientRemoteQueryHandlingException remoteQueryHandlingException =
+                (AxonServerNonTransientRemoteQueryHandlingException) actual.getCause();
+        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
     }

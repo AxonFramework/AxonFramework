@@ -19,8 +19,10 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.*;
+import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -92,11 +94,33 @@ class QuerySerializerTest {
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
         QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        assertTrue(deserialize.exceptionResult().getCause() instanceof AxonServerRemoteQueryHandlingException);
+    }
+
+    @Test
+    void testSerializeDeserializeNonTransientExceptionalResponse() {
+        SerializationException exception = new SerializationException("oops");
+        GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
+                String.class,
+                exception,
+                MetaData.with("test", "testValue"));
+
+        QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
+
+        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
+        assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        assertTrue(deserialize.exceptionResult().getCause() instanceof AxonServerNonTransientRemoteQueryHandlingException);
     }
 
     @Test
