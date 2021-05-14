@@ -42,7 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -434,17 +433,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
             String commandMessageAggregateId = commandMessageVersionedId.getIdentifier();
 
-            AtomicReference<Object> resultReference = new AtomicReference<>();
-            AtomicBoolean commandHandled = new AtomicBoolean(false);
-
-            Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, () -> {
-                T newInstance = factoryMethod.call();
-                resultReference.set(handler.handle(command, newInstance));
-                commandHandled.set(true);
-                return newInstance;
-            });
-
-            Object commandResult = commandHandled.get() ? resultReference.get() : instance.handle(command);
+            Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, factoryMethod);
+            Object commandResult = instance.handle(command);
             Object aggregateId = instance.identifier();
 
             assertThat(
