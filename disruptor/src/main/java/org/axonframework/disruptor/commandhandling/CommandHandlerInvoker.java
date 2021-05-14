@@ -294,9 +294,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                                   trigger);
 
             CurrentUnitOfWork.get().onCommit(u-> {
-                String identifier = u.getMessage().getIdentifier();
-                firstLevelCache.put(identifier, aggregate);
-                cache.put(identifier, new AggregateCacheEntry<>(aggregate));
+                firstLevelCache.put(aggregate.identifierAsString(), aggregate);
+                cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
             });
 
             return aggregate;
