@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -192,8 +193,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 () -> genericBeanDefinition(SpringResourceInjector.class).getBeanDefinition()
         );
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
-        registerComponent(EventScheduler.class, configurer, Configuration::eventScheduler);
+        registerComponent(ScopeAwareProvider.class, configurer);
         registerComponent(DeadlineManager.class, configurer, Configuration::deadlineManager);
+        registerComponent(EventScheduler.class, configurer, Configuration::eventScheduler);
 
         EventProcessingModule eventProcessingModule = new EventProcessingModule();
         Optional<String> eventProcessingConfigurerOptional = findComponent(EventProcessingConfigurer.class);
