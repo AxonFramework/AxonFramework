@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -474,6 +475,17 @@ public interface Configurer {
      */
     default Configurer configureSnapshotter(Function<Configuration, Snapshotter> snapshotterBuilder) {
         return registerComponent(Snapshotter.class, snapshotterBuilder);
+    }
+
+    /**
+     * Registers a {@link DeadlineManager} instance with this {@link Configurer}. Defaults to a {@link
+     * org.axonframework.deadline.SimpleDeadlineManager} implementation.
+     *
+     * @param deadlineManagerBuilder a builder function for the {@link DeadlineManager}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureDeadlineManager(Function<Configuration, DeadlineManager> deadlineManagerBuilder) {
+        return registerComponent(DeadlineManager.class, deadlineManagerBuilder);
     }
 
     /**

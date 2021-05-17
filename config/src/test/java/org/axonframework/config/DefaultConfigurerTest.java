@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.SimpleDeadlineManager;
+import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -48,6 +51,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
@@ -57,6 +61,9 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerContext;
+import org.quartz.SchedulerException;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -479,6 +486,43 @@ class DefaultConfigurerTest {
 
         assertTrue(filteredFirst.get());
         assertTrue(filteredSecond.get());
+    }
+
+    @Test
+    void testDefaultConfiguredDeadlineManager() {
+        DeadlineManager result = DefaultConfigurer.defaultConfiguration()
+                                                  .buildConfiguration()
+                                                  .deadlineManager();
+
+        assertTrue(result instanceof SimpleDeadlineManager);
+    }
+
+    @Test
+    void testCustomConfiguredDeadlineManager() throws SchedulerException {
+        Scheduler mockScheduler = mock(Scheduler.class);
+        when(mockScheduler.getContext()).thenReturn(mock(SchedulerContext.class));
+
+        DeadlineManager result =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureDeadlineManager(
+                                         config -> QuartzDeadlineManager.builder()
+                                                                        .scheduler(mockScheduler)
+                                                                        .scopeAwareProvider(config.scopeAwareProvider())
+                                                                        .build()
+                                 )
+                                 .buildConfiguration()
+                                 .deadlineManager();
+
+        assertTrue(result instanceof QuartzDeadlineManager);
+    }
+
+    @Test
+    void testDefaultConfiguredScopeAwareProvider() {
+        ScopeAwareProvider result = DefaultConfigurer.defaultConfiguration()
+                                                     .buildConfiguration()
+                                                     .scopeAwareProvider();
+
+        assertTrue(result instanceof ConfigurationScopeAwareProvider);
     }
 
     @SuppressWarnings("unused")
