@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -480,8 +480,19 @@ public interface FixtureExecutionResult {
      *
      * @param matcher The matcher that defines the expected list of deadlines
      * @return the FixtureExecutionResult for method chaining
+     * @deprecated in favor of {@link #expectTriggeredDeadlinesMatching(Matcher)}
      */
+    @Deprecated
     FixtureExecutionResult expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+
+
+    /**
+     * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
+     *
+     * @param matcher the matcher that defines the expected list of deadlines
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected} events.
@@ -499,6 +510,37 @@ public interface FixtureExecutionResult {
      *
      * @param expected The sequence of deadlines expected to be met
      * @return the FixtureExecutionResult for method chaining
+     * @deprecated in favor of {@link #expectTriggeredDeadlines(Object...)}
      */
+    @Deprecated
     FixtureExecutionResult expectDeadlinesMet(Object... expected);
+
+    /**
+     * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared comparing their type
+     * and fields using "equals".
+     *
+     * @param expected the sequence of deadlines expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineNames} have been triggered. Matches that the given names are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getDeadlineName()}.
+     *
+     * @param expectedDeadlineNames the sequence of deadline names expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getPayloadType()}.
+     *
+     * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 }

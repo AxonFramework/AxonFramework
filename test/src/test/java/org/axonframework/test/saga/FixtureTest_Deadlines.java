@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,15 @@ import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class intended to validate all methods in regards to scheduling and validating deadlines.
@@ -108,13 +111,161 @@ class FixtureTest_Deadlines {
     }
 
     @Test
+    void testDeadlineMetMatching() {
+        //noinspection deprecation
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(1)
+               .expectDeadlinesMetMatching(payloadsMatching(exactSequenceOf(equalTo("deadlineDetails"))))
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testTriggeredDeadlinesMatching() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(1)
+               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(equalTo("deadlineDetails"))))
+               .expectNoScheduledEvents();
+    }
+
+    @Test
     void testDeadlineMet() {
+        //noinspection deprecation
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
                .expectDeadlinesMet("deadlineDetails")
                .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testTriggeredDeadlines() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(1)
+               .expectTriggeredDeadlines("deadlineDetails")
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testTriggeredDeadlinesFailsForIncorrectDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlines("none-occurring-deadline")
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlines("deadlineDetails", "none-occurring-deadline")
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithName() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(1)
+               .expectTriggeredDeadlinesWithName("deadlineName")
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlinesWithName("none-occurring-deadline")
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlinesWithName("deadlineName", "none-occurring-deadline")
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfType() {
+        fixture.givenAggregate(AGGREGATE_ID)
+               .published(START_SAGA_EVENT)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectActiveSagas(1)
+               .expectTriggeredDeadlinesOfType(String.class)
+               .expectNoScheduledEvents();
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlinesOfType(Integer.class)
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.givenAggregate(AGGREGATE_ID)
+                             .published(START_SAGA_EVENT)
+                             .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+                             .expectActiveSagas(1)
+                             .expectTriggeredDeadlinesOfType(String.class, String.class)
+                             .expectNoScheduledEvents()
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
     }
 
     @Test
@@ -146,7 +297,7 @@ class FixtureTest_Deadlines {
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
-               .expectDeadlinesMet("fakeDeadlineDetails")
+               .expectTriggeredDeadlines("fakeDeadlineDetails")
                .expectNoScheduledEvents();
     }
 
@@ -162,7 +313,7 @@ class FixtureTest_Deadlines {
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectActiveSagas(1)
-               .expectDeadlinesMet("fakeDeadlineDetails")
+               .expectTriggeredDeadlines("fakeDeadlineDetails")
                .expectNoScheduledEvents();
     }
 
