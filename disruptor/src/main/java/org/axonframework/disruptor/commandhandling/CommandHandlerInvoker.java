@@ -293,6 +293,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                                   repositoryProvider,
                                                                                   trigger);
 
+            //in case of loadOrCreate,
+            // identifier is null, therefore this special case is handled in loadOrCreate method
             if (aggregate.identifierAsString() != null) {
                 firstLevelCache.put(aggregate.identifierAsString(), aggregate);
                 cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
