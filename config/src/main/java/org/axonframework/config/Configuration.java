@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -355,6 +356,15 @@ public interface Configuration {
      */
     default Snapshotter snapshotter() {
         return getComponent(Snapshotter.class);
+    }
+
+    /**
+     * Returns the {@link ScopeAwareProvider} defined in the Configuration.
+     *
+     * @return the {@link ScopeAwareProvider} defined in the Configuration
+     */
+    default ScopeAwareProvider scopeAwareProvider() {
+        return getComponent(ScopeAwareProvider.class);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -267,6 +268,8 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(ScopeAwareProvider.class,
+                       new Component<>(config, "scopeAwareProvider", this::defaultScopeAwareProvider));
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
         components.put(EventUpcaster.class, upcasterChain);
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
@@ -387,6 +390,19 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Returns a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
+     * used by a {@link DeadlineManager}. Uses the given {@code config} to construct the default {@link
+     * ConfigurationScopeAwareProvider}.
+     *
+     * @param config the configuration used to construct the default {@link ConfigurationScopeAwareProvider}
+     * @return a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
+     * used by a {@link DeadlineManager}
+     */
+    protected ScopeAwareProvider defaultScopeAwareProvider(Configuration config) {
+        return new ConfigurationScopeAwareProvider(config);
+    }
+
+    /**
      * Provides the default {@link DeadlineManager} implementation. Subclasses may override this method to provide their
      * own default.
      *
@@ -394,7 +410,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-        return SimpleDeadlineManager.builder().scopeAwareProvider(new ConfigurationScopeAwareProvider(config)).build();
+        return SimpleDeadlineManager.builder().scopeAwareProvider(defaultScopeAwareProvider(config)).build();
     }
 
     /**
