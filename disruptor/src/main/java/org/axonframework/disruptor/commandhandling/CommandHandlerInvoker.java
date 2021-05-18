@@ -293,10 +293,12 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                                   repositoryProvider,
                                                                                   trigger);
 
-            CurrentUnitOfWork.get().onCommit(u-> {
+            //in case of loadOrCreate,
+            // identifier is null, therefore this special case is handled in loadOrCreate method
+            if (aggregate.identifierAsString() != null) {
                 firstLevelCache.put(aggregate.identifierAsString(), aggregate);
                 cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
-            });
+            }
 
             return aggregate;
         }
@@ -306,7 +308,11 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             try {
                 return load(aggregateIdentifier);
             } catch (AggregateNotFoundException ex) {
-                return newInstance(factoryMethod);
+                Aggregate<T> newInstance = newInstance(factoryMethod);
+                firstLevelCache.put(aggregateIdentifier, (EventSourcedAggregate<T>) newInstance);
+                cache.put(aggregateIdentifier, new AggregateCacheEntry<>((EventSourcedAggregate<T>) newInstance));
+                
+                return newInstance;
             } catch (Exception e) {
                 logger.debug("Exception occurred while trying to load/create an aggregate. ", e);
                 throw e;
