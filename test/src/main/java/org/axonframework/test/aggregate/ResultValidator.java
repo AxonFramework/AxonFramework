@@ -420,7 +420,7 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectDeadlinesMet(Object... expected);
 
     /**
-     * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared comparing their type
+     * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared by their type
      * and fields using "equals".
      *
      * @param expected the sequence of deadlines expected to have been triggered
