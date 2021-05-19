@@ -157,13 +157,13 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesFailsForIncorrectDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlines(NONE_OCCURRING_DEADLINE_PAYLOAD)
+                () -> given.expectTriggeredDeadlines(NONE_OCCURRING_DEADLINE_PAYLOAD)
         );
 
         assertTrue(
@@ -173,13 +173,13 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlines(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
+                () -> given.expectTriggeredDeadlines(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
         );
 
         assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
@@ -197,12 +197,12 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlinesWithName(NONE_OCCURRING_DEADLINE_PAYLOAD)
+                () -> given.expectTriggeredDeadlinesWithName(NONE_OCCURRING_DEADLINE_PAYLOAD)
         );
 
         assertTrue(
@@ -212,13 +212,13 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlinesWithName(DEADLINE_NAME, NONE_OCCURRING_DEADLINE_PAYLOAD)
+                () -> given.expectTriggeredDeadlinesWithName(DEADLINE_NAME, NONE_OCCURRING_DEADLINE_PAYLOAD)
         );
 
         assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
@@ -236,13 +236,13 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlinesOfType(Integer.class)
+                () -> given.expectTriggeredDeadlinesOfType(Integer.class)
         );
 
         assertTrue(
@@ -252,13 +252,13 @@ class FixtureTest_Deadlines {
 
     @Test
     void testTriggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
-        ContinuedGivenState given = fixture.givenAggregate(AGGREGATE_ID)
-                                           .published(START_SAGA_EVENT);
+        FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
+                                              .published(START_SAGA_EVENT)
+                                              .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
-                () -> given.whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-                           .expectTriggeredDeadlinesOfType(String.class, String.class)
+                () -> given.expectTriggeredDeadlinesOfType(String.class, String.class)
         );
 
         assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
