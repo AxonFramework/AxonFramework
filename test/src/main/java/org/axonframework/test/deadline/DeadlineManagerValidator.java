@@ -138,7 +138,7 @@ public class DeadlineManagerValidator {
      * @param matcher the matcher that will validate the actual deadlines
      */
     public void assertTriggeredDeadlinesMatching(Matcher<? extends Iterable<?>> matcher) {
-        List<ScheduledDeadlineInfo> deadlinesMet = deadlineManager.getTriggeredDeadlines();
+        List<ScheduledDeadlineInfo> triggeredDeadlines= deadlineManager.getTriggeredDeadlines();
         List<DeadlineMessage<?>> deadlineMessages = deadlinesMet.stream()
                                                                 .map(ScheduledDeadlineInfo::deadlineMessage)
                                                                 .collect(Collectors.toList());
