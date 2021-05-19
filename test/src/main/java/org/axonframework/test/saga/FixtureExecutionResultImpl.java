@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -343,8 +343,16 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectDeadlinesMetMatching(
-            Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
-        deadlineManagerValidator.assertDeadlinesMetMatching(matcher);
+            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+    ) {
+        return expectTriggeredDeadlinesMatching(matcher);
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesMatching(
+            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+    ) {
+        deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
         return this;
     }
 
@@ -356,7 +364,24 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectDeadlinesMet(Object... expected) {
-        deadlineManagerValidator.assertDeadlinesMet(expected);
+        return expectTriggeredDeadlines(expected);
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlines(Object... expected) {
+        deadlineManagerValidator.assertTriggeredDeadlines(expected);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
+        deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
+        deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
         return this;
     }
 }

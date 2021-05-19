@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -143,7 +143,7 @@ public interface TestExecutor<T> {
      * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator whenThenTimeElapses(Duration elapsedTime);
+    ResultValidator<T> whenThenTimeElapses(Duration elapsedTime);
 
     /**
      * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
@@ -170,5 +170,5 @@ public interface TestExecutor<T> {
      * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator whenThenTimeAdvancesTo(Instant newPointInTime);
+    ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime);
 }

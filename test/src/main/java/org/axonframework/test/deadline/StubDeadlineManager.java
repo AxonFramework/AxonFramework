@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
 public class StubDeadlineManager implements DeadlineManager {
 
     private final NavigableSet<ScheduledDeadlineInfo> scheduledDeadlines = new TreeSet<>();
-    private final List<ScheduledDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
+    private final List<ScheduledDeadlineInfo> triggeredDeadlines = new CopyOnWriteArrayList<>();
     private final AtomicInteger deadlineCounter = new AtomicInteger(0);
     private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
@@ -150,9 +150,20 @@ public class StubDeadlineManager implements DeadlineManager {
      * Return all deadlines which have been met.
      *
      * @return all deadlines which have been met
+     * @deprecated in favor of {@link #getTriggeredDeadlines()}
      */
+    @Deprecated
     public List<ScheduledDeadlineInfo> getDeadlinesMet() {
-        return Collections.unmodifiableList(deadlinesMet);
+        return Collections.unmodifiableList(triggeredDeadlines);
+    }
+
+    /**
+     * Return all triggered deadlines.
+     *
+     * @return all triggered deadlines
+     */
+    public List<ScheduledDeadlineInfo> getTriggeredDeadlines() {
+        return Collections.unmodifiableList(triggeredDeadlines);
     }
 
     /**
@@ -178,7 +189,7 @@ public class StubDeadlineManager implements DeadlineManager {
         if (nextItem.getScheduleTime().isAfter(currentDateTime)) {
             currentDateTime = nextItem.getScheduleTime();
         }
-        deadlinesMet.add(nextItem);
+        triggeredDeadlines.add(nextItem);
         return nextItem;
     }
 
@@ -193,8 +204,8 @@ public class StubDeadlineManager implements DeadlineManager {
         while (!scheduledDeadlines.isEmpty() && !scheduledDeadlines.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduledDeadlineInfo scheduledDeadlineInfo = advanceToNextTrigger();
             DeadlineMessage<?> consumedMessage = consumeDeadline(deadlineConsumer, scheduledDeadlineInfo);
-            deadlinesMet.remove(scheduledDeadlineInfo);
-            deadlinesMet.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
+            triggeredDeadlines.remove(scheduledDeadlineInfo);
+            triggeredDeadlines.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;
