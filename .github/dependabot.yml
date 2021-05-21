@@ -6,7 +6,7 @@ updates:
     interval: daily
   ignore:
     - dependency-name: "*"
-      update-types: [ major, minor ]
+      update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
