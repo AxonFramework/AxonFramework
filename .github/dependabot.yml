@@ -12,6 +12,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
+    - "Target: 4.5.2
   milestone: 62
   reviewers:
     - "lfgcampos"
