@@ -5,7 +5,7 @@ updates:
   schedule:
     interval: daily
   ignore:
-    - dependency-name: *
+    - dependency-name: "*"
       update-types: [ major, minor ]
   open-pull-requests-limit: 5
   labels:
