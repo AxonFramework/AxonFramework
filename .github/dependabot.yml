@@ -4,16 +4,18 @@ updates:
   directory: "/"
   schedule:
     interval: daily
+  ignore:
+    - dependency-name: *
+      update-types: [ major, minor ]
   open-pull-requests-limit: 5
-  # Specify labels for pull requests
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  # Add reviewers
+  milestone: 62
   reviewers:
     - "lfgcampos"
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
-  milestone: 59
+  target-branch: axon-4.5.x
