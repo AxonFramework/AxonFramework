@@ -4,9 +4,6 @@ updates:
   directory: "/"
   schedule:
     interval: daily
-  ignore:
-    - dependency-name: "*"
-      update-types: [ major, minor ]
   open-pull-requests-limit: 5
   labels:
     - "Type: Dependency Upgrade"
@@ -20,3 +17,6 @@ updates:
     - "saratry"
     - "smcvb"
   target-branch: axon-4.5.x
+  ignore:
+    - dependency-name: "*"
+      update-types: [ major, minor ]
