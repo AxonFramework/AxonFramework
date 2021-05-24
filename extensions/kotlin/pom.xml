@@ -32,7 +32,7 @@
   </modules>
 
   <properties>
-    <axon.version>4.5</axon.version>
+    <axon.version>4.5.1</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.4.32</kotlin.version>
     <kotlin-logging.version>2.0.6</kotlin-logging.version>
