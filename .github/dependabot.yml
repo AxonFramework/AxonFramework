@@ -19,4 +19,4 @@ updates:
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
-  target-branch: axon-4.5.x
+  target-branch: "axon-4.5.x"
