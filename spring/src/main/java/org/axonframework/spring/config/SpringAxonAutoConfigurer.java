@@ -245,7 +245,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerEventUpcasters(Configurer configurer) {
-        beanFactory.getBeansOfType(EventUpcaster.class).values()
+        beanFactory.getBeansOfType(EventUpcaster.class)
+                   .values()
                    .stream()
                    .sorted(AnnotationAwareOrderComparator.INSTANCE)
                    .forEach(eventUpcaster -> configurer.registerEventUpcaster(c -> eventUpcaster));
