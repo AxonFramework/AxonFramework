@@ -245,10 +245,15 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerEventUpcasters(Configurer configurer) {
-        beanFactory.getBeansOfType(EventUpcaster.class).values()
-                   .stream()
-                   .sorted(AnnotationAwareOrderComparator.INSTANCE)
-                   .forEach(eventUpcaster -> configurer.registerEventUpcaster(c -> eventUpcaster));
+        //noinspection ConstantConditions - suppressing ConfigurableListableBeanFactory#getType null warning
+        Arrays.stream(beanFactory.getBeanNamesForType(EventUpcaster.class))
+              .collect(Collectors.toMap(
+                      upcasterBeanName -> upcasterBeanName,
+                      upcasterBeanName -> beanFactory.getType(upcasterBeanName)
+              ))
+              .entrySet().stream()
+              .sorted(Map.Entry.comparingByValue(AnnotationAwareOrderComparator.INSTANCE))
+              .forEach(upcasterEntry -> configurer.registerEventUpcaster(c -> getBean(upcasterEntry.getKey(), c)));
     }
 
     @SuppressWarnings("unchecked")
