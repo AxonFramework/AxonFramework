@@ -112,7 +112,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     public void setExecutionResult(ExecutionResult executionResult) {
         Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
                      () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].",
-                        message, this.executionResult, executionResult));
+                        executionResult , this.executionResult, message));
         if (this.executionResult != null && this.executionResult.isExceptionResult()) {
             this.executionResult.getExceptionResult().addSuppressed(executionResult.getExceptionResult());
         } else {
