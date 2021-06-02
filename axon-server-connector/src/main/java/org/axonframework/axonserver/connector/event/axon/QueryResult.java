@@ -15,8 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import io.axoniq.axonserver.grpc.event.QueryValue;
-import io.axoniq.axonserver.grpc.event.RowResponse;
+import io.axoniq.axonserver.connector.event.EventQueryResultEntry;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,64 +31,50 @@ import java.util.stream.Collectors;
  */
 public class QueryResult {
 
-    private final static QueryValue DEFAULT = QueryValue.newBuilder().build();
-    private final RowResponse rowResponse;
-    private final List<String> columns;
+    private final EventQueryResultEntry entry;
 
     /**
-     * Constructs a {@link QueryResult}.
+     * Constructs a QueryResult from the given {@code entry}
      *
-     * @param response the result to base this {@link QueryResult} on
-     * @param columns  the {@link List} of column information contained in the given {@code response}
+     * @param entry The entry to wrap
      */
-    public QueryResult(RowResponse response, List<String> columns) {
-        rowResponse = response;
-        this.columns = columns;
+    public QueryResult(EventQueryResultEntry entry) {
+        this.entry = entry;
     }
 
     /**
      * Retrieve the column information referring to the given {@code name}.
+     *
      * @param name the column name to retrieve information for
+     *
      * @return the column information referring to the given {@code name}
      */
     public Object get(String name) {
-        return unwrap(rowResponse.getValuesOrDefault(name, DEFAULT));
+        return entry.getValue(name);
     }
 
     public List<Object> getIdentifiers() {
-        if (rowResponse.getIdValuesCount() == 0) {
-            return null;
-        }
-        return rowResponse.getIdValuesList().stream().map(this::unwrap).collect(Collectors.toList());
+        return entry.getIdentifiers();
     }
 
     public List<Object> getSortValues() {
-        if (rowResponse.getSortValuesCount() == 0) {
-            return null;
-        }
-        return rowResponse.getSortValuesList().stream().map(this::unwrap).collect(Collectors.toList());
+        return entry.getSortValues();
     }
 
     public List<String> getColumns() {
-        return columns;
+        return entry.columns();
     }
 
-    private Object unwrap(QueryValue value) {
-        switch (value.getDataCase()) {
-            case TEXT_VALUE:
-                return value.getTextValue();
-            case NUMBER_VALUE:
-                return value.getNumberValue();
-            case BOOLEAN_VALUE:
-                return value.getBooleanValue();
-            case DOUBLE_VALUE:
-                return value.getDoubleValue();
-            default:
-                return null;
-        }
+    /**
+     * Returns the wrapped entry as returned by the AxonServer Java Connector.
+     *
+     * @return the wrapped entry as returned by the AxonServer Java Connector
+     */
+    public EventQueryResultEntry getQueryResultEntry() {
+        return entry;
     }
 
     public String toString() {
-        return columns.stream().map(col -> col + "=" + get(col)).collect(Collectors.joining(","));
+        return getColumns().stream().map(col -> col + "=" + get(col)).collect(Collectors.joining(","));
     }
 }

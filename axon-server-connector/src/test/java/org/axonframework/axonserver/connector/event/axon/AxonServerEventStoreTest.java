@@ -36,7 +36,10 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,9 +50,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link AxonServerEventStore}
@@ -119,6 +129,19 @@ class AxonServerEventStoreTest {
         stream.close();
 
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
+    }
+
+    @Test
+    void testQueryEvents() throws Exception {
+        UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
+                            GenericEventMessage.asEventMessage("Test2"),
+                            GenericEventMessage.asEventMessage("Test3"));
+        uow.commit();
+
+        QueryResultStream stream = testSubject.query("", false);
+        assertEquals(1, eventStore.getQueryEventsRequests().size());
+        stream.close();
     }
 
     @Test
