@@ -851,8 +851,9 @@ class PooledStreamingEventProcessorTest {
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(0));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.batchSize(-1));
     }
+
     @Test
-    void testReplaying() {
+    void testIsReplaying() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
