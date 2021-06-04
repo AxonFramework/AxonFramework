@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -511,7 +511,11 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
-            throw new UnsupportedOperationException("Not supported in this connector, yet");
+            return new QueryResultStreamAdapter(
+                    connectionManager.getConnection(context)
+                                     .eventChannel()
+                                     .queryEvents(query, liveUpdates)
+            );
         }
 
         @Override

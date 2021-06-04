@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,6 +119,23 @@ class AxonServerEventStoreTest {
         stream.close();
 
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
+    }
+
+    @Test
+    void testQueryEvents() throws Exception {
+        String queryAll = "";
+        boolean noLiveUpdates = false;
+
+        UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
+                            GenericEventMessage.asEventMessage("Test2"),
+                            GenericEventMessage.asEventMessage("Test3"));
+        uow.commit();
+
+        //noinspection ConstantConditions
+        QueryResultStream stream = testSubject.query(queryAll, noLiveUpdates);
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertEquals(1, eventStore.getQueryEventsRequests().size()));
+        stream.close();
     }
 
     @Test
