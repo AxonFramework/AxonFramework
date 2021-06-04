@@ -33,10 +33,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -58,26 +56,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
@@ -160,10 +141,12 @@ class PooledStreamingEventProcessorTest {
         String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
         assertWithin(1, TimeUnit.SECONDS, () -> {
             assertTrue(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
             assertTrue(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
         });
 
@@ -171,10 +154,12 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> {
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
         });
     }
@@ -196,10 +181,12 @@ class PooledStreamingEventProcessorTest {
         String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
         assertWithin(1, TimeUnit.SECONDS, () -> {
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Did not expect Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
             assertTrue(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
         });
 
@@ -207,10 +194,12 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> {
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
 
             assertFalse(coordinatorExecutor.isShutdown());
@@ -234,10 +223,12 @@ class PooledStreamingEventProcessorTest {
         String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
         assertWithin(1, TimeUnit.SECONDS, () -> {
             assertTrue(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Did not expect Worker thread named " + expectedWorkerThreadName + " to have started");
         });
 
@@ -245,10 +236,12 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> {
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                     "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
             assertFalse(
-                    Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
                     "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
 
             assertFalse(workerExecutor.isShutdown());
@@ -269,13 +262,15 @@ class PooledStreamingEventProcessorTest {
 
         String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
-                Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                Thread.getAllStackTraces().keySet().stream()
+                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                 "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started"));
 
         testSubject.shutDown();
 
         assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertFalse(
-                Thread.getAllStackTraces().keySet().stream().anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                Thread.getAllStackTraces().keySet().stream()
+                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
                 "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped"));
     }
 

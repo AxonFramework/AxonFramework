@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.stream.BlockingStream;
@@ -38,10 +54,10 @@ import java.util.function.UnaryOperator;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
- * package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and the
- * lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events are
- * scheduled one by one to <em>all</em> work packages coordinated by this service.
+ * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a
+ * work package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and
+ * the lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events
+ * are scheduled one by one to <em>all</em> work packages coordinated by this service.
  * <p>
  * Coordination tasks will run and be rerun as long as this service is considered to be {@link #isRunning()}.
  * Coordination will continue whenever exceptions occur, albeit with an incremental back off. Due to this, both {@link
@@ -244,7 +260,10 @@ class Coordinator {
         private final CompletableFuture<Void> shutdownHandle;
         private final Runnable shutdownAction;
 
-        private RunState(boolean isRunning, boolean wasStarted, CompletableFuture<Void> shutdownHandle, Runnable shutdownAction) {
+        private RunState(boolean isRunning,
+                         boolean wasStarted,
+                         CompletableFuture<Void> shutdownHandle,
+                         Runnable shutdownAction) {
             this.isRunning = isRunning;
             this.wasStarted = wasStarted;
             this.shutdownHandle = shutdownHandle;
@@ -660,7 +679,8 @@ class Coordinator {
         private long tokenClaimInterval = 5000;
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
-        private Runnable shutdownAction = () -> {};
+        private Runnable shutdownAction = () -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -806,13 +826,13 @@ class Coordinator {
 
         /**
          * Registers an action to perform when the coordinator shuts down. Will override any previously registered
-         * actions.
+         * actions. Defaults to a no-op.
          *
-         * @param action The action to perform when the coordinator is shut down
+         * @param shutdownAction the action to perform when the coordinator is shut down
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder onShutdown(Runnable action) {
-            this.shutdownAction = action;
+        Builder onShutdown(Runnable shutdownAction) {
+            this.shutdownAction = shutdownAction;
             return this;
         }
 

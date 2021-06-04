@@ -78,9 +78,9 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * approach which allows for greater parallelization and processing speed than the {@link
  * org.axonframework.eventhandling.TrackingEventProcessor}.
  * <p>
- * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will initialize
- * them in a given segment count. By default it will create {@code 16} segments, which can be configured through the
- * {@link Builder#initialSegmentCount(int)}.
+ * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
+ * initialize them in a given segment count. By default it will create {@code 16} segments, which can be configured
+ * through the {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -171,9 +171,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         boolean shutdownWorkerServiceOnStop = builder.shutdownWorkerServiceOnStop;
-
         ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
         boolean shutdownCoordinatorServiceOnStop = builder.shutdownCoordinatorServiceOnStop;
+
         this.coordinator = Coordinator.builder()
                                       .name(name)
                                       .messageSource(messageSource)
@@ -194,7 +194,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                           if (shutdownCoordinatorServiceOnStop) {
                                               coordinatorExecutor.shutdown();
                                           }
-
                                       })
                                       .build();
     }
@@ -444,12 +443,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
-        private boolean shutdownCoordinatorServiceOnStop = true;
-        private boolean shutdownWorkerServiceOnStop = true;
         private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
                 n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + n + "]"));
+        private boolean shutdownCoordinatorServiceOnStop = true;
         private Function<String, ScheduledExecutorService> workerExecutorBuilder =
                 n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + n + "]"));
+        private boolean shutdownWorkerServiceOnStop = true;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
