@@ -201,15 +201,13 @@ class WorkPackage {
                             segment.getSegmentId(), name, e);
                 abort(e);
             }
-        } else {
+        }
+        else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-            // Empty batch, check for token extension time
-            long now = clock.instant().toEpochMilli();
-            if (lastClaimExtension < now - claimExtensionThreshold) {
-                Runnable tokenOperation = lastStoredToken == lastConsumedToken
-                        ? this::extendClaim
-                        : () -> storeToken(lastConsumedToken);
-                transactionManager.executeInTransaction(tokenOperation);
+            if (lastStoredToken != lastConsumedToken) {
+                transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
+            } else if (lastClaimExtension < clock.instant().toEpochMilli() - claimExtensionThreshold) {
+                transactionManager.executeInTransaction(this::extendClaim);
             }
         }
     }

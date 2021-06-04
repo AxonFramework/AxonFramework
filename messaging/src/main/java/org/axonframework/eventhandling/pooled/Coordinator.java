@@ -67,6 +67,7 @@ class Coordinator {
     private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
+    private final long tokenExtensionThreshold;
     private final Clock clock;
     private final int maxClaimedSegments;
 
@@ -99,6 +100,7 @@ class Coordinator {
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.clock = builder.clock;
+        this.tokenExtensionThreshold = builder.claimExtensionThreshold;
         this.maxClaimedSegments = builder.maxClaimedSegments;
     }
 
@@ -285,6 +287,245 @@ class Coordinator {
     }
 
     /**
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all {@link
+     * WorkPackage}s this {@link Coordinator} could ever service.
+     */
+    @FunctionalInterface
+    interface EventFilter {
+
+        /**
+         * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
+         * event handlers this processor coordinates.
+         *
+         * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
+         *
+         * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
+         * otherwise
+         */
+        boolean canHandleTypeOf(TrackedEventMessage<?> eventMessage);
+    }
+
+    /**
+     * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
+     * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
+     */
+    static class Builder {
+
+        private long claimExtensionThreshold = 5000;
+        private String name;
+        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
+        private TokenStore tokenStore;
+        private TransactionManager transactionManager;
+        private ScheduledExecutorService executorService;
+        private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
+        private EventFilter eventFilter;
+        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
+        };
+        private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
+        private long tokenClaimInterval = 5000;
+        private Clock clock = GenericEventMessage.clock;
+        private int maxClaimedSegments;
+
+        /**
+         * The name of the processor this service coordinates for.
+         *
+         * @param name the name of the processor this service coordinates for
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * The source of events this coordinator should schedule per work package.
+         *
+         * @param messageSource the source of events this coordinator should schedule per work package
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+            this.messageSource = messageSource;
+            return this;
+        }
+
+        /**
+         * The storage solution for {@link TrackingToken}s. Used to find and claim unclaimed segments for a processor.
+         *
+         * @param tokenStore the storage solution for {@link TrackingToken}s
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder tokenStore(TokenStore tokenStore) {
+            this.tokenStore = tokenStore;
+            return this;
+        }
+
+        /**
+         * Sets the threshold after which workers should extend their claims if they haven't processed any messages.
+         *
+         * @param claimExtensionThreshold The threshold in milliseconds
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder claimExtensionThreshold(long claimExtensionThreshold) {
+            this.claimExtensionThreshold = claimExtensionThreshold;
+            return this;
+        }
+
+        /**
+         * A {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a transaction.
+         *
+         * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
+         *                           inside a transaction
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder transactionManager(TransactionManager transactionManager) {
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
+         *
+         * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Factory method to construct a {@link WorkPackage} with.
+         *
+         * @param workPackageFactory factory method to construct a {@link WorkPackage} with
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder workPackageFactory(BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory) {
+            this.workPackageFactory = workPackageFactory;
+            return this;
+        }
+
+        /**
+         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all {@link
+         * WorkPackage}s.
+         *
+         * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
+         *                    all {@link WorkPackage}s
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder eventFilter(EventFilter eventFilter) {
+            this.eventFilter = eventFilter;
+            return this;
+        }
+
+
+        /**
+         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all {@link
+         * WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
+         *
+         * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
+         *                              this {@link Coordinator} controls
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
+            this.ignoredMessageHandler = ignoredMessageHandler;
+            return this;
+        }
+
+        /**
+         * Lambda used to update the processing {@link TrackerStatus} per {@link WorkPackage}
+         *
+         * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per {@link
+         *                                WorkPackage}
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder processingStatusUpdater(BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
+            this.processingStatusUpdater = processingStatusUpdater;
+            return this;
+        }
+
+        /**
+         * The time in milliseconds this coordinator will wait to reattempt claiming segments for processing.  Defaults
+         * to {@code 5000}.
+         *
+         * @param tokenClaimInterval the time in milliseconds this coordinator will wait to reattempt claiming segments
+         *                           for processing
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder tokenClaimInterval(long tokenClaimInterval) {
+            this.tokenClaimInterval = tokenClaimInterval;
+            return this;
+        }
+
+        /**
+         * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
+         * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
+         *
+         * @param clock a {@link Clock} used for any time dependent operations in this {@link Coordinator}
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of segments this instance may claim.
+         *
+         * @param maxClaimedSegments the maximum number of segments this instance may claim
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder maxClaimedSegments(int maxClaimedSegments) {
+            this.maxClaimedSegments = maxClaimedSegments;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link Coordinator} as specified through this Builder.
+         *
+         * @return a {@link Coordinator} as specified through this Builder
+         */
+        Coordinator build() {
+            return new Coordinator(this);
+        }
+    }
+
+    /**
+     * A {@link TrackingToken} implementation used to define no token could be claimed by this {@link Coordinator}.
+     */
+    private static class NoToken implements TrackingToken {
+
+        public static final TrackingToken INSTANCE = new NoToken();
+
+        @Override
+        public TrackingToken lowerBound(TrackingToken other) {
+            return other;
+        }
+
+        @Override
+        public TrackingToken upperBound(TrackingToken other) {
+            return other;
+        }
+
+        @Override
+        public boolean covers(TrackingToken other) {
+            return false;
+        }
+    }
+
+    /**
      * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
      * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
      * sense means:
@@ -395,7 +636,7 @@ class Coordinator {
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500);
                     } else {
-                        scheduleDelayedCoordinationTask(tokenClaimInterval);
+                        scheduleDelayedCoordinationTask(Math.min(tokenExtensionThreshold, tokenClaimInterval));
                     }
                 } else {
                     scheduleCoordinationTask(100);
@@ -512,20 +753,17 @@ class Coordinator {
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
 
-                if (!eventFilter.canHandleTypeOf(event)) {
-                    eventStream.skipMessagesWithPayloadTypeOf(event);
+                boolean anyScheduled = false;
+                for (WorkPackage workPackage : workPackages.values()) {
+                    boolean scheduled = workPackage.scheduleEvent(event);
+                    anyScheduled = anyScheduled || scheduled;
+                }
+                if (!anyScheduled) {
                     ignoredMessageHandler.accept(event);
-                } else {
-                    boolean anyScheduled = false;
-                    for (WorkPackage workPackage : workPackages.values()) {
-                        boolean scheduled = workPackage.scheduleEvent(event);
-                        anyScheduled = anyScheduled || scheduled;
-                    }
-                    if (!anyScheduled) {
-                        ignoredMessageHandler.accept(event);
+                    if (!eventFilter.canHandleTypeOf(event)) {
+                        eventStream.skipMessagesWithPayloadTypeOf(event);
                     }
                 }
-
                 lastScheduledToken = event.trackingToken();
             }
 
@@ -590,219 +828,6 @@ class Coordinator {
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
                        ));
-        }
-    }
-
-    /**
-     * A {@link TrackingToken} implementation used to define no token could be claimed by this {@link Coordinator}.
-     */
-    private static class NoToken implements TrackingToken {
-
-        public static final TrackingToken INSTANCE = new NoToken();
-
-        @Override
-        public TrackingToken lowerBound(TrackingToken other) {
-            return other;
-        }
-
-        @Override
-        public TrackingToken upperBound(TrackingToken other) {
-            return other;
-        }
-
-        @Override
-        public boolean covers(TrackingToken other) {
-            return false;
-        }
-    }
-
-    /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all {@link
-     * WorkPackage}s this {@link Coordinator} could ever service.
-     */
-    @FunctionalInterface
-    interface EventFilter {
-
-        /**
-         * Checks whether the given {@code eventMessage} contains a type of message that can be handled by any of the
-         * event handlers this processor coordinates.
-         *
-         * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
-         * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
-         * otherwise
-         */
-        boolean canHandleTypeOf(TrackedEventMessage<?> eventMessage);
-    }
-
-    /**
-     * Package private builder class to construct a {@link Coordinator}. Not used for validation of the fields as is the
-     * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
-     */
-    static class Builder {
-
-        private String name;
-        private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
-        private TokenStore tokenStore;
-        private TransactionManager transactionManager;
-        private ScheduledExecutorService executorService;
-        private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-        private EventFilter eventFilter;
-        private Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler = i -> {
-        };
-        private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
-        private long tokenClaimInterval = 5000;
-        private Clock clock = GenericEventMessage.clock;
-        private int maxClaimedSegments;
-
-        /**
-         * The name of the processor this service coordinates for.
-         *
-         * @param name the name of the processor this service coordinates for
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        /**
-         * The source of events this coordinator should schedule per work package.
-         *
-         * @param messageSource the source of events this coordinator should schedule per work package
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
-            this.messageSource = messageSource;
-            return this;
-        }
-
-        /**
-         * The storage solution for {@link TrackingToken}s. Used to find and claim unclaimed segments for a processor.
-         *
-         * @param tokenStore the storage solution for {@link TrackingToken}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder tokenStore(TokenStore tokenStore) {
-            this.tokenStore = tokenStore;
-            return this;
-        }
-
-        /**
-         * A {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a transaction.
-         *
-         * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
-         *                           inside a transaction
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder transactionManager(TransactionManager transactionManager) {
-            this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
-         *
-         * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder executorService(ScheduledExecutorService executorService) {
-            this.executorService = executorService;
-            return this;
-        }
-
-        /**
-         * Factory method to construct a {@link WorkPackage} with.
-         *
-         * @param workPackageFactory factory method to construct a {@link WorkPackage} with
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder workPackageFactory(BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory) {
-            this.workPackageFactory = workPackageFactory;
-            return this;
-        }
-
-        /**
-         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all {@link
-         * WorkPackage}s.
-         *
-         * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
-         *                    all {@link WorkPackage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder eventFilter(EventFilter eventFilter) {
-            this.eventFilter = eventFilter;
-            return this;
-        }
-
-
-        /**
-         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all {@link
-         * WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
-         *
-         * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
-         *                              this {@link Coordinator} controls
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
-            this.ignoredMessageHandler = ignoredMessageHandler;
-            return this;
-        }
-
-        /**
-         * Lambda used to update the processing {@link TrackerStatus} per {@link WorkPackage}
-         *
-         * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per {@link
-         *                                WorkPackage}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder processingStatusUpdater(BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
-            this.processingStatusUpdater = processingStatusUpdater;
-            return this;
-        }
-
-        /**
-         * The time in milliseconds this coordinator will wait to reattempt claiming segments for processing.  Defaults
-         * to {@code 5000}.
-         *
-         * @param tokenClaimInterval the time in milliseconds this coordinator will wait to reattempt claiming segments
-         *                           for processing
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder tokenClaimInterval(long tokenClaimInterval) {
-            this.tokenClaimInterval = tokenClaimInterval;
-            return this;
-        }
-
-        /**
-         * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
-         * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
-         *
-         * @param clock a {@link Clock} used for any time dependent operations in this {@link Coordinator}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder clock(Clock clock) {
-            this.clock = clock;
-            return this;
-        }
-
-        /**
-         * Sets the maximum number of segments this instance may claim.
-         *
-         * @param maxClaimedSegments the maximum number of segments this instance may claim
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder maxClaimedSegments(int maxClaimedSegments) {
-            this.maxClaimedSegments = maxClaimedSegments;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link Coordinator} as specified through this Builder.
-         *
-         * @return a {@link Coordinator} as specified through this Builder
-         */
-        Coordinator build() {
-            return new Coordinator(this);
         }
     }
 }

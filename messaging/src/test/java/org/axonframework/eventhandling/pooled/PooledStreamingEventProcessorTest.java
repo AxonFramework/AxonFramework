@@ -247,6 +247,23 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testHandlingUnknownMessageTypeWillAdvanceToken() {
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
+
+        when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
+        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
+
+        EventMessage<Integer> eventToIgnoreOne = GenericEventMessage.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToIgnoreOne);
+
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().get(0).getCurrentPosition().orElse(0)));
+
+        assertEquals(1, stubMessageSource.getIgnoredEvents().size());
+    }
+
+    @Test
     void testEventsWhichMustBeIgnoredAreNotHandled() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
