@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -396,6 +397,24 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testWorkPackageIsAbortedWhenExtendingClaimFails() {
+        InMemoryTokenStore spy = spy(tokenStore);
+        setTestSubject(createTestSubject(b -> b.tokenStore(spy)
+                                               .messageSource(new InMemoryMessageSource(true))
+                                               .claimExtensionThreshold(10)));
+
+        doThrow(new MockException("Simulated failure")).when(spy)
+                                                       .extendClaim(any(), anyInt());
+
+        testSubject.start();
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                () -> verify(spy, atLeastOnce()).extendClaim(testSubject.getName(), 0)
+        );
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
+    }
+
+    @Test
     void testHandlingUnknownMessageTypeWillAdvanceToken() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
@@ -417,9 +436,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void testEventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
-        setTestSubject(createTestSubject(
-                builder -> builder.initialSegmentCount(1)
-                       ));
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
         // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
         // Hence a null check is added to the matcher.
