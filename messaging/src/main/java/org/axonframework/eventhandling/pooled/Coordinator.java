@@ -88,7 +88,7 @@ class Coordinator {
     private final int maxClaimedSegments;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
-    private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
+    private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
@@ -118,6 +118,7 @@ class Coordinator {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
         this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
     }
 
     /**
@@ -259,24 +260,29 @@ class Coordinator {
         private final boolean isRunning;
         private final boolean wasStarted;
         private final CompletableFuture<Void> shutdownHandle;
+        private final Runnable shutdownAction;
 
-        private RunState(boolean isRunning, boolean wasStarted, CompletableFuture<Void> shutdownHandle) {
+        private RunState(boolean isRunning,
+                         boolean wasStarted,
+                         CompletableFuture<Void> shutdownHandle,
+                         Runnable shutdownAction) {
             this.isRunning = isRunning;
             this.wasStarted = wasStarted;
             this.shutdownHandle = shutdownHandle;
+            this.shutdownAction = shutdownAction;
         }
 
-        public static RunState initial() {
-            return new RunState(false, false, CompletableFuture.completedFuture(null));
+        public static RunState initial(Runnable shutdownAction) {
+            return new RunState(false, false, CompletableFuture.completedFuture(null), shutdownAction);
         }
 
         public RunState attemptStart() {
             if (isRunning) {
                 // It was already started
-                return new RunState(true, false, null);
+                return new RunState(true, false, null, shutdownAction);
             } else if (shutdownHandle.isDone()) {
                 // Shutdown has previously been completed. It's allowed to start
-                return new RunState(true, true, null);
+                return new RunState(true, true, null, shutdownAction);
             } else {
                 // Shutdown is in progress
                 return this;
@@ -284,9 +290,13 @@ class Coordinator {
         }
 
         public RunState attemptStop() {
-            return !isRunning || shutdownHandle != null
-                    ? this // It's already stopped
-                    : new RunState(false, false, new CompletableFuture<>());
+            // It's already stopped
+            if (!isRunning || shutdownHandle != null) {
+                return this;
+            }
+            CompletableFuture<Void> newShutdownHandle = new CompletableFuture<>();
+            newShutdownHandle.whenComplete((r, e) -> shutdownAction.run());
+            return new RunState(false, false, newShutdownHandle, shutdownAction);
         }
 
         public boolean isRunning() {
@@ -340,6 +350,8 @@ class Coordinator {
         private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
+        private Runnable shutdownAction = () -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
@@ -492,6 +504,18 @@ class Coordinator {
          */
         Builder maxClaimedSegments(int maxClaimedSegments) {
             this.maxClaimedSegments = maxClaimedSegments;
+            return this;
+        }
+
+        /**
+         * Registers an action to perform when the coordinator shuts down. Will override any previously registered
+         * actions. Defaults to a no-op.
+         *
+         * @param shutdownAction the action to perform when the coordinator is shut down
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder onShutdown(Runnable shutdownAction) {
+            this.shutdownAction = shutdownAction;
             return this;
         }
 
