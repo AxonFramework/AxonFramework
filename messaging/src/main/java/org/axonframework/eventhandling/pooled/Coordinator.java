@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.stream.BlockingStream;
@@ -38,10 +54,10 @@ import java.util.function.UnaryOperator;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a work
- * package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and the
- * lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events are
- * scheduled one by one to <em>all</em> work packages coordinated by this service.
+ * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a
+ * work package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and
+ * the lower bound of this combined token is used to open an event stream from a {@link StreamableMessageSource}. Events
+ * are scheduled one by one to <em>all</em> work packages coordinated by this service.
  * <p>
  * Coordination tasks will run and be rerun as long as this service is considered to be {@link #isRunning()}.
  * Coordination will continue whenever exceptions occur, albeit with an incremental back off. Due to this, both {@link
@@ -67,12 +83,12 @@ class Coordinator {
     private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
-    private final long tokenExtensionThreshold;
+    private final long claimExtensionThreshold;
     private final Clock clock;
     private final int maxClaimedSegments;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
-    private final AtomicReference<RunState> runState = new AtomicReference<>(RunState.initial());
+    private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
@@ -99,9 +115,10 @@ class Coordinator {
         this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
+        this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
-        this.tokenExtensionThreshold = builder.claimExtensionThreshold;
         this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
     }
 
     /**
@@ -243,24 +260,29 @@ class Coordinator {
         private final boolean isRunning;
         private final boolean wasStarted;
         private final CompletableFuture<Void> shutdownHandle;
+        private final Runnable shutdownAction;
 
-        private RunState(boolean isRunning, boolean wasStarted, CompletableFuture<Void> shutdownHandle) {
+        private RunState(boolean isRunning,
+                         boolean wasStarted,
+                         CompletableFuture<Void> shutdownHandle,
+                         Runnable shutdownAction) {
             this.isRunning = isRunning;
             this.wasStarted = wasStarted;
             this.shutdownHandle = shutdownHandle;
+            this.shutdownAction = shutdownAction;
         }
 
-        public static RunState initial() {
-            return new RunState(false, false, CompletableFuture.completedFuture(null));
+        public static RunState initial(Runnable shutdownAction) {
+            return new RunState(false, false, CompletableFuture.completedFuture(null), shutdownAction);
         }
 
         public RunState attemptStart() {
             if (isRunning) {
                 // It was already started
-                return new RunState(true, false, null);
+                return new RunState(true, false, null, shutdownAction);
             } else if (shutdownHandle.isDone()) {
                 // Shutdown has previously been completed. It's allowed to start
-                return new RunState(true, true, null);
+                return new RunState(true, true, null, shutdownAction);
             } else {
                 // Shutdown is in progress
                 return this;
@@ -268,9 +290,13 @@ class Coordinator {
         }
 
         public RunState attemptStop() {
-            return !isRunning || shutdownHandle != null
-                    ? this // It's already stopped
-                    : new RunState(false, false, new CompletableFuture<>());
+            // It's already stopped
+            if (!isRunning || shutdownHandle != null) {
+                return this;
+            }
+            CompletableFuture<Void> newShutdownHandle = new CompletableFuture<>();
+            newShutdownHandle.whenComplete((r, e) -> shutdownAction.run());
+            return new RunState(false, false, newShutdownHandle, shutdownAction);
         }
 
         public boolean isRunning() {
@@ -298,7 +324,6 @@ class Coordinator {
          * event handlers this processor coordinates.
          *
          * @param eventMessage the {@link TrackedEventMessage} to validate whether it can be handled
-         *
          * @return {@code true} if the processor contains a handler for given {@code eventMessage}'s type, {@code false}
          * otherwise
          */
@@ -311,7 +336,6 @@ class Coordinator {
      */
     static class Builder {
 
-        private long claimExtensionThreshold = 5000;
         private String name;
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
@@ -323,14 +347,16 @@ class Coordinator {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
+        private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
+        private Runnable shutdownAction = () -> {
+        };
 
         /**
          * The name of the processor this service coordinates for.
          *
          * @param name the name of the processor this service coordinates for
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder name(String name) {
@@ -342,7 +368,6 @@ class Coordinator {
          * The source of events this coordinator should schedule per work package.
          *
          * @param messageSource the source of events this coordinator should schedule per work package
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
@@ -354,7 +379,6 @@ class Coordinator {
          * The storage solution for {@link TrackingToken}s. Used to find and claim unclaimed segments for a processor.
          *
          * @param tokenStore the storage solution for {@link TrackingToken}s
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder tokenStore(TokenStore tokenStore) {
@@ -363,23 +387,10 @@ class Coordinator {
         }
 
         /**
-         * Sets the threshold after which workers should extend their claims if they haven't processed any messages.
-         *
-         * @param claimExtensionThreshold The threshold in milliseconds
-         *
-         * @return the current Builder instance, for fluent interfacing
-         */
-        Builder claimExtensionThreshold(long claimExtensionThreshold) {
-            this.claimExtensionThreshold = claimExtensionThreshold;
-            return this;
-        }
-
-        /**
          * A {@link TransactionManager} used to invoke all {@link TokenStore} operations inside a transaction.
          *
          * @param transactionManager a {@link TransactionManager} used to invoke all {@link TokenStore} operations
          *                           inside a transaction
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder transactionManager(TransactionManager transactionManager) {
@@ -391,7 +402,6 @@ class Coordinator {
          * A {@link ScheduledExecutorService} used to run this coordinators tasks with.
          *
          * @param executorService a {@link ScheduledExecutorService} used to run this coordinators tasks with
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder executorService(ScheduledExecutorService executorService) {
@@ -403,7 +413,6 @@ class Coordinator {
          * Factory method to construct a {@link WorkPackage} with.
          *
          * @param workPackageFactory factory method to construct a {@link WorkPackage} with
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder workPackageFactory(BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory) {
@@ -417,7 +426,6 @@ class Coordinator {
          *
          * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
          *                    all {@link WorkPackage}s
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder eventFilter(EventFilter eventFilter) {
@@ -432,7 +440,6 @@ class Coordinator {
          *
          * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
          *                              this {@link Coordinator} controls
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder onMessageIgnored(Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler) {
@@ -445,7 +452,6 @@ class Coordinator {
          *
          * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per {@link
          *                                WorkPackage}
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder processingStatusUpdater(BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
@@ -459,7 +465,6 @@ class Coordinator {
          *
          * @param tokenClaimInterval the time in milliseconds this coordinator will wait to reattempt claiming segments
          *                           for processing
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder tokenClaimInterval(long tokenClaimInterval) {
@@ -468,11 +473,22 @@ class Coordinator {
         }
 
         /**
+         * Sets the threshold after which workers should extend their claims if they haven't processed any messages.
+         * Defaults to {@code 5000}.
+         *
+         * @param claimExtensionThreshold the threshold in milliseconds
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder claimExtensionThreshold(long claimExtensionThreshold) {
+            this.claimExtensionThreshold = claimExtensionThreshold;
+            return this;
+        }
+
+        /**
          * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
          * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
          *
          * @param clock a {@link Clock} used for any time dependent operations in this {@link Coordinator}
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder clock(Clock clock) {
@@ -484,11 +500,22 @@ class Coordinator {
          * Sets the maximum number of segments this instance may claim.
          *
          * @param maxClaimedSegments the maximum number of segments this instance may claim
-         *
          * @return the current Builder instance, for fluent interfacing
          */
         Builder maxClaimedSegments(int maxClaimedSegments) {
             this.maxClaimedSegments = maxClaimedSegments;
+            return this;
+        }
+
+        /**
+         * Registers an action to perform when the coordinator shuts down. Will override any previously registered
+         * actions. Defaults to a no-op.
+         *
+         * @param shutdownAction the action to perform when the coordinator is shut down
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder onShutdown(Runnable shutdownAction) {
+            this.shutdownAction = shutdownAction;
             return this;
         }
 
@@ -636,7 +663,7 @@ class Coordinator {
                     if (!availabilityCallbackSupported) {
                         scheduleCoordinationTask(500);
                     } else {
-                        scheduleDelayedCoordinationTask(Math.min(tokenExtensionThreshold, tokenClaimInterval));
+                        scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
                     }
                 } else {
                     scheduleCoordinationTask(100);
@@ -753,20 +780,17 @@ class Coordinator {
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
 
-                if (!eventFilter.canHandleTypeOf(event)) {
-                    eventStream.skipMessagesWithPayloadTypeOf(event);
+                boolean anyScheduled = false;
+                for (WorkPackage workPackage : workPackages.values()) {
+                    boolean scheduled = workPackage.scheduleEvent(event);
+                    anyScheduled = anyScheduled || scheduled;
+                }
+                if (!anyScheduled) {
                     ignoredMessageHandler.accept(event);
-                } else {
-                    boolean anyScheduled = false;
-                    for (WorkPackage workPackage : workPackages.values()) {
-                        boolean scheduled = workPackage.scheduleEvent(event);
-                        anyScheduled = anyScheduled || scheduled;
-                    }
-                    if (!anyScheduled) {
-                        ignoredMessageHandler.accept(event);
+                    if (!eventFilter.canHandleTypeOf(event)) {
+                        eventStream.skipMessagesWithPayloadTypeOf(event);
                     }
                 }
-
                 lastScheduledToken = event.trackingToken();
             }
 

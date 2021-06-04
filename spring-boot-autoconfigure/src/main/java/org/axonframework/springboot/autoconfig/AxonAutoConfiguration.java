@@ -275,6 +275,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                             ScheduledExecutorService workerExecutor = Executors.newScheduledThreadPool(
                                     settings.getThreadCount(), new AxonThreadFactory("WorkPackage[" + name + "]")
                             );
+                            config.onShutdown(workerExecutor::shutdown);
                             return builder.workerExecutor(workerExecutor)
                                           .initialSegmentCount(initialSegmentCount(settings, 16))
                                           .tokenClaimInterval(tokenClaimIntervalMillis(settings))

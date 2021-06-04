@@ -147,6 +147,155 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testStoppingProcessorWillShutdownDefaultExecutorServices() {
+        setTestSubject(PooledStreamingEventProcessor.builder()
+                                                    .name(PROCESSOR_NAME)
+                                                    .eventHandlerInvoker(stubEventHandler)
+                                                    .messageSource(stubMessageSource)
+                                                    .tokenStore(tokenStore)
+                                                    .transactionManager(NoTransactionManager.instance())
+                                                    .build());
+
+        testSubject.start();
+
+        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
+        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertTrue(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
+            assertTrue(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
+        });
+
+        testSubject.shutDown();
+
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
+        });
+    }
+
+    @Test
+    void testStoppingProcessorWillShutdownDefaultExecutorServices_CustomCoordinator() {
+        setTestSubject(PooledStreamingEventProcessor.builder()
+                                                    .name(PROCESSOR_NAME)
+                                                    .eventHandlerInvoker(stubEventHandler)
+                                                    .coordinatorExecutor(coordinatorExecutor)
+                                                    .messageSource(stubMessageSource)
+                                                    .tokenStore(tokenStore)
+                                                    .transactionManager(NoTransactionManager.instance())
+                                                    .build());
+
+        testSubject.start();
+
+        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
+        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Did not expect Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
+            assertTrue(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
+        });
+
+        testSubject.shutDown();
+
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
+
+            assertFalse(coordinatorExecutor.isShutdown());
+        });
+    }
+
+    @Test
+    void testStoppingProcessorWillShutdownDefaultExecutorServices_CustomWorker() {
+        setTestSubject(PooledStreamingEventProcessor.builder()
+                                                    .name(PROCESSOR_NAME)
+                                                    .eventHandlerInvoker(stubEventHandler)
+                                                    .workerExecutor(workerExecutor)
+                                                    .messageSource(stubMessageSource)
+                                                    .tokenStore(tokenStore)
+                                                    .transactionManager(NoTransactionManager.instance())
+                                                    .build());
+
+        testSubject.start();
+
+        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
+        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertTrue(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Did not expect Worker thread named " + expectedWorkerThreadName + " to have started");
+        });
+
+        testSubject.shutDown();
+
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
+            assertFalse(
+                    Thread.getAllStackTraces().keySet().stream()
+                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
+                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
+
+            assertFalse(workerExecutor.isShutdown());
+        });
+    }
+
+    @Test
+    void testStoppingProcessorWillShutdownDefaultExecutorService() {
+        setTestSubject(PooledStreamingEventProcessor.builder()
+                                                    .name(PROCESSOR_NAME)
+                                                    .eventHandlerInvoker(stubEventHandler)
+                                                    .messageSource(stubMessageSource)
+                                                    .tokenStore(tokenStore)
+                                                    .transactionManager(NoTransactionManager.instance())
+                                                    .build());
+
+        testSubject.start();
+
+        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
+                Thread.getAllStackTraces().keySet().stream()
+                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started"));
+
+        testSubject.shutDown();
+
+        assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertFalse(
+                Thread.getAllStackTraces().keySet().stream()
+                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
+                "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped"));
+    }
+
+    @Test
     void testStartContinuesWhenTokenInitializationFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)));
@@ -283,10 +432,39 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void testEventsWhichMustBeIgnoredAreNotHandled() {
+    void testHandlingUnknownMessageTypeWillAdvanceToken() {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
-        when(stubEventHandler.canHandle(any(), any())).thenReturn(true);
+        when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
+        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
+
+        EventMessage<Integer> eventToIgnoreOne = GenericEventMessage.asEventMessage(1337);
+        stubMessageSource.publishMessage(eventToIgnoreOne);
+
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(
+                100, TimeUnit.MILLISECONDS,
+                () -> assertEquals(1, testSubject.processingStatus().get(0).getCurrentPosition().orElse(0))
+        );
+
+        assertEquals(1, stubMessageSource.getIgnoredEvents().size());
+    }
+
+    @Test
+    void testEventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
+        setTestSubject(createTestSubject(
+                builder -> builder.initialSegmentCount(1)
+                       ));
+
+        // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
+        // Hence a null check is added to the matcher.
+        when(stubEventHandler.canHandle(
+                argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any()
+        )).thenReturn(false);
+        when(stubEventHandler.canHandle(
+                argThat(argument -> argument != null && String.class.equals(argument.getPayloadType())), any()
+        )).thenReturn(true);
         when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
         when(stubEventHandler.canHandleType(String.class)).thenReturn(true);
 
@@ -304,6 +482,13 @@ class PooledStreamingEventProcessorTest {
         eventsToHandle.add(eventToHandleOne.getPayload());
         eventsToHandle.add(eventToHandleTwo.getPayload());
 
+        List<Object> eventsToValidate = new ArrayList<>();
+        eventsToValidate.add(eventToIgnoreOne.getPayload());
+        eventsToValidate.add(eventToIgnoreTwo.getPayload());
+        eventsToValidate.add(eventToIgnoreThree.getPayload());
+        eventsToValidate.add(eventToHandleOne.getPayload());
+        eventsToValidate.add(eventToHandleTwo.getPayload());
+
         stubMessageSource.publishMessage(eventToIgnoreOne);
         stubMessageSource.publishMessage(eventToIgnoreTwo);
         stubMessageSource.publishMessage(eventToIgnoreThree);
@@ -314,14 +499,23 @@ class PooledStreamingEventProcessorTest {
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         // noinspection unchecked
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(stubEventHandler, timeout(500).times(2)).canHandle(eventCaptor.capture(), any());
+        ArgumentCaptor<EventMessage<?>> validatedEventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        verify(stubEventHandler, timeout(500).times(5)).canHandle(validatedEventCaptor.capture(), any());
 
-        List<EventMessage<?>> handledEvents = eventCaptor.getAllValues();
+        List<EventMessage<?>> validatedEvents = validatedEventCaptor.getAllValues();
+        assertEquals(5, validatedEvents.size());
+        for (EventMessage<?> validatedEvent : validatedEvents) {
+            assertTrue(eventsToValidate.contains(validatedEvent.getPayload()));
+        }
+
+        //noinspection unchecked
+        ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        verify(stubEventHandler, timeout(500).times(2)).handle(handledEventsCaptor.capture(), any());
+        List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
         assertEquals(2, handledEvents.size());
-        for (EventMessage<?> handledEvent : handledEvents) {
+        for (EventMessage<?> validatedEvent : handledEvents) {
             //noinspection SuspiciousMethodCalls
-            assertTrue(eventsToHandle.contains(handledEvent.getPayload()));
+            assertTrue(eventsToHandle.contains(validatedEvent.getPayload()));
         }
 
         List<TrackedEventMessage<?>> ignoredEvents = stubMessageSource.getIgnoredEvents();
