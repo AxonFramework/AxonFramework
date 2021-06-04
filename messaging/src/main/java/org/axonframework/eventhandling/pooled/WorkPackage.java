@@ -165,7 +165,13 @@ class WorkPackage {
                 return;
             }
 
-            processEvents();
+            try {
+                processEvents();
+            } catch (Exception e) {
+                logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
+                            segment.getSegmentId(), name, e);
+                abort(e);
+            }
             scheduled.set(false);
             if (!processingQueue.isEmpty() || abortFlag.get() != null) {
                 logger.debug("Rescheduling Work Package [{}]-[{}] since there are events left.",
@@ -175,7 +181,7 @@ class WorkPackage {
         });
     }
 
-    private void processEvents() {
+    private void processEvents() throws Exception {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
@@ -189,18 +195,12 @@ class WorkPackage {
             logger.debug("Work Package [{}]-[{}] is processing a batch of {} events.",
                          segment.getSegmentId(), name, eventBatch.size());
             UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
-            try {
-                unitOfWork.attachTransaction(transactionManager);
-                unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.afterCommit(
-                        u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
-                );
-                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
-            } catch (Exception e) {
-                logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
-                            segment.getSegmentId(), name, e);
-                abort(e);
-            }
+            unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
+            unitOfWork.afterCommit(
+                    u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
+            );
+            batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             // Empty batch, check for token extension time
