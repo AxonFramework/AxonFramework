@@ -1849,6 +1849,48 @@ class TrackingEventProcessorTest {
         assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
+    @Test
+    void testIsReplayingWhenNotCaughtUp() throws Exception {
+        when(mockHandler.supportsReset()).thenReturn(true);
+        final List<String> handled = new CopyOnWriteArrayList<>();
+        final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        int segmentId = 0;
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            if (ReplayToken.isReplay(message)) {
+                handledInRedelivery.add(message.getIdentifier());
+            }
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        testSubject.shutDown();
+        testSubject.resetTokens();
+        // Resetting twice caused problems (see issue #559)
+        testSubject.resetTokens();
+        testSubject.start();
+        assertWithin(1,
+                     TimeUnit.MILLISECONDS,
+                     () -> {
+                         assertFalse(testSubject.processingStatus().get(segmentId).isCaughtUp());
+                         assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
+                         assertTrue(testSubject.isReplaying());
+                     });
+        assertWithin(1,
+                     TimeUnit.SECONDS,
+                     () -> {
+                         assertTrue(testSubject.processingStatus().get(segmentId).isCaughtUp());
+                         assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
+                         assertFalse(testSubject.isReplaying());
+                     });
+
+    }
+
     private void waitForStatus(String description,
                                long time,
                                TimeUnit unit,

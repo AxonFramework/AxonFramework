@@ -218,4 +218,18 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @return the status for each of the segments processed by the current processor
      */
     Map<Integer, EventTrackerStatus> processingStatus();
+
+    /**
+     * Returns the overall status of the {@link org.axonframework.eventhandling.StreamingEventProcessor} and indicates if this processor is replaying.
+     * <p>
+     * Note that when the event tracking status isReplaying and isCaughtUp both are true it means that the replay is
+     * done but the processor did not receive any new events
+     *
+     * @return {@code true} if any of the segments is still replaying and not caught up yet, {@code false} otherwise
+     */
+    default boolean isReplaying() {
+        return processingStatus().values().stream().anyMatch(eventTrackerStatus -> eventTrackerStatus.isReplaying()
+                && !eventTrackerStatus.isCaughtUp());
+    }
+
 }
