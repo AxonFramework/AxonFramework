@@ -1850,6 +1850,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    @Timeout(value = 1000)
     void testIsReplayingWhenNotCaughtUp() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
@@ -1874,9 +1875,10 @@ class TrackingEventProcessorTest {
         // Resetting twice caused problems (see issue #559)
         testSubject.resetTokens();
         testSubject.start();
-        assertWithin(1,
+        assertWithin(2,
                      TimeUnit.MILLISECONDS,
                      () -> {
+                         assertFalse(testSubject.processingStatus().isEmpty());
                          assertFalse(testSubject.processingStatus().get(segmentId).isCaughtUp());
                          assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
                          assertTrue(testSubject.isReplaying());
