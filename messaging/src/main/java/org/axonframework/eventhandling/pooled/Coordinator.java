@@ -83,6 +83,7 @@ class Coordinator {
     private final Consumer<? super TrackedEventMessage<?>> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
+    private final long claimExtensionThreshold;
     private final Clock clock;
     private final int maxClaimedSegments;
 
@@ -114,6 +115,7 @@ class Coordinator {
         this.ignoredMessageHandler = builder.ignoredMessageHandler;
         this.processingStatusUpdater = builder.processingStatusUpdater;
         this.tokenClaimInterval = builder.tokenClaimInterval;
+        this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
         this.maxClaimedSegments = builder.maxClaimedSegments;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
@@ -311,338 +313,6 @@ class Coordinator {
     }
 
     /**
-     * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
-     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
-     * sense means:
-     * <ol>
-     *     <li>Validating if there are {@link CoordinatorTask}s to run, and run a single one if there are any.</li>
-     *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
-     *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
-     *     <li>Reading events from the stream.</li>
-     *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
-     *     <li>Releasing claims of aborted {@code WorkPackages}.</li>
-     *     <li>Rescheduling itself to be picked up at a reasonable point in time.</li>
-     * </ol>
-     */
-    private class CoordinationTask implements Runnable {
-
-        private final AtomicBoolean processingGate = new AtomicBoolean();
-        private final AtomicBoolean scheduledGate = new AtomicBoolean();
-        private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
-        private BlockingStream<TrackedEventMessage<?>> eventStream;
-        private TrackingToken lastScheduledToken = NoToken.INSTANCE;
-        private boolean availabilityCallbackSupported;
-        private long unclaimedSegmentValidationThreshold;
-
-        @Override
-        public void run() {
-            if (!processingGate.compareAndSet(false, true)) {
-                // Another thread is already processing, so stop this invocation.
-                return;
-            }
-
-            if (!runState.get().isRunning()) {
-                logger.debug("Stopped processing. Runnable flag is false.\n"
-                                     + "Releasing claims and closing the event stream for Processor [{}].", name);
-                abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
-                closeQuietly(eventStream);
-                return;
-            }
-
-            workPackages.entrySet().stream()
-                        .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
-                        .map(Map.Entry::getValue)
-                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
-
-            if (!coordinatorTasks.isEmpty()) {
-                CoordinatorTask task = coordinatorTasks.remove();
-                logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
-                task.run()
-                    .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
-                    .whenComplete((result, exception) -> {
-                        processingGate.set(false);
-                        scheduleImmediateCoordinationTask();
-                    });
-                return;
-            }
-
-            if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
-                unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
-
-                try {
-                    Map<Segment, TrackingToken> newSegments = claimNewSegments();
-                    TrackingToken streamStartPosition = lastScheduledToken;
-                    for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
-                        Segment segment = entry.getKey();
-                        TrackingToken token = entry.getValue();
-                        streamStartPosition = streamStartPosition == null
-                                ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
-                        logger.debug("Processor [{}] claimed {} for processing.", name, segment);
-                        workPackages.computeIfAbsent(segment.getSegmentId(),
-                                                     wp -> workPackageFactory.apply(segment, token));
-                    }
-                    if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
-                        logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
-                    }
-                    ensureOpenStream(streamStartPosition);
-                } catch (Exception e) {
-                    logger.warn("Exception occurred while Processor [{}] started work packages"
-                                        + " and opened the event stream.", name, e);
-                    abortAndScheduleRetry(e);
-                    return;
-                }
-            }
-
-            if (workPackages.isEmpty()) {
-                // We didn't start any work packages. Retry later.
-                logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
-                lastScheduledToken = NoToken.INSTANCE;
-                closeQuietly(eventStream);
-                eventStream = null;
-                processingGate.set(false);
-                scheduleDelayedCoordinationTask(tokenClaimInterval);
-                return;
-            }
-
-            try {
-                coordinateWorkPackages();
-                errorWaitBackOff = 500;
-                processingGate.set(false);
-
-                if (isSpaceAvailable() && eventStream.hasNextAvailable()) {
-                    // All work package have space available to handle events and there are still events on the stream.
-                    // We should thus start this process again immediately.
-                    // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
-                    scheduleImmediateCoordinationTask();
-                } else if (isSpaceAvailable()) {
-                    // There is space, but no events to process. We caught up.
-                    workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
-
-                    if (!availabilityCallbackSupported) {
-                        scheduleCoordinationTask(500);
-                    } else {
-                        scheduleDelayedCoordinationTask(tokenClaimInterval);
-                    }
-                } else {
-                    scheduleCoordinationTask(100);
-                }
-            } catch (Exception e) {
-                logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
-                if (e instanceof InterruptedException) {
-                    logger.error(String.format("Processor [%s] was interrupted. Shutting down.", name), e);
-                    stop();
-                    Thread.currentThread().interrupt();
-                } else {
-                    abortAndScheduleRetry(e);
-                }
-            }
-        }
-
-        private CompletableFuture<Void> abortWorkPackages(Exception cause) {
-            return workPackages.values().stream()
-                               .map(wp -> abortWorkPackage(wp, cause))
-                               .reduce(CompletableFuture::allOf)
-                               .orElse(CompletableFuture.completedFuture(null))
-                               .thenRun(workPackages::clear);
-        }
-
-        /**
-         * Attempts to claim new segments.
-         *
-         * @return a Map with each {@link TrackingToken} for newly claimed {@link Segment}
-         */
-        private Map<Segment, TrackingToken> claimNewSegments() {
-            Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
-
-            // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
-            int[] unClaimedSegments = Arrays.stream(segments)
-                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                            .toArray();
-
-            int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
-
-            for (int segmentId : unClaimedSegments) {
-                if (isSegmentBlockedFromClaim(segmentId)) {
-                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
-                    processingStatusUpdater.accept(segmentId, u -> null);
-                    continue;
-                }
-                if (newClaims.size() < maxSegmentsToClaim) {
-                    try {
-                        TrackingToken token = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchToken(name, segmentId)
-                        );
-                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
-                    } catch (UnableToClaimTokenException e) {
-                        processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
-                                     segmentId);
-                    }
-                }
-            }
-
-            return newClaims;
-        }
-
-        private boolean isSegmentBlockedFromClaim(int segmentId) {
-            return releasesDeadlines.compute(
-                    segmentId,
-                    (i, current) -> current == null || clock.instant().isAfter(current) ? null : current
-            ) != null;
-        }
-
-        private void ensureOpenStream(TrackingToken trackingToken) {
-            // We already had a stream and the token differs the last scheduled token, thus we started new WorkPackages.
-            // Close old stream to start at the new position, if we have Work Packages left.
-            if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
-                logger.debug("Processor [{}] will close the current stream.", name);
-                closeQuietly(eventStream);
-                eventStream = null;
-                lastScheduledToken = NoToken.INSTANCE;
-            }
-
-            if (eventStream == null && !workPackages.isEmpty()) {
-                eventStream = messageSource.openStream(trackingToken);
-                logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
-                availabilityCallbackSupported =
-                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
-                lastScheduledToken = trackingToken;
-            }
-        }
-
-        private boolean isSpaceAvailable() {
-            return workPackages.values().stream()
-                               .allMatch(WorkPackage::hasRemainingCapacity);
-        }
-
-        /**
-         * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the {@link
-         * StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule these
-         * events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually handle
-         * the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of the
-         * {@code WorkPackage}s can handle the event it will be ignored.
-         * <p>
-         * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this {@link
-         * Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
-         * <p>
-         * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
-         * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
-         *
-         * @throws InterruptedException from {@link BlockingStream#nextAvailable()}
-         */
-        private void coordinateWorkPackages() throws InterruptedException {
-            logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
-            for (int fetched = 0;
-                 fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
-                 fetched++) {
-                TrackedEventMessage<?> event = eventStream.nextAvailable();
-
-                if (!eventFilter.canHandleTypeOf(event)) {
-                    eventStream.skipMessagesWithPayloadTypeOf(event);
-                    ignoredMessageHandler.accept(event);
-                } else {
-                    boolean anyScheduled = false;
-                    for (WorkPackage workPackage : workPackages.values()) {
-                        boolean scheduled = workPackage.scheduleEvent(event);
-                        anyScheduled = anyScheduled || scheduled;
-                    }
-                    if (!anyScheduled) {
-                        ignoredMessageHandler.accept(event);
-                    }
-                }
-
-                lastScheduledToken = event.trackingToken();
-            }
-
-            // If a work package has been aborted by something else than the Coordinator. We should abandon it.
-            workPackages.values().stream()
-                        .filter(WorkPackage::isAbortTriggered)
-                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
-
-            // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
-            workPackages.values()
-                        .forEach(WorkPackage::scheduleWorker);
-        }
-
-        private void scheduleImmediateCoordinationTask() {
-            scheduleCoordinationTask(0);
-        }
-
-        private void scheduleCoordinationTask(long delay) {
-            if (scheduledGate.compareAndSet(false, true)) {
-                executorService.schedule(() -> {
-                    scheduledGate.set(false);
-                    this.run();
-                }, delay, TimeUnit.MILLISECONDS);
-            }
-        }
-
-        private void scheduleDelayedCoordinationTask(long delay) {
-            // We only want to schedule a delayed task if there isn't another delayed task scheduled,
-            // and preferably not if a regular task has already been scheduled (hence just a get() for that flag)
-            if (!scheduledGate.get() && interruptibleScheduledGate.compareAndSet(false, true)) {
-                executorService.schedule(() -> {
-                    interruptibleScheduledGate.set(false);
-                    this.run();
-                }, delay, TimeUnit.MILLISECONDS);
-            }
-        }
-
-        private void abortAndScheduleRetry(Exception cause) {
-            logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
-
-            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
-            abortWorkPackages(cause).thenRun(
-                    () -> {
-                        logger.debug("Work packages have aborted. Scheduling new coordination task to run in {}ms",
-                                     errorWaitBackOff);
-                        // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
-                        CoordinationTask task = new CoordinationTask();
-                        executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
-                        coordinationTask.set(task);
-                    }
-            );
-            closeQuietly(eventStream);
-        }
-
-        private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
-            return work.abort(cause)
-                       .thenRun(() -> {
-                           if (workPackages.remove(work.segment().getSegmentId(), work)) {
-                               logger.debug("Processor [{}] released claim on {}.", name, work.segment());
-                           }
-                       })
-                       .thenRun(() -> transactionManager.executeInTransaction(
-                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
-                       ));
-        }
-    }
-
-    /**
-     * A {@link TrackingToken} implementation used to define no token could be claimed by this {@link Coordinator}.
-     */
-    private static class NoToken implements TrackingToken {
-
-        public static final TrackingToken INSTANCE = new NoToken();
-
-        @Override
-        public TrackingToken lowerBound(TrackingToken other) {
-            return other;
-        }
-
-        @Override
-        public TrackingToken upperBound(TrackingToken other) {
-            return other;
-        }
-
-        @Override
-        public boolean covers(TrackingToken other) {
-            return false;
-        }
-    }
-
-    /**
      * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all {@link
      * WorkPackage}s this {@link Coordinator} could ever service.
      */
@@ -677,6 +347,7 @@ class Coordinator {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
+        private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
         private Runnable shutdownAction = () -> {
@@ -802,6 +473,18 @@ class Coordinator {
         }
 
         /**
+         * Sets the threshold after which workers should extend their claims if they haven't processed any messages.
+         * Defaults to {@code 5000}.
+         *
+         * @param claimExtensionThreshold the threshold in milliseconds
+         * @return the current Builder instance, for fluent interfacing
+         */
+        Builder claimExtensionThreshold(long claimExtensionThreshold) {
+            this.claimExtensionThreshold = claimExtensionThreshold;
+            return this;
+        }
+
+        /**
          * The {@link Clock} used for any time dependent operations in this {@link Coordinator}. For example used to
          * define when to attempt claiming new tokens. Defaults to {@link GenericEventMessage#clock}.
          *
@@ -843,6 +526,335 @@ class Coordinator {
          */
         Coordinator build() {
             return new Coordinator(this);
+        }
+    }
+
+    /**
+     * A {@link TrackingToken} implementation used to define no token could be claimed by this {@link Coordinator}.
+     */
+    private static class NoToken implements TrackingToken {
+
+        public static final TrackingToken INSTANCE = new NoToken();
+
+        @Override
+        public TrackingToken lowerBound(TrackingToken other) {
+            return other;
+        }
+
+        @Override
+        public TrackingToken upperBound(TrackingToken other) {
+            return other;
+        }
+
+        @Override
+        public boolean covers(TrackingToken other) {
+            return false;
+        }
+    }
+
+    /**
+     * A {@link Runnable} defining the entire coordination process dealt with by a {@link Coordinator}. This task will
+     * reschedule itself on various occasions, as long as the states of the coordinator is running. Coordinating in this
+     * sense means:
+     * <ol>
+     *     <li>Validating if there are {@link CoordinatorTask}s to run, and run a single one if there are any.</li>
+     *     <li>Periodically checking for unclaimed segments, claim these and start a {@link WorkPackage} per claim.</li>
+     *     <li>(Re)Opening an Event stream based on the lower bound token of all active {@code WorkPackages}.</li>
+     *     <li>Reading events from the stream.</li>
+     *     <li>Scheduling read events for each {@code WorkPackage} through {@link WorkPackage#scheduleEvent(TrackedEventMessage)}.</li>
+     *     <li>Releasing claims of aborted {@code WorkPackages}.</li>
+     *     <li>Rescheduling itself to be picked up at a reasonable point in time.</li>
+     * </ol>
+     */
+    private class CoordinationTask implements Runnable {
+
+        private final AtomicBoolean processingGate = new AtomicBoolean();
+        private final AtomicBoolean scheduledGate = new AtomicBoolean();
+        private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
+        private BlockingStream<TrackedEventMessage<?>> eventStream;
+        private TrackingToken lastScheduledToken = NoToken.INSTANCE;
+        private boolean availabilityCallbackSupported;
+        private long unclaimedSegmentValidationThreshold;
+
+        @Override
+        public void run() {
+            if (!processingGate.compareAndSet(false, true)) {
+                // Another thread is already processing, so stop this invocation.
+                return;
+            }
+
+            if (!runState.get().isRunning()) {
+                logger.debug("Stopped processing. Runnable flag is false.\n"
+                                     + "Releasing claims and closing the event stream for Processor [{}].", name);
+                abortWorkPackages(null).thenRun(() -> runState.get().shutdownHandle().complete(null));
+                closeQuietly(eventStream);
+                return;
+            }
+
+            workPackages.entrySet().stream()
+                        .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
+                        .map(Map.Entry::getValue)
+                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+
+            if (!coordinatorTasks.isEmpty()) {
+                CoordinatorTask task = coordinatorTasks.remove();
+                logger.debug("Processor [{}] found task [{}] to run.", name, task.getDescription());
+                task.run()
+                    .thenRun(() -> unclaimedSegmentValidationThreshold = 0)
+                    .whenComplete((result, exception) -> {
+                        processingGate.set(false);
+                        scheduleImmediateCoordinationTask();
+                    });
+                return;
+            }
+
+            if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
+                unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
+
+                try {
+                    Map<Segment, TrackingToken> newSegments = claimNewSegments();
+                    TrackingToken streamStartPosition = lastScheduledToken;
+                    for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
+                        Segment segment = entry.getKey();
+                        TrackingToken token = entry.getValue();
+                        streamStartPosition = streamStartPosition == null
+                                ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
+                        logger.debug("Processor [{}] claimed {} for processing.", name, segment);
+                        workPackages.computeIfAbsent(segment.getSegmentId(),
+                                                     wp -> workPackageFactory.apply(segment, token));
+                    }
+                    if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
+                        logger.info("Processor [{}] claimed {} new segments for processing", name, newSegments.size());
+                    }
+                    ensureOpenStream(streamStartPosition);
+                } catch (Exception e) {
+                    logger.warn("Exception occurred while Processor [{}] started work packages"
+                                        + " and opened the event stream.", name, e);
+                    abortAndScheduleRetry(e);
+                    return;
+                }
+            }
+
+            if (workPackages.isEmpty()) {
+                // We didn't start any work packages. Retry later.
+                logger.debug("No segments claimed. Will retry in {} milliseconds.", tokenClaimInterval);
+                lastScheduledToken = NoToken.INSTANCE;
+                closeQuietly(eventStream);
+                eventStream = null;
+                processingGate.set(false);
+                scheduleDelayedCoordinationTask(tokenClaimInterval);
+                return;
+            }
+
+            try {
+                coordinateWorkPackages();
+                errorWaitBackOff = 500;
+                processingGate.set(false);
+
+                if (isSpaceAvailable() && eventStream.hasNextAvailable()) {
+                    // All work package have space available to handle events and there are still events on the stream.
+                    // We should thus start this process again immediately.
+                    // It will likely jump all the if-statement directly, thus initiating the reading of events ASAP.
+                    scheduleImmediateCoordinationTask();
+                } else if (isSpaceAvailable()) {
+                    // There is space, but no events to process. We caught up.
+                    workPackages.keySet().forEach(i -> processingStatusUpdater.accept(i, TrackerStatus::caughtUp));
+
+                    if (!availabilityCallbackSupported) {
+                        scheduleCoordinationTask(500);
+                    } else {
+                        scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
+                    }
+                } else {
+                    scheduleCoordinationTask(100);
+                }
+            } catch (Exception e) {
+                logger.warn("Exception occurred while Processor [{}] was coordinating the work packages.", name, e);
+                if (e instanceof InterruptedException) {
+                    logger.error(String.format("Processor [%s] was interrupted. Shutting down.", name), e);
+                    stop();
+                    Thread.currentThread().interrupt();
+                } else {
+                    abortAndScheduleRetry(e);
+                }
+            }
+        }
+
+        private CompletableFuture<Void> abortWorkPackages(Exception cause) {
+            return workPackages.values().stream()
+                               .map(wp -> abortWorkPackage(wp, cause))
+                               .reduce(CompletableFuture::allOf)
+                               .orElse(CompletableFuture.completedFuture(null))
+                               .thenRun(workPackages::clear);
+        }
+
+        /**
+         * Attempts to claim new segments.
+         *
+         * @return a Map with each {@link TrackingToken} for newly claimed {@link Segment}
+         */
+        private Map<Segment, TrackingToken> claimNewSegments() {
+            Map<Segment, TrackingToken> newClaims = new HashMap<>();
+            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
+
+            // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
+            int[] unClaimedSegments = Arrays.stream(segments)
+                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
+                                            .toArray();
+
+            int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
+
+            for (int segmentId : unClaimedSegments) {
+                if (isSegmentBlockedFromClaim(segmentId)) {
+                    logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
+                    processingStatusUpdater.accept(segmentId, u -> null);
+                    continue;
+                }
+                if (newClaims.size() < maxSegmentsToClaim) {
+                    try {
+                        TrackingToken token = transactionManager.fetchInTransaction(
+                                () -> tokenStore.fetchToken(name, segmentId)
+                        );
+                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                    } catch (UnableToClaimTokenException e) {
+                        processingStatusUpdater.accept(segmentId, u -> null);
+                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
+                                     segmentId);
+                    }
+                }
+            }
+
+            return newClaims;
+        }
+
+        private boolean isSegmentBlockedFromClaim(int segmentId) {
+            return releasesDeadlines.compute(
+                    segmentId,
+                    (i, current) -> current == null || clock.instant().isAfter(current) ? null : current
+            ) != null;
+        }
+
+        private void ensureOpenStream(TrackingToken trackingToken) {
+            // We already had a stream and the token differs the last scheduled token, thus we started new WorkPackages.
+            // Close old stream to start at the new position, if we have Work Packages left.
+            if (eventStream != null && !Objects.equals(trackingToken, lastScheduledToken)) {
+                logger.debug("Processor [{}] will close the current stream.", name);
+                closeQuietly(eventStream);
+                eventStream = null;
+                lastScheduledToken = NoToken.INSTANCE;
+            }
+
+            if (eventStream == null && !workPackages.isEmpty()) {
+                eventStream = messageSource.openStream(trackingToken);
+                logger.debug("Processor [{}] opened stream with tracking token [{}].", name, trackingToken);
+                availabilityCallbackSupported =
+                        eventStream.setOnAvailableCallback(this::scheduleImmediateCoordinationTask);
+                lastScheduledToken = trackingToken;
+            }
+        }
+
+        private boolean isSpaceAvailable() {
+            return workPackages.values().stream()
+                               .allMatch(WorkPackage::hasRemainingCapacity);
+        }
+
+        /**
+         * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the {@link
+         * StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule these
+         * events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually handle
+         * the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of the
+         * {@code WorkPackage}s can handle the event it will be ignored.
+         * <p>
+         * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this {@link
+         * Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
+         * <p>
+         * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
+         * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
+         *
+         * @throws InterruptedException from {@link BlockingStream#nextAvailable()}
+         */
+        private void coordinateWorkPackages() throws InterruptedException {
+            logger.debug("Processor [{}] is coordinating work to all its work packages.", name);
+            for (int fetched = 0;
+                 fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
+                 fetched++) {
+                TrackedEventMessage<?> event = eventStream.nextAvailable();
+
+                boolean anyScheduled = false;
+                for (WorkPackage workPackage : workPackages.values()) {
+                    boolean scheduled = workPackage.scheduleEvent(event);
+                    anyScheduled = anyScheduled || scheduled;
+                }
+                if (!anyScheduled) {
+                    ignoredMessageHandler.accept(event);
+                    if (!eventFilter.canHandleTypeOf(event)) {
+                        eventStream.skipMessagesWithPayloadTypeOf(event);
+                    }
+                }
+                lastScheduledToken = event.trackingToken();
+            }
+
+            // If a work package has been aborted by something else than the Coordinator. We should abandon it.
+            workPackages.values().stream()
+                        .filter(WorkPackage::isAbortTriggered)
+                        .forEach(workPackage -> abortWorkPackage(workPackage, null));
+
+            // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
+            workPackages.values()
+                        .forEach(WorkPackage::scheduleWorker);
+        }
+
+        private void scheduleImmediateCoordinationTask() {
+            scheduleCoordinationTask(0);
+        }
+
+        private void scheduleCoordinationTask(long delay) {
+            if (scheduledGate.compareAndSet(false, true)) {
+                executorService.schedule(() -> {
+                    scheduledGate.set(false);
+                    this.run();
+                }, delay, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        private void scheduleDelayedCoordinationTask(long delay) {
+            // We only want to schedule a delayed task if there isn't another delayed task scheduled,
+            // and preferably not if a regular task has already been scheduled (hence just a get() for that flag)
+            if (!scheduledGate.get() && interruptibleScheduledGate.compareAndSet(false, true)) {
+                executorService.schedule(() -> {
+                    interruptibleScheduledGate.set(false);
+                    this.run();
+                }, delay, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        private void abortAndScheduleRetry(Exception cause) {
+            logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
+
+            errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
+            abortWorkPackages(cause).thenRun(
+                    () -> {
+                        logger.debug("Work packages have aborted. Scheduling new coordination task to run in {}ms",
+                                     errorWaitBackOff);
+                        // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
+                        CoordinationTask task = new CoordinationTask();
+                        executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
+                        coordinationTask.set(task);
+                    }
+            );
+            closeQuietly(eventStream);
+        }
+
+        private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
+            return work.abort(cause)
+                       .thenRun(() -> {
+                           if (workPackages.remove(work.segment().getSegmentId(), work)) {
+                               logger.debug("Processor [{}] released claim on {}.", name, work.segment());
+                           }
+                       })
+                       .thenRun(() -> transactionManager.executeInTransaction(
+                               () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
+                       ));
         }
     }
 }

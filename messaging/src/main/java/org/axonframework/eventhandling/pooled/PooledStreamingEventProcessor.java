@@ -185,6 +185,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .onMessageIgnored(this::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
+                                      .claimExtensionThreshold(claimExtensionThreshold)
                                       .clock(clock)
                                       .maxClaimedSegments(maxClaimedSegments)
                                       .onShutdown(() -> {
