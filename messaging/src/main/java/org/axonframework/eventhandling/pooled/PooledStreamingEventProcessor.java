@@ -178,7 +178,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .name(name)
                                       .messageSource(messageSource)
                                       .tokenStore(tokenStore)
-                                      .claimExtensionThreshold(claimExtensionThreshold)
                                       .transactionManager(transactionManager)
                                       .executorService(coordinatorExecutor)
                                       .workPackageFactory(this::spawnWorker)

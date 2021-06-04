@@ -34,10 +34,8 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -59,27 +57,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link PooledStreamingEventProcessor}.
@@ -427,7 +407,10 @@ class PooledStreamingEventProcessorTest {
                                                        .extendClaim(any(), anyInt());
 
         testSubject.start();
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> verify(spy, atLeastOnce()).extendClaim(testSubject.getName(), 0));
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                () -> verify(spy, atLeastOnce()).extendClaim(testSubject.getName(), 0)
+        );
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
     }
 
@@ -453,9 +436,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void testEventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
-        setTestSubject(createTestSubject(
-                builder -> builder.initialSegmentCount(1)
-                       ));
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
         // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
         // Hence a null check is added to the matcher.
