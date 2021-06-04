@@ -872,14 +872,6 @@ class PooledStreamingEventProcessorTest {
         testSubject.shutDown();
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
         testSubject.start();
-        assertWithin(2, TimeUnit.MILLISECONDS, () -> {
-                         assertEquals(8, testSubject.processingStatus().size());
-                         assertFalse(testSubject.processingStatus().get(0).isCaughtUp());
-                         assertTrue(testSubject.processingStatus().get(0).isReplaying());
-                         assertTrue(testSubject.isReplaying());
-                     }
-        );
-
         assertWithin(1, TimeUnit.SECONDS, () -> {
                          assertEquals(8, testSubject.processingStatus().size());
                          assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
