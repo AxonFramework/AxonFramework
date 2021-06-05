@@ -1042,9 +1042,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     }
                     waitTime = 1;
                 } catch (Exception e) {
-                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
-                                processorName, e.getMessage(), waitTime);
-                    logger.debug("Fetch Segments failed because:", e);
+                    if (waitTime == 1) {
+                        logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
+                                    processorName, e.getMessage(), waitTime, e);
+                    } else {
+                        logger.info("Fetching Segments for Processor '{}' still failing: {}. Preparing for retry in {}s",
+                                     processorName, e.getMessage(), waitTime);
+                    }
                     doSleepFor(SECONDS.toMillis(waitTime));
                     waitTime = Math.min(waitTime * 2, 60);
 
