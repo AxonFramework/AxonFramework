@@ -855,6 +855,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void testIsReplaying() {
         when(stubEventHandler.supportsReset()).thenReturn(true);
+        setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
                                                       .collect(Collectors.toList());
@@ -864,7 +865,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> {
-                         assertEquals(8, testSubject.processingStatus().size());
+                         assertEquals(1, testSubject.processingStatus().size());
                          assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
                          assertFalse(testSubject.processingStatus().get(0).isReplaying());
                          assertFalse(testSubject.isReplaying());
@@ -874,7 +875,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> {
-                         assertEquals(8, testSubject.processingStatus().size());
+                         assertEquals(1, testSubject.processingStatus().size());
                          assertTrue(testSubject.processingStatus().get(0).isCaughtUp());
                          assertTrue(testSubject.processingStatus().get(0).isReplaying());
                          assertFalse(testSubject.isReplaying());
