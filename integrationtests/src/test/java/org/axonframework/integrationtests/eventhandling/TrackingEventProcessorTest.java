@@ -1872,9 +1872,8 @@ class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         testSubject.shutDown();
         testSubject.resetTokens();
-        // Resetting twice caused problems (see issue #559)
-        testSubject.resetTokens();
         testSubject.start();
+        assertEquals(0, handledInRedelivery.size());
         assertWithin(2,
                      TimeUnit.MILLISECONDS,
                      () -> {
