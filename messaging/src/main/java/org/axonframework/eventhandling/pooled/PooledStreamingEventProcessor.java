@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -114,8 +113,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -410,8 +407,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -522,8 +517,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies the {@link ScheduledExecutorService} used by the coordinator of this {@link
-         * PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
-         * {@link AxonThreadFactory} incorporating this processors name.
+         * PooledStreamingEventProcessor}.
          *
          * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
          *                            {@link PooledStreamingEventProcessor}
@@ -536,9 +530,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
-         * Specifies a builder to constract a {@link ScheduledExecutorService} used by the coordinator of this {@link
-         * PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
-         * {@link AxonThreadFactory} incorporating this processors name.
+         * Specifies a builder to construct a {@link ScheduledExecutorService} used by the coordinator of this {@link
+         * PooledStreamingEventProcessor}.
          *
          * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService},
          *                                   providing the {@link PooledStreamingEventProcessor}
@@ -553,8 +546,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread
-         * and an {@link AxonThreadFactory} incorporating this processors name.
+         * {@link PooledStreamingEventProcessor}.
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
@@ -568,8 +560,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread
-         * and an {@link AxonThreadFactory} incorporating this processors name.
+         * {@link PooledStreamingEventProcessor}.
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
@@ -583,9 +574,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies a builder to construct a {@link ScheduledExecutorService} to be provided to the {@link
-         * WorkPackage}s created by this {@link PooledStreamingEventProcessor}. Defaults to a {@code
-         * ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this processors
-         * name.
+         * WorkPackage}s created by this {@link PooledStreamingEventProcessor}.
          *
          * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
          *                              the {@link PooledStreamingEventProcessor}
