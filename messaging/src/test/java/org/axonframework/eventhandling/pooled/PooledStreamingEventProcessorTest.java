@@ -51,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -127,155 +128,6 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void testStoppingProcessorWillShutdownDefaultExecutorServices() {
-        setTestSubject(PooledStreamingEventProcessor.builder()
-                                                    .name(PROCESSOR_NAME)
-                                                    .eventHandlerInvoker(stubEventHandler)
-                                                    .messageSource(stubMessageSource)
-                                                    .tokenStore(tokenStore)
-                                                    .transactionManager(NoTransactionManager.instance())
-                                                    .build());
-
-        testSubject.start();
-
-        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
-        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertTrue(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
-            assertTrue(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
-        });
-
-        testSubject.shutDown();
-
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
-        });
-    }
-
-    @Test
-    void testStoppingProcessorWillShutdownDefaultExecutorServices_CustomCoordinator() {
-        setTestSubject(PooledStreamingEventProcessor.builder()
-                                                    .name(PROCESSOR_NAME)
-                                                    .eventHandlerInvoker(stubEventHandler)
-                                                    .coordinatorExecutor(coordinatorExecutor)
-                                                    .messageSource(stubMessageSource)
-                                                    .tokenStore(tokenStore)
-                                                    .transactionManager(NoTransactionManager.instance())
-                                                    .build());
-
-        testSubject.start();
-
-        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
-        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Did not expect Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
-            assertTrue(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Expected Worker thread named " + expectedWorkerThreadName + " to have started");
-        });
-
-        testSubject.shutDown();
-
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
-
-            assertFalse(coordinatorExecutor.isShutdown());
-        });
-    }
-
-    @Test
-    void testStoppingProcessorWillShutdownDefaultExecutorServices_CustomWorker() {
-        setTestSubject(PooledStreamingEventProcessor.builder()
-                                                    .name(PROCESSOR_NAME)
-                                                    .eventHandlerInvoker(stubEventHandler)
-                                                    .workerExecutor(workerExecutor)
-                                                    .messageSource(stubMessageSource)
-                                                    .tokenStore(tokenStore)
-                                                    .transactionManager(NoTransactionManager.instance())
-                                                    .build());
-
-        testSubject.start();
-
-        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
-        String expectedWorkerThreadName = "WorkPackage[" + PROCESSOR_NAME + "]-0";
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertTrue(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started");
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Did not expect Worker thread named " + expectedWorkerThreadName + " to have started");
-        });
-
-        testSubject.shutDown();
-
-        assertWithin(100, TimeUnit.MILLISECONDS, () -> {
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                    "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped");
-            assertFalse(
-                    Thread.getAllStackTraces().keySet().stream()
-                          .anyMatch(t -> expectedWorkerThreadName.equals(t.getName())),
-                    "Expected Worker thread named " + expectedWorkerThreadName + " to have stopped");
-
-            assertFalse(workerExecutor.isShutdown());
-        });
-    }
-
-    @Test
-    void testStoppingProcessorWillShutdownDefaultExecutorService() {
-        setTestSubject(PooledStreamingEventProcessor.builder()
-                                                    .name(PROCESSOR_NAME)
-                                                    .eventHandlerInvoker(stubEventHandler)
-                                                    .messageSource(stubMessageSource)
-                                                    .tokenStore(tokenStore)
-                                                    .transactionManager(NoTransactionManager.instance())
-                                                    .build());
-
-        testSubject.start();
-
-        String expectedCoordinatorThreadName = "Coordinator[" + PROCESSOR_NAME + "]-0";
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(
-                Thread.getAllStackTraces().keySet().stream()
-                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have started"));
-
-        testSubject.shutDown();
-
-        assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertFalse(
-                Thread.getAllStackTraces().keySet().stream()
-                      .anyMatch(t -> expectedCoordinatorThreadName.equals(t.getName())),
-                "Expected Coordinator thread named " + expectedCoordinatorThreadName + " to have stopped"));
-    }
-
-    @Test
     void testStartContinuesWhenTokenInitializationFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)));
@@ -324,6 +176,34 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            long nonNullTokens = IntStream.range(0, 8)
+                                          .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
+                                          .filter(Objects::nonNull)
+                                          .count();
+            assertEquals(8, nonNullTokens);
+        });
+        assertEquals(8, testSubject.processingStatus().size());
+    }
+
+    @Test
+    void testStartingAfterShutdownLetsProcessorProceed() {
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+
+        testSubject.start();
+        testSubject.shutDown();
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 100)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> assertEquals(8, testSubject.processingStatus().size())
+        );
         assertWithin(2, TimeUnit.SECONDS, () -> {
             long nonNullTokens = IntStream.range(0, 8)
                                           .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
@@ -1003,17 +883,70 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testBuildWithNullCoordinatorExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.coordinatorExecutor((ScheduledExecutorService) null)
+        );
+    }
+
+    @Test
     void testBuildWithNullCoordinatorExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.coordinatorExecutor(null));
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.coordinatorExecutor((Function<String, ScheduledExecutorService>) null)
+        );
+    }
+
+    @Test
+    void testBuildWithoutCoordinatorExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.instance());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullWorkerExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.workerExecutor((ScheduledExecutorService) null)
+        );
     }
 
     @Test
     void testBuildWithNullWorkerExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.workerExecutor(null));
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.workerExecutor((Function<String, ScheduledExecutorService>) null)
+        );
+    }
+
+    @Test
+    void testBuildWithoutWorkerExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.instance())
+                                             .coordinatorExecutor(coordinatorExecutor);
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test

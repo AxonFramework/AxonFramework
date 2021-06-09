@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DirectEventProcessingStrategy;
@@ -57,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -808,11 +811,27 @@ public class EventProcessingModule
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                                              .messageSource(messageSource)
                                              .tokenStore(tokenStore(name))
-                                             .transactionManager(transactionManager(name));
+                                             .transactionManager(transactionManager(name))
+                                             .coordinatorExecutor(processorName -> {
+                                                 ScheduledExecutorService coordinatorExecutor =
+                                                         defaultExecutor("Coordinator[" + processorName + "]");
+                                                 config.onShutdown(coordinatorExecutor::shutdown);
+                                                 return coordinatorExecutor;
+                                             })
+                                             .workerExecutor(processorName -> {
+                                                 ScheduledExecutorService workerExecutor =
+                                                         defaultExecutor("WorkPackage[" + processorName + "]");
+                                                 config.onShutdown(workerExecutor::shutdown);
+                                                 return workerExecutor;
+                                             });
         return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
                                                            .andThen(processorConfiguration)
                                                            .apply(config, builder)
                                                            .build();
+    }
+
+    private ScheduledExecutorService defaultExecutor(String factoryName) {
+        return Executors.newScheduledThreadPool(1, new AxonThreadFactory(factoryName));
     }
 
     /**
