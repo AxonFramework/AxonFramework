@@ -51,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -854,17 +855,70 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testBuildWithNullCoordinatorExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.coordinatorExecutor((ScheduledExecutorService) null)
+        );
+    }
+
+    @Test
     void testBuildWithNullCoordinatorExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.coordinatorExecutor(null));
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.coordinatorExecutor((Function<String, ScheduledExecutorService>) null)
+        );
+    }
+
+    @Test
+    void testBuildWithoutCoordinatorExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.instance());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullWorkerExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.workerExecutor((ScheduledExecutorService) null)
+        );
     }
 
     @Test
     void testBuildWithNullWorkerExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.workerExecutor(null));
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> builderTestSubject.workerExecutor((Function<String, ScheduledExecutorService>) null)
+        );
+    }
+
+    @Test
+    void testBuildWithoutWorkerExecutorThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject =
+                PooledStreamingEventProcessor.builder()
+                                             .name(PROCESSOR_NAME)
+                                             .eventHandlerInvoker(stubEventHandler)
+                                             .messageSource(stubMessageSource)
+                                             .tokenStore(new InMemoryTokenStore())
+                                             .transactionManager(NoTransactionManager.instance())
+                                             .coordinatorExecutor(coordinatorExecutor);
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
