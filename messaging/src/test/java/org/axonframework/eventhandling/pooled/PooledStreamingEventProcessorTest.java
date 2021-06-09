@@ -187,6 +187,34 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testStartingAfterShutdownLetsProcessorProceed() {
+        when(stubEventHandler.supportsReset()).thenReturn(true);
+
+        testSubject.start();
+        testSubject.shutDown();
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 100)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+
+        testSubject.start();
+
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> assertEquals(8, testSubject.processingStatus().size())
+        );
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            long nonNullTokens = IntStream.range(0, 8)
+                                          .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
+                                          .filter(Objects::nonNull)
+                                          .count();
+            assertEquals(8, nonNullTokens);
+        });
+        assertEquals(8, testSubject.processingStatus().size());
+    }
+
+    @Test
     void testAllTokensUpdatedToLatestValue() {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
