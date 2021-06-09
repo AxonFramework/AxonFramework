@@ -53,7 +53,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -131,7 +130,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
+     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      *
      * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
@@ -150,6 +150,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>A {@link StreamableMessageSource}.</li>
      *     <li>A {@link TokenStore}.</li>
      *     <li>A {@link TransactionManager}.</li>
+     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      * If any of these is not present or does no comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
@@ -161,6 +163,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
+        this.workerExecutor = builder.workerExecutorBuilder.apply(name);
         this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
@@ -169,17 +172,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.batchSize = builder.batchSize;
         this.clock = builder.clock;
 
-        this.workerExecutor = builder.workerExecutorBuilder.apply(name);
-        boolean shutdownWorkerServiceOnStop = builder.shutdownWorkerServiceOnStop;
-        ScheduledExecutorService coordinatorExecutor = builder.coordinatorExecutorBuilder.apply(name);
-        boolean shutdownCoordinatorServiceOnStop = builder.shutdownCoordinatorServiceOnStop;
-
         this.coordinator = Coordinator.builder()
                                       .name(name)
                                       .messageSource(messageSource)
                                       .tokenStore(tokenStore)
                                       .transactionManager(transactionManager)
-                                      .executorService(coordinatorExecutor)
+                                      .executorService(builder.coordinatorExecutorBuilder.apply(name))
                                       .workPackageFactory(this::spawnWorker)
                                       .eventFilter(event -> canHandleType(event.getPayloadType()))
                                       .onMessageIgnored(this::reportIgnored)
@@ -188,14 +186,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .claimExtensionThreshold(claimExtensionThreshold)
                                       .clock(clock)
                                       .maxClaimedSegments(maxClaimedSegments)
-                                      .onShutdown(() -> {
-                                          if (shutdownWorkerServiceOnStop) {
-                                              workerExecutor.shutdown();
-                                          }
-                                          if (shutdownCoordinatorServiceOnStop) {
-                                              coordinatorExecutor.shutdown();
-                                          }
-                                      })
                                       .build();
     }
 
@@ -436,7 +426,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
+     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
     public static class Builder extends AbstractEventProcessor.Builder {
@@ -444,12 +435,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
-        private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
-                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + n + "]"));
-        private boolean shutdownCoordinatorServiceOnStop = true;
-        private Function<String, ScheduledExecutorService> workerExecutorBuilder =
-                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + n + "]"));
-        private boolean shutdownWorkerServiceOnStop = true;
+        private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
+        private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
@@ -545,7 +532,22 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
             assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
             this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
-            this.shutdownCoordinatorServiceOnStop = false;
+            return this;
+        }
+
+        /**
+         * Specifies a builder to constract a {@link ScheduledExecutorService} used by the coordinator of this {@link
+         * PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
+         * {@link AxonThreadFactory} incorporating this processors name.
+         *
+         * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService},
+         *                                   providing the {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
+            assertNonNull(coordinatorExecutorBuilder,
+                          "The Coordinator's ScheduledExecutorService builder may not be null");
+            this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
             return this;
         }
 
@@ -576,7 +578,22 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         public Builder workerExecutor(ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
-            this.shutdownWorkerServiceOnStop = false;
+            return this;
+        }
+
+        /**
+         * Specifies a builder to construct a {@link ScheduledExecutorService} to be provided to the {@link
+         * WorkPackage}s created by this {@link PooledStreamingEventProcessor}. Defaults to a {@code
+         * ScheduledExecutorService} with a single thread and an {@link AxonThreadFactory} incorporating this processors
+         * name.
+         *
+         * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
+         *                              the {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder workerExecutor(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+            assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
+            this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
         }
 
@@ -703,6 +720,14 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(
+                    coordinatorExecutorBuilder,
+                    "The Coordinator ScheduledExecutorService is a hard requirement and should be provided"
+            );
+            assertNonNull(
+                    workerExecutorBuilder,
+                    "The Worker ScheduledExecutorService is a hard requirement and should be provided"
+            );
         }
 
         /**
