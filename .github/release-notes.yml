@@ -1,16 +1,12 @@
-releasenotes:
+changelog:
   sections:
-    - title: "Features"
-      emoji: ":star:"
+    - title: ":star: Features"
       labels: [ "Type: Feature" ]
-    - title: "Enhancements"
-      emoji: ":chart_with_upwards_trend:"
+    - title: ":chart_with_upwards_trend: Enhancements"
       labels: [ "Type: Enhancement" ]
-    - title: "Bug Fixes"
-      emoji: ":beetle:"
+    - title: ":beetle: Bug Fixes"
       labels: [ "Type: Bug" ]
-    - title: "Dependency Upgrade"
-      emoji: ":hammer_and_wrench:"
+    - title: ":hammer_and_wrench: Dependency Upgrade"
       labels: [ "Type: Dependency Upgrade" ]
   issues:
     exclude:
