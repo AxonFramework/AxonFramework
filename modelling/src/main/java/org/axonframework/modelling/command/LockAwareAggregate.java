@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,20 @@ import org.axonframework.messaging.Message;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Aggregate implementation that provides access to the lock held by the aggregate while a command is handled.
  *
- * @param <AR> The aggregate root type
- * @param <A>  The {@link Aggregate} implementation type
+ * @param <AR> the aggregate root type
+ * @param <A>  the {@link Aggregate} implementation type
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregate<AR> {
 
     private final A wrappedAggregate;
-    private final Lock lock;
+    private final Supplier<Lock> lockSupplier;
 
     /**
      * Initializes a new {@link LockAwareAggregate} for given {@code wrappedAggregate} and {@code lock}.
@@ -41,7 +44,19 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      */
     public LockAwareAggregate(A wrappedAggregate, Lock lock) {
         this.wrappedAggregate = wrappedAggregate;
-        this.lock = lock;
+        this.lockSupplier = () -> lock;
+    }
+
+    /**
+     * Initializes a new {@link LockAwareAggregate} for given {@code wrappedAggregate} and a supplier of the {@code
+     * lock}.
+     *
+     * @param wrappedAggregate the aggregate instance to which the LockAwareAggregate will delegate
+     * @param lock             a supplier of the lock held by the aggregate
+     */
+    public LockAwareAggregate(A wrappedAggregate, Supplier<Lock> lock) {
+        this.wrappedAggregate = wrappedAggregate;
+        this.lockSupplier = lock;
     }
 
     /**
@@ -59,7 +74,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      * @return {@code true} if the lock is held, {@code false} otherwise
      */
     public boolean isLockHeld() {
-        return lock.isHeld();
+        return this.lockSupplier.get().isHeld();
     }
 
     @Override
