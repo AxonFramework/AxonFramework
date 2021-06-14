@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,17 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Fixture tests for validating {@link CreationPolicy} annotated command handlers.
@@ -41,9 +44,13 @@ class FixtureTest_CreationPolicy {
 
     private FixtureConfiguration<TestAggregate> fixture;
 
+    private static AtomicBoolean intercepted;
+
     @BeforeEach
     void setUp() {
         fixture = new AggregateTestFixture<>(TestAggregate.class);
+
+        intercepted = new AtomicBoolean(false);
     }
 
     @Test
@@ -52,6 +59,7 @@ class FixtureTest_CreationPolicy {
                .when(new CreateOrUpdateCommand(AGGREGATE_ID))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     @Test
@@ -60,6 +68,7 @@ class FixtureTest_CreationPolicy {
                .when(new CreateOrUpdateCommand(AGGREGATE_ID))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     @Test
@@ -69,6 +78,7 @@ class FixtureTest_CreationPolicy {
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                .expectResultMessagePayload(AGGREGATE_ID)
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     @Test
@@ -79,6 +89,7 @@ class FixtureTest_CreationPolicy {
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                .expectResultMessagePayload(testResult)
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     @Test
@@ -88,6 +99,7 @@ class FixtureTest_CreationPolicy {
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                .expectResultMessagePayload(null)
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     @Test
@@ -96,6 +108,17 @@ class FixtureTest_CreationPolicy {
                .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
                .expectEvents(new ExecutedOnExistingEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
+    }
+
+    @Test
+    void testAlwaysCreatePolicyWithStateReturnsStateInCommandHandlingResult() {
+        fixture.givenNoPriorActivity()
+               .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID))
+               .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+               .expectResultMessagePayload(AGGREGATE_ID)
+               .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
     }
 
     private static class CreateCommand {
@@ -157,6 +180,20 @@ class FixtureTest_CreationPolicy {
 
         public Object getResult() {
             return result;
+        }
+    }
+
+    private static class AlwaysCreateWithEventSourcedResultCommand {
+
+        @TargetAggregateIdentifier
+        private final ComplexAggregateId id;
+
+        private AlwaysCreateWithEventSourcedResultCommand(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId getId() {
+            return id;
         }
     }
 
@@ -303,6 +340,11 @@ class FixtureTest_CreationPolicy {
         public TestAggregate() {
         }
 
+        @CommandHandlerInterceptor
+        public void intercept(Object command) {
+            intercepted.set(true);
+        }
+
         @CommandHandler
         public TestAggregate(CreateCommand command) {
             apply(new CreatedEvent(command.getId()));
@@ -325,6 +367,15 @@ class FixtureTest_CreationPolicy {
         public Object handle(AlwaysCreateWithResultCommand command) {
             apply(new AlwaysCreatedEvent(command.getId()));
             return command.getResult();
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public ComplexAggregateId handle(AlwaysCreateWithEventSourcedResultCommand command) {
+            apply(new AlwaysCreatedEvent(command.getId()));
+            // On apply, the event sourcing handlers should be invoked first.
+            // Hence, we should be able to return the identifier of the aggregate directly.
+            return id;
         }
 
         @CommandHandler
