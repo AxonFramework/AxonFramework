@@ -31,63 +31,62 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Unit-Test for the PropertySequencingPolicy")
 final class PropertySequencingPolicyTest {
 
-	@Test
-	void propertyExtractorShouldReadCorrectValue() {
-		final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-				.builder(TestEvent.class, String.class)
-				.propertyExtractor(TestEvent::getId)
-				.build();
+    @Test
+    void propertyExtractorShouldReadCorrectValue() {
+        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
+                .builder(TestEvent.class, String.class)
+                .propertyExtractor(TestEvent::getId)
+                .build();
 
-		assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
-	}
+        assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
+    }
 
-	@Test
-	void propertyShouldReadCorrectValue() {
-		final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-				.builder(TestEvent.class, String.class)
-				.propertyName("Id")
-				.build();
+    @Test
+    void propertyShouldReadCorrectValue() {
+        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
+                .builder(TestEvent.class, String.class)
+                .propertyName("Id")
+                .build();
 
-		assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
-	}
+        assertEquals("42", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42"))));
+    }
 
-	@Test
-	void defaultFallbackShouldThrowException() {
-		final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-				.builder(TestEvent.class, String.class)
-				.propertyName("Id")
-				.build();
+    @Test
+    void defaultFallbackShouldThrowException() {
+        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
+                .builder(TestEvent.class, String.class)
+                .propertyName("Id")
+                .build();
 
-		assertThrows(IllegalArgumentException.class, () -> sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
-	}
+        assertThrows(IllegalArgumentException.class,
+                     () -> sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
+    }
 
-	@Test
-	void fallbackShouldBeApplied() {
-		final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-				.builder(TestEvent.class, String.class)
-				.propertyName("Id")
-				.fallbackSequencingPolicy(SequentialPerAggregatePolicy.instance())
-				.build();
+    @Test
+    void fallbackShouldBeApplied() {
+        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
+                .builder(TestEvent.class, String.class)
+                .propertyName("Id")
+                .fallbackSequencingPolicy(SequentialPerAggregatePolicy.instance())
+                .build();
 
-		assertEquals("A", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
-	}
+        assertEquals("A", sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
+    }
 
-	private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
-		return new GenericDomainEventMessage<>("type", "A", (long) 0, payload, MetaData.emptyInstance());
-	}
+    private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
+        return new GenericDomainEventMessage<>("type", "A", (long) 0, payload, MetaData.emptyInstance());
+    }
 
-	private static class TestEvent {
+    private static class TestEvent {
 
-		private final String id;
+        private final String id;
 
-		public TestEvent(String id) {
-			this.id = id;
-		}
+        public TestEvent(String id) {
+            this.id = id;
+        }
 
-		public String getId() {
-			return id;
-		}
-
-	}
-
+        public String getId() {
+            return id;
+        }
+    }
 }
