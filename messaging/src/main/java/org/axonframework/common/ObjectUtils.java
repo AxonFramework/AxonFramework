@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,5 +120,18 @@ public abstract class ObjectUtils {
         long leftTimeout = deadline - System.currentTimeMillis();
         leftTimeout = leftTimeout < 0 ? 0 : leftTimeout;
         return leftTimeout;
+    }
+
+    /**
+     * Constructs a {@link Supplier} for an {@code instance} of type {@code T}. If the given {@code instance} is {@code
+     * null}, the {@code defaultSupplier} is given.
+     *
+     * @param instance        the instance to wrap in a {@link Supplier} if it is not {@code null}
+     * @param defaultSupplier the instance {@link Supplier} to return if {@code instance} is {@code null}
+     * @param <T>             the instance type returned by the constructed {@link Supplier}
+     * @return a supplier of an object of type {@code T}
+     */
+    public static <T> Supplier<T> supplyOrDefault(T instance, Supplier<T> defaultSupplier) {
+        return () -> getOrDefault(instance, defaultSupplier);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,5 +38,11 @@ class ObjectUtilsTest {
         Function<String, String> valueProvider = o -> o;
         assertEquals(DEFAULT_VALUE, ObjectUtils.getOrDefault(NULL_INSTANCE, valueProvider, DEFAULT_VALUE));
         assertEquals(INSTANCE, ObjectUtils.getOrDefault(INSTANCE, valueProvider, DEFAULT_VALUE));
+    }
+
+    @Test
+    void testSupplyOrDefault() {
+        assertEquals(INSTANCE, ObjectUtils.supplyOrDefault(INSTANCE, () -> DEFAULT_VALUE).get());
+        assertEquals(DEFAULT_VALUE, ObjectUtils.supplyOrDefault(NULL_INSTANCE, () -> DEFAULT_VALUE).get());
     }
 }
