@@ -19,6 +19,7 @@ package org.axonframework.common;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,8 +42,8 @@ class ObjectUtilsTest {
     }
 
     @Test
-    void testSupplyOrDefault() {
-        assertEquals(INSTANCE, ObjectUtils.supplyOrDefault(INSTANCE, () -> DEFAULT_VALUE).get());
-        assertEquals(DEFAULT_VALUE, ObjectUtils.supplyOrDefault(NULL_INSTANCE, () -> DEFAULT_VALUE).get());
+    void testSupplySameInstance() {
+        Supplier<Object> testSubject = ObjectUtils.sameInstanceSupplier(Object::new);
+        assertSame(testSubject.get(), testSubject.get());
     }
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.common;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -123,15 +124,18 @@ public abstract class ObjectUtils {
     }
 
     /**
-     * Constructs a {@link Supplier} for an {@code instance} of type {@code T}. If the given {@code instance} is {@code
-     * null}, the {@code defaultSupplier} is given.
+     * Wraps the given {@code supplier} to ensure that the same instance is returned on multiple consecutive
+     * invocations. While it guarantees that the same instance is returned, concurrent access may cause given
+     * {@code supplier} to be invoked more than one.
      *
-     * @param instance        the instance to wrap in a {@link Supplier} if it is not {@code null}
-     * @param defaultSupplier the instance {@link Supplier} to return if {@code instance} is {@code null}
-     * @param <T>             the instance type returned by the constructed {@link Supplier}
-     * @return a supplier of an object of type {@code T}
+     * @param supplier The supplier to provide the instance to return
+     * @param <T>      The type of object supplied
+     *
+     * @return a supplier that returns the same instance
      */
-    public static <T> Supplier<T> supplyOrDefault(T instance, Supplier<T> defaultSupplier) {
-        return () -> getOrDefault(instance, defaultSupplier);
+    public static <T> Supplier<T> sameInstanceSupplier(Supplier<T> supplier) {
+        AtomicReference<T> instanceRef = new AtomicReference<>();
+        // Using the AtomicReference ensures the lock is only created once for the supplier's invocations.
+        return () -> instanceRef.updateAndGet(current -> getOrDefault(current, supplier));
     }
 }

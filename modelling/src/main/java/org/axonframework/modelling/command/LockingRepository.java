@@ -91,14 +91,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             lockSupplier = () -> lock;
         } else {
             // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
-            AtomicReference<Lock> lockRef = new AtomicReference<>();
-            // Using the AtomicReference ensures the lock is only created once for the supplier's invocations.
-
-            lockSupplier = ObjectUtils.supplyOrDefault(lockRef.get(), () -> {
-                Lock lock = lockFactory.obtainLock(aggregate.identifierAsString());
-                lockRef.set(lock);
-                return lock;
-            });
+            lockSupplier = ObjectUtils.sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
         }
 
         try {
