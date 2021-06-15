@@ -1838,10 +1838,9 @@ class TrackingEventProcessorTest {
 
         cdl.await();
         testSubject.shutdownAsync();
-        assertTrue(
-            assertThrows(IllegalStateException.class,
-                         () -> testSubject.start())
-                    .getMessage().contains("pending shutdown"));
+
+        IllegalStateException result = assertThrows(IllegalStateException.class, () -> testSubject.start());
+        assertTrue(result.getMessage().contains("pending shutdown"));
     }
 
     @Test
@@ -1873,10 +1872,12 @@ class TrackingEventProcessorTest {
         // initiate reset to toggle replay status
         testSubject.shutDown();
         testSubject.resetTokens();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
+
         testSubject.start();
 
         assertWithin(
-                2, TimeUnit.MILLISECONDS,
+                5, TimeUnit.MILLISECONDS,
                 () -> {
                     assertFalse(testSubject.processingStatus().isEmpty());
                     assertFalse(testSubject.processingStatus().get(segmentId).isCaughtUp());
