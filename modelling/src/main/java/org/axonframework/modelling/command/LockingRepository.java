@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -27,7 +28,10 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -80,17 +84,28 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifierAsString();
-        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+
+        Supplier<Lock> lockSupplier;
+        if (!Objects.isNull(aggregateIdentifier)) {
+            Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+            lockSupplier = () -> lock;
+        } else {
+            // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
+            lockSupplier = ObjectUtils.sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
+        }
+
         try {
-            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+            CurrentUnitOfWork.get().onCleanup(u -> lockSupplier.get().release());
         } catch (Throwable ex) {
+            Lock lock = lockSupplier.get();
             if (lock != null) {
                 logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
                 lock.release();
             }
             throw ex;
         }
-        return new LockAwareAggregate<>(aggregate, lock);
+
+        return new LockAwareAggregate<>(aggregate, lockSupplier);
     }
 
     /**

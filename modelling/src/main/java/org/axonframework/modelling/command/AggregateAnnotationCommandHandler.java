@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -395,13 +394,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            AtomicReference<Object> resultReference = new AtomicReference<>();
-            Aggregate<T> aggregate = repository.newInstance(() -> {
-                T newInstance = factoryMethod.call();
-                resultReference.set(handler.handle(command, newInstance));
-                return newInstance;
-            });
-            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : resultReference.get();
+            Aggregate<T> aggregate = repository.newInstance(factoryMethod);
+            Object response = aggregate.handle(command);
+            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response;
         }
 
         public boolean handlerHasVoidReturnType() {

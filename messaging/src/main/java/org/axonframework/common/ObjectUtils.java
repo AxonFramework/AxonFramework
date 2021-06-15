@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.common;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -120,5 +121,21 @@ public abstract class ObjectUtils {
         long leftTimeout = deadline - System.currentTimeMillis();
         leftTimeout = leftTimeout < 0 ? 0 : leftTimeout;
         return leftTimeout;
+    }
+
+    /**
+     * Wraps the given {@code supplier} to ensure that the same instance is returned on multiple consecutive
+     * invocations. While it guarantees that the same instance is returned, concurrent access may cause given
+     * {@code supplier} to be invoked more than one.
+     *
+     * @param supplier The supplier to provide the instance to return
+     * @param <T>      The type of object supplied
+     *
+     * @return a supplier that returns the same instance
+     */
+    public static <T> Supplier<T> sameInstanceSupplier(Supplier<T> supplier) {
+        AtomicReference<T> instanceRef = new AtomicReference<>();
+        // Using the AtomicReference ensures the lock is only created once for the supplier's invocations.
+        return () -> instanceRef.updateAndGet(current -> getOrDefault(current, supplier));
     }
 }
