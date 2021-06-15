@@ -16,6 +16,8 @@
 
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.PlatformService;
@@ -372,6 +374,21 @@ class AxonServerEventStoreTest {
         assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
 
         assertFalse(resultStream.hasNext());
+    }
+
+    @Test
+    void testRethrowStatusRuntimeExceptionIfNotOfTypeUnknown() {
+        String testAggregateId = "aggregateId";
+        Status expectedCode = Status.ABORTED;
+
+        eventStore.setSnapshotFailure(snapshotRequest -> snapshotRequest.getAggregateId().equals(testAggregateId));
+        eventStore.setSnapshotFailureException(() -> new StatusRuntimeException(expectedCode));
+
+        EventStoreException result =
+                assertThrows(EventStoreException.class, () -> testSubject.readEvents(testAggregateId));
+
+        assertTrue(result.getMessage().contains("communicating with Axon Server"));
+        assertEquals(expectedCode.getCode(), Status.fromThrowable(result).getCode());
     }
 }
 

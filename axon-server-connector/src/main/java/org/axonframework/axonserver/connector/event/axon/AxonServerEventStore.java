@@ -22,6 +22,7 @@ import io.axoniq.axonserver.connector.event.AppendEventsTransaction;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.Event;
+import io.grpc.Status;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
@@ -73,10 +74,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.CONCURRENT;
-import static java.util.Spliterator.DISTINCT;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -148,6 +146,14 @@ public class AxonServerEventStore extends AbstractEventStore {
      */
     public StreamableMessageSource<TrackedEventMessage<?>> createStreamableMessageSourceForContext(String context) {
         return new AxonServerMessageSource(storageEngine().createInstanceForContext(context));
+    }
+
+    @Override
+    protected Optional<DomainEventMessage<?>> handleSnapshotReadingError(String aggregateIdentifier, Throwable e) {
+        if (Status.fromThrowable(e).getCode() != Status.Code.UNKNOWN) {
+            throw new EventStoreException("Error occurred while communicating with Axon Server", e);
+        }
+        return super.handleSnapshotReadingError(aggregateIdentifier, e);
     }
 
     /**

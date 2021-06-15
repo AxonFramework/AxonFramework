@@ -99,6 +99,7 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
             @Override
             public void onCompleted() {
                 completedCounter.incrementAndGet();
+                responseObserver.onCompleted();
             }
         };
     }
