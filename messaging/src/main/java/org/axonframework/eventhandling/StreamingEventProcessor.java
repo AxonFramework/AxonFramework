@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -218,4 +234,19 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @return the status for each of the segments processed by the current processor
      */
     Map<Integer, EventTrackerStatus> processingStatus();
+
+    /**
+     * Returns the overall replay status of <b>this</b> {@link StreamingEventProcessor}. Any other instances of this
+     * streaming processor running on other applications are <b>not</b> not taken into account in this calculation.
+     * <p>
+     * Note that when an {@link EventTrackerStatus} returns {@code true} for both {@link
+     * EventTrackerStatus#isReplaying()} and {@link EventTrackerStatus#isCaughtUp()}, that the replay is done but the
+     * processor did not handle any new events yet.
+     *
+     * @return {@code true} if any of the segments is still replaying and not caught up yet, {@code false} otherwise
+     */
+    default boolean isReplaying() {
+        return processingStatus().values().stream()
+                                 .anyMatch(trackerStatus -> !trackerStatus.isCaughtUp() && trackerStatus.isReplaying());
+    }
 }
