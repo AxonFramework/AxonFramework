@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@ import java.util.Collections;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link ReplayToken}.
+ *
+ * @author Allard Buijze
+ */
 class ReplayTokenTest {
 
     private TrackingToken innerToken;
@@ -64,7 +69,11 @@ class ReplayTokenTest {
 
     @Test
     void testPosition() {
-        TrackingToken replayToken = ReplayToken.createReplayToken(innerToken, GapAwareTrackingToken.newInstance(11L, Collections.singleton(9L)));
+        GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(11L, Collections.singleton(9L));
+
+        TrackingToken replayToken = ReplayToken.createReplayToken(innerToken, startPosition);
+
+        assertTrue(replayToken.position().isPresent());
         assertEquals(11L, replayToken.position().getAsLong());
     }
 
@@ -80,5 +89,48 @@ class ReplayTokenTest {
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
         assertTrue(actual instanceof ReplayToken);
         assertEquals(testSubject.getTokenAtReset(), innerToken);
+    }
+
+    @Test
+    void testCreateReplayTokenReturnsStartPositionIfTokenAtResetIsNull() {
+        TrackingToken tokenAtReset = null;
+        TrackingToken startPosition = new GlobalSequenceTrackingToken(1);
+
+        //noinspection ConstantConditions
+        TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+        assertEquals(startPosition, result);
+    }
+
+    @Test
+    void testCreateReplayTokenReturnsStartPositionIfStartPositionCoversTokenAtReset() {
+        TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(1);
+        TrackingToken startPosition = new GlobalSequenceTrackingToken(2);
+
+        TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+        assertEquals(startPosition, result);
+    }
+
+    @Test
+    void testCreateReplayTokenReturnsWrappedReplayTokenIfTokenAtResetIsReplayToken() {
+        TrackingToken tokenAtReset = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1));
+        TrackingToken startPosition = new GlobalSequenceTrackingToken(2);
+
+        TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+        assertEquals(startPosition, result);
+    }
+
+    @Test
+    void testCreateReplayTokenReturnsReplayToken() {
+        TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(2);
+        TrackingToken startPosition = new GlobalSequenceTrackingToken(1);
+
+        TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
+
+        assertTrue(result instanceof ReplayToken);
+        assertEquals(tokenAtReset, ((ReplayToken) result).getTokenAtReset());
+        assertEquals(startPosition, ((ReplayToken) result).getCurrentToken());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.utils.TestSerializer;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -39,9 +39,12 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
+import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.serialization.Revision;
 import org.junit.jupiter.api.*;
+
+import java.util.Optional;
 
 import static org.axonframework.config.utils.TestSerializer.secureXStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -182,10 +185,29 @@ public class AggregateConfigurerTest {
         AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
                 new AggregateConfigurer<>(TestAggregateWithRevision.class);
 
+        revisionAggregateConfigurerTestSubject.initialize(mockConfiguration);
+
         SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
 
         assertTrue(result instanceof RevisionSnapshotFilter);
         assertTrue(result.allow(testDomainEventData));
+    }
+
+    @Test
+    void testAggregateConfigurationThrowsAxonConfigExceptionWhenCreatingRevisionSnapshotFilterForUndefinedDeclaredType() {
+        //noinspection unchecked
+        AggregateModel<TestAggregateWithRevision> mockModel = mock(AggregateModel.class);
+        when(mockModel.declaredType(TestAggregateWithRevision.class)).thenReturn(Optional.empty());
+        AggregateMetaModelFactory mockModelFactory = mock(AggregateMetaModelFactory.class);
+        when(mockModelFactory.createModel(eq(TestAggregateWithRevision.class), any())).thenReturn(mockModel);
+        when(mockConfiguration.getComponent(eq(AggregateMetaModelFactory.class), any())).thenReturn(mockModelFactory);
+
+        AggregateConfigurer<TestAggregateWithRevision> undefinedDeclaredAggregateTypeTestSubject =
+                new AggregateConfigurer<>(TestAggregateWithRevision.class);
+
+        undefinedDeclaredAggregateTypeTestSubject.initialize(mockConfiguration);
+
+        assertThrows(AxonConfigurationException.class, undefinedDeclaredAggregateTypeTestSubject::snapshotFilter);
     }
 
     private static class TestAggregate {

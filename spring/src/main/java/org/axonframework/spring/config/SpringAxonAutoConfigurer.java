@@ -79,6 +79,7 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -246,8 +247,15 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerEventUpcasters(Configurer configurer) {
+        //noinspection ConstantConditions - suppressing ConfigurableListableBeanFactory#getType null warning
         Arrays.stream(beanFactory.getBeanNamesForType(EventUpcaster.class))
-              .forEach(name -> configurer.registerEventUpcaster(c -> getBean(name, c)));
+              .collect(Collectors.toMap(
+                      upcasterBeanName -> upcasterBeanName,
+                      upcasterBeanName -> beanFactory.getType(upcasterBeanName)
+              ))
+              .entrySet().stream()
+              .sorted(Map.Entry.comparingByValue(AnnotationAwareOrderComparator.INSTANCE))
+              .forEach(upcasterEntry -> configurer.registerEventUpcaster(c -> getBean(upcasterEntry.getKey(), c)));
     }
 
     @SuppressWarnings("unchecked")

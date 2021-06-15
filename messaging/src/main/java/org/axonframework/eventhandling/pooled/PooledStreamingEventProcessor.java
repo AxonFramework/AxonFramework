@@ -1,8 +1,23 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -37,7 +52,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,9 +76,9 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * approach which allows for greater parallelization and processing speed than the {@link
  * org.axonframework.eventhandling.TrackingEventProcessor}.
  * <p>
- * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will initialize
- * them in a given segment count. By default it will create {@code 16} segments, which can be configured through the
- * {@link Builder#initialSegmentCount(int)}.
+ * If no {@link TrackingToken}s are present for this processor, the {@code PooledStreamingEventProcessor} will
+ * initialize them in a given segment count. By default it will create {@code 16} segments, which can be configured
+ * through the {@link Builder#initialSegmentCount(int)}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -99,8 +113,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -115,7 +127,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
+     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      *
      * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
@@ -134,6 +147,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>A {@link StreamableMessageSource}.</li>
      *     <li>A {@link TokenStore}.</li>
      *     <li>A {@link TransactionManager}.</li>
+     *     <li>A {@link ScheduledExecutorService} for coordination.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      * If any of these is not present or does no comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
@@ -165,6 +180,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .onMessageIgnored(this::reportIgnored)
                                       .processingStatusUpdater(this::statusUpdater)
                                       .tokenClaimInterval(tokenClaimInterval)
+                                      .claimExtensionThreshold(claimExtensionThreshold)
                                       .clock(clock)
                                       .maxClaimedSegments(maxClaimedSegments)
                                       .build();
@@ -391,8 +407,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} used by the coordinator of this processor, based on this processor's name.</li>
-     *     <li>A function building a single threaded {@link ScheduledExecutorService} given to the work packages created by this processor, based on this processor's name</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
      *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
@@ -407,7 +421,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
      *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
      *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link TransactionManager} to perform all event handling inside transactions.</li>
+     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
      * </ul>
      */
     public static class Builder extends AbstractEventProcessor.Builder {
@@ -415,10 +430,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         private StreamableMessageSource<TrackedEventMessage<?>> messageSource;
         private TokenStore tokenStore;
         private TransactionManager transactionManager;
-        private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder =
-                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("Coordinator[" + n + "]"));
-        private Function<String, ScheduledExecutorService> workerExecutorBuilder =
-                n -> Executors.newScheduledThreadPool(1, new AxonThreadFactory("WorkPackage[" + n + "]"));
+        private Function<String, ScheduledExecutorService> coordinatorExecutorBuilder;
+        private Function<String, ScheduledExecutorService> workerExecutorBuilder;
         private int initialSegmentCount = 16;
         private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
                 StreamableMessageSource::createTailToken;
@@ -504,8 +517,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
         /**
          * Specifies the {@link ScheduledExecutorService} used by the coordinator of this {@link
-         * PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and an
-         * {@link AxonThreadFactory} incorporating this processors name.
+         * PooledStreamingEventProcessor}.
          *
          * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
          *                            {@link PooledStreamingEventProcessor}
@@ -518,17 +530,59 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         /**
+         * Specifies a builder to construct a {@link ScheduledExecutorService} used by the coordinator of this {@link
+         * PooledStreamingEventProcessor}.
+         *
+         * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService},
+         *                                   providing the {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
+            assertNonNull(coordinatorExecutorBuilder,
+                          "The Coordinator's ScheduledExecutorService builder may not be null");
+            this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
+            return this;
+        }
+
+        /**
          * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
-         * {@link PooledStreamingEventProcessor}. Defaults to a {@code ScheduledExecutorService} with a single thread and
-         * an {@link AxonThreadFactory} incorporating this processors name.
+         * {@link PooledStreamingEventProcessor}.
+         *
+         * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
+         *                       by this {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
+         */
+        @Deprecated
+        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+            return workerExecutor(workerExecutor);
+        }
+
+        /**
+         * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
+         * {@link PooledStreamingEventProcessor}.
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutor(ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
+            return this;
+        }
+
+        /**
+         * Specifies a builder to construct a {@link ScheduledExecutorService} to be provided to the {@link
+         * WorkPackage}s created by this {@link PooledStreamingEventProcessor}.
+         *
+         * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
+         *                              the {@link PooledStreamingEventProcessor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder workerExecutor(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+            assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
+            this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
         }
 
@@ -655,6 +709,14 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             assertNonNull(messageSource, "The StreamableMessageSource is a hard requirement and should be provided");
             assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(
+                    coordinatorExecutorBuilder,
+                    "The Coordinator ScheduledExecutorService is a hard requirement and should be provided"
+            );
+            assertNonNull(
+                    workerExecutorBuilder,
+                    "The Worker ScheduledExecutorService is a hard requirement and should be provided"
+            );
         }
 
         /**

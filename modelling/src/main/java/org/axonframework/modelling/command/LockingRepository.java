@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,9 +27,12 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
 
 /**
  * Implementation of the Repository interface that takes provides a locking mechanism to prevent concurrent
@@ -37,9 +40,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * environment, it is recommended to use a LockingRepository (or one of its subclasses).
  * <p/>
  * The LockingRepository can be initialized with a locking strategy. <em>Pessimistic Locking</em> is the default
- * strategy. Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before
- * the aggregate is handed over. This means that, once an aggregate is loaded, it has full exclusive access to it,
- * until it saves the aggregate.
+ * strategy. Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before the
+ * aggregate is handed over. This means that, once an aggregate is loaded, it has full exclusive access to it, until it
+ * saves the aggregate.
  * <p/>
  * Important: If an exception is thrown during the saving process, any locks held are released. The calling thread may
  * reattempt saving the aggregate again. If the lock is available, the thread automatically takes back the lock. If,
@@ -50,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.3
  */
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
-                                                                   AbstractRepository<T, LockAwareAggregate<T, A>> {
+        AbstractRepository<T, LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -60,11 +63,11 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
-     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code
+     * aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus,
+     * either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An {@link
+     * org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * <p>
      * Additionally will assert that the {@link LockFactory} is not {@code null}, resulting in an
      * AxonConfigurationException if this is the case.
@@ -80,17 +83,28 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifierAsString();
-        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+
+        Supplier<Lock> lockSupplier;
+        if (!Objects.isNull(aggregateIdentifier)) {
+            Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+            lockSupplier = () -> lock;
+        } else {
+            // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
+            lockSupplier = sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
+        }
+
         try {
-            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+            CurrentUnitOfWork.get().onCleanup(u -> lockSupplier.get().release());
         } catch (Throwable ex) {
+            Lock lock = lockSupplier.get();
             if (lock != null) {
                 logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
                 lock.release();
             }
             throw ex;
         }
-        return new LockAwareAggregate<>(aggregate, lock);
+
+        return new LockAwareAggregate<>(aggregate, lockSupplier);
     }
 
     /**
@@ -151,8 +165,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doSaveWithLock(Aggregate)} to perform actual storage.
+     * Verifies whether all locks are valid and delegates to {@link #doSaveWithLock(Aggregate)} to perform actual
+     * storage.
      *
      * @param aggregate the aggregate to store
      */
@@ -169,8 +183,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doDeleteWithLock(Aggregate)} to perform actual deleting.
+     * Verifies whether all locks are valid and delegates to {@link #doDeleteWithLock(Aggregate)} to perform actual
+     * deleting.
      *
      * @param aggregate the aggregate to delete
      */
@@ -213,13 +227,12 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     /**
      * Abstract Builder class to instantiate {@link LockingRepository} implementations.
      * <p>
-     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
-     * {@link PessimisticLockFactory}.
-     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
-     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the {@link
+     * PessimisticLockFactory}. A goal of this Builder goal is to create an {@link AggregateModel} specifying generic
+     * {@code T} as the aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this
+     * aggregate type. To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or
+     * an {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */

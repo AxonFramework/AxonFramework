@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,8 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
@@ -86,34 +83,10 @@ import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
-import static org.axonframework.integrationtests.utils.EventTestUtils.AGGREGATE;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvent;
-import static org.axonframework.integrationtests.utils.EventTestUtils.createEvents;
+import static org.axonframework.integrationtests.utils.EventTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
@@ -1847,6 +1820,79 @@ class TrackingEventProcessorTest {
         });
 
         assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+    }
+
+    @Test
+    void testRefuseStartDuringShutdown() throws Exception {
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(1000, TimeUnit.MILLISECONDS));
+        CountDownLatch cdl = new CountDownLatch(1);
+        publishEvents(10);
+        doAnswer(i -> {
+            cdl.countDown();
+            Thread.sleep(100);
+            return i.callRealMethod();
+        }).when(eventHandlerInvoker).handle(any(), any());
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
+
+        cdl.await();
+        testSubject.shutdownAsync();
+
+        IllegalStateException result = assertThrows(IllegalStateException.class, () -> testSubject.start());
+        assertTrue(result.getMessage().contains("pending shutdown"));
+    }
+
+    @Test
+    @Timeout(value = 1000)
+    void testIsReplayingWhenNotCaughtUp() throws Exception {
+        when(mockHandler.supportsReset()).thenReturn(true);
+
+        final List<String> handled = new CopyOnWriteArrayList<>();
+        final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        int segmentId = 0;
+        int numberOfEvents = 750;
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            if (ReplayToken.isReplay(message)) {
+                handledInRedelivery.add(message.getIdentifier());
+            }
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        // ensure some events have been handled by the TEP
+        eventBus.publish(createEvents(numberOfEvents));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(numberOfEvents, handled.size()));
+        assertEquals(0, handledInRedelivery.size());
+
+        // initiate reset to toggle replay status
+        testSubject.shutDown();
+        testSubject.resetTokens();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
+
+        testSubject.start();
+
+        assertWithin(
+                5, TimeUnit.MILLISECONDS,
+                () -> {
+                    assertFalse(testSubject.processingStatus().isEmpty());
+                    assertFalse(testSubject.processingStatus().get(segmentId).isCaughtUp());
+                    assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
+                    assertTrue(testSubject.isReplaying());
+                }
+        );
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> {
+                    assertTrue(testSubject.processingStatus().get(segmentId).isCaughtUp());
+                    assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
+                    assertFalse(testSubject.isReplaying());
+                }
+        );
     }
 
     private void waitForStatus(String description,

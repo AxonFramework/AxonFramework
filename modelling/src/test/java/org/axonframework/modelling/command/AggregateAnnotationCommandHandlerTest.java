@@ -180,14 +180,18 @@ class AggregateAnnotationCommandHandlerTest {
     public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
+
+        AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
         when(mockRepository.loadOrCreate(anyString(), any()))
-                .thenReturn(createAggregate(new StubCommandAnnotatedAggregate()));
+                .thenReturn(spyAggregate);
+
         commandBus.dispatch(message, callback);
         verify(mockRepository).loadOrCreate(anyString(), any());
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
     }

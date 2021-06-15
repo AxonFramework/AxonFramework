@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,9 +79,9 @@ class DefaultConfigurerHandlerRegistrationTest {
 
     @Test
     void testRegisterMessageHandler() {
-        AtomicBoolean commandHandled = new AtomicBoolean(false);
-        AtomicBoolean eventHandled = new AtomicBoolean(false);
-        AtomicBoolean queryHandled = new AtomicBoolean(false);
+        AtomicReference<MessageHandlingComponent> commandHandled = new AtomicReference<>();
+        AtomicReference<MessageHandlingComponent> eventHandled = new AtomicReference<>();
+        AtomicReference<MessageHandlingComponent> queryHandled = new AtomicReference<>();
 
         Configuration config = baseConfigurer.registerMessageHandler(
                 c -> new MessageHandlingComponent(commandHandled, eventHandled, queryHandled)
@@ -91,10 +92,14 @@ class DefaultConfigurerHandlerRegistrationTest {
         CompletableFuture<String> queryHandling = config.queryGateway().query(new SomeQuery(), String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, commandHandlingResult.join());
-        assertTrue(commandHandled.get());
-        assertTrue(eventHandled.get());
+        assertNotNull(commandHandled.get());
+        assertNotNull(eventHandled.get());
         assertEquals(QUERY_HANDLING_RESPONSE, queryHandling.join());
-        assertTrue(queryHandled.get());
+        assertNotNull(queryHandled.get());
+
+        assertSame(queryHandled.get(), eventHandled.get());
+        assertSame(queryHandled.get(), commandHandled.get());
+
     }
 
     private static class SomeCommand {
@@ -144,13 +149,13 @@ class DefaultConfigurerHandlerRegistrationTest {
     @SuppressWarnings("unused")
     private static class MessageHandlingComponent {
 
-        private final AtomicBoolean handledCommand;
-        private final AtomicBoolean handledEvent;
-        private final AtomicBoolean handledQuery;
+        private final AtomicReference<MessageHandlingComponent> handledCommand;
+        private final AtomicReference<MessageHandlingComponent> handledEvent;
+        private final AtomicReference<MessageHandlingComponent> handledQuery;
 
-        private MessageHandlingComponent(AtomicBoolean handledCommand,
-                                         AtomicBoolean handledEvent,
-                                         AtomicBoolean handledQuery) {
+        private MessageHandlingComponent(AtomicReference<MessageHandlingComponent> handledCommand,
+                                         AtomicReference<MessageHandlingComponent> handledEvent,
+                                         AtomicReference<MessageHandlingComponent> handledQuery) {
             this.handledCommand = handledCommand;
             this.handledEvent = handledEvent;
             this.handledQuery = handledQuery;
@@ -158,18 +163,18 @@ class DefaultConfigurerHandlerRegistrationTest {
 
         @CommandHandler
         public String handle(SomeCommand command) {
-            handledCommand.set(true);
+            handledCommand.set(this);
             return COMMAND_HANDLING_RESPONSE;
         }
 
         @EventHandler
         public void on(SomeEvent event) {
-            handledEvent.set(true);
+            handledEvent.set(this);
         }
 
         @QueryHandler
         public String handle(SomeQuery query) {
-            handledQuery.set(true);
+            handledQuery.set(this);
             return QUERY_HANDLING_RESPONSE;
         }
     }
