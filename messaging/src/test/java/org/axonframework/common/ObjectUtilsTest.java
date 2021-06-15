@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.common;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,5 +39,11 @@ class ObjectUtilsTest {
         Function<String, String> valueProvider = o -> o;
         assertEquals(DEFAULT_VALUE, ObjectUtils.getOrDefault(NULL_INSTANCE, valueProvider, DEFAULT_VALUE));
         assertEquals(INSTANCE, ObjectUtils.getOrDefault(INSTANCE, valueProvider, DEFAULT_VALUE));
+    }
+
+    @Test
+    void testSupplySameInstance() {
+        Supplier<Object> testSubject = ObjectUtils.sameInstanceSupplier(Object::new);
+        assertSame(testSubject.get(), testSubject.get());
     }
 }

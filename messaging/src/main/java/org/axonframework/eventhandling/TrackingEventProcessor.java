@@ -199,6 +199,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     @Override
     @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     public void start() {
+        if (activeProcessorThreads() > 0) {
+            if (state.get().isRunning()) {
+                // then it's ok. It's already running
+                return;
+            } else {
+                // this is problematic. There are still active threads pending a shutdown.
+                throw new IllegalStateException("Cannot start this processor. It is pending shutdown...");
+            }
+        }
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
             startSegmentWorkers();
@@ -644,7 +653,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     @Override
     @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     public CompletableFuture<Void> shutdownAsync() {
-        return super.shutdownAsync();
+        setShutdownState();
+        return CompletableFuture.runAsync(this::awaitTermination);
     }
 
     private void setShutdownState() {
@@ -1042,9 +1052,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     }
                     waitTime = 1;
                 } catch (Exception e) {
-                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
-                                processorName, e.getMessage(), waitTime);
-                    logger.debug("Fetch Segments failed because:", e);
+                    if (waitTime == 1) {
+                        logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
+                                    processorName, e.getMessage(), waitTime, e);
+                    } else {
+                        logger.info("Fetching Segments for Processor '{}' still failing: {}. Preparing for retry in {}s",
+                                     processorName, e.getMessage(), waitTime);
+                    }
                     doSleepFor(SECONDS.toMillis(waitTime));
                     waitTime = Math.min(waitTime * 2, 60);
 

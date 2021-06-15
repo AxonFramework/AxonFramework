@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     public void setExecutionResult(ExecutionResult executionResult) {
         Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
                      () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].",
-                        message, this.executionResult, executionResult));
+                        this.executionResult, executionResult, message));
         if (this.executionResult != null && this.executionResult.isExceptionResult()) {
             this.executionResult.getExceptionResult().addSuppressed(executionResult.getExceptionResult());
         } else {

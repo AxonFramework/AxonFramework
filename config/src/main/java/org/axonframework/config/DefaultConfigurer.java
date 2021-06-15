@@ -584,9 +584,10 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer registerMessageHandler(Function<Configuration, Object> messageHandlerBuilder) {
-        registerCommandHandler(messageHandlerBuilder);
-        eventProcessing().registerEventHandler(messageHandlerBuilder);
-        registerQueryHandler(messageHandlerBuilder);
+        Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
+        registerCommandHandler(c -> messageHandler.get());
+        eventProcessing().registerEventHandler(c -> messageHandler.get());
+        registerQueryHandler(c -> messageHandler.get());
         return this;
     }
 
