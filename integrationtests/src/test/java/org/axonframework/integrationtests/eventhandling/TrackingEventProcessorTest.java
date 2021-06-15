@@ -1849,6 +1849,28 @@ class TrackingEventProcessorTest {
         assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
+    @Test
+    void testRefuseStartDuringShutdown() throws Exception {
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(1000, TimeUnit.MILLISECONDS));
+        CountDownLatch cdl = new CountDownLatch(1);
+        publishEvents(10);
+        doAnswer(i -> {
+            cdl.countDown();
+            Thread.sleep(100);
+            return i.callRealMethod();
+        }).when(eventHandlerInvoker).handle(any(), any());
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
+
+        cdl.await();
+        testSubject.shutdownAsync();
+        assertTrue(
+            assertThrows(IllegalStateException.class,
+                         () -> testSubject.start())
+                    .getMessage().contains("pending shutdown"));
+    }
+
     private void waitForStatus(String description,
                                long time,
                                TimeUnit unit,
