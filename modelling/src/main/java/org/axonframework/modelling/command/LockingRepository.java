@@ -17,7 +17,6 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -30,10 +29,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
 
 /**
  * Implementation of the Repository interface that takes provides a locking mechanism to prevent concurrent
@@ -41,9 +40,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * environment, it is recommended to use a LockingRepository (or one of its subclasses).
  * <p/>
  * The LockingRepository can be initialized with a locking strategy. <em>Pessimistic Locking</em> is the default
- * strategy. Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before
- * the aggregate is handed over. This means that, once an aggregate is loaded, it has full exclusive access to it,
- * until it saves the aggregate.
+ * strategy. Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before the
+ * aggregate is handed over. This means that, once an aggregate is loaded, it has full exclusive access to it, until it
+ * saves the aggregate.
  * <p/>
  * Important: If an exception is thrown during the saving process, any locks held are released. The calling thread may
  * reattempt saving the aggregate again. If the lock is available, the thread automatically takes back the lock. If,
@@ -54,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 0.3
  */
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
-                                                                   AbstractRepository<T, LockAwareAggregate<T, A>> {
+        AbstractRepository<T, LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -64,11 +63,11 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
-     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code
+     * aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus,
+     * either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An {@link
+     * org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * <p>
      * Additionally will assert that the {@link LockFactory} is not {@code null}, resulting in an
      * AxonConfigurationException if this is the case.
@@ -91,7 +90,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             lockSupplier = () -> lock;
         } else {
             // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
-            lockSupplier = ObjectUtils.sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
+            lockSupplier = sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
         }
 
         try {
@@ -166,8 +165,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doSaveWithLock(Aggregate)} to perform actual storage.
+     * Verifies whether all locks are valid and delegates to {@link #doSaveWithLock(Aggregate)} to perform actual
+     * storage.
      *
      * @param aggregate the aggregate to store
      */
@@ -184,8 +183,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     }
 
     /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doDeleteWithLock(Aggregate)} to perform actual deleting.
+     * Verifies whether all locks are valid and delegates to {@link #doDeleteWithLock(Aggregate)} to perform actual
+     * deleting.
      *
      * @param aggregate the aggregate to delete
      */
@@ -228,13 +227,12 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     /**
      * Abstract Builder class to instantiate {@link LockingRepository} implementations.
      * <p>
-     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
-     * {@link PessimisticLockFactory}.
-     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
-     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the {@link
+     * PessimisticLockFactory}. A goal of this Builder goal is to create an {@link AggregateModel} specifying generic
+     * {@code T} as the aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this
+     * aggregate type. To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or
+     * an {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */
