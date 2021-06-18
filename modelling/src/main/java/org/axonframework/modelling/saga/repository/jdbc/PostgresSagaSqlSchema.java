@@ -46,7 +46,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        final String sql = "create table if not exists" + sagaSchema().associationValueEntryTable() + " (\n" +
+        final String sql = "create table if not exists " + sagaSchema().associationValueEntryTable() + " (\n" +
                 "        id bigserial not null,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +
@@ -59,7 +59,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
-        return conn.prepareStatement("create table if not exists" + sagaSchema().sagaEntryTable() + " (\n" +
+        return conn.prepareStatement("create table if not exists " + sagaSchema().sagaEntryTable() + " (\n" +
                 "        sagaId varchar(255) not null,\n" +
                 "        revision varchar(255),\n" +
                 "        sagaType varchar(255),\n" +
