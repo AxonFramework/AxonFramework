@@ -94,20 +94,19 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
 
     @Override
     public Object handle(Message<?> message) throws Exception {
-        try {
-            return wrappedAggregate.handle(message);
-        } finally {
-            lockSupplier.get();
-        }
+        Object result = wrappedAggregate.handle(message);
+        // we need to ensure the lock is acquired, as this may not have happened earlier
+        lockSupplier.get();
+        return result;
     }
 
     @Override
     public <R> R invoke(Function<AR, R> invocation) {
-        try {
-            return wrappedAggregate.invoke(invocation);
-        } finally {
-            lockSupplier.get();
-        }
+        R result = wrappedAggregate.invoke(invocation);
+        // we need to ensure the lock is acquired, as this may not have happened earlier
+        lockSupplier.get();
+
+        return result;
     }
 
     @Override

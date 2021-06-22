@@ -23,6 +23,7 @@ import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,27 +82,22 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
 
     @Override
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
+        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifierAsString();
 
         Supplier<Lock> lockSupplier;
         if (!Objects.isNull(aggregateIdentifier)) {
             Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+            unitOfWork.onCleanup(u -> lock.release());
             lockSupplier = () -> lock;
         } else {
             // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
-            lockSupplier = sameInstanceSupplier(() -> lockFactory.obtainLock(aggregate.identifierAsString()));
-        }
-
-        try {
-            CurrentUnitOfWork.get().onCleanup(u -> lockSupplier.get().release());
-        } catch (Throwable ex) {
-            Lock lock = lockSupplier.get();
-            if (lock != null) {
-                logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
-                lock.release();
-            }
-            throw ex;
+            lockSupplier = sameInstanceSupplier(() -> {
+                Lock lock = lockFactory.obtainLock(aggregate.identifierAsString());
+                unitOfWork.onCleanup(u -> lock.release());
+                return lock;
+            });
         }
 
         return new LockAwareAggregate<>(aggregate, lockSupplier);
