@@ -51,15 +51,16 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,7 +104,7 @@ public class TrackingEventProcessorIntegrationTest {
     private static CountDownLatch countDownLatch2;
     private static AtomicBoolean resetTriggered;
     private static AtomicReference<String> resetTriggeredWithContext;
-    private static AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages;
+    private static Set<TrackedEventMessage<?>> ignoredMessages;
 
     @BeforeEach
     void setUp() {
@@ -111,7 +112,7 @@ public class TrackingEventProcessorIntegrationTest {
         countDownLatch2 = new CountDownLatch(3);
         resetTriggered = new AtomicBoolean(false);
         resetTriggeredWithContext = new AtomicReference<>();
-        ignoredMessages = new AtomicReference<>(new HashSet<>());
+        ignoredMessages = ConcurrentHashMap.newKeySet();
 
         eventProcessingModule.eventProcessors().values().forEach(EventProcessor::start);
     }
@@ -128,6 +129,7 @@ public class TrackingEventProcessorIntegrationTest {
         );
     }
 
+    @DirtiesContext
     @Test
     public void testPublishSomeEvents() throws InterruptedException {
         publishEvent(UsedEvent.INSTANCE, UsedEvent.INSTANCE);
@@ -153,6 +155,7 @@ public class TrackingEventProcessorIntegrationTest {
                              ));
     }
 
+    @DirtiesContext
     @Test
     void testResetHandlerIsCalledOnResetTokens() {
         String resetContext = "reset-context";
@@ -180,13 +183,14 @@ public class TrackingEventProcessorIntegrationTest {
         assertEquals(resetContext, resetTriggeredWithContext.get());
     }
 
+    @DirtiesContext
     @Test
     void testUnhandledEventsAreFilteredOutOfTheBlockingStream() throws InterruptedException {
         publishEvent(UsedEvent.INSTANCE, UnusedEvent.INSTANCE, UsedEvent.INSTANCE, UsedEvent.INSTANCE);
 
         assertTrue(countDownLatch1.await(10, TimeUnit.SECONDS));
 
-        Set<Class<?>> ignoredClasses = ignoredMessages.get().stream()
+        Set<Class<?>> ignoredClasses = ignoredMessages.stream()
                                                       .map(TrackedEventMessage::getPayloadType)
                                                       .collect(Collectors.toSet());
 
@@ -226,10 +230,10 @@ public class TrackingEventProcessorIntegrationTest {
     private static class FilteringBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
 
         private final BlockingStream<TrackedEventMessage<?>> delegate;
-        private final AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages;
+        private final Set<TrackedEventMessage<?>> ignoredMessages;
 
         private FilteringBlockingStream(BlockingStream<TrackedEventMessage<?>> delegate,
-                                        AtomicReference<Set<TrackedEventMessage<?>>> ignoredMessages) {
+                                        Set<TrackedEventMessage<?>> ignoredMessages) {
             this.delegate = delegate;
             this.ignoredMessages = ignoredMessages;
         }
@@ -256,10 +260,7 @@ public class TrackingEventProcessorIntegrationTest {
 
         @Override
         public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
-            ignoredMessages.updateAndGet(ignoredSet -> {
-                ignoredSet.add(ignoredMessage);
-                return ignoredSet;
-            });
+            ignoredMessages.add(ignoredMessage);
         }
     }
 
