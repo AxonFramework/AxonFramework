@@ -39,7 +39,7 @@
     <jackson-kotlin.version>2.12.3</jackson-kotlin.version>
     <mockk.version>1.11.0</mockk.version>
     <junit.jupiter.version>5.7.2</junit.jupiter.version>
-    <slf4j.version>1.7.30</slf4j.version>
+    <slf4j.version>1.7.31</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
     <dokka.version>1.4.32</dokka.version>
 
