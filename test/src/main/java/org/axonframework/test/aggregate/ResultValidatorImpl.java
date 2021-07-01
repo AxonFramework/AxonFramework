@@ -284,13 +284,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         StringDescription actualDescription = new StringDescription();
         PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
                 new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
-        PayloadMatcher<CommandResultMessage<?>> actualMatcher =
-                new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
         expectedMatcher.describeTo(expectedDescription);
-        actualMatcher.describeTo(actualDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.getPayload())) {
+            PayloadMatcher<CommandResultMessage<?>> actualMatcher =
+                    new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
+            actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
         return this;

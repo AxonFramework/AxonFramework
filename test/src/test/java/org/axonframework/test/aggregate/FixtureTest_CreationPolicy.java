@@ -121,6 +121,15 @@ class FixtureTest_CreationPolicy {
         assertTrue(intercepted.get());
     }
 
+    @Test
+    void testAlwaysCreateExceptionsArePropagates() {
+        fixture.givenNoPriorActivity()
+               .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID, false))
+               .expectNoEvents()
+               .expectException(RuntimeException.class);
+        assertTrue(intercepted.get());
+    }
+
     private static class CreateCommand {
 
         @TargetAggregateIdentifier
@@ -187,9 +196,14 @@ class FixtureTest_CreationPolicy {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
+        private final boolean success;
 
         private AlwaysCreateWithEventSourcedResultCommand(ComplexAggregateId id) {
+            this(id, true);
+        }
+        private AlwaysCreateWithEventSourcedResultCommand(ComplexAggregateId id, boolean success) {
             this.id = id;
+            this.success= success;
         }
 
         public ComplexAggregateId getId() {
@@ -373,6 +387,9 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public ComplexAggregateId handle(AlwaysCreateWithEventSourcedResultCommand command) {
             apply(new AlwaysCreatedEvent(command.getId()));
+            if (!command.success) {
+                throw new RuntimeException("Simulating failure in a creation handler");
+            }
             // On apply, the event sourcing handlers should be invoked first.
             // Hence, we should be able to return the identifier of the aggregate directly.
             return id;
