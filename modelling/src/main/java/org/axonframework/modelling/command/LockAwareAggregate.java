@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregate<AR> {
 
     private final A wrappedAggregate;
-    private final Supplier<Lock> lockSupplier;
+    private final LockSupplier lock;
 
     /**
      * Initializes a new {@link LockAwareAggregate} for given {@code wrappedAggregate} and {@code lock}.
@@ -44,7 +44,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      */
     public LockAwareAggregate(A wrappedAggregate, Lock lock) {
         this.wrappedAggregate = wrappedAggregate;
-        this.lockSupplier = () -> lock;
+        this.lock = () -> lock;
     }
 
     /**
@@ -56,7 +56,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      */
     public LockAwareAggregate(A wrappedAggregate, Supplier<Lock> lock) {
         this.wrappedAggregate = wrappedAggregate;
-        this.lockSupplier = lock;
+        this.lock = lock::get;
     }
 
     /**
@@ -74,7 +74,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      * @return {@code true} if the lock is held, {@code false} otherwise
      */
     public boolean isLockHeld() {
-        return this.lockSupplier.get().isHeld();
+        return this.lock.acquire().isHeld();
     }
 
     @Override
@@ -96,7 +96,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     public Object handle(Message<?> message) throws Exception {
         Object result = wrappedAggregate.handle(message);
         // we need to ensure the lock is acquired, as this may not have happened earlier
-        lockSupplier.get();
+        lock.acquire();
         return result;
     }
 
@@ -104,7 +104,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     public <R> R invoke(Function<AR, R> invocation) {
         R result = wrappedAggregate.invoke(invocation);
         // we need to ensure the lock is acquired, as this may not have happened earlier
-        lockSupplier.get();
+        lock.acquire();
 
         return result;
     }
@@ -114,7 +114,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
         try {
             wrappedAggregate.execute(invocation);
         } finally {
-            lockSupplier.get();
+            lock.acquire();
         }
     }
 
@@ -126,5 +126,13 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     @Override
     public Class<? extends AR> rootType() {
         return wrappedAggregate.rootType();
+    }
+
+    @FunctionalInterface
+    private interface LockSupplier extends Supplier<Lock> {
+
+        default Lock acquire() {
+            return this.get();
+        }
     }
 }
