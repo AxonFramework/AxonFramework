@@ -1,12 +1,29 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.async;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-
-import java.util.function.Function;
-
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
+
+import java.util.function.Function;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
@@ -25,6 +42,14 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
     private final Function<T, K> propertyExtractor;
     private final SequencingPolicy<EventMessage> fallbackSequencingPolicy;
 
+    /**
+     * Instantiate a {@link PropertySequencingPolicy} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@code propertyExtractor} is not {@code null} and will throw an {@link
+     * AxonConfigurationException} if this is the case.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link PropertySequencingPolicy} instance
+     */
     @SuppressWarnings("unchecked")
     protected PropertySequencingPolicy(final Builder builder) {
         builder.validate();
@@ -57,13 +82,14 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
      * <li>The {@code fallbackSequencingPolicy} which defines the behaviour in case of an unsupported event payload.</li>
      * </ul>
      *
-     * @param payloadClass  The class of the supported event payloads.
-     * @param propertyClass The class of the extracted property.
-     * @param <T>           The type of the supported event payloads.
-     * @param <K>           The type of the extracted property.
+     * @param payloadClass  the class of the supported event payloads
+     * @param propertyClass the class of the extracted property
+     * @param <T>           the type of the supported event payloads
+     * @param <K>           the type of the extracted property
      * @return a Builder to be able to create a {@link PropertySequencingPolicy}
      */
-    public static <T, K> Builder<T, K> builder(final Class<T> payloadClass, final Class<K> propertyClass) {
+    public static <T, K> Builder<T, K> builder(final Class<T> payloadClass,
+                                               @SuppressWarnings("unused") final Class<K> propertyClass) {
         return new Builder<>(payloadClass);
     }
 
@@ -81,8 +107,8 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
      * <li>The {@code fallbackSequencingPolicy} which defines the behaviour in case of an unsupported event payload.</li>
      * </ul>
      *
-     * @param <T> The type of the supported event payloads.
-     * @param <K> The type of the extracted property.
+     * @param <T> the type of the supported event payloads
+     * @param <K> the type of the extracted property
      */
     public static final class Builder<T, K> {
 
@@ -166,7 +192,10 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
             @Override
             public Object getSequenceIdentifierFor(final EventMessage eventMessage) {
                 throw new IllegalArgumentException(
-                        "The event message payload is not of a supported type. Either make sure that the processor only consumes supported events or add a fallback sequencing policy.");
+                        "The event message payload is not of a supported type. "
+                                + "Either make sure that the processor only consumes supported events "
+                                + "or add a fallback sequencing policy."
+                );
             }
         }
     }

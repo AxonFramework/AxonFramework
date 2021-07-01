@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package org.axonframework.eventhandling.async;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link PropertySequencingPolicy}.
+ *
  * @author Nils Christian Ehmke
  */
 @DisplayName("Unit-Test for the PropertySequencingPolicy")
@@ -74,7 +74,7 @@ final class PropertySequencingPolicyTest {
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
-        return new GenericDomainEventMessage<>("type", "A", (long) 0, payload, MetaData.emptyInstance());
+        return new GenericDomainEventMessage<>("type", "A", 0L, payload, MetaData.emptyInstance());
     }
 
     private static class TestEvent {
