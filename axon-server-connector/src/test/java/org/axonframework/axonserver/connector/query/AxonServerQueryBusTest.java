@@ -45,8 +45,10 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,13 +60,26 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -115,8 +130,9 @@ class AxonServerQueryBusTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         axonServerConnectionManager.shutdown();
+        testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS);
         testSubject.disconnect();
     }
 
@@ -244,7 +260,9 @@ class AxonServerQueryBusTest {
         QueryMessage<String, Optional<String>> testQuery =
                 new GenericQueryMessage<>("Hello, World", optionalInstanceOf(String.class));
 
-        testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
+        Stream<QueryResponseMessage<Optional<String>>> actual = testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
+        // not really interested in the result
+        actual.close();
 
         verify(targetContextResolver).resolveContext(testQuery);
         verify(mockQueryChannel).query(argThat(
@@ -284,7 +302,7 @@ class AxonServerQueryBusTest {
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
-        testSubject.shutdownDispatching();
+        assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
@@ -293,10 +311,22 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void testShutdownTakesFinishedQueriesIntoAccount() {
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(QueryResponse.newBuilder().build()));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
+        result.join();
+
+        assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
+
+    }
+
+    @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
-        testSubject.shutdownDispatching();
+        assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
@@ -312,7 +342,7 @@ class AxonServerQueryBusTest {
         SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
                 new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
 
-        testSubject.shutdownDispatching();
+        assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
         assertThrows(ShutdownInProgressException.class,
                      () -> testSubject.subscriptionQuery(testSubscriptionQuery));

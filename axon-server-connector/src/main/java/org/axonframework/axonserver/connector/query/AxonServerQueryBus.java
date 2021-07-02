@@ -219,10 +219,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
             queryTransaction.completeExceptionally(exception);
-            queryInTransit.end();
         }
 
-        return queryTransaction;
+        return queryTransaction.whenComplete((r, e) -> queryInTransit.end());
     }
 
     @Override
@@ -249,8 +248,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                  .query(queryRequest);
 
             return StreamSupport.stream(
-                    new QueryResponseSpliterator<>(queryMessage, queryResult, deadline, serializer), false
-            );
+                    new QueryResponseSpliterator<>(queryMessage, queryResult, deadline, serializer, queryInTransit::end),
+                    false
+            ).onClose(queryInTransit::end);
         } catch (Exception e) {
             logger.debug("There was a problem issuing a scatter-gather query {}.", interceptedQuery, e);
             queryInTransit.end();
@@ -746,15 +746,18 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final ResultStream<QueryResponse> queryResult;
         private final long deadline;
         private final QuerySerializer serializer;
+        private final Runnable closeHandler;
 
         public QueryResponseSpliterator(QueryMessage<Q, R> queryMessage,
                                         ResultStream<QueryResponse> queryResult,
                                         long deadline,
-                                        QuerySerializer serializer) {
+                                        QuerySerializer serializer,
+                                        Runnable closeHandler) {
             this.queryMessage = queryMessage;
             this.queryResult = queryResult;
             this.deadline = deadline;
             this.serializer = serializer;
+            this.closeHandler = closeHandler;
         }
 
         @Override
@@ -766,6 +769,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     next = queryResult.nextIfAvailable(remaining, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    closeHandler.run();
                     return false;
                 }
             } else {
@@ -776,6 +780,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 return true;
             }
             queryResult.close();
+            closeHandler.run();
             return false;
         }
 
