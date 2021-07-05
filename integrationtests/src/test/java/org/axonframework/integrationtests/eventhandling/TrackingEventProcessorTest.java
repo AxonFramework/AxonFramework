@@ -1476,11 +1476,13 @@ class TrackingEventProcessorTest {
 
         waitForActiveThreads(1);
 
-        testSubject.shutDown();
+        CompletableFuture<Void> shutdownComplete = testSubject.shutdownAsync();
         testSubject.resetTokens();
 
         publishEvents(10);
 
+        // wait for the shutdown to be complete prior to starting again
+        shutdownComplete.join();
         testSubject.start();
         waitForActiveThreads(1);
 
