@@ -75,6 +75,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
@@ -1087,7 +1088,6 @@ class TrackingEventProcessorTest {
 
         when(mockHandler.supportsReset()).thenReturn(true);
 
-
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
@@ -1440,14 +1440,15 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 10)
     void testReplayDuringIncompleteMerge() throws Exception {
-        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
-        tokenStore.initializeTokenSegments(testSubject.getName(), 2);
+        int segmentIdZero = 0;
+        int segmentIdOne = 1;
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
-        List<EventMessage<?>> events = new ArrayList<>();
-        int segmentId = 0;
-        for (int i = 0; i < 10; i++) {
-            events.add(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        List<EventMessage<?>> initialEvents = IntStream.range(0, 10)
+                                                       .mapToObj(i -> createEvent(UUID.randomUUID().toString(), 0))
+                                                       .collect(toList());
+
+        tokenStore.initializeTokenSegments(testSubject.getName(), 2);
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
@@ -1456,40 +1457,54 @@ class TrackingEventProcessorTest {
             }
             return handledEvents.add(message);
         });
-        eventBus.publish(events);
 
+        eventBus.publish(initialEvents);
         testSubject.start();
+
         while (testSubject.processingStatus().size() < 2
                 || !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
             Thread.sleep(10);
         }
 
-        testSubject.releaseSegment(1);
-        while (testSubject.processingStatus().containsKey(1)) {
+        testSubject.releaseSegment(segmentIdOne);
+        while (testSubject.processingStatus().containsKey(segmentIdOne)) {
             Thread.yield();
         }
 
         publishEvents(10);
 
-        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
-        assertTrue(mergeResult.join(), "Expected split to succeed");
-
-        waitForActiveThreads(1);
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentIdZero);
+        assertTrue(mergeResult.join(), "Expected merge to succeed");
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         testSubject.shutDown();
-        testSubject.resetTokens();
+        // Perform assert done during resetTokens invocations to block calls whilst the processor is running
+        assertWithin(500, TimeUnit.MILLISECONDS,
+                     () -> assertTrue(!testSubject.isRunning() && testSubject.activeProcessorThreads() == 0));
 
+        // Sometimes a rogue processing thread hangs, even though we validate the number of active threads.
+        // Hence the reset is retried if it fails when the exceptions state it should've been shut down.
+        boolean resetFailed;
+        do {
+            try {
+                testSubject.resetTokens();
+                resetFailed = false;
+            } catch (IllegalStateException e) {
+                resetFailed = e.getMessage().contains("must be shut down before triggering a reset");
+            }
+        } while (resetFailed);
         publishEvents(10);
 
         testSubject.start();
-        waitForActiveThreads(1);
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(segmentId);
+        waitForSegmentStart(segmentIdZero);
 
-        while (!testSubject.processingStatus().get(segmentId).isCaughtUp()) {
-            Thread.sleep(10);
-        }
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> assertTrue(testSubject.processingStatus().get(segmentIdZero).isCaughtUp())
+        );
 
         // Replayed messages aren't counted
         assertEquals(30, handledEvents.size());
