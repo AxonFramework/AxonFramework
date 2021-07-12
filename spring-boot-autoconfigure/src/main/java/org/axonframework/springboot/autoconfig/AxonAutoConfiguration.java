@@ -19,7 +19,9 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.DuplicateCommandHandlingMemberResolver;
 import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlingMemberResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -331,6 +333,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     public DuplicateCommandHandlerResolver duplicateCommandHandlerResolver() {
         return LoggingDuplicateCommandHandlerResolver.instance();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DuplicateCommandHandlingMemberResolver duplicateCommandHandlingMemberResolver() {
+        return LoggingDuplicateCommandHandlingMemberResolver.instance();
     }
 
     @ConditionalOnMissingBean(

@@ -173,4 +173,12 @@ public interface MessageHandlingMember<T> {
     default <R> Optional<R> attribute(String attributeKey) {
         return Optional.empty();
     }
+
+    /**
+     * for logging when multi command handling members were detected
+     * @return command handling member executable default null
+     */
+    default Executable getTargetMethod() {
+        return null;
+    }
 }

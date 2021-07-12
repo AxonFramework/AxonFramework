@@ -89,6 +89,11 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
+    public Executable getTargetMethod() {
+        return executable;
+    }
+
+    @Override
     public Class<?> payloadType() {
         return payloadType;
     }

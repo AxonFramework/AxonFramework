@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
 import java.util.Map;
 import java.util.Optional;
 
@@ -98,5 +99,10 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     @Override
     public <R> Optional<R> attribute(String attributeKey) {
         return delegate.attribute(attributeKey);
+    }
+
+    @Override
+    public Executable getTargetMethod() {
+        return delegate.getTargetMethod();
     }
 }

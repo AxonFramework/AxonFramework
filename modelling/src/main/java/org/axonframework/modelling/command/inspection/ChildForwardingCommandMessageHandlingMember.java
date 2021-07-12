@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -155,5 +156,10 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     @Override
     public <R> Optional<R> attribute(String attributeKey) {
         return childHandler.attribute(attributeKey);
+    }
+
+    @Override
+    public Executable getTargetMethod() {
+        return childHandler.getTargetMethod();
     }
 }

@@ -17,6 +17,8 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.DuplicateCommandHandlingMemberResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlingMemberResolver;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -82,6 +84,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Boolean> filterEventsByType;
     private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
+    private final Component<DuplicateCommandHandlingMemberResolver> duplicateCommandHandlingMemberResolver;
 
     private Configuration parent;
 
@@ -200,6 +203,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                 return SnapshotFilter.allowAll();
             }
         });
+        duplicateCommandHandlingMemberResolver = new Component<>(
+                () -> parent,
+                name("duplicateCommandHandlingMemberResolver"), c ->c.getComponent(DuplicateCommandHandlingMemberResolver.class,
+                                                                                   LoggingDuplicateCommandHandlingMemberResolver::instance)
+        );
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
         cache = new Component<>(() -> parent, name("aggregateCache"), c -> null);
@@ -244,6 +252,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                  .repository(repository.get())
                                                  .commandTargetResolver(commandTargetResolver.get())
                                                  .aggregateModel(metaModel.get())
+                                                 .duplicateCommandHandlingMemberResolver(duplicateCommandHandlingMemberResolver.get())
                                                  .build());
     }
 
@@ -289,6 +298,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureAggregateFactory(
             Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
+        return this;
+    }
+
+    /**
+     * Defines the DuplicateCommandHandlingMemberResolver to use to to create new Aggregates instances of the type under configuration.
+     *
+     * @param duplicateCommandHandlingMemberResolver  The builder function for the DuplicateCommandHandlingMemberResolver
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureDuplicateCommandHandlingMemberResolver(
+            Function<Configuration, DuplicateCommandHandlingMemberResolver> duplicateCommandHandlingMemberResolver) {
+        this.duplicateCommandHandlingMemberResolver.update(duplicateCommandHandlingMemberResolver);
         return this;
     }
 
@@ -450,7 +471,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     /**
      * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtypes
      * will be considered part of this aggregate's handlers.
-     *
+     z
      * @param subtypes subtypes in this polymorphic hierarchy
      * @return this configurer for fluent interfacing
      */

@@ -22,6 +22,8 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.DuplicateCommandHandlingMemberResolver;
+import org.axonframework.commandhandling.LoggingDuplicateCommandHandlingMemberResolver;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
@@ -61,8 +63,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
     private final Repository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
-    private final List<MessageHandler<CommandMessage<?>>> handlers;
+    private final List<MessageHandler<? super CommandMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
+    private final DuplicateCommandHandlingMemberResolver duplicateCommandHandlingMemberResolver;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -96,6 +99,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      */
     protected AggregateAnnotationCommandHandler(Builder<T> builder) {
         builder.validate();
+        this.duplicateCommandHandlingMemberResolver = builder.duplicateCommandHandlingMemberResolver;
         this.repository = builder.repository;
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
@@ -117,19 +121,29 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
-    private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
-        List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
-        aggregateModel.allCommandHandlers()
-                      .values()
-                      .stream()
-                      .flatMap(List::stream)
-                      .forEach(handler -> initializeHandler(aggregateModel, handler, handlersFound));
+    private List<MessageHandler<? super CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
+        List<MessageHandler<? super CommandMessage<?>>> handlersFound = new ArrayList<>();
+        aggregateModel.allCommandHandlers().values().stream()
+                      .map(item -> item.stream().collect(Collectors.groupingBy(i -> i.payloadType())))
+                      .flatMap(map -> map.entrySet().stream()).forEach(entry -> wrapInitializeHandler(aggregateModel,
+                                                                                                      entry.getKey(),
+                                                                                                      entry.getValue(),
+                                                                                                      handlersFound));
         return handlersFound;
+    }
+
+    private void wrapInitializeHandler(AggregateModel<T> aggregateModel, Class<?> payloadType,
+                                       List<MessageHandlingMember<? super T>> handlerMembers,
+                                       List<MessageHandler<? super CommandMessage<?>>> handlersFound) {
+
+        MessageHandlingMember finalHandlerMember = duplicateCommandHandlingMemberResolver.resolve(
+                payloadType, handlerMembers);
+        initializeHandler(aggregateModel, finalHandlerMember, handlersFound);
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
-                                   List<MessageHandler<CommandMessage<?>>> handlersFound) {
+                                   List<MessageHandler<? super CommandMessage<?>>> handlersFound) {
 
 
         handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
@@ -216,6 +230,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
+        private DuplicateCommandHandlingMemberResolver duplicateCommandHandlingMemberResolver
+                = LoggingDuplicateCommandHandlingMemberResolver.instance();
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
@@ -299,6 +315,22 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             assertNonNull(aggregateModel, "AggregateModel may not be null");
             this.aggregateModel = aggregateModel;
+            return this;
+        }
+
+        /**
+         * See the {@link DuplicateCommandHandlingMemberResolver
+         *
+         * @param duplicateCommandHandlingMemberResolver the {@link DuplicateCommandHandlingMemberResolver} will resolve
+         *                                               what stragety to do when duplicate handling members were
+         *                                               detected
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> duplicateCommandHandlingMemberResolver(DuplicateCommandHandlingMemberResolver
+                                                                         duplicateCommandHandlingMemberResolver) {
+            assertNonNull(duplicateCommandHandlingMemberResolver,
+                          "duplicateCommandHandlingMemberResolver may not be null");
+            this.duplicateCommandHandlingMemberResolver = duplicateCommandHandlingMemberResolver;
             return this;
         }
 
