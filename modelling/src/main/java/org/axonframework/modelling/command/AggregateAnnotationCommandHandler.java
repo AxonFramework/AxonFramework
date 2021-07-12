@@ -124,7 +124,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private List<MessageHandler<? super CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<? super CommandMessage<?>>> handlersFound = new ArrayList<>();
         aggregateModel.allCommandHandlers().values().stream()
-                      .map(item -> item.stream().collect(Collectors.groupingBy(i -> i.payloadType())))
+                      .map(item -> item.stream().collect(
+                              Collectors.groupingBy(i -> i.unwrap(CommandMessageHandlingMember.class).get().commandName())))
                       .flatMap(map -> map.entrySet().stream()).forEach(entry -> wrapInitializeHandler(aggregateModel,
                                                                                                       entry.getKey(),
                                                                                                       entry.getValue(),
@@ -132,12 +133,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         return handlersFound;
     }
 
-    private void wrapInitializeHandler(AggregateModel<T> aggregateModel, Class<?> payloadType,
+    private void wrapInitializeHandler(AggregateModel<T> aggregateModel, String commandName,
                                        List<MessageHandlingMember<? super T>> handlerMembers,
                                        List<MessageHandler<? super CommandMessage<?>>> handlersFound) {
 
-        MessageHandlingMember finalHandlerMember = duplicateCommandHandlingMemberResolver.resolve(
-                payloadType, handlerMembers);
+        MessageHandlingMember finalHandlerMember = handlerMembers.stream().findFirst().get();
+        if (handlerMembers.size() > 1){
+            finalHandlerMember = duplicateCommandHandlingMemberResolver.resolve(commandName, handlerMembers);
+        }
         initializeHandler(aggregateModel, finalHandlerMember, handlersFound);
     }
 

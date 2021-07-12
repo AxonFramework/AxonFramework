@@ -42,9 +42,9 @@ public class FailingDuplicateCommandHandlingMemberResolver implements DuplicateC
     private FailingDuplicateCommandHandlingMemberResolver() {
     }
 
-    public <T> MessageHandlingMember<? super T> resolve(Class<?> payloadType,
+    public <T> MessageHandlingMember<? super T> resolve(String commandName,
                                                         List<MessageHandlingMember<? super T>> messageHandlingMemberList) {
 
-        throw new DuplicateCommandHandlingMemberException(payloadType, messageHandlingMemberList);
+        throw new DuplicateCommandHandlingMemberException(commandName, messageHandlingMemberList);
     }
 }

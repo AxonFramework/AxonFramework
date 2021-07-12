@@ -35,7 +35,7 @@ public class DuplicateCommandInSameAggregate {
                                          .start();
         CommandGateway commandGateway = configuration.commandGateway();
         commandGateway.sendAndWait(new MyCommand("test"));
-        commandGateway.sendAndWait(new MyCommand("test"));
+//        commandGateway.sendAndWait(new GenericCommandMessage(GenericCommandMessage.asCommandMessage(new MyCommand("test")),"update"));
     }
 
     @Test
@@ -85,17 +85,20 @@ public class DuplicateCommandInSameAggregate {
 
         @CommandHandler
         public MyAggregate(MyCommand myCommand) {
+            System.out.println("MyAggregate MyAggregate command - " + myCommand);
             AggregateLifecycle.apply(new MyEvent(myCommand.id));
         }
 
-        @CommandHandler
+        @CommandHandler(commandName="update")
         public void update(MyCommand myCommand) {
+            System.out.println("MyAggregate update command - " + myCommand);
             AggregateLifecycle.apply(new MyEvent(myCommand.id));
         }
 
 
         @CommandHandler
         public void invalidate(MyCommand myCommand) {
+            System.out.println("MyAggregate invalidate command - " + myCommand);
             AggregateLifecycle.apply(new MyEvent(myCommand.id));
         }
 

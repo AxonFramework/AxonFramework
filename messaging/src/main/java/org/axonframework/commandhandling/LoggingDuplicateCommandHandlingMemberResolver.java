@@ -49,14 +49,14 @@ public class LoggingDuplicateCommandHandlingMemberResolver implements DuplicateC
     private LoggingDuplicateCommandHandlingMemberResolver() {
     }
 
-    public <T> MessageHandlingMember<? super T> resolve(Class<?> payloadType,
+    public <T> MessageHandlingMember<? super T> resolve(String commandName,
                                                         List<MessageHandlingMember<? super T>> messageHandlingMemberList) {
 
         String methods = messageHandlingMemberList.stream()
                                                   .map(item -> item.getTargetMethod() == null ?
-                                                          payloadType.getName() : item.getTargetMethod().toString())
+                                                          commandName : item.getTargetMethod().toString())
                                                   .collect(Collectors.joining(","));
-        logger.warn("Duplicate command handler members [{}] were found for command [{}]. ", methods, payloadType.getName());
+        logger.warn("Duplicate command handler members [{}] were found for command [{}]. ", methods, commandName);
         return messageHandlingMemberList.stream().findFirst().get();
     }
 }

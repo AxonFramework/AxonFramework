@@ -34,13 +34,13 @@ public interface DuplicateCommandHandlingMemberResolver {
      * Chooses what to do when multi handling member is detected, returning the handling member that should be selected
      * for command handling, or otherwise throwing an exception to reject registration altogether.
      *
-     * @param payloadType               The name of the Command for which the duplicates were detected
+     * @param commandName               The name of the Command for which the duplicates were detected
      * @param messageHandlingMemberList the {@link MessageHandlingMember} that is group of handler members handling same
      *                                  command
      * @return the resolved {@link MessageHandlingMember}. Could be one of the {@code messageHandlingMemberList} or
      *         another handling member entirely
      * @throws RuntimeException when initialize should fail
      */
-    <T> MessageHandlingMember<? super T> resolve(Class<?> payloadType,
+    <T> MessageHandlingMember<? super T> resolve(String commandName,
                                                  List<MessageHandlingMember<? super T>> messageHandlingMemberList);
 }

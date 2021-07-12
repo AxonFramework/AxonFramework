@@ -37,17 +37,17 @@ public class DuplicateCommandHandlingMemberException extends AxonNonTransientExc
      * Initialize a duplicate command handling member exception using the given {@code payloadType} and {@code
      * duplicateHandlerMembers} to form a specific message.
      *
-     * @param payloadType The payloadType of the command for which the duplicates were detected
+     * @param commandName The name of the command for which the duplicates were detected
      * @param duplicateHandlerMembers the duplicated {@link MessageHandler}
      */
-    public <T> DuplicateCommandHandlingMemberException(Class<?> payloadType,
+    public <T> DuplicateCommandHandlingMemberException(String commandName,
                                                        List<MessageHandlingMember<? super T>> duplicateHandlerMembers) {
         this(String.format("Multi command handler members [%s] were found for command [%s].",
                            duplicateHandlerMembers.stream()
                                                   .map(item -> item.getTargetMethod() == null ?
-                                                          payloadType.getName() : item.getTargetMethod().toString())
+                                                          commandName : item.getTargetMethod().toString())
                                                   .collect(Collectors.joining(",")),
-                           payloadType.getName()));
+                           commandName));
     }
 
     /**
