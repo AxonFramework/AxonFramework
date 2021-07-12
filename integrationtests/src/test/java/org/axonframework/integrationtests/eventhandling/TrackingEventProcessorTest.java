@@ -1868,6 +1868,8 @@ class TrackingEventProcessorTest {
         int segmentId = 0;
         int numberOfEvents = 750;
 
+        AtomicInteger delay = new AtomicInteger(0);
+
         //noinspection Duplicates
         doAnswer(i -> {
             EventMessage<?> message = i.getArgument(0);
@@ -1875,6 +1877,7 @@ class TrackingEventProcessorTest {
                 handledInRedelivery.add(message.getIdentifier());
             }
             handled.add(message.getIdentifier());
+            Thread.sleep(delay.get());
             return null;
         }).when(mockHandler).handle(any());
 
@@ -1889,10 +1892,13 @@ class TrackingEventProcessorTest {
         testSubject.resetTokens();
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
 
+        // set a processing delay to ensure we see some of the redelivery events first
+        delay.set(10);
+
         testSubject.start();
 
         assertWithin(
-                5, TimeUnit.MILLISECONDS,
+                100, TimeUnit.MILLISECONDS,
                 () -> {
                     assertFalse(testSubject.processingStatus().isEmpty());
                     assertFalse(testSubject.processingStatus().get(segmentId).isCaughtUp());
@@ -1900,6 +1906,10 @@ class TrackingEventProcessorTest {
                     assertTrue(testSubject.isReplaying());
                 }
         );
+
+        // remove the processing delay to rush to the end
+        delay.set(0);
+
         assertWithin(
                 1, TimeUnit.SECONDS,
                 () -> {
