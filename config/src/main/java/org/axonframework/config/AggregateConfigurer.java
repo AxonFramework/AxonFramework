@@ -471,7 +471,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     /**
      * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtypes
      * will be considered part of this aggregate's handlers.
-     z
      * @param subtypes subtypes in this polymorphic hierarchy
      * @return this configurer for fluent interfacing
      */
