@@ -1478,24 +1478,10 @@ class TrackingEventProcessorTest {
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         testSubject.shutDown();
-        // Perform assert done during resetTokens invocations to block calls whilst the processor is running
-        assertWithin(500, TimeUnit.MILLISECONDS,
-                     () -> assertTrue(!testSubject.isRunning() && testSubject.activeProcessorThreads() == 0));
-
-        // Sometimes a rogue processing thread hangs, even though we validate the number of active threads.
-        // Hence the reset is retried if it fails when the exceptions state it should've been shut down.
-        boolean resetFailed;
-        do {
-            try {
-                testSubject.resetTokens();
-                resetFailed = false;
-            } catch (IllegalStateException e) {
-                resetFailed = e.getMessage().contains("must be shut down before triggering a reset");
-            }
-        } while (resetFailed);
+        testSubject.resetTokens();
         publishEvents(10);
-
         testSubject.start();
+
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
