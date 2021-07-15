@@ -27,8 +27,8 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -59,7 +59,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DistributedCommandBus implements CommandBus, Distributed<CommandBus> {
+public class DistributedCommandBus implements CommandBus, Distributed<CommandBus>, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -113,7 +113,6 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * Disconnect the command bus for receiving new commands, by unsubscribing all registered command handlers. This
      * shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void disconnect() {
         commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
     }
@@ -125,9 +124,14 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return connector.initiateShutdown();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+        handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
+        handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
     }
 
     @Override
