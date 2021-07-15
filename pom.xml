@@ -68,12 +68,12 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.31</slf4j.version>
         <log4j.version>2.14.1</log4j.version>
-        <spring.version>5.3.8</spring.version>
+        <spring.version>5.3.9</spring.version>
         <spring-security.version>5.5.1</spring-security.version>
         <spring.boot.version>2.5.2</spring.boot.version>
         <mockito.version>3.11.2</mockito.version>
         <projectreactor.version>3.4.8</projectreactor.version>
-        <micrometer.version>1.7.1</micrometer.version>
+        <micrometer.version>1.7.2</micrometer.version>
         <dropwizard.metrics.version>4.2.2</dropwizard.metrics.version>
         <jackson.version>2.12.4</jackson.version>
         <!--
@@ -100,7 +100,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
         <hibernate-entitymanager.version>5.5.3.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.11.6</byte-buddy.version>
+        <byte-buddy.version>1.11.7</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.28.0-GA</javassist.version>
