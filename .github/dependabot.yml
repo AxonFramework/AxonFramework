@@ -16,6 +16,7 @@ updates:
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
+# Updates for `master`
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -32,3 +33,24 @@ updates:
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
+  # Patch and security updates for patch branches
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  ignore:
+    - dependency-name: "*"
+      update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+    - "Status: In Progress"
+    - "Target: 4.5.4"
+  milestone: 65
+  open-pull-requests-limit: 5
+  reviewers:
+    - "lfgcampos"
+    - "m1l4n54v1c"
+    - "saratry"
+    - "smcvb"
+  target-branch: "axon-4.5.x"
