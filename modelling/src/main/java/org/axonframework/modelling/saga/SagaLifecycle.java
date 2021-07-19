@@ -88,6 +88,13 @@ public abstract class SagaLifecycle extends Scope {
     }
 
     /**
+     * Marks the saga as ended. Ended saga's may be cleaned up by the repository when they are committed.
+     *
+     * @return the {@link SagaLifecycle} which needs to be ended
+     */
+    public static void end(SagaLifecycle sagaScope) { sagaScope.doEnd(); }
+
+    /**
      * {@link SagaLifecycle} instance method to mark the current saga as ended.
      */
     protected abstract void doEnd();
