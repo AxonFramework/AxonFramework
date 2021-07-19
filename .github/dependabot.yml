@@ -20,6 +20,9 @@ updates:
   directory: "/"
   schedule:
     interval: daily
+  ignore:
+    - dependency-name: "*"
+      update-types: [ "version-update:semver-patch" ]
   open-pull-requests-limit: 5
   labels:
     - "Type: Dependency Upgrade"
@@ -31,7 +34,7 @@ updates:
     - "m1l4n54v1c"
     - "saratry"
     - "smcvb"
-  # Patch and security updates for patch branches
+# Patch and security updates for patch branches
 - package-ecosystem: maven
   directory: "/"
   schedule:
