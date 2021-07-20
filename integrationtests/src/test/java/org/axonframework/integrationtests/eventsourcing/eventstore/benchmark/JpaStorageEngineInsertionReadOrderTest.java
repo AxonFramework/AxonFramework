@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,13 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -52,6 +51,8 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEv
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Integration test class validating the insertion order of events for the {@link JpaEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
 @ExtendWith(SpringExtension.class)
@@ -75,10 +76,6 @@ class JpaStorageEngineInsertionReadOrderTest {
     @BeforeEach
     void setUp() {
         txTemplate = new TransactionTemplate(tx);
-        txTemplate.execute(ts -> {
-            entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
-            return null;
-        });
         testSubject = JpaEventStorageEngine.builder()
                                            .snapshotSerializer(serializer)
                                            .eventSerializer(serializer)
@@ -86,6 +83,14 @@ class JpaStorageEngineInsertionReadOrderTest {
                                            .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
                                            .transactionManager(new SpringTransactionManager(tx))
                                            .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        txTemplate.execute(ts -> {
+            entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
+            return null;
+        });
     }
 
     @Test
@@ -100,7 +105,7 @@ class JpaStorageEngineInsertionReadOrderTest {
             thread.join();
         }
         assertEquals(expectedEventCount, readEvents.size(),
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
@@ -122,7 +127,7 @@ class JpaStorageEngineInsertionReadOrderTest {
             thread.join();
         }
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
@@ -158,7 +163,7 @@ class JpaStorageEngineInsertionReadOrderTest {
             thread.join();
         }
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     private Thread[] storeEvents(int threadCount, int eventsPerThread, int inverseRollbackRate) {
@@ -170,8 +175,9 @@ class JpaStorageEngineInsertionReadOrderTest {
                     final int s = j;
                     try {
                         txTemplate.execute(ts -> {
-                            testSubject.appendEvents(
-                                    createEvent(AGGREGATE, threadIndex * eventsPerThread + s, "Thread" + threadIndex));
+                            testSubject.appendEvents(createEvent(
+                                    AGGREGATE, (long) threadIndex * eventsPerThread + s, "Thread" + threadIndex
+                            ));
                             if (s % inverseRollbackRate == 0) {
                                 throw new RuntimeException("Rolling back on purpose");
                             }
