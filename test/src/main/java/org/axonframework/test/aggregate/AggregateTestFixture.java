@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -311,7 +311,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenState(Supplier<T> aggregate) {
-        clearGivenWhenState();
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
             if (repository == null) {
                 registerRepository(new InMemoryRepository<>(aggregateType,
@@ -329,6 +328,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                         e);
             }
         });
+        clearGivenWhenState();
         return this;
     }
 
