@@ -66,6 +66,7 @@ class UpcasterOrderingTest {
         InOrder upcasterOrder = inOrder(mockStream);
         upcasterOrder.verify(mockStream).sorted(); // Invoked in FirstUpcaster
         upcasterOrder.verify(mockStream).filter(any()); // Invoked in SecondUpcaster
+        upcasterOrder.verify(mockStream).distinct(); // Invoked in ThirdUpcaster
         upcasterOrder.verify(mockStream).map(any()); // Invoked in UnorderedUpcaster
     }
 
@@ -125,6 +126,24 @@ class UpcasterOrderingTest {
                 intermediateRepresentations.filter(ier -> true);
                 return intermediateRepresentations;
             }
+        }
+
+        @Bean
+        @Order(2)
+        public ThirdUpcaster someSecondUpcaster() {
+            return new ThirdUpcaster();
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static class ThirdUpcaster implements EventUpcaster {
+
+        @Override
+        public Stream<IntermediateEventRepresentation> upcast(
+                Stream<IntermediateEventRepresentation> intermediateRepresentations
+        ) {
+            intermediateRepresentations.distinct();
+            return intermediateRepresentations;
         }
     }
 }
