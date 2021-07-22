@@ -43,7 +43,9 @@ class Oracle11SagaSqlSchemaTest {
     private static final String PASSWORD = "oracle";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("oracleinanutshell/oracle-xe-11g:1.0.0");
+    private static final OracleContainer ORACLE_CONTAINER =
+            new OracleContainer("gvenzl/oracle-xe").withPassword(PASSWORD)
+                                                   .withEnv("ORACLE_PASSWORD", PASSWORD);
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
