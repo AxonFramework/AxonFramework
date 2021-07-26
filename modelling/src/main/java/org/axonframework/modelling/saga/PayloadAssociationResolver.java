@@ -62,17 +62,27 @@ public class PayloadAssociationResolver implements AssociationResolver {
     }
 
     private <T> Property createProperty(String associationPropertyName, MessageHandlingMember<T> handler) {
+        if (associationPropertyName.isEmpty()) {
+            throw new AxonConfigurationException(format(
+                    "SagaEventHandler %s does not define an association property",
+                    getHandlerName(handler)
+            ));
+        }
+
         Property<?> associationProperty = PropertyAccessStrategy.getProperty(handler.payloadType(),
                                                                              associationPropertyName);
         if (associationProperty == null) {
-            String handlerName = handler.unwrap(Executable.class).map(Executable::toGenericString).orElse("unknown");
             throw new AxonConfigurationException(format(
                     "SagaEventHandler %s defines a property %s that is not defined on the Event it declares to handle (%s)",
-                    handlerName,
+                    getHandlerName(handler),
                     associationPropertyName,
                     handler.payloadType().getName()
             ));
         }
         return associationProperty;
+    }
+
+    private String getHandlerName(MessageHandlingMember<?> handler) {
+        return handler.unwrap(Executable.class).map(Executable::toGenericString).orElse("unknown");
     }
 }
