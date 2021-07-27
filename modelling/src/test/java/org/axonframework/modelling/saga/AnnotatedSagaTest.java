@@ -72,6 +72,14 @@ class AnnotatedSagaTest {
     }
 
     @Test
+    void testInvokeSaga_AssociationPropertyEmpty() {
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> new AnnotationSagaMetaModelFactory().modelOf(SagaAssociationPropertyEmpty.class)
+        );
+    }
+
+    @Test
     void testInvokeSaga_MetaDataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
@@ -198,6 +206,15 @@ class AnnotatedSagaTest {
             super.handleStubDomainEvent(event);
             removeAssociationWith("propertyName", event.getPropertyName());
         }
+    }
+
+    private static class SagaAssociationPropertyEmpty {
+
+        @SuppressWarnings("unused")
+        @SagaEventHandler(associationProperty = "")
+        public void handleStubDomainEvent(EventWithoutProperties event) {
+        }
+
     }
 
     private static class RegularEvent {
