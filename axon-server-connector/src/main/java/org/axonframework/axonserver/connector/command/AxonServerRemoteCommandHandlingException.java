@@ -22,6 +22,7 @@ import org.axonframework.messaging.RemoteHandlingException;
 
 /**
  * Exception indicating a problem that was reported by the remote end of a connection.
+ * By default, stack trace is not generated.
  *
  * @author Marc Gathier
  * @since 4.0
@@ -38,7 +39,18 @@ public class AxonServerRemoteCommandHandlingException extends RemoteHandlingExce
      * @param errorMessage the message describing the exception on the remote end
      */
     public AxonServerRemoteCommandHandlingException(String errorCode, ErrorMessage errorMessage) {
-        super(new RemoteExceptionDescription(errorMessage.getDetailsList()));
+        this(errorCode, errorMessage, false);
+    }
+
+    /**
+     * Initialize the exception with given {@code errorCode}, {@code errorMessage} and {@code writableStackTrace}.
+     *
+     * @param errorCode          the code reported by the server
+     * @param errorMessage       the message describing the exception on the remote end
+     * @param writableStackTrace whether the stack trace should be generated ({@code true}) or not ({@code false}, this is a default)
+     */
+    public AxonServerRemoteCommandHandlingException(String errorCode, ErrorMessage errorMessage, boolean writableStackTrace) {
+        super(new RemoteExceptionDescription(errorMessage.getDetailsList()), writableStackTrace);
         this.errorCode = errorCode;
         this.server = errorMessage.getLocation();
     }
