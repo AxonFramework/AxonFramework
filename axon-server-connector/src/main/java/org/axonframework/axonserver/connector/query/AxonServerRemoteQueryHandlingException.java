@@ -21,7 +21,10 @@ import org.axonframework.messaging.RemoteExceptionDescription;
 import org.axonframework.messaging.RemoteHandlingException;
 
 /**
- * An AxonServer Exception which is thrown on a Query Handling exception. By default, stack trace is not generated.
+ * An AxonServer Exception which is thrown on a Query Handling exception.
+ * <p/>
+ * By default, a stack trace is not generated for this exception. However, the stack trace creation can be enforced explicitly
+ * via the constructor accepting the {@code writableStackTrace} parameter.
  *
  * @author Marc Gathier
  * @since 4.0
@@ -48,8 +51,7 @@ public class AxonServerRemoteQueryHandlingException extends RemoteHandlingExcept
      *
      * @param errorCode          a {@link String} defining the error code of this exception
      * @param message            an {@link ErrorMessage} describing the exception
-     * @param writableStackTrace whether the stack trace should be generated ({@code true}) or not ({@code false},
-     *                           this is a default)
+     * @param writableStackTrace whether the stack trace should be generated ({@code true}) or not ({@code false}
      */
     public AxonServerRemoteQueryHandlingException(String errorCode, ErrorMessage message, boolean writableStackTrace) {
         super(new RemoteExceptionDescription(message.getDetailsList()), writableStackTrace);

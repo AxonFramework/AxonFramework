@@ -50,8 +50,7 @@ public abstract class AxonException extends RuntimeException {
      *
      * @param message            The message describing the exception
      * @param cause              The underlying cause of the exception
-     * @param writableStackTrace Whether the stack trace should be generated ({@code true}, this is a default)
-     *                           or not ({@code false})
+     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
      */
     public AxonException(String message, Throwable cause, boolean writableStackTrace) {
         super(message, cause, true, writableStackTrace);

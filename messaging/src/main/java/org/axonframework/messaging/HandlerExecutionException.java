@@ -23,7 +23,10 @@ import java.util.Optional;
 /**
  * Base exception for exceptions raised by Handler methods. Besides standard exception information (such as message and
  * cause), these exception may optionally carry an object with additional application-specific details about the
- * exception. By default, stack trace is not generated.
+ * exception.
+ * <p/>
+ * By default, a stack trace is not generated for this exception. However, the stack trace creation can be enforced explicitly
+ * via the constructor accepting the {@code writableStackTrace} parameter.
  *
  * @author Allard Buize
  * @since 4.2
@@ -73,8 +76,7 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param message            A message describing the exception
      * @param cause              The cause of the execution exception
      * @param details            An object providing application-specific details of the exception
-     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not
-     *                           ({@code false}, this is a default)
+     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
      */
     public HandlerExecutionException(String message, Throwable cause, Object details, boolean writableStackTrace) {
         super(message, cause, writableStackTrace);
