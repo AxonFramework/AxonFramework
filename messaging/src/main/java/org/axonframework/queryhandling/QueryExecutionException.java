@@ -18,7 +18,10 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.HandlerExecutionException;
 
 /**
- * Exception indicating that the execution of a Query Handler has resulted in an exception
+ * Exception indicating that the execution of a Query Handler has resulted in an exception.
+ * <p/>
+ * By default, a stack trace is not generated for this exception. However, the stack trace creation can be enforced explicitly
+ * via the constructor accepting the {@code writableStackTrace} parameter.
  *
  * @author Marc Gathier
  * @since 3.1
@@ -38,13 +41,26 @@ public class QueryExecutionException extends HandlerExecutionException {
     }
 
     /**
-     * Initializes the exception with given {@code message} and {@code cause} and {@code details}.
+     * Initializes the exception with given {@code message}, {@code cause} and {@code details}.
      *
      * @param message Message explaining the context of the error
      * @param cause   The underlying cause of the invocation failure
-     * @param details An object providing more error details (may be {@code null}
+     * @param details An object providing more error details (may be {@code null})
      */
     public QueryExecutionException(String message, Throwable cause, Object details) {
         super(message, cause, details);
+    }
+
+    /**
+     * Initializes the exception with given {@code message}, {@code cause}, {@code details} and
+     * {@code writableStackTrace}
+     *
+     * @param message            Message explaining the context of the error
+     * @param cause              The underlying cause of the invocation failure
+     * @param details            An object providing more error details (may be {@code null})
+     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
+     */
+    public QueryExecutionException(String message, Throwable cause, Object details, boolean writableStackTrace) {
+        super(message, cause, details, writableStackTrace);
     }
 }
