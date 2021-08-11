@@ -1042,7 +1042,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 int[] tokenStoreCurrentSegments;
 
                 try {
-                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                    tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                            () -> {
+                                return tokenStore.fetchSegments(processorName);
+                            }
+                    );
 
                     // When in an initial stage, split segments to the requested number.
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
