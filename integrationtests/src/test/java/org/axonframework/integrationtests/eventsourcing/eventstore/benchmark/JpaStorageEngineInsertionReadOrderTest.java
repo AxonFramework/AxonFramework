@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.integrationtests.utils.TestSerializer;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -62,16 +62,15 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
 
-    private final Serializer serializer = XStreamSerializer.builder().build();
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
 
     @PersistenceContext
     private EntityManager entityManager;
-
     @Inject
     private PlatformTransactionManager tx;
+    private TransactionTemplate txTemplate;
 
     private BatchingEventStorageEngine testSubject;
-    private TransactionTemplate txTemplate;
 
     @BeforeEach
     void setUp() {
@@ -79,7 +78,6 @@ class JpaStorageEngineInsertionReadOrderTest {
         testSubject = JpaEventStorageEngine.builder()
                                            .snapshotSerializer(serializer)
                                            .eventSerializer(serializer)
-                                           .batchSize(20)
                                            .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
                                            .transactionManager(new SpringTransactionManager(tx))
                                            .build();
@@ -96,14 +94,18 @@ class JpaStorageEngineInsertionReadOrderTest {
     @Test
     @Timeout(value = 30)
     void testInsertConcurrentlyAndCheckReadOrder() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 7, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 7;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
+
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         List<TrackedEventMessage<?>> readEvents = readEvents(expectedEventCount);
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, readEvents.size(),
                      "The actually read list of events is shorted than the expected value");
     }
@@ -111,12 +113,16 @@ class JpaStorageEngineInsertionReadOrderTest {
     @Test
     @Timeout(value = 10)
     void testInsertConcurrentlyAndReadUsingBlockingStreams() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 2;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
-        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
+
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
+        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
+
         int counter = 0;
         while (counter < expectedEventCount) {
             if (readEvents.hasNextAvailable()) {
@@ -126,6 +132,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, counter,
                      "The actually read list of events is shorted than the expected value");
     }
@@ -133,24 +140,21 @@ class JpaStorageEngineInsertionReadOrderTest {
     @Test
     @Timeout(value = 30)
     void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
-        // Increase batch size to 100, which is the default of the JpaEventStorageEngine
-        testSubject = JpaEventStorageEngine.builder()
-                                           .snapshotSerializer(serializer)
-                                           .eventSerializer(serializer)
-                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                                           .transactionManager(new SpringTransactionManager(tx))
-                                           .build();
-        int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 4;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 2;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
-        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
+
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
                                                                   .storageEngine(testSubject)
                                                                   .cachedEvents(20)
                                                                   .fetchDelay(100)
                                                                   .cleanupDelay(1000)
                                                                   .build();
+        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
+
         int counter = 0;
         while (counter < expectedEventCount) {
             readEvents.nextAvailable();
@@ -162,6 +166,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, counter,
                      "The actually read list of events is shorted than the expected value");
     }
