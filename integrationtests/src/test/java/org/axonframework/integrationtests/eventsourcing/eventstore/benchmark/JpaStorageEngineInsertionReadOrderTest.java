@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -31,20 +32,29 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
@@ -57,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(locations = "classpath:/META-INF/spring/insertion-read-order-test-context.xml")
+@ContextConfiguration(classes = JpaStorageEngineInsertionReadOrderTest.TestContext.class)
 class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
@@ -159,6 +169,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         while (counter < expectedEventCount) {
             readEvents.nextAvailable();
             counter++;
+            logger.info("SLOW_CONSUMER Handling event #[{}]", counter);
             if (counter % 50 == 0) {
                 Thread.sleep(200);
             }
@@ -218,5 +229,50 @@ class JpaStorageEngineInsertionReadOrderTest {
             }
         }
         return result;
+    }
+
+    @Configuration
+    public static class TestContext {
+
+        @Bean
+        public ComboPooledDataSource dataSource() throws PropertyVetoException {
+            ComboPooledDataSource dataSource = new ComboPooledDataSource();
+            dataSource.setDriverClass("org.hsqldb.jdbcDriver");
+            dataSource.setJdbcUrl("jdbc:hsqldb:mem:address-book");
+            dataSource.setUser("sa");
+            dataSource.setMaxPoolSize(50);
+            dataSource.setMinPoolSize(1);
+            return dataSource;
+        }
+
+        @Bean
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+            LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
+            entityManagerFactory.setPersistenceUnitName("integrationtest");
+
+            HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+            vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
+            vendorAdapter.setShowSql(false);
+            entityManagerFactory.setJpaVendorAdapter(vendorAdapter);
+
+            HashMap<String, Object> jpaProperties = new HashMap<>();
+            jpaProperties.put("javax.persistence.schema-generation.database.action", "drop-and-create");
+            jpaProperties.put("hibernate.id.new_generator_mappings", true);
+            entityManagerFactory.setJpaPropertyMap(jpaProperties);
+
+            entityManagerFactory.setDataSource(dataSource);
+
+            return entityManagerFactory;
+        }
+
+        @Bean
+        public JpaTransactionManager transactionManager() {
+            return new JpaTransactionManager();
+        }
+
+        @Bean
+        public PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
+            return new PersistenceAnnotationBeanPostProcessor();
+        }
     }
 }
