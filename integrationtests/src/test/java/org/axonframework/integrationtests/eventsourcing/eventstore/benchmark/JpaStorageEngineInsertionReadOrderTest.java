@@ -49,6 +49,7 @@ import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -242,6 +243,9 @@ class JpaStorageEngineInsertionReadOrderTest {
             dataSource.setUser("sa");
             dataSource.setMaxPoolSize(50);
             dataSource.setMinPoolSize(1);
+            Properties dataSourceProperties = new Properties();
+            dataSourceProperties.setProperty("hsqldb.log_size", "0");
+            dataSource.setProperties(dataSourceProperties);
             return dataSource;
         }
 
