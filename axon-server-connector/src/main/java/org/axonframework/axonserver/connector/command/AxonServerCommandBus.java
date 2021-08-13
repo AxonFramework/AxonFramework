@@ -35,6 +35,8 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.common.StringUtils;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -54,6 +56,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -114,7 +117,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.priorityCalculator = builder.priorityCalculator;
         this.defaultCommandCallback = builder.defaultCommandCallback;
         this.loadFactorProvider = builder.loadFactorProvider;
-        String context = configuration.getContext();
+
+        String context;
+        if (StringUtils.nonEmptyOrNull(builder.defaultContext)) {
+            context = builder.defaultContext;
+        } else {
+            context = configuration.getContext();
+        }
+
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
         this.executorService = builder.executorServiceBuilder.apply(
@@ -311,6 +321,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
         private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
+        private String defaultContext;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -459,6 +470,18 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
+         * TODO
+         *
+         * @param defaultContext
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultContext(String defaultContext) {
+            assertNonEmpty(defaultContext, "The context may not be null or empty");
+            this.defaultContext = defaultContext;
+            return this;
+        }
+
+        /**
          * Initializes a {@link AxonServerCommandBus} as specified through this Builder.
          *
          * @return a {@link AxonServerCommandBus} as specified through this Builder
@@ -489,6 +512,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             assertNonNull(localSegment, "The Local CommandBus is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(routingStrategy, "The RoutingStrategy is a hard requirement and should be provided");
+            assertNonNull(defaultContext, "The default context is a hard requirement and should be provided");
         }
     }
 }
