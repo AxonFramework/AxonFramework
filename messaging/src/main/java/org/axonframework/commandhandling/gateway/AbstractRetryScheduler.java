@@ -153,11 +153,15 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             return scheduleRetry(dispatchTask, computeRetryInterval(commandMessage, lastFailure, failures));
         } else {
             if (failureCount >= maxRetryCount && logger.isInfoEnabled()) {
-                logger.info("Processing of Command [{}] resulted in an exception {} times. Giving up permanently. ",
+                logger.warn("Processing of Command [{}] resulted in an exception {} times. Giving up permanently. ",
                             commandMessage.getPayloadType().getSimpleName(), failureCount, lastFailure);
             } else if (logger.isInfoEnabled()) {
-                logger.info("Processing of Command [{}] resulted in an exception and will not be retried. ",
-                            commandMessage.getPayloadType().getSimpleName(), lastFailure);
+                logger.debug(
+                    "Processing of Command [{}] resulted in an exception and will not be retried. Exception was {}, {}",
+                    commandMessage.getPayloadType().getSimpleName(),
+                    lastFailure.getClass().getName(),
+                    lastFailure.getMessage()
+                );
             }
             return false;
         }
