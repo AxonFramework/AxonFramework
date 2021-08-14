@@ -87,6 +87,19 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
                                                  List<Class<? extends Throwable>[]> failures);
 
     /**
+     * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
+     * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
+     * occur again.
+     *
+     * @param failure the exception that occurred while processing a command
+     * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
+     * retried, or {@code false} when the command has a chance of succeeding if it retried.
+     */
+    protected boolean isExplicitlyNonTransient(Throwable failure) {
+        return ExceptionUtils.isExplicitlyNonTransient(failure);
+    }
+
+    /**
      * This is the entrypoint of the {@link RetryScheduler}. This default implementation checks if the last failure was
      * transient, and if so reschedules a command dispatch.
      *
@@ -103,7 +116,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
                                  List<Class<? extends Throwable>[]> failures,
                                  Runnable dispatchTask) {
         int failureCount = failures.size();
-        if (!ExceptionUtils.isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
+        if (!isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
             if (logger.isInfoEnabled()) {
                 logger.info("Processing of Command [{}] resulted in an exception. Will retry {} more time(s)... "
                                     + "Exception was {}, {}",
