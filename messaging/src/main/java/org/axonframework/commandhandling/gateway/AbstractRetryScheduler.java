@@ -18,15 +18,18 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ExceptionUtils;
+import org.axonframework.common.AxonNonTransientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -45,6 +48,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     private static final int DEFAULT_MAX_RETRIES = 1;
 
     private final ScheduledExecutorService retryExecutor;
+    private final Predicate<Throwable> nonTransientFailurePredicate;
+    private final List<Class<? extends Throwable>> nonTransientFailures;
     private final int maxRetryCount;
 
     /**
@@ -52,9 +57,12 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      *
      * @param builder the {@link Builder}
      */
+    @SuppressWarnings("unchecked")
     protected AbstractRetryScheduler(Builder builder) {
         builder.validate();
         this.retryExecutor = builder.retryExecutor;
+        this.nonTransientFailurePredicate = builder.nonTransientFailurePredicate;
+        this.nonTransientFailures = builder.nonTransientFailures;
         this.maxRetryCount = builder.maxRetryCount;
     }
 
@@ -90,13 +98,29 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
      * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
      * occur again.
+     * <p/>
+     * This implementation will test the {@code failure} with configured {@code nonTransientFailurePredicate}. If
+     * {@code nonTransientFailurePredicate} is not configured, implementation will check if any class from
+     * {@code nonTransientFailures} list is assignable from provided {@code failure}. By default,
+     * {@code nonTransientFailures} contains {@code AxonNonTransientException} class.
      *
      * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
      * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
     protected boolean isExplicitlyNonTransient(Throwable failure) {
-        return ExceptionUtils.isExplicitlyNonTransient(failure);
+        boolean isNonTransientFailure;
+
+        if (nonTransientFailurePredicate != null) {
+            isNonTransientFailure = nonTransientFailurePredicate.test(failure);
+        }
+        else {
+            isNonTransientFailure = nonTransientFailures
+                .stream()
+                .anyMatch(nonTransientFailure -> nonTransientFailure.isAssignableFrom(failure.getClass()));
+        }
+
+        return isNonTransientFailure || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
     }
 
     /**
@@ -149,6 +173,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
 
         private ScheduledExecutorService retryExecutor;
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
+        private Predicate<Throwable> nonTransientFailurePredicate = null;
+        private final List<Class<? extends Throwable>> nonTransientFailures = new ArrayList<>(Collections.singletonList(AxonNonTransientException.class));
 
         /**
          * Sets the {@link ScheduledExecutorService} used to schedule a command retry.
@@ -159,6 +185,42 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         public B retryExecutor(ScheduledExecutorService retryExecutor) {
             assertNonNull(retryExecutor, "ScheduledExecutorService may not be null");
             this.retryExecutor = retryExecutor;
+            // noinspection unchecked
+            return (B) this;
+        }
+
+        /**
+         * Sets the {@link Predicate} used for testing whether failure is transient (returns {@code false}) or not (returns {@code true}).
+         * <p/>
+         * Non-transient failures are never retried.
+         * <p/>
+         * If configured, {@code nonTransientFailures} list is ignored.
+         *
+         * @param nonTransientFailurePredicate a {@link Predicate} (accepting a {@link Throwable} parameter) used for testing transiency of provided failure
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public B nonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
+            this.nonTransientFailurePredicate = nonTransientFailurePredicate;
+            // noinspection unchecked
+            return (B) this;
+        }
+
+        /**
+         * Sets the list of throwable classes which will be considered as non-transient (including descendant throwable classes).
+         * <p/>
+         * Non-transient failures are never retried.
+         * <p/>
+         * It is ignored if {@code nonTransientFailurePredicate} is configured.
+         * <p/>
+         * By default, it is a list containing only {@code AxonNonTransientException} class.
+         *
+         * @param nonTransientFailures a list of throwable classes used for comparing and testing transiency of provided failure
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public B nonTransientFailures(List<Class<? extends Throwable>> nonTransientFailures) {
+            this.nonTransientFailures.clear();
+            this.nonTransientFailures.addAll(nonTransientFailures);
+
             // noinspection unchecked
             return (B) this;
         }
