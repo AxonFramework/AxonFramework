@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.BuilderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,6 +172,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * A builder class for the {@link RetryScheduler} implementations.
      * <p>
      * The default for {@code maxRetryCount} is set to a single retry.
+     * The default for {@code nonTransientFailures} is a list with a single {@code AxonNonTransientException} class.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder<B extends Builder> {
@@ -222,6 +224,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public B nonTransientFailures(List<Class<? extends Throwable>> nonTransientFailures) {
+            BuilderUtils.assertNonNull(nonTransientFailures, "The list of non-transient failure classes may not be null");
             this.nonTransientFailures.clear();
             this.nonTransientFailures.addAll(nonTransientFailures);
 

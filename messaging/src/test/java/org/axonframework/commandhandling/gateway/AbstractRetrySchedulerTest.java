@@ -70,7 +70,7 @@ public class AbstractRetrySchedulerTest {
 
   @Test
   void isExplicitlyNonTransient_configuredNonTransientFailurePredicate() {
-    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> false;
+    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> true;
 
     RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
         .builder()
@@ -78,10 +78,43 @@ public class AbstractRetrySchedulerTest {
         .nonTransientFailurePredicate(nonTransientFailurePredicate)
         .build();
 
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new Exception()),
+        "Per configuration, every exception should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new RuntimeException()),
+        "Per configuration, every exception should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException()),
+        "Per configuration, every exception should be treated as non-transient"
+    );
+  }
+
+  @Test
+  void isExplicitlyNonTransient_configuredNonTransientFailurePredicateAndNonTransientFailures() {
+    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> false;
+
+    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
+        .builder()
+        .retryExecutor(mock(ScheduledExecutorService.class))
+        .nonTransientFailurePredicate(nonTransientFailurePredicate)
+        .nonTransientFailures(Arrays.asList(AxonNonTransientException.class, CommandExecutionException.class))
+        .build();
+
     assertFalse(
         retrySchedulerStub.isExplicitlyNonTransient(new AxonNonTransientException("message") {}),
-        "With nonTransientFailurePredicate configured, default nonTransientFailures are ignored and " +
-        "AxonNonTransientException should be treated as transient"
+        "According to configured nonTransientFailurePredicate, all failures are transient. " +
+        "Configured nonTransientFailures list is ignored."
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("message", null, "details")),
+        "According to configured nonTransientFailurePredicate, all failures are transient. " +
+        "Configured nonTransientFailures list is ignored."
     );
   }
 
