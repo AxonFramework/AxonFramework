@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -24,94 +25,115 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.integrationtests.utils.TestSerializer;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Integration test class validating the insertion order of events for the {@link JpaEventStorageEngine}.
+ *
  * @author Rene de Waele
  */
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(locations = "classpath:/META-INF/spring/insertion-read-order-test-context.xml")
+@ContextConfiguration(classes = JpaStorageEngineInsertionReadOrderTest.TestContext.class)
 class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
 
-    private final Serializer serializer = XStreamSerializer.builder().build();
+    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
 
     @PersistenceContext
     private EntityManager entityManager;
-
     @Inject
     private PlatformTransactionManager tx;
+    private TransactionTemplate txTemplate;
 
     private BatchingEventStorageEngine testSubject;
-    private TransactionTemplate txTemplate;
 
     @BeforeEach
     void setUp() {
         txTemplate = new TransactionTemplate(tx);
-        txTemplate.execute(ts -> {
-            entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
-            return null;
-        });
         testSubject = JpaEventStorageEngine.builder()
                                            .snapshotSerializer(serializer)
                                            .eventSerializer(serializer)
-                                           .batchSize(20)
                                            .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
                                            .transactionManager(new SpringTransactionManager(tx))
                                            .build();
     }
 
+    @AfterEach
+    void tearDown() {
+        txTemplate.execute(ts -> {
+            entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
+            return null;
+        });
+    }
+
     @Test
     @Timeout(value = 30)
     void testInsertConcurrentlyAndCheckReadOrder() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 7, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 7;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
+
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         List<TrackedEventMessage<?>> readEvents = readEvents(expectedEventCount);
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, readEvents.size(),
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
     @Timeout(value = 10)
     void testInsertConcurrentlyAndReadUsingBlockingStreams() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 2;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
-        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
+
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
+        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
+
         int counter = 0;
         while (counter < expectedEventCount) {
             if (readEvents.hasNextAvailable()) {
@@ -121,35 +143,34 @@ class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     @Test
     @Timeout(value = 30)
     void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
-        // Increase batch size to 100, which is the default of the JpaEventStorageEngine
-        testSubject = JpaEventStorageEngine.builder()
-                                           .snapshotSerializer(serializer)
-                                           .eventSerializer(serializer)
-                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                                           .transactionManager(new SpringTransactionManager(tx))
-                                           .build();
-        int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
-                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 4;
+        int eventsPerThread = 100;
+        int inverseRollbackRate = 2;
+        int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
-        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
+
         EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
                                                                   .storageEngine(testSubject)
                                                                   .cachedEvents(20)
                                                                   .fetchDelay(100)
                                                                   .cleanupDelay(1000)
                                                                   .build();
+        Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
+
         int counter = 0;
         while (counter < expectedEventCount) {
             readEvents.nextAvailable();
             counter++;
+            logger.info("SLOW_CONSUMER Handling event #[{}]", counter);
             if (counter % 50 == 0) {
                 Thread.sleep(200);
             }
@@ -157,8 +178,9 @@ class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
+
         assertEquals(expectedEventCount, counter,
-                "The actually read list of events is shorted than the expected value");
+                     "The actually read list of events is shorted than the expected value");
     }
 
     private Thread[] storeEvents(int threadCount, int eventsPerThread, int inverseRollbackRate) {
@@ -170,8 +192,9 @@ class JpaStorageEngineInsertionReadOrderTest {
                     final int s = j;
                     try {
                         txTemplate.execute(ts -> {
-                            testSubject.appendEvents(
-                                    createEvent(AGGREGATE, threadIndex * eventsPerThread + s, "Thread" + threadIndex));
+                            testSubject.appendEvents(createEvent(
+                                    AGGREGATE, (long) threadIndex * eventsPerThread + s, "Thread" + threadIndex
+                            ));
                             if (s % inverseRollbackRate == 0) {
                                 throw new RuntimeException("Rolling back on purpose");
                             }
@@ -207,5 +230,53 @@ class JpaStorageEngineInsertionReadOrderTest {
             }
         }
         return result;
+    }
+
+    @Configuration
+    public static class TestContext {
+
+        @Bean
+        public ComboPooledDataSource dataSource() throws PropertyVetoException {
+            ComboPooledDataSource dataSource = new ComboPooledDataSource();
+            dataSource.setDriverClass("org.hsqldb.jdbcDriver");
+            dataSource.setJdbcUrl("jdbc:hsqldb:mem:address-book");
+            dataSource.setUser("sa");
+            dataSource.setMaxPoolSize(50);
+            dataSource.setMinPoolSize(1);
+            Properties dataSourceProperties = new Properties();
+            dataSourceProperties.setProperty("hsqldb.log_size", "0");
+            dataSource.setProperties(dataSourceProperties);
+            return dataSource;
+        }
+
+        @Bean
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+            LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
+            entityManagerFactory.setPersistenceUnitName("integrationtest");
+
+            HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+            vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
+            vendorAdapter.setShowSql(false);
+            entityManagerFactory.setJpaVendorAdapter(vendorAdapter);
+
+            HashMap<String, Object> jpaProperties = new HashMap<>();
+            jpaProperties.put("javax.persistence.schema-generation.database.action", "drop-and-create");
+            jpaProperties.put("hibernate.id.new_generator_mappings", true);
+            entityManagerFactory.setJpaPropertyMap(jpaProperties);
+
+            entityManagerFactory.setDataSource(dataSource);
+
+            return entityManagerFactory;
+        }
+
+        @Bean
+        public JpaTransactionManager transactionManager() {
+            return new JpaTransactionManager();
+        }
+
+        @Bean
+        public PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
+            return new PersistenceAnnotationBeanPostProcessor();
+        }
     }
 }

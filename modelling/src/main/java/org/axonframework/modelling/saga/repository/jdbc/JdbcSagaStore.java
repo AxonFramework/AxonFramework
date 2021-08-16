@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -40,13 +39,18 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
-
 /**
- * Jdbc implementation of the {@link SagaStore}.
+ * A {@link SagaStore} implementation that uses JDBC to store and find Saga instances.
+ * <p>
+ * Before using this store make sure the database contains an association value- and saga entry table. These can be
+ * constructed with {@link SagaSqlSchema#sql_createTableAssocValueEntry(Connection)} and {@link
+ * SagaSqlSchema#sql_createTableSagaEntry(Connection)} respectively. For convenience, these tables can be constructed
+ * through the {@link JdbcSagaStore#createSchema()} operation.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
@@ -280,9 +284,9 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Creates the SQL Schema required to store Sagas and their associations,.
+     * Creates the SQL Schema required to store Sagas and their associations.
      *
-     * @throws SQLException When an error occurs preparing of executing the required statements
+     * @throws SQLException when an error occurs preparing of executing the required statements
      */
     public void createSchema() throws SQLException {
         final Connection connection = connectionProvider.getConnection();

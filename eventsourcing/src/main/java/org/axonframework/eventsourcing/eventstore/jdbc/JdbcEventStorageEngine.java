@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,10 +82,15 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * EventStorageEngine implementation that uses JDBC to store and fetch events.
+ * An {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation that uses JDBC to store and
+ * fetch events.
  * <p>
- * By default the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
- * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
+ * By default, it stores the payload of events as a serialized blob of bytes. It uses other columns to store meta-data
+ * that allows quick finding of DomainEvents for a specific aggregate in the correct order.
+ * <p>
+ * Before using this store make sure the database contains a table named {@link EventSchema#domainEventTable()} and
+ * {@link EventSchema#snapshotTable()} in which to store events and snapshots in respectively. For convenience, these
+ * tables can be constructed through the {@link JdbcEventStorageEngine#createSchema(EventTableFactory)} operation.
  *
  * @author Rene de Waele
  * @since 3.0
