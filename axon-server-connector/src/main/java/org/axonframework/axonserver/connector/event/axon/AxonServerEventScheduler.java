@@ -215,7 +215,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     }
 
     private EventChannel eventChannel() {
-        return axonServerConnectionManager.getConnection().eventChannel();
+        return axonServerConnectionManager.getConnection().eventChannel(); //todo multicontext setup
     }
 
     private Event toEvent(Object event) {

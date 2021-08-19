@@ -111,6 +111,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
+    @ConditionalOnProperty(name = "axon.axonserver.auto-configure-command-bus", matchIfMissing = true)
     public AxonServerCommandBus axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
                                                      AxonServerConfiguration axonServerConfiguration,
                                                      @Qualifier("localSegment") CommandBus localSegment,
