@@ -28,6 +28,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.StringUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.DomainEventData;
@@ -177,6 +178,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         private Supplier<Serializer> eventSerializer;
         private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private SnapshotFilter snapshotFilter;
+        private String defaultContext;
 
         @Override
         public Builder storageEngine(EventStorageEngine storageEngine) {
@@ -256,6 +258,12 @@ public class AxonServerEventStore extends AbstractEventStore {
         public Builder eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The Event Serializer may not be null");
             this.eventSerializer = () -> eventSerializer;
+            return this;
+        }
+
+        public Builder defaultContext(String defaultContext) {
+            assertNonNull(defaultContext, "The default context may not be null");
+            this.defaultContext = defaultContext;
             return this;
         }
 
@@ -348,11 +356,12 @@ public class AxonServerEventStore extends AbstractEventStore {
                           "The PlatformConnectionManager is a hard requirement and should be provided");
 
             super.storageEngine(AxonIQEventStorageEngine.builder()
-                                                        .snapshotSerializer(snapshotSerializer.get())
-                                                        .upcasterChain(upcasterChain)
-                                                        .snapshotFilter(snapshotFilter)
-                                                        .eventSerializer(eventSerializer.get())
-                                                        .configuration(configuration)
+                    .snapshotSerializer(snapshotSerializer.get())
+                    .upcasterChain(upcasterChain)
+                    .snapshotFilter(snapshotFilter)
+                    .eventSerializer(eventSerializer.get())
+                    .configuration(configuration)
+                    .defaultContext(defaultContext)
                                                         .eventStoreClient(axonServerConnectionManager)
                                                         .converter(new GrpcMetaDataConverter(eventSerializer.get()))
                                                         .build());
@@ -391,7 +400,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         private AxonIQEventStorageEngine(Builder builder) {
-            this(builder, builder.configuration.getContext());
+            this(builder, StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : builder.configuration.getContext());
         }
 
         private AxonIQEventStorageEngine(Builder builder, String context) {
@@ -709,6 +718,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             private AxonServerConfiguration configuration;
             private AxonServerConnectionManager connectionManager;
             private GrpcMetaDataConverter converter;
+            private String defaultContext;
 
             @Override
             public Builder snapshotSerializer(Serializer snapshotSerializer) {
@@ -767,6 +777,12 @@ public class AxonServerEventStore extends AbstractEventStore {
             private Builder configuration(AxonServerConfiguration configuration) {
                 assertNonNull(configuration, "AxonServerConfiguration may not be null");
                 this.configuration = configuration;
+                return this;
+            }
+
+
+            private Builder defaultContext(String defaultContext) {
+                this.defaultContext = defaultContext;
                 return this;
             }
 
