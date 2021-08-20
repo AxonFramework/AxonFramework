@@ -7,6 +7,7 @@ jobs:
   build:
     name: Test and Build on JDK ${{ matrix.java-version }}
     runs-on: ubuntu-latest
+    continue-on-error: true # do not fail the whole job if one of the steps fails
     strategy:
       matrix:
         include:
