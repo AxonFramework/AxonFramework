@@ -51,10 +51,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     /**
      * Instantiate a Builder to be able to create a {@link XStreamSerializer}.
      * <p>
-     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a
-     * {@link CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the
-     * {@code UTF-8} character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and
-     * the {@link Converter} defaults to a {@link ChainingConverter}.
+     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a {@link
+     * CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8}
+     * character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link
+     * Converter} defaults to a {@link ChainingConverter}. Lastly, the builder adds Axon types for XStream's security
+     * settings by including {@code "org.axonframework.**} as a wildcard type. This can be disabled with the {@link
+     * Builder#disableAxonTypeSecurity()} operation when required.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link org.axonframework.commandhandling.GenericCommandMessage} and the
@@ -73,10 +75,11 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     /**
      * Instantiate a default {@link XStreamSerializer}.
      * <p>
-     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a
-     * {@link CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the
-     * {@code UTF-8} character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and
-     * the {@link Converter} defaults to a {@link ChainingConverter}.
+     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a {@link
+     * CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8}
+     * character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link
+     * Converter} defaults to a {@link ChainingConverter}. Lastly, the builder adds Axon types for XStream's security
+     * settings by including {@code "org.axonframework.**} as a wildcard type.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link org.axonframework.commandhandling.GenericCommandMessage} and the
@@ -134,10 +137,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     /**
      * Builder class to instantiate a {@link XStreamSerializer}.
      * <p>
-     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a
-     * {@link CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the
-     * {@code UTF-8} character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and
-     * the {@link Converter} defaults to a {@link ChainingConverter}.
+     * The {@link XStream} is defaulted to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing a {@link
+     * CompactDriver}, the {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8}
+     * character set, the {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link
+     * Converter} defaults to a {@link ChainingConverter}. Lastly, the builder adds Axon types for XStream's security
+     * settings by including {@code "org.axonframework.**} as a wildcard type. This can be disabled with the {@link
+     * Builder#disableAxonTypeSecurity()} operation when required.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the
@@ -191,6 +196,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         @Override
         public Builder lenientDeserialization() {
             super.lenientDeserialization();
+            return this;
+        }
+
+        @Override
+        public Builder disableAxonTypeSecurity() {
+            super.disableAxonTypeSecurity();
             return this;
         }
 

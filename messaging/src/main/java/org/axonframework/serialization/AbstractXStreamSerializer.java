@@ -257,6 +257,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * The {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8} character set, the
      * {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link Converter} defaults to
      * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
+     * Lastly, the builder adds Axon types for XStream's security settings by including {@code "org.axonframework.**} as
+     * a wildcard type. This can be disabled with the {@link Builder#disableAxonTypeSecurity()} operation when
+     * required.
      * <p>
      * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
      * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among
@@ -272,6 +275,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private boolean lenientDeserialization = false;
+        private boolean axonTypeSecurity = true;
         private ClassLoader classLoader;
 
         /**
@@ -354,6 +358,21 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         }
 
         /**
+         * Configures the underlying {@link XStream} instance to <b>not</b> include Axon's classes by default.
+         * Concretely, the {@link XStream#allowTypesByWildcard(String[])} method will not be invoked with {@code
+         * "org.axonframework.**"}.
+         * <p>
+         * It is recommended to disable this setting when complete control is required over the allowed types in this
+         * serializer's {@code XStream} instance.
+         *
+         * @return the current Builder instance for fluent interfacing
+         */
+        public Builder disableAxonTypeSecurity() {
+            this.axonTypeSecurity = false;
+            return this;
+        }
+
+        /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
@@ -366,6 +385,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             }
             if (classLoader != null) {
                 xStream.setClassLoader(classLoader);
+            }
+            if (axonTypeSecurity) {
+                xStream.allowTypesByWildcard(new String[]{"org.axonframework.**"});
             }
         }
     }

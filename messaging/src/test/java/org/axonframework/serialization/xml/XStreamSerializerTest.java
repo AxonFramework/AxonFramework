@@ -55,7 +55,7 @@ class XStreamSerializerTest {
 
     @BeforeEach
     void setUp() {
-        this.testSubject = XStreamSerializer.builder().build();
+        this.testSubject = XStreamSerializer.defaultSerializer();
         this.testEvent = new TestEvent(REGULAR_STRING);
     }
 
@@ -225,15 +225,35 @@ class XStreamSerializerTest {
 
     @Test
     void testUnknownPropertiesFailDeserializationByDefault() {
-        testSubject = XStreamSerializer.builder()
-                                       .build();
+        testSubject = XStreamSerializer.defaultSerializer();
+
         SerializedObject<Document> serialized = testSubject.serialize(testEvent, Document.class);
         Document data = serialized.getData();
         data.getRootElement().addElement("unknown").setText("Ignored");
 
-        assertThrows(AbstractReflectionConverter.UnknownFieldException.class, () -> {
-            testSubject.deserialize(new SimpleSerializedObject<>(data, Document.class, serialized.getType()));
-        });
+        assertThrows(
+                AbstractReflectionConverter.UnknownFieldException.class,
+                () -> testSubject.deserialize(new SimpleSerializedObject<>(data, Document.class, serialized.getType()))
+        );
+    }
+
+    @Test
+    void testDisableAxonTypeSecurity() {
+        XStream xStream = mock(XStream.class);
+
+        XStreamSerializer.builder()
+                         .xStream(xStream)
+                         .disableAxonTypeSecurity()
+                         .build();
+
+        verify(xStream, times(0)).allowTypesByWildcard(eq(new String[]{"org.axonframework.**"}));
+
+        // Axon types are added as wildcards by default.
+        XStreamSerializer.builder()
+                         .xStream(xStream)
+                         .build();
+
+        verify(xStream).allowTypesByWildcard(eq(new String[]{"org.axonframework.**"}));
     }
 
     @Revision("2")
