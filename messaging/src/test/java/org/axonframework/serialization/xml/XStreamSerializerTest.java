@@ -250,14 +250,14 @@ class XStreamSerializerTest {
                          .disableAxonTypeSecurity()
                          .build();
 
-        verify(xStream, times(0)).allowTypesByWildcard(eq(new String[]{"org.axonframework.**"}));
+        verify(xStream, times(0)).allowTypesByWildcard(new String[]{"org.axonframework.**"});
 
         // Axon types are added as wildcards by default.
         XStreamSerializer.builder()
                          .xStream(xStream)
                          .build();
 
-        verify(xStream).allowTypesByWildcard(eq(new String[]{"org.axonframework.**"}));
+        verify(xStream).allowTypesByWildcard(new String[]{"org.axonframework.**"});
     }
 
     @Revision("2")
