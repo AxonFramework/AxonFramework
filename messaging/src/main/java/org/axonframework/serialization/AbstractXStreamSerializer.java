@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,8 +186,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * Add an alias for a package. This allows long package names to be shortened considerably. Will also use the alias
      * for sub-packages of the provided package.
      * <p/>
-     * E.g. an alias of "axoncore" for the package "org.axonframework.core" will use "axoncore.repository" for the
-     * package "org.axonframework.core.repository".
+     * E.g. an alias of "axon-modelling" for the package "org.axonframework.modelling" will use "axon-modelling.command"
+     * for the package "org.axonframework.modelling.command".
      *
      * @param alias   The alias to use.
      * @param pkgName The package to use the alias for
@@ -214,7 +214,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
-     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
@@ -231,8 +230,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Returns the Converter used by this serialized. The converter factory allows registration of
-     * ContentTypeConverters needed by the upcasters.
+     * Returns the Converter used by this serialized. The converter factory allows registration of ContentTypeConverters
+     * needed by the upcasters.
      *
      * @return the Converter used by this serializer
      */
@@ -261,12 +260,12 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * a wildcard type. This can be disabled with the {@link Builder#disableAxonTypeSecurity()} operation when
      * required.
      * <p>
-     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
-     * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among
-     * others. Additionally, a MetaData Converter is registered too. Lastly, if the provided Converter instance
-     * is of type ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)}
-     * function will be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter
-     * instances to the chain.
+     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the {@link
+     * GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among others.
+     * Additionally, a MetaData Converter is registered too. Lastly, if the provided Converter instance is of type
+     * ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)} function will
+     * be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter instances to the
+     * chain.
      */
     public abstract static class Builder {
 
@@ -305,8 +304,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
-         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the
-         * {@link org.axonframework.serialization.Revision} annotation on the serialized classes.
+         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the {@link
+         * org.axonframework.serialization.Revision} annotation on the serialized classes.
          *
          * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
          *                         serialized
@@ -320,8 +319,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
 
         /**
-         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters
-         * to convert between different content types. Defaults to a {@link ChainingConverter}.
+         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters to
+         * convert between different content types. Defaults to a {@link ChainingConverter}.
          *
          * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
          *                  upcasters to convert between different content types
