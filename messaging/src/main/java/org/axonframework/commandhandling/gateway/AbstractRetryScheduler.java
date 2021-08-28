@@ -18,14 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.common.BuilderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,7 +46,6 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
 
     private final ScheduledExecutorService retryExecutor;
     private final Predicate<Throwable> nonTransientFailurePredicate;
-    private final List<Class<? extends Throwable>> nonTransientFailures;
     private final int maxRetryCount;
 
     /**
@@ -63,7 +58,6 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         builder.validate();
         this.retryExecutor = builder.retryExecutor;
         this.nonTransientFailurePredicate = builder.nonTransientFailurePredicate;
-        this.nonTransientFailures = builder.nonTransientFailures;
         this.maxRetryCount = builder.maxRetryCount;
     }
 
@@ -100,27 +94,16 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
      * occur again.
      * <p/>
-     * This implementation will test the {@code failure} with configured {@code nonTransientFailurePredicate}. If
-     * {@code nonTransientFailurePredicate} is not configured, implementation will check if any class from
-     * {@code nonTransientFailures} list is assignable from provided {@code failure}. By default,
-     * {@code nonTransientFailures} contains {@code AxonNonTransientException} class.
+     * In this implementation, given {@code failure} (and its causes) is tested against configured composable
+     * {@code nonTransientFailurePredicate}. By default, {@code nonTransientFailurePredicate} is configured only
+     * with {@link DefaultNonTransientPredicate}.
      *
      * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
      * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
     protected boolean isExplicitlyNonTransient(Throwable failure) {
-        boolean isNonTransientFailure;
-
-        if (nonTransientFailurePredicate != null) {
-            isNonTransientFailure = nonTransientFailurePredicate.test(failure);
-        }
-        else {
-            isNonTransientFailure = nonTransientFailures
-                .stream()
-                .anyMatch(nonTransientFailure -> nonTransientFailure.isAssignableFrom(failure.getClass()));
-        }
-
+        boolean isNonTransientFailure = nonTransientFailurePredicate.test(failure);
         return isNonTransientFailure || (failure.getCause() != null && isExplicitlyNonTransient(failure.getCause()));
     }
 
@@ -172,15 +155,14 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * A builder class for the {@link RetryScheduler} implementations.
      * <p>
      * The default for {@code maxRetryCount} is set to a single retry.
-     * The default for {@code nonTransientFailures} is a list with a single {@code AxonNonTransientException} class.
+     * The default for {@code nonTransientFailurePredicate} is set to {@link DefaultNonTransientPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder<B extends Builder> {
 
         private ScheduledExecutorService retryExecutor;
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
-        private Predicate<Throwable> nonTransientFailurePredicate = null;
-        private final List<Class<? extends Throwable>> nonTransientFailures = new ArrayList<>(Collections.singletonList(AxonNonTransientException.class));
+        private Predicate<Throwable> nonTransientFailurePredicate = new DefaultNonTransientPredicate();
 
         /**
          * Sets the {@link ScheduledExecutorService} used to schedule a command retry.
@@ -191,42 +173,105 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         public B retryExecutor(ScheduledExecutorService retryExecutor) {
             assertNonNull(retryExecutor, "ScheduledExecutorService may not be null");
             this.retryExecutor = retryExecutor;
-            // noinspection unchecked
+
+            //noinspection unchecked
             return (B) this;
         }
 
         /**
-         * Sets the {@link Predicate} used for testing whether failure is transient (returns {@code false}) or not (returns {@code true}).
+         * Resets the {@link Predicate} chain used for checking non-transiency of a failure. Throws away any previously
+         * existing predicate chain and replaces it with the provided predicate.
          * <p/>
-         * Non-transient failures are never retried.
-         * <p/>
-         * If configured, {@code nonTransientFailures} list is ignored.
+         * Provided {@code nonTransientFailurePredicate} checks whether a failure is transient (predicate returns
+         * {@code false}) or not (predicate returns {@code true}). Non-transient failures are never retried.
          *
-         * @param nonTransientFailurePredicate a {@link Predicate} (accepting a {@link Throwable} parameter) used for testing transiency of provided failure
+         * @param nonTransientFailurePredicate a {@link Predicate} (accepting a {@link Throwable} parameter) used for
+         *                                     testing transiency of provided failure
          * @return the current Builder instance, for fluent interfacing
          */
         public B nonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
+            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
             this.nonTransientFailurePredicate = nonTransientFailurePredicate;
+
             // noinspection unchecked
             return (B) this;
         }
 
         /**
-         * Sets the list of throwable classes which will be considered as non-transient (including descendant throwable classes).
+         * Resets the {@link Predicate} chain used for checking non-transiency of a failure. Throws away any previously
+         * existing predicate chain and replaces it with the provided predicate.
          * <p/>
-         * Non-transient failures are never retried.
+         * Provided {@code nonTransientFailurePredicate} checks whether a failure is transient (predicate returns
+         * {@code false}) or not (predicate returns {@code true}). Non-transient failures are never retried.
          * <p/>
-         * It is ignored if {@code nonTransientFailurePredicate} is configured.
-         * <p/>
-         * By default, it is a list containing only {@code AxonNonTransientException} class.
+         * In essence, this is just a failure typed variant of {@link #nonTransientFailurePredicate(Predicate)} method.
          *
-         * @param nonTransientFailures a list of throwable classes used for comparing and testing transiency of provided failure
+         * @param failureType concrete class of the failure to handle
+         * @param nonTransientFailurePredicate a {@link Predicate} (accepting a {@code failureType} parameter) used
+         *                                     for testing transiency of provided failure
+         * @param <E> type of the failure to handle
          * @return the current Builder instance, for fluent interfacing
          */
-        public B nonTransientFailures(List<Class<? extends Throwable>> nonTransientFailures) {
-            BuilderUtils.assertNonNull(nonTransientFailures, "The list of non-transient failure classes may not be null");
-            this.nonTransientFailures.clear();
-            this.nonTransientFailures.addAll(nonTransientFailures);
+        public <E extends Throwable> B nonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
+            assertNonNull(failureType, "Class of failure type may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+
+            //noinspection Convert2MethodRef
+            Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
+
+            // noinspection unchecked
+            this.nonTransientFailurePredicate = ((Predicate<Throwable>)typeCheckPredicate.and(nonTransientFailurePredicate));
+
+            // noinspection unchecked
+            return (B) this;
+        }
+
+        /**
+         * Adds additional predicate into the predicate chain for checking non-transiency of a failure.
+         * <p/>
+         * Provided {@code nonTransientFailurePredicate} is set on the beginning of the predicate chain with
+         * {@code or} operator.
+         *
+         * @param nonTransientFailurePredicate an additional {@link Predicate} (accepting a {@link Throwable}
+         *                                     parameter) to be added into the predicate chain used for
+         *                                     testing transiency of provided failure
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public B addNonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
+            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+            this.nonTransientFailurePredicate = nonTransientFailurePredicate.or(this.nonTransientFailurePredicate);
+
+            // noinspection unchecked
+            return (B) this;
+        }
+
+        /**
+         * Adds additional predicate into the predicate chain for checking non-transiency of a failure.
+         * <p/>
+         * Provided {@code nonTransientFailurePredicate} is set on the beginning of the predicate chain with
+         * {@code or} operator.
+         * <p/>
+         * In essence, this is just a failure typed variant of {@link #addNonTransientFailurePredicate(Predicate)}
+         * method.
+         *
+         * @param failureType concrete class of the failure to handle
+         * @param nonTransientFailurePredicate an additional {@link Predicate} (accepting a {@code failure}
+         *                                     parameter) to be added into the predicate chain used for testing
+         *                                     transiency of provided failure
+         * @param <E> type of the failure to handle
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public <E extends Throwable> B addNonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
+            assertNonNull(failureType, "Class of failure type may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+
+            // noinspection Convert2MethodRef
+            Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
+
+            //noinspection unchecked
+            Predicate<Throwable> typeCheckingNonTransientFailurePredicate = ((Predicate<Throwable>)typeCheckPredicate.and(nonTransientFailurePredicate));
+
+            this.nonTransientFailurePredicate = typeCheckingNonTransientFailurePredicate.or(this.nonTransientFailurePredicate);
 
             // noinspection unchecked
             return (B) this;
@@ -241,6 +286,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
         public B maxRetryCount(int maxRetryCount) {
             assertStrictPositive(maxRetryCount, "The maxRetryCount must be a positive number");
             this.maxRetryCount = maxRetryCount;
+
             // noinspection unchecked
             return (B) this;
         }

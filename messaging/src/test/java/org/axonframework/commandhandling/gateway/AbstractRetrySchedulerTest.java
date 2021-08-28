@@ -5,7 +5,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonNonTransientException;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,11 +49,120 @@ public class AbstractRetrySchedulerTest {
   }
 
   @Test
-  void isExplicitlyNonTransient_configuredNonTransientFailures() {
+  void isExplicitlyNonTransient_defaults_and_addNonTransientFailures() {
     RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
         .builder()
         .retryExecutor(mock(ScheduledExecutorService.class))
-        .nonTransientFailures(Arrays.asList(AxonNonTransientException.class, CommandExecutionException.class))
+        .addNonTransientFailurePredicate(new NonTransientClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class))
+        .build();
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new AxonNonTransientException("message") {}),
+        "AxonNonTransientException should be treated as non-transient by default"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("message", null)),
+        "Per configuration, CommandExecutionException should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("message", null)),
+        "Per configuration, IllegalArgumentException should be treated as non-transient"
+    );
+  }
+
+  @Test
+  void isExplicitlyNonTransient_nonTransientFailurePredicate_throwable() {
+    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> "I'm non-transient failure".equals(failure.getMessage());
+
+    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
+        .builder()
+        .retryExecutor(mock(ScheduledExecutorService.class))
+        .nonTransientFailurePredicate(nonTransientFailurePredicate)
+        .build();
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new Exception()),
+        "Per configuration, failures without appropriate message are not considered as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new Exception("a message")),
+        "Per configuration, failures without appropriate message are not considered as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new Exception("I'm non-transient failure")),
+        "Per configuration, only failures with appropriate message should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new RuntimeException("a message", new NullPointerException("I'm non-transient failure"))),
+        "Per configuration, only failures with appropriate message should be treated as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new Exception("a message", new IllegalArgumentException("a message"))),
+        "Per configuration, failures without appropriate message are not considered as non-transient"
+    );
+  }
+
+  @Test
+  void isExplicitlyNonTransient_nonTransientFailurePredicate_generics() {
+    Predicate<IllegalArgumentException> nonTransientFailurePredicate = (failure) -> "I'm non-transient IllegalArgumentException failure".equals(failure.getMessage());
+
+    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
+        .builder()
+        .retryExecutor(mock(ScheduledExecutorService.class))
+        .nonTransientFailurePredicate(IllegalArgumentException.class, nonTransientFailurePredicate)
+        .build();
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException()),
+        "Per configuration, IllegalArgumentException is transient only if their message says so"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("something")),
+        "Per configuration, IllegalArgumentException is transient only if their message says so"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("I'm non-transient IllegalArgumentException failure")),
+        "Per configuration, IllegalArgumentException with \"I'm non-transient IllegalArgumentException failure\" message should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("message", new IllegalArgumentException("I'm non-transient IllegalArgumentException failure"))),
+        "Per configuration, IllegalArgumentException with \"I'm non-transient IllegalArgumentException failure\" message should be treated as non-transient"
+    );
+
+    // Here we are checking if non-castable failure types in predicate can cause problems - start
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new RuntimeException()),
+        "Per configuration, only IllegalArgumentException with appropriate message is treated as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("a message", new RuntimeException())),
+        "Per configuration, only IllegalArgumentException with appropriate message is treated as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException(null, null)),
+        "Per configuration, only IllegalArgumentException with appropriate message is treated as non-transient"
+    );
+    // Here we are checking if non-castable failure types in predicate can cause problems - end
+  }
+
+  @Test
+  void isExplicitlyNonTransient_nonTransientFailurePredicate_and_addNonTransientFailures() {
+    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
+        .builder()
+        .retryExecutor(mock(ScheduledExecutorService.class))
+        .nonTransientFailurePredicate(new DefaultNonTransientPredicate()) // Not really needed (as this is a default), but added for clarity and explicitness.
+        .addNonTransientFailurePredicate(new NonTransientClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class))
         .build();
 
     assertTrue(
@@ -66,84 +174,58 @@ public class AbstractRetrySchedulerTest {
         retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("message", null)),
         "Per configuration, CommandExecutionException should be treated as non-transient"
     );
-  }
-
-  @Test
-  void isExplicitlyNonTransient_configuredNonTransientFailurePredicate() {
-    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> true;
-
-    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
-        .builder()
-        .retryExecutor(mock(ScheduledExecutorService.class))
-        .nonTransientFailurePredicate(nonTransientFailurePredicate)
-        .build();
 
     assertTrue(
-        retrySchedulerStub.isExplicitlyNonTransient(new Exception()),
-        "Per configuration, every exception should be treated as non-transient"
-    );
-
-    assertTrue(
-        retrySchedulerStub.isExplicitlyNonTransient(new RuntimeException()),
-        "Per configuration, every exception should be treated as non-transient"
-    );
-
-    assertTrue(
-        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException()),
-        "Per configuration, every exception should be treated as non-transient"
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("message", null)),
+        "Per configuration, IllegalArgumentException should be treated as non-transient"
     );
   }
 
   @Test
-  void isExplicitlyNonTransient_configuredNonTransientFailurePredicateAndNonTransientFailures() {
-    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> false;
+  void isExplicitlyNonTransient_typicalUsageDemo() {
+    Predicate<CommandExecutionException> nonTransientCommandExecutionExceptionPredicate =
+        (CommandExecutionException failure) -> Objects.equals(failure.getDetails().orElse("transient"), "I'm non-transient");
 
     RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
         .builder()
         .retryExecutor(mock(ScheduledExecutorService.class))
-        .nonTransientFailurePredicate(nonTransientFailurePredicate)
-        .nonTransientFailures(Arrays.asList(AxonNonTransientException.class, CommandExecutionException.class))
-        .build();
-
-    assertFalse(
-        retrySchedulerStub.isExplicitlyNonTransient(new AxonNonTransientException("message") {}),
-        "According to configured nonTransientFailurePredicate, all failures are transient. " +
-        "Configured nonTransientFailures list is ignored."
-    );
-
-    assertFalse(
-        retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("message", null, "details")),
-        "According to configured nonTransientFailurePredicate, all failures are transient. " +
-        "Configured nonTransientFailures list is ignored."
-    );
-  }
-
-  @Test
-  void isExplicitlyNonTransient_usingNonTransientFailurePredicate() {
-    Predicate<Throwable> nonTransientFailurePredicate = (Throwable failure) -> {
-      if (CommandExecutionException.class.isAssignableFrom(failure.getClass())) {
-        CommandExecutionException commandExecutionException = (CommandExecutionException) failure;
-        return Objects.equals(commandExecutionException.getDetails().orElse("transient"), "I'm non-transient");
-      }
-
-      return false;
-    };
-
-    RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
-        .builder()
-        .retryExecutor(mock(ScheduledExecutorService.class))
-        .nonTransientFailurePredicate(nonTransientFailurePredicate)
+        .nonTransientFailurePredicate(
+            new NonTransientClassesPredicate(
+                AxonNonTransientException.class, NullPointerException.class, IllegalArgumentException.class, IllegalStateException.class
+            )
+        )
+        .addNonTransientFailurePredicate(CommandExecutionException.class, nonTransientCommandExecutionExceptionPredicate)
         .build();
 
     assertTrue(
         retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("failure", null, "I'm non-transient")),
-        "CommandExecutionException should be treated as non-transient"
+        "Per configuration, CommandExecutionException with appropriate details should be treated as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new CommandExecutionException("failure", null, "a details")),
+        "Per configuration, CommandExecutionException with unexpected details should be treated as transient"
     );
 
     Exception extendedFromCommandExecutionException = new CommandExecutionException("failure", null, "I'm non-transient") {};
     assertTrue(
         retrySchedulerStub.isExplicitlyNonTransient(extendedFromCommandExecutionException),
-        "CommandExecutionException descendants should be treated as non-transient"
+        "Per configuration, CommandExecutionException descendants, with appropriate message, should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new NullPointerException("a null")),
+        "Per configuration, NullPointerException should be treated as non-transient"
+    );
+
+    assertTrue(
+        retrySchedulerStub.isExplicitlyNonTransient(new IllegalArgumentException("illegal")),
+        "Per configuration, IllegalArgumentException should be treated as non-transient"
+    );
+
+    assertFalse(
+        retrySchedulerStub.isExplicitlyNonTransient(new RuntimeException("runtime problem")),
+        "Per configuration, RuntimeException should be treated as a transient failure"
     );
   }
 }
