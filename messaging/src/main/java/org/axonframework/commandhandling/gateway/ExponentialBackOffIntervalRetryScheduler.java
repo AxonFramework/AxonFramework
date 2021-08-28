@@ -53,7 +53,7 @@ public class ExponentialBackOffIntervalRetryScheduler extends AbstractRetrySched
      * Instantiate a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}.
      * <p>
      * The default for {@code maxRetryCount} is set to a single retry and the {@code backoffFactor} defaults to 100ms.
-     * The default for {@code nonTransientFailures} is a list with a single {@code AxonNonTransientException} class.
+     * The default for {@code nonTransientFailurePredicate} is set to {@link DefaultNonTransientPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link ExponentialBackOffIntervalRetryScheduler}

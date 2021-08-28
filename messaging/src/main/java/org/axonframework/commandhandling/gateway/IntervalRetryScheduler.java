@@ -63,7 +63,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
      * The default for {@code retryInterval} is set to 100ms, while {@code maxRetryCount} gets a single retry.
-     * The default for {@code nonTransientFailures} is a list with a single {@code AxonNonTransientException} class.
+     * The default for {@code nonTransientFailurePredicate} is set to {@link DefaultNonTransientPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link IntervalRetryScheduler}
