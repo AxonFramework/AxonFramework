@@ -63,7 +63,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      * Instantiate a Builder to be able to create a {@link IntervalRetryScheduler}.
      * <p>
      * The default for {@code maxRetryCount} is set to a single retry, the {@code backoffFactor} defaults to 100ms and
-     * the {@code nonTransientFailurePredicate} defaults to {@link DefaultNonTransientPredicate}.
+     * the {@code nonTransientFailurePredicate} defaults to {@link AxonNonTransientExceptionClassesPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link IntervalRetryScheduler}
@@ -76,7 +76,7 @@ public class IntervalRetryScheduler extends AbstractRetryScheduler {
      * Builder class to instantiate a {@link IntervalRetryScheduler}.
      * <p>
      * The default for {@code maxRetryCount} is set to a single retry, the {@code backoffFactor} defaults to 100ms and
-     * the {@code nonTransientFailurePredicate} defaults to {@link DefaultNonTransientPredicate}.
+     * the {@code nonTransientFailurePredicate} defaults to {@link AxonNonTransientExceptionClassesPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractRetryScheduler.Builder<Builder> {

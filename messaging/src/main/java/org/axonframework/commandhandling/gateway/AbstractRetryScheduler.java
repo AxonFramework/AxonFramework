@@ -96,7 +96,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * <p/>
      * In this implementation, given {@code failure} (and its causes) is tested against configured composable
      * {@code nonTransientFailurePredicate}. By default, {@code nonTransientFailurePredicate} is configured only
-     * with {@link DefaultNonTransientPredicate}.
+     * with {@link AxonNonTransientExceptionClassesPredicate}.
      *
      * @param failure the exception that occurred while processing a command
      * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
@@ -154,14 +154,14 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     /**
      * A builder class for the {@link RetryScheduler} implementations.
      * <p>
-     * The default for {@code maxRetryCount} is set to a single retry and the {@code nonTransientFailurePredicate} defaults to {@link DefaultNonTransientPredicate}.
+     * The default for {@code maxRetryCount} is set to a single retry and the {@code nonTransientFailurePredicate} defaults to {@link AxonNonTransientExceptionClassesPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder<B extends Builder> {
 
         private ScheduledExecutorService retryExecutor;
         private int maxRetryCount = DEFAULT_MAX_RETRIES;
-        private Predicate<Throwable> nonTransientFailurePredicate = new DefaultNonTransientPredicate();
+        private Predicate<Throwable> nonTransientFailurePredicate = new AxonNonTransientExceptionClassesPredicate();
 
         /**
          * Sets the {@link ScheduledExecutorService} used to schedule a command retry.
