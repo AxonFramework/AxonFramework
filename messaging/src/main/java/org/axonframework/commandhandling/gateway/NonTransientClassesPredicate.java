@@ -41,12 +41,35 @@ public class NonTransientClassesPredicate implements Predicate<Throwable> {
 
   @Override
   public boolean test(Throwable failure) {
+    return isNonTransientFailure(failure);
+  }
+
+  /**
+   * Checks if provided failure is considered non-transient.
+   * <p/>
+   * This implementation checks if any configured exception class is assignable to the provided failure.
+   *
+   * @param failure The failure to check for non-transiency
+   * @return a boolean indicating if provided failure is non-transient ({@code true}) or not ({@code false})
+   */
+  protected boolean isNonTransientFailure(Throwable failure) {
     boolean isNonTransientFailure;
 
-    isNonTransientFailure = nonTransientFailures
+    isNonTransientFailure = getNonTransientFailures()
         .stream()
         .anyMatch(nonTransientFailure -> nonTransientFailure.isAssignableFrom(failure.getClass()));
 
     return isNonTransientFailure;
+  }
+
+  /**
+   * Fetches a configured list of non-transient failures.
+   * <p/>
+   * Useful if one wants to override {@link #isNonTransientFailure(Throwable)}.
+   *
+   * @return a configured list of non-transient failures.
+   */
+  protected List<Class<? extends Throwable>> getNonTransientFailures() {
+    return nonTransientFailures;
   }
 }
