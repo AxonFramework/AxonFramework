@@ -53,7 +53,7 @@ public class AbstractRetrySchedulerTest {
     RetrySchedulerStub retrySchedulerStub = RetrySchedulerStub
         .builder()
         .retryExecutor(mock(ScheduledExecutorService.class))
-        .addNonTransientFailurePredicate(new NonTransientClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class))
+        .addNonTransientFailurePredicate(new NonTransientExceptionClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class))
         .build();
 
     assertTrue(
@@ -166,7 +166,7 @@ public class AbstractRetrySchedulerTest {
             new AxonNonTransientExceptionClassesPredicate()
         )
         .addNonTransientFailurePredicate(
-            new NonTransientClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class)
+            new NonTransientExceptionClassesPredicate(CommandExecutionException.class, IllegalArgumentException.class)
         )
         .build();
 
@@ -195,7 +195,7 @@ public class AbstractRetrySchedulerTest {
         .builder()
         .retryExecutor(mock(ScheduledExecutorService.class))
         .nonTransientFailurePredicate(
-            new NonTransientClassesPredicate(
+            new NonTransientExceptionClassesPredicate(
                 AxonNonTransientException.class, NullPointerException.class, IllegalArgumentException.class, IllegalStateException.class
             )
         )

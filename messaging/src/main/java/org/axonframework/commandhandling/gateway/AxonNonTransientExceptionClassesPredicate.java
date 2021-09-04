@@ -13,7 +13,7 @@ import org.axonframework.common.AxonNonTransientException;
  * @author Damir Murat
  * @since 4.6.0
  */
-public class AxonNonTransientExceptionClassesPredicate extends NonTransientClassesPredicate {
+public class AxonNonTransientExceptionClassesPredicate extends NonTransientExceptionClassesPredicate {
   public AxonNonTransientExceptionClassesPredicate() {
     super(AxonNonTransientException.class);
   }

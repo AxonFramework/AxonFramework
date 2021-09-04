@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  *      .builder()
  *      .retryExecutor(new ScheduledThreadPoolExecutor(1))
  *      .nonTransientFailurePredicate(
- *          new NonTransientClassesPredicate(
+ *          new NonTransientExceptionClassesPredicate(
  *              AxonNonTransientException.class, NullPointerException.class, IllegalArgumentException.class,
  *              IllegalStateException.class
  *          )
@@ -26,7 +26,7 @@ import java.util.function.Predicate;
  * @author Damir Murat
  * @since 4.6.0
  */
-public class NonTransientClassesPredicate implements Predicate<Throwable> {
+public class NonTransientExceptionClassesPredicate implements Predicate<Throwable> {
   private final List<Class<? extends Throwable>> nonTransientFailures;
 
   /**
@@ -35,7 +35,7 @@ public class NonTransientClassesPredicate implements Predicate<Throwable> {
    * @param nonTransientFailures vararg list of non-transient class(es)
    */
   @SafeVarargs
-  public NonTransientClassesPredicate(Class<? extends Throwable> ...nonTransientFailures) {
+  public NonTransientExceptionClassesPredicate(Class<? extends Throwable> ...nonTransientFailures) {
     this.nonTransientFailures = Arrays.asList(nonTransientFailures);
   }
 
