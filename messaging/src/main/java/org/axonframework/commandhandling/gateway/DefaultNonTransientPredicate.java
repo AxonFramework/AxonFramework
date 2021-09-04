@@ -8,6 +8,9 @@ import org.axonframework.common.AxonNonTransientException;
  * This default implementation uses only {@link AxonNonTransientException} class for comparisons.
  * <p/>
  * This predicate is intended to be used for configuring {@link RetryScheduler} implementations.
+ *
+ * @author Damir Murat
+ * @since 4.6.0
  */
 public class DefaultNonTransientPredicate extends NonTransientClassesPredicate {
   public DefaultNonTransientPredicate() {

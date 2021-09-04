@@ -22,6 +22,9 @@ import java.util.function.Predicate;
  *      )
  *      .build();
  * </pre>
+ *
+ * @author Damir Murat
+ * @since 4.6.0
  */
 public class NonTransientClassesPredicate implements Predicate<Throwable> {
   private final List<Class<? extends Throwable>> nonTransientFailures;

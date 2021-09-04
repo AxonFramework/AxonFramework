@@ -137,7 +137,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             return scheduleRetry(dispatchTask, computeRetryInterval(commandMessage, lastFailure, failures));
         } else {
             if (failureCount >= maxRetryCount && logger.isInfoEnabled()) {
-                logger.warn("Processing of Command [{}] resulted in an exception {} times. Giving up permanently. ",
+                logger.warn("Processing of Command [{}] resulted in an exception {} times. Giving up permanently.",
                             commandMessage.getPayloadType().getSimpleName(), failureCount, lastFailure);
             } else if (logger.isInfoEnabled()) {
                 logger.debug(
@@ -154,8 +154,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
     /**
      * A builder class for the {@link RetryScheduler} implementations.
      * <p>
-     * The default for {@code maxRetryCount} is set to a single retry.
-     * The default for {@code nonTransientFailurePredicate} is set to {@link DefaultNonTransientPredicate}.
+     * The default for {@code maxRetryCount} is set to a single retry and the {@code nonTransientFailurePredicate} defaults to {@link DefaultNonTransientPredicate}.
      * The {@link ScheduledExecutorService} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder<B extends Builder> {
@@ -190,7 +189,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public B nonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
-            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
             this.nonTransientFailurePredicate = nonTransientFailurePredicate;
 
             // noinspection unchecked
@@ -214,7 +213,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          */
         public <E extends Throwable> B nonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
             assertNonNull(failureType, "Class of failure type may not be null");
-            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
 
             //noinspection Convert2MethodRef
             Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
@@ -238,7 +237,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public B addNonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
-            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
             this.nonTransientFailurePredicate = nonTransientFailurePredicate.or(this.nonTransientFailurePredicate);
 
             // noinspection unchecked
@@ -263,7 +262,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          */
         public <E extends Throwable> B addNonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
             assertNonNull(failureType, "Class of failure type may not be null");
-            assertNonNull(nonTransientFailurePredicate, "Predicate may not be null");
+            assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
 
             // noinspection Convert2MethodRef
             Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
