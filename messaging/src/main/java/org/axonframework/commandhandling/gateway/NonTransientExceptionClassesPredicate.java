@@ -45,7 +45,7 @@ public class NonTransientExceptionClassesPredicate implements Predicate<Throwabl
   }
 
   /**
-   * Checks if provided failure is considered non-transient.
+   * Checks if the provided {@code failure} is considered non-transient.
    * <p/>
    * This implementation checks if any configured exception class is assignable to the provided failure.
    *

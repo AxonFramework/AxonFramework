@@ -229,7 +229,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * Adds additional predicate into the predicate chain for checking non-transiency of a failure.
          * <p/>
          * Provided {@code nonTransientFailurePredicate} is set on the beginning of the predicate chain with
-         * {@code or} operator.
+         * the {@code Predicate#or} operator.
          *
          * @param nonTransientFailurePredicate an additional {@link Predicate} (accepting a {@link Throwable}
          *                                     parameter) to be added into the predicate chain used for
