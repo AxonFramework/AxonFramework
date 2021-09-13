@@ -108,7 +108,7 @@
         <dom4j.version>2.1.3</dom4j.version>
         <postgresql.version>42.2.23</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.7.2</junit.jupiter.version>
+        <junit.jupiter.version>5.8.0</junit.jupiter.version>
         <axonserver-connector-java.version>4.5.2</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.16.0</testcontainers.version>
