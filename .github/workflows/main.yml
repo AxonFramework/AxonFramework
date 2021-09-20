@@ -19,7 +19,7 @@ jobs:
             sonar-enabled: false
           - java-version: 11
             sonar-enabled: true
-          - java-version: 17-ea
+          - java-version: 17
             sonar-enabled: false
 
     steps:
