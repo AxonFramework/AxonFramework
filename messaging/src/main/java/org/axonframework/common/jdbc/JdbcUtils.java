@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ public class JdbcUtils {
     }
 
     /**
-     * Execute the a batch update or insert statement produced by the given {@code sqlFunction}. Any errors will be
+     * Execute the batch update or insert statement produced by the given {@code sqlFunction}. Any errors will be
      * handled by the given {@code errorHandler}.
      *
      * @param connection   connection to the underlying database that should be used for the update
