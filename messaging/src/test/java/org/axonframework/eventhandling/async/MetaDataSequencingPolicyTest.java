@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Lucas Campos
  */
 @DisplayName("Unit-Test for the MetaDataSequencingPolicy")
-public class MetaDataSequencingPolicyTest {
+class MetaDataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
@@ -60,16 +60,16 @@ public class MetaDataSequencingPolicyTest {
 
     @Test
     void missingHardRequirementShouldThrowException() {
-        assertThrows(AxonConfigurationException.class,
-                     () -> MetaDataSequencingPolicy
-                             .builder()
-                             .build());
+        MetaDataSequencingPolicy.Builder testSubject = MetaDataSequencingPolicy.builder();
+
+        assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload, Map<String, String> metaData) {
         return new GenericDomainEventMessage<>("type", "A", 0L, payload, MetaData.from(metaData));
     }
 
+    @SuppressWarnings("SameParameterValue")
     private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
         return newStubDomainEvent(payload, Collections.emptyMap());
     }
