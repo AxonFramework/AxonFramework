@@ -22,34 +22,31 @@ import org.axonframework.eventhandling.EventMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s {@link org.axonframework.messaging.MetaData}, based
- * on a given {@code metaDataKey}.
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
+ * {@link org.axonframework.messaging.MetaData}, based on a given {@code metaDataKey}. In the absence of the given
+ * {@code metaDataKey} on the {@link org.axonframework.messaging.MetaData}, the {@link EventMessage#getIdentifier()} is
+ * used.
  *
  * @author Lucas Campos
  * @since 4.6.0
  */
 public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?>> {
 
-    private final String metaData;
+    private final String metaDataKey;
 
     /**
      * Instantiate a {@link MetaDataSequencingPolicy} based on the fields contained in the {@link
      * MetaDataSequencingPolicy.Builder}.
      * <p>
-     * Will assert that the {@code metaData} is not {@code null} and will throw an {@link AxonConfigurationException} if
-     * this is the case.
+     * Will assert that the {@code metaDataKey} is not {@code null} and will throw an {@link AxonConfigurationException}
+     * if this is the case.
      *
      * @param builder the {@link MetaDataSequencingPolicy.Builder} used to instantiate a {@link
      *                MetaDataSequencingPolicy} instance
      */
     protected MetaDataSequencingPolicy(Builder builder) {
         builder.validate();
-        this.metaData = builder.metaData;
-    }
-
-    @Override
-    public Object getSequenceIdentifierFor(EventMessage<?> event) {
-        return event.getMetaData().getOrDefault(metaData, event.getIdentifier());
+        this.metaDataKey = builder.metaDataKey;
     }
 
     /**
@@ -57,7 +54,7 @@ public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?
      * <p>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
-     * <li>The {@code metaData} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
+     * <li>The {@code metaDataKey} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
      * </ul>
      *
      * @return a Builder to be able to create a {@link MetaDataSequencingPolicy}
@@ -66,29 +63,34 @@ public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?
         return new Builder();
     }
 
+    @Override
+    public Object getSequenceIdentifierFor(EventMessage<?> event) {
+        return event.getMetaData().getOrDefault(metaDataKey, event.getIdentifier());
+    }
+
     /**
      * Builder class to instantiate a {@link MetaDataSequencingPolicy}.
      * <p>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
-     * <li>The {@code metaData} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
+     * <li>The {@code metaDataKey} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
      * </ul>
      */
-    public static final class Builder {
+    public static class Builder {
 
-        private String metaData;
+        private String metaDataKey;
 
         private Builder() {
         }
 
         /**
-         * Defines the metaData key to be used as a lookup for the property to be used as the Sequence Policy.
+         * Defines the metaDataKey key to be used as a lookup for the property to be used as the Sequence Policy.
          *
-         * @param metaData key to be used as a lookup for the property to be used as the Sequence Policy
+         * @param metaDataKey key to be used as a lookup for the property to be used as the Sequence Policy
          * @return The current Builder instance, for fluent interfacing
          */
-        public Builder metaData(String metaData) {
-            this.metaData = metaData;
+        public Builder metaDataKey(String metaDataKey) {
+            this.metaDataKey = metaDataKey;
             return this;
         }
 
@@ -101,8 +103,8 @@ public class MetaDataSequencingPolicy implements SequencingPolicy<EventMessage<?
             return new MetaDataSequencingPolicy(this);
         }
 
-        private void validate() {
-            assertNonNull(metaData, "MetaData value may not be null");
+        protected void validate() {
+            assertNonNull(metaDataKey, "MetaDataKey value may not be null");
         }
     }
 }

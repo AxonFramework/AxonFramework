@@ -39,7 +39,7 @@ public class MetaDataSequencingPolicyTest {
     void propertyShouldReadCorrectValue() {
         final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
                 .builder()
-                .metaData("metaDataKey")
+                .metaDataKey("metaDataKey")
                 .build();
 
         assertEquals("metaDataValue",
@@ -52,7 +52,7 @@ public class MetaDataSequencingPolicyTest {
     void fallbackShouldBeAppliedWhenMetaDataDoesNotContainsTheKey() {
         final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
                 .builder()
-                .metaData("metaDataKey")
+                .metaDataKey("metaDataKey")
                 .build();
 
         assertNotNull(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42")));
