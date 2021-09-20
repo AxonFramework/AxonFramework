@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message metaData based
- * on a given metaData key.
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s {@link org.axonframework.messaging.MetaData}, based
+ * on a given {@code metaDataKey}.
  *
  * @author Lucas Campos
  * @since 4.6.0
