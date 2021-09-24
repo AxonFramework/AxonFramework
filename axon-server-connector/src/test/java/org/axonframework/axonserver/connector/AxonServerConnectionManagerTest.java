@@ -29,7 +29,9 @@ import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -39,7 +41,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link AxonServerConnectionManager}.
@@ -150,7 +156,28 @@ class AxonServerConnectionManagerTest {
         assertWithin(
                 250, TimeUnit.MILLISECONDS,
                 // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
-                () -> assertFalse(secondNode.getPlatformService().getHeartbeatMessages().isEmpty())
+                () -> assertEquals(1, secondNode.getPlatformService().getHeartbeatMessages(testConfig.getContext()).size())
+        );
+    }
+
+    @Test
+    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSentOnOtherContexts() {
+        testConfig.getHeartbeat().setEnabled(true);
+        AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
+                                                                             .axonServerConfiguration(testConfig)
+                                                                             .build();
+        testSubject.start();
+
+        assertNotNull(testSubject.getConnection(testConfig.getContext()));
+        assertNotNull(testSubject.getConnection("context2"));
+
+        assertWithin(
+                250, TimeUnit.MILLISECONDS,
+                // Retrieving the messages from the secondNode, as the stubServer forwards all messages to this instance
+                () -> {
+                    assertFalse(secondNode.getPlatformService().getHeartbeatMessages(testConfig.getContext()).isEmpty());
+                    assertFalse(secondNode.getPlatformService().getHeartbeatMessages("context2").isEmpty());
+                }
         );
     }
 
