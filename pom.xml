@@ -69,11 +69,11 @@
         <slf4j.version>1.7.31</slf4j.version>
         <log4j.version>2.14.1</log4j.version>
         <spring.version>5.3.9</spring.version>
-        <spring-security.version>5.5.1</spring-security.version>
+        <spring-security.version>5.5.2</spring-security.version>
         <spring.boot.version>2.5.2</spring.boot.version>
         <mockito.version>3.12.4</mockito.version>
         <projectreactor.version>3.4.8</projectreactor.version>
-        <micrometer.version>1.7.2</micrometer.version>
+        <micrometer.version>1.7.4</micrometer.version>
         <dropwizard.metrics.version>4.2.2</dropwizard.metrics.version>
         <jackson.version>2.12.4</jackson.version>
         <!--
@@ -99,8 +99,8 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-entitymanager.version>5.5.3.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.11.7</byte-buddy.version>
+        <hibernate-entitymanager.version>5.5.7.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.11.18</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.28.0-GA</javassist.version>
@@ -412,7 +412,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.0.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
