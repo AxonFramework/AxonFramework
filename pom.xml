@@ -112,6 +112,7 @@
         <axonserver-connector-java.version>4.5.2</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.15.3</testcontainers.version>
+        <xstream.version>1.4.18</xstream.version>
 
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.2</felix.maven-bundle-plugin.version>
