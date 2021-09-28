@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -55,7 +56,6 @@ import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -76,7 +76,6 @@ import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
-import static org.axonframework.config.utils.TestSerializer.secureXStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -178,7 +177,7 @@ class DefaultConfigurerTest {
                                           .persistenceExceptionResolver(c.getComponent(PersistenceExceptionResolver.class))
                                           .entityManagerProvider(() -> em)
                                           .transactionManager(c.getComponent(TransactionManager.class))
-                                          .eventSerializer(secureXStreamSerializer())
+                                          .eventSerializer(c.serializer())
                                           .build()
         ).configureAggregate(
                 defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
@@ -187,7 +186,8 @@ class DefaultConfigurerTest {
         ).registerEventUpcaster(c -> events -> {
             counter.incrementAndGet();
             return events;
-        }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)).buildConfiguration();
+        }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)
+        ).configureSerializer(configuration -> TestSerializer.xStreamSerializer()).buildConfiguration();
 
         config.start();
 
@@ -215,6 +215,7 @@ class DefaultConfigurerTest {
                                 .parameterResolverFactory(c.parameterResolverFactory())
                                 .build()
                 )
+        ).configureSerializer(c -> TestSerializer.xStreamSerializer()
         ).buildConfiguration();
 
         config.start();
@@ -233,6 +234,7 @@ class DefaultConfigurerTest {
     void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
+                                                .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                                 .configureCommandBus(c -> {
                                                     AsynchronousCommandBus commandBus =
                                                             AsynchronousCommandBus.builder().build();
@@ -293,6 +295,7 @@ class DefaultConfigurerTest {
                                 .parameterResolverFactory(c.parameterResolverFactory())
                                 .build()
                 )
+        ).configureSerializer(c -> TestSerializer.xStreamSerializer()
         ).buildConfiguration();
 
         config.start();
@@ -371,9 +374,11 @@ class DefaultConfigurerTest {
 
     @Test
     void testConfiguredSnapshotterDefaultsToAggregateSnapshotter() {
-        Snapshotter defaultSnapshotter = DefaultConfigurer.jpaConfiguration(() -> em)
-                                                          .configureAggregate(StubAggregate.class)
-                                                          .buildConfiguration().snapshotter();
+        Snapshotter defaultSnapshotter =
+                DefaultConfigurer.jpaConfiguration(() -> em)
+                                 .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                 .configureAggregate(StubAggregate.class)
+                                 .buildConfiguration().snapshotter();
 
         assertTrue(defaultSnapshotter instanceof AggregateSnapshotter);
     }
@@ -452,7 +457,7 @@ class DefaultConfigurerTest {
                 AggregateConfigurer.defaultConfiguration(StubAggregate.class)
                                    .configureSnapshotFilter(configuration -> testFilterTwo);
 
-        Serializer serializer = XStreamSerializer.defaultSerializer();
+        Serializer serializer = TestSerializer.xStreamSerializer();
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
 
         DomainEventMessage<String> testDomainEvent =
@@ -468,7 +473,7 @@ class DefaultConfigurerTest {
         ).when(transactionManager).fetchInTransaction(any());
 
         Configuration resultConfig = DefaultConfigurer.jpaConfiguration(() -> em)
-                                                      .configureEventSerializer(configuration -> serializer)
+                                                      .configureSerializer(configuration -> serializer)
                                                       .configureTransactionManager(configuration -> transactionManager)
                                                       .configureAggregate(aggregateConfigurerOne)
                                                       .configureAggregate(aggregateConfigurerTwo)
