@@ -25,11 +25,16 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -68,18 +73,22 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
-        xStream.addImmutableType(UUID.class, true);
 
         // Message serialization
         xStream.alias("domain-event", GenericDomainEventMessage.class);
         xStream.alias("event", GenericEventMessage.class);
         xStream.alias("command", GenericCommandMessage.class);
-
-        // For backward compatibility
-        xStream.alias("uuid", UUID.class);
-
+        xStream.alias("command-result", GenericCommandResultMessage.class);
+        xStream.alias("query", GenericQueryMessage.class);
+        xStream.alias("query-response", GenericQueryResponseMessage.class);
+        xStream.alias("query-update", GenericSubscriptionQueryUpdateMessage.class);
+        xStream.alias("deadline", GenericDeadlineMessage.class);
         xStream.alias("meta-data", MetaData.class);
         xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
+
+        xStream.addImmutableType(UUID.class, true);
+        // For backward compatibility
+        xStream.alias("uuid", UUID.class);
     }
 
     /**
@@ -378,7 +387,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
+            assertNonNull(xStream, "The XStream instance is a hard requirement and should be provided");
             if (lenientDeserialization) {
                 xStream.ignoreUnknownElements();
             }
