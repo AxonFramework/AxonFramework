@@ -90,9 +90,16 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * InputStreamToXomConverter} to the Converter chain.
      *
      * @return a {@link XStreamSerializer}
+     * @deprecated in favor of using the {@link #builder()} to construct an instance using a configured {@code XStream}
+     * instance. Using this shorthand still works, but will use an {@code XStream} instance that is unaware of the
+     * user's types that should be de-/serialized. XStream expects the types or wildcards for the types to be defined to
+     * ensure the application stays secure. As such, it is <b>highly recommended</b> to follow their recommended
+     * approach.
      */
+    @Deprecated
     public static XStreamSerializer defaultSerializer() {
-        return builder().build();
+        return builder().xStream(new XStream(new CompactDriver()))
+                        .build();
     }
 
     /**
@@ -153,10 +160,6 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      * InputStreamToXomConverter} to the Converter chain.
      */
     public static class Builder extends AbstractXStreamSerializer.Builder {
-
-        private Builder() {
-            xStream(new XStream(new CompactDriver()));
-        }
 
         /**
          * {@inheritDoc} Defaults to a {@link XStream#XStream(HierarchicalStreamDriver)} call, providing the {@link
