@@ -54,7 +54,9 @@ class XStreamSerializerTest {
 
     @BeforeEach
     void setUp() {
-        this.testSubject = XStreamSerializer.defaultSerializer();
+        this.testSubject = XStreamSerializer.builder()
+                                            .xStream(new XStream())
+                                            .build();
         this.testEvent = new TestEvent(REGULAR_STRING);
     }
 
@@ -213,6 +215,7 @@ class XStreamSerializerTest {
     @Test
     void testUnknownPropertiesAreIgnoredWhenConfiguringLenientDeserialization() {
         testSubject = XStreamSerializer.builder()
+                                       .xStream(new XStream())
                                        .lenientDeserialization()
                                        .build();
 
@@ -229,7 +232,9 @@ class XStreamSerializerTest {
 
     @Test
     void testUnknownPropertiesFailDeserializationByDefault() {
-        testSubject = XStreamSerializer.defaultSerializer();
+        testSubject = XStreamSerializer.builder()
+                                       .xStream(new XStream())
+                                       .build();
 
         SerializedObject<Document> serialized = testSubject.serialize(testEvent, Document.class);
         Document data = serialized.getData();
