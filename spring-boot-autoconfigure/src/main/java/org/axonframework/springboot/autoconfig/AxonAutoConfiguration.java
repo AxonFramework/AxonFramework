@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
 import org.axonframework.commandhandling.LoggingDuplicateCommandHandlerResolver;
@@ -70,6 +71,7 @@ import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -79,7 +81,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -181,7 +182,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             case XSTREAM:
             case DEFAULT:
             default:
+                Map<String, XStream> xStreamBeans = applicationContext.getBeansOfType(XStream.class);
+                XStream xStream = xStreamBeans.containsKey("defaultAxonXStream")
+                        ? xStreamBeans.get("defaultAxonXStream")
+                        : xStreamBeans.values().stream().findFirst()
+                                      .orElseThrow(() -> new NoSuchBeanDefinitionException(XStream.class));
                 return XStreamSerializer.builder()
+                                        .xStream(xStream)
                                         .revisionResolver(revisionResolver)
                                         .classLoader(beanClassLoader)
                                         .build();
