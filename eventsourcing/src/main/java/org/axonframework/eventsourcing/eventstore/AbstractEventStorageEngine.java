@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +58,9 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     /**
      * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an {@link
+     * AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
      */
@@ -243,9 +245,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     /**
      * Abstract Builder class to instantiate an {@link AbstractEventStorageEngine}.
      * <p>
-     * The {@link Serializer} used for snapshots is defaulted to a {@link XStreamSerializer}, the {@link EventUpcaster}
-     * defaults to a {@link NoOpEventUpcaster}, the Serializer used for events is also defaulted to a XStreamSerializer
-     * and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.
+     * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster} and the {@code snapshotFilter} defaults to a
+     * {@link SnapshotFilter#allowAll()} instance.
+     * <p>
+     * The event and snapshot {@link Serializer} are <b>hard requirements</b> and as such should be provided.
      */
     public abstract static class Builder {
 
@@ -256,14 +259,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         private SnapshotFilter snapshotFilter = SnapshotFilter.allowAll();
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a {@link
-         * XStreamSerializer}.
+         * Sets the {@link Serializer} used to serialize and deserialize snapshots.
          *
          * @param snapshotSerializer a {@link Serializer} used to serialize and deserialize snapshots
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder snapshotSerializer(Serializer snapshotSerializer) {
-            assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
+            assertNonNull(snapshotSerializer, "The snapshot Serializer may not be null");
             this.snapshotSerializer = () -> snapshotSerializer;
             return this;
         }
@@ -296,14 +298,15 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         }
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data with.
-         * Defaults to a {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and {@link
+         * org.axonframework.messaging.MetaData} with.
          *
-         * @param eventSerializer The serializer to serialize the Event Message's payload and Meta Data with
+         * @param eventSerializer The serializer to serialize the Event Message's payload and {@link
+         *                        org.axonframework.messaging.MetaData} with
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventSerializer(Serializer eventSerializer) {
-            assertNonNull(eventSerializer, "The Event Serializer may not be null");
+            assertNonNull(eventSerializer, "The event Serializer may not be null");
             this.eventSerializer = () -> eventSerializer;
             return this;
         }
@@ -345,13 +348,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            if (snapshotSerializer == null) {
-                snapshotSerializer = XStreamSerializer::defaultSerializer;
-            }
-
-            if (eventSerializer == null) {
-                eventSerializer = XStreamSerializer::defaultSerializer;
-            }
+            assertNonNull(snapshotSerializer, "The snapshot Serializer is a hard requirement and should be provided");
+            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
         }
     }
 }

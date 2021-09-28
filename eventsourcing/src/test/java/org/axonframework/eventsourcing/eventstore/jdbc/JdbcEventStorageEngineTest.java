@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
@@ -391,7 +392,9 @@ class JdbcEventStorageEngineTest
                                                 EventTableFactory eventTableFactory) {
         JdbcEventStorageEngine.Builder engineBuilder =
                 JdbcEventStorageEngine.builder()
+                                      .eventSerializer(TestSerializer.xStreamSerializer())
                                       .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
                                       .batchSize(100)
                                       .connectionProvider(dataSource::getConnection)
                                       .transactionManager(NoTransactionManager.INSTANCE);
@@ -402,9 +405,12 @@ class JdbcEventStorageEngineTest
     }
 
     private JdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
-        JdbcEventStorageEngine.Builder builder = JdbcEventStorageEngine.builder()
-                                                                       .connectionProvider(dataSource::getConnection)
-                                                                       .transactionManager(NoTransactionManager.INSTANCE);
+        JdbcEventStorageEngine.Builder builder =
+                JdbcEventStorageEngine.builder()
+                                      .eventSerializer(TestSerializer.xStreamSerializer())
+                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                      .connectionProvider(dataSource::getConnection)
+                                      .transactionManager(NoTransactionManager.INSTANCE);
 
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(builder) {
             @Override
