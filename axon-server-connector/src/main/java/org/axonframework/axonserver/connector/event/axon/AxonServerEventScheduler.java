@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -68,9 +67,10 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Instantiate a Builder to be able to create a {@link AxonServerEventScheduler}.
      * <p>
-     * The {@code requestTimeout} is defaulted to {@code 15000} millis and the {@link Serializer} to a {@link
-     * XStreamSerializer}. The {@link AxonServerConnectionManager} is a <b>hard requirement</b> and as such should be
-     * provided.
+     * The {@code requestTimeout} is defaulted to {@code 15000} millis.
+     * <p>
+     * The {@link Serializer} and {@link AxonServerConnectionManager} are <b>hard requirements</b> and as such
+     * should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerEventScheduler}
      */
@@ -81,15 +81,15 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Instantiates an {@link AxonServerEventScheduler} using the given {@link Builder}.
      * <p>
-     * Will assert that the {@link AxonServerConnectionManager} is not {@code null} and will throw an {@link
-     * AxonConfigurationException} if this is the case.
+     * Will assert that the {@link Serializer} and {@link AxonServerConnectionManager} are not {@code null} and will
+     * throw an {@link AxonConfigurationException} if this is the case.
      *
      * @param builder the {@link Builder} used.
      */
     protected AxonServerEventScheduler(Builder builder) {
         builder.validate();
         this.requestTimeout = builder.requestTimeout;
-        this.serializer = builder.eventSerializer.get();
+        this.serializer = builder.serializer.get();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.converter = new GrpcMetaDataConverter(serializer);
     }
@@ -242,14 +242,15 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Builder class to instantiate an {@link AxonServerEventScheduler}.
      * <p>
-     * The {@code requestTimeout} is defaulted to {@code 15000} millis and the {@link Serializer} to a {@link
-     * XStreamSerializer}. The {@link AxonServerConnectionManager} is a <b>hard requirement</b> and as such should be
+     * The {@code requestTimeout} is defaulted to {@code 15000} millis.
+     * <p>
+     * The {@link Serializer} and {@link AxonServerConnectionManager} are <b>hard requirements</b> and as such should be
      * provided.
      */
     public static class Builder {
 
         private long requestTimeout = 15000;
-        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer;
         private AxonServerConnectionManager axonServerConnectionManager;
 
         /**
@@ -271,7 +272,8 @@ public class AxonServerEventScheduler implements EventScheduler {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventSerializer(Serializer eventSerializer) {
-            this.eventSerializer = () -> eventSerializer;
+            assertNonNull(eventSerializer, "The event Serializer may not be null");
+            this.serializer = () -> eventSerializer;
             return this;
         }
 
@@ -299,6 +301,7 @@ public class AxonServerEventScheduler implements EventScheduler {
         }
 
         protected void validate() throws AxonConfigurationException {
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");
         }

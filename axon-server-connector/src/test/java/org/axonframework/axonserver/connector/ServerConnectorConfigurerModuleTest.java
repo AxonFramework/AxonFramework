@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.Configuration;
@@ -41,6 +42,7 @@ class ServerConnectorConfigurerModuleTest {
     @Test
     void testAxonServerConfiguredInDefaultConfiguration() {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration()
+                                                     .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                                      .buildConfiguration();
 
         AxonServerConfiguration resultAxonServerConfig = testSubject.getComponent(AxonServerConfiguration.class);
@@ -70,6 +72,7 @@ class ServerConnectorConfigurerModuleTest {
     @Test
     void testQueryUpdateEmitterIsTakenFromConfiguration() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                                        .buildConfiguration();
 
         assertTrue(configuration.queryBus() instanceof AxonServerQueryBus);
@@ -83,6 +86,7 @@ class ServerConnectorConfigurerModuleTest {
         CommandLoadFactorProvider expected = command -> 5000;
         Configuration config =
                 DefaultConfigurer.defaultConfiguration()
+                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                  .registerComponent(CommandLoadFactorProvider.class, c -> expected)
                                  .buildConfiguration();
 
