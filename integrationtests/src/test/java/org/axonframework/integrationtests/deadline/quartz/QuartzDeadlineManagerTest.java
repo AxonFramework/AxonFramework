@@ -85,4 +85,38 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
         assertThrows(DeadlineException.class, testSubject::shutdown);
     }
+
+    @Test
+    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+        ScopeAwareProvider scopeAwareProvider = mock(ScopeAwareProvider.class);
+        QuartzDeadlineManager.Builder builderTestSubject =
+                QuartzDeadlineManager.builder()
+                                     .scopeAwareProvider(scopeAwareProvider)
+                                     .serializer(TestSerializer.xStreamSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
+        Scheduler scheduler = mock(Scheduler.class);
+        QuartzDeadlineManager.Builder builderTestSubject =
+                QuartzDeadlineManager.builder()
+                                     .scheduler(scheduler)
+                                     .serializer(TestSerializer.xStreamSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithoutSerializerThrowsAxonConfigurationException() {
+        Scheduler scheduler = mock(Scheduler.class);
+        ScopeAwareProvider scopeAwareProvider = mock(ScopeAwareProvider.class);
+        QuartzDeadlineManager.Builder builderTestSubject =
+                QuartzDeadlineManager.builder()
+                                     .scheduler(scheduler)
+                                     .scopeAwareProvider(scopeAwareProvider);
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
 }
