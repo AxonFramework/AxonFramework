@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.util.XStreamSecurityTypeUtility;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -30,10 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 /**
  * Autoconfigures an {@link XStream} instance in absence of an existing {@code XStream} bean.
@@ -55,42 +52,8 @@ public class XStreamAutoConfiguration {
     @Conditional(XStreamConfiguredCondition.class)
     public XStream defaultAxonXStream(ApplicationContext applicationContext) {
         XStream xStream = new XStream(new CompactDriver());
-        xStream.allowTypesByWildcard(getTypesFromComponentScanAnnotatedBeans(applicationContext));
+        XStreamSecurityTypeUtility.allowTypesFromComponentScanAnnotatedBeans(applicationContext, xStream);
         return xStream;
-    }
-
-    // TODO: 28-09-21 move to utility class for testing
-    private static String[] getTypesFromComponentScanAnnotatedBeans(ApplicationContext applicationContext) {
-        return applicationContext.getBeansWithAnnotation(ComponentScan.class)
-                                 .entrySet().stream()
-                                 .flatMap(entry -> {
-                                     ComponentScan ann = applicationContext.findAnnotationOnBean(
-                                             entry.getKey(), ComponentScan.class
-                                     );
-                                     if (!Objects.nonNull(ann)) {
-                                         throw new IllegalArgumentException(
-                                                 "The ApplicationContext retrieved a bean of name [" + entry.getKey()
-                                                         + "] and type [" + entry.getValue().getClass()
-                                                         + "] for the ComponentScan annotation which does not contain the ComponentScan annotation."
-                                         );
-                                     }
-
-                                     if (ann.basePackageClasses().length != 0
-                                             || ann.basePackages().length != 0) {
-                                         Stream<String> basePackageClasses =
-                                                 Arrays.stream(ann.basePackageClasses())
-                                                       .map(Class::getName);
-
-                                         Stream<String> basePackages =
-                                                 Arrays.stream(ann.basePackages())
-                                                       .map(basePackage -> basePackage + ".**");
-
-                                         return Stream.concat(basePackageClasses, basePackages);
-                                     } else {
-                                         return Stream.of(entry.getValue().getClass().getPackage().getName() + ".**");
-                                     }
-                                 })
-                                 .toArray(String[]::new);
     }
 
     /**
