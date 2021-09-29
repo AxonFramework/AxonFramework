@@ -187,7 +187,8 @@ class DefaultConfigurerTest {
             counter.incrementAndGet();
             return events;
         }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)
-        ).configureSerializer(configuration -> TestSerializer.xStreamSerializer()).buildConfiguration();
+        ).configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+         .buildConfiguration();
 
         config.start();
 
