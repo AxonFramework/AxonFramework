@@ -358,7 +358,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private EntityManagerProvider entityManagerProvider;
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer;
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
@@ -404,6 +404,10 @@ public class JpaSagaStore implements SagaStore<Object> {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
+
+            if (serializer == null) {
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 
