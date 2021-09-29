@@ -16,20 +16,20 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test whether the serialized form of the
- * {@link org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken} can be deserialized into the
- * {@link GlobalSequenceTrackingToken}, using the {@link XStreamSerializer} and {@link JacksonSerializer}.
+ * Test whether the serialized form of the {@link org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken}
+ * can be deserialized into the {@link GlobalSequenceTrackingToken}, using the {@link XStreamSerializer} and {@link
+ * JacksonSerializer}.
  *
  * @author Steven van Beelen
  */
@@ -41,9 +41,7 @@ class GlobalSequenceTrackingTokenTest {
 
     @Test
     void testXStreamSerializationOfOldGlobalSequenceTrackingToken() {
-        XStreamSerializer serializer = XStreamSerializer.builder()
-                                                        .xStream(new XStream())
-                                                        .build();
+        XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedGlobalSequenceTrackingToken =
                 "<org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken>"

@@ -16,12 +16,12 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the {@link org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken} can
- * be deserialized into the {@link GapAwareTrackingToken}, using the {@link XStreamSerializer} and
- * {@link JacksonSerializer}.
+ * be deserialized into the {@link GapAwareTrackingToken}, using the {@link XStreamSerializer} and {@link
+ * JacksonSerializer}.
  *
  * @author Steven van Beelen
  */
@@ -47,9 +47,7 @@ class GapAwareTrackingTokenTest {
 
     @Test
     void testXStreamSerializationOfOldGapAwareTrackingToken() {
-        XStreamSerializer serializer = XStreamSerializer.builder()
-                                                        .xStream(new XStream())
-                                                        .build();
+        XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedGapAwareTrackingToken =
                 "<org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken>"

@@ -16,19 +16,20 @@
 
 package org.axonframework.eventhandling.saga;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test whether the serialized form of the {@link org.axonframework.eventhandling.saga.SagaScopeDescriptor} can be
- * deserialized into the {@link SagaScopeDescriptor}, using the {@link XStreamSerializer} and {@link JacksonSerializer}.
+ * deserialized into the {@link SagaScopeDescriptor}, using the {@link XStreamSerializer} and {@link
+ * JacksonSerializer}.
  *
  * @author Steven van Beelen
  */
@@ -41,9 +42,7 @@ class SagaScopeDescriptorTest {
 
     @Test
     void testXStreamSerializationOfOldSagaScopeDescriptor() {
-        XStreamSerializer serializer = XStreamSerializer.builder()
-                                                        .xStream(new XStream())
-                                                        .build();
+        XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedScopeDescriptor =
                 "<org.axonframework.eventhandling.saga.SagaScopeDescriptor>"
