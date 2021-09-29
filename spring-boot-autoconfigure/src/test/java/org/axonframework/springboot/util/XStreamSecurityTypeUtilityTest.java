@@ -107,6 +107,22 @@ class XStreamSecurityTypeUtilityTest {
                               });
     }
 
+    @Test
+    void testBasePackagesAndClassesSpringBootApplicationAnnotatedBeanAllowsTypesAndAllowsTypesByWildcard() {
+        Class<Integer> expectedType = Integer.class;
+        String expectedPackageWildcard = "foo.bar.baz.**";
+        testApplicationContext.withUserConfiguration(
+                                      TestContextWithBasePackageClassesAndBasePackagesSpringBootApplication.class
+                              )
+                              .run(context -> {
+                                  XStreamSecurityTypeUtility.allowTypesFromComponentScanAnnotatedBeans(
+                                          context.getSourceApplicationContext(), testSubject
+                                  );
+                                  verify(testSubject).allowTypes(aryEq(new Class[]{expectedType}));
+                                  verify(testSubject).allowTypesByWildcard(aryEq(new String[]{expectedPackageWildcard}));
+                              });
+    }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -182,6 +198,22 @@ class XStreamSecurityTypeUtilityTest {
         }
 
         @SpringBootApplication
+        private static class MainClass {
+
+        }
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    private static class TestContextWithBasePackageClassesAndBasePackagesSpringBootApplication {
+
+        @Bean
+        private MainClass mainClass() {
+            return new MainClass();
+        }
+
+        @SpringBootApplication(scanBasePackageClasses = Integer.class, scanBasePackages = "foo.bar.baz")
         private static class MainClass {
 
         }
