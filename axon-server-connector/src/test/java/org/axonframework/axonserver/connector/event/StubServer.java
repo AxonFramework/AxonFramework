@@ -15,7 +15,13 @@
 
 package org.axonframework.axonserver.connector.event;
 
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.Metadata;
 import io.grpc.Server;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.netty.NettyServerBuilder;
 import org.axonframework.axonserver.connector.PlatformService;
 
@@ -45,6 +51,7 @@ public class StubServer {
         server = NettyServerBuilder.forPort(port)
                                    .addService(eventStore)
                                    .addService(platformService)
+                                   .intercept(new ContextInterceptor())
                                    .build();
         this.platformService = platformService;
     }
@@ -64,5 +71,17 @@ public class StubServer {
 
     public PlatformService getPlatformService() {
         return platformService;
+    }
+
+    public static class ContextInterceptor implements ServerInterceptor {
+        @Override
+        public <T, R> ServerCall.Listener<T> interceptCall(ServerCall<T, R> serverCall, Metadata metadata, ServerCallHandler<T, R> serverCallHandler) {
+            String context = metadata.get(PlatformService.AXON_IQ_CONTEXT);
+            if (context == null) {
+                context = "default";
+            }
+            Context updatedGrpcContext = Context.current().withValue(PlatformService.CONTEXT_KEY, context);
+            return Contexts.interceptCall(updatedGrpcContext, serverCall, metadata, serverCallHandler);
+        }
     }
 }
