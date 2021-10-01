@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,9 +76,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     /**
      * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
-     * as such should be provided.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
+     * <p>
+     * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
+     * should be provided.
      *
      * @return a Builder to be able to create a {@link QuartzDeadlineManager}
      */
@@ -229,16 +230,17 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     /**
      * Builder class to instantiate a {@link QuartzDeadlineManager}.
      * <p>
-     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
-     * as such should be provided.
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
+     * <p>
+     * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
+     * should be provided.
      */
     public static class Builder {
 
         private Scheduler scheduler;
         private ScopeAwareProvider scopeAwareProvider;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer;
         private Predicate<Throwable> refireImmediatelyPolicy =
                 throwable -> !findException(throwable, t -> t instanceof AxonNonTransientException).isPresent();
 
@@ -284,7 +286,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@link DeadlineMessage} and the {@link ScopeDescriptor}
-         * into the {@link JobDataMap}. Defaults to a {@link XStreamSerializer}.
+         * into the {@link JobDataMap}.
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@link DeadlineMessage} and the
          *                   {@link ScopeDescriptor} into the {@link JobDataMap}
@@ -329,6 +331,16 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 }

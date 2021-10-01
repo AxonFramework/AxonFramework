@@ -73,7 +73,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
 
-    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final Serializer serializer = TestSerializer.xStreamSerializer();
 
     @PersistenceContext
     private EntityManager entityManager;

@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DomainEventEntryTest {
 
-    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final Serializer serializer = TestSerializer.xStreamSerializer();
 
     @Test
     void testDomainEventEntryWrapEventsCorrectly() {

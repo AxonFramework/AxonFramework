@@ -37,7 +37,7 @@ class RevisionSnapshotFilterTest {
 
     private static final String EXPECTED_REVISION = "LET ME IN";
 
-    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final Serializer serializer = TestSerializer.xStreamSerializer();
 
     @Test
     void testAllowsDomainEventDataContainingTheAllowedAggregateTypeAndRevision() {

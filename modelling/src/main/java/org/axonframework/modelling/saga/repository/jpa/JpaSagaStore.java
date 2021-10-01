@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,9 +27,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +34,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -44,7 +44,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * JPA implementation of the {@link SagaStore}. It uses an {@link javax.persistence.EntityManager} to persist the actual
  * saga in a backing store in serialized form.
  * <p/>
- * After each operations that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
+ * After each operation that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
  * ensure the store contains the last modifications. To override this behavior, see {@link
  * #setUseExplicitFlush(boolean)}
  *
@@ -116,8 +116,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     /**
      * Instantiate a Builder to be able to create a {@link JpaSagaStore}.
      * <p>
-     * The {@link Serializer} is defaulted to an {@link XStreamSerializer}.
-     * The {@link EntityManagerProvider} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link EntityManagerProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
      *
      * @return a Builder to be able to create a {@link JpaSagaStore}
      */
@@ -352,8 +352,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     /**
      * Builder class to instantiate a {@link JpaSagaStore}.
      * <p>
-     * The {@link Serializer} is defaulted to an {@link XStreamSerializer}.
-     * The {@link EntityManagerProvider} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link EntityManagerProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
      */
     public static class Builder {
 
@@ -375,7 +375,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         }
 
         /**
-         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
          * @return the current Builder instance, for fluent interfacing
@@ -404,8 +404,14 @@ public class JpaSagaStore implements SagaStore<Object> {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
-
             if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
                 serializer = XStreamSerializer::defaultSerializer;
             }
         }

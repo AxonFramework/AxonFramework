@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.upcasting.Upcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.utils.StubDomainEvent;
 import org.axonframework.utils.TestDomainEventEntry;
 import org.dom4j.Document;
@@ -48,10 +48,11 @@ import static org.mockito.Mockito.*;
  */
 class SingleEventUpcasterTest {
 
+    private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();;
+
     @Test
     void testUpcastsKnownType() {
         String newValue = "newNameValue";
-        Serializer serializer = XStreamSerializer.builder().build();
         MetaData metaData = MetaData.with("key", "value");
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName"), metaData),
@@ -76,7 +77,6 @@ class SingleEventUpcasterTest {
         String aggregateId = "aggregateId";
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
         long sequenceNumber = 100;
-        Serializer serializer = XStreamSerializer.builder().build();
         Object payload = new StubDomainEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData = new TrackedDomainEventData<>(
@@ -101,7 +101,6 @@ class SingleEventUpcasterTest {
 
     @Test
     void testIgnoresUnknownType() {
-        Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
         );
@@ -116,7 +115,6 @@ class SingleEventUpcasterTest {
 
     @Test
     void testIgnoresWrongVersion() {
-        Serializer serializer = XStreamSerializer.builder().build();
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName")), serializer
         );

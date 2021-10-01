@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,8 @@ class AxonServerAutoConfigurationTest {
                     MetricsAutoConfiguration.class,
                     NoOpTransactionAutoConfiguration.class,
                     ObjectMapperAutoConfiguration.class,
-                    TransactionAutoConfiguration.class
+                    TransactionAutoConfiguration.class,
+                    XStreamAutoConfiguration.class
             ));
 
     @Autowired

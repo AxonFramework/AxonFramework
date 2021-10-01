@@ -82,11 +82,14 @@ public class JdbcSagaStore implements SagaStore<Object> {
     /**
      * Instantiate a Builder to be able to create a {@link JdbcSagaStore}.
      * <p>
-     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}.
-     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
-     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
-     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}.
+     * <p>
+     * The {@link ConnectionProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
+     * <p>
+     * You can choose to provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used
+     * ConnectionProvider will be a {@link DataSourceConnectionProvider} wrapped by a {@link
+     * UnitOfWorkAwareConnectionProviderWrapper}.
      *
      * @return a Builder to be able to create a {@link JdbcSagaStore}
      */
@@ -301,17 +304,20 @@ public class JdbcSagaStore implements SagaStore<Object> {
     /**
      * Builder class to instantiate a {@link JdbcSagaStore}.
      * <p>
-     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}.
-     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
-     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
-     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}.
+     * <p>
+     * The {@link ConnectionProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
+     * <p>
+     * You can choose to provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used
+     * ConnectionProvider will be a {@link DataSourceConnectionProvider} wrapped by a {@link
+     * UnitOfWorkAwareConnectionProviderWrapper}.
      */
     public static class Builder {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer;
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
@@ -358,7 +364,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
         }
 
         /**
-         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
          * @return the current Builder instance, for fluent interfacing
@@ -386,6 +392,16 @@ public class JdbcSagaStore implements SagaStore<Object> {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 

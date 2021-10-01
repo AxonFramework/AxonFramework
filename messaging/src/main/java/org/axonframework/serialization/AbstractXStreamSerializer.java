@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,16 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -68,18 +73,22 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
-        xStream.addImmutableType(UUID.class, true);
 
         // Message serialization
         xStream.alias("domain-event", GenericDomainEventMessage.class);
         xStream.alias("event", GenericEventMessage.class);
         xStream.alias("command", GenericCommandMessage.class);
-
-        // For backward compatibility
-        xStream.alias("uuid", UUID.class);
-
+        xStream.alias("command-result", GenericCommandResultMessage.class);
+        xStream.alias("query", GenericQueryMessage.class);
+        xStream.alias("query-response", GenericQueryResponseMessage.class);
+        xStream.alias("query-update", GenericSubscriptionQueryUpdateMessage.class);
+        xStream.alias("deadline", GenericDeadlineMessage.class);
         xStream.alias("meta-data", MetaData.class);
         xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
+
+        xStream.addImmutableType(UUID.class, true);
+        // For backward compatibility
+        xStream.alias("uuid", UUID.class);
     }
 
     /**
@@ -186,8 +195,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * Add an alias for a package. This allows long package names to be shortened considerably. Will also use the alias
      * for sub-packages of the provided package.
      * <p/>
-     * E.g. an alias of "axoncore" for the package "org.axonframework.core" will use "axoncore.repository" for the
-     * package "org.axonframework.core.repository".
+     * E.g. an alias of "axon-modelling" for the package "org.axonframework.modelling" will use "axon-modelling.command"
+     * for the package "org.axonframework.modelling.command".
      *
      * @param alias   The alias to use.
      * @param pkgName The package to use the alias for
@@ -214,7 +223,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
-     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
@@ -231,8 +239,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Returns the Converter used by this serialized. The converter factory allows registration of
-     * ContentTypeConverters needed by the upcasters.
+     * Returns the Converter used by this serialized. The converter factory allows registration of ContentTypeConverters
+     * needed by the upcasters.
      *
      * @return the Converter used by this serializer
      */
@@ -257,13 +265,16 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * The {@link Charset} is defaulted to a {@link Charset#forName(String)} using the {@code UTF-8} character set, the
      * {@link RevisionResolver} defaults to an {@link AnnotationRevisionResolver} and the {@link Converter} defaults to
      * a {@link ChainingConverter}. The {@link XStream} is a <b>hard requirement</b> and as such should be provided.
+     * Lastly, the builder adds Axon types for XStream's security settings by including {@code "org.axonframework.**} as
+     * a wildcard type. This can be disabled with the {@link Builder#disableAxonTypeSecurity()} operation when
+     * required.
      * <p>
-     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the
-     * {@link GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among
-     * others. Additionally, a MetaData Converter is registered too. Lastly, if the provided Converter instance
-     * is of type ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)}
-     * function will be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter
-     * instances to the chain.
+     * Upon instantiation, several defaults aliases are added to the XStream instance, for example for the {@link
+     * GenericDomainEventMessage}, the {@link GenericCommandMessage} and the {@link MetaData} objects among others.
+     * Additionally, a MetaData Converter is registered too. Lastly, if the provided Converter instance is of type
+     * ChainingConverter, then the {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)} function will
+     * be called. Depending on the AbstractXStreamSerializer, this will add a number of Converter instances to the
+     * chain.
      */
     public abstract static class Builder {
 
@@ -272,6 +283,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();
         private boolean lenientDeserialization = false;
+        private boolean axonTypeSecurity = true;
         private ClassLoader classLoader;
 
         /**
@@ -301,8 +313,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
         /**
          * Sets the {@link RevisionResolver} used to resolve the revision from an object to be serialized. Defaults to
-         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the
-         * {@link org.axonframework.serialization.Revision} annotation on the serialized classes.
+         * an {@link AnnotationRevisionResolver} which resolves the revision based on the contents of the {@link
+         * org.axonframework.serialization.Revision} annotation on the serialized classes.
          *
          * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
          *                         serialized
@@ -316,8 +328,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
 
         /**
-         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters
-         * to convert between different content types. Defaults to a {@link ChainingConverter}.
+         * Sets the {@link Converter} used as a converter factory providing converter instances utilized by upcasters to
+         * convert between different content types. Defaults to a {@link ChainingConverter}.
          *
          * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
          *                  upcasters to convert between different content types
@@ -354,18 +366,36 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         }
 
         /**
+         * Configures the underlying {@link XStream} instance to <b>not</b> include Axon's classes by default.
+         * Concretely, the {@link XStream#allowTypesByWildcard(String[])} method will not be invoked with {@code
+         * "org.axonframework.**"}.
+         * <p>
+         * It is recommended to disable this setting when complete control is required over the allowed types in this
+         * serializer's {@code XStream} instance.
+         *
+         * @return the current Builder instance for fluent interfacing
+         */
+        public Builder disableAxonTypeSecurity() {
+            this.axonTypeSecurity = false;
+            return this;
+        }
+
+        /**
          * Validates whether the fields contained in this Builder are set accordingly.
          *
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(xStream, "The XStream is a hard requirement and should be provided");
+            assertNonNull(xStream, "The XStream instance is a hard requirement and should be provided");
             if (lenientDeserialization) {
                 xStream.ignoreUnknownElements();
             }
             if (classLoader != null) {
                 xStream.setClassLoader(classLoader);
+            }
+            if (axonTypeSecurity) {
+                xStream.allowTypesByWildcard(new String[]{"org.axonframework.**"});
             }
         }
     }
