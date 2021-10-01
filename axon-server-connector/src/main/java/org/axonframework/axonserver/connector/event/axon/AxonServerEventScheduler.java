@@ -37,7 +37,11 @@ import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
@@ -56,6 +60,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 4.4
  */
 public class AxonServerEventScheduler implements EventScheduler {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final long requestTimeout;
     private final Serializer serializer;
@@ -301,7 +307,16 @@ public class AxonServerEventScheduler implements EventScheduler {
         }
 
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");
         }

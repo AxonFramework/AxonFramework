@@ -320,6 +320,29 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         private void buildStorageEngine() {
+            if (snapshotSerializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used for events, whereas it is strongly recommended to"
+                                + " configure the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used for events,"
+                                        + " without specifying the security context"
+                        )
+                );
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
+            }
+            if (eventSerializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used for snapshots, whereas it is strongly recommended to "
+                                + "configure the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used for snapshots,"
+                                        + " without specifying the security context"
+                        )
+                );
+                eventSerializer = XStreamSerializer::defaultSerializer;
+            }
+
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");

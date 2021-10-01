@@ -32,7 +32,6 @@ import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -212,7 +211,7 @@ class JpaEventStorageEngineTest
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     void testStoreEventsWithCustomEntity() {
-        XStreamSerializer serializer = TestSerializer.xStreamSerializer();
+        XStreamSerializer serializer = xStreamSerializer();
         JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
                 JpaEventStorageEngine.builder()
                                      .snapshotSerializer(serializer)

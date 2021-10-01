@@ -221,18 +221,6 @@ class QuartzEventSchedulerTest {
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
-    @Test
-    void testBuildWithoutSerializerThrowsAxonConfigurationExceptionForMissingEventJobDataBinder() {
-        EventBus eventBus = SimpleEventBus.builder().build();
-        Scheduler scheduler = mock(Scheduler.class);
-        QuartzEventScheduler.Builder builderTestSubject =
-                QuartzEventScheduler.builder()
-                                    .eventBus(eventBus)
-                                    .scheduler(scheduler);
-
-        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
-    }
-
     private EventMessage<Object> buildTestEvent() {
         return new GenericEventMessage<>(new Object());
     }

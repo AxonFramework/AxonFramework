@@ -27,6 +27,7 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -391,7 +392,16 @@ public class JdbcSagaStore implements SagaStore<Object> {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 

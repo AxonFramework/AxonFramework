@@ -29,6 +29,7 @@ import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -330,7 +331,16 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 }
