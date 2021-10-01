@@ -27,11 +27,14 @@ import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializedObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
 
 /**
@@ -47,6 +50,8 @@ import java.nio.charset.Charset;
  * @since 1.2
  */
 public class XStreamSerializer extends AbstractXStreamSerializer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * Instantiate a Builder to be able to create a {@link XStreamSerializer}.
@@ -91,14 +96,17 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
      *
      * @return a {@link XStreamSerializer}
      * @deprecated in favor of using the {@link #builder()} to construct an instance using a configured {@code XStream}
-     * instance. Using this shorthand still works, but will use an {@code XStream} instance that is unaware of the
-     * user's types that should be de-/serialized. XStream expects the types or wildcards for the types to be defined to
-     * ensure the application stays secure. As such, it is <b>highly recommended</b> to follow their recommended
-     * approach.
+     * instance. Using this shorthand still works, but will use an {@code XStream} instance that <b>allows
+     * everything</b>. Although this works, XStream expects the types or wildcards for the types to be defined to ensure
+     * the application stays secure. As such, it is <b>highly recommended</b> to follow their recommended approach.
      */
     @Deprecated
     public static XStreamSerializer defaultSerializer() {
-        return builder().xStream(new XStream(new CompactDriver()))
+        logger.warn("An unsecured XStream instance allowing all types is used. "
+                            + "It is strongly recommended to set the security context yourself instead!");
+        XStream xStream = new XStream(new CompactDriver());
+        xStream.allowTypeHierarchy(Object.class);
+        return builder().xStream(xStream)
                         .build();
     }
 
