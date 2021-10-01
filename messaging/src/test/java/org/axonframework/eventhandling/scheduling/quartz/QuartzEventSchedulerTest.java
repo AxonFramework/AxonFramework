@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -50,8 +52,6 @@ import static org.mockito.Mockito.*;
 class QuartzEventSchedulerTest {
 
     private static final String GROUP_ID = "TestGroup";
-    private static final QuartzEventScheduler.DirectEventJobDataBinder JOB_DATA_BINDER =
-            new QuartzEventScheduler.DirectEventJobDataBinder(TestSerializer.XSTREAM.getSerializer());
 
     private Scheduler scheduler;
     private EventBus eventBus;
@@ -68,7 +68,7 @@ class QuartzEventSchedulerTest {
         testSubject = QuartzEventScheduler.builder()
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
-                                          .jobDataBinder(JOB_DATA_BINDER)
+                                          .serializer(TestSerializer.XSTREAM.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
     }
@@ -103,7 +103,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
-                                          .jobDataBinder(JOB_DATA_BINDER)
+                                          .serializer(TestSerializer.XSTREAM.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -136,7 +136,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
-                                          .jobDataBinder(JOB_DATA_BINDER)
+                                          .serializer(TestSerializer.XSTREAM.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
 
@@ -179,10 +179,46 @@ class QuartzEventSchedulerTest {
         QuartzEventScheduler testSubject = QuartzEventScheduler.builder()
                                                                .scheduler(scheduler)
                                                                .eventBus(eventBus)
-                                                               .jobDataBinder(JOB_DATA_BINDER)
+                                                               .serializer(TestSerializer.XSTREAM.getSerializer())
                                                                .build();
 
         assertThrows(SchedulingException.class, testSubject::shutdown);
+    }
+
+    @Test
+    void testBuildWithNullEventJobDataBinderThrowsAxonConfigurationException() {
+        QuartzEventScheduler.Builder builderTestSubject = QuartzEventScheduler.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.jobDataBinder(null));
+    }
+
+    @Test
+    void testBuildWithNullSerializerThrowsAxonConfigurationException() {
+        QuartzEventScheduler.Builder builderTestSubject = QuartzEventScheduler.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.serializer(null));
+    }
+
+    @Test
+    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+        EventBus eventBus = SimpleEventBus.builder().build();
+        QuartzEventScheduler.Builder builderTestSubject =
+                QuartzEventScheduler.builder()
+                                    .eventBus(eventBus)
+                                    .serializer(TestSerializer.XSTREAM.getSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithoutEventBusThrowsAxonConfigurationException() {
+        Scheduler scheduler = mock(Scheduler.class);
+        QuartzEventScheduler.Builder builderTestSubject =
+                QuartzEventScheduler.builder()
+                                    .scheduler(scheduler)
+                                    .serializer(TestSerializer.XSTREAM.getSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     private EventMessage<Object> buildTestEvent() {

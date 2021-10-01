@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.utils;
+package org.axonframework.utils;
 
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.xml.CompactDriver;

@@ -1,19 +1,17 @@
 /*
- *  Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.axonframework.axonserver.connector.event.axon;
@@ -37,6 +35,7 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
@@ -167,6 +166,7 @@ public class AxonServerEventSchedulerTest {
                                                        .axonServerConfiguration(axonserverConfiguration)
                                                        .build();
         testSubject = AxonServerEventScheduler.builder()
+                                              .eventSerializer(TestSerializer.xStreamSerializer())
                                               .connectionManager(connectionManager)
                                               .build();
         testSubject.start();
@@ -185,8 +185,10 @@ public class AxonServerEventSchedulerTest {
     void scheduleTimeout() {
         sendResponse.set(false);
         testSubject = AxonServerEventScheduler.builder()
+                                              .eventSerializer(TestSerializer.xStreamSerializer())
                                               .connectionManager(connectionManager)
-                                              .requestTimeout(500, TimeUnit.MILLISECONDS).build();
+                                              .requestTimeout(500, TimeUnit.MILLISECONDS)
+                                              .build();
         testSubject.start();
 
         try {

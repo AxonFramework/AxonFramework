@@ -23,10 +23,14 @@ import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import io.axoniq.axonserver.grpc.control.PlatformServiceGrpc;
+import io.grpc.Context;
+import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,11 +42,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase {
 
+    public static final Metadata.Key<String> AXON_IQ_CONTEXT = Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
+    public static final io.grpc.Context.Key<String> CONTEXT_KEY = Context.key("AxonIQ-Context");
+
     private final int port;
 
     private final List<ClientIdentification> clientIdentificationRequests = new CopyOnWriteArrayList<>();
     private final List<Heartbeat> heartbeatMessages = new CopyOnWriteArrayList<>();
     private final AtomicInteger completedCounter = new AtomicInteger(0);
+    private final Map<String, List<Heartbeat>> heartbeatMessagesPerContext = new ConcurrentHashMap<>();
 
     public PlatformService(int port) {
         this.port = port;
@@ -70,6 +78,10 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
         return Collections.unmodifiableList(heartbeatMessages);
     }
 
+    public List<Heartbeat> getHeartbeatMessages(String context) {
+        return Collections.unmodifiableList(heartbeatMessagesPerContext.getOrDefault(context, Collections.emptyList()));
+    }
+
     public int getNumberOfCompletedStreams() {
         return completedCounter.get();
     }
@@ -88,6 +100,9 @@ public class PlatformService extends PlatformServiceGrpc.PlatformServiceImplBase
                     clientIdentificationRequests.add(register);
                 } else if (platformInboundInstruction.hasHeartbeat()) {
                     heartbeatMessages.add(platformInboundInstruction.getHeartbeat());
+                    String context = CONTEXT_KEY.get(Context.current());
+                    heartbeatMessagesPerContext.computeIfAbsent(context, k -> new CopyOnWriteArrayList<>())
+                                               .add(platformInboundInstruction.getHeartbeat());
                 }
             }
 

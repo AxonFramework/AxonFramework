@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.eventhandling.EventMessage;
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.serialization.FixedValueRevisionResolver;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
@@ -46,6 +48,7 @@ class HeadersTests {
     @BeforeEach
     void setUp() {
         serializer = XStreamSerializer.builder()
+                                      .xStream(new XStream(new CompactDriver()))
                                       .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
                                       .build();
     }

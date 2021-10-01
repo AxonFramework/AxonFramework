@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -40,13 +39,18 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
-
 /**
- * Jdbc implementation of the {@link SagaStore}.
+ * A {@link SagaStore} implementation that uses JDBC to store and find Saga instances.
+ * <p>
+ * Before using this store make sure the database contains an association value- and saga entry table. These can be
+ * constructed with {@link SagaSqlSchema#sql_createTableAssocValueEntry(Connection)} and {@link
+ * SagaSqlSchema#sql_createTableSagaEntry(Connection)} respectively. For convenience, these tables can be constructed
+ * through the {@link JdbcSagaStore#createSchema()} operation.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
@@ -78,11 +82,14 @@ public class JdbcSagaStore implements SagaStore<Object> {
     /**
      * Instantiate a Builder to be able to create a {@link JdbcSagaStore}.
      * <p>
-     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}.
-     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
-     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
-     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}.
+     * <p>
+     * The {@link ConnectionProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
+     * <p>
+     * You can choose to provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used
+     * ConnectionProvider will be a {@link DataSourceConnectionProvider} wrapped by a {@link
+     * UnitOfWorkAwareConnectionProviderWrapper}.
      *
      * @return a Builder to be able to create a {@link JdbcSagaStore}
      */
@@ -280,9 +287,9 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Creates the SQL Schema required to store Sagas and their associations,.
+     * Creates the SQL Schema required to store Sagas and their associations.
      *
-     * @throws SQLException When an error occurs preparing of executing the required statements
+     * @throws SQLException when an error occurs preparing of executing the required statements
      */
     public void createSchema() throws SQLException {
         final Connection connection = connectionProvider.getConnection();
@@ -297,17 +304,20 @@ public class JdbcSagaStore implements SagaStore<Object> {
     /**
      * Builder class to instantiate a {@link JdbcSagaStore}.
      * <p>
-     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
-     * {@link XStreamSerializer}.
-     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
-     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
-     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}.
+     * <p>
+     * The {@link ConnectionProvider} and {@link Serializer} are <b>hard requirements</b> and as such should be
+     * provided.
+     * <p>
+     * You can choose to provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used
+     * ConnectionProvider will be a {@link DataSourceConnectionProvider} wrapped by a {@link
+     * UnitOfWorkAwareConnectionProviderWrapper}.
      */
     public static class Builder {
 
         private ConnectionProvider connectionProvider;
         private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
-        private Supplier<Serializer> serializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> serializer;
 
         /**
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
@@ -354,7 +364,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
         }
 
         /**
-         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
          * @return the current Builder instance, for fluent interfacing
@@ -382,6 +392,16 @@ public class JdbcSagaStore implements SagaStore<Object> {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
+            if (serializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
+                                + " the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used, without specifying the security context"
+                        )
+                );
+                serializer = XStreamSerializer::defaultSerializer;
+            }
         }
     }
 

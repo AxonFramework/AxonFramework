@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.utils;
 
 import com.thoughtworks.xstream.XStream;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 /**
@@ -31,14 +32,13 @@ public abstract class TestSerializer {
     }
 
     /**
-     * Return a {@link XStreamSerializer} for which the security settings have been set.
+     * Return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}.
      *
-     * @return a {@link XStreamSerializer} for which the security settings have been set.
+     * @return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}
      */
-    public static XStreamSerializer secureXStreamSerializer() {
-        XStream xStream = new XStream();
-        xStream.setClassLoader(TestSerializer.class.getClassLoader());
-        xStream.allowTypesByWildcard(new String[]{"org.axonframework.**"});
-        return XStreamSerializer.builder().xStream(xStream).build();
+    public static XStreamSerializer xStreamSerializer() {
+        return XStreamSerializer.builder()
+                                .xStream(new XStream(new CompactDriver()))
+                                .build();
     }
 }

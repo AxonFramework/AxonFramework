@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.axonframework.modelling.utils.TestSerializer.secureXStreamSerializer;
+import static org.axonframework.modelling.utils.TestSerializer.xStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -72,7 +72,7 @@ public class JpaSagaStoreTest {
     void setUp() {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
                                              .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                                             .serializer(secureXStreamSerializer())
+                                             .serializer(xStreamSerializer())
                                              .build();
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
@@ -218,7 +218,7 @@ public class JpaSagaStoreTest {
     void testStoreSagaWithCustomEntity() {
         JpaSagaStore sagaStore = new JpaSagaStore(
                 JpaSagaStore.builder()
-                            .serializer(secureXStreamSerializer())
+                            .serializer(xStreamSerializer())
                             .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
         ) {
             @Override

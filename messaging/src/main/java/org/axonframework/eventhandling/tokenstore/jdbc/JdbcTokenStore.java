@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,15 +51,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
-import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
-import static org.axonframework.common.jdbc.JdbcUtils.executeUpdate;
-import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
-import static org.axonframework.common.jdbc.JdbcUtils.listResults;
+import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * Implementation of a token store that uses JDBC to save and load tokens. Before using this store make sure the
- * database contains a table named {@link TokenSchema#tokenTable()} in which to store the tokens.
+ * A {@link TokenStore} implementation that uses JDBC to save and load {@link TrackingToken} instances.
+ * <p>
+ * Before using this store make sure the database contains a table named {@link TokenSchema#tokenTable()} in which to
+ * store the tokens. For convenience, this table can be constructed through the {@link
+ * JdbcTokenStore#createSchema(TokenTableFactory)} operation.
  *
  * @author Rene de Waele
  * @since 3.0

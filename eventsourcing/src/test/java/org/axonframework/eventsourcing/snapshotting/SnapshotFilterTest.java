@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.snapshotting;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,7 +38,7 @@ class SnapshotFilterTest {
     private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
     private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(
             new GenericDomainEventMessage<>("some-type", "some-aggregate-id", 0, "some-payload"),
-            XStreamSerializer.defaultSerializer()
+            TestSerializer.xStreamSerializer()
     );
 
     @Test

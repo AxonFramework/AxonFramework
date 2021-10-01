@@ -46,7 +46,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
-import static org.axonframework.config.utils.TestSerializer.secureXStreamSerializer;
+import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -180,7 +180,7 @@ public class AggregateConfigurerTest {
         DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
         );
-        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, secureXStreamSerializer());
+        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
 
         AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
                 new AggregateConfigurer<>(TestAggregateWithRevision.class);
