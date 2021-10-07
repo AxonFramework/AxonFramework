@@ -90,29 +90,32 @@ public class EventProcessingModule
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
-    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
-    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
-    private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
-    private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
-    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
-    private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
-    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, String> processingGroupsAssignments = new HashMap<>();
-    private final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-    private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
-    private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
-    private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
-    private final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
-
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
+
+    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
+    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
+
+    protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+
+    protected final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
+    protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+    protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
+    protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
+    protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+
+    protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
+    protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     private Configuration configuration;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -171,7 +174,7 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
+    protected PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -564,6 +567,11 @@ public class EventProcessingModule
         return this;
     }
 
+    public EventProcessingConfigurer usingEventProcessorBuilder(EventProcessorBuilder processorBuilder) {
+        this.defaultEventProcessorBuilder = processorBuilder;
+        return this;
+    }
+
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
@@ -771,39 +779,60 @@ public class EventProcessingModule
         return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
     }
 
-    private SubscribingEventProcessor subscribingEventProcessor(String name,
-                                                                EventHandlerInvoker eventHandlerInvoker,
-                                                                SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+    /**
+     * @param name
+     * @param eventHandlerInvoker
+     * @param messageSource
+     * @return
+     */
+    protected EventProcessor subscribingEventProcessor(String name,
+                                                       EventHandlerInvoker eventHandlerInvoker,
+                                                       SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
-                                        .name(name)
-                                        .eventHandlerInvoker(eventHandlerInvoker)
-                                        .rollbackConfiguration(rollbackConfiguration(name))
-                                        .errorHandler(errorHandler(name))
-                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                                        .messageSource(messageSource)
-                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                                        .transactionManager(transactionManager(name))
-                                        .build();
+                .name(name)
+                .eventHandlerInvoker(eventHandlerInvoker)
+                .rollbackConfiguration(rollbackConfiguration(name))
+                .errorHandler(errorHandler(name))
+                .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                .messageSource(messageSource)
+                .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                .transactionManager(transactionManager(name))
+                .build();
     }
 
-    private TrackingEventProcessor trackingEventProcessor(String name,
-                                                          EventHandlerInvoker eventHandlerInvoker,
-                                                          TrackingEventProcessorConfiguration config,
-                                                          StreamableMessageSource<TrackedEventMessage<?>> source) {
+    /**
+     * @param name
+     * @param eventHandlerInvoker
+     * @param config
+     * @param source
+     * @return
+     */
+    protected EventProcessor trackingEventProcessor(String name,
+                                                    EventHandlerInvoker eventHandlerInvoker,
+                                                    TrackingEventProcessorConfiguration config,
+                                                    StreamableMessageSource<TrackedEventMessage<?>> source) {
         return TrackingEventProcessor.builder()
-                                     .name(name)
-                                     .eventHandlerInvoker(eventHandlerInvoker)
-                                     .rollbackConfiguration(rollbackConfiguration(name))
-                                     .errorHandler(errorHandler(name))
-                                     .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
-                                     .messageSource(source)
-                                     .tokenStore(tokenStore(name))
-                                     .transactionManager(transactionManager(name))
-                                     .trackingEventProcessorConfiguration(config)
-                                     .build();
+                .name(name)
+                .eventHandlerInvoker(eventHandlerInvoker)
+                .rollbackConfiguration(rollbackConfiguration(name))
+                .errorHandler(errorHandler(name))
+                .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
+                .messageSource(source)
+                .tokenStore(tokenStore(name))
+                .transactionManager(transactionManager(name))
+                .trackingEventProcessorConfiguration(config)
+                .build();
     }
 
-    private PooledStreamingEventProcessor pooledStreamingEventProcessor(
+    /**
+     * @param name
+     * @param eventHandlerInvoker
+     * @param config
+     * @param messageSource
+     * @param processorConfiguration
+     * @return
+     */
+    protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,
             Configuration config,
@@ -812,8 +841,8 @@ public class EventProcessingModule
     ) {
         PooledStreamingEventProcessor.Builder builder =
                 PooledStreamingEventProcessor.builder()
-                                             .name(name)
-                                             .eventHandlerInvoker(eventHandlerInvoker)
+                        .name(name)
+                        .eventHandlerInvoker(eventHandlerInvoker)
                                              .rollbackConfiguration(rollbackConfiguration(name))
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
