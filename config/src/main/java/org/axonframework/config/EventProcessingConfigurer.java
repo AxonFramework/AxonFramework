@@ -260,6 +260,8 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer usingPooledStreamingEventProcessors();
 
+    EventProcessingConfigurer usingEventProcessorBuilder(EventProcessorBuilder processorBuilder);
+
     /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
      * Configurer.
