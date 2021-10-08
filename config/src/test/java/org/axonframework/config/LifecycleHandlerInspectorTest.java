@@ -46,7 +46,7 @@ class LifecycleHandlerInspectorTest {
     void testNothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
         LifecycleHandlerInspector.registerLifecycleHandlers(configuration, null);
 
-        verifyZeroInteractions(configuration);
+        verifyNoInteractions(configuration);
     }
 
     @Test
