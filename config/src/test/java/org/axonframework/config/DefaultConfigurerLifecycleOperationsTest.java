@@ -156,7 +156,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(phaseOneHandlerAdder).addLifecycleHandler(any(), eq(testSubject), eq(2), any());
         lifecycleOrder.verify(phaseTwoHandler).start();
 
-        verifyZeroInteractions(addedPhaseTwoShutdownHandler);
+        verifyNoInteractions(addedPhaseTwoShutdownHandler);
     }
 
     @Test
@@ -287,7 +287,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(phaseOneHandler).shutdown();
         lifecycleOrder.verify(phaseZeroHandler).shutdown();
 
-        verifyZeroInteractions(addedPhaseOneStartHandler);
+        verifyNoInteractions(addedPhaseOneStartHandler);
     }
 
     @Test
@@ -354,6 +354,7 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, phaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
+        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(phaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
     }
@@ -374,6 +375,7 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, extremelySlowPhaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
+        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(extremelySlowPhaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
     }
