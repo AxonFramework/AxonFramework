@@ -12,8 +12,8 @@ There are different ways in which you can contribute to the framework:
      framework, send us a pull request (or patch or a zip containing the source code). We will evaluate it and try to
      fit it in the framework. Please make sure code is properly documented using javadoc. This helps us to understand
      what is going on.
-  3. If you know of any other way you think you can help us, do not hesitate to send a message to the
-     [Axon Framework mailinglist](axonframework@googlegroups.com).
+  3. If you know of any other way you think you can help us, do not hesitate to join and start a conversation on
+     [AxonIQ's discussion platform](https://discuss.axoniq.io/).
 
 ## Code contributions
 

@@ -1,0 +1,16 @@
+changelog:
+  sections:
+    - title: ":star: Features"
+      labels: [ "Type: Feature" ]
+    - title: ":chart_with_upwards_trend: Enhancements"
+      labels: [ "Type: Enhancement" ]
+    - title: ":beetle: Bug Fixes"
+      labels: [ "Type: Bug" ]
+    - title: ":hammer_and_wrench: Dependency Upgrade"
+      labels: [ "Type: Dependency Upgrade" ]
+  issues:
+    exclude:
+      labels: [ "Type: Incorrect Repository", "Type: Question" ]
+  contributors:
+    exclude:
+      names: [ "dependabot" ]
