@@ -126,13 +126,13 @@ public interface TestExecutor<T> {
      * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      *
-     * @deprecated in favor of {@link #whenThenTimeElapses(Duration)}. This function incorrectly suggests you can
+     * @deprecated in favor of {@link #whenTimeElapses(Duration)}. This function incorrectly suggests you can
      * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
      * return type
      */
     @Deprecated
     default ResultValidator andThenTimeElapses(Duration elapsedTime) {
-        return whenThenTimeElapses(elapsedTime);
+        return whenTimeElapses(elapsedTime);
     }
 
     /**
@@ -165,13 +165,13 @@ public interface TestExecutor<T> {
      * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      *
-     * @deprecated in favor of {@link #whenThenTimeAdvancesTo(Instant)}. This function incorrectly suggests you can
+     * @deprecated in favor of {@link #whenTimeAdvancesTo(Instant)}. This function incorrectly suggests you can
      * proceed with other operations after calling it, which is made impossible due to the {@link ResultValidator}
      * return type
      */
     @Deprecated
     default ResultValidator andThenTimeAdvancesTo(Instant newPointInTime) {
-        return whenThenTimeAdvancesTo(newPointInTime);
+        return whenTimeAdvancesTo(newPointInTime);
     }
 
     /**
