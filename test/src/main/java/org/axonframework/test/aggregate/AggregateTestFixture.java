@@ -439,7 +439,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return buildResultValidator();
     }
 
-    @Override @Deprecated(since="4.6")
+    @Override @Deprecated
     public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
         return whenTimeElapses(elapsedTime);
     }
@@ -451,7 +451,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    @Deprecated(since = "4.6")
+    @Deprecated
     public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
         return whenTimeAdvancesTo(newPointInTime);
     }

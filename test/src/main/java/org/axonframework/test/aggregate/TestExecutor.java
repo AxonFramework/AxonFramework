@@ -144,7 +144,7 @@ public interface TestExecutor<T> {
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      * @deprecated since 4.6. Use {@link #whenTimeAdvancesTo(Instant)} method
      */
-    @Deprecated(since = "4.6")
+    @Deprecated
     ResultValidator<T> whenThenTimeElapses(Duration elapsedTime);
 
     /**
@@ -191,7 +191,7 @@ public interface TestExecutor<T> {
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      * @deprecated since 4.6. Use {@link #whenTimeAdvancesTo(Instant)} method
      */
-    @Deprecated(since="4.6")
+    @Deprecated
     ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime);
 
     /**
