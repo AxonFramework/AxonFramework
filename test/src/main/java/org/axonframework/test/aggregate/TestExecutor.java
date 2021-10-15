@@ -152,10 +152,18 @@ public interface TestExecutor<T> {
      * useful when the time between given events is of importance, for example when leveraging the
      * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
      *
+     * Note: As this method is added to the interface as a replacement for the deprecated
+     * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
+     * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
+     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recomended
+     * approach is to override this implementation.
+     *
      * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator<T> whenTimeElapses(Duration elapsedTime);
+    default ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
+        return whenThenTimeElapses(elapsedTime);
+    }
 
     /**
      * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
@@ -191,9 +199,17 @@ public interface TestExecutor<T> {
      * useful when the time between given events is of importance, for example when leveraging the
      * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
      *
+     * Note: As this method is added to the interface as a replacement for the deprecated
+     * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
+     * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
+     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recomended
+     * approach is to override this implementation.
+     *
      * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime);
+    default ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
+        return whenThenTimeAdvancesTo(newPointInTime);
+    }
 
 }
