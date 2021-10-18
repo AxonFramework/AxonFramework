@@ -100,7 +100,7 @@ class FixtureTest_Deadlines {
         //noinspection deprecation
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMetMatching(payloadsMatching(exactSequenceOf(equalTo(DEADLINE_PAYLOAD))));
     }
 
@@ -108,7 +108,7 @@ class FixtureTest_Deadlines {
     void testTriggeredDeadlinesMatching() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(equalTo(DEADLINE_PAYLOAD))));
     }
 
@@ -117,7 +117,7 @@ class FixtureTest_Deadlines {
         //noinspection deprecation
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectDeadlinesMet(DEADLINE_PAYLOAD);
     }
 
@@ -125,7 +125,7 @@ class FixtureTest_Deadlines {
     void testTriggeredDeadlines() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
     }
 
@@ -134,7 +134,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -151,7 +151,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -165,7 +165,7 @@ class FixtureTest_Deadlines {
     void testTriggeredDeadlinesWithName() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlinesWithName(DEADLINE_NAME);
     }
 
@@ -174,7 +174,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -191,7 +191,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -205,7 +205,7 @@ class FixtureTest_Deadlines {
     void testTriggeredDeadlinesOfType() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlinesOfType(String.class);
     }
 
@@ -214,7 +214,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -231,7 +231,7 @@ class FixtureTest_Deadlines {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
-                       .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
 
         AxonAssertionError result = assertThrows(
                 AxonAssertionError.class,
@@ -263,7 +263,7 @@ class FixtureTest_Deadlines {
                 messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlines("fakeDeadlineDetails");
     }
 
@@ -277,7 +277,7 @@ class FixtureTest_Deadlines {
         })
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlines("fakeDeadlineDetails");
     }
 
