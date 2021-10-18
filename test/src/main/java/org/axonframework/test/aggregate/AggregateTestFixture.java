@@ -439,7 +439,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return buildResultValidator();
     }
 
-    @Override @Deprecated
+    @Override
+    @Deprecated
     public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
         return whenTimeElapses(elapsedTime);
     }
