@@ -52,7 +52,7 @@ public class XStreamAutoConfiguration {
     @Conditional(XStreamConfiguredCondition.class)
     public XStream defaultAxonXStream(ApplicationContext applicationContext) {
         XStream xStream = new XStream(new CompactDriver());
-        XStreamSecurityTypeUtility.allowTypesFromComponentScanAnnotatedBeans(applicationContext, xStream);
+        XStreamSecurityTypeUtility.allowEntityTypesFrom(applicationContext, xStream);
         return xStream;
     }
 
