@@ -344,7 +344,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
                     "org.axonframework.axonserver.connector.command.AxonServerCommandBus",
-                    "org.axonframework.extensions.multitenancy.commandbus.MultiTenantCommandBus"
+                    "org.axonframework.extensions.multitenancy.components.commandhandeling.MultiTenantCommandBus"
             },
             value = CommandBus.class
     )
