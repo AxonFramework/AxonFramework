@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -206,6 +206,19 @@ public interface TokenStore {
      * @return an array of segment identifiers.
      */
     int[] fetchSegments(String processorName);
+
+    /**
+     * Returns an array of known {@code segments} for a given {@code processorName}.
+     * <p>
+     * The segments returned are segments for which a token has been stored previously and have not been claimed by another processor. When the {@link
+     * TokenStore} is empty, an empty array is returned.
+     *
+     * @param processorName The process name for which to fetch the segments
+     * @return an array of segment identifiers for the specified {@code processorName}, or an empty Optional if this method has not been implemented.
+     */
+    default Optional<int[]> fetchAvailableSegments(String processorName) {
+        return Optional.empty();
+    }
 
     /**
      * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token

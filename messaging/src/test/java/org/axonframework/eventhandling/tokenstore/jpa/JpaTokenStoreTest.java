@@ -137,10 +137,11 @@ public class JpaTokenStoreTest {
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
     }
+
     @Transactional
     @Test
     void testIdentifierReadIfAvailable() {
-        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer() ));
+        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer()));
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
         assertTrue(id1.isPresent());
         Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
@@ -263,15 +264,7 @@ public class JpaTokenStoreTest {
     @Transactional
     @Test
     public void testQuerySegments() {
-        jpaTokenStore.initializeTokenSegments("test", 1);
-        jpaTokenStore.initializeTokenSegments("proc1", 2);
-        jpaTokenStore.initializeTokenSegments("proc2", 1);
-
-        assertNull(jpaTokenStore.fetchToken("test", 0));
-
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
+        prepareTokenStore();
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc1");
@@ -281,15 +274,58 @@ public class JpaTokenStoreTest {
             final int[] segments = jpaTokenStore.fetchSegments("proc2");
             assertThat(segments.length, is(1));
         }
-
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc3");
             assertThat(segments.length, is(0));
         }
 
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    @Transactional
+    @Test
+    public void testQueryAvailableSegments() {
+        prepareTokenStore();
+
+        {
+            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc1");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(0));
+            jpaTokenStore.releaseClaim("proc1", 0);
+            final Optional<int[]> segmentsAfterRelease = jpaTokenStore.fetchAvailableSegments("proc1");
+            assertTrue(segmentsAfterRelease.isPresent());
+            assertThat(segmentsAfterRelease.get().length, is(1));
+        }
+        {
+            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc2");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(0));
+            jpaTokenStore.releaseClaim("proc2", 0);
+            final Optional<int[]> segmentsAfterRelease = jpaTokenStore.fetchAvailableSegments("proc2");
+            assertTrue(segmentsAfterRelease.isPresent());
+            assertThat(segmentsAfterRelease.get().length, is(1));
+        }
+        {
+            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc3");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(0));
+        }
 
         entityManager.flush();
         entityManager.clear();
+    }
+
+    private void prepareTokenStore() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        jpaTokenStore.initializeTokenSegments("proc1", 2);
+        jpaTokenStore.initializeTokenSegments("proc2", 1);
+
+        assertNull(jpaTokenStore.fetchToken("test", 0));
+
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
     }
 
     @Transactional
@@ -495,7 +531,6 @@ public class JpaTokenStoreTest {
             public EntityManagerProvider entityManagerProvider() {
                 return new SimpleEntityManagerProvider(entityManager);
             }
-
         }
     }
 }

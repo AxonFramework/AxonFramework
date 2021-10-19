@@ -313,6 +313,23 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Override
+    public Optional<int[]> fetchAvailableSegments(String processorName) {
+        Connection connection = getConnection();
+        try {
+            List<Integer> integers = executeQuery(connection,
+                                                  c -> selectForSegments(c, processorName, true),
+                                                  listResults(rs -> rs.getInt(schema.segmentColumn())),
+                                                  e -> new JdbcException(format(
+                                                          "Could not load segments for processor [%s]", processorName
+                                                  ), e)
+            );
+            return Optional.of(integers.stream().mapToInt(i -> i).toArray());
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
     /**
      * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying
      * storage.
@@ -323,9 +340,24 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
+        return selectForSegments(connection, processorName, false);
+    }
+
+    /**
+     * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying storage.
+     *
+     * @param connection    the connection to the underlying database
+     * @param processorName the name of the processor to fetch the segments for
+     * @param unclaimedOnly if true, filter the tokens on unclaimed tokens only
+     * @return a {@link PreparedStatement} that will fetch segments when executed
+     * @throws SQLException when an exception occurs while creating the prepared statement
+     */
+    protected PreparedStatement selectForSegments(Connection connection, String processorName, boolean unclaimedOnly) throws SQLException {
         final String sql = "SELECT " + schema.segmentColumn() +
                 " FROM " + schema.tokenTable() +
-                " WHERE " + schema.processorNameColumn() + " = ? ORDER BY " + schema.segmentColumn() + " ASC";
+                " WHERE " + schema.processorNameColumn() + " = ? " +
+                (unclaimedOnly ? "AND " + schema.ownerColumn() + " IS NULL " : "") +
+                " ORDER BY " + schema.segmentColumn() + " ASC";
         PreparedStatement preparedStatement =
                 connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         preparedStatement.setString(1, processorName);

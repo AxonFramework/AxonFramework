@@ -150,6 +150,53 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void testQuerySegments() {
+        prepareTokenStore();
+
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc1");
+            assertThat(segments.length, is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc2");
+            assertThat(segments.length, is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc3");
+            assertThat(segments.length, is(0));
+        });
+    }
+
+    @Transactional
+    @Test
+    void testQueryAvailableSegments() {
+        prepareTokenStore();
+
+        transactionManager.executeInTransaction(() -> {
+            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc1");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(0));
+            tokenStore.releaseClaim("proc1", 0);
+            final Optional<int[]> segmentsAfterRelease = tokenStore.fetchAvailableSegments("proc1");
+            assertTrue(segmentsAfterRelease.isPresent());
+            assertThat(segmentsAfterRelease.get().length, is(1));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc2");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(1));
+            tokenStore.releaseClaim("proc2", 1);
+            final Optional<int[]> segmentsAfterRelease = tokenStore.fetchAvailableSegments("proc2");
+            assertTrue(segmentsAfterRelease.isPresent());
+            assertThat(segmentsAfterRelease.get().length, is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc3");
+            assertTrue(segments.isPresent());
+            assertThat(segments.get().length, is(0));
+        });
+    }
+
+    private void prepareTokenStore() {
         transactionManager.executeInTransaction(() -> {
             tokenStore.initializeTokenSegments("test", 1);
             tokenStore.initializeTokenSegments("proc1", 2);
@@ -166,19 +213,6 @@ class JdbcTokenStoreTest {
         transactionManager.executeInTransaction(
                 () -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1)
         );
-
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc1");
-            assertThat(segments.length, is(2));
-        });
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc2");
-            assertThat(segments.length, is(2));
-        });
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc3");
-            assertThat(segments.length, is(0));
-        });
     }
 
 

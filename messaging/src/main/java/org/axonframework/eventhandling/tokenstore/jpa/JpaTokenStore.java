@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,6 +228,19 @@ public class JpaTokenStore implements TokenStore {
         ).setParameter("processorName", processorName).getResultList();
 
         return resultList.stream().mapToInt(i -> i).toArray();
+    }
+
+    @Override
+    public Optional<int[]> fetchAvailableSegments(String processorName) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+
+        final List<Integer> resultList = entityManager.createQuery(
+                "SELECT te.segment FROM TokenEntry te "
+                        + "WHERE te.processorName = :processorName AND te.owner IS NULL ORDER BY te.segment ASC",
+                Integer.class
+        ).setParameter("processorName", processorName).getResultList();
+
+        return Optional.of(resultList.stream().mapToInt(i -> i).toArray());
     }
 
     /**
