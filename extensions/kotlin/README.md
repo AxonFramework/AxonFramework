@@ -24,7 +24,7 @@ For more information on anything Axon, please visit our website, [http://axoniq.
 
 ### Dependencies
 
-For the Kotlin extension itself plese use the following coordinates:
+For the Kotlin extension itself please use the following coordinates:
 
 **Maven**
 
@@ -42,7 +42,7 @@ For the Kotlin extension itself plese use the following coordinates:
 implementation("org.axonframework.extensions.kotlin:axon-kotlin:0.2.0")
 ```
 
-For the Kotlin testing extension itself plese use the following coordinates:
+For the Kotlin testing extension itself please use the following coordinates:
 
 **Maven**
 
