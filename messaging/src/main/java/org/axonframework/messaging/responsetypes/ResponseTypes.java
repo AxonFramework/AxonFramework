@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.responsetypes;
 
+import reactor.core.publisher.Flux;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -62,6 +64,12 @@ public abstract class ResponseTypes {
      */
     public static <R> ResponseType<List<R>> multipleInstancesOf(Class<R> type) {
         return new MultipleInstancesResponseType<>(type);
+    }
+
+    // TODO: 10/21/21 javadoc
+    // TODO: 10/21/21 check compatibility when project reactor is not on classpath
+    public static <R> ResponseType<Flux<R>> streamOf(Class<R> type) {
+        return new StreamResponseType<>(type);
     }
 
     private ResponseTypes() {

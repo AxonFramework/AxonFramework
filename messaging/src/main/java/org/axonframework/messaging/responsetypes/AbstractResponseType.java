@@ -18,6 +18,7 @@ package org.axonframework.messaging.responsetypes;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.TypeReflectionUtils;
+import reactor.core.publisher.Flux;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -72,6 +73,12 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     @Deprecated
     protected Type unwrapIfTypeFuture(Type type) {
         return ReflectionUtils.unwrapIfType(type, Future.class);
+    }
+
+    protected boolean isFluxOfExpectedType(Type responseType) {
+        // TODO: 10/21/21 check compatibility when project reactor is not on classpath
+        Type fluxType = TypeReflectionUtils.getExactSuperType(responseType, Flux.class);
+        return fluxType != null && isParameterizedTypeOfExpectedType(fluxType);
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {

@@ -32,6 +32,8 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -53,6 +55,7 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
+import static org.axonframework.queryhandling.GenericQueryResponseMessage.asNullableResponseMessage;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -181,6 +184,27 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
+    public <Q, R> QueryResponseMessage<R> streamingQuery(QueryMessage<Q, R> query) {
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
+        QueryMessage<Q, R> interceptedQuery = intercept(query);
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+        if (handlers.isEmpty()) {
+            monitorCallback.reportIgnored();
+            throw new NoHandlerForQueryException(
+                    format("No handler found for [%s] with response type [%s]",
+                           interceptedQuery.getQueryName(),
+                           interceptedQuery.getResponseType())
+            );
+        }
+        DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+        // TODO: 10/20/21 do for all handlers :)
+        ResultMessage<R> queryResponseMessageResultMessage = interceptAndInvokeStreamingHandler(
+                uow,
+                handlers.get(0));
+        return new GenericQueryResponseMessage<>(queryResponseMessageResultMessage.getPayload());
+    }
+
+    @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
@@ -286,6 +310,26 @@ public class SimpleQueryBus implements QueryBus {
         return queryUpdateEmitter;
     }
 
+    private <Q, R> ResultMessage<R> interceptAndInvokeStreamingHandler(
+            UnitOfWork<QueryMessage<Q, R>> uow,
+            MessageHandler<? super QueryMessage<?, R>> handler) {
+        ResultMessage<R> result = uow.executeWithResult(() -> {
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            if (Flux.class.isAssignableFrom(queryResponse.getClass())) {
+                return (R) queryResponse;
+            } else if (Iterable.class.isAssignableFrom(queryResponse.getClass())) {
+                return (R) Flux.fromIterable((Iterable) queryResponse);
+            } else if (Stream.class.isAssignableFrom(queryResponse.getClass())) {
+                return (R) Flux.fromStream((Stream) queryResponse);
+            }else if (CompletableFuture.class.isAssignableFrom(queryResponse.getClass())) {
+                return (R) Flux.from(Mono.fromCompletionStage((CompletableFuture) queryResponse));
+            } else {
+                return (R) Flux.just(queryResponse);
+            }
+        });
+        return result;
+    }
+
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler
@@ -299,7 +343,7 @@ public class SimpleQueryBus implements QueryBus {
             } else if (queryResponse instanceof Future) {
                 return CompletableFuture.supplyAsync(() -> {
                     try {
-                        return GenericQueryResponseMessage.asNullableResponseMessage(
+                        return asNullableResponseMessage(
                                 responseType.responseMessagePayloadType(),
                                 responseType.convert(((Future<?>) queryResponse).get()));
                     } catch (InterruptedException | ExecutionException e) {
@@ -313,7 +357,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private <R> CompletableFuture<QueryResponseMessage<R>> buildCompletableFuture(ResponseType<R> responseType,
                                                                                   Object queryResponse) {
-        return CompletableFuture.completedFuture(GenericQueryResponseMessage.asNullableResponseMessage(
+        return CompletableFuture.completedFuture(asNullableResponseMessage(
                 responseType.responseMessagePayloadType(),
                 responseType.convert(queryResponse)));
     }

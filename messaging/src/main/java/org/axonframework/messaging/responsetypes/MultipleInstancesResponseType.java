@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -84,7 +85,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         return isIterableOfExpectedType(unwrapped) ||
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||
-                isArrayOfExpectedType(unwrapped);
+                isArrayOfExpectedType(unwrapped) ||
+                isFluxOfExpectedType(unwrapped);
     }
 
     /**
@@ -108,6 +110,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
             return Arrays.asList((R[]) response);
         } else if (isIterableOfExpectedType(response)) {
             return convertToList((Iterable) response);
+        } else if (Flux.class.isAssignableFrom(responseType)) {
+            return ((Flux<R>) response).collectList().block();
         }
 
         throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
