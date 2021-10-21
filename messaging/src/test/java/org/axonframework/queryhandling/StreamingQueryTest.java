@@ -4,12 +4,16 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -108,6 +112,103 @@ public class StreamingQueryTest {
                     .verifyComplete();
     }
 
+    @Test
+    void testStreamingMonoResult() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "monoQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectNext("helloMono")
+                    .verifyComplete();
+    }
+
+    @Test
+    void testStreamingNullResult() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "nullQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectComplete()
+                    .verify();
+    }
+
+    @Test
+    void testErrorResult() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "exceptionQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectErrorMatches(t -> t instanceof RuntimeException
+                            && t.getMessage().equals("oops"))
+                    .verify();
+    }
+
+    @Test
+    void testThrottledFluxQuery() {
+        QueryMessage<String, Flux<Long>> queryMessage =
+                new GenericQueryMessage<>("criteria",
+                                          "throttledFluxQuery",
+                                          ResponseTypes.streamOf(Long.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectNext(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)
+                    .verifyComplete();
+    }
+
+    @Test
+    void testBackpressureFluxQuery() {
+        QueryMessage<String, Flux<Long>> queryMessage =
+                new GenericQueryMessage<>("criteria",
+                                          "backPressure",
+                                          ResponseTypes.streamOf(Long.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload(), 10L)
+                    .expectNextCount(10)
+                    .thenRequest(10)
+                    .expectNextCount(10)
+                    .thenCancel()
+                    .verify();
+    }
+
+    @Test
+    void testDispatchInterceptor() {
+        AtomicBoolean hasBeenCalled = new AtomicBoolean();
+
+        queryBus.registerDispatchInterceptor(messages -> {
+            hasBeenCalled.set(true);
+            return (i, m) -> m;
+        });
+
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectNext("a", "b", "c", "d")
+                    .verifyComplete();
+
+        assertTrue(hasBeenCalled.get());
+    }
+
+    @Test
+    void testHandlerInterceptor() {
+        queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) ->
+                                                    ((Flux) interceptorChain.proceed()).map(it -> "a"));
+
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectNext("a", "a", "a", "a")
+                    .verifyComplete();
+    }
+
     private static class MyQueryHandler {
 
         @QueryHandler(queryName = "fluxQuery")
@@ -139,6 +240,36 @@ public class StreamingQueryTest {
         public Flux<Long> streamingAfterHandlerCompletesQuery(String criteria) {
             return Flux.interval(Duration.ofSeconds(1))
                        .take(5);
+        }
+
+        @QueryHandler(queryName = "monoQuery")
+        public Mono<String> monoQuery(String criteria) {
+            return Mono.fromCallable(() -> "helloMono")
+                       .delayElement(Duration.ofMillis(100));
+        }
+
+        @QueryHandler(queryName = "nullQuery")
+        public Flux<String> nullQuery(String criteria) {
+            return null;
+        }
+
+        @QueryHandler(queryName = "exceptionQuery")
+        public Flux<String> exceptionQuery(String criteria) {
+            throw new RuntimeException("oops");
+        }
+
+        @QueryHandler(queryName = "throttledFluxQuery")
+        public Flux<Long> throttledFlux(String criteria) {
+            return Flux.interval(Duration.ofMillis(100))
+                       .window(2)
+                       .take(4)
+                       .flatMap(Function.identity());
+        }
+
+        @QueryHandler(queryName = "backPressure")
+        public Flux<Long> backPressureQuery(String criteria) {
+            return Flux.create(longFluxSink -> longFluxSink
+                    .onRequest(r -> LongStream.range(0, r).forEach(longFluxSink::next)));
         }
     }
 }

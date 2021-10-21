@@ -314,14 +314,23 @@ public class SimpleQueryBus implements QueryBus {
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler) {
         ResultMessage<R> result = uow.executeWithResult(() -> {
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            if (Flux.class.isAssignableFrom(queryResponse.getClass())) {
+            Object queryResponse;
+            try {
+                queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            } catch (Exception e) {
+                return (R) Flux.error(e);
+            }
+            if (queryResponse == null) {
+                return (R) Flux.empty();
+            } else if (Flux.class.isAssignableFrom(queryResponse.getClass())) {
                 return (R) queryResponse;
             } else if (Iterable.class.isAssignableFrom(queryResponse.getClass())) {
                 return (R) Flux.fromIterable((Iterable) queryResponse);
             } else if (Stream.class.isAssignableFrom(queryResponse.getClass())) {
                 return (R) Flux.fromStream((Stream) queryResponse);
-            }else if (CompletableFuture.class.isAssignableFrom(queryResponse.getClass())) {
+            } else if (Mono.class.isAssignableFrom(queryResponse.getClass())) {
+                return (R) Flux.from((Mono) queryResponse);
+            } else if (CompletableFuture.class.isAssignableFrom(queryResponse.getClass())) {
                 return (R) Flux.from(Mono.fromCompletionStage((CompletableFuture) queryResponse));
             } else {
                 return (R) Flux.just(queryResponse);
