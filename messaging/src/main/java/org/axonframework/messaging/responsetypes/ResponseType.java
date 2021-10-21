@@ -18,6 +18,7 @@ package org.axonframework.messaging.responsetypes;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 /**
  * Specifies the expected response type required when performing a query through the
@@ -59,6 +60,10 @@ public interface ResponseType<R> extends Serializable {
     @SuppressWarnings("unchecked")
     default R convert(Object response) {
         return (R) response;
+    }
+
+    default Optional<R> convertExceptional(Throwable e) {
+        return Optional.empty();
     }
 
     /**

@@ -9,6 +9,7 @@ import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,6 +46,29 @@ public class StreamingQueryTest {
     }
 
     @Test
+    void testSingleInstancesOfTypeResults() {
+        QueryMessage<String, String> queryMessage =
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.instanceOf(String.class));
+
+        assertThrows(NoHandlerForQueryException.class, () -> queryBus.streamingQuery(queryMessage));
+    }
+
+    @Test
+    void testOptionalInstancesOfTypeResults() {
+        QueryMessage<String, Optional<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.optionalInstanceOf(String.class));
+
+        assertThrows(NoHandlerForQueryException.class, () -> queryBus.streamingQuery(queryMessage));
+    }
+
+    @Test
+    void testMultipleInstancesOfTypeResults() {
+        QueryMessage<String, List<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.multipleInstancesOf(String.class));
+        assertEquals(asList("a", "b", "c", "d"), queryBus.streamingQuery(queryMessage).getPayload());
+    }
+
+    @Test
     void testStreamingFluxResults() {
         QueryMessage<String, Flux<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
@@ -56,6 +80,28 @@ public class StreamingQueryTest {
     }
 
     @Test
+    void testOptionalResults() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "optionalResultQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectNext("optional")
+                    .verifyComplete();
+    }
+
+    @Test
+    void testEmptyOptionalResults() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "emptyOptionalResultQuery", ResponseTypes.streamOf(String.class));
+
+        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+                                    .getPayload())
+                    .expectComplete()
+                    .verify();
+    }
+
+    @Test
     void testStreamingListResults() {
         QueryMessage<String, Flux<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "listQuery", ResponseTypes.streamOf(String.class));
@@ -64,6 +110,15 @@ public class StreamingQueryTest {
                                     .getPayload())
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
+    }
+
+    @Test
+    void testStreamingMultipleInstanceOfResults() {
+        QueryMessage<String, List<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "listQuery", ResponseTypes.multipleInstancesOf(String.class));
+
+        assertEquals(asList("a", "b", "c", "d"), queryBus.streamingQuery(queryMessage)
+                                    .getPayload());
     }
 
     @Test
@@ -229,6 +284,16 @@ public class StreamingQueryTest {
         @QueryHandler(queryName = "singleResultQuery")
         public String singleResultQuery(String criteria) {
             return "lonely";
+        }
+
+        @QueryHandler(queryName = "optionalResultQuery")
+        public Optional<String> optionalResultQuery(String criteria) {
+            return Optional.of("optional");
+        }
+
+        @QueryHandler(queryName = "emptyOptionalResultQuery")
+        public Optional<String> emptyOptionalResultQuery(String criteria) {
+            return Optional.empty();
         }
 
         @QueryHandler(queryName = "completableFutureQuery")

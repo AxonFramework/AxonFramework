@@ -32,8 +32,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -188,20 +186,25 @@ public class SimpleQueryBus implements QueryBus {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+        ResponseType<R> responseType = interceptedQuery.getResponseType();
         if (handlers.isEmpty()) {
             monitorCallback.reportIgnored();
             throw new NoHandlerForQueryException(
                     format("No handler found for [%s] with response type [%s]",
                            interceptedQuery.getQueryName(),
-                           interceptedQuery.getResponseType())
+                           responseType)
             );
         }
         DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
         // TODO: 10/20/21 do for all handlers :)
-        ResultMessage<R> queryResponseMessageResultMessage = interceptAndInvokeStreamingHandler(
-                uow,
-                handlers.get(0));
-        return new GenericQueryResponseMessage<>(queryResponseMessageResultMessage.getPayload());
+        ResultMessage<R> resultMessage = interceptAndInvokeStreamingHandler(uow, handlers.get(0));
+        if (resultMessage.isExceptional()) {
+            return responseType.convertExceptional(resultMessage.exceptionResult())
+                               .map(GenericQueryResponseMessage::new)
+                               .orElse(new GenericQueryResponseMessage<>(responseType.responseMessagePayloadType(),
+                                                                         resultMessage.exceptionResult()));
+        }
+        return new GenericQueryResponseMessage<>(resultMessage.getPayload());
     }
 
     @Override
@@ -313,30 +316,11 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> ResultMessage<R> interceptAndInvokeStreamingHandler(
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler) {
-        ResultMessage<R> result = uow.executeWithResult(() -> {
-            Object queryResponse;
-            try {
-                queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            } catch (Exception e) {
-                return (R) Flux.error(e);
-            }
-            if (queryResponse == null) {
-                return (R) Flux.empty();
-            } else if (Flux.class.isAssignableFrom(queryResponse.getClass())) {
-                return (R) queryResponse;
-            } else if (Iterable.class.isAssignableFrom(queryResponse.getClass())) {
-                return (R) Flux.fromIterable((Iterable) queryResponse);
-            } else if (Stream.class.isAssignableFrom(queryResponse.getClass())) {
-                return (R) Flux.fromStream((Stream) queryResponse);
-            } else if (Mono.class.isAssignableFrom(queryResponse.getClass())) {
-                return (R) Flux.from((Mono) queryResponse);
-            } else if (CompletableFuture.class.isAssignableFrom(queryResponse.getClass())) {
-                return (R) Flux.from(Mono.fromCompletionStage((CompletableFuture) queryResponse));
-            } else {
-                return (R) Flux.just(queryResponse);
-            }
+        return uow.executeWithResult(() -> {
+            ResponseType<R> responseType = uow.getMessage().getResponseType();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            return responseType.convert(queryResponse);
         });
-        return result;
     }
 
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(
