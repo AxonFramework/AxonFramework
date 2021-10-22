@@ -264,6 +264,25 @@ public class StreamingQueryTest {
                     .verifyComplete();
     }
 
+    @Test
+    void testErrorStream() {
+        QueryMessage<String, Flux<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "errorStream", ResponseTypes.streamOf(String.class));
+
+        QueryResponseMessage<Flux<String>> result = queryBus.streamingQuery(queryMessage);
+        StepVerifier.create(result.getPayload())
+                    .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
+    }
+
+    @Test
+    void testErrorStreamOnMultipleResponses() {
+        QueryMessage<String, List<String>> queryMessage =
+                new GenericQueryMessage<>("criteria", "errorStream", ResponseTypes.multipleInstancesOf(String.class));
+
+        QueryResponseMessage<List<String>> result = queryBus.streamingQuery(queryMessage);
+        assertTrue(result.isExceptional());
+    }
+
     private static class MyQueryHandler {
 
         @QueryHandler(queryName = "fluxQuery")
@@ -335,6 +354,11 @@ public class StreamingQueryTest {
         public Flux<Long> backPressureQuery(String criteria) {
             return Flux.create(longFluxSink -> longFluxSink
                     .onRequest(r -> LongStream.range(0, r).forEach(longFluxSink::next)));
+        }
+
+        @QueryHandler(queryName = "errorStream")
+        public Flux<String> errorStream(String criteria) {
+            return Flux.error(new RuntimeException("oops"));
         }
     }
 }

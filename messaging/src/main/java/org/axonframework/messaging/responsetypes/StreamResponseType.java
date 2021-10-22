@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 public class StreamResponseType<R> extends AbstractResponseType<Flux<R>> {
 
     // TODO: 10/21/21 javadoc
-    protected StreamResponseType(Class<?> expectedResponseType) {
+    public StreamResponseType(Class<?> expectedResponseType) {
         super(expectedResponseType);
     }
 
