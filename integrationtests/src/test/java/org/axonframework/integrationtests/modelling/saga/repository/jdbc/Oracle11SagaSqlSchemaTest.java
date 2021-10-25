@@ -39,8 +39,8 @@ import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 @Testcontainers
 class Oracle11SagaSqlSchemaTest {
 
-    private static final String USERNAME = "system";
-    private static final String PASSWORD = "oracle";
+    private static final String USERNAME = "test";
+    private static final String PASSWORD = "test";
 
     @Container
     private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gvenzl/oracle-xe");
