@@ -246,7 +246,7 @@ public abstract class AnnotationUtils {
                                                                  boolean overrideOnly) {
         Method[] methods = ann.annotationType().getDeclaredMethods();
         for (Method method : methods) {
-            if (method.getParameterTypes().length == 0 && method.getReturnType() != void.class) {
+            if (method.getParameterCount() == 0 && method.getReturnType() != void.class) {
                 try {
                     String key = resolveName(method);
                     Object value = method.invoke(ann);
