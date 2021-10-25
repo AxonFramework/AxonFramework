@@ -52,11 +52,12 @@ import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
+import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.StreamResponseType;
+import org.axonframework.messaging.responsetypes.FluxResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -76,6 +77,7 @@ import reactor.core.publisher.Flux;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -107,7 +109,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
     private static final int STREAMING_QUERY_NUMBER_OF_RESULTS = -2;
-    private static final long STREAMING_QUERY_TIMEOUT_MS = TimeUnit.DAYS.toMillis(1); //todo infinity
+    private static final long STREAMING_QUERY_TIMEOUT_MS = TimeUnit.DAYS.toMillis(1);
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
     private static final int DEFAULT_PRIORITY = 0;
@@ -207,20 +209,46 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         try {
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             int priority = priorityCalculator.determinePriority(interceptedQuery);
-            QueryRequest queryRequest =
-                    serializer.serializeRequest(interceptedQuery,
-                                                DIRECT_QUERY_NUMBER_OF_RESULTS,
-                                                DIRECT_QUERY_TIMEOUT_MS,
-                                                priority);
+            QueryRequest queryRequest;
+            boolean streamingQuery = queryMessage.getResponseType() instanceof FluxResponseType;
+            if (streamingQuery) {
+                queryRequest = serializer.serializeRequest(interceptedQuery,
+                                            STREAMING_QUERY_NUMBER_OF_RESULTS,
+                                            STREAMING_QUERY_TIMEOUT_MS,
+                                            priority);
+            } else {
+                queryRequest =
+                        serializer.serializeRequest(interceptedQuery,
+                                                    DIRECT_QUERY_NUMBER_OF_RESULTS,
+                                                    DIRECT_QUERY_TIMEOUT_MS,
+                                                    priority);
+            }
 
             ResultStream<QueryResponse> result = axonServerConnectionManager.getConnection(targetContext)
                                                                             .queryChannel()
                                                                             .query(queryRequest);
 
-            ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
-                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
-            );
-            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
+            if (streamingQuery) {
+                Flux<R> resultStream = new QueryResponseStream<>(interceptedQuery,
+                                                                 result,
+                                                                 serializer,
+                                                                 queryInTransit::end).getResponseStream();
+                QueryResponseMessage<R> queryResponseMessage;
+                try {
+                    queryResponseMessage = new GenericQueryResponseMessage<>(queryMessage.getResponseType()
+                                                                                         .convert(resultStream));
+                } catch (IllegalPayloadAccessException e) {
+                    queryResponseMessage = new GenericQueryResponseMessage<>(queryMessage.getResponseType()
+                                                                                         .responseMessagePayloadType(),
+                                                                             e);
+                }
+                queryTransaction.complete(queryResponseMessage);
+            } else {
+                ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
+                        result, serializer, queryTransaction, priority, queryMessage.getResponseType()
+                );
+                result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
+            }
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -228,37 +256,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         return queryTransaction.whenComplete((r, e) -> queryInTransit.end());
-    }
-
-    @Override
-    public <Q, R> QueryResponseMessage<R> streamingQuery(QueryMessage<Q, R> queryMessage) {
-        shutdownLatch.ifShuttingDown(String.format("Cannot dispatch new %s as this bus is being shut down", "queries"));
-
-        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
-        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-        String targetContext = targetContextResolver.resolveContext(interceptedQuery);
-        int priority = priorityCalculator.determinePriority(interceptedQuery);
-
-        QueryRequest queryRequest =
-                serializer.serializeRequest(interceptedQuery,
-                                            STREAMING_QUERY_NUMBER_OF_RESULTS,
-                                            STREAMING_QUERY_TIMEOUT_MS,
-                                            // TODO: 21.10.21. check query timeout for streaming queries to infinitiii
-                                            priority);
-        ResultStream<QueryResponse> queryResult = axonServerConnectionManager.getConnection(targetContext)
-                                                                             .queryChannel()
-                                                                             .query(queryRequest);
-
-        Flux<R> resultStream = new QueryResponseStream<>(interceptedQuery,
-                                                         queryResult,
-                                                         serializer,
-                                                         queryInTransit::end).getResponseStream();
-        try {
-            R result = queryMessage.getResponseType().convert(resultStream);
-            return new GenericQueryResponseMessage<>(result);
-        } catch (Exception e) {
-            return new GenericQueryResponseMessage<>(queryMessage.getResponseType().responseMessagePayloadType(), e);
-        }
     }
 
     @Override
@@ -449,16 +446,30 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     QueryMessage<Object, Flux<Object>> streamingQueryMessage =
                             new GenericQueryMessage<>(queryMessage,
                                                       queryMessage.getQueryName(),
-                                                      new StreamResponseType<>(queryMessage.getResponseType()
-                                                                                           .getExpectedResponseType()));
-                    localSegment.streamingQuery(streamingQueryMessage)
-                                .getPayload()
-                                .map(r -> new GenericQueryResponseMessage(r))
-                                .map(r -> serializer.serializeResponse(r, r.getIdentifier()))
-                                .subscribe(responseHandler::send,
-                                           e -> responseHandler.completeWithError(ExceptionSerializer.serialize(clientId,
-                                                                                                                e)),
-                                           responseHandler::complete);
+                                                      new FluxResponseType<>(queryMessage.getResponseType()
+                                                                                         .getExpectedResponseType()));
+                    localSegment.query(streamingQueryMessage)
+                            .whenComplete((fluxResult, error) -> {
+                                if (error == null) {
+                                    fluxResult.getPayload()
+                                     .map(r -> new GenericQueryResponseMessage(r))
+                                     .map(r -> serializer.serializeResponse(r, r.getIdentifier()))
+                                     .subscribe(responseHandler::send,
+                                                e -> responseHandler.completeWithError(ExceptionSerializer.serialize(clientId,
+                                                                                                                     e)),
+                                                responseHandler::complete);
+                                } else {
+                                    ErrorMessage ex = ExceptionSerializer.serialize(clientId, error);
+                                    QueryResponse response =
+                                            QueryResponse.newBuilder()
+                                                         .setErrorCode(ErrorCode.getQueryExecutionErrorCode(error).errorCode())
+                                                         .setErrorMessage(ex)
+                                                         .setRequestIdentifier(queryRequest.getMessageIdentifier())
+                                                         .build();
+                                    responseHandler.sendLast(response);
+                                }
+                            });
+
                 } else {
                     Stream<QueryResponseMessage<Object>> result = localSegment.scatterGather(
                             queryMessage,
@@ -852,13 +863,18 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                        }
                                    }
                                } else {
-                                   fluxSink.complete();
+                                   Optional<Throwable> optionalError = queryResult.getError();
+                                   if (optionalError.isPresent()) {
+                                       fluxSink.error(optionalError.get());
+                                   } else {
+                                       fluxSink.complete();
+                                   }
                                }
                            });
                        })
                        .map(queryResponse -> serializer.deserializeResponse(queryResponse,
-                                                                               queryMessage.getResponseType()))
-                       .flatMap(m -> (Flux<R>) m.getPayload())//todo fix later
+                                                                            queryMessage.getResponseType()))
+                       .flatMap(m -> (Flux<R>) m.getPayload())
                        .doFinally(c -> {
                            queryResult.close();
                            closeHandler.run();

@@ -68,8 +68,8 @@ public abstract class ResponseTypes {
 
     // TODO: 10/21/21 javadoc
     // TODO: 10/21/21 check compatibility when project reactor is not on classpath
-    public static <R> ResponseType<Flux<R>> streamOf(Class<R> type) {
-        return new StreamResponseType<>(type);
+    public static <R> ResponseType<Flux<R>> fluxOf(Class<R> type) {
+        return new FluxResponseType<>(type);
     }
 
     private ResponseTypes() {

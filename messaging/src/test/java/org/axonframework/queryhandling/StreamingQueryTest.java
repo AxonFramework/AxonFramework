@@ -50,7 +50,13 @@ public class StreamingQueryTest {
         QueryMessage<String, String> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.instanceOf(String.class));
 
-        assertThrows(NoHandlerForQueryException.class, () -> queryBus.streamingQuery(queryMessage));
+        assertThrows(NoHandlerForQueryException.class, () -> {
+            try {
+                queryBus.query(queryMessage).get();
+            } catch (ExecutionException e) {
+                throw e.getCause();
+            }
+        });
     }
 
     @Test
@@ -58,143 +64,160 @@ public class StreamingQueryTest {
         QueryMessage<String, Optional<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.optionalInstanceOf(String.class));
 
-        assertThrows(NoHandlerForQueryException.class, () -> queryBus.streamingQuery(queryMessage));
+        assertThrows(NoHandlerForQueryException.class, () -> {
+            try {
+                queryBus.query(queryMessage).get();
+            } catch (ExecutionException e) {
+                throw e.getCause();
+            }
+        });
     }
 
     @Test
-    void testMultipleInstancesOfTypeResults() {
+    void testMultipleInstancesOfTypeResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.multipleInstancesOf(String.class));
-        assertEquals(asList("a", "b", "c", "d"), queryBus.streamingQuery(queryMessage).getPayload());
+        assertEquals(asList("a", "b", "c", "d"), queryBus.query(queryMessage).get().getPayload());
     }
 
     @Test
-    void testStreamingFluxResults() {
+    void testStreamingFluxResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
     @Test
-    void testOptionalResults() {
+    void testOptionalResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "optionalResultQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "optionalResultQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("optional")
                     .verifyComplete();
     }
 
     @Test
-    void testEmptyOptionalResults() {
+    void testEmptyOptionalResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "emptyOptionalResultQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "emptyOptionalResultQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectComplete()
                     .verify();
     }
 
     @Test
-    void testStreamingListResults() {
+    void testStreamingListResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "listQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "listQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingMultipleInstanceOfResults() {
+    void testStreamingMultipleInstanceOfResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "listQuery", ResponseTypes.multipleInstancesOf(String.class));
 
-        assertEquals(asList("a", "b", "c", "d"), queryBus.streamingQuery(queryMessage)
-                                    .getPayload());
+        assertEquals(asList("a", "b", "c", "d"), queryBus.query(queryMessage)
+                                                         .get()
+                                                         .getPayload());
     }
 
     @Test
-    void testStreamingStreamResults() {
+    void testStreamingStreamResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "streamQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "streamQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingSingleResult() {
+    void testStreamingSingleResult() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "singleResultQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "singleResultQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("lonely")
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingCompletableFutureResult() {
+    void testStreamingCompletableFutureResult() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "completableFutureQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "completableFutureQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("future")
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingFluxAfterHandlerCompletes() {
+    void testStreamingFluxAfterHandlerCompletes() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<Long>> queryMessage =
                 new GenericQueryMessage<>("criteria",
                                           "streamingAfterHandlerCompletesQuery",
-                                          ResponseTypes.streamOf(Long.class));
+                                          ResponseTypes.fluxOf(Long.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext(0L, 1L, 2L, 3L, 4L)
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingMonoResult() {
+    void testStreamingMonoResult() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "monoQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "monoQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectNext("helloMono")
                     .verifyComplete();
     }
 
     @Test
-    void testStreamingNullResult() {
+    void testStreamingNullResult() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "nullQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "nullQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage)
+                                    .get()
                                     .getPayload())
                     .expectComplete()
                     .verify();
     }
 
     @Test
-    void testErrorResult() {
+    void testErrorResult() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "exceptionQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "exceptionQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage).get()
                                     .getPayload())
                     .expectErrorMatches(t -> t instanceof RuntimeException
                             && t.getMessage().equals("oops"))
@@ -202,26 +225,26 @@ public class StreamingQueryTest {
     }
 
     @Test
-    void testThrottledFluxQuery() {
+    void testThrottledFluxQuery() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<Long>> queryMessage =
                 new GenericQueryMessage<>("criteria",
                                           "throttledFluxQuery",
-                                          ResponseTypes.streamOf(Long.class));
+                                          ResponseTypes.fluxOf(Long.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage).get()
                                     .getPayload())
                     .expectNext(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L)
                     .verifyComplete();
     }
 
     @Test
-    void testBackpressureFluxQuery() {
+    void testBackpressureFluxQuery() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<Long>> queryMessage =
                 new GenericQueryMessage<>("criteria",
                                           "backPressure",
-                                          ResponseTypes.streamOf(Long.class));
+                                          ResponseTypes.fluxOf(Long.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage).get()
                                     .getPayload(), 10L)
                     .expectNextCount(10)
                     .thenRequest(10)
@@ -231,7 +254,7 @@ public class StreamingQueryTest {
     }
 
     @Test
-    void testDispatchInterceptor() {
+    void testDispatchInterceptor() throws ExecutionException, InterruptedException {
         AtomicBoolean hasBeenCalled = new AtomicBoolean();
 
         queryBus.registerDispatchInterceptor(messages -> {
@@ -240,9 +263,9 @@ public class StreamingQueryTest {
         });
 
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage).get()
                                     .getPayload())
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
@@ -251,35 +274,35 @@ public class StreamingQueryTest {
     }
 
     @Test
-    void testHandlerInterceptor() {
+    void testHandlerInterceptor() throws ExecutionException, InterruptedException {
         queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) ->
                                                     ((Flux) interceptorChain.proceed()).map(it -> "a"));
 
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
 
-        StepVerifier.create(queryBus.streamingQuery(queryMessage)
+        StepVerifier.create(queryBus.query(queryMessage).get()
                                     .getPayload())
                     .expectNext("a", "a", "a", "a")
                     .verifyComplete();
     }
 
     @Test
-    void testErrorStream() {
+    void testErrorStream() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "errorStream", ResponseTypes.streamOf(String.class));
+                new GenericQueryMessage<>("criteria", "errorStream", ResponseTypes.fluxOf(String.class));
 
-        QueryResponseMessage<Flux<String>> result = queryBus.streamingQuery(queryMessage);
+        QueryResponseMessage<Flux<String>> result = queryBus.query(queryMessage).get();
         StepVerifier.create(result.getPayload())
                     .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
     }
 
     @Test
-    void testErrorStreamOnMultipleResponses() {
+    void testErrorStreamOnMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "errorStream", ResponseTypes.multipleInstancesOf(String.class));
 
-        QueryResponseMessage<List<String>> result = queryBus.streamingQuery(queryMessage);
+        QueryResponseMessage<List<String>> result = queryBus.query(queryMessage).get();
         assertTrue(result.isExceptional());
     }
 

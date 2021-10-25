@@ -11,10 +11,10 @@ import java.util.stream.Stream;
 // TODO: 10/21/21 javadoc
 // TODO: 10/21/21 check compatibility with non-streaming queries
 // TODO: 10/21/21 check compatibility when project reactor is not on classpath
-public class StreamResponseType<R> extends AbstractResponseType<Flux<R>> {
+public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
 
     // TODO: 10/21/21 javadoc
-    public StreamResponseType(Class<?> expectedResponseType) {
+    public FluxResponseType(Class<?> expectedResponseType) {
         super(expectedResponseType);
     }
 

@@ -71,9 +71,6 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      */
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
 
-    // TODO: 10/21/21 javadoc
-    <Q, R> QueryResponseMessage<R> streamingQuery(QueryMessage<Q, R> query);
-
     /**
      * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s
      * queryName/responseType. Returns a stream of results which blocks until all handlers have processed the request or

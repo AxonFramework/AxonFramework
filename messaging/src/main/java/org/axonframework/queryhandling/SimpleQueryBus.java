@@ -140,11 +140,12 @@ public class SimpleQueryBus implements QueryBus {
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
         try {
+            ResponseType<R> responseType = interceptedQuery.getResponseType();
             if (handlers.isEmpty()) {
                 throw new NoHandlerForQueryException(
                         format("No handler found for [%s] with response type [%s]",
                                interceptedQuery.getQueryName(),
-                               interceptedQuery.getResponseType())
+                               responseType)
                 );
             }
             Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
@@ -155,9 +156,15 @@ public class SimpleQueryBus implements QueryBus {
                         interceptAndInvoke(uow, handlerIterator.next());
                 if (resultMessage.isExceptional()) {
                     if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
-                        result.complete(new GenericQueryResponseMessage<>(
-                                interceptedQuery.getResponseType().responseMessagePayloadType(),
-                                resultMessage.exceptionResult()));
+                        GenericQueryResponseMessage<R> queryResponseMessage =
+                                responseType.convertExceptional(resultMessage.exceptionResult())
+                                            .map(GenericQueryResponseMessage::new)
+                                            .orElse(new GenericQueryResponseMessage<>(
+                                                    responseType.responseMessagePayloadType(),
+                                                    resultMessage.exceptionResult()));
+
+
+                        result.complete(queryResponseMessage);
                         monitorCallback.reportFailure(resultMessage.exceptionResult());
                         return result;
                     }
@@ -170,7 +177,7 @@ public class SimpleQueryBus implements QueryBus {
                 throw new NoHandlerForQueryException(
                         format("No suitable handler was found for [%s] with response type [%s]",
                                interceptedQuery.getQueryName(),
-                               interceptedQuery.getResponseType())
+                               responseType)
                 );
             }
             monitorCallback.reportSuccess();
@@ -179,32 +186,6 @@ public class SimpleQueryBus implements QueryBus {
             monitorCallback.reportFailure(e);
         }
         return result;
-    }
-
-    @Override
-    public <Q, R> QueryResponseMessage<R> streamingQuery(QueryMessage<Q, R> query) {
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
-        ResponseType<R> responseType = interceptedQuery.getResponseType();
-        if (handlers.isEmpty()) {
-            monitorCallback.reportIgnored();
-            throw new NoHandlerForQueryException(
-                    format("No handler found for [%s] with response type [%s]",
-                           interceptedQuery.getQueryName(),
-                           responseType)
-            );
-        }
-        DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-        // TODO: 10/20/21 do for all handlers :)
-        ResultMessage<R> resultMessage = interceptAndInvokeStreamingHandler(uow, handlers.get(0));
-        if (resultMessage.isExceptional()) {
-            return responseType.convertExceptional(resultMessage.exceptionResult())
-                               .map(GenericQueryResponseMessage::new)
-                               .orElse(new GenericQueryResponseMessage<>(responseType.responseMessagePayloadType(),
-                                                                         resultMessage.exceptionResult()));
-        }
-        return new GenericQueryResponseMessage<>(resultMessage.getPayload());
     }
 
     @Override
@@ -311,16 +292,6 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public QueryUpdateEmitter queryUpdateEmitter() {
         return queryUpdateEmitter;
-    }
-
-    private <Q, R> ResultMessage<R> interceptAndInvokeStreamingHandler(
-            UnitOfWork<QueryMessage<Q, R>> uow,
-            MessageHandler<? super QueryMessage<?, R>> handler) {
-        return uow.executeWithResult(() -> {
-            ResponseType<R> responseType = uow.getMessage().getResponseType();
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            return responseType.convert(queryResponse);
-        });
     }
 
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(

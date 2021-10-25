@@ -47,6 +47,8 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,11 +60,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -264,6 +266,60 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void streamingQuery() throws ExecutionException, InterruptedException {
+        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubResponse("<string>1</string>"),
+                                                                            stubResponse("<string>2</string>"),
+                                                                            stubResponse("<string>3</string>")));
+
+        StepVerifier.create(testSubject.query(testQuery)
+                                       .get()
+                                       .getPayload())
+                    .expectNext("1", "2", "3")
+                    .verifyComplete();
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
+    void streamingQueryReturnsError() throws ExecutionException, InterruptedException {
+        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(new RuntimeException("oops")));
+
+        StepVerifier.create(testSubject.query(testQuery)
+                                       .get()
+                                       .getPayload())
+                    .verifyErrorMatches(t -> t instanceof RuntimeException && "oops".equals(t.getMessage()));
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
+    void streamingQueryReturnsNoResults() throws ExecutionException, InterruptedException {
+        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream());
+
+        StepVerifier.create(testSubject.query(testQuery)
+                                       .get()
+                                       .getPayload())
+                    .verifyComplete();
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
     void queryForOptionalWillRequestInstanceOfFromRemoteDestination() {
         QueryMessage<String, Optional<String>> testQuery =
                 new GenericQueryMessage<>("Hello, World", optionalInstanceOf(String.class));
@@ -382,18 +438,23 @@ class AxonServerQueryBusTest {
 
         private final Iterator<QueryResponse> responses;
         private QueryResponse peeked;
-        private boolean closed;
+        private volatile boolean closed;
         private final Throwable error;
+        private final int totalNumberOfElements;
 
         public StubResultStream(Throwable error) {
             this.error = error;
             this.closed = true;
             this.responses = Collections.emptyIterator();
+            this.totalNumberOfElements = 1;
         }
 
         public StubResultStream(QueryResponse... responses) {
             this.error = null;
-            this.responses = Arrays.asList(responses).iterator();
+            List<QueryResponse> queryResponses = Arrays.asList(responses);
+            this.responses = queryResponses.iterator();
+            this.totalNumberOfElements = queryResponses.size();
+            this.closed = totalNumberOfElements == 0;
         }
 
         @Override
@@ -411,7 +472,15 @@ class AxonServerQueryBusTest {
                 peeked = null;
                 return result;
             }
-            return responses.hasNext() ? responses.next() : null;
+            if (responses.hasNext()) {
+                QueryResponse next = responses.next();
+                if (!responses.hasNext()) {
+                    close();
+                }
+                return next;
+            } else {
+                return null;
+            }
         }
 
         @Override
@@ -427,7 +496,8 @@ class AxonServerQueryBusTest {
         @Override
         public void onAvailable(Runnable r) {
             if (peeked != null || responses.hasNext() || isClosed()) {
-                r.run();
+                IntStream.rangeClosed(0, totalNumberOfElements)
+                         .forEach(i -> r.run());
             }
         }
 
