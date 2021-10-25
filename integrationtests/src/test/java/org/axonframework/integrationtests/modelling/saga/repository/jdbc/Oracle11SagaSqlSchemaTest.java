@@ -43,7 +43,7 @@ class Oracle11SagaSqlSchemaTest {
     private static final String PASSWORD = "oracle";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gvenzl/oracle-xe");
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;

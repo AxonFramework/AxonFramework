@@ -43,7 +43,7 @@ class Oracle11EventTableFactoryTest {
     private static final String PASSWORD = "oracle";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gvenzl/oracle-xe");
 
     private Oracle11EventTableFactory testSubject;
     private Connection connection;
