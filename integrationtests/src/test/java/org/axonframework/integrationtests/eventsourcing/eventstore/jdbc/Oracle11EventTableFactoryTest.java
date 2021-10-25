@@ -54,8 +54,8 @@ class Oracle11EventTableFactoryTest {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         Properties properties = new Properties();
-        properties.getProperty("user", USERNAME);
-        properties.getProperty("password", PASSWORD);
+        properties.setProperty("user", USERNAME);
+        properties.setProperty("password", PASSWORD);
         //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
         properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
         connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), properties);
