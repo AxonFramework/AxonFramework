@@ -111,7 +111,7 @@
         <junit.jupiter.version>5.8.1</junit.jupiter.version>
         <axonserver-connector-java.version>4.5.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>1.16.2</testcontainers.version>
         <xstream.version>1.4.18</xstream.version>
 
         <!-- plugin versions -->
