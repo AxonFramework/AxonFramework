@@ -313,8 +313,9 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                                     .filter(m -> invocation.getMethod().getName().equals(m.getName()))
                                     .filter(m -> m.getParameterCount() == invocation.getArguments().length)
                                     .anyMatch(m -> {
-                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
-                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                        Class<?>[] parameterTypes = m.getParameterTypes();
+                                        for (int i = 0; i < m.getParameterCount(); i++) {
+                                            if (!parameterTypes[i].isInstance(invocation.getArguments()[i])) {
                                                 return false;
                                             }
                                         }
