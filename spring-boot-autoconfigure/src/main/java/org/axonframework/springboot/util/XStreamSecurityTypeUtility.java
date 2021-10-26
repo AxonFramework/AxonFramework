@@ -52,7 +52,7 @@ public abstract class XStreamSecurityTypeUtility {
      * output from {@link AutoConfigurationPackages#get(BeanFactory)}.
      * <p>
      * Will add the {@link EntityScan#basePackageClasses()} and {@link EntityScan#basePackages()} ({@link
-     * EntityScan#value() is used instead if not specified} to the given {@code xStream}, through {@link
+     * EntityScan#value()} is used instead if not specified) to the given {@code xStream}, through {@link
      * XStream#allowTypes(Class[])} and {@link XStream#allowTypesByWildcard(String[])} respectively. If both the base
      * package classes and base packages of the {@code EntityScan} are not set, the package of the {@code EntityScan}
      * annotated bean is included.
