@@ -85,7 +85,7 @@ public abstract class XStreamSecurityTypeUtility {
         }
     }
 
-    private static void extractAllowedTypesFrom(String beanName,
+    private static void setAllowedTypesFrom(String beanName,
                                                 Object bean,
                                                 ApplicationContext applicationContext,
                                                 XStream xStream) {
