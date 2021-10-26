@@ -696,6 +696,14 @@ public class EventProcessingModule
     }
 
     @Override
+    public EventProcessingConfigurer registerDefaultTransactionManager(
+            Function<Configuration, TransactionManager> transactionManagerBuilder
+    ) {
+        this.defaultTransactionManager.update(transactionManagerBuilder);
+        return this;
+    }
+
+    @Override
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
             String name,
             Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
