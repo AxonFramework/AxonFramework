@@ -18,6 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -1014,6 +1016,55 @@ class EventProcessingModuleTest {
         assertEquals(100, (int) getField("batchSize", result));
     }
 
+    @Test
+    void testDefaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
+        String testName = "pooled-streaming";
+        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+
+        CountDownLatch transactionCommitted = new CountDownLatch(1);
+        TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDefaultTransactionManager(c -> defaultTransactionManager);
+        Configuration config = configurer.start();
+
+        try {
+            config.eventBus().publish(testEvent);
+            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    void testDefaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
+        String testName = "pooled-streaming";
+        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+
+        TransactionManager defaultTransactionManager = spy(TransactionManager.class);
+        CountDownLatch transactionCommitted = new CountDownLatch(1);
+        TransactionManager processorSpecificTransactionManager = new StubTransactionManager(transactionCommitted);
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDefaultTransactionManager(c -> defaultTransactionManager)
+                  .registerTransactionManager(testName, c -> processorSpecificTransactionManager);
+        Configuration config = configurer.start();
+
+        try {
+            config.eventBus().publish(testEvent);
+            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+        verifyNoInteractions(defaultTransactionManager);
+    }
+
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
         return getField(object.getClass(), fieldName, object);
     }
@@ -1209,5 +1260,29 @@ class EventProcessingModuleTest {
     @ProcessingGroup("my-saga-processing-group")
     private static class CustomSaga {
 
+    }
+
+    private static class StubTransactionManager implements TransactionManager {
+
+        private final CountDownLatch transactionCommitted;
+
+        private StubTransactionManager(CountDownLatch transactionCommitted) {
+            this.transactionCommitted = transactionCommitted;
+        }
+
+        @Override
+        public Transaction startTransaction() {
+            return new Transaction() {
+                @Override
+                public void commit() {
+                    transactionCommitted.countDown();
+                }
+
+                @Override
+                public void rollback() {
+
+                }
+            };
+        }
     }
 }

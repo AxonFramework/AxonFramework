@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -522,6 +522,17 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerTransactionManager(String name,
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
+
+    /**
+     * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided {@code
+     * TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
+     *
+     * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    EventProcessingConfigurer registerDefaultTransactionManager(
+            Function<Configuration, TransactionManager> transactionManagerBuilder
+    );
 
     /**
      * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to be used by the {@link
