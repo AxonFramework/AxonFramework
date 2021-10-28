@@ -19,7 +19,8 @@ package org.axonframework.springboot.autoconfig;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.springboot.SerializerProperties;
-import org.axonframework.springboot.util.XStreamSecurityTypeUtility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -28,15 +29,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+
+import java.lang.invoke.MethodHandles;
+
+import static org.axonframework.springboot.util.XStreamSecurityTypeUtility.autoConfigBasePackages;
 
 /**
  * Autoconfigures an {@link XStream} instance in absence of an existing {@code XStream} bean.
  * <p>
- * Will automatically set the security context of the {@code XStream} instance, based on the classes and packages found
- * in the {@link ComponentScan} annotated classes.
+ * Will automatically set the security context of the {@code XStream} instance, based on the auto-configuration base
+ * packages.
  *
  * @author Steven van Beelen
  * @since 4.5.4
@@ -47,12 +51,18 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(value = SerializerProperties.class)
 public class XStreamAutoConfiguration {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     @Bean("defaultAxonXStream")
     @ConditionalOnMissingBean
     @Conditional(XStreamConfiguredCondition.class)
     public XStream defaultAxonXStream(ApplicationContext applicationContext) {
+        logger.info(
+                "Initializing an XStream instance since none was found. "
+                        + "The auto configuration base packages will be used as wildcards for the XStream security settings."
+        );
         XStream xStream = new XStream(new CompactDriver());
-        XStreamSecurityTypeUtility.allowEntityTypesFrom(applicationContext, xStream);
+        xStream.allowTypesByWildcard(autoConfigBasePackages(applicationContext));
         return xStream;
     }
 
