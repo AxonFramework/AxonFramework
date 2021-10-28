@@ -72,6 +72,7 @@ import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 
 import java.lang.invoke.MethodHandles;
@@ -396,6 +397,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private static class QueryProcessingTask implements Runnable {
 
         private final QueryBus localSegment;
+        private final AxonServerConnectionManager axonServerConnectionManager;
         private final long priority;
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
@@ -403,10 +405,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private final String clientId;
 
         private QueryProcessingTask(QueryBus localSegment,
+                                    AxonServerConnectionManager axonServerConnectionManager,
                                     QueryRequest queryRequest,
                                     ReplyChannel<QueryResponse> responseHandler,
                                     QuerySerializer serializer, String clientId) {
             this.localSegment = localSegment;
+            this.axonServerConnectionManager = axonServerConnectionManager;
             this.priority = priority(queryRequest.getProcessingInstructionsList());
             this.queryRequest = queryRequest;
             this.responseHandler = responseHandler;
@@ -451,13 +455,26 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     localSegment.query(streamingQueryMessage)
                             .whenComplete((fluxResult, error) -> {
                                 if (error == null) {
-                                    fluxResult.getPayload()
-                                     .map(r -> new GenericQueryResponseMessage(r))
-                                     .map(r -> serializer.serializeResponse(r, r.getIdentifier()))
-                                     .subscribe(responseHandler::send,
-                                                e -> responseHandler.completeWithError(ExceptionSerializer.serialize(clientId,
-                                                                                                                     e)),
-                                                responseHandler::complete);
+                                    Disposable subscribe = fluxResult.getPayload()
+                                                                     .map(r -> new GenericQueryResponseMessage(r))
+                                                                     .map(r -> serializer.serializeResponse(r,
+                                                                                                            r.getIdentifier()))
+                                                                     .subscribe(responseHandler::send,
+                                                                                e -> responseHandler.completeWithError(
+                                                                                        ExceptionSerializer.serialize(
+                                                                                                clientId,
+                                                                                                e)),
+                                                                                responseHandler::complete);
+                                    axonServerConnectionManager.getConnection()
+                                                               .queryChannel()
+                                                               .registerQueryCompleteListener(streamingQueryMessage.getIdentifier(),
+                                                                                              () -> {
+                                                                                                  logger.trace(
+                                                                                                          "Query {}-{} completed by the receiver.",
+                                                                                                          streamingQueryMessage.getQueryName(),
+                                                                                                          streamingQueryMessage.getIdentifier());
+                                                                                                  subscribe.dispose();
+                                                                                              });
                                 } else {
                                     ErrorMessage ex = ExceptionSerializer.serialize(clientId, error);
                                     QueryResponse response =
@@ -852,7 +869,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         public Flux<R> getResponseStream() {
             return Flux.<QueryResponse>create(fluxSink -> {
-                           fluxSink.onCancel(queryResult::close); //todo close does not work in query impl
                            queryResult.onAvailable(() -> {
                                if (!queryResult.isClosed()) {
                                    QueryResponse queryResponse = queryResult.nextIfAvailable();
@@ -876,7 +892,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                             queryMessage.getResponseType()))
                        .flatMap(m -> (Flux<R>) m.getPayload())
                        .doFinally(c -> {
-                           queryResult.close();
+                           if (!queryResult.isClosed()) {
+                               queryResult.close();
+                           }
                            closeHandler.run();
                        });
         }
@@ -891,7 +909,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         @Override
         public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
             QueryProcessingTask processingTask = new QueryProcessingTask(
-                    localSegment, query, responseHandler, serializer, configuration.getClientId()
+                    localSegment, axonServerConnectionManager, query, responseHandler, serializer, configuration.getClientId()
             );
             queryExecutor.submit(processingTask);
         }
