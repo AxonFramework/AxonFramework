@@ -36,6 +36,8 @@ import static org.mockito.Mockito.*;
  */
 class DefaultConfigurerLifecycleOperationsTest {
 
+    private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
+
     @Test
     void testStartLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
@@ -317,7 +319,7 @@ class DefaultConfigurerLifecycleOperationsTest {
             testSubject.start();
             fail("Expected a LifecycleHandlerInvocationException to be thrown");
         } catch (LifecycleHandlerInvocationException e) {
-            // Expected
+            assertTrue(e.getCause().getMessage().contains(START_FAILURE_EXCEPTION_MESSAGE));
         }
 
         InOrder lifecycleOrder =
@@ -432,7 +434,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         }
 
         public void failingStart() {
-            throw new RuntimeException("some start failure");
+            throw new RuntimeException(START_FAILURE_EXCEPTION_MESSAGE);
         }
     }
 
