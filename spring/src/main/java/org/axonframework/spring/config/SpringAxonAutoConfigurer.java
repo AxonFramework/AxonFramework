@@ -419,6 +419,13 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                         aggregateConfigurer.configureCache(c -> beanFactory.getBean(cacheBeanName, Cache.class));
                     }
 
+                    String lockFactoryBeanName = aggregateAnnotation.lockFactory();
+                    if (nonEmptyBeanName(lockFactoryBeanName)) {
+                        aggregateConfigurer.configureLockFactory(
+                                c -> beanFactory.getBean(lockFactoryBeanName, LockFactory.class)
+                        );
+                    }
+
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
                         aggregateConfigurer.configureRepository(
                                 c -> GenericJpaRepository.builder(aggregateType)

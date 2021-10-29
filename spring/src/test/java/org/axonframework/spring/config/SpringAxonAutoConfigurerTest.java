@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.axonframework.commandhandling.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
@@ -179,6 +181,10 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private TagsConfiguration tagsConfiguration;
+
+    @Autowired
+    @Qualifier("myLockFactory")
+    private LockFactory myLockFactory;
 
     @Test
     void contextWiresMainComponents() {
@@ -348,6 +354,19 @@ public class SpringAxonAutoConfigurerTest {
         );
     }
 
+    @Test
+    void testAggregateLockFactory() {
+        String expectedAggregateId = "someIdentifier";
+
+        FutureCallback<Object, Object> commandCallback = new FutureCallback<>();
+        commandBus.dispatch(asCommandMessage(
+                new Context.CreateMyCachedAggregateCommand(expectedAggregateId)), commandCallback
+        );
+        commandCallback.getResult();
+
+        verify(myLockFactory).obtainLock(expectedAggregateId);
+    }
+
     @AnnotationDriven
     @Import({SpringAxonAutoConfigurer.ImportSelector.class, AnnotationDrivenRegistrar.class})
     @Scope
@@ -421,6 +440,12 @@ public class SpringAxonAutoConfigurerTest {
         @Qualifier("myCache")
         public Cache myCache() {
             return mock(Cache.class);
+        }
+
+        @Bean
+        @Qualifier("myLockFactory")
+        public LockFactory myLockFactory() {
+            return spy(PessimisticLockFactory.usingDefaults());
         }
 
         @Aggregate(type = "MyCustomAggregateType", filterEventsByType = true)
@@ -521,7 +546,7 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
-        @Aggregate(cache = "myCache")
+        @Aggregate(cache = "myCache", lockFactory = "myLockFactory")
         public static class MyCachedAggregate {
 
             @AggregateIdentifier
