@@ -20,6 +20,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -45,6 +48,7 @@ import org.axonframework.serialization.Revision;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
+import javax.persistence.EntityManager;
 
 import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -76,8 +80,9 @@ public class AggregateConfigurerTest {
         testParameterResolverFactory = mock(ParameterResolverFactory.class);
         when(mockConfiguration.parameterResolverFactory()).thenReturn(testParameterResolverFactory);
         when(mockConfiguration.getComponent(eq(AggregateMetaModelFactory.class), any()))
-                .thenReturn(new AnnotatedAggregateMetaModelFactory(testParameterResolverFactory,
-                                                                   new AnnotatedMessageHandlingMemberDefinition()));
+                .thenReturn(new AnnotatedAggregateMetaModelFactory(
+                        testParameterResolverFactory, new AnnotatedMessageHandlingMemberDefinition()
+                ));
 
         testSubject = new AggregateConfigurer<>(TestAggregate.class);
     }
@@ -208,6 +213,73 @@ public class AggregateConfigurerTest {
         undefinedDeclaredAggregateTypeTestSubject.initialize(mockConfiguration);
 
         assertThrows(AxonConfigurationException.class, undefinedDeclaredAggregateTypeTestSubject::snapshotFilter);
+    }
+
+    @Test
+    void testConfigureLockFactoryForEventSourcedAggregate() {
+        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
+        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
+                                                                        .configureLockFactory(config -> lockFactory);
+
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+        verify(lockFactory).obtainLock(testAggregateIdentifier);
+
+        config.shutdown();
+    }
+
+    @Test
+    void testConfigureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
+        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
+        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
+                                                                        .configureLockFactory(config -> lockFactory);
+
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .registerComponent(
+                                                        EntityManagerProvider.class,
+                                                        c -> new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                                )
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+        verify(lockFactory).obtainLock(testAggregateIdentifier);
+
+        config.shutdown();
+    }
+
+    @Test
+    void testConfigureLockFactoryForStateStoredAggregate() {
+        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
+        AggregateConfigurer<A> aggregateConfigurer =
+                AggregateConfigurer.jpaMappedConfiguration(
+                                           A.class, new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                   )
+                                   .configureLockFactory(config -> lockFactory);
+
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+        verify(lockFactory).obtainLock(testAggregateIdentifier);
+
+        config.shutdown();
     }
 
     private static class TestAggregate {
