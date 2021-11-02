@@ -58,6 +58,38 @@ class XStreamSecurityTypeUtilityTest {
                               });
     }
 
+    @Test
+    void testAutoConfigBasePackagesWithCustomScanBasePackagesDoesNotChangeOutcome() {
+        String[] expected = new String[]{
+                "org.axonframework.springboot.util.**",
+                "org.axonframework.eventhandling.tokenstore.**",
+                "org.axonframework.modelling.saga.repository.jpa.**",
+                "org.axonframework.eventsourcing.eventstore.jpa.**"
+        };
+        testApplicationContext.withUserConfiguration(TestContextWithSpringBootApplicationWithCustomBasePackages.class)
+                              .run(context -> {
+                                  String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
+                                  assertArrayEquals(expected, result);
+                              });
+    }
+
+    @Test
+    void testAutoConfigBasePackagesWithCustomScanBasePackageClassesDoesNotChangeOutcome() {
+        String[] expected = new String[]{
+                "org.axonframework.springboot.util.**",
+                "org.axonframework.eventhandling.tokenstore.**",
+                "org.axonframework.modelling.saga.repository.jpa.**",
+                "org.axonframework.eventsourcing.eventstore.jpa.**"
+        };
+        testApplicationContext.withUserConfiguration(
+                                      TestContextWithSpringBootApplicationWithCustomBasePackageClasses.class
+                              )
+                              .run(context -> {
+                                  String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
+                                  assertArrayEquals(expected, result);
+                              });
+    }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -69,6 +101,38 @@ class XStreamSecurityTypeUtilityTest {
         }
 
         @SpringBootApplication
+        private static class MainClass {
+
+        }
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    private static class TestContextWithSpringBootApplicationWithCustomBasePackages {
+
+        @Bean
+        private MainClass mainClass() {
+            return new MainClass();
+        }
+
+        @SpringBootApplication(scanBasePackages = "org.axonframework.springboot.util")
+        private static class MainClass {
+
+        }
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    private static class TestContextWithSpringBootApplicationWithCustomBasePackageClasses {
+
+        @Bean
+        private MainClass mainClass() {
+            return new MainClass();
+        }
+
+        @SpringBootApplication(scanBasePackageClasses = XStreamSecurityTypeUtilityTest.class)
         private static class MainClass {
 
         }
