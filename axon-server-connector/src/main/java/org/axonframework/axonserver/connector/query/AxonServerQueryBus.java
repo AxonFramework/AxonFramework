@@ -70,10 +70,13 @@ import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
+import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.SignalType;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -87,6 +90,9 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -452,19 +458,59 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                       queryMessage.getQueryName(),
                                                       new FluxResponseType<>(queryMessage.getResponseType()
                                                                                          .getExpectedResponseType()));
+
+                    AtomicLong initialPermits = new AtomicLong(0);
+                    AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
+                    axonServerConnectionManager.getConnection()
+                            .queryChannel()
+                            .registerQueryFlowControlListener(streamingQueryMessage.getIdentifier(),
+                                    l-> {
+                                        Subscription subscription = subscriptionRef.get();
+                                        if (subscription != null)  {
+                                            subscription.request(l);
+                                        } else {
+                                            initialPermits.set(l);
+                                        }
+                                    });
+
                     localSegment.query(streamingQueryMessage)
                             .whenComplete((fluxResult, error) -> {
                                 if (error == null) {
+
                                     Disposable subscribe = fluxResult.getPayload()
                                                                      .map(r -> new GenericQueryResponseMessage(r))
                                                                      .map(r -> serializer.serializeResponse(r,
                                                                                                             r.getIdentifier()))
-                                                                     .subscribe(responseHandler::send,
-                                                                                e -> responseHandler.completeWithError(
-                                                                                        ExceptionSerializer.serialize(
-                                                                                                clientId,
-                                                                                                e)),
-                                                                                responseHandler::complete);
+
+                                            .subscribeWith(new BaseSubscriber<QueryResponse>() {
+                                                @Override
+                                                protected void hookOnSubscribe(Subscription subscription) {
+                                                    long l = initialPermits.get();
+                                                    if (l > 0) {
+                                                        subscription.request(l);
+                                                    }
+                                                    subscriptionRef.set(subscription);
+                                                }
+
+                                                @Override
+                                                protected void hookFinally(SignalType type) {
+                                                    responseHandler.complete();
+                                                    super.hookFinally(type);
+                                                }
+
+                                                @Override
+                                                protected void hookOnError(Throwable t) {
+                                                    responseHandler.completeWithError(ExceptionSerializer.serialize(clientId, t));
+                                                    super.hookOnError(t);
+                                                }
+
+                                                @Override
+                                                protected void hookOnNext(QueryResponse value) {
+                                                    responseHandler.send(value);
+                                                    super.hookOnNext(value);
+                                                }
+                                            });
+
                                     axonServerConnectionManager.getConnection()
                                                                .queryChannel()
                                                                .registerQueryCompleteListener(streamingQueryMessage.getIdentifier(),
@@ -853,6 +899,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private final QueryMessage<Q, R> queryMessage;
         private final ResultStream<QueryResponse> queryResult;
+
         private final QuerySerializer serializer;
         private final Runnable closeHandler;
 
@@ -869,7 +916,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         public Flux<R> getResponseStream() {
             return Flux.<QueryResponse>create(fluxSink -> {
+                        fluxSink.onRequest(r-> System.out.println("inner requested: " + r));
                            queryResult.onAvailable(() -> {
+
+                               while(fluxSink.requestedFromDownstream() == 0 && !fluxSink.isCancelled() && !queryResult.isClosed()) {
+                                  //busy wait
+                               }
+
                                if (!queryResult.isClosed()) {
                                    QueryResponse queryResponse = queryResult.nextIfAvailable();
                                    if (queryResponse != null) {
@@ -890,7 +943,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                        })
                        .map(queryResponse -> serializer.deserializeResponse(queryResponse,
                                                                             queryMessage.getResponseType()))
-                       .flatMap(m -> (Flux<R>) m.getPayload())
+                        .doOnRequest(r-> System.out.println("1 requested: " + r))
+                       .concatMap(m -> (Flux<R>) m.getPayload(),0)
+                       .doOnRequest(r-> System.out.println("0 requested: " + r))
                        .doFinally(c -> {
                            if (!queryResult.isClosed()) {
                                queryResult.close();
