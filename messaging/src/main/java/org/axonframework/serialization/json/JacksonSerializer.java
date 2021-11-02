@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
@@ -120,14 +119,16 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Registers converters with the given {@code converter} which depend on the actual contents of the
-     * serialized for to represent a JSON format.
+     * Registers converters with the given {@code converter} which depend on the actual contents of the serialized form
+     * to represent a JSON format.
      *
      * @param converter The ChainingConverter instance to register the converters with.
      */
     protected void registerConverters(ChainingConverter converter) {
         converter.registerConverter(new JsonNodeToByteArrayConverter(objectMapper));
         converter.registerConverter(new ByteArrayToJsonNodeConverter(objectMapper));
+        converter.registerConverter(new JsonNodeToObjectNodeConverter());
+        converter.registerConverter(new ObjectNodeToJsonNodeConverter());
     }
 
     @Override
