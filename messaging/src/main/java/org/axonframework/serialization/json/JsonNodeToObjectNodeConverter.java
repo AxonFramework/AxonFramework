@@ -46,7 +46,7 @@ public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonN
     @Override
     public ObjectNode convert(JsonNode original) {
         JsonNodeType originalNodeType = original.getNodeType();
-        if (originalNodeType.equals(JsonNodeType.OBJECT)) {
+        if (JsonNodeType.OBJECT.equals(originalNodeType)) {
             return ((ObjectNode) original);
         } else {
             throw new SerializationException(

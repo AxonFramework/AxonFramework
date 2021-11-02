@@ -119,7 +119,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Registers converters with the given {@code converter} which depend on the actual contents of the serialized for
+     * Registers converters with the given {@code converter} which depend on the actual contents of the serialized form
      * to represent a JSON format.
      *
      * @param converter The ChainingConverter instance to register the converters with.
