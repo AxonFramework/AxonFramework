@@ -695,7 +695,7 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
+            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name).orElse(tokenStore.fetchSegments(name)));
 
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
             int[] unClaimedSegments = Arrays.stream(segments)

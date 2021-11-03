@@ -40,6 +40,7 @@ import org.mockito.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,7 +84,7 @@ class PooledStreamingEventProcessorTest {
     void setUp() {
         stubMessageSource = new InMemoryMessageSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
-        tokenStore = new InMemoryTokenStore();
+        tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = Executors.newScheduledThreadPool(2);
         workerExecutor = Executors.newScheduledThreadPool(8);
 
@@ -167,6 +168,16 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void testStartingProcessorClaimsAllAvailableTokens() {
+        startAndAssertProcessorClaimsAllTokens();
+    }
+
+    @Test
+    void testFallbackToClaimingAllTokensIfAvailableTokensIsNotImplemented() {
+        when(tokenStore.fetchAvailableSegments(any())).thenReturn(Optional.empty());
+        startAndAssertProcessorClaimsAllTokens();
+    }
+
+    private void startAndAssertProcessorClaimsAllTokens() {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
                                                       .collect(Collectors.toList());
@@ -184,6 +195,21 @@ class PooledStreamingEventProcessorTest {
             assertEquals(8, nonNullTokens);
         });
         assertEquals(8, testSubject.processingStatus().size());
+    }
+
+    @Test
+    void testProcessorOnlyTriesToClaimAvailableSegments() {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Optional.of(new int[]{2}));
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
+        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
     @Test

@@ -54,6 +54,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -280,7 +281,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testBlacklist() throws Exception {
+    void testBlacklist() {
         when(mockHandler.canHandle(any())).thenReturn(false);
         when(mockHandler.canHandleType(String.class)).thenReturn(false);
         Set<Class<?>> skipped = new HashSet<>();
@@ -729,8 +730,7 @@ class TrackingEventProcessorTest {
         fail.set(false);
         assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
         assertEquals(5, acknowledgedEvents.size());
-        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(s -> s
-                .isErrorState()).findFirst();
+        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(EventTrackerStatus::isErrorState).findFirst();
         assertThat("no processor in error state when open stream succeeds again", !inErrorState.isPresent());
     }
 
@@ -1904,6 +1904,30 @@ class TrackingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
+    }
+
+    @Test
+    void testFallbackToClaimingAllTokensIfAvailableTokensIsNotImplemented() {
+        when(tokenStore.fetchAvailableSegments(any())).thenReturn(Optional.empty());
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+    }
+
+    @Test
+    void testProcessorOnlyTriesToClaimAvailableSegments() {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Optional.of(new int[]{2}));
+
+        testSubject.start();
+
+        eventBus.publish(createEvents(1));
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
+        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
     private void waitForStatus(String description,

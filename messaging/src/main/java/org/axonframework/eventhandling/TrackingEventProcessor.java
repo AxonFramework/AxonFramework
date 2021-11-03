@@ -1048,11 +1048,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
                     // When in an initial stage, split segments to the requested number.
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                        tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                        transactionManager.executeInTransaction(
                                 () -> {
                                     TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
                                     tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
-                                    return tokenStore.fetchSegments(processorName);
                                 }
                         );
                     }
@@ -1076,8 +1075,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                for (int i = 0; i < tokenStoreCurrentSegments.length && availableThreads.get() > 0; i++) {
-                    int segmentId = tokenStoreCurrentSegments[i];
+                int[] availableSegments = tokenStore.fetchAvailableSegments(processorName).orElse(tokenStore.fetchSegments(processorName));
+                for (int i = 0; i < availableSegments.length && availableThreads.get() > 0; i++) {
+                    int segmentId = availableSegments[i];
 
                     if (!activeSegments.containsKey(segmentId) && canClaimSegment(segmentId)) {
                         try {
