@@ -17,13 +17,9 @@
 package org.axonframework.springboot.util;
 
 import org.junit.jupiter.api.*;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
-import org.springframework.test.context.ContextConfiguration;
 
 import static org.axonframework.springboot.util.XStreamSecurityTypeUtility.autoConfigBasePackages;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,105 +32,25 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class XStreamSecurityTypeUtilityTest {
 
-    private ApplicationContextRunner testApplicationContext;
-
-    @BeforeEach
-    void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false");
-    }
-
     @Test
     void testAutoConfigBasePackages() {
+        // Axon packages are added through the default ApplicationContextRunner that adds Axon's DefaultEntityRegistrar.
         String[] expected = new String[]{
                 "org.axonframework.springboot.util.**",
                 "org.axonframework.eventhandling.tokenstore.**",
                 "org.axonframework.modelling.saga.repository.jpa.**",
                 "org.axonframework.eventsourcing.eventstore.jpa.**"
         };
-        testApplicationContext.withUserConfiguration(TestContextWithSpringBootApplication.class)
-                              .run(context -> {
-                                  String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
-                                  assertArrayEquals(expected, result);
-                              });
+        new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
+                                      .withConfiguration(AutoConfigurations.of(TestContext.class))
+                                      .run(context -> {
+                                          String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
+                                          assertArrayEquals(expected, result);
+                                      });
     }
 
-    @Test
-    void testAutoConfigBasePackagesWithCustomScanBasePackagesDoesNotChangeOutcome() {
-        String[] expected = new String[]{
-                "org.axonframework.springboot.util.**",
-                "org.axonframework.eventhandling.tokenstore.**",
-                "org.axonframework.modelling.saga.repository.jpa.**",
-                "org.axonframework.eventsourcing.eventstore.jpa.**"
-        };
-        testApplicationContext.withUserConfiguration(TestContextWithSpringBootApplicationWithCustomBasePackages.class)
-                              .run(context -> {
-                                  String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
-                                  assertArrayEquals(expected, result);
-                              });
-    }
-
-    @Test
-    void testAutoConfigBasePackagesWithCustomScanBasePackageClassesDoesNotChangeOutcome() {
-        String[] expected = new String[]{
-                "org.axonframework.springboot.util.**",
-                "org.axonframework.eventhandling.tokenstore.**",
-                "org.axonframework.modelling.saga.repository.jpa.**",
-                "org.axonframework.eventsourcing.eventstore.jpa.**"
-        };
-        testApplicationContext.withUserConfiguration(
-                                      TestContextWithSpringBootApplicationWithCustomBasePackageClasses.class
-                              )
-                              .run(context -> {
-                                  String[] result = autoConfigBasePackages(context.getSourceApplicationContext());
-                                  assertArrayEquals(expected, result);
-                              });
-    }
-
-    @ContextConfiguration
     @EnableAutoConfiguration
-    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    private static class TestContextWithSpringBootApplication {
+    static class TestContext {
 
-        @Bean
-        private MainClass mainClass() {
-            return new MainClass();
-        }
-
-        @SpringBootApplication
-        private static class MainClass {
-
-        }
-    }
-
-    @ContextConfiguration
-    @EnableAutoConfiguration
-    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    private static class TestContextWithSpringBootApplicationWithCustomBasePackages {
-
-        @Bean
-        private MainClass mainClass() {
-            return new MainClass();
-        }
-
-        @SpringBootApplication(scanBasePackages = "org.axonframework.springboot.util")
-        private static class MainClass {
-
-        }
-    }
-
-    @ContextConfiguration
-    @EnableAutoConfiguration
-    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    private static class TestContextWithSpringBootApplicationWithCustomBasePackageClasses {
-
-        @Bean
-        private MainClass mainClass() {
-            return new MainClass();
-        }
-
-        @SpringBootApplication(scanBasePackageClasses = XStreamSecurityTypeUtilityTest.class)
-        private static class MainClass {
-
-        }
     }
 }
