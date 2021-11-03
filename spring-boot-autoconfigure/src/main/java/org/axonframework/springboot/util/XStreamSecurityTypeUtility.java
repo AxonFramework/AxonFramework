@@ -16,78 +16,53 @@
 
 package org.axonframework.springboot.util;
 
-import com.thoughtworks.xstream.XStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.lang.invoke.MethodHandles;
 
 /**
- * Utility class exposing an operation that searches the {@link ApplicationContext} for {@link ComponentScan} annotated
- * beans and adds the contained types and packages to an {@link XStream} instance.
- * <p>
- * The {@link ComponentScan} annotation on these beans defines the base classes and base packages of types used within a
- * Spring application. These thus reflect a reasonable default of types that {@link XStream} should allow.
+ * Utility class exposing an operation that searches the {@link ApplicationContext} for auto-configuration base
+ * packages.
  *
  * @author Steven van Beelen
  * @since 4.5.4
  */
 public abstract class XStreamSecurityTypeUtility {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private static final String PACKAGES_AND_SUBPACKAGES_WILDCARD = ".**";
 
     /**
-     * Searches the {@link ApplicationContext} for {@link ComponentScan} annotated beans to allow the contained types
-     * for the given {@code xStream} instance.
+     * Retrieves the auto-configuration base packages from {@link AutoConfigurationPackages#get(BeanFactory)}. These can
+     * be used to define the security context of an {@link com.thoughtworks.xstream.XStream} instance.
      * <p>
-     * Will add the {@link ComponentScan#basePackageClasses()} and {@link ComponentScan#basePackages()} ({@link
-     * ComponentScan#value() is used instead if not specified} to the given {@code xStream}, through {@link
-     * XStream#allowTypes(Class[])} and {@link XStream#allowTypesByWildcard(String[])} respectively. If both the base
-     * package classes and base packages of the {@link ComponentScan} are not set, the package of the {@link
-     * ComponentScan} annotated bean is included.
+     * This method will return the package names of the {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration}
+     * annotated beans. After retrieval this method attaches a wildcard ({@code ".**"}) to the packages for XStream's
+     * convenience.
      *
-     * @param applicationContext the {@link ApplicationContext} to retrieve {@link ComponentScan} beans from
-     * @param xStream            the {@link XStream} to set allow types and type wildcards for
+     * @param applicationContext the {@link ApplicationContext} to retrieve the auto-configuration base packages from
+     * @return the auto-configuration base packages with {@code ".**"} appended to them
      */
-    public static void allowTypesFromComponentScanAnnotatedBeans(ApplicationContext applicationContext,
-                                                                 XStream xStream) {
-        applicationContext.getBeansWithAnnotation(ComponentScan.class)
-                          .forEach((beanName, bean) -> {
-                              ComponentScan ann =
-                                      applicationContext.findAnnotationOnBean(beanName, ComponentScan.class);
-                              if (!Objects.nonNull(ann)) {
-                                  throw new IllegalArgumentException(
-                                          "The ApplicationContext retrieved a bean of name [" + beanName + "] and type"
-                                                  + " [" + bean.getClass() + "] for the ComponentScan annotation "
-                                                  + "which does not contain the ComponentScan annotation."
-                                  );
-                              }
-
-                              if (isEmptyAnnotation(ann)) {
-                                  xStream.allowTypesByWildcard(new String[]{
-                                          bean.getClass().getPackage().getName() + PACKAGES_AND_SUBPACKAGES_WILDCARD
-                                  });
-                              } else {
-                                  xStream.allowTypes(ann.basePackageClasses());
-                                  if (ann.basePackages().length != 0) {
-                                      allowPackages(xStream, ann.basePackages());
-                                  } else {
-                                      allowPackages(xStream, ann.value());
-                                  }
-                              }
-                          });
-    }
-
-    private static boolean isEmptyAnnotation(ComponentScan ann) {
-        return ann.basePackageClasses().length == 0 && ann.basePackages().length == 0 && ann.value().length == 0;
-    }
-
-    private static void allowPackages(XStream xStream, String[] basePackages) {
-        String[] typeWildcards = Arrays.stream(basePackages)
-                                       .map(basePackage -> basePackage + PACKAGES_AND_SUBPACKAGES_WILDCARD)
-                                       .toArray(String[]::new);
-        xStream.allowTypesByWildcard(typeWildcards);
+    public static String[] autoConfigBasePackages(ApplicationContext applicationContext) {
+        if (AutoConfigurationPackages.has(applicationContext)) {
+            return AutoConfigurationPackages.get(applicationContext)
+                                            .stream()
+                                            .map(basePackage -> {
+                                                logger.info("Constructing wildcard type for base package [{}].",
+                                                            basePackage);
+                                                return basePackage + PACKAGES_AND_SUBPACKAGES_WILDCARD;
+                                            })
+                                            .toArray(String[]::new);
+        } else {
+            logger.warn("Cannot extract types, because the provided ApplicationContext "
+                                + "does not contain any @EnableAutoConfiguration annotated beans.");
+            return new String[]{};
+        }
     }
 
     private XStreamSecurityTypeUtility() {
