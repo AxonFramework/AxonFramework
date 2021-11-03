@@ -41,9 +41,9 @@ public abstract class XStreamSecurityTypeUtility {
      * Retrieves the auto-configuration base packages from {@link AutoConfigurationPackages#get(BeanFactory)}. These can
      * be used to define the security context of an {@link com.thoughtworks.xstream.XStream} instance.
      * <p>
-     * This method will return the package names of {@link javax.persistence.Entity} and {@link
-     * org.springframework.boot.autoconfigure.EnableAutoConfiguration} annotated beans, attaching a wildcard ({@code
-     * ".**"}) to the package for XStream's convenience.
+     * This method will return the package names of the {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration}
+     * annotated beans. After retrieval this method attaches a wildcard ({@code ".**"}) to the packages for XStream's
+     * convenience.
      *
      * @param applicationContext the {@link ApplicationContext} to retrieve the auto-configuration base packages from
      * @return the auto-configuration base packages with {@code ".**"} appended to them
