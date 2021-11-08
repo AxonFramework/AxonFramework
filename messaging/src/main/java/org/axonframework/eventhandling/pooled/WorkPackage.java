@@ -219,10 +219,12 @@ class WorkPackage {
             batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-            if (lastStoredToken != lastConsumedToken) {
-                transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
-            } else if (lastClaimExtension < clock.instant().toEpochMilli() - claimExtensionThreshold) {
-                transactionManager.executeInTransaction(this::extendClaim);
+            if (lastClaimExtension < clock.instant().toEpochMilli() - claimExtensionThreshold) {
+                if (lastStoredToken != lastConsumedToken) {
+                    transactionManager.executeInTransaction(() -> storeToken(lastConsumedToken));
+                } else {
+                    transactionManager.executeInTransaction(this::extendClaim);
+                }
             }
         }
     }
