@@ -21,6 +21,9 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -91,6 +94,24 @@ public class DefaultQueryGateway implements QueryGateway {
                          }
                      });
         return result;
+    }
+
+    @Override
+    public <R, Q> Flux<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
+        return Flux.defer(() -> {
+            CompletableFuture<QueryResponseMessage<Flux<R>>> queryResponse = queryBus
+                    .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName,
+                                                                         ResponseTypes.fluxOf(responseType))));
+
+            return Mono.fromCompletionStage(queryResponse)
+                       .flatMapMany(queryResponseMessage -> {
+                           if (queryResponseMessage.isExceptional()) {
+                               return Flux.error(queryResponseMessage.exceptionResult());
+                           } else {
+                               return queryResponseMessage.getPayload();
+                           }
+                       });
+        });
     }
 
     @Override
