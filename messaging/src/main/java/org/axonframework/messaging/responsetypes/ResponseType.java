@@ -62,6 +62,13 @@ public interface ResponseType<R> extends Serializable {
         return (R) response;
     }
 
+    /**
+     * Converts the {@link java.lang.Throwable} into the type {@code R} of this {@link ResponseType} instance.
+     * Used when error is represented as message payload.
+     * {@link Optional} is not empty when error is represented as message payload.
+     *
+     * @return a {@link Optional} {@code response} of type {@code R}
+     */
     default Optional<R> convertExceptional(Throwable e) {
         return Optional.empty();
     }

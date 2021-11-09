@@ -115,7 +115,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
     private static final int STREAMING_QUERY_NUMBER_OF_RESULTS = -2;
-    private static final long STREAMING_QUERY_TIMEOUT_MS = TimeUnit.DAYS.toMillis(1);
+    private static final long STREAMING_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
     private static final int DEFAULT_PRIORITY = 0;

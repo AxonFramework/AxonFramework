@@ -76,7 +76,6 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isFluxOfExpectedType(Type responseType) {
-        // TODO: 10/21/21 check compatibility when project reactor is not on classpath
         Type fluxType = TypeReflectionUtils.getExactSuperType(responseType, Flux.class);
         return fluxType != null && isParameterizedTypeOfExpectedType(fluxType);
     }

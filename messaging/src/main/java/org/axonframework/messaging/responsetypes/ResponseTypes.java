@@ -66,8 +66,13 @@ public abstract class ResponseTypes {
         return new MultipleInstancesResponseType<>(type);
     }
 
-    // TODO: 10/21/21 javadoc
-    // TODO: 10/21/21 check compatibility when project reactor is not on classpath
+    /**
+     * Specify the desire to retrieve a Flux (reactive stream) of instances of type {@code R} when performing a query.
+     *
+     * @param type the {@code R} which is expected to be the response type
+     * @param <R>  the generic type of the instantiated {@link ResponseType}
+     * @return a {@link ResponseType} specifying the desire to retrieve a flux of instances of type {@code R}
+     */
     public static <R> ResponseType<Flux<R>> fluxOf(Class<R> type) {
         return new FluxResponseType<>(type);
     }

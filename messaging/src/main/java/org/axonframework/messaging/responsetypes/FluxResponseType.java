@@ -8,16 +8,38 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
-// TODO: 10/21/21 javadoc
-// TODO: 10/21/21 check compatibility with non-streaming queries
-// TODO: 10/21/21 check compatibility when project reactor is not on classpath
+/**
+ * A {@link ResponseType} implementation that will match with query
+ * handlers which return a Flux stream of the expected response type. If matching succeeds, the
+ * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
+ * {@code R}.
+ *
+ * @param <R> The response type which will be matched against and converted to
+ * @author Stefan Dragisic
+ * @author Milan Savic
+ * @since 4.6.0
+ */
 public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
 
-    // TODO: 10/21/21 javadoc
+    /**
+     * Instantiate a {@link FluxResponseType} with the given
+     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
+     * converted to.
+     *
+     * @param expectedResponseType the response type which is expected to be matched against and returned
+     */
     public FluxResponseType(Class<?> expectedResponseType) {
         super(expectedResponseType);
     }
 
+    /**
+     * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType
+     * {@code R}.
+     * Will return true if the expected type is assignable to the response type, taking generic types into account.
+     *
+     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
+     * @return true if the response type is assignable to the expected type, taking generic types into account
+     */
     @Override
     public boolean matches(Type responseType) {
         return true;
