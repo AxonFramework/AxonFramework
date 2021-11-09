@@ -285,7 +285,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testQueryAvailableSegments() {
+    void testQueryAvailableSegments() {
         prepareTokenStore();
 
         {
