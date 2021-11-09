@@ -208,13 +208,13 @@ public interface TokenStore {
     int[] fetchSegments(String processorName);
 
     /**
-     * Returns an array of known {@code segments} for a given {@code processorName}.
+     * Returns an array of known available {@code segments} for a given {@code processorName}.
      * <p>
      * The segments returned are segments for which a token has been stored previously and have not been claimed by another processor. When the {@link
      * TokenStore} is empty, an empty array is returned.
      *
-     * @param processorName The process name for which to fetch the segments
-     * @return an array of segment identifiers for the specified {@code processorName}, or an empty Optional if this method has not been implemented.
+     * @param processorName the processor's name for which to fetch the segments
+     * @return an array of available segment identifiers for the specified {@code processorName}, or an empty {@code Optional} if this method has not been implemented.
      */
     default Optional<int[]> fetchAvailableSegments(String processorName) {
         return Optional.empty();
