@@ -447,7 +447,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void streamingQueryPropagatesErrors() {
+    void streamingQueryPropagateErrors() {
         QueryMessage<String, Flux<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
 
@@ -457,7 +457,7 @@ class DefaultQueryGatewayTest {
         when(mockBus.query(anyMessage(
                 queryMessage.getResponseType().getExpectedResponseType(),
                 queryMessage.getResponseType().responseMessagePayloadType())))
-                .thenReturn(        failedFuture);
+                .thenReturn(failedFuture);
 
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
                 .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
