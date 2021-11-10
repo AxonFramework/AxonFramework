@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
