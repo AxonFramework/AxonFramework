@@ -16,6 +16,7 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
@@ -458,8 +459,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                       new FluxResponseType<>(queryMessage.getResponseType()
                                                                                          .getExpectedResponseType()));
 
+                    AtomicReference<
+                            io.axoniq.axonserver.connector.Registration> flowControlListenerRegistration = new AtomicReference<>();
+                    AtomicReference<
+                            io.axoniq.axonserver.connector.Registration> queryCompleteListenerRegistration = new AtomicReference<>();
+
                     AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
-                    axonServerConnectionManager.getConnection()
+
+                    flowControlListenerRegistration.set(axonServerConnectionManager.getConnection()
                                                .queryChannel()
                                                .registerQueryFlowControlListener(streamingQueryMessage.getIdentifier(),
                                                                                  l -> {
@@ -467,14 +474,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                      if (subscription != null) {
                                                                                          subscription.request(l);
                                                                                      }
-                                                                                 });
+                                                                                 }));
 
                     localSegment.query(streamingQueryMessage)
                                 .whenComplete((fluxResult, error) -> {
                                     if (error == null) {
 
                                         Disposable subscribe = fluxResult.getPayload()
-                                                                         .map(r -> new GenericQueryResponseMessage(r))
+                                                                         .map(GenericQueryResponseMessage::new)
                                                                          .map(r -> serializer.serializeResponse(r,
                                                                                                                 r.getIdentifier()))
                                                                          .subscribeWith(new BaseSubscriber<QueryResponse>() {
@@ -482,14 +489,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                              protected void hookOnSubscribe(
                                                                                      Subscription subscription) {
                                                                                  subscriptionRef.set(subscription);
-                                                                                 subscription.request(32);
+                                                                                 subscription.request(32); //initial request
                                                                              }
 
                                                                              @Override
                                                                              protected void hookFinally(
                                                                                      SignalType type) {
+                                                                                 io.axoniq.axonserver.connector.Registration r1 = flowControlListenerRegistration.get();
+                                                                                 if (r1 != null) r1.cancel();
+
+                                                                                 io.axoniq.axonserver.connector.Registration r2 = queryCompleteListenerRegistration.get();
+                                                                                 if (r2 != null) r2.cancel();
+                                                                             }
+
+                                                                             @Override
+                                                                             protected void hookOnComplete() {
                                                                                  responseHandler.complete();
-                                                                                 super.hookFinally(type);
+                                                                             }
+
+                                                                             @Override
+                                                                             protected void hookOnCancel() {
+                                                                                 responseHandler.complete();
                                                                              }
 
                                                                              @Override
@@ -498,18 +518,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                          ExceptionSerializer.serialize(
                                                                                                  clientId,
                                                                                                  t));
-                                                                                 super.hookOnError(t);
                                                                              }
 
                                                                              @Override
                                                                              protected void hookOnNext(
                                                                                      QueryResponse value) {
                                                                                  responseHandler.send(value);
-                                                                                 super.hookOnNext(value);
                                                                              }
                                                                          });
 
-                                        axonServerConnectionManager.getConnection()
+                                        queryCompleteListenerRegistration.set(axonServerConnectionManager.getConnection()
                                                                    .queryChannel()
                                                                    .registerQueryCompleteListener(streamingQueryMessage.getIdentifier(),
                                                                                                   () -> {
@@ -518,7 +536,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                                                               streamingQueryMessage.getQueryName(),
                                                                                                               streamingQueryMessage.getIdentifier());
                                                                                                       subscribe.dispose();
-                                                                                                  });
+                                                                                                  }));
                                     } else {
                                         ErrorMessage ex = ExceptionSerializer.serialize(clientId, error);
                                         QueryResponse response =
