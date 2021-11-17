@@ -18,7 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import reactor.core.publisher.Flux;
+import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
@@ -105,34 +105,58 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
-     * as Flux of {@code responseType}. Query is sent once Flux is subscribed to.
+     * as {@link org.reactivestreams.Publisher} of {@code responseType}.
+     * Query is sent once {@link org.reactivestreams.Publisher} is subscribed to.
      * The Streaming query allows a client to stream large result sets.
+     *
+     * Usage of this method requires
+     * <a href="https://projectreactor.io/">Project Reactor</a>
+     * on the class path.
+     *
+     * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason,
+     * for clients that don't have Project Reactor on class path.
+     * Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor Extension</a>
+     * for native Flux type and more.
+     *
+     * Use {@code Flux.from(publisher)} to convert to Flux stream.
      *
      * @param query        The {@code query} to be sent
      * @param responseType A {@link java.lang.Class} describing the desired response type
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link reactor.core.publisher.Flux} streaming the results as dictated by the given
+     * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
      * {@code responseType}
      */
-    default <R, Q> Flux<R> streamingQuery(Q query, Class<R> responseType) {
+    default <R, Q> Publisher<R> streamingQuery(Q query, Class<R> responseType) {
         return streamingQuery(queryName(query), query, responseType);
     }
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
-     * as Flux of {@code responseType}. Query is sent once Flux is subscribed to.
+     * as {@link org.reactivestreams.Publisher} of {@code responseType}.
+     * Query is sent once {@link org.reactivestreams.Publisher} is subscribed to.
      * The Streaming query allows a client to stream large result sets.
+     *
+     * Usage of this method requires
+     * <a href="https://projectreactor.io/">Project Reactor</a>
+     * on the class path.
+     *
+     * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason,
+     * for clients that don't have Project Reactor on class path.
+     * Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor Extension</a>
+     * for native Flux type and more.
+     *
+     * Use {@code Flux.from(publisher)} to convert to Flux stream.
      *
      * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
      * @param responseType A {@link java.lang.Class} describing the desired response type
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return A {@link reactor.core.publisher.Flux} streaming the results as dictated by the given
-     * {@code responseType}
+     * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
+     * {@code responseType}.
      */
-    <R, Q> Flux<R> streamingQuery(String queryName, Q query,  Class<R> responseType);
+    <R, Q> Publisher<R> streamingQuery(String queryName, Q query,  Class<R> responseType);
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the

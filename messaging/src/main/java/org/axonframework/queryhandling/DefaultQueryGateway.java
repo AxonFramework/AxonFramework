@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -97,7 +98,7 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Flux<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
+    public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
         return Flux.defer(() -> {
             CompletableFuture<QueryResponseMessage<Flux<R>>> queryResponse = queryBus
                     .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName,

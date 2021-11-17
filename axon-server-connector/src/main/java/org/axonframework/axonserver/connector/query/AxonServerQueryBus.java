@@ -57,7 +57,9 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.FluxResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -216,8 +218,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             int priority = priorityCalculator.determinePriority(interceptedQuery);
             QueryRequest queryRequest;
+
+            boolean streamMultipleInstanceOf = false;
+            if (queryMessage.getResponseType() instanceof MultipleInstancesResponseType) {
+                try {
+                    //If Reactor project is on class path
+                    //stream multiple instances of query response
+                    Class.forName("reactor.core.publisher.Flux");
+                    streamMultipleInstanceOf = true;
+                    //Temporary change response type to fluxOf to let producer switch to streaming mode
+                    interceptedQuery = new GenericQueryMessage<>(interceptedQuery.getPayload(),
+                                                                 interceptedQuery.getQueryName(),
+                                                                 (ResponseType<R>) ResponseTypes.fluxOf(interceptedQuery.getResponseType()
+                                                                                                                        .getExpectedResponseType()))
+                            .withMetaData(interceptedQuery.getMetaData());
+                } catch (ClassNotFoundException e) {
+                    //Reactor project not on class path, proceed as normal
+                }
+            }
+
             boolean streamingQuery = queryMessage.getResponseType() instanceof FluxResponseType;
-            if (streamingQuery) {
+            if (streamingQuery || streamMultipleInstanceOf) {
                 queryRequest = serializer.serializeRequest(interceptedQuery,
                                                            STREAMING_QUERY_NUMBER_OF_RESULTS,
                                                            STREAMING_QUERY_TIMEOUT_MS,
@@ -234,7 +255,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                             .queryChannel()
                                                                             .query(queryRequest);
 
-            if (streamingQuery) {
+            if (streamingQuery || streamMultipleInstanceOf) {
                 Flux<R> resultStream = new QueryResponseStream<>(interceptedQuery,
                                                                  result,
                                                                  serializer,
