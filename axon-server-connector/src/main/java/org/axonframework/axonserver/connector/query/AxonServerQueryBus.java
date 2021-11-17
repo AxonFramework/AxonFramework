@@ -533,11 +533,15 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                                              }
 
                                                                              @Override
-                                                                             protected void hookOnError(Throwable t) {
-                                                                                 responseHandler.completeWithError(
-                                                                                         ExceptionSerializer.serialize(
-                                                                                                 clientId,
-                                                                                                 t));
+                                                                             protected void hookOnError(Throwable e) {
+                                                                                 ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
+                                                                                 QueryResponse response =
+                                                                                         QueryResponse.newBuilder()
+                                                                                                 .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())
+                                                                                                 .setErrorMessage(ex)
+                                                                                                 .setRequestIdentifier(queryRequest.getMessageIdentifier())
+                                                                                                 .build();
+                                                                                 responseHandler.sendLast(response);
                                                                              }
 
                                                                              @Override
