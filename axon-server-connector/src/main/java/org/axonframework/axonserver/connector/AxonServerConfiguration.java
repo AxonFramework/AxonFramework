@@ -41,7 +41,7 @@ public class AxonServerConfiguration {
 
     /**
      * Whether (automatic) configuration of the AxonServer Connector is enabled. When {@code false}, the connector will
-     * not be implicitly be configured. Defaults to {@code true}.
+     * not be implicitly configured. Defaults to {@code true}.
      * <p>
      * Note that this setting will only affect automatic configuration by Application Containers (such as Spring).
      */
@@ -49,7 +49,7 @@ public class AxonServerConfiguration {
 
     /**
      * Comma separated list of AxonServer servers. Each element is hostname or hostname:grpcPort. When no grpcPort is
-     * specified, default port 8123 is used.
+     * specified, default port 8124 is used.
      */
     private String servers = DEFAULT_SERVERS;
 
@@ -108,13 +108,13 @@ public class AxonServerConfiguration {
     /**
      * Specific flow control settings for the event message stream.
      * <p>
-     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits en
+     * When not specified (null) the default flow control properties initialNrOfPermits, nrOfNewPermits and
      * newPermitsThreshold will be used.
      */
     private FlowControlConfiguration eventFlowControl;
 
     /**
-     * Specific flow control settings for the queue message stream.
+     * Specific flow control settings for the query message stream.
      */
     private FlowControlConfiguration queryFlowControl;
 
@@ -215,7 +215,7 @@ public class AxonServerConfiguration {
 
     /**
      * Indicates whether it is OK to query events from the local Axon Server node - the node the client is currently
-     * connected to. This means that the client will probably get stale events since all events my not be replicated to
+     * connected to. This means that the client will probably get stale events since all events may not be replicated to
      * this node yet. Can be used when the criteria for eventual consistency is less strict. It will spread the load for
      * querying events - not all requests will go to the leader of the cluster anymore.
      * <p>
