@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.FactoryBean;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,8 +31,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -80,6 +86,21 @@ class AnnotationCommandHandlerBeanPostProcessorTest {
         commandHandler.handle(myCommand);
 
         assertEquals(1, annotatedCommandHandler.getInvocationCount());
+    }
+
+    @Test
+    void testProcessorIgnoresFactoryBeans() {
+        BeanFactory mockBeanFactory = mock(BeanFactory.class);
+        when(mockBeanFactory.containsBean("beanName")).thenReturn(true);
+        FactoryBean mockFactoryBean = mock(FactoryBean.class);
+        testSubject.setBeanFactory(mockBeanFactory);
+        Object result1 = testSubject.postProcessBeforeInitialization(mockFactoryBean, "beanName");
+        Object postProcessedBean = testSubject.postProcessAfterInitialization(mockFactoryBean, "beanName");
+
+        assertSame(mockFactoryBean, result1);
+        assertSame(mockFactoryBean, postProcessedBean);
+        // this call leads to problems in Spring Boot 2.6 when post-processing factory beans, so it needs to be avoided
+        verify(mockBeanFactory, never()).isSingleton(anyString());
     }
 
     public static class AnnotatedCommandHandler {
