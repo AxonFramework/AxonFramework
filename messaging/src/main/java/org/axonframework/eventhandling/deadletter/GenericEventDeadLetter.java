@@ -29,30 +29,50 @@ import java.util.Objects;
  */
 public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
 
+    /**
+     *
+     */
+    public static final Throwable SEQUENCED_DEAD_LETTER =
+            new Throwable("Added dead letter as part of earlier letters within the same sequence.");
+
     private final String sequenceIdentifier;
-    private final Instant deadLettered;
     private final EventMessage<?> deadLetter;
+    private final Throwable failure;
+    private final Instant deadLettered;
 
     /**
      * @param sequenceIdentifier
      * @param deadLetter
      */
-    public GenericEventDeadLetter(String sequenceIdentifier,
-                                  EventMessage<?> deadLetter) {
-        this(sequenceIdentifier, GenericEventMessage.clock.instant(), deadLetter);
+    public GenericEventDeadLetter(String sequenceIdentifier, EventMessage<?> deadLetter) {
+        this(sequenceIdentifier, deadLetter, SEQUENCED_DEAD_LETTER);
     }
 
     /**
      * @param sequenceIdentifier
-     * @param deadLettered
      * @param deadLetter
+     * @param failure
      */
     public GenericEventDeadLetter(String sequenceIdentifier,
-                                  Instant deadLettered,
-                                  EventMessage<?> deadLetter) {
+                                  EventMessage<?> deadLetter,
+                                  Throwable failure) {
+        this(sequenceIdentifier, deadLetter, failure, GenericEventMessage.clock.instant());
+    }
+
+    /**
+     * @param sequenceIdentifier
+     * @param deadLetter
+     * @param failure
+     * @param deadLettered
+     */
+    public GenericEventDeadLetter(String sequenceIdentifier,
+                                  EventMessage<?> deadLetter,
+                                  Throwable failure,
+                                  Instant deadLettered) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.deadLettered = deadLettered;
         this.deadLetter = deadLetter;
+        this.failure = failure;
     }
 
     @Override
@@ -61,13 +81,18 @@ public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
     }
 
     @Override
-    public Instant deadLettered() {
-        return deadLettered;
+    public EventMessage<?> deadLetter() {
+        return deadLetter;
     }
 
     @Override
-    public EventMessage<?> deadLetter() {
-        return deadLetter;
+    public Throwable failure() {
+        return failure;
+    }
+
+    @Override
+    public Instant deadLettered() {
+        return deadLettered;
     }
 
     @Override
@@ -79,14 +104,15 @@ public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
             return false;
         }
         GenericEventDeadLetter that = (GenericEventDeadLetter) o;
-        return Objects.equals(sequenceIdentifier, that.sequenceIdentifier) && Objects.equals(
-                deadLettered,
-                that.deadLettered) && Objects.equals(deadLetter, that.deadLetter);
+        return Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
+                && Objects.equals(deadLettered, that.deadLettered)
+                && Objects.equals(deadLetter, that.deadLetter)
+                && Objects.equals(failure, that.failure);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sequenceIdentifier, deadLettered, deadLetter);
+        return Objects.hash(sequenceIdentifier, deadLettered, deadLetter, failure);
     }
 
     @Override
@@ -95,6 +121,7 @@ public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
                 "sequenceIdentifier='" + sequenceIdentifier + '\'' +
                 ", deadLettered=" + deadLettered +
                 ", deadLetter=" + deadLetter +
+                ", failure=" + failure +
                 '}';
     }
 }

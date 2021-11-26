@@ -30,6 +30,7 @@ public interface DeadLetter<T extends Message<?>> {
      *
      * @return
      */
+    // TODO: 26-11-21 replace for ProcessingIdentifier interface?
     String sequenceIdentifier();
 
     /**
@@ -43,6 +44,8 @@ public interface DeadLetter<T extends Message<?>> {
      * @return
      */
     T deadLetter();
+
+    Throwable failure();
 
     /**
      *
