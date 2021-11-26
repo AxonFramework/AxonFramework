@@ -17,7 +17,10 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -33,10 +36,13 @@ import java.util.stream.Stream;
  */
 public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetterQueue<T> {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final ConcurrentNavigableMap<String, Queue<DeadLetter<T>>> deadLetters = new ConcurrentSkipListMap<>();
 
     @Override
     public void add(DeadLetter<T> deadLetter) {
+        logger.debug("Adding dead letter [{}].", deadLetter);
         deadLetters.computeIfAbsent(deadLetter.sequenceIdentifier(),
                                     sequenceId -> new PriorityQueue<>(DeadLetter::compare))
                    .add(deadLetter);
@@ -44,6 +50,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
     @Override
     public boolean contains(String sequenceIdentifier) {
+        logger.debug("Validating existence of sequence identifier [{}].", sequenceIdentifier);
         return deadLetters.containsKey(sequenceIdentifier);
     }
 
