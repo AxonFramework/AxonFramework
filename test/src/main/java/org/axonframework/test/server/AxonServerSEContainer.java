@@ -69,7 +69,7 @@ public class AxonServerSEContainer<SELF extends AxonServerSEContainer<SELF>> ext
     }
 
     /**
-     * Initialize AxonServer SE on dev mode.
+     * Initialize AxonServer SE on dev mode. Development mode enables some features for development convenience.
      *
      * @param devMode dev mode. Default value is {@code false}.
      * @return Container itself for fluent API.
