@@ -18,6 +18,7 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
 
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -39,11 +40,27 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * DeadLetter#sequenceIdentifier()}. If there's no queue for the {@code deadLetter} it is ignored.
      *
      * @param deadLetter the {@link DeadLetter} to attached in FIFO ordering for the given {@code sequenceIdentifier}
+     * @return {@code true} if the {@code deadLetter} is added, {@code false} otherwise
      */
-    default void addIfPresent(DeadLetter<T> deadLetter) {
-        if (!isEmpty() && contains(deadLetter.sequenceIdentifier())) {
-            add(deadLetter);
+    default boolean addIfPresent(DeadLetter<T> deadLetter) {
+        return addIfPresent(deadLetter.sequenceIdentifier(), () -> deadLetter);
+    }
+
+    /**
+     * Adds the result of the given {@code deadLetterSupplier} if this queue contains the given {@code
+     * sequenceIdentifier}. If there's no queue for the {@code deadLetter} it is ignored.
+     *
+     * @param sequenceIdentifier the identifier used to validate for contained {@link DeadLetter} instances
+     * @param deadLetterSupplier the {@link Supplier} of the {@link DeadLetter}. Only invoked if the given {@code
+     *                           sequenceIdentifier} is contained in this queue
+     * @return {@code true} if the {@code deadLetter} is added, {@code false} otherwise
+     */
+    default boolean addIfPresent(String sequenceIdentifier, Supplier<DeadLetter<T>> deadLetterSupplier) {
+        boolean canAdd = !isEmpty() && contains(sequenceIdentifier);
+        if (canAdd) {
+            add(deadLetterSupplier.get());
         }
+        return canAdd;
     }
 
     /**

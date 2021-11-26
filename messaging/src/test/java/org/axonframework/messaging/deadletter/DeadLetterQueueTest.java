@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.deadletter.GenericEventDeadLetter;
 import org.junit.jupiter.api.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -64,8 +63,9 @@ public abstract class DeadLetterQueueTest {
     void testAddIfPresentDoesNotAddForEmptyQueue() {
         String testSequenceId = generateSequenceId();
 
-        testSubject.addIfPresent(generateDeadLetter(testSequenceId));
+        boolean result = testSubject.addIfPresent(generateDeadLetter(testSequenceId));
 
+        assertFalse(result);
         assertFalse(testSubject.contains(testSequenceId));
         assertTrue(testSubject.isEmpty());
     }
@@ -77,8 +77,9 @@ public abstract class DeadLetterQueueTest {
 
         String testSecondSequenceId = generateSequenceId();
 
-        testSubject.addIfPresent(generateDeadLetter(testFirstSequenceId));
+        boolean result = testSubject.addIfPresent(generateDeadLetter(testFirstSequenceId));
 
+        assertTrue(result);
         assertTrue(testSubject.contains(testFirstSequenceId));
         assertFalse(testSubject.contains(testSecondSequenceId));
         assertFalse(testSubject.isEmpty());
@@ -91,13 +92,14 @@ public abstract class DeadLetterQueueTest {
         testSubject.add(testFirstDeadLetter);
         DeadLetter<EventMessage<?>> testSecondDeadLetter = generateDeadLetter(testSequenceId);
 
-        testSubject.addIfPresent(testSecondDeadLetter);
+        boolean result = testSubject.addIfPresent(testSecondDeadLetter);
 
+        assertTrue(result);
         assertTrue(testSubject.contains(testSequenceId));
         assertFalse(testSubject.isEmpty());
-        List<DeadLetter<EventMessage<?>>> result = testSubject.peek().collect(Collectors.toList());
-        assertTrue(result.contains(testFirstDeadLetter));
-        assertTrue(result.contains(testSecondDeadLetter));
+        List<DeadLetter<EventMessage<?>>> resultQueue = testSubject.peek().collect(Collectors.toList());
+        assertTrue(resultQueue.contains(testFirstDeadLetter));
+        assertTrue(resultQueue.contains(testSecondDeadLetter));
     }
 
     @Test
@@ -234,8 +236,6 @@ public abstract class DeadLetterQueueTest {
     }
 
     private static DeadLetter<EventMessage<?>> generateDeadLetter(String sequenceIdentifier) {
-        return new GenericEventDeadLetter(sequenceIdentifier,
-                                          Instant.now(),
-                                          GenericEventMessage.asEventMessage(generateSequenceId()));
+        return new GenericEventDeadLetter(sequenceIdentifier, GenericEventMessage.asEventMessage(generateSequenceId()));
     }
 }

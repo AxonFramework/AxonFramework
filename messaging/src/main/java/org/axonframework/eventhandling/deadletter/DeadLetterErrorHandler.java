@@ -85,7 +85,7 @@ public class DeadLetterErrorHandler implements ListenerInvocationErrorHandler {
      * <p>
      * The {@link DeadLetterQueue} is a <b>hard requirement</b> and as such should be provided.
      */
-    protected static class Builder {
+    public static class Builder {
 
         private DeadLetterQueue<EventMessage<?>> deadLetterQueue;
 
