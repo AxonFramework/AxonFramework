@@ -263,6 +263,7 @@ public class EventProcessingModule
                                                           processingGroup
                                                   ))
                                                   .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                  .processingGroup(processingGroup)
                                                   .build()
             );
         });
