@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,10 +112,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                 try {
                     handler.handle(message);
                 } catch (Exception e) {
-                    listenerInvocationErrorHandler.onError(e, message, handler);
+                    listenerInvocationErrorHandler.onError(executionException(message, e), message, handler);
                 }
             }
         }
+    }
+
+    private EventExecutionException executionException(EventMessage<?> event, Exception exception) {
+        String message = String.format("Handling failed for event [%s] in group [%s]", event, processingGroup);
+        return new EventExecutionException(message, exception, sequenceIdentifier(event).toString(), processingGroup);
     }
 
     @Override
@@ -148,10 +153,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
-        return segment.matches(Objects.hashCode(getOrDefault(
-                sequencingPolicy.getSequenceIdentifierFor(message),
-                message::getIdentifier)
-        ));
+        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
+    }
+
+    private Object sequenceIdentifier(EventMessage<?> event) {
+        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
     }
 
     @Override
