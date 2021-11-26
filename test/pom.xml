@@ -80,6 +80,7 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>optional</scope>
         </dependency>
     </dependencies>
 

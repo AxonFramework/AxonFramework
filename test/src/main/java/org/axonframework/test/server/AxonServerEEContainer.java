@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2021. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.test.server;
 
 import org.testcontainers.containers.GenericContainer;
@@ -103,6 +119,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given license.
+     *
+     * @param licensePath path to the license file.
+     * @return Container itself for fluent API.
      */
     public SELF withLicense(String licensePath) {
         this.licensePath = licensePath;
@@ -111,6 +130,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given configuration file.
+     *
+     * @param configurationPath path to the configuration file.
+     * @return Container itself for fluent API.
      */
     public SELF withConfiguration(String configurationPath) {
         this.configurationPath = configurationPath;
@@ -119,6 +141,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given cluster template configuration file.
+     *
+     * @param clusterTemplatePath path to the cluster template file.
+     * @return Container itself for fluent API.
      */
     public SELF withClusterTemplate(String clusterTemplatePath) {
         this.clusterTemplatePath = clusterTemplatePath;
@@ -127,6 +152,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given Axon Server Name.
+     *
+     * @param axonServerName name of the Axon Server.
+     * @return Container itself for fluent API.
      */
     public SELF withAxonServerName(String axonServerName) {
         this.axonServerName = axonServerName;
@@ -135,6 +163,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given Axon Server Internal Hostname.
+     *
+     * @param axonServerInternalHostname internal hostname of the Axon Server.
+     * @return Container itself for fluent API.
      */
     public SELF withAxonServerInternalHostname(String axonServerInternalHostname) {
         this.axonServerInternalHostname = axonServerInternalHostname;
@@ -143,6 +174,9 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
 
     /**
      * Initialize AxonServer EE with a given Axon Server Hostname.
+     *
+     * @param axonServerHostname hostname of the Axon Server.
+     * @return Container itself for fluent API.
      */
     public SELF withAxonServerHostname(String axonServerHostname) {
         this.axonServerHostname = axonServerHostname;
