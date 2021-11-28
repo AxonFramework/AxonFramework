@@ -181,7 +181,7 @@
         </dependency>
 
         <dependency>
-            <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
+            <!-- Not part of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
             <scope>test</scope>
