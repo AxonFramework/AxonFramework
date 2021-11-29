@@ -31,6 +31,7 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.util.ClassUtils;
 
@@ -70,7 +71,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
+        if (bean instanceof FactoryBean
+                || (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName))) {
             return bean;
         }
 
