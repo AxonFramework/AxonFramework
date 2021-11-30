@@ -17,9 +17,13 @@
 package org.axonframework.eventhandling.tokenstore;
 
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
@@ -208,18 +212,22 @@ public interface TokenStore {
     int[] fetchSegments(String processorName);
 
     /**
-     * Returns an array of known available {@code segments} for a given {@code processorName}. A segment is considered available if it is not claimed by any
+     * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered available if it is not claimed by any
      * other event processor.
      * <p>
      * The segments returned are segments for which a token has been stored previously and have not been claimed by another processor. When the {@link
-     * TokenStore} is empty, an empty array is returned.
+     * TokenStore} is empty, an empty list is returned.
+     *
+     * By default, if this method is not implemented, we will return all segments instead, whether they are available or not.
      *
      * @param processorName the processor's name for which to fetch the segments
-     * @return an array of available segment identifiers for the specified {@code processorName}, or an empty {@code Optional} if this method has not been
-     * implemented.
+     * @return a List of available segment identifiers for the specified {@code processorName}
      */
-    default Optional<int[]> fetchAvailableSegments(String processorName) {
-        return Optional.empty();
+    default List<Segment> fetchAvailableSegments(String processorName) {
+        int[] allSegments = fetchSegments(processorName);
+        return Arrays.stream(allSegments).boxed()
+                .map(segment -> Segment.computeSegment(segment, allSegments))
+                .collect(Collectors.toList());
     }
 
     /**

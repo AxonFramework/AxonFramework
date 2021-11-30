@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
@@ -1559,7 +1560,7 @@ class TrackingEventProcessorTest {
      * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
-    public void testThrownErrorBubblesUp() {
+    void testThrownErrorBubblesUp() {
         AtomicReference<Throwable> thrownException = new AtomicReference<>();
 
         EventHandlerInvoker eventHandlerInvoker = mock(EventHandlerInvoker.class);
@@ -1907,19 +1908,12 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testFallbackToClaimingAllTokensIfAvailableTokensIsNotImplemented() {
-        when(tokenStore.fetchAvailableSegments(any())).thenReturn(Optional.empty());
-        testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
-    }
-
-    @Test
     void testProcessorOnlyTriesToClaimAvailableSegments() {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Optional.of(new int[]{2}));
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
         testSubject.start();
 

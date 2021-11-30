@@ -1084,16 +1084,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                int[] segmentsToClaim = tokenStore.fetchAvailableSegments(processorName).orElse(tokenStore.fetchSegments(processorName));
-                for (int i = 0; i < segmentsToClaim.length && availableThreads.get() > 0; i++) {
-                    int segmentId = segmentsToClaim[i];
+                List<Segment> segmentsToClaim = tokenStore.fetchAvailableSegments(processorName);
+                for (int i = 0; i < segmentsToClaim.size() && availableThreads.get() > 0; i++) {
+                    Segment segment = segmentsToClaim.get(i);
+                    int segmentId = segment.getSegmentId();
 
                     if (!activeSegments.containsKey(segmentId) && canClaimSegment(segmentId)) {
                         try {
                             transactionManager.executeInTransaction(() -> {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segmentId);
-                                int[] segmentIds = tokenStore.fetchSegments(processorName);
-                                Segment segment = Segment.computeSegment(segmentId, segmentIds);
                                 logger.info("Worker assigned to segment {} for processing", segment);
                                 TrackerStatus newStatus = new TrackerStatus(segment, token);
                                 TrackerStatus previousStatus = activeSegments.putIfAbsent(segmentId, newStatus);

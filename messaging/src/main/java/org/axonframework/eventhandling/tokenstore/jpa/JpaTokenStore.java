@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -30,8 +31,6 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
@@ -40,6 +39,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -231,16 +233,21 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public Optional<int[]> fetchAvailableSegments(String processorName) {
+    public List<Segment> fetchAvailableSegments(String processorName) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        final List<Integer> resultList = entityManager.createQuery(
-                "SELECT te.segment FROM TokenEntry te "
-                        + "WHERE te.processorName = :processorName AND te.owner IS NULL ORDER BY te.segment ASC",
-                Integer.class
+        final List<TokenEntry> resultList = entityManager.createQuery(
+                "SELECT te FROM TokenEntry te "
+                        + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                TokenEntry.class
         ).setParameter("processorName", processorName).getResultList();
-
-        return Optional.of(resultList.stream().mapToInt(i -> i).toArray());
+        int[] allSegments = resultList.stream()
+                .mapToInt(TokenEntry::getSegment)
+                .toArray();
+        return resultList.stream()
+                .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                .collect(Collectors.toList());
     }
 
     /**

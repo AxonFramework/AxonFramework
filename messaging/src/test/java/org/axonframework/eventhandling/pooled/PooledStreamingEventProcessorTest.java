@@ -41,6 +41,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -171,12 +172,6 @@ class PooledStreamingEventProcessorTest {
         startAndAssertProcessorClaimsAllTokens();
     }
 
-    @Test
-    void testFallbackToClaimingAllTokensIfAvailableTokensIsNotImplemented() {
-        when(tokenStore.fetchAvailableSegments(any())).thenReturn(Optional.empty());
-        startAndAssertProcessorClaimsAllTokens();
-    }
-
     private void startAndAssertProcessorClaimsAllTokens() {
         List<EventMessage<Integer>> events = IntStream.range(0, 100)
                                                       .mapToObj(GenericEventMessage::new)
@@ -203,7 +198,7 @@ class PooledStreamingEventProcessorTest {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Optional.of(new int[]{2}));
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
         testSubject.start();
 

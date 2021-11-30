@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
@@ -45,6 +46,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -172,27 +174,22 @@ class JdbcTokenStoreTest {
         prepareTokenStore();
 
         transactionManager.executeInTransaction(() -> {
-            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc1");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(0));
+            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segments.size(), is(0));
             tokenStore.releaseClaim("proc1", 0);
-            final Optional<int[]> segmentsAfterRelease = tokenStore.fetchAvailableSegments("proc1");
-            assertTrue(segmentsAfterRelease.isPresent());
-            assertThat(segmentsAfterRelease.get().length, is(1));
+            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segmentsAfterRelease.size(), is(1));
         });
         transactionManager.executeInTransaction(() -> {
-            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc2");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(1));
+            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segments.size(), is(1));
             tokenStore.releaseClaim("proc2", 1);
-            final Optional<int[]> segmentsAfterRelease = tokenStore.fetchAvailableSegments("proc2");
-            assertTrue(segmentsAfterRelease.isPresent());
-            assertThat(segmentsAfterRelease.get().length, is(2));
+            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segmentsAfterRelease.size(), is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final Optional<int[]> segments = tokenStore.fetchAvailableSegments("proc3");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(0));
+            final List<Segment> segments = tokenStore.fetchAvailableSegments("proc3");
+            assertThat(segments.size(), is(0));
         });
     }
 

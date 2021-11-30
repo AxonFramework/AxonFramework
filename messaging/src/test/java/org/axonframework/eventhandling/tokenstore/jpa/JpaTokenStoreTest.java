@@ -21,6 +21,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -289,27 +290,26 @@ public class JpaTokenStoreTest {
         prepareTokenStore();
 
         {
-            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc1");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(0));
+            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segments.size(), is(0));
             jpaTokenStore.releaseClaim("proc1", 0);
-            final Optional<int[]> segmentsAfterRelease = jpaTokenStore.fetchAvailableSegments("proc1");
-            assertTrue(segmentsAfterRelease.isPresent());
-            assertThat(segmentsAfterRelease.get().length, is(1));
+            entityManager.flush();
+            entityManager.clear();
+            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segmentsAfterRelease.size(), is(1));
         }
         {
-            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc2");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(0));
+            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segments.size(), is(0));
             jpaTokenStore.releaseClaim("proc2", 0);
-            final Optional<int[]> segmentsAfterRelease = jpaTokenStore.fetchAvailableSegments("proc2");
-            assertTrue(segmentsAfterRelease.isPresent());
-            assertThat(segmentsAfterRelease.get().length, is(1));
+            entityManager.flush();
+            entityManager.clear();
+            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segmentsAfterRelease.size(), is(1));
         }
         {
-            final Optional<int[]> segments = jpaTokenStore.fetchAvailableSegments("proc3");
-            assertTrue(segments.isPresent());
-            assertThat(segments.get().length, is(0));
+            final List<Segment> segments = jpaTokenStore.fetchAvailableSegments("proc3");
+            assertThat(segments.size(), is(0));
         }
 
         entityManager.flush();

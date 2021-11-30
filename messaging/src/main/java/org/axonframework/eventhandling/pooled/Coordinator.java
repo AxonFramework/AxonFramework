@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -50,6 +50,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -695,16 +696,17 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name).orElse(tokenStore.fetchSegments(name)));
+            List<Segment> segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name));
 
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
-            int[] unClaimedSegments = Arrays.stream(segments)
-                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                            .toArray();
+            List<Segment> unClaimedSegments = segments.stream()
+                                              .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
+                                              .collect(Collectors.toList());
 
             int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
 
-            for (int segmentId : unClaimedSegments) {
+            for (Segment segment : unClaimedSegments) {
+                int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {
                     logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
                     processingStatusUpdater.accept(segmentId, u -> null);
@@ -715,7 +717,7 @@ class Coordinator {
                         TrackingToken token = transactionManager.fetchInTransaction(
                                 () -> tokenStore.fetchToken(name, segmentId)
                         );
-                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                        newClaims.put(segment, token);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
                         logger.debug("Unable to claim the token for segment {}. It is owned by another process.",

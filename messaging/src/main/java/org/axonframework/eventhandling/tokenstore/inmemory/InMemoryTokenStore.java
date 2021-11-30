@@ -113,12 +113,6 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public Optional<int[]> fetchAvailableSegments(String processorName) {
-        //The in-memory implementation isn't accessible by multiple processes, so we just return all tokens.
-        return Optional.of(fetchSegments(processorName));
-    }
-
-    @Override
     public Optional<String> retrieveStorageIdentifier() {
         return Optional.of(identifier);
     }

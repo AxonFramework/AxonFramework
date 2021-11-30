@@ -17,11 +17,12 @@
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -115,19 +116,19 @@ class InMemoryTokenStoreTest {
         testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);
 
         {
-            final Optional<int[]> tokensOptional = testSubject.fetchAvailableSegments("proc1");
-            assertTrue(tokensOptional.isPresent());
-            assertThat(tokensOptional.get().length, is(2));
+            final List<Segment> segments = testSubject.fetchAvailableSegments("proc1");
+            assertThat(segments.size(), is(2));
+            assertThat(segments.get(0).getSegmentId(), is(0));
+            assertThat(segments.get(1).getSegmentId(), is(1));
         }
         {
-            final Optional<int[]> tokensOptional = testSubject.fetchAvailableSegments("proc2");
-            assertTrue(tokensOptional.isPresent());
-            assertThat(tokensOptional.get().length, is(1));
+            final List<Segment> segments = testSubject.fetchAvailableSegments("proc2");
+            assertThat(segments.size(), is(1));
+            assertThat(segments.get(0).getSegmentId(), is(1));
         }
         {
-            final Optional<int[]> tokensOptional = testSubject.fetchAvailableSegments("proc3");
-            assertTrue(tokensOptional.isPresent());
-            assertThat(tokensOptional.get().length, is(0));
+            final List<Segment> segments = testSubject.fetchAvailableSegments("proc3");
+            assertThat(segments.size(), is(0));
         }
     }
 }

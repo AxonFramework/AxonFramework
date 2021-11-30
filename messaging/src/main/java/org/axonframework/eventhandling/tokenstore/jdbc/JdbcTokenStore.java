@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
@@ -27,6 +28,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
+import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -314,17 +317,23 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public Optional<int[]> fetchAvailableSegments(String processorName) {
+    public List<Segment> fetchAvailableSegments(String processorName) {
         Connection connection = getConnection();
         try {
-            List<Integer> integers = executeQuery(connection,
-                                                  c -> selectForSegments(c, processorName, true),
-                                                  listResults(rs -> rs.getInt(schema.segmentColumn())),
-                                                  e -> new JdbcException(format(
-                                                          "Could not load segments for processor [%s]", processorName
-                                                  ), e)
+            List<AbstractTokenEntry<?>> tokenEntries = executeQuery(connection,
+                                                                    c -> selectTokenEntries(c, processorName),
+                                                                    listResults(this::readTokenEntry),
+                                                                    e -> new JdbcException(format(
+                                                                            "Could not load segments for processor [%s]", processorName
+                                                                    ), e)
             );
-            return Optional.of(integers.stream().mapToInt(i -> i).toArray());
+            int[] allSegments = tokenEntries.stream()
+                                          .mapToInt(AbstractTokenEntry::getSegment)
+                                          .toArray();
+            return tokenEntries.stream()
+                             .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                             .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                             .collect(Collectors.toList());
         } finally {
             closeQuietly(connection);
         }
@@ -340,23 +349,28 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
-        return selectForSegments(connection, processorName, false);
+        final String sql = "SELECT " + schema.segmentColumn() +
+                " FROM " + schema.tokenTable() +
+                " WHERE " + schema.processorNameColumn() + " = ?" +
+                " ORDER BY " + schema.segmentColumn() + " ASC";
+        PreparedStatement preparedStatement =
+                connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        preparedStatement.setString(1, processorName);
+        return preparedStatement;
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying storage.
+     * Returns a {@link PreparedStatement} to select all {@link TokenEntry} for a given processorName from the underlying storage.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to fetch the segments for
-     * @param unclaimedOnly if true, filter the tokens on unclaimed tokens only
-     * @return a {@link PreparedStatement} that will fetch segments when executed
+     * @return a {@link PreparedStatement} that will fetch TokenEntries when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement selectForSegments(Connection connection, String processorName, boolean unclaimedOnly) throws SQLException {
-        final String sql = "SELECT " + schema.segmentColumn() +
+    protected PreparedStatement selectTokenEntries(Connection connection, String processorName) throws SQLException {
+        final String sql = "SELECT *" +
                 " FROM " + schema.tokenTable() +
-                " WHERE " + schema.processorNameColumn() + " = ? " +
-                (unclaimedOnly ? "AND " + schema.ownerColumn() + " IS NULL " : "") +
+                " WHERE " + schema.processorNameColumn() + " = ?" +
                 " ORDER BY " + schema.segmentColumn() + " ASC";
         PreparedStatement preparedStatement =
                 connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
