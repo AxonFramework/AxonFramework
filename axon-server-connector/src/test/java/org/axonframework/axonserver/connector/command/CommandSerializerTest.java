@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -29,7 +30,6 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -41,7 +41,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Author: marc
+ * Test class validating the {@link CommandSerializer}.
+ *
+ * @author Marc Gathier
  */
 class CommandSerializerTest {
 
@@ -51,8 +53,8 @@ class CommandSerializerTest {
             this.setComponentName("component");
         }};
         return Stream.of(JacksonSerializer.defaultSerializer(),
-                         XStreamSerializer.defaultSerializer())
-                .map(serializer -> new CommandSerializer(serializer, configuration));
+                         TestSerializer.xStreamSerializer())
+                     .map(serializer -> new CommandSerializer(serializer, configuration));
     }
 
     @MethodSource("data")
@@ -127,7 +129,8 @@ class CommandSerializerTest {
     @MethodSource("data")
     @ParameterizedTest
     void testSerializeNonTransientExceptionalResponse(CommandSerializer testSubject) {
-        SerializationException nonTransientExceptionCause = new SerializationException("Serialization non recoverable problem");
+        SerializationException nonTransientExceptionCause = new SerializationException(
+                "Serialization non recoverable problem");
         Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, null);
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
@@ -140,7 +143,8 @@ class CommandSerializerTest {
     @MethodSource("data")
     @ParameterizedTest
     void testSerializeDeserializeNonTransientExceptionalResponseWithDetails(CommandSerializer testSubject) {
-        SerializationException nonTransientExceptionCause = new SerializationException("Serialization non recoverable problem");
+        SerializationException nonTransientExceptionCause = new SerializationException(
+                "Serialization non recoverable problem");
         Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
@@ -164,7 +168,11 @@ class CommandSerializerTest {
     void testDeserializeResponseWithoutPayload(CommandSerializer testSubject) {
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setRequestIdentifier("requestId")
-                                                  .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))
+                                                  .putAllMetaData(Collections.singletonMap("meta-key",
+                                                                                           MetaDataValue.newBuilder()
+                                                                                                        .setTextValue(
+                                                                                                                "meta-value")
+                                                                                                        .build()))
                                                   .build();
 
         CommandResultMessage<Object> actual = testSubject.deserialize(response);

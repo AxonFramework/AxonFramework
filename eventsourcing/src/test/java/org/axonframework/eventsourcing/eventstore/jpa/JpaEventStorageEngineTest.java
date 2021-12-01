@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import javax.sql.DataSource;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.utils.TestSerializer.secureXStreamSerializer;
+import static org.axonframework.eventsourcing.utils.TestSerializer.xStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -211,7 +211,7 @@ class JpaEventStorageEngineTest
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     void testStoreEventsWithCustomEntity() {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
+        XStreamSerializer serializer = xStreamSerializer();
         JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
                 JpaEventStorageEngine.builder()
                                      .snapshotSerializer(serializer)
@@ -302,8 +302,8 @@ class JpaEventStorageEngineTest
                                      .batchSize(100)
                                      .entityManagerProvider(entityManagerProvider)
                                      .transactionManager(transactionManager)
-                                     .eventSerializer(secureXStreamSerializer())
-                                     .snapshotSerializer(secureXStreamSerializer());
+                                     .eventSerializer(xStreamSerializer())
+                                     .snapshotSerializer(xStreamSerializer());
         return new JpaEventStorageEngine(customization.apply(engineBuilder));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -236,6 +236,8 @@ class FixtureTest_StateStorage {
         StateStoredAggregate(String id, String message) {
             this.id = id;
             this.message = message;
+            // this event, published during the givenState operation, should not be included in the expectEvents phase
+            apply(new StubDomainEvent());
         }
 
         @CommandHandler

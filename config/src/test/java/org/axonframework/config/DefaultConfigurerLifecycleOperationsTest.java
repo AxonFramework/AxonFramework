@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  */
 class DefaultConfigurerLifecycleOperationsTest {
+
+    private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 
     @Test
     void testStartLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
@@ -156,7 +158,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(phaseOneHandlerAdder).addLifecycleHandler(any(), eq(testSubject), eq(2), any());
         lifecycleOrder.verify(phaseTwoHandler).start();
 
-        verifyZeroInteractions(addedPhaseTwoShutdownHandler);
+        verifyNoInteractions(addedPhaseTwoShutdownHandler);
     }
 
     @Test
@@ -287,7 +289,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         lifecycleOrder.verify(phaseOneHandler).shutdown();
         lifecycleOrder.verify(phaseZeroHandler).shutdown();
 
-        verifyZeroInteractions(addedPhaseOneStartHandler);
+        verifyNoInteractions(addedPhaseOneStartHandler);
     }
 
     @Test
@@ -317,7 +319,7 @@ class DefaultConfigurerLifecycleOperationsTest {
             testSubject.start();
             fail("Expected a LifecycleHandlerInvocationException to be thrown");
         } catch (LifecycleHandlerInvocationException e) {
-            // Expected
+            assertTrue(e.getCause().getMessage().contains(START_FAILURE_EXCEPTION_MESSAGE));
         }
 
         InOrder lifecycleOrder =
@@ -354,6 +356,7 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, phaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
+        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(phaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
     }
@@ -374,6 +377,7 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, extremelySlowPhaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
+        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(extremelySlowPhaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
     }
@@ -430,7 +434,7 @@ class DefaultConfigurerLifecycleOperationsTest {
         }
 
         public void failingStart() {
-            throw new RuntimeException("some start failure");
+            throw new RuntimeException(START_FAILURE_EXCEPTION_MESSAGE);
         }
     }
 

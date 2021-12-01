@@ -98,8 +98,9 @@ public class AxonServerConnectionManager implements LifecycleAware {
      */
     public void start() {
         if (heartbeatEnabled) {
-            getConnection().controlChannel()
-                           .enableHeartbeat(heartbeatInterval, heartbeatTimeout, TimeUnit.MILLISECONDS);
+            // for backwards compatibility. Starting the ConnectionManager with heartbeat enabled should eagerly create
+            // a connection to Axon Server
+            getConnection();
         }
     }
 
@@ -116,10 +117,21 @@ public class AxonServerConnectionManager implements LifecycleAware {
      * Retrieves the {@link AxonServerConnection} used for the given {@code context} of this application.
      *
      * @param context the context for which to retrieve an {@link AxonServerConnection}
+     *
      * @return the {@link AxonServerConnection} used for the given {@code context} of this application.
      */
     public AxonServerConnection getConnection(String context) {
-        return connections.computeIfAbsent(context, connectionFactory::connect);
+        return connections.computeIfAbsent(context, this::createConnection);
+    }
+
+    private AxonServerConnection createConnection(String context) {
+        AxonServerConnection connection = connectionFactory.connect(context);
+        if (heartbeatEnabled) {
+            connection.controlChannel()
+                      .enableHeartbeat(heartbeatInterval, heartbeatTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        return connection;
     }
 
     /**
@@ -127,6 +139,7 @@ public class AxonServerConnectionManager implements LifecycleAware {
      *
      * @param context the (Bounded) Context for for which is verified the AxonServer connection through the gRPC
      *                channel
+     *
      * @return if the gRPC channel is opened, false otherwise
      */
     public boolean isConnected(String context) {
@@ -201,6 +214,7 @@ public class AxonServerConnectionManager implements LifecycleAware {
          *
          * @param axonServerConfiguration an {@link AxonServerConfiguration} used to correctly configure the connections
          *                                created by an {@link AxonServerConnectionManager} instance
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder axonServerConfiguration(AxonServerConfiguration axonServerConfiguration) {
@@ -217,6 +231,7 @@ public class AxonServerConnectionManager implements LifecycleAware {
          *
          * @param tagsConfiguration a {@link TagsConfiguration} to add the tags of this Axon instance as client
          *                          information when setting up a channel
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder tagsConfiguration(TagsConfiguration tagsConfiguration) {
@@ -233,6 +248,7 @@ public class AxonServerConnectionManager implements LifecycleAware {
          * feature.
          *
          * @param channelCustomization A function defining the customization to make on the ManagedChannelBuilder
+         *
          * @return this builder for further configuration
          */
         public Builder channelCustomizer(UnaryOperator<ManagedChannelBuilder<?>> channelCustomization) {
@@ -245,6 +261,7 @@ public class AxonServerConnectionManager implements LifecycleAware {
          * Server.
          *
          * @param axonFrameworkVersionResolver a string supplier that retrieve the current Axon Framework version
+         *
          * @return the current Builder instance, for fluent interfacing
          * @deprecated Not ued anymore
          */

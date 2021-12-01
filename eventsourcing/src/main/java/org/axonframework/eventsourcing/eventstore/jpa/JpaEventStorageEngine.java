@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Instantiate a {@link JpaEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EntityManagerProvider} and {@link TransactionManager} are not {@code null}, and will
-     * throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link
+     * TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
+     * {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JpaEventStorageEngine} instance
      */
@@ -110,11 +111,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The snapshot {@link Serializer} defaults to {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
-     * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
@@ -124,8 +123,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link EntityManagerProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such
-     * should be provided.
+     * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link JpaEventStorageEngine}
      */
@@ -473,11 +472,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The snapshot {@link Serializer} defaults to {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
-     * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
@@ -487,8 +484,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
      * </ul>
      * <p>
-     * The {@link EntityManagerProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such
-     * should be provided.
+     * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends BatchingEventStorageEngine.Builder {
 

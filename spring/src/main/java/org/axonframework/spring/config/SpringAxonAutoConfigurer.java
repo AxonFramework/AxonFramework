@@ -18,6 +18,7 @@ package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -79,7 +80,8 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -247,14 +249,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerEventUpcasters(Configurer configurer) {
-        //noinspection ConstantConditions - suppressing ConfigurableListableBeanFactory#getType null warning
         Arrays.stream(beanFactory.getBeanNamesForType(EventUpcaster.class))
               .collect(Collectors.toMap(
                       upcasterBeanName -> upcasterBeanName,
-                      upcasterBeanName -> beanFactory.getType(upcasterBeanName)
+                      upcasterBeanName -> ObjectUtils.getOrDefault(
+                              beanFactory.findAnnotationOnBean(upcasterBeanName, Order.class),
+                              Order::value, Ordered.LOWEST_PRECEDENCE
+                      )
               ))
               .entrySet().stream()
-              .sorted(Map.Entry.comparingByValue(AnnotationAwareOrderComparator.INSTANCE))
+              .sorted(Map.Entry.comparingByValue())
               .forEach(upcasterEntry -> configurer.registerEventUpcaster(c -> getBean(upcasterEntry.getKey(), c)));
     }
 
@@ -413,6 +417,13 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     String cacheBeanName = aggregateAnnotation.cache();
                     if (nonEmptyBeanName(cacheBeanName)) {
                         aggregateConfigurer.configureCache(c -> beanFactory.getBean(cacheBeanName, Cache.class));
+                    }
+
+                    String lockFactoryBeanName = aggregateAnnotation.lockFactory();
+                    if (nonEmptyBeanName(lockFactoryBeanName)) {
+                        aggregateConfigurer.configureLockFactory(
+                                c -> beanFactory.getBean(lockFactoryBeanName, LockFactory.class)
+                        );
                     }
 
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {

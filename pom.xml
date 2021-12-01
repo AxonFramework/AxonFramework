@@ -66,16 +66,16 @@
         </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
-        <slf4j.version>1.7.31</slf4j.version>
+        <slf4j.version>1.7.32</slf4j.version>
         <log4j.version>2.14.1</log4j.version>
-        <spring.version>5.3.9</spring.version>
-        <spring-security.version>5.5.1</spring-security.version>
-        <spring.boot.version>2.5.2</spring.boot.version>
-        <mockito.version>3.11.2</mockito.version>
-        <projectreactor.version>3.4.8</projectreactor.version>
-        <micrometer.version>1.7.2</micrometer.version>
-        <dropwizard.metrics.version>4.2.2</dropwizard.metrics.version>
-        <jackson.version>2.12.4</jackson.version>
+        <spring.version>5.3.13</spring.version>
+        <spring-security.version>5.6.0</spring-security.version>
+        <spring.boot.version>2.6.1</spring.boot.version>
+        <mockito.version>4.1.0</mockito.version>
+        <projectreactor.version>3.4.12</projectreactor.version>
+        <micrometer.version>1.8.0</micrometer.version>
+        <dropwizard.metrics.version>4.2.4</dropwizard.metrics.version>
+        <jackson.version>2.13.0</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.
             gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
@@ -94,24 +94,25 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <mysql-connector-java.version>8.0.25</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.27</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
-        <hsqldb.version>2.5.0</hsqldb.version>
-        <hibernate-entitymanager.version>5.5.3.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.11.7</byte-buddy.version>
+        <hsqldb.version>2.5.2</hsqldb.version>
+        <hibernate-entitymanager.version>5.6.1.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.12.2</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.28.0-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <postgresql.version>42.2.23</postgresql.version>
+        <postgresql.version>42.3.1</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.7.2</junit.jupiter.version>
-        <axonserver-connector-java.version>4.5.1</axonserver-connector-java.version>
+        <junit.jupiter.version>5.8.2</junit.jupiter.version>
+        <axonserver-connector-java.version>4.5.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.15.3</testcontainers.version>
+        <testcontainers.version>1.16.2</testcontainers.version>
+        <xstream.version>1.4.18</xstream.version>
 
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.2</felix.maven-bundle-plugin.version>
@@ -180,7 +181,7 @@
         </dependency>
 
         <dependency>
-            <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
+            <!-- Not part of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
             <scope>test</scope>
@@ -412,7 +413,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.0.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -474,7 +475,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>

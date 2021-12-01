@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                     QuartzDeadlineManager.builder()
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
-                                         .serializer(TestSerializer.secureXStreamSerializer())
+                                         .serializer(TestSerializer.xStreamSerializer())
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;
@@ -62,6 +62,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
+                                                                 .serializer(TestSerializer.xStreamSerializer())
                                                                  .build();
 
         testSubject.shutdown();
@@ -79,8 +80,31 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
                                                                  .scheduler(scheduler)
+                                                                 .serializer(TestSerializer.xStreamSerializer())
                                                                  .build();
 
         assertThrows(DeadlineException.class, testSubject::shutdown);
+    }
+
+    @Test
+    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+        ScopeAwareProvider scopeAwareProvider = mock(ScopeAwareProvider.class);
+        QuartzDeadlineManager.Builder builderTestSubject =
+                QuartzDeadlineManager.builder()
+                                     .scopeAwareProvider(scopeAwareProvider)
+                                     .serializer(TestSerializer.xStreamSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
+        Scheduler scheduler = mock(Scheduler.class);
+        QuartzDeadlineManager.Builder builderTestSubject =
+                QuartzDeadlineManager.builder()
+                                     .scheduler(scheduler)
+                                     .serializer(TestSerializer.xStreamSerializer());
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 }

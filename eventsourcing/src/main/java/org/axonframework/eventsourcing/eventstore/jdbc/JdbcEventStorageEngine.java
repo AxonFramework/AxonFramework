@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,10 +82,15 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * EventStorageEngine implementation that uses JDBC to store and fetch events.
+ * An {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation that uses JDBC to store and
+ * fetch events.
  * <p>
- * By default the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
- * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
+ * By default, it stores the payload of events as a serialized blob of bytes. It uses other columns to store meta-data
+ * that allows quick finding of DomainEvents for a specific aggregate in the correct order.
+ * <p>
+ * Before using this store make sure the database contains a table named {@link EventSchema#domainEventTable()} and
+ * {@link EventSchema#snapshotTable()} in which to store events and snapshots in respectively. For convenience, these
+ * tables can be constructed through the {@link JdbcEventStorageEngine#createSchema(EventTableFactory)} operation.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -127,8 +132,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Instantiate a {@link JdbcEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link ConnectionProvider} and {@link TransactionManager} are not {@code null}, and will
-     * throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the event and snapshot {@link Serializer}, the {@link ConnectionProvider} and {@link
+     * TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
+     * {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JdbcEventStorageEngine} instance
      */
@@ -163,10 +169,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The snapshot {@link Serializer} defaults to {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
-     * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
@@ -191,8 +195,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code readEventDataWithGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithGaps}.</li>
      * </ul>
      * <p>
-     * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
-     * be provided.
+     * The event and snapshot {@link Serializer}, {@link ConnectionProvider} and {@link TransactionManager} are <b>hard
+     * requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link JdbcEventStorageEngine}
      */
@@ -830,10 +834,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <p>
      * The following configurable fields have defaults:
      * <ul>
-     * <li>The snapshot {@link Serializer} defaults to {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link JdbcSQLErrorCodesResolver}</li>
-     * <li>The event Serializer defaults to a {@link org.axonframework.serialization.xml.XStreamSerializer}.</li>
      * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
@@ -858,8 +860,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code readEventDataWithGaps} defaults to {@link JdbcEventStorageEngineStatements#readEventDataWithGaps}.</li>
      * </ul>
      * <p>
-     * The {@link ConnectionProvider} and {@link TransactionManager} are <b>hard requirements</b> and as such should
-     * be provided.
+     * The event and snapshot {@link Serializer}, {@link ConnectionProvider} and {@link TransactionManager} are <b>hard
+     * requirements</b> and as such should be provided.
      */
     public static class Builder extends BatchingEventStorageEngine.Builder {
 

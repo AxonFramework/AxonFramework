@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,9 @@ import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.TestSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
@@ -42,9 +39,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Clock;
@@ -52,15 +46,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.sql.DataSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
@@ -356,7 +348,7 @@ class JdbcTokenStoreTest {
         public JdbcTokenStore concurrentTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(XStreamSerializer.builder().build())
+                                 .serializer(TestSerializer.XSTREAM.getSerializer())
                                  .claimTimeout(Duration.ofSeconds(2))
                                  .nodeId("concurrent")
                                  .build();
@@ -366,7 +358,7 @@ class JdbcTokenStoreTest {
         public JdbcTokenStore stealingTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(XStreamSerializer.builder().build())
+                                 .serializer(TestSerializer.XSTREAM.getSerializer())
                                  .claimTimeout(Duration.ofSeconds(-1))
                                  .nodeId("stealing")
                                  .build();

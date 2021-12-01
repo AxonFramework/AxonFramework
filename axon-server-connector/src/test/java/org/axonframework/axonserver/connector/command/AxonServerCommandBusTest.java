@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class AxonServerCommandBusTest {
     private AxonServerConnectionManager axonServerConnectionManager;
     private AxonServerConfiguration configuration;
     private final SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
-    private final Serializer serializer = TestSerializer.secureXStreamSerializer();
+    private final Serializer serializer = TestSerializer.xStreamSerializer();
     private final TargetContextResolver<CommandMessage<?>> targetContextResolver =
             spy(new TestTargetContextResolver<>());
 

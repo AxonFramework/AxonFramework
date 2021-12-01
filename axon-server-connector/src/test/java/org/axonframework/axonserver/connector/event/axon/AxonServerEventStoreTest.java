@@ -96,7 +96,7 @@ class AxonServerEventStoreTest {
                                           .platformConnectionManager(axonServerConnectionManager)
                                           .upcasterChain(upcasterChain)
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
-                                          .snapshotSerializer(TestSerializer.secureXStreamSerializer())
+                                          .snapshotSerializer(TestSerializer.xStreamSerializer())
                                           .snapshotFilter(SnapshotFilter.allowAll())
                                           .build();
     }

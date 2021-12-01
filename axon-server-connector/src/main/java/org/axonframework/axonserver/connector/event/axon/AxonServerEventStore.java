@@ -98,10 +98,10 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
-     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}. The {@link
-     * AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
-     * EventStorageEngine is provided directly.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}.
+     * <p>
+     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
+     * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
      *
      * @return a Builder to be able to create a {@link AxonServerEventStore}
      */
@@ -164,17 +164,17 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The snapshot {@link Serializer} is defaulted to a {@link XStreamSerializer}, the event Serializer also defaults
-     * to a XStreamSerializer and the {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}. The {@link
-     * AxonServerConfiguration} and {@link AxonServerConnectionManager} are <b>hard requirements</b> if no
-     * EventStorageEngine is provided directly.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}.
+     * <p>
+     * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
+     * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
      */
     public static class Builder extends AbstractEventStore.Builder {
 
         private AxonServerConfiguration configuration;
         private AxonServerConnectionManager axonServerConnectionManager;
-        private Supplier<Serializer> snapshotSerializer = XStreamSerializer::defaultSerializer;
-        private Supplier<Serializer> eventSerializer = XStreamSerializer::defaultSerializer;
+        private Supplier<Serializer> snapshotSerializer;
+        private Supplier<Serializer> eventSerializer;
         private EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private SnapshotFilter snapshotFilter;
 
@@ -320,6 +320,29 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         private void buildStorageEngine() {
+            if (snapshotSerializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used for events, whereas it is strongly recommended to"
+                                + " configure the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used for events,"
+                                        + " without specifying the security context"
+                        )
+                );
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
+            }
+            if (eventSerializer == null) {
+                logger.warn(
+                        "The default XStreamSerializer is used for snapshots, whereas it is strongly recommended to "
+                                + "configure the security context of the XStream instance.",
+                        new AxonConfigurationException(
+                                "A default XStreamSerializer is used for snapshots,"
+                                        + " without specifying the security context"
+                        )
+                );
+                eventSerializer = XStreamSerializer::defaultSerializer;
+            }
+
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
             assertNonNull(axonServerConnectionManager,
                           "The PlatformConnectionManager is a hard requirement and should be provided");

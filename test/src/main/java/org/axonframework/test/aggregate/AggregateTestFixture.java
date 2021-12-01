@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -326,7 +326,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         ensureRepositoryConfiguration();
-        clearGivenWhenState();
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.newInstance(aggregate::get);
@@ -336,6 +335,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                         e);
             }
         });
+        clearGivenWhenState();
         return this;
     }
 
@@ -434,15 +434,27 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
+    public ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
 
     @Override
-    public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
+    @Deprecated
+    public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
+        return whenTimeElapses(elapsedTime);
+    }
+
+    @Override
+    public ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
         deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
+    }
+
+    @Override
+    @Deprecated
+    public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
+        return whenTimeAdvancesTo(newPointInTime);
     }
 
     @Override

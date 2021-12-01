@@ -775,7 +775,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return Spliterator.DISTINCT & Spliterator.IMMUTABLE & Spliterator.NONNULL;
         }
     }
-
     /**
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@link QueryBus} to push through the
      * message handling and subscription query registration.
@@ -797,6 +796,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     updateEmitter.registerUpdateHandler(subscriptionSerializer.deserialize(query), 1024);
 
             updateHandler.getUpdates()
+                         .map(subscriptionSerializer::serialize)
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
@@ -808,7 +808,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                              sendUpdate.complete();
                          })
                          .doOnComplete(sendUpdate::complete)
-                         .map(subscriptionSerializer::serialize)
                          .subscribe(sendUpdate::sendUpdate);
 
             return () -> {

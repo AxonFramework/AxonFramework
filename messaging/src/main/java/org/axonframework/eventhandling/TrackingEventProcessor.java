@@ -387,9 +387,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
-            TrackingToken lastToken;
-            Collection<Segment> processingSegments;
-            if (eventStream.hasNextAvailable(eventAvailabilityTimeout, MILLISECONDS)) {
+            TrackingToken lastToken = null;
+            Collection<Segment> processingSegments = Collections.emptySet();
+
+            long processingDeadline = now().toEpochMilli() + eventAvailabilityTimeout;
+            long processingTime = eventAvailabilityTimeout;
+            while (batch.isEmpty() && processingTime > 0 && eventStream.hasNextAvailable((int) processingTime, MILLISECONDS)) {
+                processingTime = processingDeadline - now().toEpochMilli();
+
                 final TrackedEventMessage<?> firstMessage = eventStream.nextAvailable();
                 lastToken = firstMessage.trackingToken();
                 processingSegments = processingSegments(lastToken, segment);
@@ -398,8 +403,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 } else {
                     ignoreEvent(eventStream, firstMessage);
                 }
-                // besides checking batch sizes, we must also ensure that both the current message in the batch
-                // and the next (if present) allow for processing with a batch
+                // Next to checking batch sizes, we must also ensure that both the current message in the batch
+                // and the next (if present) allow for processing with a batch.
                 for (int i = 0; isRegularProcessing(segment, processingSegments)
                         && i < batchSize * 10 && batch.size() < batchSize
                         && eventStream.peek().map(m -> isRegularProcessing(segment, m)).orElse(false); i++) {
@@ -411,11 +416,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                         ignoreEvent(eventStream, trackedEventMessage);
                     }
                 }
+
                 if (batch.isEmpty()) {
+                    // The batch is empty because none of the events can be handled by this segment. Update the status.
                     TrackingToken finalLastToken = lastToken;
-                    transactionManager.executeInTransaction(
-                            () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
-                    );
                     TrackerStatus previousStatus = activeSegments.get(segment.getSegmentId());
                     TrackerStatus updatedStatus = activeSegments.computeIfPresent(
                             segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken)
@@ -425,13 +429,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 singletonMap(segment.getSegmentId(), updatedStatus)
                         );
                     }
-                    return;
                 }
-            } else {
+            }
+
+            if (lastToken == null) {
+                // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
-                // Refresh claim on token
                 transactionManager.executeInTransaction(
                         () -> tokenStore.extendClaim(getName(), segment.getSegmentId())
+                );
+                return;
+            } else if (batch.isEmpty()) {
+                // The token is updated but didn't contain events for this segment. So, we update the token position.
+                TrackingToken finalLastToken = lastToken;
+                transactionManager.executeInTransaction(
+                        () -> tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId())
                 );
                 return;
             }
@@ -439,8 +451,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             TrackingToken finalLastToken = lastToken;
             // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
             // These are the result of upcasting and should always be processed in the same batch.
-            while (lastToken != null
-                    && eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
+            while (eventStream.peek().filter(event -> finalLastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                 if (canHandle(trackedEventMessage, processingSegments)) {
                     batch.add(trackedEventMessage);
@@ -1100,7 +1111,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 int[] tokenStoreCurrentSegments;
 
                 try {
-                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                    tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                            () -> tokenStore.fetchSegments(processorName)
+                    );
 
                     // When in an initial stage, split segments to the requested number.
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {

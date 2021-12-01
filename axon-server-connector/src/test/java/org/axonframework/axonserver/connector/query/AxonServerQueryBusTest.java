@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,17 @@ import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -43,12 +46,14 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,21 +70,9 @@ import java.util.stream.Stream;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test suite to verify the {@link AxonServerQueryBus}.
@@ -92,7 +85,7 @@ class AxonServerQueryBusTest {
     private static final String CONTEXT = "default-test";
 
     private final QueryBus localSegment = mock(QueryBus.class);
-    private final Serializer serializer = XStreamSerializer.defaultSerializer();
+    private final Serializer serializer = TestSerializer.xStreamSerializer();
     private final TargetContextResolver<QueryMessage<?, ?>> targetContextResolver = spy(new TestTargetContextResolver<>());
 
     private AxonServerConnectionManager axonServerConnectionManager;
@@ -360,6 +353,40 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void testSubscriptionQueryCompletesWithExceptionOnUpdateDeserializationError() {
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
+                .thenReturn(new SimpleSubscriptionQueryResult("<string>Hello world</string>", stubUpdate("Not a valid XML object")));
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult = testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("Say hi", "test", instanceOf(String.class), instanceOf(String.class)));
+        Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
+        Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
+        queryResult.close();
+
+        StepVerifier.create(initialResult)
+                    .expectNextMatches(r -> r.getPayload().equals("Hello world"))
+                    .verifyComplete();
+
+        StepVerifier.create(updates.map(Message::getPayload))
+                    .verifyError();
+    }
+
+    @Test
+    void testSubscriptionQueryCompletesWithExceptionOnInitialResultDeserializationError() {
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
+                .thenReturn(new SimpleSubscriptionQueryResult("Not a valid XML object", stubUpdate("<string>Hello world</string>")));
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult = testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("Say hi", "test", instanceOf(String.class), instanceOf(String.class)));
+        Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
+        Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
+        queryResult.close();
+
+        StepVerifier.create(initialResult.map(Message::getPayload))
+                    .verifyError();
+
+        StepVerifier.create(updates.map(Message::getPayload))
+                    .expectNextMatches(r -> r.equals("Hello world"))
+                    .verifyComplete();
+    }
+
+    @Test
     void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
         SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
                 new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
@@ -380,6 +407,15 @@ class AxonServerQueryBusTest {
                             .build();
     }
 
+    private QueryUpdate stubUpdate(String payload) {
+        return QueryUpdate.newBuilder()
+                          .setMessageIdentifier(UUID.randomUUID().toString())
+                          .setPayload(SerializedObject.newBuilder()
+                                                      .setData(ByteString.copyFromUtf8(payload))
+                                                      .setType(String.class.getName()))
+                          .build();
+    }
+
     private QueryResponse stubErrorResponse(String errorCode, @SuppressWarnings("SameParameterValue") String message) {
         return QueryResponse.newBuilder()
                             .setRequestIdentifier("request")
@@ -392,12 +428,12 @@ class AxonServerQueryBusTest {
                             .build();
     }
 
-    private static class StubResultStream implements ResultStream<QueryResponse> {
+    private static class StubResultStream<T> implements ResultStream<T> {
 
-        private final Iterator<QueryResponse> responses;
-        private QueryResponse peeked;
-        private boolean closed;
+        private final Iterator<T> responses;
         private final Throwable error;
+        private T peeked;
+        private boolean closed;
 
         public StubResultStream(Throwable error) {
             this.error = error;
@@ -405,13 +441,13 @@ class AxonServerQueryBusTest {
             this.responses = Collections.emptyIterator();
         }
 
-        public StubResultStream(QueryResponse... responses) {
+        public StubResultStream(T... responses) {
             this.error = null;
             this.responses = Arrays.asList(responses).iterator();
         }
 
         @Override
-        public QueryResponse peek() {
+        public T peek() {
             if (peeked == null && responses.hasNext()) {
                 peeked = responses.next();
             }
@@ -419,9 +455,9 @@ class AxonServerQueryBusTest {
         }
 
         @Override
-        public QueryResponse nextIfAvailable() {
+        public T nextIfAvailable() {
             if (peeked != null) {
-                QueryResponse result = peeked;
+                T result = peeked;
                 peeked = null;
                 return result;
             }
@@ -429,12 +465,12 @@ class AxonServerQueryBusTest {
         }
 
         @Override
-        public QueryResponse nextIfAvailable(long timeout, TimeUnit unit) {
+        public T nextIfAvailable(long timeout, TimeUnit unit) {
             return nextIfAvailable();
         }
 
         @Override
-        public QueryResponse next() {
+        public T next() {
             return nextIfAvailable();
         }
 
@@ -458,6 +494,26 @@ class AxonServerQueryBusTest {
         @Override
         public Optional<Throwable> getError() {
             return Optional.ofNullable(error);
+        }
+    }
+
+    private class SimpleSubscriptionQueryResult implements io.axoniq.axonserver.connector.query.SubscriptionQueryResult {
+        private final StubResultStream<QueryUpdate> updateStubResultStream;
+        private final String payload;
+
+        public SimpleSubscriptionQueryResult(String payload, QueryUpdate... updates) {
+            this.updateStubResultStream = new StubResultStream<>(updates);
+            this.payload = payload;
+        }
+
+        @Override
+        public CompletableFuture<QueryResponse> initialResult() {
+            return CompletableFuture.completedFuture(stubResponse(payload));
+        }
+
+        @Override
+        public ResultStream<QueryUpdate> updates() {
+            return updateStubResultStream;
         }
     }
 }

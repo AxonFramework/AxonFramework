@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +52,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
 
     /**
      * Instantiate a {@link BatchingEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an {@link
+     * AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link BatchingEventStorageEngine} instance
      */
@@ -138,11 +142,11 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     /**
      * Abstract Builder class to instantiate a {@link BatchingEventStorageEngine}.
      * <p>
-     * This implementation inherits the following defaults: The {@link Serializer} used for snapshots is defaulted to a
-     * {@link org.axonframework.serialization.xml.XStreamSerializer}, the {@link EventUpcaster} defaults to a {@link
-     * org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}, the Serializer used for events is also
-     * defaulted to a XStreamSerializer and the {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()}
-     * instance. The {@code batchSize} in this Builder implementation is defaulted to an integer of size {@code 100}.
+     * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}, the {@code snapshotFilter} defaults to a
+     * {@link SnapshotFilter#allowAll()} instance and the {@code batchSize} is defaulted to an integer of size {@code
+     * 100}.
+     * <p>
+     * The event and snapshot {@link Serializer} are <b>hard requirements</b> and as such should be provided.
      */
     public abstract static class Builder extends AbstractEventStorageEngine.Builder {
 

@@ -704,14 +704,14 @@ public class DefaultConfigurer implements Configurer {
                 startHandlers,
                 e -> {
                     logger.debug("Start up is being ended prematurely due to an exception");
-                    invokeShutdownHandlers();
-                    throw new LifecycleHandlerInvocationException(
-                            String.format(
-                                    "One of the start handlers in phase [%d] failed with the following exception:",
-                                    currentLifecyclePhase
-                            ),
-                            e
+                    String startFailure = String.format(
+                            "One of the start handlers in phase [%d] failed with the following exception: ",
+                            currentLifecyclePhase
                     );
+                    logger.warn(startFailure, e);
+
+                    invokeShutdownHandlers();
+                    throw new LifecycleHandlerInvocationException(startFailure, e);
                 }
         );
 

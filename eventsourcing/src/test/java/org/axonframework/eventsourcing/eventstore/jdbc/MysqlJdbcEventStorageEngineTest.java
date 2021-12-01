@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -73,7 +74,9 @@ class MysqlJdbcEventStorageEngineTest {
     private JdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
         JdbcEventStorageEngine engine =
                 JdbcEventStorageEngine.builder()
+                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
                                       .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
+                                      .eventSerializer(TestSerializer.xStreamSerializer())
                                       .connectionProvider(dataSource::getConnection)
                                       .transactionManager(NoTransactionManager.INSTANCE)
                                       .build();
