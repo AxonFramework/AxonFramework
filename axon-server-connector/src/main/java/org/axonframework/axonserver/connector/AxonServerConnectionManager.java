@@ -26,10 +26,10 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -48,7 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerConnectionManager {
+public class AxonServerConnectionManager implements LifecycleAware {
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
@@ -86,12 +85,17 @@ public class AxonServerConnectionManager {
         return new Builder();
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
+        lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
+    }
+
     /**
      * Starts the {@link AxonServerConnectionManager}. Will enable heartbeat messages to be send to the connected Axon
      * Server instance in the {@link Phase#INSTRUCTION_COMPONENTS} phase, if this has been enabled through the {@link
      * AxonServerConfiguration.HeartbeatConfiguration#isEnabled()}.
      */
-    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         if (heartbeatEnabled) {
             getConnection().controlChannel()
@@ -134,7 +138,6 @@ public class AxonServerConnectionManager {
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
      * This shutdown operation is performed in the {@link Phase#EXTERNAL_CONNECTIONS} phase.
      */
-    @ShutdownHandler(phase = Phase.EXTERNAL_CONNECTIONS)
     public void shutdown() {
         connectionFactory.shutdown();
         disconnect();
