@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -31,7 +32,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SubscribingEventProcessorTest {
@@ -84,6 +85,13 @@ class SubscribingEventProcessorTest {
         eventBus.publish(EventTestUtils.createEvents(1));
 
         assertTrue(transactionManager.started, "Expected Transaction to be started");
+    }
+
+    @Test
+    void testBuildWithNullTransactionManagerThrowsAxonConfigurationException() {
+        SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
+
+        assertThrows(AxonConfigurationException.class,  () -> builder.transactionManager(null));
     }
 
     static class TestingTransactionManager implements TransactionManager {
