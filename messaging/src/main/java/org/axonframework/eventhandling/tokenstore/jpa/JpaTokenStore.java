@@ -242,12 +242,12 @@ public class JpaTokenStore implements TokenStore {
                 TokenEntry.class
         ).setParameter("processorName", processorName).getResultList();
         int[] allSegments = resultList.stream()
-                .mapToInt(TokenEntry::getSegment)
-                .toArray();
+                                      .mapToInt(TokenEntry::getSegment)
+                                      .toArray();
         return resultList.stream()
-                .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
-                .collect(Collectors.toList());
+                         .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                         .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                         .collect(Collectors.toList());
     }
 
     /**

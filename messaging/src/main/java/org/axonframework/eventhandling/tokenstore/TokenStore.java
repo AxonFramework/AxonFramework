@@ -226,8 +226,8 @@ public interface TokenStore {
     default List<Segment> fetchAvailableSegments(String processorName) {
         int[] allSegments = fetchSegments(processorName);
         return Arrays.stream(allSegments).boxed()
-                .map(segment -> Segment.computeSegment(segment, allSegments))
-                .collect(Collectors.toList());
+                     .map(segment -> Segment.computeSegment(segment, allSegments))
+                     .collect(Collectors.toList());
     }
 
     /**

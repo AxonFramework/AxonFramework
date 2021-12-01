@@ -328,12 +328,12 @@ public class JdbcTokenStore implements TokenStore {
                                                                     ), e)
             );
             int[] allSegments = tokenEntries.stream()
-                                          .mapToInt(AbstractTokenEntry::getSegment)
-                                          .toArray();
+                                            .mapToInt(AbstractTokenEntry::getSegment)
+                                            .toArray();
             return tokenEntries.stream()
-                             .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                             .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
-                             .collect(Collectors.toList());
+                               .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                               .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                               .collect(Collectors.toList());
         } finally {
             closeQuietly(connection);
         }
