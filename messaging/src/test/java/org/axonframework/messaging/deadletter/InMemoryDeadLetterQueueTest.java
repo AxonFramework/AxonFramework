@@ -16,10 +16,40 @@
 
 package org.axonframework.messaging.deadletter;
 
-class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest {
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
+import org.junit.jupiter.api.*;
+
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class validating the {@link InMemoryDeadLetterQueue}.
+ *
+ * @author Steven van Beelen
+ */
+class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventMessage<?>> {
 
     @Override
-    DeadLetterQueue buildTestSubject() {
-        return new InMemoryDeadLetterQueue();
+    DeadLetterQueue<EventMessage<?>> buildTestSubject() {
+        return InMemoryDeadLetterQueue.defaultQueue();
+    }
+
+    @Override
+    EventMessage<?> generateMessage() {
+        return GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
+    }
+
+    @Test
+    void testMaxSize() {
+        int expectedMaxEntries = 128;
+
+        InMemoryDeadLetterQueue<Message<?>> testSubject = InMemoryDeadLetterQueue.builder()
+                                                                                 .maxEntries(expectedMaxEntries)
+                                                                                 .build();
+
+        assertEquals(expectedMaxEntries, testSubject.maxSize());
     }
 }
