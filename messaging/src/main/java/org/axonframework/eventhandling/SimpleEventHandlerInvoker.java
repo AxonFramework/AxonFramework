@@ -122,6 +122,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
+    private boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
+        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
+    }
+
     @Override
     public boolean canHandleType(Class<?> payloadType) {
         return wrappedEventHandlers.stream().anyMatch(eh -> eh.canHandleType(payloadType));
@@ -146,14 +150,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return true;
     }
 
-    private boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
-        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
-    }
-
-    protected Object sequenceIdentifier(EventMessage<?> event) {
-        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
-    }
-
     @Override
     public void performReset() {
         performReset(null);
@@ -164,6 +160,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         for (EventMessageHandler eventHandler : wrappedEventHandlers) {
             eventHandler.prepareReset(resetContext);
         }
+    }
+
+    @Override
+    public Object sequenceIdentifier(EventMessage<?> event) {
+        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
     }
 
     /**
