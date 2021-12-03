@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.DeadLetterEntry;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -27,67 +27,69 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
+public class GenericEventDeadLetter implements DeadLetterEntry<EventMessage<?>> {
 
-    /**
-     *
-     */
-    public static final Throwable SEQUENCED_DEAD_LETTER =
-            new Throwable("Added dead letter as part of earlier letters within the same sequence.");
+    public static final Throwable SEQUENCED_DEAD_LETTER = null;
 
-    private final String sequenceIdentifier;
+    private final String identifier;
+    private final String group;
     private final EventMessage<?> deadLetter;
     private final Throwable failure;
+    private final Instant expiresAt;
     private final Instant deadLettered;
 
-    /**
-     * @param sequenceIdentifier
-     * @param deadLetter
-     */
-    public GenericEventDeadLetter(String sequenceIdentifier, EventMessage<?> deadLetter) {
-        this(sequenceIdentifier, deadLetter, SEQUENCED_DEAD_LETTER);
-    }
-
-    /**
-     * @param sequenceIdentifier
-     * @param deadLetter
-     * @param failure
-     */
-    public GenericEventDeadLetter(String sequenceIdentifier,
+    public GenericEventDeadLetter(String identifier,
+                                  String group,
                                   EventMessage<?> deadLetter,
-                                  Throwable failure) {
-        this(sequenceIdentifier, deadLetter, failure, GenericEventMessage.clock.instant());
+                                  Instant expiresAt) {
+        this(identifier, group, deadLetter, SEQUENCED_DEAD_LETTER, expiresAt);
     }
 
-    /**
-     * @param sequenceIdentifier
-     * @param deadLetter
-     * @param failure
-     * @param deadLettered
-     */
-    public GenericEventDeadLetter(String sequenceIdentifier,
+    public GenericEventDeadLetter(String identifier,
+                                  String group,
                                   EventMessage<?> deadLetter,
                                   Throwable failure,
+                                  Instant expiresAt) {
+        this(identifier, group, deadLetter, failure, expiresAt, GenericEventMessage.clock.instant());
+    }
+
+    public GenericEventDeadLetter(String identifier,
+                                  String group,
+                                  EventMessage<?> deadLetter,
+                                  Throwable failure,
+                                  Instant expiresAt,
                                   Instant deadLettered) {
-        this.sequenceIdentifier = sequenceIdentifier;
-        this.deadLettered = deadLettered;
+        this.identifier = identifier;
+        this.group = group;
         this.deadLetter = deadLetter;
         this.failure = failure;
+        this.expiresAt = expiresAt;
+        this.deadLettered = deadLettered;
     }
 
     @Override
-    public String sequenceIdentifier() {
-        return sequenceIdentifier;
+    public String identifier() {
+        return identifier;
     }
 
     @Override
-    public EventMessage<?> deadLetter() {
+    public String group() {
+        return group;
+    }
+
+    @Override
+    public EventMessage<?> message() {
         return deadLetter;
     }
 
     @Override
-    public Throwable failure() {
+    public Throwable cause() {
         return failure;
+    }
+
+    @Override
+    public Instant expiresAt() {
+        return expiresAt;
     }
 
     @Override
@@ -104,24 +106,28 @@ public class GenericEventDeadLetter implements DeadLetter<EventMessage<?>> {
             return false;
         }
         GenericEventDeadLetter that = (GenericEventDeadLetter) o;
-        return Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
-                && Objects.equals(deadLettered, that.deadLettered)
+        return Objects.equals(identifier, that.identifier)
+                && Objects.equals(group, that.group)
                 && Objects.equals(deadLetter, that.deadLetter)
-                && Objects.equals(failure, that.failure);
+                && Objects.equals(failure, that.failure)
+                && Objects.equals(expiresAt, that.expiresAt)
+                && Objects.equals(deadLettered, that.deadLettered);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sequenceIdentifier, deadLettered, deadLetter, failure);
+        return Objects.hash(identifier, group, deadLetter, failure, expiresAt, deadLettered);
     }
 
     @Override
     public String toString() {
         return "GenericEventDeadLetter{" +
-                "sequenceIdentifier='" + sequenceIdentifier + '\'' +
-                ", deadLettered=" + deadLettered +
+                "identifier='" + identifier + '\'' +
+                ", group='" + group + '\'' +
                 ", deadLetter=" + deadLetter +
                 ", failure=" + failure +
+                ", expiresAt=" + expiresAt +
+                ", deadLettered=" + deadLettered +
                 '}';
     }
 }
