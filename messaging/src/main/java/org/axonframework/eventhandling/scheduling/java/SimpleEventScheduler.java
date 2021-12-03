@@ -25,8 +25,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -56,7 +56,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
  * @since 0.7
  */
-public class SimpleEventScheduler implements EventScheduler {
+public class SimpleEventScheduler implements EventScheduler, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventScheduler.class);
 
@@ -111,7 +111,7 @@ public class SimpleEventScheduler implements EventScheduler {
 
     @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
-        if (!SimpleScheduleToken.class.isInstance(scheduleToken)) {
+        if (!(scheduleToken instanceof SimpleScheduleToken)) {
             throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
         }
         Future<?> future = tokens.remove(((SimpleScheduleToken) scheduleToken).getTokenId());
@@ -120,13 +120,13 @@ public class SimpleEventScheduler implements EventScheduler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+
+    @Override
     public void shutdown() {
         scheduledExecutorService.shutdown();
     }

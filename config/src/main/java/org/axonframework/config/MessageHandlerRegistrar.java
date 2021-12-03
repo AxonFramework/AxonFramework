@@ -17,9 +17,8 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -37,7 +36,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.3
  */
-public class MessageHandlerRegistrar {
+public class MessageHandlerRegistrar implements LifecycleAware {
 
     private final Supplier<Configuration> configurationSupplier;
     private final Function<Configuration, Object> messageHandlerBuilder;
@@ -67,12 +66,17 @@ public class MessageHandlerRegistrar {
         this.handlerRegistration = null;
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+        handle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::start);
+        handle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::shutdown);
+    }
+
     /**
      * Start the message handler registration process by building the message handler in the {@link
      * Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase. The specified {@code messageHandlerBuilder} is used for
      * creation and registration is performed through the {@code messageHandlerSubscriber}.
      */
-    @StartHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void start() {
         Configuration config = configurationSupplier.get();
         Object annotatedHandler = messageHandlerBuilder.apply(config);
@@ -84,7 +88,6 @@ public class MessageHandlerRegistrar {
      * Close the message handler registration initialized in phase {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
      * through the {@link #start()} method.
      */
-    @ShutdownHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void shutdown() {
         handlerRegistration.cancel();
     }

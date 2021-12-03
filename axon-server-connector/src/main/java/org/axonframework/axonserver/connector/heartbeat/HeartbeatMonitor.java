@@ -17,9 +17,8 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.util.Scheduler;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +36,12 @@ import java.util.concurrent.TimeUnit;
  * connector</a>
  */
 @Deprecated
-public class HeartbeatMonitor {
+public class HeartbeatMonitor implements LifecycleAware {
 
     private static final long DEFAULT_INITIAL_DELAY = 10_000;
     private static final long DEFAULT_DELAY = 1_000;
-    private final Scheduler scheduler;
-
     private static final Logger logger = LoggerFactory.getLogger(HeartbeatMonitor.class);
-
+    private final Scheduler scheduler;
     private final Runnable onInvalidConnection;
 
     private final ConnectionSanityChecker connectionSanityCheck;
@@ -70,6 +67,12 @@ public class HeartbeatMonitor {
         this.delay = delay;
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
+        lifecycle.onShutdown(Phase.INSTRUCTION_COMPONENTS, this::shutdown);
+    }
+
     /**
      * Verify if the connection with AxonServer is still alive. If it is not, invoke a callback in order to react to the
      * disconnection.
@@ -90,7 +93,6 @@ public class HeartbeatMonitor {
      * react to the disconnection. Started in phase {@link Phase#INSTRUCTION_COMPONENTS}, as this means all inbound and
      * outbound connections have been started.
      */
-    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         this.scheduler.scheduleWithFixedDelay(this::run, initialDelay, delay, TimeUnit.MILLISECONDS);
     }
@@ -99,7 +101,6 @@ public class HeartbeatMonitor {
      * Stops the scheduled task and shutdown the monitor, that cannot be restarted again. Shuts down in phase {@link
      * Phase#INSTRUCTION_COMPONENTS}.
      */
-    @ShutdownHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void shutdown() {
         this.scheduler.shutdownNow();
     }

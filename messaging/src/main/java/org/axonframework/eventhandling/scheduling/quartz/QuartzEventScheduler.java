@@ -23,10 +23,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -50,8 +51,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
-import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.EVENT_BUS_KEY;
+import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.EVENT_JOB_DATA_BINDER_KEY;
+import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.TRANSACTION_MANAGER_KEY;
+import static org.axonframework.messaging.Headers.MESSAGE_ID;
+import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
+import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
+import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
+import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
+import static org.axonframework.messaging.Headers.SERIALIZED_MESSAGE_PAYLOAD;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -62,7 +70,7 @@ import static org.quartz.JobKey.jobKey;
  * @see FireEventJob
  * @since 0.7
  */
-public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
+public class QuartzEventScheduler implements EventScheduler, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
 
@@ -206,13 +214,12 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         this.groupIdentifier = groupIdentifier;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+    @Override
     public void shutdown() {
         try {
             scheduler.shutdown(true);
