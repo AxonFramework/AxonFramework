@@ -18,9 +18,6 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
 
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 /**
  * @author Steven van Beelen
  * @since 4.6.0
@@ -28,66 +25,83 @@ import java.util.stream.Stream;
 public interface DeadLetterQueue<T extends Message<?>> {
 
     /**
-     * Add a {@link DeadLetter} to this queue. The {@code deadLetter} will be FIFO ordered with all other dead letters
-     * of the same {@link DeadLetter#sequenceIdentifier()}.
+     * Add a {@link Message} to this queue. The {@code deadLetter} will be FIFO ordered with all other dead letters
+     * having the same {@code identifier} and {@code group} combination.
      *
-     * @param deadLetter the {@link DeadLetter} to add to this queue
+     * @param identifier the identifier of given {@code deadLetter}
+     * @param group      the group the {@code deadLetter} originates from
+     * @param deadLetter the {@link Message} to add to this queue
+     * @param cause      the cause for enqueueing the given {@code deadLetter}
      */
-    void add(DeadLetter<T> deadLetter);
-
-    /**
-     * Adds the given {@code deadLetter} if this queue contains the given {@code deadLetter's} {@link
-     * DeadLetter#sequenceIdentifier()}. If there's no queue for the {@code deadLetter} it is ignored.
-     *
-     * @param deadLetter the {@link DeadLetter} to attached in FIFO ordering for the given {@code sequenceIdentifier}
-     * @return {@code true} if the {@code deadLetter} is added, {@code false} otherwise
-     */
-    default boolean addIfPresent(DeadLetter<T> deadLetter) {
-        return addIfPresent(deadLetter.sequenceIdentifier(), () -> deadLetter);
-    }
+    void enqueue(String identifier, String group, T deadLetter, Throwable cause) throws DeadLetterQueueFilledException;
 
     /**
      * Adds the result of the given {@code deadLetterSupplier} if this queue contains the given {@code
      * sequenceIdentifier}. If there's no queue for the {@code deadLetter} it is ignored.
      *
-     * @param sequenceIdentifier the identifier used to validate for contained {@link DeadLetter} instances
-     * @param deadLetterSupplier the {@link Supplier} of the {@link DeadLetter}. Only invoked if the given {@code
-     *                           sequenceIdentifier} is contained in this queue
-     * @return {@code true} if the {@code deadLetter} is added, {@code false} otherwise
+     * @param identifier the identifier of given {@code message}. Used ot validate if the given {@code message} should
+     *                   be enqueued
+     * @param group      the group the {@code deadLetter} originates from. Used ot validate if the given {@code message}
+     *                   should be enqueued
+     * @param message    the {@link Message} validated if it should be enqueued
+     * @return {@code true} if the {@code message} is added, {@code false} otherwise
      */
-    default boolean addIfPresent(String sequenceIdentifier, Supplier<DeadLetter<T>> deadLetterSupplier) {
-        boolean canAdd = !isEmpty() && contains(sequenceIdentifier);
-        if (canAdd) {
-            add(deadLetterSupplier.get());
+    default boolean enqueueIfPresent(String identifier, String group, T message) {
+        if (!isEmpty() && !isFull() && contains(identifier, group)) {
+            enqueue(identifier, group, message, null);
+            return true;
         }
-        return canAdd;
+        return false;
     }
 
     /**
-     * Check whether there's a FIFO ordered queue of {@link DeadLetter} instances with the given {@code
-     * sequenceIdentifier}.
+     * Check whether there's a FIFO ordered queue of {@link DeadLetterEntry} instances with the given {@code
+     * identifier}.
      *
-     * @param sequenceIdentifier the identifier used to validate for contained {@link DeadLetter} instances
-     * @return {@code true} if the identifiers has {@link DeadLetter} instances in this queue, {@code false} otherwise
+     * @param identifier the identifier used to validate for contained {@link DeadLetterEntry} instances
+     * @return {@code true} if the identifiers has {@link DeadLetterEntry} instances in this queue, {@code false}
+     * otherwise
      */
-    boolean contains(String sequenceIdentifier);
+    boolean contains(String identifier, String group);
 
     /**
      * Validates whether this queue is empty.
      *
-     * @return {@code true} if this queue does not contain any {@link DeadLetter} instances, {@code false} otherwise
+     * @return {@code true} if this queue does not contain any {@link DeadLetterEntry} instances, {@code false}
+     * otherwise
      */
     boolean isEmpty();
 
     /**
-     * Peeks the most recently introduced {@link DeadLetter} instances.
+     * Validates whether this queue is full. When full, no new messages can be dead lettered.
+     *
+     * @return {@code true} if this queue is full, {@code false} otherwise
+     */
+    boolean isFull();
+
+    /**
      *
      * @return
      */
-    Stream<DeadLetter<T>> peek();
+    long maxSize();
 
     /**
+     * Peeks the most recently introduced {@link DeadLetterEntry} instances.
+     *
      * @return
      */
-    Stream<DeadLetter<T>> poll();
+    DeadLetterEntry<T> peek();
+
+    /**
+     *
+     * @param deadLetter
+     */
+    void evaluationSucceeded(DeadLetterEntry<T> deadLetter);
+
+    /**
+     *
+     * @param deadLetter
+     * @param cause
+     */
+    void evaluationFailed(DeadLetterEntry<T> deadLetter, Throwable cause);
 }

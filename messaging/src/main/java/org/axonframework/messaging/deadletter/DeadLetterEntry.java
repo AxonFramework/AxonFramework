@@ -24,14 +24,29 @@ import java.time.Instant;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public interface DeadLetter<T extends Message<?>> {
+public interface DeadLetterEntry<T extends Message<?>> {
 
     /**
      *
      * @return
      */
-    // TODO: 26-11-21 replace for ProcessingIdentifier interface?
-    String sequenceIdentifier();
+    String identifier();
+
+    /**
+     *
+     * @return
+     */
+    String group();
+
+    /**
+     *
+     * @return
+     */
+    T message();
+
+    Throwable cause();
+
+    Instant expiresAt();
 
     /**
      *
@@ -41,19 +56,11 @@ public interface DeadLetter<T extends Message<?>> {
 
     /**
      *
-     * @return
-     */
-    T deadLetter();
-
-    Throwable failure();
-
-    /**
-     *
      * @param one
      * @param two
      * @return
      */
-    static int compare(DeadLetter<?> one, DeadLetter<?> two) {
+    static int compare(DeadLetterEntry<?> one, DeadLetterEntry<?> two) {
         return one.deadLettered().compareTo(two.deadLettered());
     }
 }

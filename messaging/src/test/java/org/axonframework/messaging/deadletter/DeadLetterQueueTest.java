@@ -16,25 +16,21 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.deadletter.GenericEventDeadLetter;
+import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Abstract class providing a generic test set every {@link DeadLetterQueue} implementation should comply with.
+ * Abstract class providing a generic test suite every {@link DeadLetterQueue} implementation should comply with.
  *
  * @author Steven van Beelen
  */
-public abstract class DeadLetterQueueTest {
+public abstract class DeadLetterQueueTest<M extends Message<?>> {
 
-    private DeadLetterQueue<EventMessage<?>> testSubject;
+    private DeadLetterQueue<M> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -46,196 +42,308 @@ public abstract class DeadLetterQueueTest {
      *
      * @return a {@link DeadLetterQueue} implementation under test
      */
-    abstract DeadLetterQueue<EventMessage<?>> buildTestSubject();
+    abstract DeadLetterQueue<M> buildTestSubject();
+
+    /**
+     * Constructs a {@link Message} implementation expected by the test subject.
+     *
+     * @return a {@link Message} implementation expected by the test subject
+     */
+    abstract M generateMessage();
 
     @Test
-    void testAdd() {
-        String testSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testDeadLetter = generateDeadLetter(testSequenceId);
+    void testEnqueue() {
+        String testId = generateId();
+        String testGroup = generateId();
+        M testDeadLetter = generateMessage();
+        Throwable testCause = generateCause();
 
-        testSubject.add(testDeadLetter);
+        testSubject.enqueue(testId, testGroup, testDeadLetter, testCause);
 
-        assertTrue(testSubject.contains(testSequenceId));
+        assertTrue(testSubject.contains(testId, testGroup));
         assertFalse(testSubject.isEmpty());
     }
 
     @Test
-    void testAddIfPresentDoesNotAddForEmptyQueue() {
-        String testSequenceId = generateSequenceId();
+    void testEnqueueThrowsDeadLetterQueueFilledExceptionForFullQueue() {
+        long maxSize = testSubject.maxSize();
+        assertTrue(maxSize > 0);
 
-        boolean result = testSubject.addIfPresent(generateDeadLetter(testSequenceId));
+        for (int i = 0; i < maxSize; i++) {
+            testSubject.enqueue(generateId(), generateId(), generateMessage(), generateCause());
+        }
+
+        assertThrows(
+                DeadLetterQueueFilledException.class,
+                () -> testSubject.enqueue(generateId(), generateId(), generateMessage(), generateCause())
+        );
+    }
+
+    @Test
+    void testEnqueueIfPresentDoesNotEnqueueForEmptyQueue() {
+        String testId = generateId();
+        String testGroup = generateId();
+
+        boolean result = testSubject.enqueueIfPresent(testId, testGroup, generateMessage());
 
         assertFalse(result);
-        assertFalse(testSubject.contains(testSequenceId));
+        assertFalse(testSubject.contains(testId, testGroup));
         assertTrue(testSubject.isEmpty());
     }
 
     @Test
-    void testAddIfPresentDoesNotAddForNonExistentSequenceId() {
-        String testFirstSequenceId = generateSequenceId();
-        testSubject.add(generateDeadLetter(testFirstSequenceId));
+    void testEnqueueIfPresentDoesNotEnqueueForNonExistentIdGroupCombination() {
+        String testGroup = generateId();
+        Throwable testCause = generateCause();
+        String testFirstId = generateId();
 
-        String testSecondSequenceId = generateSequenceId();
+        testSubject.enqueue(testFirstId, testGroup, generateMessage(), testCause);
 
-        boolean result = testSubject.addIfPresent(generateDeadLetter(testFirstSequenceId));
+        String testSecondId = generateId();
 
-        assertTrue(result);
-        assertTrue(testSubject.contains(testFirstSequenceId));
-        assertFalse(testSubject.contains(testSecondSequenceId));
+        boolean result = testSubject.enqueueIfPresent(testSecondId, testGroup, generateMessage());
+
+        assertFalse(result);
+        assertTrue(testSubject.contains(testFirstId, testGroup));
+        assertFalse(testSubject.contains(testSecondId, testGroup));
         assertFalse(testSubject.isEmpty());
     }
 
     @Test
-    void testAddIfPresentAddsForExistingSequence() {
-        String testSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testFirstDeadLetter = generateDeadLetter(testSequenceId);
-        testSubject.add(testFirstDeadLetter);
-        DeadLetter<EventMessage<?>> testSecondDeadLetter = generateDeadLetter(testSequenceId);
+    void testEnqueueIfPresentEnqueuesForExistingIdGroupCombination() {
+        String testId = generateId();
+        String testGroup = generateId();
+        Throwable testCause = generateCause();
 
-        boolean result = testSubject.addIfPresent(testSecondDeadLetter);
+        // First dead letter inserted...
+        M testFirstLetter = generateMessage();
+        testSubject.enqueue(testId, testGroup, testFirstLetter, testCause);
+        // Second dead letter inserted...
+        M testSecondLetter = generateMessage();
+        boolean result = testSubject.enqueueIfPresent(testId, testGroup, testSecondLetter);
 
         assertTrue(result);
-        assertTrue(testSubject.contains(testSequenceId));
+        assertTrue(testSubject.contains(testId, testGroup));
         assertFalse(testSubject.isEmpty());
-        List<DeadLetter<EventMessage<?>>> resultQueue = testSubject.peek().collect(Collectors.toList());
-        assertTrue(resultQueue.contains(testFirstDeadLetter));
-        assertTrue(resultQueue.contains(testSecondDeadLetter));
+
+        DeadLetterEntry<M> resultEntry = testSubject.peek();
+        assertEquals(testId, resultEntry.identifier());
+        assertEquals(testGroup, resultEntry.group());
+        assertEquals(testFirstLetter, resultEntry.message());
+        assertEquals(testCause, resultEntry.cause());
     }
 
     @Test
-    void testIsPresent() {
-        String testSequenceId = generateSequenceId();
+    void testContains() {
+        String testId = generateId();
+        String testGroup = generateId();
 
-        assertFalse(testSubject.contains(testSequenceId));
+        assertFalse(testSubject.contains(testId, testGroup));
 
-        testSubject.add(generateDeadLetter(testSequenceId));
+        testSubject.enqueue(testId, testGroup, generateMessage(), generateCause());
 
-        assertTrue(testSubject.contains(testSequenceId));
+        assertTrue(testSubject.contains(testId, testGroup));
     }
 
     @Test
     void testIsEmpty() {
         assertTrue(testSubject.isEmpty());
 
-        testSubject.add(generateDeadLetter());
+        testSubject.enqueue(generateId(), generateId(), generateMessage(), generateCause());
 
         assertFalse(testSubject.isEmpty());
+    }
+
+    @Test
+    void testIsFull() {
+        assertFalse(testSubject.isFull());
+
+        long maxSize = testSubject.maxSize();
+        assertTrue(maxSize > 0);
+
+        for (int i = 0; i < maxSize; i++) {
+            testSubject.enqueue(generateId(), generateId(), generateMessage(), generateCause());
+        }
+
+        assertTrue(testSubject.isFull());
     }
 
     @Test
     void testPeek() {
-        String testSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testFirstDeadLetter = generateDeadLetter(testSequenceId);
-        DeadLetter<EventMessage<?>> testSecondDeadLetter = generateDeadLetter(testSequenceId);
+        String testId = generateId();
+        String testGroup = generateId();
+        M testFirstLetter = generateMessage();
+        Throwable testCause = generateCause();
+        M testSecondLetter = generateMessage();
 
-        testSubject.add(testFirstDeadLetter);
-        testSubject.add(testSecondDeadLetter);
+        testSubject.enqueue(testId, testGroup, testFirstLetter, testCause);
+        testSubject.enqueue(testId, testGroup, testSecondLetter, testCause);
 
-        List<DeadLetter<EventMessage<?>>> result = testSubject.peek().collect(Collectors.toList());
-        assertTrue(result.contains(testFirstDeadLetter));
-        assertTrue(result.contains(testSecondDeadLetter));
+        DeadLetterEntry<M> firstResult = testSubject.peek();
+        assertEquals(testId, firstResult.identifier());
+        assertEquals(testGroup, firstResult.group());
+        assertEquals(testFirstLetter, firstResult.message());
+        assertEquals(testCause, firstResult.cause());
+        testSubject.evaluationSucceeded(firstResult);
 
-        // peek keeps entries in the dead letter queue
+        DeadLetterEntry<M> secondResult = testSubject.peek();
+        assertEquals(testId, secondResult.identifier());
+        assertEquals(testGroup, secondResult.group());
+        assertEquals(testSecondLetter, secondResult.message());
+        assertEquals(testCause, secondResult.cause());
+
+        // only one entry was evaluated successfully, so the second still remains
         assertFalse(testSubject.isEmpty());
     }
 
     @Test
-    void testPeekOnEmptyQueueReturnsEmptyStream() {
-        List<DeadLetter<EventMessage<?>>> result = testSubject.peek().collect(Collectors.toList());
-
-        assertTrue(result.isEmpty());
+    void testPeekOnEmptyQueueReturnsNull() {
+        assertNull(testSubject.peek());
     }
 
     @Test
-    void testPeekReturnsDeadLetterStreamsInInsertOrder() {
-        String testThisSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testThisFirstDeadLetter = generateDeadLetter(testThisSequenceId);
-        DeadLetter<EventMessage<?>> testThisSecondDeadLetter = generateDeadLetter(testThisSequenceId);
+    void testPeekReturnsDeadLettersInInsertOrder() {
+        String testThisId = generateId();
+        String testThisGroup = generateId();
+        M testThisFirstLetter = generateMessage();
+        Throwable testThisCause = generateCause();
+        M testThisSecondLetter = generateMessage();
 
-        testSubject.add(testThisFirstDeadLetter);
-        testSubject.add(testThisSecondDeadLetter);
+        testSubject.enqueue(testThisId, testThisGroup, testThisFirstLetter, testThisCause);
+        testSubject.enqueueIfPresent(testThisId, testThisGroup, testThisSecondLetter);
 
+        String testThatId = generateId();
+        String testThatGroup = generateId();
+        M testThatFirstLetter = generateMessage();
+        Throwable testThatCause = generateCause();
+        M testThatSecondLetter = generateMessage();
 
-        String testThatSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testThatFirstDeadLetter = generateDeadLetter(testThatSequenceId);
-        DeadLetter<EventMessage<?>> testThatSecondDeadLetter = generateDeadLetter(testThatSequenceId);
+        testSubject.enqueue(testThatId, testThatGroup, testThatFirstLetter, testThatCause);
+        testSubject.enqueueIfPresent(testThatId, testThatGroup, testThatSecondLetter);
 
-        testSubject.add(testThatFirstDeadLetter);
-        testSubject.add(testThatSecondDeadLetter);
+        DeadLetterEntry<M> thisFirstResult = testSubject.peek();
+        assertEquals(testThisId, thisFirstResult.identifier());
+        assertEquals(testThisGroup, thisFirstResult.group());
+        assertEquals(testThisFirstLetter, thisFirstResult.message());
+        assertEquals(testThisCause, thisFirstResult.cause());
+        testSubject.evaluationSucceeded(thisFirstResult);
 
-        List<DeadLetter<EventMessage<?>>> thisResult = testSubject.peek().collect(Collectors.toList());
-        assertTrue(thisResult.contains(testThisFirstDeadLetter));
-        assertTrue(thisResult.contains(testThisSecondDeadLetter));
+        DeadLetterEntry<M> thisSecondResult = testSubject.peek();
+        assertEquals(testThisId, thisSecondResult.identifier());
+        assertEquals(testThisGroup, thisSecondResult.group());
+        assertEquals(testThisSecondLetter, thisSecondResult.message());
+        assertNull(thisSecondResult.cause());
+        testSubject.evaluationSucceeded(thisSecondResult);
 
-        // peeking again will result in the same entry
-        assertArrayEquals(thisResult.toArray(), testSubject.peek().toArray());
+        DeadLetterEntry<M> thatFirstResult = testSubject.peek();
+        assertEquals(testThatId, thatFirstResult.identifier());
+        assertEquals(testThatGroup, thatFirstResult.group());
+        assertEquals(testThatFirstLetter, thatFirstResult.message());
+        assertEquals(testThatCause, thatFirstResult.cause());
+        testSubject.evaluationSucceeded(thatFirstResult);
 
-        // peek keeps entries in the dead letter queue
+        // The second 'that' letter is still in the queue
         assertFalse(testSubject.isEmpty());
     }
 
     @Test
-    void testPoll() {
-        String testSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testFirstDeadLetter = generateDeadLetter(testSequenceId);
-        DeadLetter<EventMessage<?>> testSecondDeadLetter = generateDeadLetter(testSequenceId);
+    void testEvaluationSucceededRemovesLetterFromQueue() {
+        String testId = generateId();
+        String testGroup = generateId();
+        M testFirstLetter = generateMessage();
+        Throwable testCause = generateCause();
 
-        testSubject.add(testFirstDeadLetter);
-        testSubject.add(testSecondDeadLetter);
-
-        List<DeadLetter<EventMessage<?>>> result = testSubject.poll().collect(Collectors.toList());
-        assertTrue(result.contains(testFirstDeadLetter));
-        assertTrue(result.contains(testSecondDeadLetter));
-
-        // poll removes entries in the dead letter queue
-        assertTrue(testSubject.isEmpty());
-    }
-
-    @Test
-    void testPollOnEmptyQueueReturnsEmptyStream() {
-        List<DeadLetter<EventMessage<?>>> result = testSubject.poll().collect(Collectors.toList());
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testPollReturnsDeadLetterStreamsInInsertOrder() {
-        String testThisSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testThisFirstDeadLetter = generateDeadLetter(testThisSequenceId);
-        DeadLetter<EventMessage<?>> testThisSecondDeadLetter = generateDeadLetter(testThisSequenceId);
-
-        testSubject.add(testThisFirstDeadLetter);
-        testSubject.add(testThisSecondDeadLetter);
-
-        String testThatSequenceId = generateSequenceId();
-        DeadLetter<EventMessage<?>> testThatFirstDeadLetter = generateDeadLetter(testThatSequenceId);
-        DeadLetter<EventMessage<?>> testThatSecondDeadLetter = generateDeadLetter(testThatSequenceId);
-
-        testSubject.add(testThatFirstDeadLetter);
-        testSubject.add(testThatSecondDeadLetter);
-
-        List<DeadLetter<EventMessage<?>>> thisResult = testSubject.poll().collect(Collectors.toList());
-        assertTrue(thisResult.contains(testThisFirstDeadLetter));
-        assertTrue(thisResult.contains(testThisSecondDeadLetter));
+        testSubject.enqueue(testId, testGroup, testFirstLetter, testCause);
 
         assertFalse(testSubject.isEmpty());
 
-        List<DeadLetter<EventMessage<?>>> thatResult = testSubject.poll().collect(Collectors.toList());
-        assertTrue(thatResult.contains(testThisFirstDeadLetter));
-        assertTrue(thatResult.contains(testThisSecondDeadLetter));
+        DeadLetterEntry<M> result = testSubject.peek();
+        assertEquals(testId, result.identifier());
+        assertEquals(testGroup, result.group());
+        assertEquals(testFirstLetter, result.message());
+        assertEquals(testCause, result.cause());
+
+        testSubject.evaluationSucceeded(result);
 
         assertTrue(testSubject.isEmpty());
+        assertNull(testSubject.peek());
     }
 
-    private static String generateSequenceId() {
+    @Test
+    void testEvaluationFailedUpdatesLetterInQueue() {
+        String testId = generateId();
+        String testGroup = generateId();
+        M testFirstLetter = generateMessage();
+        Throwable testFirstCause = generateCause();
+        Throwable testSecondCause = generateCause();
+
+        testSubject.enqueue(testId, testGroup, testFirstLetter, testFirstCause);
+
+        assertFalse(testSubject.isEmpty());
+
+        DeadLetterEntry<M> result = testSubject.peek();
+        assertEquals(testId, result.identifier());
+        assertEquals(testGroup, result.group());
+        assertEquals(testFirstLetter, result.message());
+        assertEquals(testFirstCause, result.cause());
+
+        testSubject.evaluationFailed(result, testSecondCause);
+
+        assertFalse(testSubject.isEmpty());
+        result = testSubject.peek();
+        assertEquals(testId, result.identifier());
+        assertEquals(testGroup, result.group());
+        assertEquals(testFirstLetter, result.message());
+        assertEquals(testSecondCause, result.cause());
+    }
+
+    @Test
+    void testEvaluationFailedAddsLetterToTheEndOfTheQueue() {
+        String testThisId = generateId();
+        String testThisGroup = generateId();
+        M testThisLetter = generateMessage();
+        Throwable testThisFirstCause = generateCause();
+        Throwable testThisSecondCause = generateCause();
+
+        testSubject.enqueue(testThisId, testThisGroup, testThisLetter, testThisFirstCause);
+
+        String testThatId = generateId();
+        String testThatGroup = generateId();
+        M testThatLetter = generateMessage();
+        Throwable testThatCause = generateCause();
+
+        testSubject.enqueue(testThatId, testThatGroup, testThatLetter, testThatCause);
+
+        DeadLetterEntry<M> thisResult = testSubject.peek();
+        assertEquals(testThisId, thisResult.identifier());
+        assertEquals(testThisGroup, thisResult.group());
+        assertEquals(testThisLetter, thisResult.message());
+        assertEquals(testThisFirstCause, thisResult.cause());
+        // 'thisResult' is reentered in the queue at the end
+        testSubject.evaluationFailed(thisResult, testThisSecondCause);
+
+        // Peek generates 'thatResult'
+        DeadLetterEntry<M> thatResult = testSubject.peek();
+        assertNotEquals(thisResult.identifier(), thatResult.identifier());
+        assertNotEquals(thisResult.group(), thatResult.group());
+        assertNotEquals(thisResult.message(), thatResult.message());
+        assertNotEquals(thisResult.cause(), thatResult.cause());
+        testSubject.evaluationSucceeded(thatResult);
+
+        // After successfully evaluating 'thatResult', the following entry is 'thisResult' with a new cause
+        DeadLetterEntry<M> thisUpdatedResult = testSubject.peek();
+        assertEquals(thisResult.identifier(), thisUpdatedResult.identifier());
+        assertEquals(thisResult.group(), thisUpdatedResult.group());
+        assertEquals(thisResult.message(), thisUpdatedResult.message());
+        assertNotEquals(thisResult.cause(), thisUpdatedResult.cause());
+        assertEquals(testThisSecondCause, thisUpdatedResult.cause());
+    }
+
+    private static String generateId() {
         return UUID.randomUUID().toString();
     }
 
-    private static DeadLetter<EventMessage<?>> generateDeadLetter() {
-        return generateDeadLetter(generateSequenceId());
-    }
-
-    private static DeadLetter<EventMessage<?>> generateDeadLetter(String sequenceIdentifier) {
-        return new GenericEventDeadLetter(sequenceIdentifier, GenericEventMessage.asEventMessage(generateSequenceId()));
+    private static Throwable generateCause() {
+        return new RuntimeException("Because..." + generateId());
     }
 }
