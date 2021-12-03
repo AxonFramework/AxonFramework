@@ -19,11 +19,8 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.eventhandling.deadletter.DeadLetterErrorHandler;
-import org.axonframework.eventhandling.deadletter.DeadLetterEventHandlerInvoker;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +30,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -49,7 +47,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     private final List<EventMessageHandler> wrappedEventHandlers;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
-    protected final String processingGroup;
 
     /**
      * Instantiate a {@link SimpleEventHandlerInvoker} based on the fields contained in the {@link Builder}.
@@ -70,7 +67,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                              .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = builder.sequencingPolicy;
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
-        this.processingGroup = builder.processingGroup;
     }
 
     /**
@@ -115,15 +111,10 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                 try {
                     handler.handle(message);
                 } catch (Exception e) {
-                    listenerInvocationErrorHandler.onError(executionException(message, e), message, handler);
+                    listenerInvocationErrorHandler.onError(e, message, handler);
                 }
             }
         }
-    }
-
-    private EventExecutionException executionException(EventMessage<?> event, Exception exception) {
-        String message = String.format("Handling failed for event [%s] in group [%s]", event, processingGroup);
-        return new EventExecutionException(message, exception, sequenceIdentifier(event).toString(), processingGroup);
     }
 
     @Override
@@ -207,8 +198,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
         private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
-        private String processingGroup;
-        private DeadLetterQueue<EventMessage<?>> deadLetterQueue;
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
@@ -299,49 +288,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Sets the name of this invoker.
+         * Initializes a {@link SimpleEventHandlerInvoker} as specified through this Builder.
          *
-         * @param processingGroup the name of this {@link EventHandlerInvoker}
-         * @return the current Builder instance, for fluent interfacing
+         * @return a {@link SimpleEventHandlerInvoker} as specified through this Builder
          */
-        public Builder processingGroup(String processingGroup) {
-            assertNonEmpty(processingGroup, "The processing group may not be null or empty");
-            this.processingGroup = processingGroup;
-            return this;
-        }
-
-        /**
-         * Sets the {@link DeadLetterQueue} used by this invoker. todo fine-tune documentation
-         *
-         * @param deadLetterQueue the name of this {@link EventHandlerInvoker}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder deadLetterQueue(DeadLetterQueue<EventMessage<?>> deadLetterQueue) {
-            assertNonNull(this.deadLetterQueue, "The DeadLetterQueue may not be null");
-            this.deadLetterQueue = deadLetterQueue;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleEventHandlerInvoker} or {@link DeadLetterEventHandlerInvoker} as specified through
-         * this Builder. Will return a {@code DeadLetterEventHandlerInvoker} if {@link
-         * #deadLetterQueue(DeadLetterQueue)} has been set. Otherwise, builds a regular {@code
-         * SimpleEventHandlerInvoker}.
-         *
-         * @param <R> a generic extending {@link SimpleEventHandlerInvoker}, to allow both an {@code
-         *            SimpleEventHandlerInvoker} and {@link DeadLetterEventHandlerInvoker} return type
-         * @return a {@link SimpleEventHandlerInvoker} or {@link DeadLetterEventHandlerInvoker} (if {@link
-         * #deadLetterQueue(DeadLetterQueue)} has been set) as specified through this Builder
-         */
-        @SuppressWarnings("unchecked")
-        public <R extends SimpleEventHandlerInvoker> R build() {
-            if (deadLetterQueue != null) {
-                this.listenerInvocationErrorHandler = DeadLetterErrorHandler.builder()
-                                                                            .deadLetterQueue(deadLetterQueue)
-                                                                            .build();
-                return (R) new DeadLetterEventHandlerInvoker(this);
-            }
-            return (R) new SimpleEventHandlerInvoker(this);
+        public SimpleEventHandlerInvoker build() {
+            return new SimpleEventHandlerInvoker(this);
         }
 
         /**
@@ -373,16 +325,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
             assertThat(eventHandlers,
                        list -> list != null && !list.isEmpty(),
                        "At least one EventMessageHandler should be provided");
-            assertNonNull(processingGroup, "The processing group is a hard requirement and should be provided");
-        }
-
-        /**
-         * Return the {@link DeadLetterQueue} configured in this Builder.
-         *
-         * @return the {@link DeadLetterQueue} configured in this Builder
-         */
-        public DeadLetterQueue<EventMessage<?>> deadLetterQueue() {
-            return deadLetterQueue;
         }
     }
 }

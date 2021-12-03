@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -25,7 +23,6 @@ import java.util.List;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -49,7 +46,6 @@ class SimpleEventHandlerInvokerTest {
         mockHandler2 = mock(EventMessageHandler.class);
         testSubject = SimpleEventHandlerInvoker.builder()
                                                .eventHandlers("test", mockHandler1, mockHandler2)
-                                               .processingGroup(PROCESSING_GROUP)
                                                .build();
     }
 
@@ -82,46 +78,6 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleWrapsExceptionInEventExecutionException() throws Exception {
-        // given...
-        ListenerInvocationErrorHandler errorHandler = mock(ListenerInvocationErrorHandler.class);
-        //noinspection unchecked
-        SequencingPolicy<EventMessage<?>> sequencingPolicy = mock(SequencingPolicy.class);
-
-        SimpleEventHandlerInvoker customTestSubject =
-                SimpleEventHandlerInvoker.builder()
-                                         .eventHandlers(mockHandler1)
-                                         .listenerInvocationErrorHandler(errorHandler)
-                                         .sequencingPolicy(sequencingPolicy)
-                                         .processingGroup(PROCESSING_GROUP)
-                                         .build();
-
-        EventMessage<?> testEvent = createEvent();
-
-        RuntimeException expectedException = new RuntimeException("some-exception");
-        String expectedSequenceIdentifier = "sequenceIdentifier";
-
-        when(mockHandler1.handle(testEvent)).thenThrow(expectedException);
-        when(sequencingPolicy.getSequenceIdentifierFor(testEvent)).thenReturn(expectedSequenceIdentifier);
-
-        // when...
-        customTestSubject.handle(testEvent, Segment.ROOT_SEGMENT);
-
-        // then...
-        ArgumentCaptor<Exception> exceptionCaptor = ArgumentCaptor.forClass(Exception.class);
-
-        verify(errorHandler).onError(exceptionCaptor.capture(), eq(testEvent), eq(mockHandler1));
-
-        Exception result = exceptionCaptor.getValue();
-
-        assertTrue(result instanceof EventExecutionException);
-        EventExecutionException executionException = ((EventExecutionException) result);
-        assertEquals(expectedSequenceIdentifier, executionException.getSequenceIdentifier());
-        assertEquals(PROCESSING_GROUP, executionException.getProcessingGroup());
-        assertEquals(expectedException, executionException.getCause());
-    }
-
-    @Test
     void testPerformReset() {
         testSubject.performReset();
 
@@ -137,26 +93,5 @@ class SimpleEventHandlerInvokerTest {
 
         verify(mockHandler1).prepareReset(eq(resetContext));
         verify(mockHandler2).prepareReset(eq(resetContext));
-    }
-
-    @Test
-    void testBuildWithNullProcessingGroupThrowsAxonConfigurationException() {
-        SimpleEventHandlerInvoker.Builder testSubject = SimpleEventHandlerInvoker.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testSubject.processingGroup(null));
-    }
-
-    @Test
-    void testBuildWithEmptyProcessingGroupThrowsAxonConfigurationException() {
-        SimpleEventHandlerInvoker.Builder testSubject = SimpleEventHandlerInvoker.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testSubject.processingGroup(""));
-    }
-
-    @Test
-    void testBuildWithoutProcessingGroupThrowsAxonConfigurationException() {
-        SimpleEventHandlerInvoker.Builder testSubject = SimpleEventHandlerInvoker.builder();
-
-        assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 }
