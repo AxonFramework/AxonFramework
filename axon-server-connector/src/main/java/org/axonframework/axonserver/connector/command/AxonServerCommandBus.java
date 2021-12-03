@@ -35,10 +35,9 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -65,7 +64,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus> {
+public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -122,18 +121,24 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                 builder.configuration,
                 new PriorityBlockingQueue<>(1000, Comparator.comparingLong(
                         r -> r instanceof CommandProcessingTask
-                                ? ((CommandProcessingTask) r).getPriority()
-                                : DEFAULT_PRIORITY).reversed()
+                             ? ((CommandProcessingTask) r).getPriority()
+                             : DEFAULT_PRIORITY).reversed()
                 )
         );
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+        handle.onStart(Phase.INBOUND_COMMAND_CONNECTOR, this::start);
+        handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
+        handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
+    }
+
     /**
      * Start the Axon Server {@link CommandBus} implementation.
      */
-    @StartHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void start() {
         shutdownLatch.initialize();
     }
@@ -225,7 +230,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public CompletableFuture<Void> disconnect() {
         if (axonServerConnectionManager.isConnected(axonServerConnectionManager.getDefaultContext())) {
             return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
@@ -240,7 +244,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return shutdownLatch.initiateShutdown();
     }

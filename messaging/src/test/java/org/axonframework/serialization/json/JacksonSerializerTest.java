@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,26 +46,34 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link JacksonSerializer}.
+ *
  * @author Allard Buijze
  */
 class JacksonSerializerTest {
 
-    private JacksonSerializer testSubject;
-    private Instant time;
     private ObjectMapper objectMapper;
+    private Instant time;
+
+    private JacksonSerializer testSubject;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        testSubject = JacksonSerializer.builder().objectMapper(objectMapper).build();
         time = Instant.now();
+
+        testSubject = JacksonSerializer.builder()
+                                       .objectMapper(objectMapper)
+                                       .build();
     }
 
     @Test
-    void testCanSerializeToStringByteArrayAndInputStream() {
+    void testCanSerializeToByteArrayStringInputStreamJsonNodeAndObjectNode() {
         assertTrue(testSubject.canSerializeTo(byte[].class));
         assertTrue(testSubject.canSerializeTo(String.class));
         assertTrue(testSubject.canSerializeTo(InputStream.class));
+        assertTrue(testSubject.canSerializeTo(JsonNode.class));
+        assertTrue(testSubject.canSerializeTo(ObjectNode.class));
     }
 
     @Test
@@ -174,7 +182,7 @@ class JacksonSerializerTest {
         verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
-        verify(converter, times(2)).registerConverter(isA(ContentTypeConverter.class));
+        verify(converter, times(4)).registerConverter(isA(ContentTypeConverter.class));
         assertSame(objectMapper, testSubject.getObjectMapper());
     }
 
@@ -294,6 +302,18 @@ class JacksonSerializerTest {
         assertEquals("one", actual.getValue1());
         assertEquals("two", actual.getValue2());
         assertEquals(3, actual.getValue3());
+    }
+
+    @Test
+    void testSerializeAndDeserializeObjectObjectNodeFormat() {
+        SimpleSerializableType toSerialize =
+                new SimpleSerializableType("first", time, new SimpleSerializableType("nested"));
+
+        SerializedObject<ObjectNode> serialized = testSubject.serialize(toSerialize, ObjectNode.class);
+        SimpleSerializableType actual = testSubject.deserialize(serialized);
+
+        assertEquals(toSerialize.getValue(), actual.getValue());
+        assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
     }
 
     public static class ComplexObject {

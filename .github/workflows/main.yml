@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v2.3.1
+        uses: actions/setup-java@v2.4.0
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -33,7 +33,7 @@ jobs:
           server-password: MAVEN_PASSWORD
 
       - name: Cache .m2
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
