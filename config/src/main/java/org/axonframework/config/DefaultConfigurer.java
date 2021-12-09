@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -100,6 +101,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -122,8 +125,6 @@ import static java.util.stream.Collectors.toList;
 public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    private static final int LIFECYCLE_PHASE_TIMEOUT_SECONDS = 5;
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -154,6 +155,8 @@ public class DefaultConfigurer implements Configurer {
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
+    private long lifecyclePhaseTimeout = 5;
+    private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
 
     private boolean initialized = false;
     private Integer currentLifecyclePhase = null;
@@ -646,6 +649,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
+        assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
+        assertNonNull(timeUnit, "The lifecycle phase time unit should not be null");
+        this.lifecyclePhaseTimeout = timeout;
+        this.lifecyclePhaseTimeunit = timeUnit;
+        return this;
+    }
+
+    @Override
     public Configuration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
@@ -755,7 +767,7 @@ public class DefaultConfigurer implements Configurer {
                         .map(LifecycleHandler::run)
                         .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
                         .orElse(CompletableFuture.completedFuture(null))
-                        .get(LIFECYCLE_PHASE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                        .get(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
             } catch (CompletionException | ExecutionException e) {
                 exceptionHandler.accept(e);
             } catch (InterruptedException e) {
