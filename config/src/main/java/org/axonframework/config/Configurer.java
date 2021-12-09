@@ -34,6 +34,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -514,6 +515,26 @@ public interface Configurer {
      */
     default Configurer registerEventHandler(Function<Configuration, Object> eventHandlerBuilder) {
         eventProcessing().registerEventHandler(eventHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures the timeout of each lifecycle phase. The Configurer invokes lifecycle phases during start-up and
+     * shutdown of an application.
+     * <p>
+     * Note that if a lifecycle phase exceeds the configured {@code timeout} and {@code timeUnit} combination, the
+     * Configurer will proceed with the following phase. A phase-skip is marked with a warn logging message, as the
+     * chances are high this causes undesired side effects.
+     * <p>
+     * The default lifecycle phase timeout is five seconds.
+     *
+     * @param timeout  the amount of time to wait for lifecycle phase completion
+     * @param timeUnit the unit in which the {@code timeout} is expressed
+     * @return the current instance of the Configurer, for chaining purposes
+     * @see org.axonframework.lifecycle.Phase
+     * @see LifecycleHandler
+     */
+    default Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
         return this;
     }
 
