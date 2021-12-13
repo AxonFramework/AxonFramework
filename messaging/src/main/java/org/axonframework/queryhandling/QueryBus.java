@@ -182,7 +182,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
 
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {
-                return Mono.defer(() -> Mono.fromFuture(query(query)));
+                return Mono.fromFuture(() -> query(query));
             }
 
             @Override

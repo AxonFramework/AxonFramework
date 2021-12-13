@@ -231,11 +231,10 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        Mono<QueryResponseMessage<I>> initialResult = Mono.defer(
-                () -> Mono.fromFuture(query(query))
-                          .doOnError(error -> logger.error(format(
-                                  "An error happened while trying to report an initial result. Query: %s",
-                                  query), error)));
+        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
+                                                          .doOnError(error -> logger.error(format(
+                                                                  "An error happened while trying to report an initial result. Query: %s",
+                                                                  query), error));
 
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, backpressure, updateBufferSize);
@@ -252,11 +251,10 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        Mono<QueryResponseMessage<I>> initialResult = Mono.defer(
-                () -> Mono.fromFuture(query(query))
-                          .doOnError(error -> logger.error(format(
-                                  "An error happened while trying to report an initial result. Query: %s",
-                                  query), error)));
+        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
+                                                          .doOnError(error -> logger.error(format(
+                                                                  "An error happened while trying to report an initial result. Query: %s",
+                                                                  query), error));
 
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
