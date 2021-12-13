@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -607,6 +608,22 @@ class SimpleQueryBusTest {
                     "Exception by handler should be reported in result, not on Mono");
         //noinspection ConstantConditions
         assertTrue(initialResult.block().isExceptional());
+    }
+
+    @Test
+    void testSubscriptionQueryInitialResult() {
+        final AtomicReference value = new AtomicReference("A");
+        testSubject.subscribe(String.class.getName(), String.class, q -> value.get());
+
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result = testSubject
+                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                         ResponseTypes.instanceOf(String.class),
+                                                                         ResponseTypes.instanceOf(String.class)));
+        Mono<QueryResponseMessage<String>> initialResult = result.initialResult();
+        value.set("B");
+        assertEquals("B", initialResult.block().getPayload());
+        value.set("C");
+        assertEquals("C", initialResult.block().getPayload());
     }
 
     @Test
