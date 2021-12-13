@@ -73,8 +73,8 @@
         <spring.boot.version>2.6.1</spring.boot.version>
         <mockito.version>4.1.0</mockito.version>
         <projectreactor.version>3.4.12</projectreactor.version>
-        <micrometer.version>1.8.0</micrometer.version>
-        <dropwizard.metrics.version>4.2.4</dropwizard.metrics.version>
+        <micrometer.version>1.8.1</micrometer.version>
+        <dropwizard.metrics.version>4.2.5</dropwizard.metrics.version>
         <jackson.version>2.13.0</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.
@@ -99,8 +99,8 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
-        <hibernate-entitymanager.version>5.6.1.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.12.2</byte-buddy.version>
+        <hibernate-entitymanager.version>5.6.2.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.12.3</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.28.0-GA</javassist.version>
