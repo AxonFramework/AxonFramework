@@ -169,9 +169,12 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * Sets whether or not to automatically start the processor when event processing is initialized. If false, the
+     * Whether to automatically start the processor when event processing is initialized. If set to {@code false}, the
      * application must explicitly start the processor. This can be useful if the application needs to perform its
      * own initialization before it begins processing new events.
+     *
+     * The autostart setting does not impact the shutdown process of the processor. It will always be triggered when
+     * the framework receives a signal to shut down.
      *
      * @param autoStart {@code true} to automatically start the processor (the default), {@code false} if the
      *                  application will start the processor itself.

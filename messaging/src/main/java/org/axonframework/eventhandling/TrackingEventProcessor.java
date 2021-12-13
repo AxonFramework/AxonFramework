@@ -193,7 +193,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public void registerLifecycleHandlers(LifecycleRegistry handle) {
-        handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
+        if (autoStart) {
+            handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
+        }
         handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
 
