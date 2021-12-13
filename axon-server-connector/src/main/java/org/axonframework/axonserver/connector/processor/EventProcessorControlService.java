@@ -26,8 +26,8 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.StartHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class EventProcessorControlService {
+public class EventProcessorControlService implements LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
     private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
@@ -88,13 +88,17 @@ public class EventProcessorControlService {
         this.context = context;
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
+    }
+
     /**
      * Add {@link java.util.function.Consumer}s to the {@link AxonServerConnectionManager} for several {@link
      * PlatformOutboundInstruction}s. Will be started in phase {@link Phase#INBOUND_EVENT_CONNECTORS}, to ensure the
      * event processors this service provides control over have been started.
      */
     @SuppressWarnings("Duplicates")
-    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         if (axonServerConnectionManager != null && eventProcessingConfiguration != null) {
             ControlChannel controlChannel = axonServerConnectionManager.getConnection(context)
