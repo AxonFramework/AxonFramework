@@ -50,6 +50,7 @@ public class TrackingEventProcessorConfiguration {
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
+    private boolean autoStart;
     private EventTrackerStatusChangeListener eventTrackerStatusChangeListener = EventTrackerStatusChangeListener.noOp();
 
     /**
@@ -79,6 +80,7 @@ public class TrackingEventProcessorConfiguration {
         this.maxThreadCount = numberOfSegments;
         this.threadFactory = pn -> new AxonThreadFactory("EventProcessor[" + pn + "]");
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
+        this.autoStart = true;
     }
 
     /**
@@ -167,6 +169,20 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets whether or not to automatically start the processor when event processing is initialized. If false, the
+     * application must explicitly start the processor. This can be useful if the application needs to perform its
+     * own initialization before it begins processing new events.
+     *
+     * @param autoStart {@code true} to automatically start the processor (the default), {@code false} if the
+     *                  application will start the processor itself.
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andAutoStart(boolean autoStart) {
+        this.autoStart = autoStart;
+        return this;
+    }
+
+    /**
      * Sets the {@link EventTrackerStatusChangeListener} which will be called on {@link EventTrackerStatus} changes.
      * Defaults to {@link EventTrackerStatusChangeListener#noOp()}.
      *
@@ -236,6 +252,13 @@ public class TrackingEventProcessorConfiguration {
      */
     public long getTokenClaimInterval() {
         return tokenClaimInterval;
+    }
+
+    /**
+     * @return {@code} true if the processor should be started automatically by the framework.
+     */
+    public boolean isAutoStart() {
+        return autoStart;
     }
 
     /**

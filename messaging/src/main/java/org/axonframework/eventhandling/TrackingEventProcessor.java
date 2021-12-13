@@ -98,6 +98,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final int segmentsSize;
+    private final boolean autoStart;
 
     private final ThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
@@ -147,6 +148,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.eventAvailabilityTimeout = config.getEventAvailabilityTimeout();
         this.storeTokenBeforeProcessing = builder.storeTokenBeforeProcessing;
         this.batchSize = config.getBatchSize();
+        this.autoStart = config.isAutoStart();
 
         this.messageSource = builder.messageSource;
         this.tokenStore = builder.tokenStore;
