@@ -60,11 +60,19 @@ import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
 import org.quartz.SchedulerException;
 
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,20 +80,25 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating several {@link DefaultConfigurer} operations.
@@ -181,6 +194,59 @@ class DefaultConfigurerTest {
                             2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length
                     )
             );
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabledDoesNotComplainAtShutdown() throws Exception {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventStore,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                                                          .andAutoStart(false))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+
+        TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                 .eventProcessor(processorName, TrackingEventProcessor.class)
+                                                 .orElseThrow(RuntimeException::new);
+        try {
+            assertFalse(processor.isRunning());
+        } finally {
+            assertDoesNotThrow(config::shutdown);
+        }
+    }
+
+    @Test
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabled() throws Exception {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventStore,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                                                          .andAutoStart(false))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+        try {
+            TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                     .eventProcessor(processorName, TrackingEventProcessor.class)
+                                                     .orElseThrow(RuntimeException::new);
+            assertFalse(processor.isRunning());
+            processor.start();
+            assertTrue(processor.isRunning());
         } finally {
             config.shutdown();
         }

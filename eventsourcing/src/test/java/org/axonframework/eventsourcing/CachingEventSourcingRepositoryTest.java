@@ -159,12 +159,58 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
-        doThrow(new MockException()).when(mockEventStore).publish(anyList());
+        uow.onCommit(c -> { throw new MockException();});
         try {
             testSubject.newInstance(() -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
-            fail("Applied aggregate should have caused an exception");
+            uow.commit();
         } catch (MockException e) {
-            uow.rollback();
+            // great, that's what we expect
+        }
+        assertNull(cache.get("id1"));
+    }
+
+    @Test
+    void testCacheClearedAfterRollbackOfLoadedAggregate() throws Exception {
+
+        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        uow.onCommit(c -> { throw new MockException();});
+        try {
+            testSubject.load("id1").execute(StubAggregate::doSomething);
+            uow.commit();
+        } catch (MockException e) {
+            // great, that's what we expect
+        }
+        assertNull(cache.get("id1"));
+    }
+
+    @Test
+    void testCacheClearedAfterRollbackOfLoadedAggregateUsingLoadOrCreate() throws Exception {
+
+        startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
+
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        uow.onCommit(c -> { throw new MockException();});
+        try {
+            testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
+            uow.commit();
+        } catch (MockException e) {
+            // great, that's what we expect
+        }
+        assertNull(cache.get("id1"));
+    }
+
+    @Test
+    void testCacheClearedAfterRollbackOfCreatedAggregateUsingLoadOrCreate() throws Exception {
+
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        uow.onCommit(c -> { throw new MockException();});
+        try {
+            testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
+            uow.commit();
+        } catch (MockException e) {
+            // great, that's what we expect
         }
         assertNull(cache.get("id1"));
     }

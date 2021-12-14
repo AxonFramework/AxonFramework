@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -46,29 +45,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor extends AbstractEventProcessor {
+public class SubscribingEventProcessor extends AbstractEventProcessor implements LifecycleAware {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private final TransactionManager transactionManager;
 
     private volatile Registration eventBusRegistration;
-
-    /**
-     * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
-     * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
-     * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
-     * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link SubscribingEventProcessor}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
 
     /**
      * Instantiate a {@link SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -87,13 +70,34 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
+     * Instantiate a Builder to be able to create a {@link SubscribingEventProcessor}.
+     * <p>
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
+     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
+     * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
+     * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link SubscribingEventProcessor}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+        handle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::start);
+        handle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::shutDown);
+    }
+
+    /**
      * Start this processor. This will register the processor with the {@link EventBus}.
      * <p>
      * Upon start up of an application, this method will be invoked in the {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS}
      * phase.
      */
     @Override
-    @StartHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void start() {
         if (eventBusRegistration != null) {
             // This event processor has already been started
@@ -140,7 +144,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * phase.
      */
     @Override
-    @ShutdownHandler(phase = Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS)
     public void shutDown() {
         IOUtils.closeQuietly(eventBusRegistration);
         eventBusRegistration = null;
@@ -215,6 +218,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
          * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
          *                      {@link EventProcessor} implementation will subscribe itself to receive
          *                      {@link EventMessage}s
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
@@ -229,6 +233,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
          *
          * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed
          *                           directly or asynchronously
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder processingStrategy(EventProcessingStrategy processingStrategy) {
@@ -241,10 +246,11 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
          * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
          *
          * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
-            assertNonNull(processingStrategy, "TransactionManager may not be null");
+            assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
         }

@@ -16,11 +16,14 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -336,10 +339,11 @@ class DefaultConfigurerLifecycleOperationsTest {
 
     @Test
     void testLifecycleHandlersProceedToFollowingPhaseWhenTheThreadIsInterrupted() throws InterruptedException {
+        AtomicBoolean invoked = new AtomicBoolean(false);
         Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
-        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance(invoked));
         LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
 
         testSubject.onStart(0, phaseZeroHandler::start);
@@ -356,17 +360,20 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, phaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
-        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(phaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
+        assertFalse(invoked.get());
     }
 
     @Test
     void testLifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
-        Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        Configuration testSubject = DefaultConfigurer.defaultConfiguration()
+                                                     .configureLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                                                     .buildConfiguration();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
-        LifecycleManagedInstance extremelySlowPhaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance extremelySlowPhaseOneHandler = spy(new LifecycleManagedInstance(invoked));
         LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
 
         testSubject.onStart(0, phaseZeroHandler::start);
@@ -377,21 +384,61 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, extremelySlowPhaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
-        //noinspection ResultOfMethodCallIgnored
         lifecycleOrder.verify(extremelySlowPhaseOneHandler).uncompletableStart();
         lifecycleOrder.verify(phaseTwoHandler).start();
+        assertFalse(invoked.get());
+    }
+
+    @Test
+    void testConfigureLifecyclePhaseTimeoutWithZeroTimeoutThrowsAxonConfigurationException() {
+        Configurer configurerTestSubject = DefaultConfigurer.defaultConfiguration();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> configurerTestSubject.configureLifecyclePhaseTimeout(0, TimeUnit.SECONDS)
+        );
+    }
+
+    @Test
+    void testConfigureLifecyclePhaseTimeoutWithNegativeTimeoutThrowsAxonConfigurationException() {
+        Configurer configurerTestSubject = DefaultConfigurer.defaultConfiguration();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> configurerTestSubject.configureLifecyclePhaseTimeout(-1, TimeUnit.SECONDS)
+        );
+    }
+
+    @Test
+    void testConfigureLifecyclePhaseTimeoutWithNullTimeUnitThrowsAxonConfigurationException() {
+        Configurer configurerTestSubject = DefaultConfigurer.defaultConfiguration();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> configurerTestSubject.configureLifecyclePhaseTimeout(1, null)
+        );
     }
 
     private static class LifecycleManagedInstance {
 
         private final ReentrantLock lock;
+        private final AtomicBoolean invoked;
 
         private LifecycleManagedInstance() {
-            this(new ReentrantLock());
+            this(new ReentrantLock(), new AtomicBoolean(false));
         }
 
-        private LifecycleManagedInstance(ReentrantLock lock) {
+        public LifecycleManagedInstance(ReentrantLock lock) {
+            this(lock, new AtomicBoolean(false));
+        }
+
+        private LifecycleManagedInstance(AtomicBoolean invoked) {
+            this(new ReentrantLock(), invoked);
+        }
+
+        private LifecycleManagedInstance(ReentrantLock lock, AtomicBoolean invoked) {
             this.lock = lock;
+            this.invoked = invoked;
         }
 
         public void start() {
@@ -408,8 +455,8 @@ class DefaultConfigurerLifecycleOperationsTest {
             });
         }
 
-        public CompletableFuture<Void> uncompletableStart() {
-            return new CompletableFuture<>();
+        public CompletableFuture<Object> uncompletableStart() {
+            return new CompletableFuture<>().whenComplete((r, e) -> invoked.set(true));
         }
 
         public void addLifecycleHandler(LifecycleRegistration lifecycleRegistration,
