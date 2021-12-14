@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new AggregateEntityNotFoundException(
-                    "Aggregate cannot handle this command, as there is no entity instance to forward it to."
+                    "Aggregate cannot handle command [" + ((CommandMessage<?>) message).getCommandName()
+                            + "], as there is no entity instance within the aggregate to forward it to."
             );
         }
         List<AnnotatedCommandHandlerInterceptor<? super C>> interceptors =
