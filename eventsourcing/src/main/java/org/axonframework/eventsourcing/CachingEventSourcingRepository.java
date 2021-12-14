@@ -83,13 +83,17 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     @Override
     protected void doSaveWithLock(EventSourcedAggregate<T> aggregate) {
         super.doSaveWithLock(aggregate);
-        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
+        String key = aggregate.identifierAsString();
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
+        cache.put(key, new AggregateCacheEntry<>(aggregate));
     }
 
     @Override
     protected void doDeleteWithLock(EventSourcedAggregate<T> aggregate) {
         super.doDeleteWithLock(aggregate);
-        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
+        String key = aggregate.identifierAsString();
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
+        cache.put(key, new AggregateCacheEntry<>(aggregate));
     }
 
     /**
@@ -106,6 +110,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         EventSourcedAggregate<T> aggregate = null;
         AggregateCacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
         if (cacheEntry != null) {
+            CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregateIdentifier));
             aggregate = cacheEntry.recreateAggregate(aggregateModel(),
                                                      eventStore,
                                                      repositoryProvider,
