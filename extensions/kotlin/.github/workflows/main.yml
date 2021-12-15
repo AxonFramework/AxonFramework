@@ -40,25 +40,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven
 
-      - name: Maven operation with Sonar
+      - name: Regular Build
+        run: |
+          ./mvnw -B -U clean verify
+
+      - name: Sonar Analysis
         if: matrix.sonar-enabled
         run: |
-          mvn -B -U -Pcoverage \
-          clean verify \
-          sonar:sonar \
+          ./mvnw -B -Pcoverage sonar:sonar \
           -Dsonar.projectKey=AxonFramework_extension-kotlin \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Maven operation without Sonar
-        if: matrix.sonar-enabled != true
-        run: |
-          mvn -B -U clean verify
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to Sonatype
         if: success()
