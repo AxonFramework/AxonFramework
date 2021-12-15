@@ -37,12 +37,9 @@ import java.util.function.Function;
  */
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 
-    private Configuration config;
-
-    private final Component<EventProcessingConfiguration> eventProcessingConfiguration;
-    private final Component<AxonServerConnectionManager> connectionManager;
-    private final Component<AxonServerConfiguration> axonServerConfiguration;
     private final Component<EventProcessorControlService> eventProcessorControlService;
+
+    private Configuration config;
 
     /**
      * Create an default EventProcessorInfoConfiguration, which uses the {@link Configuration} as a means to retrieve
@@ -55,41 +52,47 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
              c -> c.getComponent(AxonServerConfiguration.class));
     }
 
+
     /**
      * Creates an EventProcessorInfoConfiguration using the provided functions to retrieve the {@link
      * EventProcessingConfiguration}, {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
      *
-     * @param eventProcessingConfiguration a Function taking in the {@link Configuration} and providing a {@link
-     *                                     EventProcessingConfiguration}
-     * @param connectionManager            a Function taking in the {@link Configuration} and providing a {@link
-     *                                     AxonServerConnectionManager}
-     * @param axonServerConfiguration      a Function taking in the {@link Configuration} and providing a {@link
-     *                                     AxonServerConfiguration}
+     * @param eventProcessingConfigurationBuilder a Function taking in the {@link Configuration} and providing a {@link
+     *                                            EventProcessingConfiguration}
+     * @param connectionManagerBuilder            a Function taking in the {@link Configuration} and providing a {@link
+     *                                            AxonServerConnectionManager}
+     * @param axonServerConfigurationBuilder      a Function taking in the {@link Configuration} and providing a {@link
+     *                                            AxonServerConfiguration}
      */
     public EventProcessorInfoConfiguration(
-            Function<Configuration, EventProcessingConfiguration> eventProcessingConfiguration,
-            Function<Configuration, AxonServerConnectionManager> connectionManager,
-            Function<Configuration, AxonServerConfiguration> axonServerConfiguration) {
-        this.eventProcessingConfiguration = new Component<>(
-                () -> config, "eventProcessingConfiguration", eventProcessingConfiguration
-        );
-        this.connectionManager = new Component<>(() -> config, "connectionManager", connectionManager);
-        this.axonServerConfiguration = new Component<>(() -> config, "connectionManager", axonServerConfiguration);
+            Function<Configuration, EventProcessingConfiguration> eventProcessingConfigurationBuilder,
+            Function<Configuration, AxonServerConnectionManager> connectionManagerBuilder,
+            Function<Configuration, AxonServerConfiguration> axonServerConfigurationBuilder
+    ) {
+        this(c -> new EventProcessorControlService(
+                connectionManagerBuilder.apply(c),
+                eventProcessingConfigurationBuilder.apply(c),
+                axonServerConfigurationBuilder.apply(c)
+        ));
+    }
 
+    /**
+     * TODO
+     *
+     * @param eventProcessorControlServiceBuilder TODO
+     */
+    public EventProcessorInfoConfiguration(
+            Function<Configuration, EventProcessorControlService> eventProcessorControlServiceBuilder
+    ) {
         this.eventProcessorControlService = new Component<>(
-                () -> config, "eventProcessorControlService",
-                c -> new EventProcessorControlService(
-                        this.connectionManager.get(),
-                        this.eventProcessingConfiguration.get(),
-                        this.axonServerConfiguration.get()
-                )
+                () -> config, "eventProcessorControlService", eventProcessorControlServiceBuilder
         );
     }
 
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        // if there are no event handlers registered, there is may be no EventProcessingConfiguration at all.
+        // if there are no event handlers registered, there may be no EventProcessingConfiguration at all.
         if (config.eventProcessingConfiguration() != null) {
             this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
         }

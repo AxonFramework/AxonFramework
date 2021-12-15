@@ -135,6 +135,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public EventProcessorInfoConfiguration processorInfoConfiguration(
             EventProcessingConfiguration eventProcessingConfiguration,
             AxonServerConnectionManager connectionManager,
@@ -143,6 +144,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                    c -> connectionManager,
                                                    c -> configuration);
     }
+
 
     @Bean
     @ConditionalOnMissingBean
