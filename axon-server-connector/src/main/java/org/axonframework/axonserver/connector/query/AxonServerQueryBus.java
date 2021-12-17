@@ -50,8 +50,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.common.StringUtils;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -644,9 +644,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         }
 
         /**
-         * TODO
+         * Sets the default context for this event store to connect to.
          *
-         * @param defaultContext
+         * @param defaultContext for this bus to connect to.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder defaultContext(String defaultContext) {

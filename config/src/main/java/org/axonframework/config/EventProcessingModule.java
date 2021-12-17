@@ -800,13 +800,6 @@ public class EventProcessingModule
                 .build();
     }
 
-    /**
-     * @param name
-     * @param eventHandlerInvoker
-     * @param config
-     * @param source
-     * @return
-     */
     protected EventProcessor trackingEventProcessor(String name,
                                                     EventHandlerInvoker eventHandlerInvoker,
                                                     TrackingEventProcessorConfiguration config,
@@ -824,14 +817,6 @@ public class EventProcessingModule
                 .build();
     }
 
-    /**
-     * @param name
-     * @param eventHandlerInvoker
-     * @param config
-     * @param messageSource
-     * @param processorConfiguration
-     * @return
-     */
     protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,

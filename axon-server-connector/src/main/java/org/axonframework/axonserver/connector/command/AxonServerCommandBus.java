@@ -35,9 +35,9 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.common.StringUtils;
 import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.LifecycleAware;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.Distributed;
@@ -472,9 +472,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * TODO
+         * Sets the default context for this event store to connect to.
          *
-         * @param defaultContext
+         * @param defaultContext for this bus to connect to.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder defaultContext(String defaultContext) {
@@ -514,7 +514,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             assertNonNull(localSegment, "The Local CommandBus is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(routingStrategy, "The RoutingStrategy is a hard requirement and should be provided");
-            //assertNonNull(defaultContext, "The default context is a hard requirement and should be provided");
+            assertNonNull(defaultContext, "The default context is a hard requirement and should be provided");
         }
     }
 }

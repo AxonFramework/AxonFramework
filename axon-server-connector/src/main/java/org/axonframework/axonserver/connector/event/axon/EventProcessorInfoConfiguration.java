@@ -77,15 +77,16 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * TODO
+     * Create a default EventProcessorInfoConfiguration, which uses the {@link EventProcessorControlService}
      *
-     * @param eventProcessorControlServiceBuilder TODO
+     * @param eventProcessorControlService a Function taking in the {@link Configuration} and providing a {@link
+     *                                     EventProcessorControlService}
      */
     public EventProcessorInfoConfiguration(
-            Function<Configuration, EventProcessorControlService> eventProcessorControlServiceBuilder
+            Function<Configuration, EventProcessorControlService> eventProcessorControlService
     ) {
         this.eventProcessorControlService = new Component<>(
-                () -> config, "eventProcessorControlService", eventProcessorControlServiceBuilder
+                () -> config, "eventProcessorControlService", eventProcessorControlService
         );
     }
 

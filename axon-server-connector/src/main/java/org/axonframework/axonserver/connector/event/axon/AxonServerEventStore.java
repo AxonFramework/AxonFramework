@@ -261,6 +261,12 @@ public class AxonServerEventStore extends AbstractEventStore {
             return this;
         }
 
+        /**
+         * Sets the default context for this event store to connect to.
+         *
+         * @param defaultContext for this event store to connect to.
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder defaultContext(String defaultContext) {
             assertNonNull(defaultContext, "The default context may not be null");
             this.defaultContext = defaultContext;

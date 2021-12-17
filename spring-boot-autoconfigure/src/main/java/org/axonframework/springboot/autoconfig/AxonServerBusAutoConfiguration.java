@@ -138,15 +138,5 @@ public class AxonServerBusAutoConfiguration {
                 .upcasterChain(configuration.upcasterChain())
                 .build();
     }
-
-//    @Bean   todo
-//    @ConditionalOnMissingBean
-//    public EventScheduler eventScheduler(@Qualifier("eventSerializer") Serializer eventSerializer,
-//                                         AxonServerConnectionManager connectionManager) {
-//        return AxonServerEventScheduler.builder()
-//                                       .eventSerializer(eventSerializer)
-//                                       .connectionManager(connectionManager)
-//                                       .build();
-//    }
 }
 
