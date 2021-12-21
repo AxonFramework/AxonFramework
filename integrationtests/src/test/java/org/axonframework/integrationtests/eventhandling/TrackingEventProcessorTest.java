@@ -1911,29 +1911,30 @@ class TrackingEventProcessorTest {
         int numberOfEvents = 5;
         List<String> handled = new CopyOnWriteArrayList<>();
         int testWorkerTerminationTimeout = 50;
-
+        List<Thread> createdThreads = new CopyOnWriteArrayList<>();
         // A higher event availability timeout will block a worker thread that should shut down
-        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                         .andInitialSegmentsCount(2)
                                                          .andBatchSize(100)
+                                                         .andThreadFactory(n -> r -> {
+                                                             Thread thread = new Thread(r, n);
+                                                             createdThreads.add(thread);
+                                                             return thread;
+                                                         })
                                                          .andWorkerTerminationTimeout(testWorkerTerminationTimeout)
                                                          .andEventAvailabilityTimeout(20, TimeUnit.SECONDS));
 
-        doAnswer(i -> {
-            EventMessage<?> event = i.getArgument(0);
-            handled.add(event.getIdentifier());
-            return null;
-        }).when(mockHandler).handle(any());
-
-        // ensure some events have been handled by the TEP
-        eventBus.publish(createEvents(numberOfEvents));
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(numberOfEvents, handled.size()));
 
         // sleep a little to reach the EventAvailabilityTimeout usage on the Event Stream
         Thread.sleep(500);
 
+        assertEquals(2, createdThreads.size());
+
         CompletableFuture<Void> result = testSubject.shutdownAsync();
         assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(createdThreads.get(0).isAlive());
+        assertFalse(createdThreads.get(1).isAlive());
     }
 
     private void waitForStatus(String description,
