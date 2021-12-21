@@ -69,7 +69,7 @@
         <slf4j.version>1.7.32</slf4j.version>
         <log4j.version>2.17.0</log4j.version>
         <spring.version>5.3.14</spring.version>
-        <spring-security.version>5.6.0</spring-security.version>
+        <spring-security.version>5.6.1</spring-security.version>
         <spring.boot.version>2.6.1</spring.boot.version>
         <mockito.version>4.2.0</mockito.version>
         <projectreactor.version>3.4.13</projectreactor.version>
