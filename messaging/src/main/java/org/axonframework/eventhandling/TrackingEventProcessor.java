@@ -474,8 +474,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             checkSegmentCaughtUp(segment, eventStream);
         } catch (InterruptedException e) {
-            logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
-            this.shutDown();
+            if (isRunning()) {
+                logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
+                setShutdownState();
+            }
             Thread.currentThread().interrupt();
         }
     }
@@ -689,7 +691,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                             .stream()
                             .map(worker -> CompletableFuture.runAsync(() -> {
                                 try {
-                                    worker.getValue().join(workerTerminationTimeout);
+                                    Thread workerThread = worker.getValue();
+                                    workerThread.join(workerTerminationTimeout);
+                                    if (workerThread.isAlive()) {
+                                        workerThread.interrupt();
+                                        workerThread.join(workerTerminationTimeout);
+                                    }
                                 } catch (InterruptedException e) {
                                     logger.info(
                                             "Thread was interrupted waiting for TrackingProcessor Worker '{}' shutdown.",
