@@ -1049,6 +1049,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             int waitTime = 1;
             String processorName = TrackingEventProcessor.this.getName();
             while (getState().isRunning()) {
+                List<Segment> segmentsToClaim;
                 workLauncherRunning.set(true);
                 try {
                     int[] tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
@@ -1064,6 +1065,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 }
                         );
                     }
+                    segmentsToClaim = tokenStore.fetchAvailableSegments(processorName);
                     waitTime = 1;
                 } catch (Exception e) {
                     if (waitTime == 1) {
@@ -1084,7 +1086,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                List<Segment> segmentsToClaim = tokenStore.fetchAvailableSegments(processorName);
                 for (int i = 0; i < segmentsToClaim.size() && availableThreads.get() > 0; i++) {
                     Segment segment = segmentsToClaim.get(i);
                     int segmentId = segment.getSegmentId();
