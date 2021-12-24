@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
 
 /**
  * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
@@ -113,9 +111,11 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
      */
     @Override
     public Object handle(CommandMessage<?> command) throws Exception {
-        return model.getHandlers().stream()
-                    .filter(h -> h.canHandle(command)).findFirst()
-                    .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", command.getCommandName())))
+        return model.getHandlers()
+                    .stream()
+                    .filter(h -> h.canHandle(command))
+                    .findFirst()
+                    .orElseThrow(() -> new NoHandlerForCommandException(command))
                     .handle(command, target);
     }
 

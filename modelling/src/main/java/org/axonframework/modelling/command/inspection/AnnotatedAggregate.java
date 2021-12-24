@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -412,10 +412,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        MessageHandlingMember<? super T> handler = inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                                                            .filter(mh -> mh.canHandle(commandMessage))
-                                                            .findFirst()
-                                                            .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandMessage.getCommandName())));
+        MessageHandlingMember<? super T> handler =
+                inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
+                         .filter(mh -> mh.canHandle(commandMessage))
+                         .findFirst()
+                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage));
 
         Object result;
         if (interceptors.isEmpty()) {
