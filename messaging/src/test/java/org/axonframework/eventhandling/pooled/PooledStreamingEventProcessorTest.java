@@ -1034,7 +1034,6 @@ class PooledStreamingEventProcessorTest {
         );
     }
 
-
     private static class InMemoryMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
         private static final String FAIL_PAYLOAD = "FAIL";

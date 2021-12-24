@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -72,11 +76,11 @@ public class SimpleCommandBus implements CommandBus {
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
-     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a {@link
+     * RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults to
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()}. The {@link TransactionManager}, {@link
+     * MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to {@code null}
+     * will result in an {@link AxonConfigurationException}.
      *
      * @return a Builder to be able to create a {@link SimpleCommandBus}
      */
@@ -115,8 +119,8 @@ public class SimpleCommandBus implements CommandBus {
      * Invokes all the dispatch interceptors.
      *
      * @param command The original command being dispatched
+     * @param <C>     The type of payload contained in the CommandMessage
      * @return The command to actually dispatch
-     * @param <C> The type of payload contained in the CommandMessage
      */
     @SuppressWarnings("unchecked")
     protected <C> CommandMessage<C> intercept(CommandMessage<C> command) {
@@ -179,9 +183,9 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Subscribe the given {@code handler} to commands with given {@code commandName}. If a subscription already
-     * exists for the given name, the configured {@link DuplicateCommandHandlerResolver} will resolve the command
-     * handler which should be subscribed.
+     * Subscribe the given {@code handler} to commands with given {@code commandName}. If a subscription already exists
+     * for the given name, the configured {@link DuplicateCommandHandlerResolver} will resolve the command handler which
+     * should be subscribed.
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
@@ -198,29 +202,31 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Registers the given interceptor to the command bus. All incoming commands will pass through the
-     * registered interceptors at the given order before the command is passed to the handler for processing.
+     * Registers the given interceptor to the command bus. All incoming commands will pass through the registered
+     * interceptors at the given order before the command is passed to the handler for processing.
      *
      * @param handlerInterceptor The interceptor to invoke when commands are handled
      * @return handle to unregister the interceptor
      */
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor
+    ) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
 
     /**
-     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through
-     * the interceptors at the given order before the command is dispatched toward the command handler.
+     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through the
+     * interceptors at the given order before the command is dispatched toward the command handler.
      *
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
      * @return handle to unregister the interceptor
      */
     @Override
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor
+    ) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
@@ -241,11 +247,11 @@ public class SimpleCommandBus implements CommandBus {
      * Builder class to instantiate a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
-     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults
-     * to {@link DuplicateCommandHandlerResolution#logAndOverride()}.
-     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
-     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a {@link
+     * RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults to
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()}. The {@link TransactionManager}, {@link
+     * MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to {@code null}
+     * will result in an {@link AxonConfigurationException}.
      */
     public static class Builder {
 
@@ -312,9 +318,9 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result
-         * in a {@link NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
+         * #dispatch(CommandMessage)}. Defaults to a {@link LoggingCallback}. Passing {@code null} will result in a
+         * {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
@@ -340,7 +346,7 @@ public class SimpleCommandBus implements CommandBus {
          *                                    specifications
          */
         protected void validate() {
-            // No assertions required, kept for overriding
+            // Method kept for overriding
         }
     }
 }
