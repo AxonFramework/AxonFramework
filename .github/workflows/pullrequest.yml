@@ -39,7 +39,7 @@ jobs:
 
       - name: Regular Build
         run: |
-          ./mvnw -B -U -Possrh -Pcoverage clean verify
+          ./mvnw -B -U -Possrh -Pcoverage-aggregate clean verify
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
