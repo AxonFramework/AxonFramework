@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -693,7 +692,7 @@ public class DefaultConfigurer implements Configurer {
      * lifecycle handlers are registered.
      */
     protected void prepareMessageHandlerRegistrars() {
-        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(config -> registrar.get()));
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(cfg -> registrar.get()));
     }
 
     /**
@@ -805,6 +804,16 @@ public class DefaultConfigurer implements Configurer {
      */
     public Map<Class<?>, Component<?>> getComponents() {
         return components;
+    }
+
+    @Override
+    public void onStart(int phase, LifecycleHandler startHandler) {
+        onInitialize(cfg -> cfg.onStart(phase, startHandler));
+    }
+
+    @Override
+    public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
+        onInitialize(cfg -> cfg.onShutdown(phase, shutdownHandler));
     }
 
     private class ConfigurationImpl implements Configuration {

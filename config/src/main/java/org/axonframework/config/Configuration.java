@@ -43,7 +43,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -57,7 +56,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 3.0
  */
-public interface Configuration {
+public interface Configuration extends LifecycleOperations {
 
     /**
      * Retrieves the Event Bus defined in this Configuration.
@@ -373,109 +372,6 @@ public interface Configuration {
      * @return all modules that have been registered with this Configuration
      */
     List<ModuleConfiguration> getModules();
-
-    /**
-     * Registers a {@code startHandler} to be executed in the default phase {@code 0} when this Configuration is
-     * started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param startHandler the handler to execute when the configuration is started
-     * @see #start()
-     */
-    default void onStart(Runnable startHandler) {
-        onStart(0, startHandler);
-    }
-
-    /**
-     * Registers a {@code startHandler} to be executed in the given {@code phase} when this Configuration is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to execute when the configuration is started
-     * @see #start()
-     */
-    default void onStart(int phase, Runnable startHandler) {
-        onStart(phase, () -> {
-            try {
-                startHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code startHandler} to be executed in the given {@code phase} when this Configuration
-     * is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to be executed asynchronously when the configuration is started
-     * @see #start()
-     */
-    void onStart(int phase, LifecycleHandler startHandler);
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the default phase {@code 0} when the Configuration is shut
-     * down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see #shutdown()
-     */
-    default void onShutdown(Runnable shutdownHandler) {
-        onShutdown(0, shutdownHandler);
-    }
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the given {@code phase} when the Configuration is shut
-     * down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see #shutdown()
-     */
-    default void onShutdown(int phase, Runnable shutdownHandler) {
-        onShutdown(phase, () -> {
-            try {
-                shutdownHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code shutdownHandler} to be executed in the given {@code phase} when the
-     * Configuration is shut down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to be executed asynchronously when the Configuration is shut down
-     * @see #shutdown()
-     */
-    void onShutdown(int phase, LifecycleHandler shutdownHandler);
 
     /**
      * Returns the EventUpcasterChain with all registered upcasters.

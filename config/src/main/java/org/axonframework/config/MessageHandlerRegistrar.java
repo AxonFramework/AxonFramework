@@ -17,7 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.function.BiFunction;
@@ -36,7 +36,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.3
  */
-public class MessageHandlerRegistrar implements LifecycleAware {
+public class MessageHandlerRegistrar implements Lifecycle {
 
     private final Supplier<Configuration> configurationSupplier;
     private final Function<Configuration, Object> messageHandlerBuilder;

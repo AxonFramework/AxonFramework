@@ -26,7 +26,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
 import javax.net.ssl.SSLException;
@@ -47,7 +47,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerConnectionManager implements LifecycleAware {
+public class AxonServerConnectionManager implements Lifecycle {
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;

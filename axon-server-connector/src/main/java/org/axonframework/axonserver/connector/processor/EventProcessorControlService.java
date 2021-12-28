@@ -26,7 +26,7 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class EventProcessorControlService implements LifecycleAware {
+public class EventProcessorControlService implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
     private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
