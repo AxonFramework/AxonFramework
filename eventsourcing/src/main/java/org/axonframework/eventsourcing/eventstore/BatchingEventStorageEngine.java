@@ -229,6 +229,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
 
         private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
+        private final int smallResultTreshold;
+        private boolean contiguousSmallResultSeen = false;
         private final boolean fetchUntilEmpty;
 
         private Iterator<? extends T> iterator;
@@ -241,6 +243,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
+            this.smallResultTreshold = this.batchSize/2;
             this.fetchUntilEmpty = fetchUntilEmpty;
         }
 
@@ -251,9 +254,19 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
                 if (iterator != null && batchSize > sizeOfLastBatch && !fetchUntilEmpty) {
                     return false;
                 }
+                if (contiguousSmallResultSeen) {
+                    return false;
+                }
                 List<? extends T> items = fetchFunction.apply(lastItem);
+                int numItems = items.size();
+                if (numItems > 0 && numItems < smallResultTreshold) {
+                    DomainEventData<T> firstFetchedItem = (DomainEventData<T>)items.get(0);
+                    DomainEventData<T> lastFetchedItem = (DomainEventData<T>)items.get(numItems -1 );
+                    contiguousSmallResultSeen = (lastFetchedItem.getSequenceNumber() - firstFetchedItem.getSequenceNumber()) == (numItems-1);
+                }
+
                 iterator = items.iterator();
-                if ((sizeOfLastBatch = items.size()) == 0) {
+                if ((sizeOfLastBatch = numItems) == 0) {
                     return false;
                 }
             }
