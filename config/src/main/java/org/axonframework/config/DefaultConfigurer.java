@@ -692,7 +692,7 @@ public class DefaultConfigurer implements Configurer {
      * lifecycle handlers are registered.
      */
     protected void prepareMessageHandlerRegistrars() {
-        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(config -> registrar.get()));
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(cfg -> registrar.get()));
     }
 
     /**
@@ -808,12 +808,12 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public void onStart(int phase, LifecycleHandler startHandler) {
-        onInitialize(config -> config.onStart(phase, startHandler));
+        onInitialize(cfg -> cfg.onStart(phase, startHandler));
     }
 
     @Override
     public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
-        onInitialize(config -> config.onShutdown(phase, shutdownHandler));
+        onInitialize(cfg -> cfg.onShutdown(phase, shutdownHandler));
     }
 
     private class ConfigurationImpl implements Configuration {
