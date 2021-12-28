@@ -14,13 +14,14 @@ jobs:
             sonar-enabled: false
           - java-version: 11
             sonar-enabled: true
+      fail-fast: false # run both to the end
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v2.3.1
+        uses: actions/setup-java@v2.5.0
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -36,22 +37,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven
 
-      - name: Maven operation with Sonar
-        if: matrix.sonar-enabled
+      - name: Regular Build
         run: |
-          mvn -B -U -Possrh -Pcoverage \
-          clean verify \
-          sonar:sonar \
+          ./mvnw -B -U -Possrh -Pcoverage clean verify
+
+      - name: Sonar Analysis
+        if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          ./mvnw -B sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Maven operation without Sonar
-        if: matrix.sonar-enabled != true
-        run: |
-          mvn -B -U -Possrh clean verify
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

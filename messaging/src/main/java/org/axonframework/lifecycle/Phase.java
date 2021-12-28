@@ -18,9 +18,10 @@ package org.axonframework.lifecycle;
 
 /**
  * Utility class containing constants which can be used as input for the {@link StartHandler} and {@link
- * ShutdownHandler} annotations.
+ * ShutdownHandler} annotations, or components implementing the {@link Lifecycle} interface.
  *
  * @author Steven van Beelen
+ * @see Lifecycle
  * @see StartHandler
  * @see ShutdownHandler
  * @since 4.3

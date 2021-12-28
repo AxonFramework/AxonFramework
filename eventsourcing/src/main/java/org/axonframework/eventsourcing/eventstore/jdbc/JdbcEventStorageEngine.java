@@ -79,7 +79,10 @@ import static org.axonframework.common.Assert.isTrue;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.executeBatch;
+import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
+import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
+import static org.axonframework.common.jdbc.JdbcUtils.nextAndExtract;
 
 /**
  * An {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation that uses JDBC to store and
@@ -112,9 +115,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private final int maxGapOffset;
     private final long lowestGlobalSequence;
     private final boolean extendedGapCheckEnabled;
-    private int gapTimeout;
-    private int gapCleaningThreshold;
-
     private final CreateTokenAtStatementBuilder createTokenAt;
     private final AppendEventsStatementBuilder appendEvents;
     private final LastSequenceNumberForStatementBuilder lastSequenceNumberFor;
@@ -128,6 +128,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private final ReadSnapshotDataStatementBuilder readSnapshotData;
     private final ReadEventDataWithoutGapsStatementBuilder readEventDataWithoutGaps;
     private final ReadEventDataWithGapsStatementBuilder readEventDataWithGaps;
+    private int gapTimeout;
+    private int gapCleaningThreshold;
 
     /**
      * Instantiate a {@link JdbcEventStorageEngine} based on the fields contained in the {@link Builder}.
@@ -209,6 +211,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection The connection to the database.
      * @param dateTime   The dateTime where the token will be created.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -222,6 +225,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection The connection to the database.
      * @param events     The events to be added.
      * @param serializer The serializer for the payload and metadata.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -235,6 +239,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -247,6 +252,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Creates a statement to be used at {@link JdbcEventStorageEngine#createTailToken()}.
      *
      * @param connection The connection to the database.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -258,6 +264,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Creates a statement to be used at {@link JdbcEventStorageEngine#createHeadToken()}.
      *
      * @param connection The connection to the database.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -271,6 +278,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection The connection to the database.
      * @param snapshot   The snapshot to be appended.
      * @param serializer The serializer for the payload and metadata.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -285,6 +293,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate taken from the snapshot.
      * @param sequenceNumber      The sequence number taken from the snapshot.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -298,6 +307,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection The connection to the database.
      * @param index      The index taken from the tracking token.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -310,6 +320,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection The connection to the database.
      * @param gaps       The Set of gaps taken from the tracking token.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -324,6 +335,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param identifier          The identifier of the aggregate.
      * @param firstSequenceNumber The expected sequence number of the first returned entry.
      * @param batchSize           The number of items to include in the batch.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -337,6 +349,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection The connection to the database.
      * @param identifier The identifier of the aggregate.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -350,6 +363,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection  The connection to the database.
      * @param globalIndex The index taken from the tracking token.
      * @param batchSize   The number of items to include in the batch
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -365,6 +379,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param globalIndex The index taken from the tracking token.
      * @param batchSize   The number of items to include in the batch
      * @param gaps        The Set of gaps taken from the tracking token.
+     *
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -377,6 +392,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Performs the DDL queries to create the schema necessary for this storage engine implementation.
      *
      * @param schemaFactory Factory of the event schema.
+     *
      * @throws EventStoreException when an error occurs executing SQL statements.
      */
     public void createSchema(EventTableFactory schemaFactory) {
@@ -492,7 +508,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                () -> "Unsupported token format: " + lastToken);
-        List<TrackedEventData<?>> trackedEventData = transactionManager.fetchInTransaction(() -> {
+
+        return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
             GapAwareTrackingToken cleanedToken;
             if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
@@ -518,8 +535,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             }
             return eventData;
         });
-
-        return trackedEventData;
     }
 
     private List<TrackedEventData<?>> executeEventDataQuery(GapAwareTrackingToken cleanedToken, int batchSize) {
@@ -591,6 +606,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connection The connection to the database.
      * @param batchSize  The number of items to include in the batch
+     *
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -606,6 +622,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param lastToken  Object describing the global index of the last processed event or {@code null} to return all
      *                   entries in the store.
      * @param batchSize  The number of items to include in the batch
+     *
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
@@ -633,6 +650,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet     The results of a query for tracked events.
      * @param previousToken The last known token of the tracker before obtaining this result set.
+     *
      * @return The next tracked event.
      * @throws SQLException when an exception occurs while creating the event data.
      */
@@ -661,10 +679,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             token = GapAwareTrackingToken.newInstance(
                     globalSequence,
                     allowGaps
-                            ? LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
-                                        .boxed()
-                                        .collect(Collectors.toCollection(TreeSet::new))
-                            : Collections.emptySortedSet()
+                    ? LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
+                                .boxed()
+                                .collect(Collectors.toCollection(TreeSet::new))
+                    : Collections.emptySortedSet()
             );
         } else {
             token = token.advanceTo(globalSequence, maxGapOffset);
@@ -683,6 +701,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Extracts the next domain event entry from the given {@code resultSet}.
      *
      * @param resultSet The results of a query for domain events of an aggregate.
+     *
      * @return The next domain event.
      * @throws SQLException when an exception occurs while creating the event data.
      */
@@ -702,6 +721,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Extracts the next snapshot entry from the given {@code resultSet}.
      *
      * @param resultSet The results of a query for a snapshot of an aggregate.
+     *
      * @return The next snapshot data.
      * @throws SQLException when an exception occurs while creating the event data.
      */
@@ -723,6 +743,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the timestamp.
+     *
      * @return an object describing the timestamp.
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
@@ -736,6 +757,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param preparedStatement the statement to update.
      * @param position          the position of the timestamp parameter in the statement.
      * @param timestamp         {@link Instant} to convert.
+     *
      * @throws SQLException if modification of the statement fails.
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
@@ -749,6 +771,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the payload.
+     *
      * @return an object describing the serialized data.
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
@@ -810,6 +833,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * performance of reading events. Defaults to 60000 (1 minute).
      *
      * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
+     *
      * @deprecated Use the {@link Builder#gapTimeout(int) gapTimeout(int)} in the {@link #builder()} instead
      */
     @Deprecated
@@ -821,6 +845,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
      *
      * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
+     *
      * @deprecated Use the {@link Builder#gapCleaningThreshold(int) gapCleaningThreshold(int)} in the {@link #builder()}
      * instead
      */
@@ -888,6 +913,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         private ReadSnapshotDataStatementBuilder readSnapshotData = JdbcEventStorageEngineStatements::readSnapshotData;
         private ReadEventDataWithoutGapsStatementBuilder readEventDataWithoutGaps = JdbcEventStorageEngineStatements::readEventDataWithoutGaps;
         private ReadEventDataWithGapsStatementBuilder readEventDataWithGaps = JdbcEventStorageEngineStatements::readEventDataWithGaps;
+
+        private Builder() {
+            persistenceExceptionResolver(new JdbcSQLErrorCodesResolver());
+        }
 
         /**
          * Set the PreparedStatement to be used on {@link JdbcEventStorageEngine#createTokenAt}. Defaults to {@link
@@ -1052,10 +1081,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             return this;
         }
 
-        private Builder() {
-            persistenceExceptionResolver(new JdbcSQLErrorCodesResolver());
-        }
-
         @Override
         public JdbcEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
@@ -1087,6 +1112,19 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
         /**
          * {@inheritDoc}
+         * <p>
+         * The JdbcEventStorageEngine defaults to using an empty batch as the final batch. While this is safe, it is
+         * also relatively inefficient. When one can guarantee that no events for an aggregate are every removed from
+         * the event store, any batch smaller than the maximum batch size can be seen as the final batch.
+         */
+        @Override
+        public JdbcEventStorageEngine.Builder finalAggregateBatchPredicate(Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
+            super.finalAggregateBatchPredicate(finalAggregateBatchPredicate);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
          *
          * @deprecated in favor of {@link #snapshotFilter(SnapshotFilter)}
          */
@@ -1113,6 +1151,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
          *
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder connectionProvider(ConnectionProvider connectionProvider) {
@@ -1127,6 +1166,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param transactionManager a {@link TransactionManager} used to manage transactions around fetching event
          *                           data
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
@@ -1140,6 +1180,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Defaults to the {@code byte[]} {@link Class}.
          *
          * @param dataType a {@link Class} specifying the serialized type of the Event Message's payload and Meta Data
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dataType(Class<?> dataType) {
@@ -1153,6 +1194,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * EventSchema#EventSchema()}.
          *
          * @param schema the {@link EventSchema} describing the database schema of event entries
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder schema(EventSchema schema) {
@@ -1162,13 +1204,16 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
 
         /**
-         * Sets the {@code maxGapOffset} specifying the maximum distance in sequence numbers between a missing event and
-         * the event with the highest known index. If the gap is bigger it is assumed that the missing event will not be
+         * Sets the {@code maxGapOffset} specifying the maximum distance in sequence numbers between a missing event
+         * and
+         * the event with the highest known index. If the gap is bigger it is assumed that the missing event will not
+         * be
          * committed to the store anymore. This event storage engine will no longer look for those events the next time
          * a batch is fetched. Defaults to an integer of {@code 10000} ({@link JdbcEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
          *
          * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
          *                     event and the event with the highest known index
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxGapOffset(int maxGapOffset) {
@@ -1183,6 +1228,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * ({@link JdbcEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
          *
          * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder lowestGlobalSequence(long lowestGlobalSequence) {
@@ -1201,6 +1247,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param gapTimeout an {@code int} specifying the amount of time until a 'gap' in a TrackingToken may be
          *                   considered timed out
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapTimeout(int gapTimeout) {
@@ -1215,6 +1262,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
          *                             attempt to clean gaps up is taken
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapCleaningThreshold(int gapCleaningThreshold) {
@@ -1238,6 +1286,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Defaults to {@code true}
          *
          * @param extendedGapCheckEnabled whether to enable the "extended gap check". Defaults to {@code true}.
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder extendedGapCheckEnabled(boolean extendedGapCheckEnabled) {

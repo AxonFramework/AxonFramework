@@ -24,8 +24,8 @@ import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
@@ -61,7 +61,7 @@ import static org.quartz.JobKey.jobKey;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class QuartzDeadlineManager extends AbstractDeadlineManager {
+public class QuartzDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
 
@@ -212,13 +212,12 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                              .build();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+    @Override
     public void shutdown() {
         try {
             scheduler.shutdown(true);

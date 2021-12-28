@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,19 +30,22 @@ import java.util.Map;
 
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
+ *
+ * @author Allard Buijze
+ * @since 3.0
  */
 public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(CommandHandler.class)
-                .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember(original, attr))
-                .orElse(original);
+                       .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember<>(original, attr))
+                       .orElse(original);
     }
 
-    private static class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements
-            CommandMessageHandlingMember<T> {
+    private static class MethodCommandMessageHandlingMember<T>
+            extends WrappedMessageHandlingMember<T>
+            implements CommandMessageHandlingMember<T> {
 
         private final String commandName;
         private final boolean isFactoryHandler;
@@ -62,7 +65,8 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                 commandName = (String) annotationAttributes.get("commandName");
             }
             final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
-            if (factoryMethod && !executable.getDeclaringClass().isAssignableFrom(((Method)executable).getReturnType())) {
+            if (factoryMethod && !executable.getDeclaringClass()
+                                            .isAssignableFrom(((Method) executable).getReturnType())) {
                 throw new AxonConfigurationException("static @CommandHandler methods must declare a return value " +
                                                              "which is equal to or a subclass of the declaring type");
             }
@@ -71,7 +75,7 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
 
         @Override
         public boolean canHandle(Message<?> message) {
-            return super.canHandle(message) && commandName.equals(((CommandMessage) message).getCommandName());
+            return super.canHandle(message) && commandName.equals(((CommandMessage<?>) message).getCommandName());
         }
 
         @Override

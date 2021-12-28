@@ -21,13 +21,14 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Constructs a single node AxonServer Enterprise Edition (EE) for testing.
  *
  * @author Lucas Campos
- * @since 4.6
+ * @since 4.6.0
  */
 public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> extends GenericContainer<SELF> {
 
@@ -193,15 +194,6 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
     }
 
     /**
-     * Returns the IP Address of the Axon Server container.
-     *
-     * @return IP Address of the container.
-     */
-    public String getIPAddress() {
-        return this.getContainerIpAddress();
-    }
-
-    /**
      * Returns the Axon Server's address container in a host:port format.
      *
      * @return address in host:port format.
@@ -210,5 +202,48 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
         return String.format(AXON_SERVER_ADDRESS_TEMPLATE,
                              this.getContainerIpAddress(),
                              this.getMappedPort(AXON_SERVER_GRPC_PORT));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        AxonServerEEContainer<?> that = (AxonServerEEContainer<?>) o;
+        return Objects.equals(licensePath, that.licensePath)
+                && Objects.equals(configurationPath, that.configurationPath)
+                && Objects.equals(clusterTemplatePath, that.clusterTemplatePath)
+                && Objects.equals(axonServerName, that.axonServerName)
+                && Objects.equals(axonServerInternalHostname, that.axonServerInternalHostname)
+                && Objects.equals(axonServerHostname, that.axonServerHostname);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(),
+                            licensePath,
+                            configurationPath,
+                            clusterTemplatePath,
+                            axonServerName,
+                            axonServerInternalHostname,
+                            axonServerHostname);
+    }
+
+    @Override
+    public String toString() {
+        return "AxonServerEEContainer{" +
+                "licensePath='" + licensePath + '\'' +
+                ", configurationPath='" + configurationPath + '\'' +
+                ", clusterTemplatePath='" + clusterTemplatePath + '\'' +
+                ", axonServerName='" + axonServerName + '\'' +
+                ", axonServerInternalHostname='" + axonServerInternalHostname + '\'' +
+                ", axonServerHostname='" + axonServerHostname + '\'' +
+                '}';
     }
 }

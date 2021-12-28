@@ -1924,6 +1924,37 @@ class TrackingEventProcessorTest {
         verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
+    @Test
+    void testShutdownTerminatesWorkersAfterConfiguredWorkerTerminationTimeout() throws Exception {
+        int numberOfEvents = 5;
+        List<String> handled = new CopyOnWriteArrayList<>();
+        int testWorkerTerminationTimeout = 50;
+        List<Thread> createdThreads = new CopyOnWriteArrayList<>();
+        // A higher event availability timeout will block a worker thread that should shut down
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                         .andInitialSegmentsCount(2)
+                                                         .andBatchSize(100)
+                                                         .andThreadFactory(n -> r -> {
+                                                             Thread thread = new Thread(r, n);
+                                                             createdThreads.add(thread);
+                                                             return thread;
+                                                         })
+                                                         .andWorkerTerminationTimeout(testWorkerTerminationTimeout)
+                                                         .andEventAvailabilityTimeout(20, TimeUnit.SECONDS));
+
+        testSubject.start();
+
+        // sleep a little to reach the EventAvailabilityTimeout usage on the Event Stream
+        Thread.sleep(500);
+
+        assertEquals(2, createdThreads.size());
+
+        CompletableFuture<Void> result = testSubject.shutdownAsync();
+        assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(createdThreads.get(0).isAlive());
+        assertFalse(createdThreads.get(1).isAlive());
+    }
+
     private void waitForStatus(String description,
                                long time,
                                TimeUnit unit,

@@ -31,9 +31,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -59,7 +58,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.4
  */
-public class AxonServerEventScheduler implements EventScheduler {
+public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -100,10 +99,15 @@ public class AxonServerEventScheduler implements EventScheduler {
         this.converter = new GrpcMetaDataConverter(serializer);
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, this::start);
+        lifecycle.onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS, this::shutdownDispatching);
+    }
+
     /**
      * Start the Axon Server {@link EventScheduler} implementation.
      */
-    @StartHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void start() {
         started.set(true);
     }
@@ -111,7 +115,6 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Shuts down the Axon Server {@link EventScheduler} implementation.
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void shutdownDispatching() {
         started.set(false);
     }

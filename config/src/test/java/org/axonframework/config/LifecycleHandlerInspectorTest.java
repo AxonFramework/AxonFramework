@@ -17,20 +17,29 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Validates the internals of the {@link LifecycleHandlerInspector}.
@@ -76,6 +85,20 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
+    void lifecycleAwareComponentsRegisterHandlers(@Mock Configuration config) {
+        LifecycleHandlerInspector.registerLifecycleHandlers(config, new ComponentWithLifecycle(
+                r -> {
+                    r.onStart(42, () -> {
+                    });
+                    r.onShutdown(24, () -> {
+                    });
+                }));
+
+        verify(config).onStart(eq(42), any(LifecycleHandler.class));
+        verify(config).onShutdown(eq(24), any(LifecycleHandler.class));
+    }
+
+    @Test
     void testLifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
         AtomicBoolean started = new AtomicBoolean(false);
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(started);
@@ -116,6 +139,20 @@ class LifecycleHandlerInspectorTest {
         @StartHandler(phase = TEST_PHASE)
         public void start(String someParameter) {
             // Some start up process
+        }
+    }
+
+    private static class ComponentWithLifecycle implements Lifecycle {
+
+        private final Consumer<LifecycleRegistry> registration;
+
+        public ComponentWithLifecycle(Consumer<LifecycleRegistry> registration) {
+            this.registration = registration;
+        }
+
+        @Override
+        public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+            registration.accept(lifecycle);
         }
     }
 
