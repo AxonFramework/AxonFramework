@@ -63,7 +63,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 /**
  * EventStorageEngine implementation that uses JPA to store and fetch events.
  * <p>
- * By default the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
+ * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
  *
  * @author Rene de Waele
@@ -114,7 +114,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
@@ -134,7 +134,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
-     * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
+     * DomainEventMessage} it will be returned as is. Otherwise, a new {@link GenericDomainEventMessage} is made with
      * {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of 0L.
      * <p>
      * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a {@link
@@ -162,7 +162,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
 
         List<Object[]> entries = transactionManager.fetchInTransaction(() -> {
-            // if there are many gaps, it worthwhile checking if it is possible to clean them up
+            // if there are many gaps, it's worth checking if it is possible to clean them up
             TypedQuery<Object[]> query;
             if (previousToken == null || previousToken.getGaps().isEmpty()) {
                 query = entityManager().createQuery(
@@ -196,7 +196,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             );
 
             // Now that we have the event itself, we can calculate the token
-            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutFrame());
+            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutThreshold());
             if (token == null) {
                 token = GapAwareTrackingToken.newInstance(
                         globalSequence,
@@ -218,9 +218,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
-        GapAwareTrackingToken previousToken = lastToken;
         if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
-            List<Object[]> results = transactionManager.fetchInTransaction(() -> entityManager()
+            return withGapsCleaned(lastToken, transactionManager.fetchInTransaction(() -> entityManager()
                     .createQuery(
                             "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
                                     + "WHERE e.globalIndex >= :firstGapOffset "
@@ -229,28 +228,40 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                     )
                     .setParameter("firstGapOffset", lastToken.getGaps().first())
                     .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
-                    .getResultList());
-            for (Object[] result : results) {
-                try {
-                    Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
-                    long sequenceNumber = (long) result[0];
-                    if (previousToken.getGaps().contains(sequenceNumber) || timestamp.isAfter(gapTimeoutFrame())) {
-                        // filled a gap, should not continue cleaning up
-                        break;
-                    }
-                    if (previousToken.getGaps().contains(sequenceNumber - 1)) {
-                        previousToken = previousToken.withGapsTruncatedAt(sequenceNumber);
-                    }
-                } catch (DateTimeParseException e) {
-                    logger.info("Unable to parse timestamp to clean old gaps", e);
-                    break;
+                    .getResultList()));
+        }
+        return lastToken;
+    }
+
+    private GapAwareTrackingToken withGapsCleaned(GapAwareTrackingToken token, List<Object[]> indexToTimestamp) {
+        Instant gapTimeoutThreshold = gapTimeoutThreshold();
+        GapAwareTrackingToken cleanedToken = token;
+        for (Object[] result : indexToTimestamp) {
+            try {
+                Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
+                long sequenceNumber = (long) result[0];
+                if (cleanedToken.getGaps().contains(sequenceNumber) || timestamp.isAfter(gapTimeoutThreshold)) {
+                    // filled a gap or found an entry that is too recent. Should not continue cleaning up
+                    return cleanedToken;
+                }
+                if (cleanedToken.getGaps().contains(sequenceNumber - 1)) {
+                    cleanedToken = cleanedToken.withGapsTruncatedAt(sequenceNumber);
+                }
+            } catch (DateTimeParseException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.info("Unable to parse timestamp ('{}') to clean old gaps. Trying to proceed. ",
+                                e.getParsedString(), e);
+                } else {
+                    logger.info("Unable to parse timestamp ('{}') to clean old gaps. Trying to proceed. " +
+                                        "Exception message: {}. (enable debug logging for full stack trace)",
+                                e.getParsedString(), e.getMessage());
                 }
             }
         }
-        return previousToken;
+        return cleanedToken;
     }
 
-    private Instant gapTimeoutFrame() {
+    private Instant gapTimeoutThreshold() {
         return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
     }
 
@@ -433,7 +444,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     /**
-     * Returns the name of the Snaphot event entity. Defaults to 'SnapshotEventEntry'.
+     * Returns the name of the Snapshot event entity. Defaults to 'SnapshotEventEntry'.
      *
      * @return the name of the Jpa snapshot entity
      */
@@ -478,7 +489,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
      * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
      * {@link DataSource} is provided</li>
-     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} intance.</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code explicitFlush} defaults to {@code true}.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
