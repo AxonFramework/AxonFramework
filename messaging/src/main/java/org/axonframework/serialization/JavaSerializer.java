@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ public class JavaSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

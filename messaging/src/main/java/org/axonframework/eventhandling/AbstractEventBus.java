@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.AFTER_COMMIT;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.COMMIT;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.PREPARE_COMMIT;
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
@@ -97,8 +95,8 @@ public abstract class AbstractEventBus implements EventBus {
     /**
      * {@inheritDoc}
      * <p/>
-     * In case a Unit of Work is active, the {@code preprocessor} is not invoked by this Event Bus until the Unit
-     * of Work root is committed.
+     * In case a Unit of Work is active, the {@code preprocessor} is not invoked by this Event Bus until the Unit of
+     * Work root is committed.
      *
      * @param dispatchInterceptor
      */
@@ -111,7 +109,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(List<? extends EventMessage<?>> events) {
-        List<MessageMonitor.MonitorCallback> ingested = events.stream().map(messageMonitor::onMessageIngested)
+        List<MessageMonitor.MonitorCallback> ingested = events.stream()
+                                                              .map(messageMonitor::onMessageIngested)
                                                               .collect(Collectors.toList());
 
         if (CurrentUnitOfWork.isStarted()) {
@@ -182,8 +181,8 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Returns a list of all the events staged for publication in this Unit of Work. Changing this list will
-     * not affect the publication of events.
+     * Returns a list of all the events staged for publication in this Unit of Work. Changing this list will not affect
+     * the publication of events.
      *
      * @return a list of all the events staged for publication
      */
@@ -208,14 +207,12 @@ public abstract class AbstractEventBus implements EventBus {
                 messages.add(stagedEvent);
             }
         }
-
     }
 
     /**
      * Invokes all the dispatch interceptors.
      *
      * @param events The original events being published
-     *
      * @return The events to actually publish
      */
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
@@ -256,8 +253,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given {@code events} after the Unit of Work has been committed. The default implementation does
-     * nothing.
+     * Process given {@code events} after the Unit of Work has been committed. The default implementation does nothing.
      *
      * @param events Events to be published by this Event Bus
      */
@@ -274,8 +270,8 @@ public abstract class AbstractEventBus implements EventBus {
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
 
         /**
-         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a
-         * {@link NoOpMessageMonitor}.
+         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a {@link
+         * NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
@@ -293,7 +289,7 @@ public abstract class AbstractEventBus implements EventBus {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

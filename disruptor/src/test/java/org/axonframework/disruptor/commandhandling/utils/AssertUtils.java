@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.utils;
+package org.axonframework.disruptor.commandhandling.utils;
 
 import java.util.concurrent.TimeUnit;
 
