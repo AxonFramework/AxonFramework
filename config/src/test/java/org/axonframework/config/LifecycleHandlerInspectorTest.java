@@ -17,7 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
@@ -86,7 +86,7 @@ class LifecycleHandlerInspectorTest {
 
     @Test
     void lifecycleAwareComponentsRegisterHandlers(@Mock Configuration config) {
-        LifecycleHandlerInspector.registerLifecycleHandlers(config, new ComponentWithLifecycleAware(
+        LifecycleHandlerInspector.registerLifecycleHandlers(config, new ComponentWithLifecycle(
                 r -> {
                     r.onStart(42, () -> {
                     });
@@ -142,11 +142,11 @@ class LifecycleHandlerInspectorTest {
         }
     }
 
-    private static class ComponentWithLifecycleAware implements LifecycleAware {
+    private static class ComponentWithLifecycle implements Lifecycle {
 
         private final Consumer<LifecycleRegistry> registration;
 
-        public ComponentWithLifecycleAware(Consumer<LifecycleRegistry> registration) {
+        public ComponentWithLifecycle(Consumer<LifecycleRegistry> registration) {
             this.registration = registration;
         }
 

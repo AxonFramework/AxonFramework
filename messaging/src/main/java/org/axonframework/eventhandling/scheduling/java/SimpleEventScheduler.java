@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -56,7 +56,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
  * @since 0.7
  */
-public class SimpleEventScheduler implements EventScheduler, LifecycleAware {
+public class SimpleEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventScheduler.class);
 

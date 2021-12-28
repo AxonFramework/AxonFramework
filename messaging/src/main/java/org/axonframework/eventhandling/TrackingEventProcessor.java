@@ -25,7 +25,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
@@ -87,7 +87,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  * @since 3.0
  */
-public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, LifecycleAware {
+public class TrackingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
 
