@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @see org.axonframework.lifecycle.Phase
  * @since 4.6.0
  */
-public interface LifecycleOperationConfiguration {
+public interface LifecycleOperations {
 
     /**
      * Registers a {@code startHandler} to be executed in the default phase {@code 0} when this Configuration is

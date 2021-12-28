@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.heartbeat;
 
 import org.axonframework.axonserver.connector.util.Scheduler;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * connector</a>
  */
 @Deprecated
-public class HeartbeatMonitor implements LifecycleAware {
+public class HeartbeatMonitor implements Lifecycle {
 
     private static final long DEFAULT_INITIAL_DELAY = 10_000;
     private static final long DEFAULT_DELAY = 1_000;

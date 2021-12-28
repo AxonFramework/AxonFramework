@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 3.0
  */
-public interface Configuration extends LifecycleOperationConfiguration {
+public interface Configuration extends LifecycleOperations {
 
     /**
      * Retrieves the Event Bus defined in this Configuration.
