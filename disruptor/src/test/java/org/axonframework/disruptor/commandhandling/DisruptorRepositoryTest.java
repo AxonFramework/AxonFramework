@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package org.axonframework.disruptor.commandhandling;
 
-import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -46,9 +46,9 @@ class DisruptorRepositoryTest {
 
         AggregateAnnotationCommandHandler<TestAggregate> handler =
                 AggregateAnnotationCommandHandler.<TestAggregate>builder()
-                        .aggregateType(TestAggregate.class)
-                        .repository(repository)
-                        .build();
+                                                 .aggregateType(TestAggregate.class)
+                                                 .repository(repository)
+                                                 .build();
 
         handler.subscribe(commandBus);
         DefaultCommandGateway gateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
@@ -83,13 +83,13 @@ class DisruptorRepositoryTest {
         }
     }
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings("unused")
     public static class TestAggregate {
 
+        @SuppressWarnings("FieldCanBeLocal")
         @AggregateIdentifier
         private String id;
 
-        @SuppressWarnings("unused")
         private TestAggregate() {
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,14 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Works as an in-memory cache to keep a weak reference to the cached object,
- * which then allows the garbage collector to remove an object from memory once it isn't needed
- * anymore.
+ * Works as an in-memory cache to keep a weak reference to the cached object, which then allows the garbage collector to
+ * remove an object from memory once it isn't needed anymore.
  * <p>
- * A {@link HashMap} doesn't help here since it will keep hard delegate for key and
- * value objects. A {@link WeakHashMap} doesn't either, because it keeps weak delegate to the
- * key objects, but we want to track the value objects.
+ * A {@link HashMap} doesn't help here since it will keep hard delegate for key and value objects. A {@link WeakHashMap}
+ * doesn't either, because it keeps weak delegate to the key objects, but we want to track the value objects.
  * <p>
- * This implementation which delegates to a {@link Map} uses a {@link WeakReference} for the values. Once the
- * garbage collector decides it wants to finalize a value, it will be removed from the
- * map automatically.
+ * This implementation which delegates to a {@link Map} uses a {@link WeakReference} for the values. Once the garbage
+ * collector decides it wants to finalize a value, it will be removed from the map automatically.
  * <p>
  * This implementation is heavily inspired by http://www.java2s.com/Code/Java/Collections-Data-Structure/WeakValueHashMap.htm
  *
@@ -46,8 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class FirstLevelCache<T> {
 
-    private Map<String, WeakValue> delegate;
-    private ReferenceQueue<EventSourcedAggregate<T>> queue;
+    private final Map<String, WeakValue> delegate;
+    private final ReferenceQueue<EventSourcedAggregate<T>> queue;
 
     /**
      * Creates a FirstLevelCache with a desired initial capacity.
@@ -87,6 +84,7 @@ class FirstLevelCache<T> {
      */
     public EventSourcedAggregate<T> get(Object key) {
         processQueue();
+        //noinspection SuspiciousMethodCalls
         return getReferenceValue(delegate.get(key));
     }
 
@@ -97,6 +95,7 @@ class FirstLevelCache<T> {
      * @return the entry stored, or {@code null} if no entry was known for this key
      */
     public EventSourcedAggregate<T> remove(Object key) {
+        //noinspection SuspiciousMethodCalls
         return getReferenceValue(delegate.remove(key));
     }
 
@@ -118,6 +117,7 @@ class FirstLevelCache<T> {
     }
 
     private class WeakValue extends WeakReference<EventSourcedAggregate<T>> {
+
         private final String key;
 
         private WeakValue(String key, EventSourcedAggregate<T> value, ReferenceQueue<EventSourcedAggregate<T>> queue) {
@@ -129,5 +129,4 @@ class FirstLevelCache<T> {
             return key;
         }
     }
-
 }

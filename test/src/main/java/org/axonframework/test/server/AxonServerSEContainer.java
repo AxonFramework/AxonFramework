@@ -20,11 +20,13 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Objects;
+
 /**
  * Constructs a single node AxonServer Standard Edition (SE) for testing.
  *
  * @author Lucas Campos
- * @since 4.6
+ * @since 4.6.0
  */
 public class AxonServerSEContainer<SELF extends AxonServerSEContainer<SELF>> extends GenericContainer<SELF> {
 
@@ -89,15 +91,6 @@ public class AxonServerSEContainer<SELF extends AxonServerSEContainer<SELF>> ext
     }
 
     /**
-     * Returns the IP Address of the Axon Server container.
-     *
-     * @return IP Address of the container.
-     */
-    public String getIPAddress() {
-        return this.getContainerIpAddress();
-    }
-
-    /**
      * Returns the Axon Server's address container in a host:port format.
      *
      * @return address in host:port format.
@@ -106,5 +99,32 @@ public class AxonServerSEContainer<SELF extends AxonServerSEContainer<SELF>> ext
         return String.format(AXON_SERVER_ADDRESS_TEMPLATE,
                              this.getContainerIpAddress(),
                              this.getMappedPort(AXON_SERVER_GRPC_PORT));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        AxonServerSEContainer<?> that = (AxonServerSEContainer<?>) o;
+        return devMode == that.devMode;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), devMode);
+    }
+
+    @Override
+    public String toString() {
+        return "AxonServerSEContainer{" +
+                "devMode=" + devMode +
+                '}';
     }
 }
