@@ -49,12 +49,12 @@ jobs:
 
       - name: Regular Build
         run: |
-          ./mvnw -B -U clean verify
+          ./mvnw -B -U -Pcoverage clean verify
 
       - name: Sonar Analysis
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -Pcoverage sonar:sonar \
+          ./mvnw -B sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
