@@ -19,7 +19,7 @@ package org.axonframework.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
@@ -59,7 +59,7 @@ public abstract class LifecycleHandlerInspector {
     /**
      * Register any lifecycle handlers found on given {@code component} with given {@code configuration}.
      * <p>
-     * If given {@code component} implements {@link LifecycleAware}, will allow it to register lifecycle handlers with
+     * If given {@code component} implements {@link Lifecycle}, will allow it to register lifecycle handlers with
      * the configuration. Otherwise, will resolve {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle
      * handlers in the given {@code component}. If present, they will be registered on the given {@code configuration}
      * through the {@link Configuration#onStart(int, LifecycleHandler)} and
@@ -74,15 +74,15 @@ public abstract class LifecycleHandlerInspector {
             logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
         }
-        if (component instanceof LifecycleAware) {
-            ((LifecycleAware) component).registerLifecycleHandlers(new LifecycleAware.LifecycleRegistry() {
+        if (component instanceof Lifecycle) {
+            ((Lifecycle) component).registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
                 @Override
-                public void onStart(int phase, LifecycleAware.LifecycleHandler action) {
+                public void onStart(int phase, Lifecycle.LifecycleHandler action) {
                     configuration.onStart(phase, action::run);
                 }
 
                 @Override
-                public void onShutdown(int phase, LifecycleAware.LifecycleHandler action) {
+                public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
                     configuration.onShutdown(phase, action::run);
                 }
             });

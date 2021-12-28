@@ -66,6 +66,30 @@ class DefaultConfigurerLifecycleOperationsTest {
     }
 
     @Test
+    void testStartLifecycleHandlerConfiguredThroughConfigurerAreInvokedInAscendingPhaseOrder() {
+        Configurer testSubject = DefaultConfigurer.defaultConfiguration();
+
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOverNineThousandHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onStart(9001, phaseOverNineThousandHandler::start);
+        testSubject.onStart(10, phaseTenHandler::start);
+        testSubject.onStart(1, phaseOneHandler::start);
+        testSubject.onStart(0, phaseZeroHandler::start);
+
+        testSubject.start();
+
+        InOrder lifecycleOrder =
+                inOrder(phaseZeroHandler, phaseOneHandler, phaseTenHandler, phaseOverNineThousandHandler);
+        lifecycleOrder.verify(phaseZeroHandler).start();
+        lifecycleOrder.verify(phaseOneHandler).start();
+        lifecycleOrder.verify(phaseTenHandler).start();
+        lifecycleOrder.verify(phaseOverNineThousandHandler).start();
+    }
+
+    @Test
     void testStartLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
             throws InterruptedException {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration().buildConfiguration();
@@ -180,6 +204,31 @@ class DefaultConfigurerLifecycleOperationsTest {
         testSubject.start();
 
         testSubject.shutdown();
+
+        InOrder lifecycleOrder =
+                inOrder(phaseOverNineThousandHandler, phaseTenHandler, phaseOneHandler, phaseZeroHandler);
+        lifecycleOrder.verify(phaseOverNineThousandHandler).shutdown();
+        lifecycleOrder.verify(phaseTenHandler).shutdown();
+        lifecycleOrder.verify(phaseOneHandler).shutdown();
+        lifecycleOrder.verify(phaseZeroHandler).shutdown();
+    }
+
+    @Test
+    void testShutdownLifecycleHandlersConfiguredThroughConfigurerAreInvokedInDescendingPhaseOrder() {
+        Configurer testSubject = DefaultConfigurer.defaultConfiguration();
+
+        LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
+        LifecycleManagedInstance phaseOverNineThousandHandler = spy(new LifecycleManagedInstance());
+
+        testSubject.onShutdown(0, phaseZeroHandler::shutdown);
+        testSubject.onShutdown(1, phaseOneHandler::shutdown);
+        testSubject.onShutdown(10, phaseTenHandler::shutdown);
+        testSubject.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
+        Configuration config = testSubject.start();
+
+        config.shutdown();
 
         InOrder lifecycleOrder =
                 inOrder(phaseOverNineThousandHandler, phaseTenHandler, phaseOneHandler, phaseZeroHandler);

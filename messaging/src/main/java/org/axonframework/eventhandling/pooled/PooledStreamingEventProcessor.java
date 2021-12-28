@@ -34,7 +34,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -83,7 +83,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, LifecycleAware {
+public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

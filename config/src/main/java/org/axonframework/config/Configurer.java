@@ -53,7 +53,7 @@ import java.util.function.Function;
  * @see DefaultConfigurer
  * @since 3.0
  */
-public interface Configurer {
+public interface Configurer extends LifecycleOperations {
 
     /**
      * Registers an upcaster to be used to upcast Events to a newer version

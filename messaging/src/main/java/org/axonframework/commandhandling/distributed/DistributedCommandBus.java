@@ -27,7 +27,7 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -59,7 +59,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DistributedCommandBus implements CommandBus, Distributed<CommandBus>, LifecycleAware {
+public class DistributedCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
