@@ -74,10 +74,10 @@ class DefaultConfigurerLifecycleOperationsTest {
         LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOverNineThousandHandler = spy(new LifecycleManagedInstance());
 
-        testSubject.onStart(0, phaseZeroHandler::start);
-        testSubject.onStart(1, phaseOneHandler::start);
-        testSubject.onStart(10, phaseTenHandler::start);
         testSubject.onStart(9001, phaseOverNineThousandHandler::start);
+        testSubject.onStart(10, phaseTenHandler::start);
+        testSubject.onStart(1, phaseOneHandler::start);
+        testSubject.onStart(0, phaseZeroHandler::start);
 
         testSubject.start();
 
@@ -222,10 +222,10 @@ class DefaultConfigurerLifecycleOperationsTest {
         LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOverNineThousandHandler = spy(new LifecycleManagedInstance());
 
-        testSubject.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
-        testSubject.onShutdown(10, phaseTenHandler::shutdown);
-        testSubject.onShutdown(1, phaseOneHandler::shutdown);
         testSubject.onShutdown(0, phaseZeroHandler::shutdown);
+        testSubject.onShutdown(1, phaseOneHandler::shutdown);
+        testSubject.onShutdown(10, phaseTenHandler::shutdown);
+        testSubject.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
         Configuration config = testSubject.start();
 
         config.shutdown();
