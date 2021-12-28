@@ -120,6 +120,70 @@ class JdbcTokenStoreTest {
 
     @Transactional
     @Test
+    void testFetchTokenBySegment() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 2));
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", segmentToFetch)));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", segmentToFetch)));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMerge() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMergeSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplit() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 4));
+        //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplitSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 2));
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
     void testInitializeTokens() {
         tokenStore.initializeTokenSegments("test1", 7);
 

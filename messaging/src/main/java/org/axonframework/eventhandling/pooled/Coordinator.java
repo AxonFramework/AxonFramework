@@ -715,12 +715,12 @@ class Coordinator {
                 if (newClaims.size() < maxSegmentsToClaim) {
                     try {
                         TrackingToken token = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchToken(name, segmentId)
+                                () -> tokenStore.fetchToken(name, segment)
                         );
                         newClaims.put(segment, token);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
+                        logger.debug("Unable to claim the token for segment {}. It is owned by another process or has been split/merged concurrently.",
                                      segmentId);
                     }
                 }

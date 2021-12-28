@@ -121,6 +121,28 @@ public interface TokenStore {
     TrackingToken fetchToken(String processorName, int segment) throws UnableToClaimTokenException;
 
     /**
+     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}. Returns {@code null} if the stored token for
+     * the given process and segment is {@code null}.
+     * <p>
+     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been initialized with a Token (albeit {@code
+     * null}) yet. In that case, a segment must have been explicitly initialized. A TokenStore implementation's ability to do so is exposed by the {@link
+     * #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly initialize a token and return that token upon
+     * invocation.
+     * <p>
+     * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release the claim, use {@link
+     * #releaseClaim(String, int)}
+     *
+     * @param processorName The process name for which to fetch the token
+     * @param segment       The segment for which to fetch the token
+     * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
+     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but they are claimed by another process, or
+     *                                     if the {@code segment has been split or merged concurrently}
+     */
+    default TrackingToken fetchToken(String processorName, Segment segment) throws UnableToClaimTokenException {
+        return fetchToken(processorName, segment.getSegmentId());
+    }
+
+    /**
      * Extends the claim on the current token held by the this node for the given {@code processorName} and
      * {@code segment}.
      *

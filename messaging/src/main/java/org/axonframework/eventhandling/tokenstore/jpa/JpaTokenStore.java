@@ -200,6 +200,12 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
+    public TrackingToken fetchToken(String processorName, Segment segment) throws UnableToClaimTokenException {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        return loadToken(processorName, segment, entityManager).getToken(serializer);
+    }
+
+    @Override
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
@@ -275,6 +281,59 @@ public class JpaTokenStore implements TokenStore {
                            segment, token.getOwner()));
         }
         return token;
+    }
+
+    /**
+     * Tries loading an existing token owned by a processor with given {@code processorName} and {@code segment}. If such a token entry exists an attempt will
+     * be made to claim the token. If that succeeds the token will be returned. If the token is already owned by another node an {@link
+     * UnableToClaimTokenException} will be thrown.
+     * <p>
+     * If no such token exists yet, a new token entry will be inserted with {@code null} token owned by this node and return {@code null}.
+     * <p>
+     * If a token has been claimed, the {@code segment} will be validated by checking the database for the split and merge candidate segments. If a concurrent
+     * split or merge operation has been detected, the calim will be released and an {@link UnableToClaimTokenException} will be thrown.}
+     *
+     * @param processorName the name of the processor to load or insert a token entry for
+     * @param segment       the segment of the processor to load or insert a token entry for
+     * @param entityManager the entity manager instance to use for the query
+     * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
+     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token or if the segment has been split or
+     *                                     merged concurrently
+     */
+    protected TokenEntry loadToken(String processorName, Segment segment, EntityManager entityManager) {
+        TokenEntry token = loadToken(processorName, segment.getSegmentId(), entityManager);
+        try {
+            validateSegment(processorName, segment, entityManager);
+        } catch (UnableToClaimTokenException e) {
+            token.releaseClaim(nodeId);
+            throw e;
+        }
+        return token;
+    }
+
+    /**
+     * Validate a {@code segment} by checking for the existence of a split or merge candidate segment.
+     * <p>
+     * If the segment has been split concurrently, the split segment candidate will be found, indicating that we have claimed an incorrect {@code segment}. If
+     * the segment has been merged concurrently, the merge candidate segment will no longer exist, also indicating that we have claimed an incorrect {@code
+     * segment}.
+     *
+     * @param processorName the name of the processor to load or insert a token entry for
+     * @param segment       the segment of the processor to load or insert a token entry for
+     */
+    private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
+        TokenEntry mergeableSegment = entityManager //This segment should exist
+                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.mergeableSegmentId()), loadingLockMode);
+        if(mergeableSegment == null) {
+            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
+                                                         processorName, segment.getSegmentId()));
+        }
+        TokenEntry splitSegment = entityManager //This segment should not exist
+                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.splitSegmentId()), loadingLockMode);
+        if (splitSegment != null) {
+            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been split into two segments",
+                                                         processorName, segment.getSegmentId()));
+        }
     }
 
     @Override

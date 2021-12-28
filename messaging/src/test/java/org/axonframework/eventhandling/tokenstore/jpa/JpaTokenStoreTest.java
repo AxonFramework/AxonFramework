@@ -264,7 +264,71 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testQuerySegments() {
+    void testFetchTokenBySegment() {
+        jpaTokenStore.initializeTokenSegments("test", 2);
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentSegment0() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMerge() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMergeSegment0() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplit() {
+        jpaTokenStore.initializeTokenSegments("test", 4);
+        //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplitSegment0() {
+        jpaTokenStore.initializeTokenSegments("test", 2);
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testQuerySegments() {
         prepareTokenStore();
 
         {
