@@ -146,8 +146,9 @@ public class SimpleCommandBus implements CommandBus {
         if (optionalHandler.isPresent()) {
             handle(command, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
         } else {
-            NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                    format("No handler was subscribed to command [%s]", command.getCommandName()));
+            NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
+                    "No handler was subscribed for command [%s].", command.getCommandName()
+            ));
             monitorCallback.reportFailure(exception);
             callback.onResult(command, asCommandResultMessage(exception));
         }
