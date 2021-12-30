@@ -61,11 +61,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/integrationtests/target/site/jacoco-aggregate/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-        <pattern.class.test>**/*Test.*</pattern.class.test>
-        <pattern.class.test.int>**/*IntegrationTest.*</pattern.class.test.int>
+            <sonar.coverage.jacoco.xmlReportPaths>
+                ${project.basedir}/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
+                ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
+            </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
         <slf4j.version>1.7.32</slf4j.version>
@@ -486,18 +485,24 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <excludes>
-                        <exclude>${pattern.class.test.int}</exclude>
-                    </excludes>
-                    <includes>
-                        <include>${pattern.class.test}</include>
-                    </includes>
                     <!--suppress MavenModelInspection -->
                     <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
                         <log4j.version>${log4j.version}</log4j.version>
                     </systemPropertyVariables>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*Test_*.java</include>
+                        <include>**/*Tests_*.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*IntegrationTests.java</exclude>
+                        <exclude>**/*IntegrationTest_*.java</exclude>
+                        <exclude>**/*IntegrationTests_*.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -583,37 +588,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>prepare-unit-test</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <propertyName>surefireArgLine</propertyName>
-                            <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>report-unit-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <dataFile>${project.build.directory}/jacoco-ut.exec</dataFile>
-                            <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
-                            <excludes>
-                                <exclude>${pattern.class.test.int}</exclude>
-                            </excludes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -649,27 +623,34 @@
 
         <profile>
             <id>coverage</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
+
+            <modules>
+                <module>coverage-report</module>
+            </modules>
+
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${jacoco-maven-plugin.version}</version>
 
                         <executions>
                             <execution>
-                                <id>prepare-agent</id>
+                                <id>prepare-agent-for-unit-tests</id>
                                 <phase>initialize</phase>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                            </execution>
-                            <execution>
-                                <id>report</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
+                                <configuration>
+                                    <propertyName>surefireArgLine</propertyName>
+                                    <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -699,49 +680,14 @@
             <id>integration-test</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
             </activation>
 
             <build>
                 <defaultGoal>verify</defaultGoal>
                 <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>prepare-integration-test</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <propertyName>failsafeArgLine</propertyName>
-                                    <destFile>${project.build.directory}/jacoco-it.exec</destFile>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>report-integration-test</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                                <configuration>
-                                    <dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
-                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
-                                    <excludes>
-                                        <exclude>${pattern.class.test}</exclude>
-                                    </excludes>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
@@ -755,51 +701,41 @@
                                     <!--suppress MavenModelInspection -->
                                     <argLine>-Djava.awt.headless=true ${failsafeArgLine}</argLine>
                                     <includes>
-                                        <include>${pattern.class.test.int}</include>
+                                        <include>**/*IntegrationTest.java</include>
+                                        <include>**/*IntegrationTests.java</include>
+                                        <include>**/*IntegrationTest_*.java</include>
+                                        <include>**/*IntegrationTests_*.java</include>
                                     </includes>
+                                    <excludes>
+                                        <exclude>**/*Test.java</exclude>
+                                        <exclude>**/*Tests.java</exclude>
+                                        <exclude>**/*Test_*.java</exclude>
+                                        <exclude>**/*Tests_*.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent-for-integration-test</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <propertyName>failsafeArgLine</propertyName>
+                                    <destFile>${project.build.directory}/jacoco-it.exec</destFile>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>coverage-aggregate</id>
-            <build>
-                <defaultGoal>verify</defaultGoal>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>report-aggregate</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>report-aggregate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <modules>
-                <module>axon-server-connector</module>
-                <module>config</module>
-                <module>disruptor</module>
-                <module>eventsourcing</module>
-                <module>integrationtests</module>
-                <module>legacy</module>
-                <module>messaging</module>
-                <module>metrics</module>
-                <module>metrics-micrometer</module>
-                <module>modelling</module>
-                <module>spring</module>
-                <module>spring-boot-autoconfigure</module>
-                <module>test</module>
-            </modules>
         </profile>
     </profiles>
 
