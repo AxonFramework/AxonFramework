@@ -1165,7 +1165,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                     }
                             );
                         }
-                        segmentsToClaim = tokenStore.fetchAvailableSegments(processorName);
+                        segmentsToClaim = transactionManager.fetchInTransaction(() ->tokenStore.fetchAvailableSegments(processorName));
                         waitTime = 1;
                     } catch (Exception e) {
                         if (waitTime == 1) {
