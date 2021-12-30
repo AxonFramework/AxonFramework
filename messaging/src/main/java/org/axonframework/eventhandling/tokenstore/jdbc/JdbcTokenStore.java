@@ -374,7 +374,7 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select all {@link TokenEntry} for a given processorName from the underlying storage.
+     * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from the underlying storage.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to fetch the segments for
