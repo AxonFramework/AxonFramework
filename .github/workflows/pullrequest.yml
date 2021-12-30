@@ -38,8 +38,14 @@ jobs:
             ${{ runner.os }}-maven
 
       - name: Regular Build
+        if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -Possrh -Pcoverage-aggregate clean verify
+          ./mvnw -B -U -Pintegration-test clean verify
+
+      - name: Build with Coverage reports
+        if: matrix.sonar-enabled
+        run: |
+          ./mvnw -B -U -Possrh -Dcoverage clean verify
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
