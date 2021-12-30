@@ -583,7 +583,7 @@ public class JdbcTokenStore implements TokenStore {
      * be made to claim the token. If that succeeds the token will be returned. If the token is already owned by another node an {@link
      * UnableToClaimTokenException} will be thrown.
      * <p>
-     * If no such token exists yet, a new token entry will be inserted with {@code null} token owned by this node and return {@code null}.
+     * If no such token exists yet, a new token entry will be inserted with a {@code null} token, owned by this node, and this method returns {@code null}.
      * <p>
      * If a token has been claimed, the {@code segment} will be validated by checking the database for the split and merge candidate segments. If a concurrent
      * split or merge operation has been detected, the calim will be released and an {@link UnableToClaimTokenException} will be thrown.}
