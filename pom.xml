@@ -480,8 +480,7 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!--suppress MavenModelInspection -->
-                    <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
+                    <argLine>-Djava.awt.headless=true</argLine>
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
                         <log4j.version>${log4j.version}</log4j.version>
@@ -631,6 +630,14 @@
 
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
+                        </configuration>
+                    </plugin>
+
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
