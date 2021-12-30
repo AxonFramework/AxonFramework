@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonNonTransientException;
 
+import static java.lang.String.format;
+
 /**
  * Exception indicating a query for a single result was executed, but no handlers were found that could provide an
  * answer.
@@ -29,11 +31,28 @@ public class NoHandlerForQueryException extends AxonNonTransientException {
     private static final long serialVersionUID = 7525883085990429064L;
 
     /**
-     * Initialize the exception with given {@code message}
+     * Initialize this exception with the given {@code message}.
      *
-     * @param message The message explaining the context of the exception
+     * @param message the message describing the cause of the exception
      */
     public NoHandlerForQueryException(String message) {
         super(message);
+    }
+
+    /**
+     * Initialize this exception with a message describing the given {@link QueryMessage}. This constructor specifies in
+     * its message that missing parameters could be the culprit of finding a matching handler.
+     *
+     * @param query the {@link QueryMessage query} for which no handler was found
+     */
+    public NoHandlerForQueryException(QueryMessage<?, ?> query) {
+        super(format(
+                "No matching handler is available to handle query [%s] with response type [%s]. "
+                        + "To find a matching handler, note that the query handler's name should match the query's name, "
+                        + "the response, and all the parameters on the query handling method should be resolvable. "
+                        + "It is thus recommended to validate the name, response type, and parameters.",
+                query.getQueryName(),
+                query.getResponseType()
+        ));
     }
 }

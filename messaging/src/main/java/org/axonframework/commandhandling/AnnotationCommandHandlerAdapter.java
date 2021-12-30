@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -121,7 +120,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
                     .flatMap(Collection::stream)
                     .filter(ch -> ch.canHandle(command))
                     .findFirst()
-                    .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", command.getCommandName())))
+                    .orElseThrow(() -> new NoHandlerForCommandException(command))
                     .handle(command, target);
     }
 

@@ -409,10 +409,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        MessageHandlingMember<? super T> handler = inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                                                            .filter(mh -> mh.canHandle(commandMessage))
-                                                            .findFirst()
-                                                            .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandMessage.getCommandName())));
+        MessageHandlingMember<? super T> handler =
+                inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
+                         .filter(mh -> mh.canHandle(commandMessage))
+                         .findFirst()
+                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage));
 
         Object result;
         if (interceptors.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
                 }
             } else {
                 loggingCallback.onResult(interceptedCommand, asCommandResultMessage(new NoHandlerForCommandException(
-                        format("No node known to accept [%s]", interceptedCommand.getCommandName())
+                        format("No node known to accept command [%s].", interceptedCommand.getCommandName())
                 )));
             }
         } else {
@@ -190,7 +190,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
             }
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                    format("No node known to accept [%s]", interceptedCommand.getCommandName())
+                    format("No node known to accept command [%s].", interceptedCommand.getCommandName())
             );
             messageMonitorCallback.reportFailure(exception);
             callback.onResult(interceptedCommand, asCommandResultMessage(exception));
