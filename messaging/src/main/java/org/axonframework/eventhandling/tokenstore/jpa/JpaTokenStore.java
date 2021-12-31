@@ -324,7 +324,7 @@ public class JpaTokenStore implements TokenStore {
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
         TokenEntry mergeableSegment = entityManager //This segment should exist
                 .find(TokenEntry.class, new TokenEntry.PK(processorName, segment.mergeableSegmentId()), loadingLockMode);
-        if(mergeableSegment == null) {
+        if (mergeableSegment == null) {
             throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
                                                          processorName, segment.getSegmentId()));
         }
