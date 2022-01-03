@@ -1149,24 +1149,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 int waitTime = 1;
                 String processorName = TrackingEventProcessor.this.getName();
                 while (getState().isRunning()) {
+                    List<Segment> segmentsToClaim;
                     workLauncherRunning.set(true);
-                    int[] tokenStoreCurrentSegments;
-
                     try {
-                        tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                        int[] tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
                                 () -> tokenStore.fetchSegments(processorName)
                         );
 
                         // When in an initial stage, split segments to the requested number.
                         if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                            tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                            transactionManager.executeInTransaction(
                                     () -> {
                                         TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
                                         tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
-                                        return tokenStore.fetchSegments(processorName);
                                     }
                             );
                         }
+                        segmentsToClaim = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(processorName));
                         waitTime = 1;
                     } catch (Exception e) {
                         if (waitTime == 1) {
@@ -1187,15 +1186,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                     // Keep track of the last processed segments...
                     TrackingSegmentWorker workingInCurrentThread = null;
-                    for (int i = 0; i < tokenStoreCurrentSegments.length && availableThreads.get() > 0; i++) {
-                        int segmentId = tokenStoreCurrentSegments[i];
+                    for (int i = 0; i < segmentsToClaim.size() && availableThreads.get() > 0; i++) {
+                        Segment segment = segmentsToClaim.get(i);
+                        int segmentId = segment.getSegmentId();
 
                         if (!activeSegments.containsKey(segmentId) && canClaimSegment(segmentId)) {
                             try {
                                 transactionManager.executeInTransaction(() -> {
-                                    TrackingToken token = tokenStore.fetchToken(processorName, segmentId);
-                                    int[] segmentIds = tokenStore.fetchSegments(processorName);
-                                    Segment segment = Segment.computeSegment(segmentId, segmentIds);
+                                    TrackingToken token = tokenStore.fetchToken(processorName, segment);
                                     logger.info("Worker assigned to segment {} for processing", segment);
                                     TrackerStatus newStatus = new TrackerStatus(segment, token);
                                     TrackerStatus previousStatus = activeSegments.putIfAbsent(segmentId, newStatus);
@@ -1208,7 +1206,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 });
                             } catch (UnableToClaimTokenException ucte) {
                                 // When not able to claim a token for a given segment, we skip the
-                                logger.debug("Unable to claim the token for segment: {}. It is owned by another process",
+                                logger.debug("Unable to claim the token for segment: {}. It is owned by another process or has been split/merged concurrently",
                                              segmentId);
 
                                 TrackerStatus removedStatus = activeSegments.remove(segmentId);
