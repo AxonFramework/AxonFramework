@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  * @since 3.1
  */
 public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<?, ?>>,
-                                  MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
+        MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
 
     /**
      * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
@@ -143,8 +143,9 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <Q>              the payload type of the query
      * @param <I>              the response type of the query
      * @param <U>              the incremental response types of the query
-     * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
      * @return query result containing initial result and incremental updates
+     *
+     * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
@@ -181,12 +182,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
 
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {
-                return MonoWrapper.<QueryResponseMessage<I>>create(monoSinkWrapper -> query(query)
-                        .thenAccept(monoSinkWrapper::success)
-                        .exceptionally(t -> {
-                            monoSinkWrapper.error(t);
-                            return null;
-                        })).getMono();
+                return Mono.fromFuture(() -> query(query));
             }
 
             @Override
