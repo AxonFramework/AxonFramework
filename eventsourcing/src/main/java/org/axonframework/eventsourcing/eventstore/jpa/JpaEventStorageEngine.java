@@ -145,7 +145,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @return the message converted to a domain event message
      */
-    private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+    protected static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
         return event instanceof DomainEventMessage<?>
                ? (DomainEventMessage<T>) event
                : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
