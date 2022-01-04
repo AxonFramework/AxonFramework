@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Simple test class for AxonServerEEContainer.
+ *
+ * @author Lucas Campos
  */
 class AxonServerEEContainerTest {
 
@@ -50,12 +52,12 @@ class AxonServerEEContainerTest {
             assertTrue(axonServerEEContainer.isRunning());
             assertNotNull(axonServerEEContainer.getAxonServerAddress());
             assertNotNull(axonServerEEContainer.getGrpcPort());
-            assertNotNull(axonServerEEContainer.getIPAddress());
+            assertNotNull(axonServerEEContainer.getContainerIpAddress());
             assertEquals(2, axonServerEEContainer.getExposedPorts().size());
             assertEquals("axon-server-name", axonServerEEContainer.getEnvMap().get("AXONIQ_AXONSERVER_NAME"));
-            assertEquals("axon-server-internal-host-name", axonServerEEContainer.getEnvMap().get("AXONIQ_AXONSERVER_INTERNAL_HOSTNAME"));
+            assertEquals("axon-server-internal-host-name",
+                         axonServerEEContainer.getEnvMap().get("AXONIQ_AXONSERVER_INTERNAL_HOSTNAME"));
             assertEquals("axon-server-hostname", axonServerEEContainer.getEnvMap().get("AXONIQ_AXONSERVER_HOSTNAME"));
-
         }
     }
 }

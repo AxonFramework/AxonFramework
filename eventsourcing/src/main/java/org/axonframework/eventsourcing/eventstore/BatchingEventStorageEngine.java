@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * {@link AbstractEventStorageEngine} implementation that fetches events in batches from the backing database.
@@ -49,6 +51,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     private static final int DEFAULT_BATCH_SIZE = 100;
 
     private final int batchSize;
+    private final Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
 
     /**
      * Instantiate a {@link BatchingEventStorageEngine} based on the fields contained in the {@link Builder}.
@@ -61,6 +64,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     protected BatchingEventStorageEngine(Builder builder) {
         super(builder);
         this.batchSize = builder.batchSize;
+        this.finalAggregateBatchPredicate = getOrDefault(builder.finalAggregateBatchPredicate, this::defaultFinalAggregateBatchPredicate);
     }
 
     /**
@@ -74,6 +78,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * @param lastToken Object describing the global index of the last processed event or {@code null} to create a
      *                  stream of all events in the store
      * @param batchSize The maximum number of events that should be returned
+     *
      * @return A batch of tracked event messages stored since the given tracking token
      */
     protected abstract List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize);
@@ -86,11 +91,15 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * make sure the returned batch does not contain gaps between events due to uncommitted storage transactions.
      * <p/>
      * If the returned number of entries is smaller than the given {@code batchSize} it is assumed that the storage
-     * holds no further applicable entries.
+     * holds no further applicable entries. Implementations for which this is not always the case should override
+     * {@link #fetchForAggregateUntilEmpty()} to return {@code true} and preferably configure a better
+     * {@link Builder#finalAggregateBatchPredicate(Predicate)} to provide a better heuristic for detecting the last
+     * batch in a stream.
      *
      * @param aggregateIdentifier The identifier of the aggregate to open a stream for
      * @param firstSequenceNumber The sequence number of the first excepted event entry
      * @param batchSize           The maximum number of events that should be returned
+     *
      * @return a batch of serialized event entries for the given aggregate
      */
     protected abstract List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier,
@@ -108,12 +117,16 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         return false;
     }
 
+    private boolean defaultFinalAggregateBatchPredicate(List<? extends DomainEventData<?>> recentBatch) {
+        return fetchForAggregateUntilEmpty() ? recentBatch.isEmpty() : recentBatch.size() < batchSize;
+    }
+
     @Override
     protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
         EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchDomainEvents(identifier,
                                               lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                              batchSize), batchSize, fetchForAggregateUntilEmpty());
+                                              batchSize), finalAggregateBatchPredicate);
         return StreamSupport.stream(spliterator, false);
     }
 
@@ -126,7 +139,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
         EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
-                batchSize, true);
+                List::isEmpty);
         return StreamSupport.stream(spliterator, false);
     }
 
@@ -151,6 +164,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     public abstract static class Builder extends AbstractEventStorageEngine.Builder {
 
         private int batchSize = DEFAULT_BATCH_SIZE;
+        private Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
 
         @Override
         public BatchingEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
@@ -175,6 +189,21 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         @Override
         public BatchingEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
+            return this;
+        }
+
+        /**
+         * Defines the predicate to use to recognize the terminal batch when reading an event stream for an aggregate.
+         * The default behavior is implementation-specific.
+         *
+         * @param finalAggregateBatchPredicate The predicate that indicates whether a given batch is to be considered
+         *                                     the final batch of an event stream.
+         *
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public BatchingEventStorageEngine.Builder finalAggregateBatchPredicate(Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
+            BuilderUtils.assertNonNull(finalAggregateBatchPredicate, "The finalAggregateBatchPredicate must not be null");
+            this.finalAggregateBatchPredicate = finalAggregateBatchPredicate;
             return this;
         }
 
@@ -205,6 +234,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
          * will generally retrieve all events required to rebuild an aggregate's state.
          *
          * @param batchSize an {@code int} specifying the number of events that should be read at each database access
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder batchSize(int batchSize) {
@@ -228,35 +258,34 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final Function<T, List<? extends T>> fetchFunction;
-        private final int batchSize;
-        private final boolean fetchUntilEmpty;
+        private final Predicate<List<? extends T>> finalBatchPredicate;
 
         private Iterator<? extends T> iterator;
         private T lastItem;
-        private int sizeOfLastBatch;
+        private boolean lastBatchFound;
 
         private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                       int batchSize,
-                                       boolean fetchUntilEmpty) {
+                                       Predicate<List<? extends T>> finalBatchPredicate) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
-            this.batchSize = batchSize;
-            this.fetchUntilEmpty = fetchUntilEmpty;
+            this.finalBatchPredicate = finalBatchPredicate;
         }
 
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
             Objects.requireNonNull(action);
             if (iterator == null || !iterator.hasNext()) {
-                if (iterator != null && batchSize > sizeOfLastBatch && !fetchUntilEmpty) {
+                if (lastBatchFound) {
                     return false;
                 }
                 List<? extends T> items = fetchFunction.apply(lastItem);
+                lastBatchFound = finalBatchPredicate.test(items);
                 iterator = items.iterator();
-                if ((sizeOfLastBatch = items.size()) == 0) {
-                    return false;
-                }
             }
+            if (!iterator.hasNext()) {
+                return false;
+            }
+
             action.accept(lastItem = iterator.next());
             return true;
         }

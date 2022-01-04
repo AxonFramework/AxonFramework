@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,9 +111,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message))
                      .findFirst()
-                     .orElseThrow(() -> new NoHandlerForQueryException(
-                             "No suitable handler was found for the query of type " + message.getPayloadType().getName()
-                     ));
+                     .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
                     .handle(message, target, handler);

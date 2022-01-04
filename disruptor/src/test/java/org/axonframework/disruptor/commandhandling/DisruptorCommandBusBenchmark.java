@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,23 @@
 package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Registration;
 import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +46,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Benchmark approach for the {@link DisruptorCommandBus}.
+ *
  * @author Allard Buijze
  */
 public class DisruptorCommandBusBenchmark {
@@ -69,11 +71,13 @@ public class DisruptorCommandBusBenchmark {
         }
         System.out.println("Finished dispatching!");
 
+        //noinspection ResultOfMethodCallIgnored
         eventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         try {
             assertEquals(COMMAND_COUNT,
-                         eventStore.readEvents(aggregateIdentifier).asStream().count(), "Seems that some events are not stored");
+                         eventStore.readEvents(aggregateIdentifier).asStream().count(),
+                         "Seems that some events are not stored");
             System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
         } finally {
             commandBus.stop();
@@ -82,7 +86,7 @@ public class DisruptorCommandBusBenchmark {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new HashMap<>();
+        private final Map<String, DomainEventMessage<?>> storedEvents = new HashMap<>();
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
@@ -140,7 +144,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @EventSourcingHandler
-        protected void handle(EventMessage event) {
+        protected void handle(EventMessage<?> event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
     }
@@ -148,7 +152,7 @@ public class DisruptorCommandBusBenchmark {
     private static class StubCommand {
 
         @TargetAggregateIdentifier
-        private String aggregateIdentifier;
+        private final String aggregateIdentifier;
 
         public StubCommand(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;

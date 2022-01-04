@@ -35,7 +35,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.Distributed;
@@ -64,7 +64,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, LifecycleAware {
+public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

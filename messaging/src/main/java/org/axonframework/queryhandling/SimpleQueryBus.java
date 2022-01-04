@@ -454,7 +454,7 @@ public class SimpleQueryBus implements QueryBus {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

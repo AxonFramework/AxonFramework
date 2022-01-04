@@ -21,7 +21,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
@@ -45,7 +45,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor extends AbstractEventProcessor implements LifecycleAware {
+public class SubscribingEventProcessor extends AbstractEventProcessor implements Lifecycle {
 
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
