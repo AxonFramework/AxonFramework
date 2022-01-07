@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,11 @@ class WorkPackage {
      * @return {@code true} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}
      */
     public boolean scheduleEvent(TrackedEventMessage<?> event) {
-        if (lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken())) {
+        if (shouldNotSchedule(event)) {
+            logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
+                                 + "The last token [{}] covers event's token [{}].",
+                         event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId(),
+                         lastDeliveredToken, event.trackingToken());
             return false;
         }
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
@@ -145,6 +149,27 @@ class WorkPackage {
         scheduleWorker();
 
         return canHandle;
+    }
+
+    /**
+     * The given {@code event} should not be scheduled if:
+     * <ol>
+     *     <li>The {@link TrackedEventMessage#trackingToken()} {@link TrackingToken#covers(TrackingToken)} the last delivered token, and</li>
+     *     <li>if the last delivered token does not equal the given {@code event's} token.</li>
+     * </ol>
+     * <p>
+     * The first validation ensures events that this work package already covered are ignored. The second validation
+     * ensures that subsequent events with the exact same token <b>are</b> included. The last step is necessary to
+     * include events that are the result of a one-to-many upcaster.
+     *
+     * @param event The event to validate whether it should be scheduled yes or no.
+     * @return {@code true} if the given {@code event} should not be scheduled, {@code false} otherwise.
+     */
+    private boolean shouldNotSchedule(TrackedEventMessage<?> event) {
+        // Null check is done to solve potential NullPointerException.
+        return lastDeliveredToken != null
+                && lastDeliveredToken.covers(event.trackingToken())
+                && !lastDeliveredToken.equals(event.trackingToken());
     }
 
     private boolean canHandle(TrackedEventMessage<?> event) {

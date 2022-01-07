@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1540,7 +1540,7 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow up from issue https://github.com/AxonIQ/axon-server-se/issues/135
+     * This test is a follow-up from issue https://github.com/AxonIQ/axon-server-se/issues/135
      */
     @Test
     @Timeout(value = 10)
@@ -1557,7 +1557,7 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
+     * This test is a follow-up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
     void testThrownErrorBubblesUp() {

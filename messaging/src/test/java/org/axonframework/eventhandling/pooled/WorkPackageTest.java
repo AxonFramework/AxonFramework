@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -96,13 +112,20 @@ class WorkPackageTest {
         }
     }
 
+    /**
+     * The "last delivered token" is configured as the initialToken for a fresh WorkPackage.
+     */
     @Test
-    void testScheduleEventDoesNotScheduleAnythingIfTheEventsTokenIsAlreadyCovered() {
+    void testScheduleEventDoesNotScheduleIfTheLastDeliveredTokenCoversAndDoesNotEqualTheEventsToken() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
-                initialTrackingToken, GenericEventMessage.asEventMessage("some-event")
+                new GlobalSequenceTrackingToken(1L), GenericEventMessage.asEventMessage("some-event")
         );
 
-        testSubject.scheduleEvent(testEvent);
+        WorkPackage testSubjectWithCustomInitialToken =
+                testSubjectBuilder.initialToken(new GlobalSequenceTrackingToken(2L))
+                                  .build();
+
+        testSubjectWithCustomInitialToken.scheduleEvent(testEvent);
 
         verifyNoInteractions(executorService);
     }
@@ -194,6 +217,35 @@ class WorkPackageTest {
         OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());
+    }
+
+    /**
+     * The "last delivered token" is configured as the initialToken for a fresh WorkPackage.
+     */
+    @Test
+    void testScheduleEventIsScheduledIfTheLastDeliveredTokenEqualsTheEventsToken() {
+        TrackedEventMessage<String> expectedEvent = new GenericTrackedEventMessage<>(
+                initialTrackingToken, GenericEventMessage.asEventMessage("some-event")
+        );
+
+        testSubject.scheduleEvent(expectedEvent);
+
+        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
+        assertEquals(expectedEvent, validatedEvents.get(0));
+
+        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        assertEquals(expectedEvent, processedEvents.get(0));
+
+        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        assertEquals(initialTrackingToken, tokenCaptor.getValue());
+
+        assertEquals(1, trackerStatusUpdates.size());
+        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+        assertTrue(resultPosition.isPresent());
+        assertEquals(0L, resultPosition.getAsLong());
     }
 
     @Test

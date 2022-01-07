@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -781,19 +781,16 @@ class Coordinator {
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
-
-                boolean anyScheduled = false;
-                for (WorkPackage workPackage : workPackages.values()) {
-                    boolean scheduled = workPackage.scheduleEvent(event);
-                    anyScheduled = anyScheduled || scheduled;
-                }
-                if (!anyScheduled) {
-                    ignoredMessageHandler.accept(event);
-                    if (!eventFilter.canHandleTypeOf(event)) {
-                        eventStream.skipMessagesWithPayloadTypeOf(event);
-                    }
-                }
+                offerEventToWorkPackages(event);
                 lastScheduledToken = event.trackingToken();
+
+                // Make sure all subsequent events with the same token as the last are added as well.
+                // These are the result of upcasting and should always be processed in the same batch.
+                while (eventStream.peek()
+                                  .filter(e -> lastScheduledToken.equals(e.trackingToken()))
+                                  .isPresent()) {
+                    offerEventToWorkPackages(eventStream.nextAvailable());
+                }
             }
 
             // If a work package has been aborted by something else than the Coordinator. We should abandon it.
@@ -804,6 +801,20 @@ class Coordinator {
             // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
             workPackages.values()
                         .forEach(WorkPackage::scheduleWorker);
+        }
+
+        private void offerEventToWorkPackages(TrackedEventMessage<?> event) {
+            boolean anyScheduled = false;
+            for (WorkPackage workPackage : workPackages.values()) {
+                boolean scheduled = workPackage.scheduleEvent(event);
+                anyScheduled = anyScheduled || scheduled;
+            }
+            if (!anyScheduled) {
+                ignoredMessageHandler.accept(event);
+                if (!eventFilter.canHandleTypeOf(event)) {
+                    eventStream.skipMessagesWithPayloadTypeOf(event);
+                }
+            }
         }
 
         private void scheduleImmediateCoordinationTask() {
