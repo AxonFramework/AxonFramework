@@ -40,19 +40,26 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
     private final EventHandlerInvoker delegate;
     private final DeadLetterQueue<EventMessage<?>> queue;
     private final String processingGroup;
+    private final boolean allowReset;
 
     /**
-     * @param builder
+     * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
+     * {@link DeadLetterQueue} to maintain and retrieve dead-letters from.
+     *
+     * @param builder The {@link Builder} used to instantiate a {@link DeadLetteringEventHandlerInvoker} instance.
      */
     protected DeadLetteringEventHandlerInvoker(Builder builder) {
         builder.validate();
         this.delegate = builder.delegate;
         this.queue = builder.queue;
         this.processingGroup = builder.processingGroup;
+        this.allowReset = builder.allowReset;
     }
 
     /**
-     * @return
+     * Instantiate a builder to construct a {@link DeadLetteringEventHandlerInvoker}.
+     *
+     * @return A builder that can consturct a {@link DeadLetteringEventHandlerInvoker}.
      */
     public static Builder builder() {
         return new Builder();
@@ -98,11 +105,17 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
+        if (allowReset) {
+            queue.clear(processingGroup);
+        }
         delegate.performReset();
     }
 
     @Override
     public <R> void performReset(R resetContext) {
+        if (allowReset) {
+            queue.clear(processingGroup);
+        }
         delegate.performReset(resetContext);
     }
 
@@ -119,10 +132,15 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         private EventHandlerInvoker delegate;
         private DeadLetterQueue<EventMessage<?>> queue;
         private String processingGroup;
+        private boolean allowReset = false;
 
         /**
-         * @param delegate
-         * @return
+         * The {@link EventHandlerInvoker} wrapped by this dead-lettering implementation. Operations {@link
+         * #canHandle(EventMessage, Segment)}, {@link #canHandleType(Class)}, {@link #supportsReset()} and {@link
+         * #sequenceIdentifier(EventMessage)} are completely taken care of by the given {@code delegate}.
+         *
+         * @param delegate The {@link EventHandlerInvoker} instance to delegate operations to.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder delegate(EventHandlerInvoker delegate) {
             assertNonNull(delegate, "The delegate EventHandlerInvoker may not be null");
@@ -131,8 +149,10 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * @param queue
-         * @return
+         * Sets the {@link DeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
+         *
+         * @param queue The {@link DeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder queue(DeadLetterQueue<EventMessage<?>> queue) {
             assertNonNull(queue, "The DeadLetterQueue may not be null");
@@ -141,10 +161,10 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Sets the name of this invoker.
+         * Sets the processing group name of this invoker.
          *
-         * @param processingGroup the name of this {@link EventHandlerInvoker}
-         * @return the current Builder instance, for fluent interfacing
+         * @param processingGroup The processing group name of this {@link EventHandlerInvoker}.
+         * @return The current Builder instance, for fluent interfacing.
          */
         public Builder processingGroup(String processingGroup) {
             assertNonEmpty(processingGroup, "The processing group may not be null or empty");
@@ -153,17 +173,33 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * @return
+         * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided {@link
+         * DeadLetterQueue}. If set to {@code true}, {@link DeadLetterQueue#clear(String)} will be invoked upon a {@link
+         * #performReset()}/{@link #performReset(Object)} invocation. Defaults to {@code false}.
+         *
+         * @param allowReset A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports resets of
+         *                   the provided {@link DeadLetterQueue}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder allowReset(boolean allowReset) {
+            this.allowReset = allowReset;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DeadLetteringEventHandlerInvoker} as specified through this Builder.
+         *
+         * @return A {@link DeadLetteringEventHandlerInvoker} as specified through this Builder.
          */
         public DeadLetteringEventHandlerInvoker build() {
             return new DeadLetteringEventHandlerInvoker(this);
         }
 
         /**
-         * Validates whether the fields contained in this Builder are set accordingly.
+         * Validate whether the fields contained in this Builder as set accordingly.
          *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
+         * @throws AxonConfigurationException If one field is asserted to be incorrect according to the Builder's
+         *                                    specifications.
          */
         protected void validate() {
             assertNonNull(delegate, "The delegate EventHandlerInvoker is a hard requirement and should be provided");

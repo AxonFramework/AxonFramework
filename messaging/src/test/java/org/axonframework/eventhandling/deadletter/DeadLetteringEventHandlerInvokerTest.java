@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -55,11 +56,26 @@ class DeadLetteringEventHandlerInvokerTest {
         //noinspection unchecked
         queue = mock(DeadLetterQueue.class);
 
-        testSubject = DeadLetteringEventHandlerInvoker.builder()
-                                                      .delegate(delegate)
-                                                      .queue(queue)
-                                                      .processingGroup(TEST_PROCESSING_GROUP)
-                                                      .build();
+        setTestSubject(createTestSubject());
+    }
+
+    private void setTestSubject(DeadLetteringEventHandlerInvoker testSubject) {
+        this.testSubject = testSubject;
+    }
+
+    private DeadLetteringEventHandlerInvoker createTestSubject() {
+        return createTestSubject(builder -> builder);
+    }
+
+    private DeadLetteringEventHandlerInvoker createTestSubject(
+            UnaryOperator<DeadLetteringEventHandlerInvoker.Builder> customization
+    ) {
+        DeadLetteringEventHandlerInvoker.Builder invokerBuilder =
+                DeadLetteringEventHandlerInvoker.builder()
+                                                .delegate(delegate)
+                                                .queue(queue)
+                                                .processingGroup(TEST_PROCESSING_GROUP);
+        return customization.apply(invokerBuilder).build();
     }
 
     @Test
@@ -130,18 +146,46 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetIsDelegated() {
+    void testPerformResetOnlyDelegatesForAllowResetSetToFalse() {
+        setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
+
         testSubject.performReset();
 
+        verifyNoInteractions(queue);
         verify(delegate).performReset();
     }
 
     @Test
-    void testPerformResetWithContextIsDelegated() {
+    void testPerformResetClearsOutTheQueueForAllowResetSetToTrue() {
+        setTestSubject(createTestSubject(builder -> builder.allowReset(true)));
+
+        testSubject.performReset();
+
+        verify(queue).clear(TEST_PROCESSING_GROUP);
+        verify(delegate).performReset();
+    }
+
+    @Test
+    void testPerformResetWithContextOnlyDelegatesForAllowResetSetToFalse() {
+        setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
+
         String testContext = "some-reset-context";
 
         testSubject.performReset(testContext);
 
+        verifyNoInteractions(queue);
+        verify(delegate).performReset(testContext);
+    }
+
+    @Test
+    void testPerformResetWithContextClearsOutTheQueueForAllowResetSetToTrue() {
+        setTestSubject(createTestSubject(builder -> builder.allowReset(true)));
+
+        String testContext = "some-reset-context";
+
+        testSubject.performReset(testContext);
+
+        verify(queue).clear(TEST_PROCESSING_GROUP);
         verify(delegate).performReset(testContext);
     }
 
