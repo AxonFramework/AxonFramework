@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 class ResultValidatorImplTest {
 
     @Mock
-    private StubDeadlineManager stubDeadlineManager;
+    private StubDeadlineManager deadlineManager;
     private ResultValidator<?> validator;
 
     private final Instant deadlineWindowFrom = Instant.now();
@@ -56,7 +56,7 @@ class ResultValidatorImplTest {
         validator = new ResultValidatorImpl<>(actualEvents(),
                                               AllFieldsFilter.instance(),
                                               () -> null,
-                                              stubDeadlineManager);
+                                              deadlineManager);
     }
 
     @Test
@@ -99,21 +99,21 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineMatchingInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
     }
 
     @Test
     void noDeadlineMatchingInTimeframeWithDeadlineAtFrom() {
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowFrom)));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowFrom)));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
     }
 
     @Test
     void noDeadlineMatchingInTimeframeWithDeadlineAtTo() {
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowTo)));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowTo)));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
     }
@@ -122,7 +122,7 @@ class ResultValidatorImplTest {
     void noDeadlineMatchingInTimeframeWithDeadlinesOutsideWindow() {
         ScheduledDeadlineInfo deadlineBefore = createDeadline(deadlineWindowFrom.minus(1, ChronoUnit.DAYS));
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
         validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything());
     }
@@ -131,7 +131,7 @@ class ResultValidatorImplTest {
     void noDeadlineInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class,
                      () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
@@ -140,7 +140,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class,
                      () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
@@ -149,7 +149,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtTo() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class,
                      () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
@@ -159,7 +159,7 @@ class ResultValidatorImplTest {
     void noDeadlineInTimeframeWithDeadlinesOutsideWindow() {
         ScheduledDeadlineInfo deadlineBefore = createDeadline(deadlineWindowFrom.minus(1, ChronoUnit.DAYS));
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
         validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineBefore.deadlineMessage().getPayload());
         validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineAfter.deadlineMessage().getPayload());
@@ -169,7 +169,7 @@ class ResultValidatorImplTest {
     void noDeadlineOfTypeInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
     }
@@ -177,7 +177,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineOfTypeInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
     }
@@ -185,7 +185,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineOfTypeInTimeframeWithDeadlineAtTo() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
     }
@@ -194,7 +194,7 @@ class ResultValidatorImplTest {
     void noDeadlineOfTypeInTimeframeWithDeadlinesOutsideWindow() {
         ScheduledDeadlineInfo deadlineBefore = createDeadline(deadlineWindowFrom.minus(1, ChronoUnit.DAYS));
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
         validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class);
     }
@@ -203,7 +203,7 @@ class ResultValidatorImplTest {
     void noDeadlineWithNameInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
     }
@@ -211,7 +211,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineWithNameInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
     }
@@ -219,7 +219,7 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineWithNameInTimeframeWithDeadlineAtTo() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
     }
@@ -228,7 +228,7 @@ class ResultValidatorImplTest {
     void noDeadlineWithNameInTimeframeWithDeadlinesOutsideWindow() {
         ScheduledDeadlineInfo deadlineBefore = createDeadline(deadlineWindowFrom.minus(1, ChronoUnit.DAYS));
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
-        when(stubDeadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
         validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName");
     }
