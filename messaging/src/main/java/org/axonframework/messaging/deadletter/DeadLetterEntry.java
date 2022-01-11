@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,46 +21,68 @@ import org.axonframework.messaging.Message;
 import java.time.Instant;
 
 /**
+ * Entry describing a dead-lettered {@link Message}.
+ * <p>
+ * The time of storing the {@link #message()} is kept through {@link #deadLettered()}. This letter can be regarded for
+ * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the entry can be cleared through
+ * {@link #release()}.
+ *
+ * @param <T> The type of {@link Message} represented by this entry.
  * @author Steven van Beelen
  * @since 4.6.0
  */
 public interface DeadLetterEntry<T extends Message<?>> {
 
     /**
+     * The {@link QueueIdentifier} this dead-letter belongs to.
      *
-     * @return
+     * @return The {@link QueueIdentifier} this dead-letter belongs to
      */
-    String identifier();
+    QueueIdentifier queueIdentifier();
 
     /**
+     * The {@link Message} of type {@code T} contained in this entry.
      *
-     * @return
-     */
-    String group();
-
-    /**
-     *
-     * @return
+     * @return The {@link Message} of type {@code T} contained in this entry.
      */
     T message();
 
+    /**
+     * The cause for the {@link #message()} to be dead-lettered.
+     *
+     * @return The cause for the {@link #message()} to be dead-lettered
+     */
     Throwable cause();
 
-    Instant expiresAt();
-
     /**
+     * The moment in time when the {@link #message()} was dead-lettered.
      *
-     * @return
+     * @return The moment in time when the {@link #message()} was dead-lettered.
      */
     Instant deadLettered();
 
     /**
+     * The moment in time when this letter may be evaluated.
      *
-     * @param one
-     * @param two
-     * @return
+     * @return The moment in time when this letter may be evaluated.
      */
-    static int compare(DeadLetterEntry<?> one, DeadLetterEntry<?> two) {
-        return one.deadLettered().compareTo(two.deadLettered());
+    Instant expiresAt();
+
+    /**
+     * Marks this {@link DeadLetterEntry dead-letter} as successfully evaluated. This will remove the entry from its
+     * queue.
+     */
+    void release();
+
+    /**
+     * Compares two {@link DeadLetterEntry dead-letters} with one another, based on when they {@link #expiresAt()}.
+     *
+     * @param first  The first {@link DeadLetterEntry dead-letter} to compare with.
+     * @param second The second {@link DeadLetterEntry dead-letter} to compare with.
+     * @return The result of {@link Instant#compareTo(Instant)} between the {@code first} and {@code second} {@link
+     * DeadLetterEntry dead-letter}.
+     */
+    static int compare(DeadLetterEntry<?> first, DeadLetterEntry<?> second) {
+        return first.expiresAt().compareTo(second.expiresAt());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package org.axonframework.eventhandling.deadletter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.QueueIdentifier;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * @author Steven van Beelen
@@ -31,70 +33,70 @@ public class GenericEventDeadLetter implements DeadLetterEntry<EventMessage<?>> 
 
     public static final Throwable SEQUENCED_DEAD_LETTER = null;
 
-    private final String identifier;
-    private final String group;
+    private final QueueIdentifier queueIdentifier;
     private final EventMessage<?> deadLetter;
     private final Throwable failure;
-    private final Instant expiresAt;
     private final Instant deadLettered;
+    private final Instant expiresAt;
+    private final Consumer<GenericEventDeadLetter> releaseOperation;
 
-    public GenericEventDeadLetter(String identifier,
-                                  String group,
+    public GenericEventDeadLetter(QueueIdentifier queueIdentifier,
                                   EventMessage<?> deadLetter,
-                                  Instant expiresAt) {
-        this(identifier, group, deadLetter, SEQUENCED_DEAD_LETTER, expiresAt);
+                                  Instant expiresAt,
+                                  Consumer<GenericEventDeadLetter> releaseOperation) {
+        this(queueIdentifier, deadLetter, SEQUENCED_DEAD_LETTER, expiresAt, releaseOperation);
     }
 
-    public GenericEventDeadLetter(String identifier,
-                                  String group,
-                                  EventMessage<?> deadLetter,
-                                  Throwable failure,
-                                  Instant expiresAt) {
-        this(identifier, group, deadLetter, failure, expiresAt, GenericEventMessage.clock.instant());
-    }
-
-    public GenericEventDeadLetter(String identifier,
-                                  String group,
+    public GenericEventDeadLetter(QueueIdentifier queueIdentifier,
                                   EventMessage<?> deadLetter,
                                   Throwable failure,
                                   Instant expiresAt,
-                                  Instant deadLettered) {
-        this.identifier = identifier;
-        this.group = group;
+                                  Consumer<GenericEventDeadLetter> releaseOperation) {
+        this(queueIdentifier, deadLetter, failure, GenericEventMessage.clock.instant(), expiresAt, releaseOperation);
+    }
+
+    public GenericEventDeadLetter(QueueIdentifier queueIdentifier,
+                                  EventMessage<?> deadLetter,
+                                  Throwable failure,
+                                  Instant deadLettered,
+                                  Instant expiresAt,
+                                  Consumer<GenericEventDeadLetter> releaseOperation) {
+        this.queueIdentifier = queueIdentifier;
         this.deadLetter = deadLetter;
         this.failure = failure;
-        this.expiresAt = expiresAt;
         this.deadLettered = deadLettered;
+        this.expiresAt = expiresAt;
+        this.releaseOperation = releaseOperation;
     }
 
     @Override
-    public String identifier() {
-        return identifier;
-    }
-
-    @Override
-    public String group() {
-        return group;
+    public QueueIdentifier queueIdentifier() {
+        return this.queueIdentifier;
     }
 
     @Override
     public EventMessage<?> message() {
-        return deadLetter;
+        return this.deadLetter;
     }
 
     @Override
     public Throwable cause() {
-        return failure;
-    }
-
-    @Override
-    public Instant expiresAt() {
-        return expiresAt;
+        return this.failure;
     }
 
     @Override
     public Instant deadLettered() {
-        return deadLettered;
+        return this.deadLettered;
+    }
+
+    @Override
+    public Instant expiresAt() {
+        return this.expiresAt;
+    }
+
+    @Override
+    public void release() {
+        releaseOperation.accept(this);
     }
 
     @Override
@@ -106,28 +108,26 @@ public class GenericEventDeadLetter implements DeadLetterEntry<EventMessage<?>> 
             return false;
         }
         GenericEventDeadLetter that = (GenericEventDeadLetter) o;
-        return Objects.equals(identifier, that.identifier)
-                && Objects.equals(group, that.group)
+        return Objects.equals(queueIdentifier, that.queueIdentifier)
                 && Objects.equals(deadLetter, that.deadLetter)
                 && Objects.equals(failure, that.failure)
-                && Objects.equals(expiresAt, that.expiresAt)
-                && Objects.equals(deadLettered, that.deadLettered);
+                && Objects.equals(deadLettered, that.deadLettered)
+                && Objects.equals(expiresAt, that.expiresAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(identifier, group, deadLetter, failure, expiresAt, deadLettered);
+        return Objects.hash(queueIdentifier, deadLetter, failure, deadLettered, expiresAt);
     }
 
     @Override
     public String toString() {
         return "GenericEventDeadLetter{" +
-                "identifier='" + identifier + '\'' +
-                ", group='" + group + '\'' +
+                "queueIdentifier=" + queueIdentifier +
                 ", deadLetter=" + deadLetter +
                 ", failure=" + failure +
-                ", expiresAt=" + expiresAt +
                 ", deadLettered=" + deadLettered +
+                ", expiresAt=" + expiresAt +
                 '}';
     }
 }

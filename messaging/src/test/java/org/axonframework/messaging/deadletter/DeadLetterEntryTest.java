@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,18 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Test class validating the common functionality of the {@link DeadLetterEntry}.
+ *
+ * @author Steven van Beelen
+ */
 class DeadLetterEntryTest {
 
     @Test
@@ -64,13 +70,8 @@ class DeadLetterEntryTest {
         }
 
         @Override
-        public String identifier() {
-            return "some-identifier";
-        }
-
-        @Override
-        public String group() {
-            return "some-group";
+        public QueueIdentifier queueIdentifier() {
+            return StaticQueueIdentifier.INSTANCE;
         }
 
         @Override
@@ -91,6 +92,26 @@ class DeadLetterEntryTest {
         @Override
         public Instant deadLettered() {
             return deadLettered;
+        }
+
+        @Override
+        public void release() {
+
+        }
+
+        private static class StaticQueueIdentifier implements QueueIdentifier {
+
+            private static final StaticQueueIdentifier INSTANCE = new StaticQueueIdentifier();
+
+            @Override
+            public Object identifier() {
+                return "some-identifier";
+            }
+
+            @Override
+            public String group() {
+                return "some-group";
+            }
         }
     }
 }

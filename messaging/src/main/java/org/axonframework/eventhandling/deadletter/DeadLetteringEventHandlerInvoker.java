@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,9 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        String sequenceIdentifier = Integer.toString(delegate.sequenceIdentifier(message).hashCode());
-        if (queue.enqueueIfPresent(sequenceIdentifier, processingGroup, message)) {
+        String sequenceIdentifier = Integer.toString(Objects.hashCode(delegate.sequenceIdentifier(message)));
+        EventHandlingQueueIdentifier identifier = new EventHandlingQueueIdentifier(sequenceIdentifier, processingGroup);
+        if (queue.enqueueIfPresent(identifier, message).isPresent()) {
             logger.info(
                     "Event [{}] is added to the dead-letter queue since its processing id [{}-{}] was already present.",
                     message, sequenceIdentifier, processingGroup
@@ -85,7 +86,7 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
                 //  It is mandatory to rethrow the exception, as otherwise the message isn't enqueued.
                 delegate.handle(message, segment);
             } catch (Exception e) {
-                queue.enqueue(sequenceIdentifier, processingGroup, message, e);
+                queue.enqueue(identifier, message, e);
             }
         }
     }

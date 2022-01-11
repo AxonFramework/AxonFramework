@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.deadletter.EventHandlingQueueIdentifier;
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,11 +34,20 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventMessage<?>> {
+class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueueIdentifier, EventMessage<?>> {
+
+    private static final long EXPIRE_THRESHOLD = 5000L;
 
     @Override
     DeadLetterQueue<EventMessage<?>> buildTestSubject() {
-        return InMemoryDeadLetterQueue.defaultQueue();
+        return InMemoryDeadLetterQueue.<EventMessage<?>>builder()
+                                      .expireThreshold(EXPIRE_THRESHOLD)
+                                      .build();
+    }
+
+    @Override
+    EventHandlingQueueIdentifier generateQueueId() {
+        return new EventHandlingQueueIdentifier(generateId(), generateId());
     }
 
     @Override
@@ -42,14 +55,86 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventMessage<?>> {
         return GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
     }
 
+    @Override
+    void setClock(Clock clock) {
+        InMemoryDeadLetterQueue.clock = clock;
+    }
+
+    @Override
+    long expireThreshold() {
+        return EXPIRE_THRESHOLD;
+    }
+
     @Test
-    void testMaxSize() {
-        int expectedMaxEntries = 128;
+    void testMaxQueues() {
+        int expectedMaxQueues = 128;
 
         InMemoryDeadLetterQueue<Message<?>> testSubject = InMemoryDeadLetterQueue.builder()
-                                                                                 .maxEntries(expectedMaxEntries)
+                                                                                 .maxQueues(expectedMaxQueues)
                                                                                  .build();
 
-        assertEquals(expectedMaxEntries, testSubject.maxSize());
+        assertEquals(expectedMaxQueues, testSubject.maxQueues());
+    }
+
+    @Test
+    void testMaxQueueSize() {
+        int expectedMaxQueueSize = 128;
+
+        InMemoryDeadLetterQueue<Message<?>> testSubject = InMemoryDeadLetterQueue.builder()
+                                                                                 .maxQueueSize(expectedMaxQueueSize)
+                                                                                 .build();
+
+        assertEquals(expectedMaxQueueSize, testSubject.maxQueueSize());
+    }
+
+    @Test
+    void testBuildDefaultQueue() {
+        assertDoesNotThrow(() -> InMemoryDeadLetterQueue.defaultQueue());
+    }
+
+    @Test
+    void testBuildWithNegativeMaxQueuesThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxQueues(-1));
+    }
+
+    @Test
+    void testBuildWithValueLowerThanMinimumMaxQueuesThrowsAxonConfigurationException() {
+        IntStream.range(0, 127).forEach(i -> {
+            InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxQueues(i));
+        });
+    }
+
+    @Test
+    void testBuildWithNegativeMaxQueueSizeThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxQueueSize(-1));
+    }
+
+    @Test
+    void testBuildWithValueLowerThanMinimumMaxQueueSizeThrowsAxonConfigurationException() {
+        IntStream.range(0, 127).forEach(i -> {
+            InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxQueueSize(i));
+        });
+    }
+
+    @Test
+    void testBuildWithNegativeExpireThresholdThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(-1));
+    }
+
+    @Test
+    void testBuildWithZeroExpireThresholdThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(0));
     }
 }

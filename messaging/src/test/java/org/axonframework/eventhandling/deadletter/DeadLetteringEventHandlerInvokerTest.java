@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,12 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.messaging.deadletter.DeadLetterEntry;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -36,6 +40,8 @@ class DeadLetteringEventHandlerInvokerTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
     private static final String TEST_SEQUENCE_ID = "my-sequence";
+    private static final EventHandlingQueueIdentifier TEST_QUEUE_ID =
+            new EventHandlingQueueIdentifier(TEST_SEQUENCE_ID, TEST_PROCESSING_GROUP);
     private static final EventMessage<Object> TEST_EVENT = GenericEventMessage.asEventMessage("some-payload");
 
     private EventHandlerInvoker delegate;
@@ -59,12 +65,12 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void testHandleHandlesEventJustFine() throws Exception {
         when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
-        when(queue.enqueueIfPresent(any(), any(), any())).thenReturn(false);
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
-        verify(queue, never()).enqueue(any(), any(), eq(TEST_EVENT), any());
+        verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
     }
 
     @Test
@@ -73,25 +79,24 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
         doThrow(testCause).when(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
-        when(queue.enqueueIfPresent(any(), any(), any())).thenReturn(false);
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
-        verify(queue).enqueue(
-                Integer.toString(TEST_SEQUENCE_ID.hashCode()), TEST_PROCESSING_GROUP, TEST_EVENT, testCause
-        );
+        verify(queue).enqueue(TEST_QUEUE_ID, TEST_EVENT, testCause);
     }
 
     @Test
     void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
         when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
-        when(queue.enqueueIfPresent(any(), any(), any())).thenReturn(true);
+        //noinspection unchecked
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.of(mock(DeadLetterEntry.class)));
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(delegate, never()).handle(any(), any());
-        verify(queue, never()).enqueue(any(), any(), eq(TEST_EVENT), any());
+        verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
     }
 
     @Test
@@ -205,5 +210,12 @@ class DeadLetteringEventHandlerInvokerTest {
                                                 .queue(queue);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullExecutorThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.executorService(null));
     }
 }
