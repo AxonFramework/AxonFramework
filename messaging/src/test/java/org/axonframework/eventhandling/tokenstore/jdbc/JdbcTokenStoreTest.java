@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
@@ -45,6 +46,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -118,6 +120,70 @@ class JdbcTokenStoreTest {
 
     @Transactional
     @Test
+    void testFetchTokenBySegment() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 2));
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", segmentToFetch)));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", segmentToFetch)));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMerge() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMergeSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1));
+        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplit() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 4));
+        //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplitSegment0() {
+        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 2));
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> tokenStore.fetchToken("test", segmentToFetch))
+        );
+    }
+
+    @Transactional
+    @Test
     void testInitializeTokens() {
         tokenStore.initializeTokenSegments("test1", 7);
 
@@ -150,6 +216,48 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void testQuerySegments() {
+        prepareTokenStore();
+
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc1");
+            assertThat(segments.length, is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc2");
+            assertThat(segments.length, is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final int[] segments = tokenStore.fetchSegments("proc3");
+            assertThat(segments.length, is(0));
+        });
+    }
+
+    @Transactional
+    @Test
+    void testQueryAvailableSegments() {
+        prepareTokenStore();
+
+        transactionManager.executeInTransaction(() -> {
+            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segments.size(), is(0));
+            tokenStore.releaseClaim("proc1", 0);
+            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segmentsAfterRelease.size(), is(1));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segments.size(), is(1));
+            tokenStore.releaseClaim("proc2", 1);
+            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segmentsAfterRelease.size(), is(2));
+        });
+        transactionManager.executeInTransaction(() -> {
+            final List<Segment> segments = tokenStore.fetchAvailableSegments("proc3");
+            assertThat(segments.size(), is(0));
+        });
+    }
+
+    private void prepareTokenStore() {
         transactionManager.executeInTransaction(() -> {
             tokenStore.initializeTokenSegments("test", 1);
             tokenStore.initializeTokenSegments("proc1", 2);
@@ -166,19 +274,6 @@ class JdbcTokenStoreTest {
         transactionManager.executeInTransaction(
                 () -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1)
         );
-
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc1");
-            assertThat(segments.length, is(2));
-        });
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc2");
-            assertThat(segments.length, is(2));
-        });
-        transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc3");
-            assertThat(segments.length, is(0));
-        });
     }
 
 

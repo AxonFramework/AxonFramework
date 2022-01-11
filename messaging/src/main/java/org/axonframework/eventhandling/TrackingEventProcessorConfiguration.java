@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * Configuration object for the {@link TrackingEventProcessor}. The TrackingEventProcessorConfiguration provides access
@@ -42,6 +41,7 @@ public class TrackingEventProcessorConfiguration {
     private static final int DEFAULT_BATCH_SIZE = 1;
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static final int DEFAULT_TOKEN_CLAIM_INTERVAL = 5000;
+    private static final long DEFAULT_WORKER_TERMINATION_TIMEOUT_MS = 5000;
 
     private final int maxThreadCount;
     private int batchSize;
@@ -50,8 +50,9 @@ public class TrackingEventProcessorConfiguration {
     private Function<String, ThreadFactory> threadFactory;
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
-    private boolean autoStart;
     private EventTrackerStatusChangeListener eventTrackerStatusChangeListener = EventTrackerStatusChangeListener.noOp();
+    private boolean autoStart;
+    private long workerTerminationTimeout;
 
     /**
      * Initialize a configuration with single threaded processing.
@@ -81,6 +82,7 @@ public class TrackingEventProcessorConfiguration {
         this.threadFactory = pn -> new AxonThreadFactory("EventProcessor[" + pn + "]");
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
         this.autoStart = true;
+        this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
     }
 
     /**
@@ -201,6 +203,18 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the shutdown timeout to terminate active workers. Defaults to 5000ms.
+     *
+     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeout) {
+        assertStrictPositive(workerTerminationTimeout, "The worker termination timeout should be strictly positive");
+        this.workerTerminationTimeout = workerTerminationTimeout;
+        return this;
+    }
+
+    /**
      * @return the maximum number of events to process in a single batch.
      */
     public int getBatchSize() {
@@ -272,5 +286,14 @@ public class TrackingEventProcessorConfiguration {
      */
     public EventTrackerStatusChangeListener getEventTrackerStatusChangeListener() {
         return eventTrackerStatusChangeListener;
+    }
+
+    /**
+     * Returns the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}.
+     *
+     * @return the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}
+     */
+    public long getWorkerTerminationTimeout() {
+        return workerTerminationTimeout;
     }
 }

@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Allard Buijze
  * @since 4.6
  */
-public interface LifecycleAware {
+public interface Lifecycle {
 
     /**
      * Registers the activities to be executed in the various phases of an application's lifecycle. This could either

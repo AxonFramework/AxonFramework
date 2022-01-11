@@ -21,7 +21,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.lifecycle.LifecycleAware;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
@@ -61,7 +61,7 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
  * @author Steven van Beelen
  * @since 3.3
  */
-public class SimpleDeadlineManager extends AbstractDeadlineManager implements LifecycleAware {
+public class SimpleDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
     private static final String THREAD_FACTORY_GROUP_NAME = "deadlineManager";

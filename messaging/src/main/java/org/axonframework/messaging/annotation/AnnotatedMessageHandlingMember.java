@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -39,6 +42,8 @@ import java.util.Optional;
  * @since 3.0
  */
 public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<T> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Class<?> payloadType;
     private final int parameterCount;
@@ -95,8 +100,9 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
 
     @Override
     public boolean canHandle(Message<?> message) {
-        return typeMatches(message) && payloadType.isAssignableFrom(message.getPayloadType()) &&
-                parametersMatch(message);
+        return typeMatches(message)
+                && payloadType.isAssignableFrom(message.getPayloadType())
+                && parametersMatch(message);
     }
 
     @Override
@@ -131,6 +137,8 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     protected boolean parametersMatch(Message<?> message) {
         for (ParameterResolver<?> resolver : parameterResolvers) {
             if (!resolver.matches(message)) {
+                logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
+                             resolver.getClass(), message, message.getPayloadType());
                 return false;
             }
         }

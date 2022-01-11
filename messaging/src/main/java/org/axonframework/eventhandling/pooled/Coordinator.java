@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -50,6 +50,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -695,16 +696,17 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
+            List<Segment> segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name));
 
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
-            int[] unClaimedSegments = Arrays.stream(segments)
-                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                            .toArray();
+            List<Segment> unClaimedSegments = segments.stream()
+                                              .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
+                                              .collect(Collectors.toList());
 
             int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
 
-            for (int segmentId : unClaimedSegments) {
+            for (Segment segment : unClaimedSegments) {
+                int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {
                     logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
                     processingStatusUpdater.accept(segmentId, u -> null);
@@ -713,12 +715,12 @@ class Coordinator {
                 if (newClaims.size() < maxSegmentsToClaim) {
                     try {
                         TrackingToken token = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchToken(name, segmentId)
+                                () -> tokenStore.fetchToken(name, segment)
                         );
-                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                        newClaims.put(segment, token);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
+                        logger.debug("Unable to claim the token for segment {}. It is owned by another process or has been split/merged concurrently.",
                                      segmentId);
                     }
                 }
@@ -779,19 +781,16 @@ class Coordinator {
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
-
-                boolean anyScheduled = false;
-                for (WorkPackage workPackage : workPackages.values()) {
-                    boolean scheduled = workPackage.scheduleEvent(event);
-                    anyScheduled = anyScheduled || scheduled;
-                }
-                if (!anyScheduled) {
-                    ignoredMessageHandler.accept(event);
-                    if (!eventFilter.canHandleTypeOf(event)) {
-                        eventStream.skipMessagesWithPayloadTypeOf(event);
-                    }
-                }
+                offerEventToWorkPackages(event);
                 lastScheduledToken = event.trackingToken();
+
+                // Make sure all subsequent events with the same token as the last are added as well.
+                // These are the result of upcasting and should always be processed in the same batch.
+                while (eventStream.peek()
+                                  .filter(e -> lastScheduledToken.equals(e.trackingToken()))
+                                  .isPresent()) {
+                    offerEventToWorkPackages(eventStream.nextAvailable());
+                }
             }
 
             // If a work package has been aborted by something else than the Coordinator. We should abandon it.
@@ -802,6 +801,20 @@ class Coordinator {
             // Chances are no events were scheduled at all. Scheduling regardless will ensure the token claim is held.
             workPackages.values()
                         .forEach(WorkPackage::scheduleWorker);
+        }
+
+        private void offerEventToWorkPackages(TrackedEventMessage<?> event) {
+            boolean anyScheduled = false;
+            for (WorkPackage workPackage : workPackages.values()) {
+                boolean scheduled = workPackage.scheduleEvent(event);
+                anyScheduled = anyScheduled || scheduled;
+            }
+            if (!anyScheduled) {
+                ignoredMessageHandler.accept(event);
+                if (!eventFilter.canHandleTypeOf(event)) {
+                    eventStream.skipMessagesWithPayloadTypeOf(event);
+                }
+            }
         }
 
         private void scheduleImmediateCoordinationTask() {

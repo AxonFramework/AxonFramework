@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.utils;
+package org.axonframework.springboot.utils;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Utility class for special assertions
+ * Utility class providing additional forms of assertions, mainly involving time based checks.
  *
  * @author Sara Pellegrini
  * @author Steven van Beelen
