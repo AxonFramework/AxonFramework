@@ -413,7 +413,7 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
 
     /**
-     * Asserts that <b>no</b> deadline with the given {@code type} has been scheduled between the {@code to} and {@code from} times. Can be used to validate if
+     * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times. Can be used to validate if
      * a deadline has never been set or has been canceled within a given timeframe.
      *
      * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled
