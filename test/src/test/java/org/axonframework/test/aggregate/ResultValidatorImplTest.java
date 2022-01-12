@@ -124,7 +124,7 @@ class ResultValidatorImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything());
+        assertDoesNotThrow(() -> validator.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.anything()));
     }
 
     @Test
@@ -161,8 +161,8 @@ class ResultValidatorImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineBefore.deadlineMessage().getPayload());
-        validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineAfter.deadlineMessage().getPayload());
+        assertDoesNotThrow(() -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineBefore.deadlineMessage().getPayload()));
+        assertDoesNotThrow(() -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadlineAfter.deadlineMessage().getPayload()));
     }
 
     @Test
@@ -196,7 +196,7 @@ class ResultValidatorImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class);
+        assertDoesNotThrow(() -> validator.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, String.class));
     }
 
     @Test
@@ -230,7 +230,7 @@ class ResultValidatorImplTest {
         ScheduledDeadlineInfo deadlineAfter = createDeadline(deadlineWindowTo.plus(1, ChronoUnit.DAYS));
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Arrays.asList(deadlineBefore, deadlineAfter));
 
-        validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName");
+        assertDoesNotThrow(() -> validator.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
     }
 
     private List<EventMessage<?>> actualEvents() {
