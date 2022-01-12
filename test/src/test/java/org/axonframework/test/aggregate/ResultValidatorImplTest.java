@@ -130,29 +130,29 @@ class ResultValidatorImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
-        ScheduledDeadlineInfo deadline = createDeadline(expiryTime);
-        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        ScheduledDeadlineInfo deadlineInfo = createDeadline(expiryTime);
+        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class,
-                     () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
+        assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
     void noDeadlineInTimeframeWithDeadlineAtFrom() {
-        ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
-        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowFrom);
+        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class,
-                     () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
+        assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
     void noDeadlineInTimeframeWithDeadlineAtTo() {
-        ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowTo);
-        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
+        ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowTo);
+        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
-        assertThrows(AxonAssertionError.class,
-                     () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline.deadlineMessage().getPayload()));
+        assertThrows(AxonAssertionError.class, () -> validator.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
     }
 
     @Test
