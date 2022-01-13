@@ -17,7 +17,7 @@ labels: 'Type: Enhancement'
 
 ### Wanted Behaviour
 
-<!-- Please described the desired outcome through the Kotlin Extension around the suggested enhancement. -->
+<!-- Please describe the desired outcome through the Kotlin Extension around the suggested enhancement. -->
 
 ### Possible Workarounds
 
