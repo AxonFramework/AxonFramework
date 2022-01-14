@@ -17,19 +17,19 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,19 +40,20 @@ import static org.mockito.Mockito.*;
 class DeadLetteringEventHandlerInvokerTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
-    private static final String TEST_SEQUENCE_ID = "my-sequence";
+    private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent();
     private static final EventHandlingQueueIdentifier TEST_QUEUE_ID =
-            new EventHandlingQueueIdentifier(TEST_SEQUENCE_ID, TEST_PROCESSING_GROUP);
-    private static final EventMessage<Object> TEST_EVENT = GenericEventMessage.asEventMessage("some-payload");
+            new EventHandlingQueueIdentifier(TEST_EVENT.getAggregateIdentifier(), TEST_PROCESSING_GROUP);
 
-    private EventHandlerInvoker delegate;
+    private EventMessageHandler handler;
+    private SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private DeadLetterQueue<EventMessage<?>> queue;
 
     private DeadLetteringEventHandlerInvoker testSubject;
 
     @BeforeEach
     void setUp() {
-        delegate = mock(EventHandlerInvoker.class);
+        handler = mock(EventMessageHandler.class);
+        sequencingPolicy = spy(SequentialPerAggregatePolicy.instance());
         //noinspection unchecked
         queue = mock(DeadLetterQueue.class);
 
@@ -72,7 +73,9 @@ class DeadLetteringEventHandlerInvokerTest {
     ) {
         DeadLetteringEventHandlerInvoker.Builder invokerBuilder =
                 DeadLetteringEventHandlerInvoker.builder()
-                                                .delegate(delegate)
+                                                .eventHandlers(handler)
+                                                .sequencingPolicy(sequencingPolicy)
+                                                .listenerInvocationErrorHandler(PropagatingErrorHandler.instance())
                                                 .queue(queue)
                                                 .processingGroup(TEST_PROCESSING_GROUP);
         return customization.apply(invokerBuilder).build();
@@ -80,79 +83,63 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void testHandleHandlesEventJustFine() throws Exception {
-        when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
-        verify(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+        verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), eq(TEST_EVENT));
         verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
+    }
+
+    @Test
+    void testHandleIgnoresEventForNonMatchingSegment() throws Exception {
+        Segment testSegment = mock(Segment.class);
+        when(testSegment.matches(any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, testSegment);
+
+        verify(sequencingPolicy).getSequenceIdentifierFor(TEST_EVENT);
+        verifyNoInteractions(handler);
+        verifyNoInteractions(queue);
     }
 
     @Test
     void testHandleEnqueuesWhenDelegateThrowsAnException() throws Exception {
         RuntimeException testCause = new RuntimeException("some-cause");
 
-        when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
-        doThrow(testCause).when(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        doThrow(testCause).when(handler).handle(TEST_EVENT);
         when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
-        verify(delegate).handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+        verify(queue).enqueueIfPresent(TEST_QUEUE_ID, TEST_EVENT);
         verify(queue).enqueue(TEST_QUEUE_ID, TEST_EVENT, testCause);
     }
 
     @Test
     void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
-        when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_SEQUENCE_ID);
         //noinspection unchecked
         when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.of(mock(DeadLetterEntry.class)));
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
-        verify(delegate, never()).handle(any(), any());
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler, never()).handle(TEST_EVENT);
         verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
     }
 
     @Test
-    void testCanHandleIsDelegated() {
-        when(delegate.canHandle(TEST_EVENT, Segment.ROOT_SEGMENT)).thenReturn(true);
-
-        boolean result = testSubject.canHandle(TEST_EVENT, Segment.ROOT_SEGMENT);
-
-        assertTrue(result);
-        verify(delegate).canHandle(TEST_EVENT, Segment.ROOT_SEGMENT);
-    }
-
-    @Test
-    void testCanHandleTypeIsDelegated() {
-        when(delegate.canHandleType(String.class)).thenReturn(false);
-
-        boolean result = testSubject.canHandleType(String.class);
-
-        assertFalse(result);
-        verify(delegate).canHandleType(String.class);
-    }
-
-    @Test
-    void testSupportsResetIsDelegated() {
-        when(delegate.supportsReset()).thenReturn(true);
-
-        boolean result = testSubject.supportsReset();
-
-        assertTrue(result);
-        verify(delegate).supportsReset();
-    }
-
-    @Test
-    void testPerformResetOnlyDelegatesForAllowResetSetToFalse() {
+    void testPerformResetOnlyInvokesParentForAllowResetSetToFalse() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
 
         testSubject.performReset();
 
         verifyNoInteractions(queue);
-        verify(delegate).performReset();
+        verify(handler).prepareReset(null);
     }
 
     @Test
@@ -162,11 +149,11 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset();
 
         verify(queue).clear(TEST_PROCESSING_GROUP);
-        verify(delegate).performReset();
+        verify(handler).prepareReset(null);
     }
 
     @Test
-    void testPerformResetWithContextOnlyDelegatesForAllowResetSetToFalse() {
+    void testPerformResetWithContextOnlyInvokesParentForAllowResetSetToFalse() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
 
         String testContext = "some-reset-context";
@@ -174,7 +161,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset(testContext);
 
         verifyNoInteractions(queue);
-        verify(delegate).performReset(testContext);
+        verify(handler).prepareReset(testContext);
     }
 
     @Test
@@ -186,34 +173,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset(testContext);
 
         verify(queue).clear(TEST_PROCESSING_GROUP);
-        verify(delegate).performReset(testContext);
-    }
-
-    @Test
-    void testSequenceIdentifierIsDelegated() {
-        when(delegate.sequenceIdentifier(TEST_EVENT)).thenReturn(TEST_EVENT.getIdentifier());
-
-        Object result = testSubject.sequenceIdentifier(TEST_EVENT);
-
-        assertEquals(TEST_EVENT.getIdentifier(), result);
-        verify(delegate).sequenceIdentifier(TEST_EVENT);
-    }
-
-    @Test
-    void testBuildWithNullDelegateThrowsAxonConfigurationException() {
-        DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.delegate(null));
-    }
-
-    @Test
-    void testBuildWithoutDelegateThrowsAxonConfigurationException() {
-        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
-                DeadLetteringEventHandlerInvoker.builder()
-                                                .queue(queue)
-                                                .processingGroup(TEST_PROCESSING_GROUP);
-
-        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+        verify(handler).prepareReset(testContext);
     }
 
     @Test
@@ -227,7 +187,6 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithoutDeadLetterQueueThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
-                                                .delegate(delegate)
                                                 .processingGroup(TEST_PROCESSING_GROUP);
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -250,7 +209,6 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithoutProcessingGroupThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
-                                                .delegate(delegate)
                                                 .queue(queue);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,16 +89,5 @@ public interface EventHandlerInvoker {
                     "EventHandlerInvoker#performRest(R) is not implemented for a non-null reset context."
             );
         }
-    }
-
-    /**
-     * Retrieve the sequence identifier for the given {@code event}, used to handle events in the desired order.
-     * Defaults to {@link EventMessage#getIdentifier()}.
-     *
-     * @param event the {@link EventMessage} to deduce the sequence identifier for
-     * @return the sequence identifier for the given {@code event}
-     */
-    default Object sequenceIdentifier(EventMessage<?> event) {
-        return event.getIdentifier();
     }
 }

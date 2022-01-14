@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import static org.mockito.Mockito.*;
 class SimpleEventHandlerInvokerTest {
 
     private static final Object NO_RESET_PAYLOAD = null;
-    private static final String PROCESSING_GROUP = "processingGroup";
 
     private EventMessageHandler mockHandler1;
     private EventMessageHandler mockHandler2;

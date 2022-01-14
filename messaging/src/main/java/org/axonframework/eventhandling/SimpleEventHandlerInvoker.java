@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,14 +56,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @param builder the {@link Builder} used to instantiate a {@link SimpleEventHandlerInvoker} instance
      */
-    protected SimpleEventHandlerInvoker(Builder builder) {
+    protected SimpleEventHandlerInvoker(Builder<?> builder) {
         builder.validate();
         this.eventHandlers = builder.eventHandlers;
         this.wrappedEventHandlers =
                 eventHandlers.stream()
                              .map(handler -> handler instanceof EventMessageHandler
                                      ? (EventMessageHandler) handler
-                                     : builder.wrapEventMessageHandler(handler))
+                                     : builder.wrapEventMessageHandler(handler)
+                             )
                              .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = builder.sequencingPolicy;
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
@@ -91,8 +92,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @return a Builder to be able to create a {@link SimpleEventHandlerInvoker}
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -106,13 +107,26 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        if (sequencingPolicyMatchesSegment(message, segment)) {
-            for (EventMessageHandler handler : wrappedEventHandlers) {
-                try {
-                    handler.handle(message);
-                } catch (Exception e) {
-                    listenerInvocationErrorHandler.onError(e, message, handler);
-                }
+        if (!sequencingPolicyMatchesSegment(message, segment)) {
+            return;
+        }
+        invokeHandlers(message);
+    }
+
+    protected boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
+        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
+    }
+
+    protected Object sequenceIdentifier(EventMessage<?> event) {
+        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
+    }
+
+    protected void invokeHandlers(EventMessage<?> message) throws Exception {
+        for (EventMessageHandler handler : wrappedEventHandlers) {
+            try {
+                handler.handle(message);
+            } catch (Exception e) {
+                listenerInvocationErrorHandler.onError(e, message, handler);
             }
         }
     }
@@ -120,10 +134,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
         return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
-    }
-
-    private boolean sequencingPolicyMatchesSegment(EventMessage<?> message, Segment segment) {
-        return segment.matches(Objects.hashCode(sequenceIdentifier(message)));
     }
 
     @Override
@@ -162,11 +172,6 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
     }
 
-    @Override
-    public Object sequenceIdentifier(EventMessage<?> event) {
-        return getOrDefault(sequencingPolicy.getSequenceIdentifierFor(event), event::getIdentifier);
-    }
-
     /**
      * Return the {@link ListenerInvocationErrorHandler} as configured for this {@link EventHandlerInvoker}.
      *
@@ -192,7 +197,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler and a
      * processing group name are a <b>hard requirements</b> and thus should be accounted for.
      */
-    public static class Builder {
+    public static class Builder<B extends Builder<?>> {
 
         private List<?> eventHandlers;
         private ParameterResolverFactory parameterResolverFactory;
@@ -208,7 +213,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandlers an array of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventHandlers(Object... eventHandlers) {
+        public B eventHandlers(Object... eventHandlers) {
             return eventHandlers(detectList(eventHandlers));
         }
 
@@ -220,10 +225,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventHandlers(List<?> eventHandlers) {
+        public B eventHandlers(List<?> eventHandlers) {
             assertThat(eventHandlers, list -> !list.isEmpty(), "At least one EventMessageHandler should be provided");
             this.eventHandlers = eventHandlers;
-            return this;
+            //noinspection unchecked
+            return (B) this;
         }
 
         /**
@@ -236,10 +242,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                 instantiated {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public B parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
             this.parameterResolverFactory = parameterResolverFactory;
-            return this;
+            //noinspection unchecked
+            return (B) this;
         }
 
         /**
@@ -252,10 +259,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                          {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
+        public B handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
-            return this;
+            //noinspection unchecked
+            return (B) this;
         }
 
         /**
@@ -266,10 +274,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                       Exception}s being thrown by the {@link EventListener}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        public B listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
             assertNonNull(listenerInvocationErrorHandler, "ListenerInvocationErrorHandler may not be null");
             this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
-            return this;
+            //noinspection unchecked
+            return (B) this;
         }
 
         /**
@@ -282,10 +291,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        public B sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
             assertNonNull(sequencingPolicy, "{} may not be null");
             this.sequencingPolicy = sequencingPolicy;
-            return this;
+            //noinspection unchecked
+            return (B) this;
         }
 
         /**

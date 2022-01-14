@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +31,18 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
+ * Implementation of the {@link SimpleEventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue {@link
+ * EventMessage} for which event handling failed. This dead-lettering {@link EventHandlerInvoker} takes into account
+ * that events part of the same sequence (as according to the {@link org.axonframework.eventhandling.async.SequencingPolicy})
+ * should be enqueued in order too.
+ *
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
+public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final EventHandlerInvoker delegate;
     private final DeadLetterQueue<EventMessage<?>> queue;
     private final String processingGroup;
     private final boolean allowReset;
@@ -49,8 +54,7 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
      * @param builder The {@link Builder} used to instantiate a {@link DeadLetteringEventHandlerInvoker} instance.
      */
     protected DeadLetteringEventHandlerInvoker(Builder builder) {
-        builder.validate();
-        this.delegate = builder.delegate;
+        super(builder);
         this.queue = builder.queue;
         this.processingGroup = builder.processingGroup;
         this.allowReset = builder.allowReset;
@@ -59,48 +63,39 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
     /**
      * Instantiate a builder to construct a {@link DeadLetteringEventHandlerInvoker}.
      *
-     * @return A builder that can consturct a {@link DeadLetteringEventHandlerInvoker}.
+     * @return A builder that can construct a {@link DeadLetteringEventHandlerInvoker}.
      */
     public static Builder builder() {
         return new Builder();
     }
 
     @Override
-    public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
-        return delegate.canHandle(eventMessage, segment);
-    }
-
-    @Override
-    public boolean canHandleType(Class<?> payloadType) {
-        return delegate.canHandleType(payloadType);
-    }
-
-    @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        String sequenceIdentifier = Integer.toString(Objects.hashCode(delegate.sequenceIdentifier(message)));
-        EventHandlingQueueIdentifier identifier = new EventHandlingQueueIdentifier(sequenceIdentifier, processingGroup);
+        if (!super.sequencingPolicyMatchesSegment(message, segment)) {
+            logger.trace("Ignoring event [{}] as it is not meant for segment [{}].", message, segment);
+            return;
+        }
+
+        Object sequenceId = super.sequenceIdentifier(message);
+        EventHandlingQueueIdentifier identifier = new EventHandlingQueueIdentifier(sequenceId, processingGroup);
         if (queue.enqueueIfPresent(identifier, message).isPresent()) {
-            logger.info(
-                    "Event [{}] is added to the dead-letter queue since its processing id [{}-{}] was already present.",
-                    message, sequenceIdentifier, processingGroup
-            );
+            logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] was already present.",
+                        message, identifier.combinedIdentifier());
         } else {
-            logger.debug("Event [{}] with processing id [{}-{}] is not present in the dead-letter queue present."
-                                 + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
-                         message, sequenceIdentifier, processingGroup);
             try {
+                logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue present."
+                                     + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
+                             message, identifier.combinedIdentifier());
+                super.invokeHandlers(message);
+            } catch (Exception e) {
                 // TODO: 03-12-21 how to deal with the delegates ListenerInvocationErrorHandler in this case?
                 //  It is mandatory to rethrow the exception, as otherwise the message isn't enqueued.
-                delegate.handle(message, segment);
-            } catch (Exception e) {
+                // TODO: 14-01-22 We could (1) move the errorHandler invocation to a protected method to override,
+                //  ensuring enqueue is invoked at all times with a try-catch block
+                //  or (2) enforce a PropagatingErrorHandler at all times or (3) do nothing.
                 queue.enqueue(identifier, message, e);
             }
         }
-    }
-
-    @Override
-    public boolean supportsReset() {
-        return delegate.supportsReset();
     }
 
     @Override
@@ -108,7 +103,7 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         if (allowReset) {
             queue.clear(processingGroup);
         }
-        delegate.performReset();
+        super.performReset(null);
     }
 
     @Override
@@ -116,37 +111,17 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
         if (allowReset) {
             queue.clear(processingGroup);
         }
-        delegate.performReset(resetContext);
-    }
-
-    @Override
-    public Object sequenceIdentifier(EventMessage<?> event) {
-        return delegate.sequenceIdentifier(event);
+        super.performReset(resetContext);
     }
 
     /**
      *
      */
-    public static class Builder {
+    public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
-        private EventHandlerInvoker delegate;
         private DeadLetterQueue<EventMessage<?>> queue;
         private String processingGroup;
         private boolean allowReset = false;
-
-        /**
-         * The {@link EventHandlerInvoker} wrapped by this dead-lettering implementation. Operations {@link
-         * #canHandle(EventMessage, Segment)}, {@link #canHandleType(Class)}, {@link #supportsReset()} and {@link
-         * #sequenceIdentifier(EventMessage)} are completely taken care of by the given {@code delegate}.
-         *
-         * @param delegate The {@link EventHandlerInvoker} instance to delegate operations to.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder delegate(EventHandlerInvoker delegate) {
-            assertNonNull(delegate, "The delegate EventHandlerInvoker may not be null");
-            this.delegate = delegate;
-            return this;
-        }
 
         /**
          * Sets the {@link DeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
@@ -202,9 +177,8 @@ public class DeadLetteringEventHandlerInvoker implements EventHandlerInvoker {
          *                                    specifications.
          */
         protected void validate() {
-            assertNonNull(delegate, "The delegate EventHandlerInvoker is a hard requirement and should be provided");
             assertNonNull(queue, "The DeadLetterQueue is a hard requirement and should be provided");
-            assertNonNull(processingGroup, "The processing group is a hard requirement and should be provided");
+            assertNonEmpty(processingGroup, "The processing group is a hard requirement and should be provided");
         }
     }
 }
