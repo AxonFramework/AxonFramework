@@ -401,6 +401,14 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
+    void noDeadlineMatchingInTimeframeWithOtherDeadlineInsideWindow() {
+        Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
+
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineMatching(deadlineWindowFrom, deadlineWindowTo, Matchers.nullValue()));
+    }
+
+    @Test
     void noDeadlineMatchingInTimeframeWithDeadlineAtFrom() {
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(deadlineWindowFrom)));
 
@@ -431,6 +439,14 @@ class FixtureExecutionResultImplTest {
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, deadline));
+    }
+
+    @Test
+    void noDeadlineInTimeframeWithOtherDeadlineInsideWindow() {
+        Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
+
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom, deadlineWindowTo, new Object()));
     }
 
     @Test
@@ -471,6 +487,14 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
+    void noDeadlineOfTypeInTimeframeWithOtherDeadlineInsideWindow() {
+        Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
+
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineOfType(deadlineWindowFrom, deadlineWindowTo, Integer.class));
+    }
+
+    @Test
     void noDeadlineOfTypeInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadline = createDeadline(deadlineWindowFrom);
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
@@ -502,6 +526,14 @@ class FixtureExecutionResultImplTest {
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadline));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "deadlineName"));
+    }
+
+    @Test
+    void noDeadlineWithNameTimeframeWithOtherDeadlineInsideWindow() {
+        Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
+        when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(createDeadline(expiryTime)));
+
+        assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadlineWithName(deadlineWindowFrom, deadlineWindowTo, "otherName"));
     }
 
     @Test
