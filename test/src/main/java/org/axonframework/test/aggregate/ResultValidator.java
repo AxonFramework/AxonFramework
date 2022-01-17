@@ -391,44 +391,44 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
-     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and {@code from} times. Can be used to
-     * validate if a deadline has never been set or has been canceled within a given timeframe.
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and {@code from} times, where {@code to} and
+     * {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
-     * @param from    the time from which no deadline equal to the given {@code deadline} should be scheduled
-     * @param to      the time until which no deadline equal to the given {@code deadline} should be scheduled
+     * @param from    the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to      the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
-     * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times. Can be used to
-     * validate if a deadline has never been set or has been canceled within a given timeframe.
+     * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
-     * @param from     the time from which no deadline equal to the given {@code deadline} should be scheduled
-     * @param to       the time until which no deadline equal to the given {@code deadline} should be scheduled
+     * @param from     the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to       the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param deadline the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
 
     /**
-     * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times. Can be used to validate if
-     * a deadline has never been set or has been canceled within a given timeframe.
+     * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
-     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled
-     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param deadlineType the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
 
     /**
-     * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times. Can be used to
-     * validate if a deadline has never been set or has been canceled within a given timeframe.
+     * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
-     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled
-     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param deadlineName the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
