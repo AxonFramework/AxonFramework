@@ -12,7 +12,7 @@ updates:
     - "Priority 1: Must"
     - "Status: In Progress"
     - "Target: 4.5.2"
-  milestone: 62
+  milestone: 69
   open-pull-requests-limit: 5
   reviewers:
     - "lfgcampos"
