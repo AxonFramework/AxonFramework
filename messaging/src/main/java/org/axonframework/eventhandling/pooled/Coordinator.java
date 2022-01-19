@@ -617,8 +617,10 @@ class Coordinator {
                     for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
                         Segment segment = entry.getKey();
                         TrackingToken token = entry.getValue();
-                        streamStartPosition = streamStartPosition == null
-                                ? null : streamStartPosition.lowerBound(WrappedToken.unwrapLowerBound(token));
+                        TrackingToken otherUnwrapped = WrappedToken.unwrapLowerBound(token);
+
+                        streamStartPosition = streamStartPosition == null || otherUnwrapped == null
+                                ? null : streamStartPosition.lowerBound(otherUnwrapped);
                         logger.debug("Processor [{}] claimed {} for processing.", name, segment);
                         workPackages.computeIfAbsent(segment.getSegmentId(),
                                                      wp -> workPackageFactory.apply(segment, token));
