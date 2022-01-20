@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -309,6 +310,87 @@ class DefaultCommandGatewayTest {
         assertTrue(actual.isDone());
         assertTrue(actual.isCompletedExceptionally());
         assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
+    }
+
+    @Test
+    void testSendAndWaitAttachesMetaData() {
+        //noinspection unchecked
+        doAnswer(invocation -> {
+            //noinspection unchecked
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        String expectedPayload = "command";
+        MetaData expectedMetaData = MetaData.with("key", "value");
+        testSubject.sendAndWait(expectedPayload, expectedMetaData);
+
+        //noinspection unchecked
+        ArgumentCaptor<CommandMessage<?>> messageCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+
+        //noinspection unchecked
+        verify(mockCommandBus).dispatch(messageCaptor.capture(), isA(CommandCallback.class));
+        CommandMessage<?> result = messageCaptor.getValue();
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertEquals(expectedMetaData, result.getMetaData());
+    }
+
+    @Test
+    void testSendAndWaitWithTimeoutAttachesMetaData() {
+        //noinspection unchecked
+        doAnswer(invocation -> {
+            //noinspection unchecked
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        String expectedPayload = "command";
+        MetaData expectedMetaData = MetaData.with("key", "value");
+        testSubject.sendAndWait(expectedPayload, expectedMetaData, 10, TimeUnit.MILLISECONDS);
+
+        //noinspection unchecked
+        ArgumentCaptor<CommandMessage<?>> messageCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+
+        //noinspection unchecked
+        verify(mockCommandBus).dispatch(messageCaptor.capture(), isA(CommandCallback.class));
+        CommandMessage<?> result = messageCaptor.getValue();
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertEquals(expectedMetaData, result.getMetaData());
+    }
+
+    @Test
+    void testSendAttachesMetaData() {
+        //noinspection unchecked
+        doAnswer(invocation -> {
+            //noinspection unchecked
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        String expectedPayload = "command";
+        MetaData expectedMetaData = MetaData.with("key", "value");
+        testSubject.send(expectedPayload, expectedMetaData);
+
+        //noinspection unchecked
+        ArgumentCaptor<CommandMessage<?>> messageCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+
+        //noinspection unchecked
+        verify(mockCommandBus).dispatch(messageCaptor.capture(), isA(CommandCallback.class));
+        CommandMessage<?> result = messageCaptor.getValue();
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertEquals(expectedMetaData, result.getMetaData());
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {

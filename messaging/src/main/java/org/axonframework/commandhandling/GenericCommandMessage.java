@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,22 +31,30 @@ import java.util.Map;
  * @since 2.0
  */
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
+
     private static final long serialVersionUID = 3282528436414939876L;
     private final String commandName;
 
     /**
-     * Returns the given command as a CommandMessage. If {@code command} already implements CommandMessage, it is
-     * returned as-is. Otherwise, the given {@code command} is wrapped into a GenericCommandMessage as its
-     * payload.
+     * Returns the given command as a {@link CommandMessage}. If {@code command} already implements {@code
+     * CommandMessage}, it is returned as-is. When the {@code command} is another implementation of {@link Message}, the
+     * {@link Message#getPayload()} and {@link Message#getMetaData()} are used as input for a new {@link
+     * GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a {@code GenericCommandMessage} as
+     * its payload.
      *
-     * @param command the command to wrap as CommandMessage
-     * @return a CommandMessage containing given {@code command} as payload, or {@code command} if it already implements
-     * CommandMessage.
+     * @param command The command to wrap as {@link CommandMessage}.
+     * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
+     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of {@link
+     * Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
      */
     @SuppressWarnings("unchecked")
     public static <C> CommandMessage<C> asCommandMessage(Object command) {
-        if (CommandMessage.class.isInstance(command)) {
+        if (command instanceof CommandMessage) {
             return (CommandMessage<C>) command;
+        } else if (command instanceof Message) {
+            return new GenericCommandMessage<>(
+                    (C) ((Message<?>) command).getPayload(), ((Message<?>) command).getMetaData()
+            );
         }
         return new GenericCommandMessage<>((C) command, MetaData.emptyInstance());
     }
