@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MetaData;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +78,32 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     <R> R sendAndWait(Object command);
 
     /**
+     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
+     * execution is returned when available. This method will block indefinitely, until a result is available, or until
+     * the Thread is interrupted. When the thread is interrupted, this method returns {@code null}. If command execution
+     * resulted in an exception, it is wrapped in a {@link CommandExecutionException}. If command dispatching failed,
+     * {@link CommandDispatchException} is thrown instead.
+     * <p/>
+     * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
+     * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
+     * implements {@link Message}. In that case, a {@code CommandMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached afterwards in this case.
+     * <p/>
+     * Note that the interrupted flag is set back on the thread if it has been interrupted while waiting.
+     *
+     * @param command  the command to dispatch
+     * @param metaData meta-data that must be registered with the {@code command}
+     * @param <R>      the type of result expected from command execution
+     * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for the
+     * command to execute
+     * @throws CommandExecutionException when an exception occurred while processing the command
+     * @throws CommandDispatchException  when an exception occurred while dispatching the command
+     */
+    default <R> R sendAndWait(Object command, MetaData metaData) {
+        return sendAndWait(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData));
+    }
+
+    /**
      * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
      * available. This method will block until a result is available, or the given {@code timeout} was reached, or until
      * the Thread is interrupted. When the timeout is reached or the thread is interrupted, this method returns {@code
@@ -101,6 +129,35 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     <R> R sendAndWait(Object command, long timeout, TimeUnit unit);
 
     /**
+     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
+     * execution is returned when available. This method will block until a result is available, or the given {@code
+     * timeout} was reached, or until the Thread is interrupted. When the timeout is reached or the thread is
+     * interrupted, this method returns {@code null}. If command execution resulted in an exception, it is wrapped in a
+     * {@link CommandExecutionException}. If command dispatching failed, {@link CommandDispatchException} is thrown
+     * instead.
+     * <p/>
+     * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
+     * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
+     * implements {@link Message}. In that case, a {@code CommandMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached afterwards in this case.
+     * <p/>
+     * Note that the interrupted flag is set back on the thread if it has been interrupted while waiting.
+     *
+     * @param command  the command to dispatch
+     * @param metaData meta-data that must be registered with the {@code command}
+     * @param timeout  the amount of time in the given {@code unit} the thread is allowed to wait for the result
+     * @param unit     the unit in which {@code timeout} is expressed
+     * @param <R>      the type of result expected from command execution
+     * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for the
+     * command to execute
+     * @throws CommandExecutionException when an exception occurred while processing the command
+     * @throws CommandDispatchException  when an exception occurred while dispatching the command
+     */
+    default <R> R sendAndWait(Object command, MetaData metaData, long timeout, TimeUnit unit) {
+        return sendAndWait(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), timeout, unit);
+    }
+
+    /**
      * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
      * command to execute. The caller will therefore not receive any immediate feedback on the {@code command}'s
      * execution. Instead hooks <em>can</em> be added to the returned {@code CompletableFuture} to react on success or
@@ -116,4 +173,24 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * command execution result
      */
     <R> CompletableFuture<R> send(Object command);
+
+    /**
+     * Sends the given {@code command} with the given {@code metaData} and returns a {@link CompletableFuture}
+     * immediately, without waiting for the command to execute. The caller will therefore not receive any immediate
+     * feedback on the {@code command}'s execution. Instead, hooks <em>can</em> be added to the returned {@code
+     * CompletableFuture} to react on success or failure of command execution.
+     * <p/>
+     * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
+     * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
+     * implements {@link Message}. In that case, a {@code CommandMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached afterwards in this case.
+     *
+     * @param command  the command to dispatch
+     * @param metaData meta-data that must be registered with the {@code command}
+     * @return a {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
+     * command execution result
+     */
+    default <R> CompletableFuture<R> send(Object command, MetaData metaData) {
+        return send(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData));
+    }
 }

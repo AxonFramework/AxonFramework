@@ -17,7 +17,7 @@ labels: 'Type: Enhancement'
 
 ### Wanted Behaviour
 
-<!-- Please described the desired outcome through Axon Framework around the suggested enhancement. -->
+<!-- Please describe the desired outcome through Axon Framework around the suggested enhancement. -->
 
 ### Possible Workarounds
 

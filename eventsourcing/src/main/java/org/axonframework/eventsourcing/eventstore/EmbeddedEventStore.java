@@ -460,8 +460,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 return;
             }
             tailingConsumers.stream().filter(EventConsumer::behindGlobalCache).forEach(consumer -> {
-                logger.warn("An event processor fell behind the tail end of the event store cache. " +
-                                    "This usually indicates a badly performing event processor.");
+                logger.debug("An event stream cannot read from the local cache. It either runs behind, or its " +
+                                     "current token cannot be found in the cache. Opening a dedicated stream.");
                 consumer.stopTailingGlobalStream();
             });
         }

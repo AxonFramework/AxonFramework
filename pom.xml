@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2021. Axon Framework
+  ~ Copyright (c) 2010-2022. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -67,14 +67,14 @@
         </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
-        <slf4j.version>1.7.32</slf4j.version>
+        <slf4j.version>1.7.33</slf4j.version>
         <log4j.version>2.17.1</log4j.version>
-        <spring.version>5.3.14</spring.version>
+        <spring.version>5.3.15</spring.version>
         <spring-security.version>5.6.1</spring-security.version>
-        <spring.boot.version>2.6.2</spring.boot.version>
+        <spring.boot.version>2.6.3</spring.boot.version>
         <mockito.version>4.2.0</mockito.version>
-        <projectreactor.version>3.4.13</projectreactor.version>
-        <micrometer.version>1.8.1</micrometer.version>
+        <projectreactor.version>3.4.14</projectreactor.version>
+        <micrometer.version>1.8.2</micrometer.version>
         <dropwizard.metrics.version>4.2.7</dropwizard.metrics.version>
         <jackson.version>2.13.1</jackson.version>
 
@@ -82,7 +82,7 @@
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <el-impl.version>2.2</el-impl.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <hibernate-validator.version>6.2.0.Final</hibernate-validator.version>
+        <hibernate-validator.version>6.2.1.Final</hibernate-validator.version>
 
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
@@ -90,13 +90,13 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <mysql-connector-java.version>8.0.27</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
-        <hibernate-entitymanager.version>5.6.3.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.12.6</byte-buddy.version>
+        <hibernate-entitymanager.version>5.6.4.Final</hibernate-entitymanager.version>
+        <byte-buddy.version>1.12.7</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.28.0-GA</javassist.version>
@@ -107,7 +107,7 @@
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
         <axonserver-connector-java.version>4.5.4</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
+        <testcontainers.version>1.16.3</testcontainers.version>
         <xstream.version>1.4.18</xstream.version>
 
         <!-- plugin versions -->
@@ -447,7 +447,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.9.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -536,7 +536,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.2.2</version>
                 <configuration>
                     <archive>
                         <manifest>

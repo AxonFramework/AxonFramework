@@ -336,6 +336,21 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testTokenStoreReturningSingleNullToken() {
+        when(stubEventHandler.canHandle(any(), any())).thenReturn(false);
+        when(stubEventHandler.canHandleType(Integer.class)).thenReturn(false);
+
+        tokenStore.initializeTokenSegments(testSubject.getName(), 2);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.getName(), 1);
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> {
+            assertEquals(2, testSubject.processingStatus().size());
+        });
+    }
+
+    @Test
     void testEventsWhichMustBeIgnoredAreNotHandledOnlyValidated() throws Exception {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 

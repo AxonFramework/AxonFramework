@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,6 +28,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link GenericCommandMessage}.
+ *
  * @author Allard Buijze
  */
 class GenericCommandMessageTest {
@@ -95,5 +99,45 @@ class GenericCommandMessageTest {
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
         assertTrue(actual.endsWith("', commandName='java.lang.String'}"), "Wrong output: " + actual);
         assertEquals(173, actual.length(), "Wrong output: " + actual);
+    }
+
+    @Test
+    void testAsCommandMessageWrapsPayload() {
+        String expectedPayload = "some-payload";
+
+        CommandMessage<Object> result = asCommandMessage(expectedPayload);
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertTrue(result.getMetaData().isEmpty());
+        assertNotNull(result.getIdentifier());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getCommandName());
+    }
+
+    @Test
+    void testAsCommandMessageReturnsCommandMessageAsIs() {
+        CommandMessage<String> expected = new GenericCommandMessage<>("some-payload", MetaData.with("key", "value"));
+
+        CommandMessage<Object> result = asCommandMessage(expected);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void testAsCommandMessageRetrievesPayloadAndMetaDataFromMessageImplementations() {
+        String expectedPayload = "some-payload";
+        MetaData expectedMetaData = MetaData.with("key", "value");
+
+        String testIdentifier = "some-identifier";
+        Message<String> testMessage =
+                new GenericMessage<>(testIdentifier, expectedPayload, expectedMetaData);
+
+        CommandMessage<Object> result = asCommandMessage(testMessage);
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertEquals(expectedMetaData, result.getMetaData());
+        assertNotEquals(testIdentifier, result.getIdentifier());
+        assertEquals(String.class, result.getPayloadType());
+        assertEquals(String.class.getName(), result.getCommandName());
     }
 }
