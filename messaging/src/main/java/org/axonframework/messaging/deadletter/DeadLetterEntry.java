@@ -25,7 +25,7 @@ import java.time.Instant;
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #deadLettered()}. This letter can be regarded for
  * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the entry can be cleared through
- * {@link #release()}.
+ * {@link #acknowledge()}. The {@link #evict()} method should be used to remove an entry regardless of any evaluation.
  *
  * @param <T> The type of {@link Message} represented by this entry.
  * @author Steven van Beelen
@@ -69,10 +69,17 @@ public interface DeadLetterEntry<T extends Message<?>> {
     Instant expiresAt();
 
     /**
-     * Marks this {@link DeadLetterEntry dead-letter} as successfully evaluated. This will remove the entry from its
-     * queue.
+     * Acknowledges this {@link DeadLetterEntry dead-letter} as successfully evaluated. This operation will remove the
+     * entry from its queue.
      */
-    void release();
+    void acknowledge();
+
+    /**
+     * Evict this {@link DeadLetterEntry dead-letter} from the queue it originates from. This operation will remove the
+     * entry from its queue. It is recommended to use this method to remove an entry if it cannot be {@link
+     * #acknowledge() acknowledged} anymore.
+     */
+    void evict();
 
     /**
      * Compares two {@link DeadLetterEntry dead-letters} with one another, based on when they {@link #expiresAt()}.

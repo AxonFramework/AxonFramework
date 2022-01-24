@@ -393,7 +393,12 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
 
         @Override
-        public void release() {
+        public void acknowledge() {
+            releaseOperation.accept(this);
+        }
+
+        @Override
+        public void evict() {
             releaseOperation.accept(this);
         }
 

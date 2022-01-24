@@ -291,7 +291,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
                     //  A different thread, separate from regular event handling, is performing this task any how.
                     //  From that end, I anticipate it to be okay if anyone just picks it up, regardless of the Segment.
                     handle.invokerHandlers(letter.message());
-                    letter.release();
+                    letter.acknowledge();
                     logger.info("Dead-letter [{}] is released as it is successfully handled for processing group [{}].",
                                 letter.message().getIdentifier(), processingGroup);
                 } catch (Exception e) {

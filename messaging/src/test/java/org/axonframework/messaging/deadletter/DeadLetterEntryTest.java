@@ -17,12 +17,11 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the common functionality of the {@link DeadLetterEntry}.
@@ -95,8 +94,13 @@ class DeadLetterEntryTest {
         }
 
         @Override
-        public void release() {
+        public void acknowledge() {
+            // Implementation not needed
+        }
 
+        @Override
+        public void evict() {
+            // Implementation not needed
         }
 
         private static class StaticQueueIdentifier implements QueueIdentifier {

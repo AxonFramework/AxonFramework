@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  * <p>
  * The contained queues are uniquely identifiable through the {@link QueueIdentifier}. Dead-letters are kept in the form
  * of a {@link DeadLetterEntry DeadLetterEntries}. When retrieving letters through {@link #peek(String)} for evaluation,
- * they can be removed with {@link DeadLetterEntry#release()} to clear them from this queue.
+ * they can be removed with {@link DeadLetterEntry#acknowledge()} to clear them from this queue.
  *
  * @param <T> An implementation of {@link Message} that represent the dead-letter.
  * @author Steven van Beelen

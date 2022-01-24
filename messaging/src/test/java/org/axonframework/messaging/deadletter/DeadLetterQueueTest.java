@@ -213,7 +213,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(testSubject.isEmpty());
 
         // The queue should be empty again after releasing the only letter present
-        testSubject.peek(testId.group()).ifPresent(DeadLetterEntry::release);
+        testSubject.peek(testId.group()).ifPresent(DeadLetterEntry::acknowledge);
 
         assertTrue(testSubject.isEmpty());
     }
@@ -271,7 +271,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testCause, firstResult.cause());
         assertEquals(expectedDeadLettered, firstResult.deadLettered());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
-        firstResult.release();
+        firstResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.peek(testId.group());
         assertTrue(secondOptionalResult.isPresent());
@@ -340,7 +340,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisCause, thisFirstResult.cause());
         assertEquals(expectedDeadLettered, thisFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thisFirstResult.expiresAt());
-        thisFirstResult.release();
+        thisFirstResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> thisOptionalSecondResult = testSubject.peek(testThisId.group());
         assertTrue(thisOptionalSecondResult.isPresent());
@@ -350,7 +350,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertNull(thisSecondResult.cause());
         assertEquals(expectedDeadLettered, thisSecondResult.deadLettered());
         assertEquals(expectedExpireAt, thisSecondResult.expiresAt());
-        thisSecondResult.release();
+        thisSecondResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> thatOptionalFirstResult = testSubject.peek(testThatId.group());
         assertTrue(thatOptionalFirstResult.isPresent());
@@ -360,7 +360,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThatCause, thatFirstResult.cause());
         assertEquals(expectedDeadLettered, thatFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thatFirstResult.expiresAt());
-        thatFirstResult.release();
+        thatFirstResult.acknowledge();
 
         // The second 'that' letter is still in the queue
         assertFalse(testSubject.isEmpty());
@@ -388,7 +388,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
 
-        result.release();
+        result.acknowledge();
 
         assertTrue(testSubject.isEmpty());
         assertFalse(testSubject.peek(testId.group()).isPresent());
@@ -478,7 +478,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedSecondExpireAt, secondResult.expiresAt());
         assertNotEquals(firstResult.expiresAt(), secondResult.expiresAt());
 
-        secondResult.release();
+        secondResult.acknowledge();
         // After successfully releasing the 'secondResult', the following entry is 'firstResult'
 
         Optional<DeadLetterEntry<M>> updateFirstOptionalResult = testSubject.peek(testId.group());
