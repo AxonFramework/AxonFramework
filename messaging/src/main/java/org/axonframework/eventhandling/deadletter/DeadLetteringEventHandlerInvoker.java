@@ -25,7 +25,9 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetterEvaluator;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.FixedDelayLetterEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +35,8 @@ import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -44,9 +44,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the {@link SimpleEventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue {@link
- * EventMessage} for which event handling failed. This dead-lettering {@link EventHandlerInvoker} takes into account
- * that events part of the same sequence (as according to the {@link org.axonframework.eventhandling.async.SequencingPolicy})
- * should be enqueued in order too.
+ * EventMessage} for which event handling failed.
+ * <p>
+ * This dead-lettering {@link EventHandlerInvoker} takes into account that events part of the same sequence (as
+ * according to the {@link org.axonframework.eventhandling.async.SequencingPolicy}) should be enqueued in order.
+ * TODO - add a bit about the evaluation process...
  *
  * @author Steven van Beelen
  * @since 4.6.0
@@ -58,9 +60,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     private final DeadLetterQueue<EventMessage<?>> queue;
     private final String processingGroup;
     private final boolean allowReset;
-    private final ScheduledExecutorService executorService;
-
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final DeadLetterEvaluator letterEvaluator;
+    private final AtomicReference<RunState> runState;
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
@@ -73,7 +74,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         this.queue = builder.queue;
         this.processingGroup = builder.processingGroup;
         this.allowReset = builder.allowReset;
-        this.executorService = builder.executorService;
+        this.letterEvaluator = builder.letterEvaluator;
+        this.runState = new AtomicReference<>(RunState.initial(letterEvaluator::shutdown));
     }
 
     /**
@@ -97,13 +99,13 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
      * Starts the {@link ScheduledExecutorService} used by this invoker for evaluating dead-lettered events.
      */
     public void start() {
-        // TODO: 03-12-21 replace for trigger mechanism instead of fixed delays
-        // TODO: 03-12-21 or, do this as a follow up?
-
-        // TODO: 06-12-21 introduce a 'release' mechanism for the queue as a solution for triggering evaluation
-        executorService.scheduleWithFixedDelay(
-                new EvaluationTask(super::invokeHandlers/*, add predicate*/), 300, 300, TimeUnit.SECONDS
-        );
+        RunState currentState = this.runState.updateAndGet(RunState::start);
+        if (currentState.isRunning()) {
+            letterEvaluator.start(() -> new EvaluationTask(super::invokeHandlers/*, add predicate*/));
+        } else {
+            // TODO: 21-01-22 fine tune exception
+            throw new IllegalStateException("Starting this invoker is blocked somehow");
+        }
     }
 
     /**
@@ -113,10 +115,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
      * @return A future that completes once this invoker's {@link ScheduledExecutorService} is properly shut down.
      */
     public CompletableFuture<Void> shutdown() {
-        // TODO: 03-12-21 add state to stop the task
-        // TODO: 17-01-22 should this invoker stop if it's event processors is stopped?
-        executorService.shutdown();
-        return CompletableFuture.completedFuture(null);
+        return runState.updateAndGet(RunState::attemptStop)
+                       .shutdownHandle();
     }
 
     @Override
@@ -128,7 +128,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         Object sequenceId = super.sequenceIdentifier(message);
         EventHandlingQueueIdentifier identifier = new EventHandlingQueueIdentifier(sequenceId, processingGroup);
-        if (queue.enqueueIfPresent(identifier, message).isPresent()) {
+        Optional<DeadLetterEntry<EventMessage<?>>> optionalEntry = queue.enqueueIfPresent(identifier, message);
+        if (optionalEntry.isPresent()) {
+            letterEvaluator.enqueued(optionalEntry.get());
             logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] was already present.",
                         message, identifier.combinedIdentifier());
         } else {
@@ -143,7 +145,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
                 // TODO: 14-01-22 We could (1) move the errorHandler invocation to a protected method to override,
                 //  ensuring enqueue is invoked at all times with a try-catch block
                 //  or (2) enforce a PropagatingErrorHandler at all times or (3) do nothing.
-                queue.enqueue(identifier, message, e);
+                DeadLetterEntry<EventMessage<?>> letter = queue.enqueue(identifier, message, e);
+                letterEvaluator.enqueued(letter);
             }
         }
     }
@@ -174,7 +177,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         private DeadLetterQueue<EventMessage<?>> queue;
         private String processingGroup;
         private boolean allowReset = false;
-        private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        // TODO: 24-01-22 should we even do a default?
+        private DeadLetterEvaluator letterEvaluator = FixedDelayLetterEvaluator.defaultEvaluator();
 
         /**
          * Sets the {@link DeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
@@ -215,16 +219,12 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         }
 
         /**
-         * Sets the {@link ScheduledExecutorService} this invoker uses to evaluated dead-letters. Defaults to a {@link
-         * Executors#newSingleThreadScheduledExecutor()}.
-         *
-         * @param executorService The scheduled executor used to evaluate dead-letters from the {@link
-         *                        DeadLetterQueue}.
+         * @param letterEvaluator
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder executorService(ScheduledExecutorService executorService) {
-            assertNonNull(executorService, "The ScheduledExecutorService may not be null");
-            this.executorService = executorService;
+        public Builder letterEvaluator(DeadLetterEvaluator letterEvaluator) {
+            assertNonNull(letterEvaluator, "The DeadLetterEvaluator may not be null");
+            this.letterEvaluator = letterEvaluator;
             return this;
         }
 
@@ -259,15 +259,26 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         private final HandlerInvoker handle;
 
         private EvaluationTask(HandlerInvoker handle) {
+            // TODO: 06-12-21 introduce a 'release' mechanism for the queue/task as a solution for triggering actual evaluation
             this.handle = handle;
         }
 
         @Override
         public void run() {
-            Instant now = GenericEventMessage.clock.instant();
+            // TODO: 24-01-22 correctly remove the running task boolean when done
+            if (runState.updateAndGet(RunState::attemptTaskStart).hasRunningTask()) {
+                logger.debug("This runnable is stopped since an Evaluation Task is already running.");
+                return;
+            }
 
+            Instant now = GenericEventMessage.clock.instant();
             boolean done = false;
             while (!done) {
+                if (!runState.get().isRunning()) {
+                    runState.get().shutdownHandle().complete(null);
+                    return;
+                }
+
                 Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter = queue.peek(processingGroup);
                 if (!optionalLetter.isPresent()) {
                     logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present.",
@@ -319,6 +330,70 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    /**
+     * Run state container for this invoker. Maintains whether this invoker {@link #isRunning()}, has a {@link
+     * #taskRunning}
+     */
+    private static class RunState {
+
+        private final boolean isRunning;
+        private final boolean taskRunning;
+        private final CompletableFuture<Void> shutdownHandle;
+        private final Runnable shutdownAction;
+
+        private RunState(boolean isRunning,
+                         boolean taskRunning,
+                         CompletableFuture<Void> shutdownHandle,
+                         Runnable shutdownAction) {
+            this.isRunning = isRunning;
+            this.taskRunning = taskRunning;
+            this.shutdownHandle = shutdownHandle;
+            this.shutdownAction = shutdownAction;
+        }
+
+        public static RunState initial(Runnable shutdownAction) {
+            return new RunState(false, false, CompletableFuture.completedFuture(null), shutdownAction);
+        }
+
+        public RunState start() {
+            return new RunState(true, taskRunning, null, shutdownAction);
+        }
+
+        public RunState attemptTaskStart() {
+            // Starts a task if the invoker is running and no task is active. Otherwise, return the state as is.
+            return isRunning && !taskRunning
+                    ? new RunState(true, true, shutdownHandle, shutdownAction)
+                    : this;
+        }
+
+        public RunState attemptStop() {
+            if (!isRunning || shutdownHandle != null) {
+                // It's already stopped
+                return this;
+            } else if (taskRunning) {
+                // A task is active, so we wait for it to complete the shutdown handle
+                CompletableFuture<Void> handle = new CompletableFuture<>();
+                handle.whenComplete((r, e) -> shutdownAction.run());
+                return new RunState(false, false, handle, shutdownAction);
+            } else {
+                // There's no task active, so we can immediately complete the future and invoke the shutdown action.
+                return new RunState(false, false, CompletableFuture.runAsync(shutdownAction), shutdownAction);
+            }
+        }
+
+        public boolean isRunning() {
+            return isRunning;
+        }
+
+        public boolean hasRunningTask() {
+            return taskRunning;
+        }
+
+        public CompletableFuture<Void> shutdownHandle() {
+            return shutdownHandle;
         }
     }
 }
