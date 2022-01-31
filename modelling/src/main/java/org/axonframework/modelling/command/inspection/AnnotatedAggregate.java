@@ -32,15 +32,11 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateInvocationException;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.ApplyMore;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.*;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -407,16 +403,24 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
+        AtomicInteger canHandleCount = new AtomicInteger(0);
         MessageHandlingMember<? super T> handler =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> {
-                             return mh.canHandle(commandMessage) &&
-                                     mh.unwrap(CommandMessageHandlingMember.class)
-                                             .map(c -> c.canResolve(commandMessage, aggregateRoot))
-                                             .orElseThrow(IllegalAccessError::new);
-                         })
+                         .filter(mh -> mh.canHandle(commandMessage) &&
+                                 canHandleCount.incrementAndGet() > 0 &&
+                                 mh.unwrap(CommandMessageHandlingMember.class)
+                                         .map(c -> c.canResolve(commandMessage, aggregateRoot))
+                                         .orElse(false))
                          .findFirst()
-                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage));
+                         .orElseThrow(() -> {
+                             if (canHandleCount.get() == 0){
+                                 return new NoHandlerForCommandException(commandMessage);
+                             }
+                             return new AggregateEntityNotFoundException(
+                                     "Aggregate cannot handle command [" + commandMessage.getCommandName()
+                                             + "], as there is no entity instance within the aggregate to forward it to."
+                             );
+                         });
 
         Object result;
         if (interceptors.isEmpty()) {
