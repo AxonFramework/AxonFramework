@@ -479,7 +479,7 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
-     * and {@code from} are inclusiv. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
      * @param from     the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param to       the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
@@ -490,7 +490,7 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times, where {@code to}
-     * and {@code from} are inclusiv. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
      * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
@@ -501,7 +501,7 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times, where {@code to}
-     * and {@code from} are inclusiv. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
      *
      * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
      * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
