@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandler;
@@ -70,6 +72,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -1123,10 +1126,20 @@ class EventProcessingModuleTest {
         }
 
         public List<?> getEventHandlers() {
-            return ((SimpleEventHandlerInvoker) ((MultiEventHandlerInvoker) getEventHandlerInvoker())
-                    .delegates()
-                    .get(0))
-                    .eventHandlers();
+            List<EventHandlerInvoker> invokers = ((MultiEventHandlerInvoker) getEventHandlerInvoker()).delegates();
+            return ((SimpleEventHandlerInvoker) invokers.get(0))
+                    .eventHandlers()
+                    .stream()
+                    .map(eventHandlingComponent -> {
+                        try {
+                            Field handlerField =
+                                    AnnotationEventHandlerAdapter.class.getDeclaredField("annotatedEventListener");
+                            return ReflectionUtils.getFieldValue(handlerField, eventHandlingComponent);
+                        } catch (NoSuchFieldException e) {
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
         }
 
         @Override

@@ -16,13 +16,16 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.axonframework.utils.EventTestUtils.createEvent;
 import static org.axonframework.utils.EventTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -92,5 +95,54 @@ class SimpleEventHandlerInvokerTest {
 
         verify(mockHandler1).prepareReset(eq(resetContext));
         verify(mockHandler2).prepareReset(eq(resetContext));
+    }
+
+    @Test
+    void testBuildWithNullEventHandlersListThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventHandlers((List<?>) null));
+    }
+
+    @Test
+    void testBuildWithEmptyEventHandlersListThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventHandlers(Collections.emptyList()));
+    }
+
+    @Test
+    void testBuildWithoutEventHandlersListThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullParameterResolverFactoryThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.parameterResolverFactory(null));
+    }
+
+    @Test
+    void testBuildWithNullHandlerDefinitionThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.handlerDefinition(null));
+    }
+
+    @Test
+    void testBuildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
+    }
+
+    @Test
+    void testBuildWithNullSequencingPolicyThrowsAxonConfigurationException() {
+        SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.sequencingPolicy(null));
     }
 }

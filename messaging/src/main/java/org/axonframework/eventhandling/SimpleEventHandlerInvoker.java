@@ -43,8 +43,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
-    private final List<?> eventHandlers;
-    private final List<EventMessageHandler> wrappedEventHandlers;
+    private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
@@ -58,14 +57,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      */
     protected SimpleEventHandlerInvoker(Builder<?> builder) {
         builder.validate();
-        this.eventHandlers = builder.eventHandlers;
-        this.wrappedEventHandlers =
-                eventHandlers.stream()
-                             .map(handler -> handler instanceof EventMessageHandler
-                                     ? (EventMessageHandler) handler
-                                     : builder.wrapEventMessageHandler(handler)
-                             )
-                             .collect(Collectors.toCollection(ArrayList::new));
+        this.eventHandlingComponents =
+                builder.eventHandlers.stream()
+                                     .map(handler -> handler instanceof EventMessageHandler
+                                             ? (EventMessageHandler) handler
+                                             : builder.wrapEventMessageHandler(handler)
+                                     )
+                                     .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = builder.sequencingPolicy;
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
@@ -97,12 +95,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     /**
-     * Gets the list of Event Handler delegates. This delegates are the end point of event handling.
+     * Gets the list of {@link EventMessageHandler} delegates in this invoker. These delegates are the end point of
+     * event handling.
      *
-     * @return the list of Event Handler delegates
+     * @return The list of {@link EventMessageHandler} delegates.
      */
-    public List<?> eventHandlers() {
-        return Collections.unmodifiableList(eventHandlers);
+    public List<EventMessageHandler> eventHandlers() {
+        return Collections.unmodifiableList(eventHandlingComponents);
     }
 
     @Override
@@ -122,7 +121,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     protected void invokeHandlers(EventMessage<?> message) throws Exception {
-        for (EventMessageHandler handler : wrappedEventHandlers) {
+        for (EventMessageHandler handler : eventHandlingComponents) {
             try {
                 handler.handle(message);
             } catch (Exception e) {
@@ -138,11 +137,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean canHandleType(Class<?> payloadType) {
-        return wrappedEventHandlers.stream().anyMatch(eh -> eh.canHandleType(payloadType));
+        return eventHandlingComponents.stream().anyMatch(eh -> eh.canHandleType(payloadType));
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
-        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+        for (EventMessageHandler eventHandler : eventHandlingComponents) {
             if (eventHandler.canHandle(eventMessage)) {
                 return true;
             }
@@ -152,7 +151,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+        for (EventMessageHandler eventHandler : eventHandlingComponents) {
             if (!eventHandler.supportsReset()) {
                 return false;
             }
@@ -167,7 +166,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public <R> void performReset(R resetContext) {
-        for (EventMessageHandler eventHandler : wrappedEventHandlers) {
+        for (EventMessageHandler eventHandler : eventHandlingComponents) {
             eventHandler.prepareReset(resetContext);
         }
     }
@@ -207,7 +206,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * handler is assignable to {@link EventMessageHandler} it will registered as is. If not, it will be wrapped by
+         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by
          * a new {@link AnnotationEventHandlerAdapter}.
          *
          * @param eventHandlers an array of {@link Object}s which can handle events
@@ -219,14 +218,16 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * handler is assignable to {@link EventMessageHandler} it will registered as is. If not, it will be wrapped by
+         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by
          * a new {@link AnnotationEventHandlerAdapter}.
          *
          * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
         public B eventHandlers(List<?> eventHandlers) {
-            assertThat(eventHandlers, list -> !list.isEmpty(), "At least one EventMessageHandler should be provided");
+            assertThat(eventHandlers,
+                       list -> list != null && !list.isEmpty(),
+                       "At least one EventMessageHandler should be provided");
             this.eventHandlers = eventHandlers;
             //noinspection unchecked
             return (B) this;
@@ -292,7 +293,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @return the current Builder instance, for fluent interfacing
          */
         public B sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-            assertNonNull(sequencingPolicy, "{} may not be null");
+            assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked
             return (B) this;
