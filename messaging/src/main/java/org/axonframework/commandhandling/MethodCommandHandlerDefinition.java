@@ -92,5 +92,10 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         public boolean isFactoryHandler() {
             return isFactoryHandler;
         }
+
+        @Override
+        public boolean canResolve(Message<?> message, T parent) {
+            return super.canHandle(message);
+        }
     }
 }

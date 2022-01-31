@@ -96,6 +96,12 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     }
 
     @Override
+    public boolean canResolve(Message<?> message, P parent){
+        return childEntityResolver.apply((CommandMessage<?>) message,
+                                         parent) != null;
+    }
+
+    @Override
     public boolean canHandle(Message<?> message) {
         return childHandler.canHandle(message);
     }

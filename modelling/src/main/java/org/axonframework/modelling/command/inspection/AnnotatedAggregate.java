@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -38,10 +39,7 @@ import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -411,7 +409,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                          .collect(Collectors.toList());
         MessageHandlingMember<? super T> handler =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage))
+                         .filter(mh -> {
+                             return mh.canHandle(commandMessage) &&
+                                     mh.unwrap(CommandMessageHandlingMember.class)
+                                             .map(c -> c.canResolve(commandMessage, aggregateRoot))
+                                             .orElseThrow(IllegalAccessError::new);
+                         })
                          .findFirst()
                          .orElseThrow(() -> new NoHandlerForCommandException(commandMessage));
 
