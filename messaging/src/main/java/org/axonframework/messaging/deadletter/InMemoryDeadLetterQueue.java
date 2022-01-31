@@ -339,6 +339,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         private final T message;
         private final Throwable cause;
         private final Instant expiresAt;
+        private final int numberOfRetries;
         private final Instant deadLettered;
         private final Consumer<GenericDeadLetterMessage> releaseOperation;
 
@@ -350,6 +351,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                  entry.cause(),
                  entry.deadLettered(),
                  expiresAt,
+                 entry.numberOfRetries() + 1,
                  releaseOperation);
         }
 
@@ -359,11 +361,22 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                                          Instant deadLettered,
                                          Instant expiresAt,
                                          Consumer<GenericDeadLetterMessage> releaseOperation) {
+            this(queueIdentifier, message, cause, deadLettered, expiresAt, 0, releaseOperation);
+        }
+
+        private GenericDeadLetterMessage(QueueIdentifier queueIdentifier,
+                                         T message,
+                                         Throwable cause,
+                                         Instant deadLettered,
+                                         Instant expiresAt,
+                                         int numberOfRetries,
+                                         Consumer<GenericDeadLetterMessage> releaseOperation) {
             this.queueIdentifier = queueIdentifier;
             this.message = message;
             this.cause = cause;
             this.deadLettered = deadLettered;
             this.expiresAt = expiresAt;
+            this.numberOfRetries = numberOfRetries;
             this.releaseOperation = releaseOperation;
         }
 
@@ -393,6 +406,11 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
 
         @Override
+        public int numberOfRetries() {
+            return numberOfRetries;
+        }
+
+        @Override
         public void acknowledge() {
             releaseOperation.accept(this);
         }
@@ -411,7 +429,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                 return false;
             }
 
-            // Validation does not include the expiresAt and releaseOperation, to allow stable removal of entries
+            // Check does not include the expiresAt, numberOfRetries, and releaseOperation allowing easy entry removal.
             //noinspection unchecked
             GenericDeadLetterMessage that = (GenericDeadLetterMessage) o;
             return Objects.equals(queueIdentifier, that.queueIdentifier)
@@ -427,12 +445,13 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         @Override
         public String toString() {
-            return "DeadLetterEntry{" +
+            return "GenericDeadLetterMessage{" +
                     "queueIdentifier=" + queueIdentifier +
                     ", message=" + message +
                     ", cause=" + cause +
-                    ", deadLettered=" + deadLettered +
                     ", expiresAt=" + expiresAt +
+                    ", numberOfRetries=" + numberOfRetries +
+                    ", deadLettered=" + deadLettered +
                     '}';
         }
     }

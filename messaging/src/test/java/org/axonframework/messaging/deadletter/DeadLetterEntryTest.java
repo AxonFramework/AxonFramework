@@ -62,10 +62,10 @@ class DeadLetterEntryTest {
 
     private static class TestDeadLetterEntry implements DeadLetterEntry<Message<?>> {
 
-        private final Instant deadLettered;
+        private final Instant expiresAt;
 
-        private TestDeadLetterEntry(Instant deadLettered) {
-            this.deadLettered = deadLettered;
+        private TestDeadLetterEntry(Instant expiresAt) {
+            this.expiresAt = expiresAt;
         }
 
         @Override
@@ -85,12 +85,17 @@ class DeadLetterEntryTest {
 
         @Override
         public Instant expiresAt() {
-            return null;
+            return expiresAt;
+        }
+
+        @Override
+        public int numberOfRetries() {
+            return 0;
         }
 
         @Override
         public Instant deadLettered() {
-            return deadLettered;
+            return null;
         }
 
         @Override

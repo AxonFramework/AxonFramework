@@ -69,6 +69,13 @@ public interface DeadLetterEntry<T extends Message<?>> {
     Instant expiresAt();
 
     /**
+     * The number of retries this {@link DeadLetterEntry dead-letter} has gone through.
+     *
+     * @return The number of retries this {@link DeadLetterEntry dead-letter} has gone through.
+     */
+    int numberOfRetries();
+
+    /**
      * Acknowledges this {@link DeadLetterEntry dead-letter} as successfully evaluated. This operation will remove the
      * entry from its queue.
      */
