@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -121,7 +120,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(sagaType));
         registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(sagaType));
         registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(sagaType));
-        listenerInvocationErrorHandler = new LoggingErrorHandler();
+        RecordingLoggingErrorHandler recordingLoggingErrorHandler = new RecordingLoggingErrorHandler();
+        listenerInvocationErrorHandler = recordingLoggingErrorHandler;
 
         this.sagaType = sagaType;
         sagaStore = new InMemorySagaStore();
@@ -133,8 +133,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
-                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters
-        );
+                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters, recordingLoggingErrorHandler);
     }
 
     /**
@@ -412,6 +411,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+        if (listenerInvocationErrorHandler instanceof RecordingLoggingErrorHandler) {
+            fixtureExecutionResult.setLoggingErrorHandler((RecordingLoggingErrorHandler) listenerInvocationErrorHandler);
+        }
         return this;
     }
 

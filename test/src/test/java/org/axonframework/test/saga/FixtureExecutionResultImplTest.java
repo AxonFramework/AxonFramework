@@ -81,8 +81,7 @@ class FixtureExecutionResultImplTest {
         sagaStore = new InMemorySagaStore();
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
-                AllFieldsFilter.instance()
-        );
+                AllFieldsFilter.instance(), new RecordingLoggingErrorHandler());
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
@@ -92,8 +91,7 @@ class FixtureExecutionResultImplTest {
     void testStartRecording() {
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
-                AllFieldsFilter.instance()
-        );
+                AllFieldsFilter.instance(), new RecordingLoggingErrorHandler());
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));
@@ -112,7 +110,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void testStartRecording_ClearsEventsAndCommands() {
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
-                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
+                                                       commandBus, StubSaga.class, AllFieldsFilter.instance(), new RecordingLoggingErrorHandler());
         testSubject.startRecording();
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"));

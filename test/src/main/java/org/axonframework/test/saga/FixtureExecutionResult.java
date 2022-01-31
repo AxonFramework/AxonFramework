@@ -587,4 +587,11 @@ public interface FixtureExecutionResult {
      * @return the current FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
+
+    /**
+     * Expect a successful execution of the given command handler, regardless of the actual return value.
+     *
+     * @return the current FixtureExecutionResult, for fluent interfacing
+     */
+    FixtureExecutionResult expectSuccessfulHandlerExecution();
 }

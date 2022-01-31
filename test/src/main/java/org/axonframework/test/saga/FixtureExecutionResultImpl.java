@@ -22,6 +22,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.EventSchedulerValidator;
@@ -34,6 +35,7 @@ import org.hamcrest.Matcher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.test.matchers.Matchers.*;
@@ -54,22 +56,24 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     private final CommandValidator commandValidator;
     private final FieldFilter fieldFilter;
     private final List<Runnable> onStartRecordingCallbacks;
+    private RecordingLoggingErrorHandler loggingErrorHandler;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
-     *
-     * @param sagaStore       The SagaStore to monitor
+     *  @param sagaStore       The SagaStore to monitor
      * @param eventScheduler  The scheduler to monitor
      * @param deadlineManager The deadline manager to monitor
      * @param eventBus        The event bus to monitor
      * @param commandBus      The command bus to monitor
      * @param sagaType        The type of Saga under test
      * @param fieldFilter     The FieldFilter describing the fields to include in equality checks
+     * @param loggingErrorHandler
      */
     FixtureExecutionResultImpl(InMemorySagaStore sagaStore, StubEventScheduler eventScheduler,
                                StubDeadlineManager deadlineManager, EventBus eventBus, RecordingCommandBus commandBus,
-                               Class<T> sagaType, FieldFilter fieldFilter) {
+                               Class<T> sagaType, FieldFilter fieldFilter, RecordingLoggingErrorHandler loggingErrorHandler) {
         this.fieldFilter = fieldFilter;
+        this.loggingErrorHandler = loggingErrorHandler;
         commandValidator = new CommandValidator(commandBus, fieldFilter);
         repositoryContentValidator = new RepositoryContentValidator<>(sagaType, sagaStore);
         eventValidator = new EventValidator(eventBus, fieldFilter);
@@ -406,5 +410,19 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
         deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
         return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectSuccessfulHandlerExecution() {
+        Optional<Exception> throwableOptional = loggingErrorHandler.getException();
+        if (throwableOptional.isPresent()) {
+            throw new AxonAssertionError(String.format("An exception occurred during event handling: [%s]",
+                                                       throwableOptional.get().getMessage()));
+        }
+        return this;
+    }
+
+    public void setLoggingErrorHandler(RecordingLoggingErrorHandler loggingErrorHandler) {
+        this.loggingErrorHandler = loggingErrorHandler;
     }
 }
