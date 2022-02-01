@@ -27,8 +27,13 @@ import java.util.function.Predicate;
  * several FIFO-ordered queues.
  * <p>
  * The contained queues are uniquely identifiable through the {@link QueueIdentifier}. Dead-letters are kept in the form
- * of a {@link DeadLetterEntry DeadLetterEntries}. When retrieving letters through {@link #peek(String)} for evaluation,
- * they can be removed with {@link DeadLetterEntry#acknowledge()} to clear them from this queue.
+ * of a {@link DeadLetterEntry DeadLetterEntries}. When retrieving letters through {@link #take(String)} for evaluation,
+ * they can be removed with {@link DeadLetterEntry#acknowledge()} or {@link DeadLetterEntry#evict()} to clear them from
+ * this queue.
+ * <p>
+ * A callback can be configured through {@link #onAvailable(String, Runnable)} that is automatically invoked when
+ * dead-letters are released and thus ready to be taken. Entries may be released earlier by invoking {@link
+ * #release(Predicate)}.
  *
  * @param <T> An implementation of {@link Message} that represent the dead-letter.
  * @author Steven van Beelen
@@ -135,18 +140,52 @@ public interface DeadLetterQueue<T extends Message<?>> {
     long maxQueueSize();
 
     /**
-     * Peeks the oldest {@link DeadLetterEntry} from this dead-letter queue for the given {@code group}.
+     * Take the oldest {@link DeadLetterEntry} from this dead-letter queue for the given {@code group} that is ready to
+     * be released. Entries can be made available earlier through {@link #release(Predicate)} when necessary.
      * <p>
-     * Upon peeking, the returned {@link DeadLetterEntry dead-letter} is automatically reentered into the queue with an
-     * updated {@link DeadLetterEntry#expiresAt()}. Doing so guards the queue against concurrent peek operations
-     * accidentally retrieving (and thus handling) the same letter.
+     * Upon taking, the returned {@link DeadLetterEntry dead-letter} is kept in the queue with an updated {@link
+     * DeadLetterEntry#expiresAt()} and {@link DeadLetterEntry#numberOfRetries()}. Doing so guards the queue against
+     * concurrent take operations accidentally retrieving (and thus handling) the same letter.
      * <p>
-     * Will return an {@link Optional#empty()} if there are no entries present for the given {@code group}.
+     * Will return an {@link Optional#empty()} if there are no entries ready to be released or present for the given
+     * {@code group}.
      *
      * @param group The group descriptor of a {@link QueueIdentifier} to peek an entry for.
      * @return The oldest {@link DeadLetterEntry} belonging to the given {@code group} from this dead-letter queue.
+     * @see #release(Predicate)
      */
-    Optional<DeadLetterEntry<T>> peek(String group);
+    Optional<DeadLetterEntry<T>> take(String group);
+
+    /**
+     * Release all {@link DeadLetterEntry dead-letters} within this queue that match the given {@code entryFilter}.
+     * <p>
+     * This makes the matching letters ready to be {@link #take(String) taken}. Furthermore, it signals any matching
+     * (based on the {@code group} name) callbacks registered through {@link #onAvailable(String, Runnable)}.
+     *
+     * @param entryFilter A lambda selecting the entries within this queue to be released.
+     */
+    void release(Predicate<DeadLetterEntry<T>> entryFilter);
+
+    /**
+     * Release all {@link DeadLetterEntry dead-letters} within this queue.
+     * <p>
+     * This makes the letters ready to be {@link #take(String) taken}. Furthermore, it signals any callbacks registered
+     * through {@link #onAvailable(String, Runnable)}.
+     */
+    default void release() {
+        release(entry -> true);
+    }
+
+    /**
+     * Set the given {@code callback} for the given {@code group} to be invoked when {@link DeadLetterEntry
+     * dead-letters} are ready to be {@link #take(String) taken} from the queue. Dead-letters may be released earlier
+     * through {@link #release(Predicate)} to automatically trigger the {@code callback} if the {@code group} matches.
+     *
+     * @param group    The group descriptor of a {@link QueueIdentifier} to register a {@code callback} for.
+     * @param callback The operation to run whenever {@link DeadLetterEntry dead-letters} are released and ready to be
+     *                 taken.
+     */
+    void onAvailable(String group, Runnable callback);
 
     /**
      * Clears out all {@link DeadLetterEntry dead-letters} matching the given {@link Predicate queueFilter}.

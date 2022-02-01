@@ -62,7 +62,8 @@ public interface DeadLetterEntry<T extends Message<?>> {
     Instant deadLettered();
 
     /**
-     * The moment in time when this letter may be evaluated.
+     * The moment in time when this letter may be evaluated again. Will equal the {@link #deadLettered()} value if this
+     * entry is enqueued as part of a sequence.
      *
      * @return The moment in time when this letter may be evaluated.
      */

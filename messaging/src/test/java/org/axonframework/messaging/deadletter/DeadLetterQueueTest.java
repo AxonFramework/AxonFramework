@@ -186,9 +186,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedDeadLettered, enqueueResult.deadLettered());
         assertEquals(expectedExpireAt, enqueueResult.expiresAt());
 
-        Optional<DeadLetterEntry<M>> peekedResult = testSubject.peek(testId.group());
-        assertTrue(peekedResult.isPresent());
-        assertEquals(enqueueResult, peekedResult.get());
+        Optional<DeadLetterEntry<M>> takenResult = testSubject.take(testId.group());
+        assertTrue(takenResult.isPresent());
+        assertEquals(enqueueResult, takenResult.get());
     }
 
     @Test
@@ -213,7 +213,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(testSubject.isEmpty());
 
         // The queue should be empty again after releasing the only letter present
-        testSubject.peek(testId.group()).ifPresent(DeadLetterEntry::acknowledge);
+        testSubject.take(testId.group()).ifPresent(DeadLetterEntry::acknowledge);
 
         assertTrue(testSubject.isEmpty());
     }
@@ -251,7 +251,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testPeek() {
+    void testTake() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
 
@@ -263,7 +263,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testId, testFirstLetter, testCause);
         testSubject.enqueue(testId, testSecondLetter, testCause);
 
-        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.peek(testId.group());
+        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
         assertTrue(firstOptionalResult.isPresent());
         DeadLetterEntry<M> firstResult = firstOptionalResult.get();
         assertEquals(testId, firstResult.queueIdentifier());
@@ -273,7 +273,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         firstResult.acknowledge();
 
-        Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.peek(testId.group());
+        Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.take(testId.group());
         assertTrue(secondOptionalResult.isPresent());
         DeadLetterEntry<M> secondResult = secondOptionalResult.get();
         assertEquals(testId, secondResult.queueIdentifier());
@@ -287,15 +287,15 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testPeekOnEmptyQueueReturnsEmptyOptional() {
+    void testTakeOnEmptyQueueReturnsEmptyOptional() {
         String testGroup = "some-group";
 
         assertTrue(testSubject.isEmpty());
-        assertFalse(testSubject.peek(testGroup).isPresent());
+        assertFalse(testSubject.take(testGroup).isPresent());
     }
 
     @Test
-    void testPeekForNonContainedGroupReturnsEmptyOptional() {
+    void testTakeForNonContainedGroupReturnsEmptyOptional() {
         I testId = generateQueueId();
         String testGroup = "some-group";
         assertNotEquals(testGroup, testId.group());
@@ -308,11 +308,11 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.isEmpty());
 
-        assertFalse(testSubject.peek(testGroup).isPresent());
+        assertFalse(testSubject.take(testGroup).isPresent());
     }
 
     @Test
-    void testPeekReturnsDeadLettersInInsertOrder() {
+    void testTakeReturnsDeadLettersInInsertOrder() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
 
@@ -332,7 +332,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testThatId, testThatFirstLetter, testThatCause);
         testSubject.enqueueIfPresent(testThatId, testThatSecondLetter);
 
-        Optional<DeadLetterEntry<M>> thisOptionalFirstResult = testSubject.peek(testThisId.group());
+        Optional<DeadLetterEntry<M>> thisOptionalFirstResult = testSubject.take(testThisId.group());
         assertTrue(thisOptionalFirstResult.isPresent());
         DeadLetterEntry<M> thisFirstResult = thisOptionalFirstResult.get();
         assertEquals(testThisId, thisFirstResult.queueIdentifier());
@@ -342,17 +342,18 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, thisFirstResult.expiresAt());
         thisFirstResult.acknowledge();
 
-        Optional<DeadLetterEntry<M>> thisOptionalSecondResult = testSubject.peek(testThisId.group());
+        Optional<DeadLetterEntry<M>> thisOptionalSecondResult = testSubject.take(testThisId.group());
         assertTrue(thisOptionalSecondResult.isPresent());
         DeadLetterEntry<M> thisSecondResult = thisOptionalSecondResult.get();
         assertEquals(testThisId, thisSecondResult.queueIdentifier());
         assertEquals(testThisSecondLetter, thisSecondResult.message());
         assertNull(thisSecondResult.cause());
         assertEquals(expectedDeadLettered, thisSecondResult.deadLettered());
-        assertEquals(expectedExpireAt, thisSecondResult.expiresAt());
+        // The expiresAt equals the deadLettered time whenever the message is enqueue due to a contained earlier entry.
+        assertEquals(expectedDeadLettered, thisSecondResult.expiresAt());
         thisSecondResult.acknowledge();
 
-        Optional<DeadLetterEntry<M>> thatOptionalFirstResult = testSubject.peek(testThatId.group());
+        Optional<DeadLetterEntry<M>> thatOptionalFirstResult = testSubject.take(testThatId.group());
         assertTrue(thatOptionalFirstResult.isPresent());
         DeadLetterEntry<M> thatFirstResult = thatOptionalFirstResult.get();
         assertEquals(testThatId, thatFirstResult.queueIdentifier());
@@ -367,7 +368,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testReleaseRemovesLetterFromQueue() {
+    void testAcknowledgeRemovesLetterFromQueue() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
 
@@ -379,7 +380,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.isEmpty());
 
-        Optional<DeadLetterEntry<M>> optionalResult = testSubject.peek(testId.group());
+        Optional<DeadLetterEntry<M>> optionalResult = testSubject.take(testId.group());
         assertTrue(optionalResult.isPresent());
         DeadLetterEntry<M> result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
@@ -391,11 +392,11 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         result.acknowledge();
 
         assertTrue(testSubject.isEmpty());
-        assertFalse(testSubject.peek(testId.group()).isPresent());
+        assertFalse(testSubject.take(testId.group()).isPresent());
     }
 
     @Test
-    void testPeekWithoutReleaseUpdatesLetterInQueue() {
+    void testTakeWithoutAcknowledgeUpdatesLetterInQueue() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
 
@@ -404,13 +405,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Throwable testCause = generateCause();
 
         testSubject.enqueue(testId, testLetter, testCause);
-        // Update the clock to a time in the future in preparation for DeadLetterQueue#peek(String)
+        // Update the clock to a time in the future in preparation for DeadLetterQueue#take(String)
         // And, increment the result with the threshold for validation ASAP.
         Instant expectedUpdatedExpireAt = setAndGetTime(Instant.now().plusMillis(1337)).plusMillis(expireThreshold());
 
         assertFalse(testSubject.isEmpty());
 
-        Optional<DeadLetterEntry<M>> optionalResult = testSubject.peek(testId.group());
+        Optional<DeadLetterEntry<M>> optionalResult = testSubject.take(testId.group());
         assertTrue(optionalResult.isPresent());
         DeadLetterEntry<M> result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
@@ -421,7 +422,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.isEmpty());
 
-        optionalResult = testSubject.peek(testId.group());
+        optionalResult = testSubject.take(testId.group());
         assertTrue(optionalResult.isPresent());
         result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
@@ -432,7 +433,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testPeekWithoutReleaseAddsLetterToTheEndOfTheQueue() {
+    void testTakeWithoutAcknowledgeAddsLetterToTheEndOfTheQueue() {
         Instant expectedFirstDeadLettered = setAndGetTime();
         Instant expectedFirstExpireAt = expectedFirstDeadLettered.plusMillis(expireThreshold());
 
@@ -449,13 +450,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Throwable testSecondCause = generateCause();
 
         testSubject.enqueue(testId, testSecondLetter, testSecondCause);
-        // Update the clock to a time in the future in preparation for DeadLetterQueue#peek(String)
+        // Update the clock to a time in the future in preparation for DeadLetterQueue#take(String)
         // And, increment the result with the threshold for validation ASAP.
         Instant expectedUpdatedFirstExpireAt =
                 setAndGetTime(Instant.now().plusMillis(1337)).plusMillis(expireThreshold());
 
-        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.peek(testId.group());
-        // 'firstResult' is automatically reentered in the queue on peek
+        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
+        // 'firstResult' is automatically reentered in the queue on take
         assertTrue(firstOptionalResult.isPresent());
         DeadLetterEntry<M> firstResult = firstOptionalResult.get();
         assertEquals(testId, firstResult.queueIdentifier());
@@ -464,8 +465,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedFirstDeadLettered, firstResult.deadLettered());
         assertEquals(expectedFirstExpireAt, firstResult.expiresAt());
 
-        Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.peek(testId.group());
-        // Peek generates 'secondResult'
+        Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.take(testId.group());
+        // Take generates 'secondResult'
         assertTrue(secondOptionalResult.isPresent());
         DeadLetterEntry<M> secondResult = secondOptionalResult.get();
         assertEquals(firstResult.queueIdentifier(), secondResult.queueIdentifier());
@@ -481,7 +482,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         secondResult.acknowledge();
         // After successfully releasing the 'secondResult', the following entry is 'firstResult'
 
-        Optional<DeadLetterEntry<M>> updateFirstOptionalResult = testSubject.peek(testId.group());
+        Optional<DeadLetterEntry<M>> updateFirstOptionalResult = testSubject.take(testId.group());
         assertTrue(updateFirstOptionalResult.isPresent());
         DeadLetterEntry<M> updatedFirstResult = updateFirstOptionalResult.get();
         assertEquals(firstResult.queueIdentifier(), updatedFirstResult.queueIdentifier());

@@ -17,22 +17,35 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
@@ -57,11 +70,13 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
      */
     public static Clock clock = Clock.systemUTC();
 
-    private final ConcurrentNavigableMap<QueueIdentifier, Deque<DeadLetterEntry<T>>> deadLetters = new ConcurrentSkipListMap<>();
+    private final Map<QueueIdentifier, Deque<DeadLetterEntry<T>>> deadLetters = new ConcurrentSkipListMap<>();
+    private final Map<String, Runnable> availabilityCallbacks = new ConcurrentSkipListMap<>();
 
     private final int maxQueues;
     private final int maxQueueSize;
-    private final long expireThreshold;
+    private final Duration expireThreshold;
+    private final ScheduledExecutorService scheduledExecutorService;
 
     /**
      * Instantiate an in-memory {@link DeadLetterQueue} based on the given {@link Builder builder}.
@@ -73,13 +88,16 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         this.maxQueues = builder.maxQueues;
         this.maxQueueSize = builder.maxQueueSize;
         this.expireThreshold = builder.expireThreshold;
+        this.scheduledExecutorService = builder.scheduledExecutorService;
     }
 
     /**
      * Instantiate a builder to construct an {@link InMemoryDeadLetterQueue}.
      * <p>
      * The maximum number of queues defaults to {@code 1024}, the maximum amount of dead letters inside a queue defaults
-     * to {@code 1024}, and the dead letter expire threshold defaults to {@code 5000} milliseconds.
+     * to {@code 1024}, the dead letter expire threshold defaults to a {@link Duration} of 5000 milliseconds, and the {@link
+     * ScheduledExecutorService} defaults to a {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)}, using
+     * an {@link AxonThreadFactory}.
      *
      * @param <T> The type of {@link Message} maintained in this {@link DeadLetterQueue}.
      * @return A Builder that can construct an {@link InMemoryDeadLetterQueue}.
@@ -92,7 +110,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
      * Construct a default {@link InMemoryDeadLetterQueue}.
      * <p>
      * The maximum number of queues defaults to {@code 1024}, the maximum amount of dead letters inside a queue defaults
-     * to {@code 1024}, and the dead letter expire threshold defaults to {@code 5000} milliseconds.
+     * to {@code 1024}, the dead letter expire threshold defaults to a {@link Duration} of 5000 milliseconds, and the {@link
+     * ScheduledExecutorService} defaults to a {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)}, using
+     * an {@link AxonThreadFactory}.
      *
      * @return A default {@link InMemoryDeadLetterQueue}.
      */
@@ -112,19 +132,27 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                     cause
             );
         }
-        logger.debug("Adding dead letter [{}] because [{}].", deadLetter, cause);
+
+        if (cause != null) {
+            logger.debug("Adding dead letter [{}] because [{}].", deadLetter, cause);
+        } else {
+            logger.debug("Adding dead letter [{}] because the queue identifier [{}] is already present.",
+                         deadLetter, identifier);
+        }
 
         DeadLetterEntry<T> entry = buildEntry(identifier, deadLetter, cause);
 
         deadLetters.computeIfAbsent(identifier, id -> new ConcurrentLinkedDeque<>())
                    .add(entry);
 
+        scheduleAvailabilityCallbacks(identifier);
+
         return entry;
     }
 
     private DeadLetterEntry<T> buildEntry(QueueIdentifier identifier, T deadLetter, Throwable cause) {
         Instant deadLettered = clock.instant();
-        Instant expiresAt = deadLettered.plusMillis(expireThreshold);
+        Instant expiresAt = cause == null ? deadLettered : deadLettered.plus(expireThreshold);
         return new GenericDeadLetterMessage(identifier,
                                             deadLetter,
                                             cause,
@@ -142,6 +170,16 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
     }
 
+    private void scheduleAvailabilityCallbacks(QueueIdentifier identifier) {
+        availabilityCallbacks.entrySet()
+                             .stream()
+                             .filter(callbackEntry -> callbackEntry.getKey().equals(identifier.group()))
+                             .map(Map.Entry::getValue)
+                             .forEach(callback -> scheduledExecutorService.schedule(
+                                     callback, expireThreshold.toMillis(), TimeUnit.MILLISECONDS
+                             ));
+    }
+
     @Override
     public boolean contains(QueueIdentifier identifier) {
         logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
@@ -155,7 +193,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
     @Override
     public boolean isFull(QueueIdentifier queueIdentifier) {
-         return maximumNumberOfQueuesReached(queueIdentifier) || maximumQueueSizeReached(queueIdentifier);
+        return maximumNumberOfQueuesReached(queueIdentifier) || maximumQueueSizeReached(queueIdentifier);
     }
 
     private boolean maximumNumberOfQueuesReached(QueueIdentifier queueIdentifier) {
@@ -177,7 +215,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public Optional<DeadLetterEntry<T>> peek(String group) {
+    public synchronized Optional<DeadLetterEntry<T>> take(String group) {
         if (deadLetters.isEmpty()) {
             logger.debug("Queue is empty while peeking. Returning an empty optional.");
             return Optional.empty();
@@ -224,11 +262,40 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
     private void updateAndReinsert(DeadLetterEntry<T> letter) {
         // Reinsert the entry with an updated expireAt. This solves concurrent access of the same letter.
-        Instant newExpiresAt = clock.instant().plusMillis(expireThreshold);
+        // And ensures letters that have reached the top of the queue are considered at the top.
+        Instant newExpiresAt = clock.instant().plus(expireThreshold);
         DeadLetterEntry<T> updatedLetter = new GenericDeadLetterMessage(letter, newExpiresAt, this::releaseOperation);
-        Queue<DeadLetterEntry<T>> queue = deadLetters.get(updatedLetter.queueIdentifier());
+        Deque<DeadLetterEntry<T>> queue = deadLetters.get(updatedLetter.queueIdentifier());
         queue.remove(letter);
         queue.add(updatedLetter);
+    }
+
+    @Override
+    public void release(Predicate<DeadLetterEntry<T>> entryFilter) {
+        Instant expiresAt = clock.instant();
+        Set<String> releasedGroups = new HashSet<>();
+        logger.debug("Received a request to release matching dead-letters for evaluation.");
+
+        deadLetters.values()
+                   .stream()
+                   .flatMap(Collection::stream)
+                   .filter(entryFilter)
+                   .map(entry -> (GenericDeadLetterMessage) entry)
+                   .forEach(entry -> {
+                       entry.setExpiresAt(expiresAt);
+                       releasedGroups.add(entry.queueIdentifier().group());
+                   });
+        // todo task should be repeated as long as there are entries
+        releasedGroups.stream()
+                      .map(availabilityCallbacks::get)
+                      .forEach(scheduledExecutorService::submit);
+    }
+
+    @Override
+    public void onAvailable(String group, Runnable callback) {
+        if (availabilityCallbacks.put(group, callback) != null) {
+            logger.info("Replaced the availability callback for group [{}].", group);
+        }
     }
 
     @Override
@@ -249,7 +316,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
      * Builder class to instantiate an {@link InMemoryDeadLetterQueue}.
      * <p>
      * The maximum number of queues defaults to {@code 1024}, the maximum amount of dead letters inside a queue defaults
-     * to {@code 1024}, and the dead letter expire threshold defaults to {@code 5000} milliseconds.
+     * to {@code 1024}, the dead letter expire threshold defaults to a {@link Duration} of 5000 milliseconds, and the {@link
+     * ScheduledExecutorService} defaults to a {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)}, using
+     * an {@link AxonThreadFactory}.
      *
      * @param <T> The type of {@link Message} maintained in this {@link DeadLetterQueue}.
      */
@@ -257,7 +326,10 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         private int maxQueues = 1024;
         private int maxQueueSize = 1024;
-        private long expireThreshold = 5000;
+        // TODO: 01-02-22 should we increase this value to something higher to not trigger to many checks?
+        private Duration expireThreshold = Duration.ofMillis(5000);
+        private ScheduledExecutorService scheduledExecutorService =
+                Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory("InMemoryDeadLetterQueue"));
 
         /**
          * Sets the maximum number of queues this {@link DeadLetterQueue} may contain. This requirement reflects itself
@@ -296,17 +368,35 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         /**
          * Sets the threshold when newly {@link #enqueue(QueueIdentifier, Message, Throwable) enqueued} letters are
-         * considered expired.
+         * considered ready to be {@link #take(String) taken}.
          * <p>
-         * The earlier the {@link DeadLetterEntry#expiresAt()} date, the earlier it is returned from {@link
-         * #peek(String)}. Defaults to  {@code 5000} milliseconds.
+         * The provided threshold is also used to schedule {@link #onAvailable(String, Runnable) configured availability
+         * checks}. Defaults to a {@link Duration} of 5000 milliseconds.
          *
-         * @param expireThreshold The threshold for enqueued {@link DeadLetterEntry letters} to be considered expired.
+         * @param expireThreshold The threshold for enqueued {@link DeadLetterEntry letters} to be considered ready to
+         *                        be {@link #take(String) taken}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<T> expireThreshold(long expireThreshold) {
-            assertStrictPositive(expireThreshold, "the expire threshold should be strictly positive");
+        public Builder<T> expireThreshold(Duration expireThreshold) {
+            assertThat(expireThreshold,
+                       threshold -> threshold != null && (!threshold.isZero() || !threshold.isNegative()),
+                       "The expire threshold should be strictly positive");
             this.expireThreshold = expireThreshold;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ScheduledExecutorService} this queue uses to invoke {@link #onAvailable(String, Runnable)
+         * configured availability callbacks}. Defaults to a {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)},
+         * using an {@link AxonThreadFactory}.
+         *
+         * @param scheduledExecutorService The {@link ScheduledExecutorService} this queue uses to invoke {@link
+         *                                 #onAvailable(String, Runnable) configured availability callbacks}.
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<T> scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+            assertNonNull(scheduledExecutorService, "The ScheduledExecutorService should be non null");
+            this.scheduledExecutorService = scheduledExecutorService;
             return this;
         }
 
@@ -338,7 +428,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         private final QueueIdentifier queueIdentifier;
         private final T message;
         private final Throwable cause;
-        private final Instant expiresAt;
+        private Instant expiresAt;
         private final int numberOfRetries;
         private final Instant deadLettered;
         private final Consumer<GenericDeadLetterMessage> releaseOperation;
@@ -403,6 +493,10 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         @Override
         public Instant expiresAt() {
             return expiresAt;
+        }
+
+        public void setExpiresAt(Instant expiresAt) {
+            this.expiresAt = expiresAt;
         }
 
         @Override
