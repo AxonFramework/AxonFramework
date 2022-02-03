@@ -25,7 +25,8 @@ import java.time.Instant;
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #deadLettered()}. This letter can be regarded for
  * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the entry can be cleared through
- * {@link #acknowledge()}. The {@link #evict()} method should be used to remove an entry regardless of any evaluation.
+ * {@link #acknowledge()}. The {@link #requeue()} method should be used to signal evaluation failed, reentering the
+ * letter into its queue.
  *
  * @param <T> The type of {@link Message} represented by this entry.
  * @author Steven van Beelen
@@ -83,11 +84,9 @@ public interface DeadLetterEntry<T extends Message<?>> {
     void acknowledge();
 
     /**
-     * Evict this {@link DeadLetterEntry dead-letter} from the queue it originates from. This operation will remove the
-     * entry from its queue. It is recommended to use this method to remove an entry if it cannot be {@link
-     * #acknowledge() acknowledged} anymore.
+     * Reenters this {@link DeadLetterEntry dead-letter} in the queue it originates from. This method should be used to
+     * signal the evaluation failed. This operation might remove the entry from the {@link DeadLetterQueue queue} it
+     * originated from.
      */
-    void evict();
-
-
+    void requeue();
 }

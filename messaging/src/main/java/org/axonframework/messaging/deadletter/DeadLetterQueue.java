@@ -28,8 +28,8 @@ import java.util.function.Predicate;
  * <p>
  * The contained queues are uniquely identifiable through the {@link QueueIdentifier}. Dead-letters are kept in the form
  * of a {@link DeadLetterEntry DeadLetterEntries}. When retrieving letters through {@link #take(String)} for evaluation,
- * they can be removed with {@link DeadLetterEntry#acknowledge()} or {@link DeadLetterEntry#evict()} to clear them from
- * this queue.
+ * they can be removed with {@link DeadLetterEntry#acknowledge()} after successful evaluation. Upon failure, the letter
+ * may be reentered in the queue through {@link DeadLetterEntry#requeue()}.
  * <p>
  * A callback can be configured through {@link #onAvailable(String, Runnable)} that is automatically invoked when
  * dead-letters are released and thus ready to be taken. Entries may be released earlier by invoking {@link
@@ -157,14 +157,14 @@ public interface DeadLetterQueue<T extends Message<?>> {
     Optional<DeadLetterEntry<T>> take(String group);
 
     /**
-     * Release all {@link DeadLetterEntry dead-letters} within this queue that match the given {@code entryFilter}.
+     * Release all {@link DeadLetterEntry dead-letters} within this queue that match the given {@code letterFilter}.
      * <p>
      * This makes the matching letters ready to be {@link #take(String) taken}. Furthermore, it signals any matching
      * (based on the {@code group} name) callbacks registered through {@link #onAvailable(String, Runnable)}.
      *
-     * @param entryFilter A lambda selecting the entries within this queue to be released.
+     * @param letterFilter A lambda selecting the letters within this queue to be released.
      */
-    void release(Predicate<DeadLetterEntry<T>> entryFilter);
+    void release(Predicate<DeadLetterEntry<T>> letterFilter);
 
     /**
      * Release all {@link DeadLetterEntry dead-letters} within this queue.

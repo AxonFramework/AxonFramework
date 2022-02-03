@@ -17,10 +17,10 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -79,12 +79,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
      *
      * @return The expiry threshold used by the {@link DeadLetterQueue} under test.
      */
-    abstract long expireThreshold();
+    abstract Duration expireThreshold();
 
     @Test
     void testEnqueue() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
         M testDeadLetter = generateMessage();
@@ -165,7 +165,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     @Test
     void testEnqueueIfPresentEnqueuesForExistingIdGroupCombination() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
         Throwable testCause = generateCause();
@@ -253,7 +253,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     @Test
     void testTake() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
         M testFirstLetter = generateMessage();
@@ -271,6 +271,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testCause, firstResult.cause());
         assertEquals(expectedDeadLettered, firstResult.deadLettered());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
+        assertEquals(0, firstResult.numberOfRetries());
         firstResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.take(testId.group());
@@ -281,8 +282,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testCause, secondResult.cause());
         assertEquals(expectedDeadLettered, secondResult.deadLettered());
         assertEquals(expectedExpireAt, secondResult.expiresAt());
+        assertEquals(0, secondResult.numberOfRetries());
 
-        // only one entry was released, so the second still remains
+        // Only one entry was acknowledged, so the second still remains.
         assertFalse(testSubject.isEmpty());
     }
 
@@ -314,7 +316,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     @Test
     void testTakeReturnsDeadLettersInInsertOrder() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testThisId = generateQueueId();
         M testThisFirstLetter = generateMessage();
@@ -340,6 +342,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisCause, thisFirstResult.cause());
         assertEquals(expectedDeadLettered, thisFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thisFirstResult.expiresAt());
+        assertEquals(0, thisFirstResult.numberOfRetries());
         thisFirstResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> thisOptionalSecondResult = testSubject.take(testThisId.group());
@@ -351,6 +354,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedDeadLettered, thisSecondResult.deadLettered());
         // The expiresAt equals the deadLettered time whenever the message is enqueue due to a contained earlier entry.
         assertEquals(expectedDeadLettered, thisSecondResult.expiresAt());
+        assertEquals(0, thisSecondResult.numberOfRetries());
         thisSecondResult.acknowledge();
 
         Optional<DeadLetterEntry<M>> thatOptionalFirstResult = testSubject.take(testThatId.group());
@@ -361,22 +365,57 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThatCause, thatFirstResult.cause());
         assertEquals(expectedDeadLettered, thatFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thatFirstResult.expiresAt());
+        assertEquals(0, thatFirstResult.numberOfRetries());
         thatFirstResult.acknowledge();
 
-        // The second 'that' letter is still in the queue
+        // The second 'that' letter is still in the queue.
+        assertFalse(testSubject.isEmpty());
+    }
+
+    /**
+     * An "active sequence" in this case means that a letter with {@link QueueIdentifier} {@code x} is not {@link
+     * DeadLetterEntry#acknowledge() acknowledged} or {@link DeadLetterEntry#requeue() requeued} yet. Furthermore, if
+     * it's the sole entry for that {@code group}, nothing should be returned. This approach ensure the events for a
+     * given {@link QueueIdentifier} are handled in the order they've been dead-lettered (a.k.a., in sequence).
+     */
+    @Test
+    void testTakeReturnsEmptyOptionalForAnActiveSequenceAndOtherwiseEmptyQueue() {
+        Instant expectedDeadLettered = setAndGetTime();
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
+
+        I testId = generateQueueId();
+        M testFirstLetter = generateMessage();
+        Throwable testThisCause = generateCause();
+        M testSecondLetter = generateMessage();
+
+        testSubject.enqueue(testId, testFirstLetter, testThisCause);
+        testSubject.enqueueIfPresent(testId, testSecondLetter);
+
+        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
+        assertTrue(firstOptionalResult.isPresent());
+        DeadLetterEntry<M> firstResult = firstOptionalResult.get();
+        assertEquals(testId, firstResult.queueIdentifier());
+        assertEquals(testFirstLetter, firstResult.message());
+        assertEquals(testThisCause, firstResult.cause());
+        assertEquals(expectedDeadLettered, firstResult.deadLettered());
+        assertEquals(expectedExpireAt, firstResult.expiresAt());
+        assertEquals(0, firstResult.numberOfRetries());
+        // No DeadLetterEntry#acknowledge or DeadLetterEntry#requeue invocation here, as that releases the sequence.
+
+        assertFalse(testSubject.take(testId.group()).isPresent());
         assertFalse(testSubject.isEmpty());
     }
 
     @Test
     void testAcknowledgeRemovesLetterFromQueue() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
-        M testFirstLetter = generateMessage();
+        M testLetter = generateMessage();
         Throwable testCause = generateCause();
 
-        testSubject.enqueue(testId, testFirstLetter, testCause);
+        testSubject.enqueue(testId, testLetter, testCause);
 
         assertFalse(testSubject.isEmpty());
 
@@ -384,11 +423,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(optionalResult.isPresent());
         DeadLetterEntry<M> result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
-        assertEquals(testFirstLetter, result.message());
+        assertEquals(testLetter, result.message());
         assertEquals(testCause, result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
+        assertEquals(0, result.numberOfRetries());
 
+        // Evaluation of the dead-letter was successful, so its acknowledged and thus removed from the queue.
         result.acknowledge();
 
         assertTrue(testSubject.isEmpty());
@@ -396,101 +437,42 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testTakeWithoutAcknowledgeUpdatesLetterInQueue() {
+    void testRequeueReenterLetterToQueueWithAdjustedExpireAtAndNumberOfRetries() {
         Instant expectedDeadLettered = setAndGetTime();
-        Instant expectedExpireAt = expectedDeadLettered.plusMillis(expireThreshold());
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
         M testLetter = generateMessage();
         Throwable testCause = generateCause();
 
         testSubject.enqueue(testId, testLetter, testCause);
-        // Update the clock to a time in the future in preparation for DeadLetterQueue#take(String)
-        // And, increment the result with the threshold for validation ASAP.
-        Instant expectedUpdatedExpireAt = setAndGetTime(Instant.now().plusMillis(1337)).plusMillis(expireThreshold());
 
         assertFalse(testSubject.isEmpty());
 
-        Optional<DeadLetterEntry<M>> optionalResult = testSubject.take(testId.group());
-        assertTrue(optionalResult.isPresent());
-        DeadLetterEntry<M> result = optionalResult.get();
-        assertEquals(testId, result.queueIdentifier());
-        assertEquals(testLetter, result.message());
-        assertEquals(testCause, result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
-        assertEquals(expectedExpireAt, result.expiresAt());
+        Optional<DeadLetterEntry<M>> optionalFirstTryResult = testSubject.take(testId.group());
+        assertTrue(optionalFirstTryResult.isPresent());
+        DeadLetterEntry<M> firstTryResult = optionalFirstTryResult.get();
+        assertEquals(testId, firstTryResult.queueIdentifier());
+        assertEquals(testLetter, firstTryResult.message());
+        assertEquals(testCause, firstTryResult.cause());
+        assertEquals(expectedDeadLettered, firstTryResult.deadLettered());
+        assertEquals(expectedExpireAt, firstTryResult.expiresAt());
+        assertEquals(0, firstTryResult.numberOfRetries());
+
+        Instant expectedUpdatedExpireAt = setAndGetTime().plus(expireThreshold());
+        // Evaluation of the dead-letter was unsuccessful, so its requeued and thus kept in the queue.
+        firstTryResult.requeue();
 
         assertFalse(testSubject.isEmpty());
-
-        optionalResult = testSubject.take(testId.group());
-        assertTrue(optionalResult.isPresent());
-        result = optionalResult.get();
-        assertEquals(testId, result.queueIdentifier());
-        assertEquals(testLetter, result.message());
-        assertEquals(testCause, result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
-        assertEquals(expectedUpdatedExpireAt, result.expiresAt());
-    }
-
-    @Test
-    void testTakeWithoutAcknowledgeAddsLetterToTheEndOfTheQueue() {
-        Instant expectedFirstDeadLettered = setAndGetTime();
-        Instant expectedFirstExpireAt = expectedFirstDeadLettered.plusMillis(expireThreshold());
-
-        I testId = generateQueueId();
-        M testFirstLetter = generateMessage();
-        Throwable testFirstCause = generateCause();
-
-        testSubject.enqueue(testId, testFirstLetter, testFirstCause);
-
-        Instant expectedSecondDeadLettered = setAndGetTime(Instant.now().plusMillis(1337));
-        Instant expectedSecondExpireAt = expectedSecondDeadLettered.plusMillis(expireThreshold());
-
-        M testSecondLetter = generateMessage();
-        Throwable testSecondCause = generateCause();
-
-        testSubject.enqueue(testId, testSecondLetter, testSecondCause);
-        // Update the clock to a time in the future in preparation for DeadLetterQueue#take(String)
-        // And, increment the result with the threshold for validation ASAP.
-        Instant expectedUpdatedFirstExpireAt =
-                setAndGetTime(Instant.now().plusMillis(1337)).plusMillis(expireThreshold());
-
-        Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
-        // 'firstResult' is automatically reentered in the queue on take
-        assertTrue(firstOptionalResult.isPresent());
-        DeadLetterEntry<M> firstResult = firstOptionalResult.get();
-        assertEquals(testId, firstResult.queueIdentifier());
-        assertEquals(testFirstLetter, firstResult.message());
-        assertEquals(testFirstCause, firstResult.cause());
-        assertEquals(expectedFirstDeadLettered, firstResult.deadLettered());
-        assertEquals(expectedFirstExpireAt, firstResult.expiresAt());
-
-        Optional<DeadLetterEntry<M>> secondOptionalResult = testSubject.take(testId.group());
-        // Take generates 'secondResult'
-        assertTrue(secondOptionalResult.isPresent());
-        DeadLetterEntry<M> secondResult = secondOptionalResult.get();
-        assertEquals(firstResult.queueIdentifier(), secondResult.queueIdentifier());
-        assertEquals(testSecondLetter, secondResult.message());
-        assertNotEquals(firstResult.message(), secondResult.message());
-        assertEquals(testSecondCause, secondResult.cause());
-        assertNotEquals(firstResult.cause(), secondResult.cause());
-        assertEquals(expectedSecondDeadLettered, secondResult.deadLettered());
-        assertNotEquals(firstResult.deadLettered(), secondResult.deadLettered());
-        assertEquals(expectedSecondExpireAt, secondResult.expiresAt());
-        assertNotEquals(firstResult.expiresAt(), secondResult.expiresAt());
-
-        secondResult.acknowledge();
-        // After successfully releasing the 'secondResult', the following entry is 'firstResult'
-
-        Optional<DeadLetterEntry<M>> updateFirstOptionalResult = testSubject.take(testId.group());
-        assertTrue(updateFirstOptionalResult.isPresent());
-        DeadLetterEntry<M> updatedFirstResult = updateFirstOptionalResult.get();
-        assertEquals(firstResult.queueIdentifier(), updatedFirstResult.queueIdentifier());
-        assertEquals(firstResult.message(), updatedFirstResult.message());
-        assertEquals(firstResult.cause(), updatedFirstResult.cause());
-        assertEquals(firstResult.deadLettered(), updatedFirstResult.deadLettered());
-        assertNotEquals(firstResult.expiresAt(), updatedFirstResult.expiresAt());
-        assertEquals(expectedUpdatedFirstExpireAt, updatedFirstResult.expiresAt());
+        Optional<DeadLetterEntry<M>> optionalSecondTry = testSubject.take(testId.group());
+        assertTrue(optionalSecondTry.isPresent());
+        DeadLetterEntry<M> secondTryResult = optionalSecondTry.get();
+        assertEquals(firstTryResult.queueIdentifier(), secondTryResult.queueIdentifier());
+        assertEquals(firstTryResult.message(), secondTryResult.message());
+        assertEquals(firstTryResult.cause(), secondTryResult.cause());
+        assertEquals(firstTryResult.deadLettered(), secondTryResult.deadLettered());
+        assertEquals(expectedUpdatedExpireAt, secondTryResult.expiresAt());
+        assertEquals(1, secondTryResult.numberOfRetries());
     }
 
     @Test

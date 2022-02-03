@@ -21,9 +21,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.deadletter.EventHandlingQueueIdentifier;
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueueIdentifier, EventMessage<?>> {
 
-    private static final long EXPIRE_THRESHOLD = 5000L;
+    private static final Duration EXPIRE_THRESHOLD = Duration.ofMillis(5000);
 
     @Override
     DeadLetterQueue<EventMessage<?>> buildTestSubject() {
@@ -61,7 +62,7 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
     }
 
     @Override
-    long expireThreshold() {
+    Duration expireThreshold() {
         return EXPIRE_THRESHOLD;
     }
 
@@ -125,16 +126,23 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
     }
 
     @Test
+    void testBuildWithNullExpireThresholdThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(null));
+    }
+
+    @Test
     void testBuildWithNegativeExpireThresholdThrowsAxonConfigurationException() {
         InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(-1));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(Duration.ofMillis(-1)));
     }
 
     @Test
     void testBuildWithZeroExpireThresholdThrowsAxonConfigurationException() {
         InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(0));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(Duration.ZERO));
     }
 }
