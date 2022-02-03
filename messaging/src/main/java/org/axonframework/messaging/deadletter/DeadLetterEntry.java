@@ -89,15 +89,5 @@ public interface DeadLetterEntry<T extends Message<?>> {
      */
     void evict();
 
-    /**
-     * Compares two {@link DeadLetterEntry dead-letters} with one another, based on when they {@link #expiresAt()}.
-     *
-     * @param first  The first {@link DeadLetterEntry dead-letter} to compare with.
-     * @param second The second {@link DeadLetterEntry dead-letter} to compare with.
-     * @return The result of {@link Instant#compareTo(Instant)} between the {@code first} and {@code second} {@link
-     * DeadLetterEntry dead-letter}.
-     */
-    static int compare(DeadLetterEntry<?> first, DeadLetterEntry<?> second) {
-        return first.expiresAt().compareTo(second.expiresAt());
-    }
+
 }
