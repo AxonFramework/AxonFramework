@@ -25,7 +25,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -100,6 +104,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testCause, result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
+        assertEquals(0, result.numberOfRetries());
     }
 
     @Test
@@ -135,6 +140,38 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
+    void testOnAvailableCallbackIsInvokedAfterConfiguredExpireThresholdForAnEnqueuedLetter() {
+        Duration testExpireThreshold = expireThreshold();
+        I testId = generateQueueId();
+        M testLetter = generateMessage();
+        Throwable testCause = generateCause();
+
+        Instant expectedDeadLettered = setAndGetTime();
+        Instant expectedExpireAt = expectedDeadLettered.plus(testExpireThreshold);
+        CountDownLatch expectedCallbackInvocations = new CountDownLatch(1);
+
+        // Set the callback that's invoked after the expiry threshold is reached that's followed by enqueue.
+        testSubject.onAvailable(testId.group(), expectedCallbackInvocations::countDown);
+
+        DeadLetterEntry<M> result = testSubject.enqueue(testId, testLetter, testCause);
+
+        assertTrue(testSubject.contains(testId));
+        assertFalse(testSubject.isEmpty());
+        assertEquals(testId, result.queueIdentifier());
+        assertEquals(testLetter, result.message());
+        assertEquals(testCause, result.cause());
+        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedExpireAt, result.expiresAt());
+        assertEquals(0, result.numberOfRetries());
+
+        try {
+            assertTrue(expectedCallbackInvocations.await(testExpireThreshold.toMillis() * 2, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException e) {
+            fail("Callback should have been invoked within [" + testExpireThreshold + "]");
+        }
+    }
+
+    @Test
     void testEnqueueIfPresentDoesNotEnqueueForEmptyQueue() {
         I testQueueId = generateQueueId();
 
@@ -146,7 +183,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testEnqueueIfPresentDoesNotEnqueueForNonExistentIdGroupCombination() {
+    void testEnqueueIfPresentDoesNotEnqueueForNonExistentQueueIdentifier() {
         I testFirstId = generateQueueId();
         Throwable testCause = generateCause();
 
@@ -163,7 +200,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testEnqueueIfPresentEnqueuesForExistingIdGroupCombination() {
+    void testEnqueueIfPresentEnqueuesForExistingQueueIdentifier() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
@@ -185,10 +222,58 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testCause, enqueueResult.cause());
         assertEquals(expectedDeadLettered, enqueueResult.deadLettered());
         assertEquals(expectedExpireAt, enqueueResult.expiresAt());
+        assertEquals(0, enqueueResult.numberOfRetries());
 
         Optional<DeadLetterEntry<M>> takenResult = testSubject.take(testId.group());
         assertTrue(takenResult.isPresent());
         assertEquals(enqueueResult, takenResult.get());
+    }
+
+    @Test
+    void testOnAvailableCallbackIsInvokedAfterConfiguredExpireThresholdForAnEnqueuedIfPresentLetter() {
+        Duration testExpireThreshold = expireThreshold();
+        I testId = generateQueueId();
+        M testFirstLetter = generateMessage();
+        M testSecondLetter = generateMessage();
+        Throwable testCause = generateCause();
+
+        Instant expectedFirstDeadLettered = setAndGetTime();
+        Instant expectedFirstExpireAt = expectedFirstDeadLettered.plus(testExpireThreshold);
+        CountDownLatch expectedCallbackInvocations = new CountDownLatch(2);
+
+        // Set the callback that's invoked after the expiry threshold is reached that's followed by enqueue.
+        testSubject.onAvailable(testId.group(), expectedCallbackInvocations::countDown);
+
+        DeadLetterEntry<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testCause);
+
+        assertTrue(testSubject.contains(testId));
+        assertFalse(testSubject.isEmpty());
+
+        assertEquals(testId, enqueueResult.queueIdentifier());
+        assertEquals(testFirstLetter, enqueueResult.message());
+        assertEquals(testCause, enqueueResult.cause());
+        assertEquals(expectedFirstDeadLettered, enqueueResult.deadLettered());
+        assertEquals(expectedFirstExpireAt, enqueueResult.expiresAt());
+        assertEquals(0, enqueueResult.numberOfRetries());
+
+        Instant expectedSecondDeadLettered = setAndGetTime(expectedFirstExpireAt);
+        Optional<DeadLetterEntry<M>> optionalResult = testSubject.enqueueIfPresent(testId, testSecondLetter);
+
+        assertTrue(optionalResult.isPresent());
+        DeadLetterEntry<M> enqueueIfPresentResult = optionalResult.get();
+        assertEquals(testId, enqueueIfPresentResult.queueIdentifier());
+        assertEquals(testSecondLetter, enqueueIfPresentResult.message());
+        assertNull(enqueueIfPresentResult.cause());
+        assertEquals(expectedSecondDeadLettered, enqueueIfPresentResult.deadLettered());
+        // The expiresAt equals the deadLettered time whenever the message is enqueue due to a contained earlier entry.
+        assertEquals(expectedSecondDeadLettered, enqueueIfPresentResult.expiresAt());
+        assertEquals(0, enqueueIfPresentResult.numberOfRetries());
+
+        try {
+            assertTrue(expectedCallbackInvocations.await(testExpireThreshold.toMillis() * 2, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException e) {
+            fail("Callback should have been invoked within [" + testExpireThreshold + "]");
+        }
     }
 
     @Test
@@ -476,6 +561,114 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
+    void testReleaseUpdatesExpireAtToNow() {
+        Instant expectedDeadLettered = setAndGetTime();
+        Instant expectedExpireAt = expectedDeadLettered.plus(Duration.ofMillis(5000));
+
+        I testThisId = generateQueueId();
+        M testThisLetter = generateMessage();
+        Throwable testThisCause = generateCause();
+        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+
+        I testThatId = generateQueueId();
+        M testThatLetter = generateMessage();
+        Throwable testThatCause = generateCause();
+        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+
+        // Set the time to the expected expireAt.
+        setAndGetTime(expectedExpireAt);
+        // Release all letters.
+        testSubject.release();
+
+        Optional<DeadLetterEntry<M>> thisOptionalResult = testSubject.take(testThisId.group());
+        assertTrue(thisOptionalResult.isPresent());
+        DeadLetterEntry<M> thisResult = thisOptionalResult.get();
+        assertEquals(testThisId, thisResult.queueIdentifier());
+        assertEquals(testThisLetter, thisResult.message());
+        assertEquals(testThisCause, thisResult.cause());
+        assertEquals(expectedDeadLettered, thisResult.deadLettered());
+        assertEquals(expectedExpireAt, thisResult.expiresAt());
+        assertEquals(0, thisResult.numberOfRetries());
+
+        Optional<DeadLetterEntry<M>> thatOptionalResult = testSubject.take(testThatId.group());
+        assertTrue(thatOptionalResult.isPresent());
+        DeadLetterEntry<M> thatResult = thatOptionalResult.get();
+        assertEquals(testThatId, thatResult.queueIdentifier());
+        assertEquals(testThatLetter, thatResult.message());
+        assertEquals(testThatCause, thatResult.cause());
+        assertEquals(expectedDeadLettered, thatResult.deadLettered());
+        assertEquals(expectedExpireAt, thatResult.expiresAt());
+        assertEquals(0, thatResult.numberOfRetries());
+    }
+
+    @Test
+    void testReleaseUpdatesExpireAtToNowForEntriesMatchingTheReleasePredicate() {
+        Instant expectedDeadLettered = setAndGetTime();
+        Instant expectedOriginalExpireAt = expectedDeadLettered.plus(expireThreshold());
+        Instant expectedUpdatedExpireAt = expectedDeadLettered.plus(Duration.ofMillis(5000));
+
+        I testThisId = generateQueueId();
+        M testThisLetter = generateMessage();
+        Throwable testThisCause = generateCause();
+        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+
+        I testThatId = generateQueueId();
+        M testThatLetter = generateMessage();
+        Throwable testThatCause = generateCause();
+        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+
+        // Set the time to the expected expireAt.
+        setAndGetTime(expectedUpdatedExpireAt);
+        // Release letters matching testThatId.
+        testSubject.release(entry -> entry.queueIdentifier().equals(testThatId));
+
+        Optional<DeadLetterEntry<M>> thisOptionalResult = testSubject.take(testThisId.group());
+        assertTrue(thisOptionalResult.isPresent());
+        DeadLetterEntry<M> thisResult = thisOptionalResult.get();
+        assertEquals(testThisId, thisResult.queueIdentifier());
+        assertEquals(testThisLetter, thisResult.message());
+        assertEquals(testThisCause, thisResult.cause());
+        assertEquals(expectedDeadLettered, thisResult.deadLettered());
+        assertEquals(expectedOriginalExpireAt, thisResult.expiresAt());
+        assertEquals(0, thisResult.numberOfRetries());
+
+        Optional<DeadLetterEntry<M>> thatOptionalResult = testSubject.take(testThatId.group());
+        assertTrue(thatOptionalResult.isPresent());
+        DeadLetterEntry<M> thatResult = thatOptionalResult.get();
+        assertEquals(testThatId, thatResult.queueIdentifier());
+        assertEquals(testThatLetter, thatResult.message());
+        assertEquals(testThatCause, thatResult.cause());
+        assertEquals(expectedDeadLettered, thatResult.deadLettered());
+        assertEquals(expectedUpdatedExpireAt, thatResult.expiresAt());
+        assertEquals(0, thatResult.numberOfRetries());
+    }
+
+    @Test
+    void testReleaseInvokesAvailabilityCallbacksForUpdatedLetters() {
+        AtomicBoolean thisExpectedCallbackInvoked = new AtomicBoolean(false);
+
+        I testThisId = generateQueueId();
+        M testThisLetter = generateMessage();
+        Throwable testThisCause = generateCause();
+        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+        testSubject.onAvailable(testThisId.group(), () -> thisExpectedCallbackInvoked.set(true));
+
+        AtomicBoolean thatExpectedCallbackInvoked = new AtomicBoolean(false);
+
+        I testThatId = generateQueueId();
+        M testThatLetter = generateMessage();
+        Throwable testThatCause = generateCause();
+        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+        testSubject.onAvailable(testThatId.group(), () -> thatExpectedCallbackInvoked.set(true));
+
+        // Release letters matching testThisId.
+        testSubject.release(entry -> entry.queueIdentifier().equals(testThisId));
+
+        assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(thisExpectedCallbackInvoked.get()));
+        assertFalse(thatExpectedCallbackInvoked.get());
+    }
+
+    @Test
     void testClearRemovesAllEntries() {
         assertTrue(testSubject.isEmpty());
 
@@ -539,13 +732,18 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     /**
      * Generate a unique {@link String} based on {@link UUID#randomUUID()}.
      *
-     * @return a unique {@link String}, based on {@link UUID#randomUUID()}.
+     * @return A unique {@link String}, based on {@link UUID#randomUUID()}.
      */
     protected static String generateId() {
         return UUID.randomUUID().toString();
     }
 
-    private static Throwable generateCause() {
+    /**
+     * Generate a unique {@link Throwable} by using {@link #generateId()} in the cause description.
+     *
+     * @return A unique {@link Throwable} by using {@link #generateId()} in the cause description..
+     */
+    protected static Throwable generateCause() {
         return new RuntimeException("Because..." + generateId());
     }
 

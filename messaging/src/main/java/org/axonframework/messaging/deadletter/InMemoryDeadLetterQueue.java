@@ -51,10 +51,10 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 /**
  * In memory implementation of the {@link DeadLetterQueue}.
  * <p>
- * Maintains a {@link Deque} per unique {@link QueueIdentifier} entry. The maximum amount of {@code
- * Deques} contained by this {@code DeadLetterQueue} is {@code 1024} (configurable through {@link
- * Builder#maxQueues(int)}). The maximum amount of {@link DeadLetterEntry letters} per queue also defaults to {@code
- * 1024} (configurable through {@link Builder#maxQueueSize(int)}).
+ * Maintains a {@link Deque} per unique {@link QueueIdentifier} entry. The maximum amount of {@code Deques} contained by
+ * this {@code DeadLetterQueue} is {@code 1024} (configurable through {@link Builder#maxQueues(int)}). The maximum
+ * amount of {@link DeadLetterEntry letters} per queue also defaults to {@code 1024} (configurable through {@link
+ * Builder#maxQueueSize(int)}).
  *
  * @param <T> The type of {@link Message} maintained in this {@link DeadLetterQueue}.
  * @author Steven van Beelen
@@ -296,6 +296,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         // TODO: 03-02-22 Should this callback be invoked automatically as long as letters are available in the sequence?
         releasedGroups.stream()
                       .map(availabilityCallbacks::get)
+                      .filter(Objects::nonNull)
                       .forEach(scheduledExecutorService::submit);
     }
 

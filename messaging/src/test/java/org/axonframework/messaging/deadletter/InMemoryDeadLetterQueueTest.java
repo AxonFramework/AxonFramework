@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueueIdentifier, EventMessage<?>> {
 
-    private static final Duration EXPIRE_THRESHOLD = Duration.ofMillis(5000);
+    private static final Duration EXPIRE_THRESHOLD = Duration.ofMillis(100);
 
     @Override
     DeadLetterQueue<EventMessage<?>> buildTestSubject() {
@@ -144,5 +144,12 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
         InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.expireThreshold(Duration.ZERO));
+    }
+
+    @Test
+    void testBuildWithNullScheduledExecutorServiceThrowsAxonConfigurationException() {
+        InMemoryDeadLetterQueue.Builder<Message<?>> builderTestSubject = InMemoryDeadLetterQueue.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.scheduledExecutorService(null));
     }
 }
