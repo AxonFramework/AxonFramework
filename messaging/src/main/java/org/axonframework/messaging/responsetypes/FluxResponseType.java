@@ -1,5 +1,6 @@
 package org.axonframework.messaging.responsetypes;
 
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -67,6 +68,8 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
             return Flux.from(Mono.fromCompletionStage((CompletableFuture) queryResponse));
         } else if (Optional.class.isAssignableFrom(queryResponse.getClass())) {
             return (Flux<R>) ((Optional) queryResponse).map(Flux::just).orElse(Flux.<R>empty());
+        } else if (Publisher.class.isAssignableFrom(queryResponse.getClass())) {
+            return Flux.from((Publisher) queryResponse);
         }
         return Flux.just((R) queryResponse);
     }
@@ -74,5 +77,10 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
     @Override
     public Optional<Flux<R>> convertExceptional(Throwable e) {
         return Optional.of(Flux.error(e));
+    }
+
+    @Override
+    public ResponseType<?> forSerialization() {
+        return ResponseTypes.multipleInstancesOf(expectedResponseType);
     }
 }

@@ -32,6 +32,7 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 
 /**
@@ -120,6 +121,7 @@ public class QuerySerializer {
                                                         .setKey(ProcessingKey.PRIORITY)
                                                         .setValue(MetaDataValue.newBuilder().setNumberValue(priority))
                            )
+                           .setExpectedResponseType(queryMessage.getResponseType().getExpectedResponseType().getName())
                            .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()))
                            .build();
     }

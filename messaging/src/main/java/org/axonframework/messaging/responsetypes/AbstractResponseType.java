@@ -76,6 +76,9 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isFluxOfExpectedType(Type responseType) {
+        if (!projectReactorOnClassPath()) {
+            return false;
+        }
         Type fluxType = TypeReflectionUtils.getExactSuperType(responseType, Flux.class);
         return fluxType != null && isParameterizedTypeOfExpectedType(fluxType);
     }
@@ -156,6 +159,15 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
 
     protected boolean isAssignableFrom(Type responseType) {
         return responseType instanceof Class && expectedResponseType.isAssignableFrom((Class) responseType);
+    }
+
+    protected boolean projectReactorOnClassPath() {
+        try {
+            Class.forName("reactor.core.publisher.Flux", false, getClass().getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     @Override

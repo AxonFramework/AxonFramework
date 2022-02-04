@@ -3,6 +3,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -46,17 +47,11 @@ public class StreamingQueryTest {
     }
 
     @Test
-    void testSingleInstancesOfTypeResults() {
+    void testSingleInstancesOfTypeResults() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.instanceOf(String.class));
 
-        assertThrows(NoHandlerForQueryException.class, () -> {
-            try {
-                queryBus.query(queryMessage).get();
-            } catch (ExecutionException e) {
-                throw e.getCause();
-            }
-        });
+        assertEquals("a", queryBus.query(queryMessage).get().getPayload());
     }
 
     @Test

@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -266,7 +267,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void streamingQuery() throws ExecutionException, InterruptedException {
+    void streamingFluxQuery() throws ExecutionException, InterruptedException {
         QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubResponse("<string>1</string>"),
@@ -282,7 +283,23 @@ class AxonServerQueryBusTest {
         verify(targetContextResolver).resolveContext(testQuery);
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
+    void streamingListQuery() throws ExecutionException, InterruptedException {
+        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>("Hello, World", multipleInstancesOf(String.class));
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubResponse("<string>1</string>").toBuilder().setStreamed(true).build(),
+                                                                            stubResponse("<string>2</string>").toBuilder().setStreamed(true).build(),
+                                                                            stubResponse("<string>3</string>").toBuilder().setStreamed(true).build()));
+
+        assertEquals(asList("1", "2", "3"), testSubject.query(testQuery).get().getPayload());
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
     }
 
     @Test
@@ -299,7 +316,7 @@ class AxonServerQueryBusTest {
         verify(targetContextResolver).resolveContext(testQuery);
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
     }
 
     @Test
@@ -316,7 +333,7 @@ class AxonServerQueryBusTest {
         verify(targetContextResolver).resolveContext(testQuery);
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && -2 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
     }
 
     @Test
@@ -451,7 +468,7 @@ class AxonServerQueryBusTest {
 
         public StubResultStream(QueryResponse... responses) {
             this.error = null;
-            List<QueryResponse> queryResponses = Arrays.asList(responses);
+            List<QueryResponse> queryResponses = asList(responses);
             this.responses = queryResponses.iterator();
             this.totalNumberOfElements = queryResponses.size();
             this.closed = totalNumberOfElements == 0;
@@ -470,16 +487,21 @@ class AxonServerQueryBusTest {
             if (peeked != null) {
                 QueryResponse result = peeked;
                 peeked = null;
+                closeIfThereAreNoMoreElements();
                 return result;
             }
             if (responses.hasNext()) {
                 QueryResponse next = responses.next();
-                if (!responses.hasNext()) {
-                    close();
-                }
+                closeIfThereAreNoMoreElements();
                 return next;
             } else {
                 return null;
+            }
+        }
+
+        private void closeIfThereAreNoMoreElements() {
+            if (!responses.hasNext()) {
+                close();
             }
         }
 

@@ -58,6 +58,10 @@ public abstract class ProcessingInstructionHelper {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.NR_OF_RESULTS).orElse(1L);
     }
 
+    public static boolean axonServerSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionBoolean(processingInstructions, ProcessingKey.SUPPORTS_STREAMING).orElse(false);
+    }
+
     /**
      * Retrieve the desired 'number of results' as a {@code long} from the given {@code processingInstructions}, by
      * searching for the {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#NR_OF_RESULTS}.
@@ -75,6 +79,14 @@ public abstract class ProcessingInstructionHelper {
         return processingInstructions.stream()
                                      .filter(instruction -> processingKey.equals(instruction.getKey()))
                                      .map(instruction -> instruction.getValue().getNumberValue())
+                                     .findFirst();
+    }
+
+    private static Optional<Boolean> getProcessingInstructionBoolean(List<ProcessingInstruction> processingInstructions,
+                                                                     ProcessingKey processingKey) {
+        return processingInstructions.stream()
+                                     .filter(instruction -> processingKey.equals(instruction.getKey()))
+                                     .map(instruction -> instruction.getValue().getBooleanValue())
                                      .findFirst();
     }
 }

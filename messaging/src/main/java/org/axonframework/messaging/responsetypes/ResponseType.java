@@ -98,4 +98,12 @@ public interface ResponseType<R> extends Serializable {
     default ResponseType<?> forSerialization() {
         return this;
     }
+
+    default NumberOfResults numberOfResults() {
+        return NumberOfResults.ONE;
+    }
+
+    enum NumberOfResults {
+        ONE, MANY
+    }
 }

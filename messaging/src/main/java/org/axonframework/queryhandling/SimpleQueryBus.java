@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -25,6 +26,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.responsetypes.FluxResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -36,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +193,8 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
+        Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
+                       () -> "Scatter-Gather query does not support Flux as a return type. Yet.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
@@ -234,6 +239,7 @@ public class SimpleQueryBus implements QueryBus {
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize
     ) {
+        assertSubQueryResponseTypes(query);
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
@@ -251,6 +257,7 @@ public class SimpleQueryBus implements QueryBus {
             SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
+        assertSubQueryResponseTypes(query);
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
@@ -261,6 +268,13 @@ public class SimpleQueryBus implements QueryBus {
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
         return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
+    }
+
+    private <Q, I, U> void assertSubQueryResponseTypes(SubscriptionQueryMessage<Q, I, U> query) {
+        Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
+                       () -> "Subscription Query query does not support Flux as a return type. Yet.");
+        Assert.isFalse(query.getUpdateResponseType() instanceof FluxResponseType,
+                       () -> "Subscription Query query does not support Flux as an update type. Yet.");
     }
 
     private <Q, I, U> MonoWrapper<QueryResponseMessage<I>> getInitialResultMono(
@@ -379,9 +393,51 @@ public class SimpleQueryBus implements QueryBus {
         return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                             .stream()
                             .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
+                            .sorted(new MessageHandlerComparator(responseType))
                             .map(QuerySubscription::getQueryHandler)
                             .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
                             .collect(Collectors.toList());
+    }
+
+    /**
+     * Comparator to prioritize handlers based on the response type.
+     *
+     * Because FluxResponseType can handle any response type, this comparator is used to prioritize the Flux(high priority)
+     * and List/Stream handlers (medium priority).
+     *
+     */
+    private static class MessageHandlerComparator implements Comparator<QuerySubscription> {
+
+        private enum Priority {
+            HIGH,
+            MEDIUM,
+            LOW
+        }
+
+        private final ResponseType responseType;
+
+        public MessageHandlerComparator(ResponseType responseType) {
+            this.responseType = responseType;
+        }
+
+        @Override
+        public int compare(QuerySubscription o1, QuerySubscription o2) {
+            if (!(responseType instanceof FluxResponseType)) {
+                return 0;
+            }
+            return getPriority(o1) - getPriority(o2);
+        }
+
+        @SuppressWarnings("rawtypes")
+        private int getPriority(QuerySubscription handler) {
+            if (handler.getResponseType().getTypeName().contains("reactor.core.publisher.Flux")) {
+                return Priority.HIGH.ordinal();
+            } else if (handler.getResponseType().getTypeName().contains("java.util.")) {
+                return Priority.MEDIUM.ordinal();
+            } else {
+                return Priority.LOW.ordinal();
+            }
+        }
     }
 
     /**

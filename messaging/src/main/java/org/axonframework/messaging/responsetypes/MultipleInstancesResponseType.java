@@ -18,18 +18,22 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
@@ -107,11 +111,17 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         Class<?> responseType = response.getClass();
 
         if (isArrayOfExpectedType(responseType)) {
-            return Arrays.asList((R[]) response);
+            return asList((R[]) response);
         } else if (isIterableOfExpectedType(response)) {
-            return convertToList((Iterable) response);
-        } else if (Flux.class.isAssignableFrom(responseType)) {
-            return ((Flux<R>) response).collectList().block();
+            return convertToList((Iterable<R>) response);
+        } else if (projectReactorOnClassPath()) {
+            if (Flux.class.isAssignableFrom(responseType)) {
+                return ((Flux<R>) response).collectList().block();
+            } else if (Mono.class.isAssignableFrom(responseType)) {
+                return Collections.singletonList(((Mono<R>) response).block());
+            } else if (Publisher.class.isAssignableFrom(responseType)) {
+                return Flux.from((Publisher<R>) response).collectList().block();
+            }
         }
 
         throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
