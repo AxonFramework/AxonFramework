@@ -36,6 +36,7 @@ import org.axonframework.modelling.command.*;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -403,17 +404,16 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        AtomicInteger canHandleCount = new AtomicInteger(0);
+        AtomicBoolean hasHandler = new AtomicBoolean(false);
         MessageHandlingMember<? super T> handler =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage) &&
-                                 canHandleCount.incrementAndGet() > 0 &&
-                                 mh.unwrap(CommandMessageHandlingMember.class)
-                                         .map(c -> c.canResolve(commandMessage, aggregateRoot))
-                                         .orElse(false))
+                         .filter(mh -> hasHandler.compareAndSet(mh.canHandle(commandMessage),true)
+                                                  && mh.unwrap(CommandMessageHandlingMember.class)
+                                                 .map(c -> c.canResolve(commandMessage, aggregateRoot))
+                                                 .orElse(false))
                          .findFirst()
                          .orElseThrow(() -> {
-                             if (canHandleCount.get() == 0){
+                             if (!hasHandler.get()){
                                  return new NoHandlerForCommandException(commandMessage);
                              }
                              return new AggregateEntityNotFoundException(

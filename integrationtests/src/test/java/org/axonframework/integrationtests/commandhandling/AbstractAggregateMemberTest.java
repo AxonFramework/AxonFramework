@@ -7,8 +7,8 @@ import org.axonframework.modelling.command.*;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 public class AbstractAggregateMemberTest {
     private FixtureConfiguration<FactoryAggregate> fixture;
     private String factoryId = "factoryId";
-    @Before
+
+    @BeforeEach
     public void setUp(){
         fixture = new AggregateTestFixture(FactoryAggregate.class);
     }
