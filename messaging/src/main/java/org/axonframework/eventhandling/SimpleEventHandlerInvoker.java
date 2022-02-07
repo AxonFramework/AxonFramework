@@ -24,7 +24,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EventListener;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -85,8 +84,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * Instantiate a Builder to be able to create a {@link SimpleEventHandlerInvoker}.
      * <p>
      * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a
-     * <b>hard requirement</b> and thus should be accounted for.
+     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a <b>hard
+     * requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SimpleEventHandlerInvoker}
      */
@@ -193,8 +192,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * Builder class to instantiate a {@link SimpleEventHandlerInvoker}.
      * <p>
      * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler and a
-     * processing group name are a <b>hard requirements</b> and thus should be accounted for.
+     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a <b>hard
+     * requirement</b> and as such should be provided.
      */
     public static class Builder<B extends Builder<?>> {
 
@@ -206,8 +205,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by
-         * a new {@link AnnotationEventHandlerAdapter}.
+         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by a
+         * new {@link AnnotationEventHandlerAdapter}.
          *
          * @param eventHandlers an array of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
@@ -218,8 +217,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
-         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by
-         * a new {@link AnnotationEventHandlerAdapter}.
+         * handler is assignable to {@link EventMessageHandler} it will register as is. If not, it will be wrapped by a
+         * new {@link AnnotationEventHandlerAdapter}.
          *
          * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
@@ -268,11 +267,11 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Sets the {@link ListenerInvocationErrorHandler} which deals with any {@link Exception}s being thrown by the
-         * {@link EventListener}s. Defaults to a {@link LoggingErrorHandler}.
+         * Sets the {@link ListenerInvocationErrorHandler} dealing with {@link Exception exceptions} thrown by the
+         * configured {@link EventMessageHandler event handlers}. Defaults to a {@link LoggingErrorHandler}.
          *
-         * @param listenerInvocationErrorHandler a {@link ListenerInvocationErrorHandler} which deals with any {@link
-         *                                       Exception}s being thrown by the {@link EventListener}s
+         * @param listenerInvocationErrorHandler The error handler dealing with {@link Exception exceptions} thrown by
+         *                                       the configured {@link EventMessageHandler event handlers}
          * @return the current Builder instance, for fluent interfacing
          */
         public B listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
