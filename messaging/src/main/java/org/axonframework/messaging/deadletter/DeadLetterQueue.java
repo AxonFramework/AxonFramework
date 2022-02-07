@@ -20,6 +20,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 /**
@@ -211,4 +212,13 @@ public interface DeadLetterQueue<T extends Message<?>> {
     default void clear() {
         clear(identifier -> true);
     }
+
+    /**
+     * Shutdown this queue. Invoking this operation ensure any {@link #onAvailable(String, Runnable) registered
+     * callbacks} that are active are properly stopped too.
+     *
+     * @return A {@link CompletableFuture} that's completed asynchronously once all active on available callbacks have
+     * completed.
+     */
+    CompletableFuture<Void> shutdown();
 }

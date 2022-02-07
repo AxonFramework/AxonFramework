@@ -18,6 +18,8 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -60,7 +63,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetterQueue<T> {
+public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetterQueue<T>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -78,6 +81,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     private final int maxQueueSize;
     private final Duration expireThreshold;
     private final ScheduledExecutorService scheduledExecutorService;
+    private final boolean customExecutor;
 
     /**
      * Instantiate an in-memory {@link DeadLetterQueue} based on the given {@link Builder builder}.
@@ -90,6 +94,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         this.maxQueueSize = builder.maxQueueSize;
         this.expireThreshold = builder.expireThreshold;
         this.scheduledExecutorService = builder.scheduledExecutorService;
+        this.customExecutor = builder.customExecutor;
     }
 
     /**
@@ -321,6 +326,20 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         });
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS + 1, this::shutdown);
+    }
+
+    @Override
+    public CompletableFuture<Void> shutdown() {
+        // TODO: 07-02-22 cleaner solution required?
+        // When the executor is customized by the user, it's their job to shut it down.
+        return customExecutor
+                ? CompletableFuture.completedFuture(null)
+                : CompletableFuture.runAsync(scheduledExecutorService::shutdown);
+    }
+
     /**
      * Builder class to instantiate an {@link InMemoryDeadLetterQueue}.
      * <p>
@@ -339,6 +358,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         private Duration expireThreshold = Duration.ofMillis(5000);
         private ScheduledExecutorService scheduledExecutorService =
                 Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory("InMemoryDeadLetterQueue"));
+        private boolean customExecutor = false;
 
         /**
          * Sets the maximum number of queues this {@link DeadLetterQueue} may contain. This requirement reflects itself
@@ -406,6 +426,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         public Builder<T> scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
             assertNonNull(scheduledExecutorService, "The ScheduledExecutorService should be non null");
             this.scheduledExecutorService = scheduledExecutorService;
+            this.customExecutor = true;
             return this;
         }
 
@@ -419,9 +440,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
 
         /**
-         * Validate whether the fields contained in this Builder as set accordingly.
+         * Validate whether the fields contained in this Builder are set accordingly.
          *
-         * @throws AxonConfigurationException If one field is asserted to be incorrect according to the Builder's
+         * @throws AxonConfigurationException When one field asserts to be incorrect according to the Builder's
          *                                    specifications.
          */
         protected void validate() {
