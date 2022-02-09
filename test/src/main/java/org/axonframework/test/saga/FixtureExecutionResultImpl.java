@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -332,6 +332,29 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
                 scheduledTime,
                 matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
         );
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                        && matcher.matches(deadlineMessage)
+        ));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
     }
 
     @Override

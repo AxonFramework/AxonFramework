@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -264,6 +264,29 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
                 scheduledTime,
                 matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
         );
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                        && matcher.matches(deadlineMessage)
+        ));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
     }
 
     @Override
