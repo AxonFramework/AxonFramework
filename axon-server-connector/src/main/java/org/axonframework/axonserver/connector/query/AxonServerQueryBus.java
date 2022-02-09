@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,11 +151,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         this.serializer = builder.buildQuerySerializer();
         this.subscriptionSerializer = builder.buildSubscriptionMessageSerializer();
         this.priorityCalculator = builder.priorityCalculator;
-        if (StringUtils.nonEmptyOrNull(builder.defaultContext)) {
-            this.context = builder.defaultContext;
-        } else {
-            this.context = configuration.getContext();
-        }
+        this.context = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
         dispatchInterceptors = new DispatchInterceptors<>();

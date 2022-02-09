@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -567,10 +567,6 @@ public class EventProcessingModule
         return this;
     }
 
-    public EventProcessingConfigurer usingEventProcessorBuilder(EventProcessorBuilder processorBuilder) {
-        this.defaultEventProcessorBuilder = processorBuilder;
-        return this;
-    }
 
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
@@ -780,10 +776,12 @@ public class EventProcessingModule
     }
 
     /**
-     * @param name
-     * @param eventHandlerInvoker
-     * @param messageSource
-     * @return
+     * Default {@link SubscribingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the vent handling
+     * @param messageSource where to retrieve events from
+     * @return Default {@link SubscribingEventProcessor} configuration based on this configure module.
      */
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
@@ -800,6 +798,15 @@ public class EventProcessingModule
                 .build();
     }
 
+    /**
+     * Default {@link TrackingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config for the tracking event processor construction
+     * @param source where to retrieve events from
+     * @return Default {@link TrackingEventProcessor} configuration based on this configure module.
+     */
     protected EventProcessor trackingEventProcessor(String name,
                                                     EventHandlerInvoker eventHandlerInvoker,
                                                     TrackingEventProcessorConfiguration config,
@@ -817,6 +824,16 @@ public class EventProcessingModule
                 .build();
     }
 
+    /**
+     * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config main configuration providing access for Axon components
+     * @param messageSource where to retrieve events from
+     * @param processorConfiguration for the pooled event processor construction
+     * @return Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     */
     protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,

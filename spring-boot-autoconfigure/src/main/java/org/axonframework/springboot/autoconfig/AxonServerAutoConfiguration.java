@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
-import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
+import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -135,16 +136,14 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
+    @ConditionalOnMissingClass("org.axonframework.extensions.multitenancy.autoconfig.MultiTenancyAxonServerAutoConfiguration")
     @ConditionalOnMissingBean
-    public EventProcessorInfoConfiguration processorInfoConfiguration(
+    public EventProcessorControlService eventProcessorControlService(
             EventProcessingConfiguration eventProcessingConfiguration,
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration) {
-        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
-                                                   c -> connectionManager,
-                                                   c -> configuration);
+        return new EventProcessorControlService(connectionManager,eventProcessingConfiguration,configuration);
     }
-
 
     @Bean
     @ConditionalOnMissingBean

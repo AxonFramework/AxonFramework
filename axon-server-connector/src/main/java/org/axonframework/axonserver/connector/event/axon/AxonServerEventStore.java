@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Spliterator.*;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -268,7 +269,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder defaultContext(String defaultContext) {
-            assertNonNull(defaultContext, "The default context may not be null");
+            assertNonEmpty(defaultContext, "The default context may not be null");
             this.defaultContext = defaultContext;
             return this;
         }
@@ -362,12 +363,12 @@ public class AxonServerEventStore extends AbstractEventStore {
                           "The PlatformConnectionManager is a hard requirement and should be provided");
 
             super.storageEngine(AxonIQEventStorageEngine.builder()
-                    .snapshotSerializer(snapshotSerializer.get())
-                    .upcasterChain(upcasterChain)
-                    .snapshotFilter(snapshotFilter)
-                    .eventSerializer(eventSerializer.get())
-                    .configuration(configuration)
-                    .defaultContext(defaultContext)
+                                                        .snapshotSerializer(snapshotSerializer.get())
+                                                        .upcasterChain(upcasterChain)
+                                                        .snapshotFilter(snapshotFilter)
+                                                        .eventSerializer(eventSerializer.get())
+                                                        .configuration(configuration)
+                                                        .defaultContext(defaultContext)
                                                         .eventStoreClient(axonServerConnectionManager)
                                                         .converter(new GrpcMetaDataConverter(eventSerializer.get()))
                                                         .build());
