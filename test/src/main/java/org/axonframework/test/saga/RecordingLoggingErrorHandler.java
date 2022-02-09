@@ -35,4 +35,8 @@ public class RecordingLoggingErrorHandler extends LoggingErrorHandler {
     public Optional<Exception> getException() {
         return exception;
     }
+
+    public void startRecording() {
+        exception = Optional.empty();
+    }
 }

@@ -60,14 +60,15 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
-     *  @param sagaStore       The SagaStore to monitor
-     * @param eventScheduler  The scheduler to monitor
-     * @param deadlineManager The deadline manager to monitor
-     * @param eventBus        The event bus to monitor
-     * @param commandBus      The command bus to monitor
-     * @param sagaType        The type of Saga under test
-     * @param fieldFilter     The FieldFilter describing the fields to include in equality checks
-     * @param loggingErrorHandler
+     *
+     * @param sagaStore           The SagaStore to monitor
+     * @param eventScheduler      The scheduler to monitor
+     * @param deadlineManager     The deadline manager to monitor
+     * @param eventBus            The event bus to monitor
+     * @param commandBus          The command bus to monitor
+     * @param sagaType            The type of Saga under test
+     * @param fieldFilter         The FieldFilter describing the fields to include in equality checks
+     * @param loggingErrorHandler The RecordingLoggingErrorHandler to monitor
      */
     FixtureExecutionResultImpl(InMemorySagaStore sagaStore, StubEventScheduler eventScheduler,
                                StubDeadlineManager deadlineManager, EventBus eventBus, RecordingCommandBus commandBus,
@@ -102,6 +103,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public void startRecording() {
         eventValidator.startRecording();
         commandValidator.startRecording();
+        loggingErrorHandler.startRecording();
         onStartRecordingCallbacks.forEach(Runnable::run);
     }
 

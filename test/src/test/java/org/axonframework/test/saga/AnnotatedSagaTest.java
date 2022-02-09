@@ -356,9 +356,9 @@ class AnnotatedSagaTest {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
 
-        fixture.givenNoPriorActivity()
-               .whenAggregate(identifier).publishes(new TriggerSagaStartEvent(identifier))
-               .expectSuccessfulHandlerExecution();
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenNoPriorActivity().whenAggregate(identifier)
+                                                               .publishes(new TriggerSagaStartEvent(identifier));
+        assertDoesNotThrow(fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
 
     @Test
@@ -366,8 +366,8 @@ class AnnotatedSagaTest {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
 
-        FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier))
-                                                               .whenAggregate(identifier).publishes(new TriggerExceptionWhileHandlingEvent(identifier));
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier)).whenAggregate(identifier)
+                                                               .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
         assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
 }

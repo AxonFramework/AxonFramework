@@ -589,7 +589,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 
     /**
-     * Expect a successful execution of the given command handler, regardless of the actual return value.
+     * Expect a successful execution of the given event handler.
      *
      * @return the current FixtureExecutionResult, for fluent interfacing
      */
