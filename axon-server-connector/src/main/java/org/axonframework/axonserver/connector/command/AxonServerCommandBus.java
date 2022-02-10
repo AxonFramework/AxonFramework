@@ -508,7 +508,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             assertNonNull(localSegment, "The Local CommandBus is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(routingStrategy, "The RoutingStrategy is a hard requirement and should be provided");
-            assertNonNull(defaultContext, "The default context is a hard requirement and should be provided");
         }
     }
 }
