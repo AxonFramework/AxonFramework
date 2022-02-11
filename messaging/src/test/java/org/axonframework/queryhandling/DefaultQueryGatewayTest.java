@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -423,19 +424,20 @@ class DefaultQueryGatewayTest {
         QueryMessage<String, Flux<String>> queryMessage =
                 new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
 
-        CompletableFuture<QueryResponseMessage<Flux<String>>> response = CompletableFuture.completedFuture(new GenericQueryResponseMessage<>(
-                Flux.just("a", "b", "c")));
+        Publisher<QueryResponseMessage<Object>> response = Flux.just(
+                new GenericQueryResponseMessage("a"),
+                new GenericQueryResponseMessage("b"),
+                new GenericQueryResponseMessage("c")
+        );
 
-        when(mockBus.query(anyMessage(
-                queryMessage.getResponseType().getExpectedResponseType(),
-                queryMessage.getResponseType().responseMessagePayloadType())))
-                .thenReturn(        response);
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(response);
 
         //first try without subscribing
         testSubject.streamingQuery("query", String.class);
 
         //expect query never sent
-        verify(mockBus, never()).query(anyMessage(String.class, String.class));
+        verify(mockBus, never()).streamingQuery(any());
 
         //second try with subscribing
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
@@ -443,21 +445,13 @@ class DefaultQueryGatewayTest {
                 .verifyComplete();
 
         //expect query sent
-        verify(mockBus, times(1)).query(anyMessage(String.class, String.class));
+        verify(mockBus, times(1)).streamingQuery(any(StreamingQueryMessage.class));
     }
 
     @Test
     void streamingQueryPropagateErrors() {
-        QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
-
-        CompletableFuture<QueryResponseMessage<Flux<String>>> failedFuture = new CompletableFuture<>();
-        failedFuture.completeExceptionally(new IllegalStateException("test"));
-
-        when(mockBus.query(anyMessage(
-                queryMessage.getResponseType().getExpectedResponseType(),
-                queryMessage.getResponseType().responseMessagePayloadType())))
-                .thenReturn(failedFuture);
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(Flux.error(new IllegalStateException("test")));
 
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
                 .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
