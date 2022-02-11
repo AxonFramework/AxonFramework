@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import net.bytebuddy.implementation.SuperMethodCall;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;

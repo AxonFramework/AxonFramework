@@ -19,13 +19,18 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -70,6 +75,10 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return a CompletableFuture that resolves when the response is available
      */
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
+
+    default <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+        return Flux.empty();
+    }
 
     /**
      * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s

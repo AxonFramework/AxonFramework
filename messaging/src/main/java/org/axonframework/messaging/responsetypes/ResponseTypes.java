@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.responsetypes;
 
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import java.util.List;

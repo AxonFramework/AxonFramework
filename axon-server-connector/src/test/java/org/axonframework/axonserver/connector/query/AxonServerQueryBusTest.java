@@ -34,15 +34,18 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
@@ -50,7 +53,6 @@ import org.mockito.*;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -267,16 +269,17 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void streamingFluxQuery() throws ExecutionException, InterruptedException {
-        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+    void streamingFluxQuery() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
 
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubResponse("<string>1</string>"),
-                                                                            stubResponse("<string>2</string>"),
-                                                                            stubResponse("<string>3</string>")));
+        StubResultStream stubResultStream = new StubResultStream(streamedStubResponse("<string>1</string>"),
+                                                                 streamedStubResponse("<string>2</string>"),
+                                                                 streamedStubResponse("<string>3</string>"));
+        when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
-        StepVerifier.create(testSubject.query(testQuery)
-                                       .get()
-                                       .getPayload())
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+                                .map(Message::getPayload))
                     .expectNext("1", "2", "3")
                     .verifyComplete();
 
@@ -288,11 +291,13 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingListQuery() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>("Hello, World", multipleInstancesOf(String.class));
+        QueryMessage<String, List<String>> testQuery =
+                new GenericQueryMessage<>("Hello, World", multipleInstancesOf(String.class));
 
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(stubResponse("<string>1</string>").toBuilder().setStreamed(true).build(),
-                                                                            stubResponse("<string>2</string>").toBuilder().setStreamed(true).build(),
-                                                                            stubResponse("<string>3</string>").toBuilder().setStreamed(true).build()));
+        StubResultStream stubResultStream = new StubResultStream(streamedStubResponse("<string>1</string>"),
+                                                                 streamedStubResponse("<string>2</string>"),
+                                                                 streamedStubResponse("<string>3</string>"));
+        when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
         assertEquals(asList("1", "2", "3"), testSubject.query(testQuery).get().getPayload());
 
@@ -303,14 +308,14 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void streamingQueryReturnsError() throws ExecutionException, InterruptedException {
-        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+    void streamingQueryReturnsError() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(new RuntimeException("oops")));
 
-        StepVerifier.create(testSubject.query(testQuery)
-                                       .get()
-                                       .getPayload())
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+                                .map(Message::getPayload))
                     .verifyErrorMatches(t -> t instanceof RuntimeException && "oops".equals(t.getMessage()));
 
         verify(targetContextResolver).resolveContext(testQuery);
@@ -320,14 +325,13 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void streamingQueryReturnsNoResults() throws ExecutionException, InterruptedException {
-        QueryMessage<String, Flux<String>> testQuery = new GenericQueryMessage<>("Hello, World", fluxOf(String.class));
+    void streamingQueryReturnsNoResults() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream());
 
-        StepVerifier.create(testSubject.query(testQuery)
-                                       .get()
-                                       .getPayload())
+        StepVerifier.create(testSubject.streamingQuery(testQuery))
                     .verifyComplete();
 
         verify(targetContextResolver).resolveContext(testQuery);
@@ -427,6 +431,12 @@ class AxonServerQueryBusTest {
 
         assertThrows(ShutdownInProgressException.class,
                      () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+    }
+
+    private QueryResponse streamedStubResponse(String payload) {
+        return stubResponse(payload).toBuilder()
+                                    .setStreamed(true)
+                                    .build();
     }
 
     private QueryResponse stubResponse(String payload) {

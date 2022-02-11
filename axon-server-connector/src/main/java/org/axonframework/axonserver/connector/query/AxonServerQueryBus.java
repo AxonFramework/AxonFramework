@@ -53,14 +53,21 @@ import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.FluxResponseType;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -71,10 +78,13 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Signal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -87,6 +97,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -192,39 +203,23 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
-        shutdownLatch.ifShuttingDown(String.format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        Assert.isFalse(queryMessage.getResponseType() instanceof FluxResponseType,
+                       () -> "Direct query does not support Flux as a return type.");
+        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
         CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
         try {
-            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             int priority = priorityCalculator.determinePriority(interceptedQuery);
+            QueryRequest queryRequest = serialize(interceptedQuery);
+            Publisher<QueryResponse> result = invoke(interceptedQuery, queryRequest);
 
-            QueryRequest queryRequest = serializer.serializeRequest(interceptedQuery,
-                                                                    DIRECT_QUERY_NUMBER_OF_RESULTS,
-                                                                    DIRECT_QUERY_TIMEOUT_MS,
-                                                                    priority);
-
-            Publisher<QueryResponse> result =
-                    new ResultStreamPublisher<>(() -> axonServerConnectionManager.getConnection(targetContext)
-                                                                                 .queryChannel()
-                                                                                 .query(queryRequest));
-
-            Runnable task;
-            if (interceptedQuery.getResponseType() instanceof FluxResponseType) {
-                task = new StreamingQueryResponseProcessingTask<>(Flux.from(result),
-                                                                  queryTransaction,
-                                                                  serializer,
-                                                                  queryMessage.getResponseType(),
-                                                                  priority);
-            } else {
-                task = new BlockingQueryResponseProcessingTask<>(result,
-                                                                 serializer,
-                                                                 queryTransaction,
-                                                                 priority,
-                                                                 queryMessage.getResponseType());
-            }
+            Runnable task = new BlockingQueryResponseProcessingTask<>(result,
+                                                                      serializer,
+                                                                      queryTransaction,
+                                                                      priority,
+                                                                      queryMessage.getResponseType());
             queryExecutor.submit(task);
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
@@ -236,12 +231,83 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
+    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+        return Mono.fromSupplier(this::registerStreamingQueryActivity)
+                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
+                                                .flatMapMany(intercepted -> Mono.just(serialize(intercepted))
+                                                                                .flatMapMany(queryRequest -> invoke(intercepted, queryRequest))
+                                                                                .flatMap(queryResponse -> deserialize(intercepted, queryResponse))
+                                                                                .doOnTerminate(activity::end)));
+    }
+
+    private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
+        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        return shutdownLatch.registerActivity();
+    }
+
+    private QueryRequest serialize(QueryMessage<?, ?> query) {
+        return serializer.serializeRequest(query,
+                                           DIRECT_QUERY_NUMBER_OF_RESULTS,
+                                           DIRECT_QUERY_TIMEOUT_MS,
+                                           priorityCalculator.determinePriority(query));
+    }
+
+    private Publisher<QueryResponse> invoke(QueryMessage<?, ?> queryMessage, QueryRequest queryRequest) {
+        return new ResultStreamPublisher<>(() -> axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(queryMessage))
+                                                                            .queryChannel()
+                                                                            .query(queryRequest));
+    }
+
+    private <R> Publisher<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
+                                                               QueryResponse queryResponse) {
+        Class<R> expectedResponseType = (Class<R>) queryMessage.getResponseType().getExpectedResponseType();
+        if (queryResponse.getStreamed()) {
+            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
+            QueryResponseMessage<R> responseMessage = serializer.deserializeResponse(queryResponse,
+                                                                                     instanceResponseType);
+            if (responseMessage.isExceptional()) {
+                return Flux.error(responseMessage.exceptionResult());
+            }
+            return Flux.just(responseMessage);
+        } else {
+            QueryResponseMessage<List<R>> responseMessage = serializer.deserializeResponse(
+                    queryResponse,
+                    ResponseTypes.multipleInstancesOf(expectedResponseType));
+            if (responseMessage.isExceptional()) {
+                return Flux.error(responseMessage.exceptionResult());
+            }
+            return Flux.fromStream(responseMessage.getPayload()
+                                                  .stream()
+                                                  .map(payload -> switchPayload(responseMessage,
+                                                                                payload,
+                                                                                expectedResponseType)));
+        }
+    }
+
+    private <R> QueryResponseMessage<R> switchPayload(QueryResponseMessage<?> original,
+                                                      R newPayload,
+                                                      Class<R> expectedPayloadType) {
+        if (original.isExceptional()) {
+            GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
+                                                              expectedPayloadType,
+                                                              null,
+                                                              original.getMetaData());
+            return new GenericQueryResponseMessage<>(delegate, original.exceptionResult());
+        }
+        GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
+                                                          expectedPayloadType,
+                                                          newPayload,
+                                                          original.getMetaData());
+        return new GenericQueryResponseMessage<>(delegate);
+    }
+
+    @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
         Assert.isFalse(queryMessage.getResponseType() instanceof FluxResponseType,
-                       () -> "Scatter-Gather query does not support Flux as a return type. Yet.");
-        shutdownLatch.ifShuttingDown(String.format(
+                       () -> "Scatter-Gather query does not support Flux as a return type.");
+        shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
 
@@ -302,10 +368,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             int updateBufferSize
     ) {
         Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
-                       () -> "Subscription Query query does not support Flux as a return type. Yet.");
+                       () -> "Subscription Query query does not support Flux as a return type.");
         Assert.isFalse(query.getUpdateResponseType() instanceof FluxResponseType,
-                       () -> "Subscription Query query does not support Flux as an update type. Yet.");
-        shutdownLatch.ifShuttingDown(String.format(
+                       () -> "Subscription Query query does not support Flux as an update type.");
+        shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
 

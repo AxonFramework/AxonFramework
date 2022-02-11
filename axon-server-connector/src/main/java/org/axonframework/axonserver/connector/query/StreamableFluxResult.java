@@ -21,8 +21,6 @@ import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
@@ -32,16 +30,14 @@ class StreamableFluxResult implements StreamableResult {
 
     private final Subscription subscription;
 
-    public <T> StreamableFluxResult(QueryResponseMessage<T> resultMessage,
+    public <T> StreamableFluxResult(Flux<QueryResponseMessage<T>> result,
                                     ReplyChannel<QueryResponse> responseHandler,
                                     QuerySerializer serializer,
                                     String requestId,
                                     String clientId) {
-        Flux<T> result = resultMessage.getPayload() == null ? Flux.empty() : (Flux<T>) resultMessage.getPayload();
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
-        result.map(payload -> convert(resultMessage, payload))
-              .map(message -> serialize(serializer, requestId, message))
+        result.map(message -> serialize(serializer, requestId, message))
               .subscribeWith(subscriber);
     }
 
@@ -55,16 +51,8 @@ class StreamableFluxResult implements StreamableResult {
         subscription.cancel();
     }
 
-    private <T> GenericQueryResponseMessage<T> convert(QueryResponseMessage<T> resultMessage, T payload) {
-        GenericMessage<T> delegate = new GenericMessage<>(resultMessage.getIdentifier(),
-                                                          resultMessage.getPayloadType(),
-                                                          payload,
-                                                          resultMessage.getMetaData());
-        return new GenericQueryResponseMessage<>(delegate);
-    }
-
     private <T> QueryResponse serialize(QuerySerializer serializer, String requestId,
-                                        GenericQueryResponseMessage<T> message) {
+                                        QueryResponseMessage<T> message) {
         return serializer.serializeResponse(message, requestId)
                          .toBuilder()
                          .setStreamed(true)

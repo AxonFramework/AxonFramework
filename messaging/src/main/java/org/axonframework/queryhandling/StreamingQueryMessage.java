@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.query;
+package org.axonframework.queryhandling;
 
-interface StreamableResultProvider {
+import org.axonframework.messaging.responsetypes.FluxResponseType;
+import reactor.core.publisher.Flux;
 
-    StreamableResult provide();
+import java.util.Map;
+
+public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Flux<R>> {
+
+    @Override
+    FluxResponseType<R> getResponseType();
+
+    @Override
+    StreamingQueryMessage<Q, R> withMetaData(Map<String, ?> metaData);
+
+    @Override
+    StreamingQueryMessage<Q, R> andMetaData(Map<String, ?> additionalMetaData);
 }

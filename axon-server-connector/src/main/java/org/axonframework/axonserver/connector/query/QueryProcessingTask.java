@@ -25,16 +25,20 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
+import org.axonframework.messaging.responsetypes.FluxResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.util.ClasspathResolver;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.ExecutorService;
@@ -46,7 +50,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.axonServerSupportsQueryStreaming;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
 
 /**
@@ -67,6 +72,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     private final String clientId;
     private final AtomicReference<StreamableResult> streamableResultRef = new AtomicReference<>();
     private final AtomicLong requestedBeforeInit = new AtomicLong();
+    private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
 
@@ -92,6 +98,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.clientId = clientId;
+        this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
     }
 
@@ -105,7 +112,11 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
             QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
             if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
-                directQuery(queryMessage);
+                if (supportsStreaming && reactorOnClassPath.get()) {
+                    streamingQuery(queryMessage);
+                } else {
+                    directQuery(queryMessage);
+                }
             } else {
                 scatterGather(queryMessage);
             }
@@ -140,31 +151,40 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
         }
     }
 
-    private void directQuery(QueryMessage<Object, Object> originalQueryMessage) {
-        ResponseType<Object> adaptedResponseType = determineResponseType(queryRequest.getExpectedResponseType(),
-                                                                         originalQueryMessage.getResponseType());
-        QueryMessage<Object, Object> alteredQueryMessage = new GenericQueryMessage<>(originalQueryMessage,
-                                                                                     originalQueryMessage.getQueryName(),
-                                                                                     adaptedResponseType);
+    private void streamingQuery(QueryMessage<Object, Object> originalQueryMessage) {
+        StreamingQueryMessage<Object, Object> streamingQueryMessage = new GenericStreamingQueryMessage<>(
+                originalQueryMessage,
+                originalQueryMessage.getQueryName(),
+                fluxResponseType(queryRequest.getExpectedResponseType()));
+        Publisher<QueryResponseMessage<Object>> resultPublisher = localSegment.streamingQuery(streamingQueryMessage);
+        setResult(streamableFluxResult(resultPublisher));
+    }
 
-        localSegment.query(alteredQueryMessage)
+    private void directQuery(QueryMessage<Object, Object> queryMessage) {
+        localSegment.query(queryMessage)
                     .whenComplete((result, e) -> {
                         if (e != null) {
                             sendError(e);
                         } else {
                             try {
-                                StreamableResultProvider resultProvider =
-                                        streamableResultProviderChain(originalQueryMessage.getResponseType(),
-                                                                      adaptedResponseType,
-                                                                      result);
-                                StreamableResult streamableResult = resultProvider.provide();
-                                streamableResultRef.set(streamableResult);
-                                request(requestedBeforeInit.get());
+                                StreamableResult streamableResult;
+                                if (supportsStreaming
+                                        && queryMessage.getResponseType() instanceof MultipleInstancesResponseType) {
+                                    streamableResult = streamableMultiInstanceResult(result);
+                                } else {
+                                    streamableResult = streamableInstanceResult(result);
+                                }
+                                setResult(streamableResult);
                             } catch (Throwable t) {
                                 sendError(t);
                             }
                         }
                     });
+    }
+
+    private void setResult(StreamableResult result) {
+        streamableResultRef.set(result);
+        request(requestedBeforeInit.get());
     }
 
     private void scatterGather(QueryMessage<Object, Object> originalQueryMessage) {
@@ -179,43 +199,32 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
         responseHandler.complete();
     }
 
-    private StreamableResultProvider streamableResultProviderChain(ResponseType<?> original,
-                                                                   ResponseType<?> adapted,
-                                                                   QueryResponseMessage<?> result) {
-        String requestId = queryRequest.getMessageIdentifier();
-        BackwardsCompatibleStreamableResult backwardsCompatible = new BackwardsCompatibleStreamableResult(
-                result,
-                responseHandler,
-                serializer,
-                requestId);
-        FluxBlockingStreamableResult fluxBlocking = new FluxBlockingStreamableResult(original,
-                                                                                     adapted,
-                                                                                     result,
-                                                                                     responseHandler,
-                                                                                     serializer,
-                                                                                     requestId,
-                                                                                     backwardsCompatible);
-        return new StreamingStreamableResultProvider(supportsStreaming(queryRequest),
-                                                     adapted,
-                                                     result,
-                                                     responseHandler,
-                                                     serializer,
-                                                     clientId,
-                                                     requestId,
-                                                     fluxBlocking);
+    private StreamableResult streamableFluxResult(Publisher<QueryResponseMessage<Object>> resultPublisher) {
+        return new StreamableFluxResult(Flux.from(resultPublisher),
+                                        responseHandler,
+                                        serializer,
+                                        queryRequest.getMessageIdentifier(),
+                                        clientId);
     }
 
-    private <R> ResponseType determineResponseType(String expectedResponseType, ResponseType<R> original) {
-        if (clientSupportsStreaming(expectedResponseType) && reactorOnClassPath.get()) {
-            try {
-                Class<?> responseType = Class.forName(expectedResponseType);
-                return ResponseTypes.fluxOf(responseType);
-            } catch (ClassNotFoundException e) {
-                throw new SerializationException(format("Unable to deserialize '%s'.", expectedResponseType), e);
-            }
+    private StreamableMultiInstanceResult<?> streamableMultiInstanceResult(QueryResponseMessage<?> result) {
+        return new StreamableMultiInstanceResult<>(result,
+                                                   responseHandler,
+                                                   serializer,
+                                                   queryRequest.getMessageIdentifier());
+    }
+
+    private StreamableInstanceResult streamableInstanceResult(QueryResponseMessage<?> result) {
+        return new StreamableInstanceResult(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
+    }
+
+    private <R> FluxResponseType<R> fluxResponseType(String className) {
+        try {
+            Class<?> responseType = Class.forName(className);
+            return new FluxResponseType<>(responseType);
+        } catch (ClassNotFoundException e) {
+            throw new SerializationException(format("Unable to deserialize '%s'.", className), e);
         }
-        // backwards compatibility
-        return original;
     }
 
     private boolean supportsStreaming(QueryRequest queryRequest) {
