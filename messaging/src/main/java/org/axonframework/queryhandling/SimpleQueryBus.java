@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -30,7 +29,6 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.FluxResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -57,8 +55,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,7 +62,6 @@ import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 import static org.axonframework.queryhandling.GenericQueryResponseMessage.asNullableResponseMessage;
-import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -198,12 +193,12 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         return Mono.just(intercept(query))
-                   .flatMapMany(intercepted -> Mono.just(intercepted)
-                                                   .flatMapMany(this::getStreamingHandlersForMessage) //todo test handlers retry
-                                                   .switchIfEmpty(Flux.error(noHandlerError(intercepted)))
-                                                   .map(handler -> interceptAndInvokeStreaming(intercepted, handler))
+                   .flatMapMany(interceptedQuery -> Mono.just(interceptedQuery)
+                                                   .flatMapMany(this::getStreamingHandlersForMessage)
+                                                   .switchIfEmpty(Flux.error(noHandlerError(interceptedQuery)))
+                                                   .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler))
                                                    .skipWhile(ResultMessage::isExceptional)
-                                                   .switchIfEmpty(Flux.error(noSuitableHandlerError(intercepted)))
+                                                   .switchIfEmpty(Flux.error(noSuitableHandlerError(interceptedQuery)))
                                                    .next()
                                                    .doOnEach(this::monitorCallback)
                                                    .flatMapMany(Message::getPayload))

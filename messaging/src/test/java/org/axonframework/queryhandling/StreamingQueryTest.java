@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
@@ -8,9 +24,11 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -31,6 +49,11 @@ class StreamingQueryTest {
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             myQueryHandler);
+
+    private final ErrorQueryHandler errorQueryHandler = new ErrorQueryHandler();
+
+    private final AnnotationQueryHandlerAdapter<ErrorQueryHandler> errorQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
+            errorQueryHandler);
 
     @BeforeEach
     void setUp() {
@@ -53,6 +76,22 @@ class StreamingQueryTest {
         StepVerifier.create(streamingQueryPayloads(queryMessage))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
+    }
+
+    @Test
+    void testSwitchHandlerOnError() {
+        handlersInvoked.removeIf(n->true);
+        errorQueryHandlerAdapter.subscribe(queryBus);
+
+        StreamingQueryMessage<String, String> queryMessage =
+                new GenericStreamingQueryMessage<>("criteria", "listQuery", String.class);
+
+        StepVerifier.create(streamingQueryPayloads(queryMessage))
+                    .expectNext("a", "b", "c", "d")
+                    .verifyComplete();
+
+        List<String> handlers_invoked = new ArrayList<>(handlersInvoked);
+        Assertions.assertEquals(asList("handler_error","handler_healthy"),handlers_invoked);
     }
 
     @Test
@@ -226,6 +265,17 @@ class StreamingQueryTest {
                     .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
     }
 
+    public static ConcurrentLinkedQueue<String> handlersInvoked = new ConcurrentLinkedQueue<>();
+    private static class ErrorQueryHandler {
+
+        @QueryHandler(queryName = "listQuery")
+        public Flux<String> listQuery(String criteria) {
+            handlersInvoked.add("handler_error");
+           throw new RuntimeException("ooops");
+        }
+
+    }
+
     private static class MyQueryHandler {
 
         @QueryHandler(queryName = "fluxQuery")
@@ -235,6 +285,7 @@ class StreamingQueryTest {
 
         @QueryHandler(queryName = "listQuery")
         public List<String> listQuery(String criteria) {
+            handlersInvoked.add("handler_healthy");
             return asList("a", "b", "c", "d");
         }
 
