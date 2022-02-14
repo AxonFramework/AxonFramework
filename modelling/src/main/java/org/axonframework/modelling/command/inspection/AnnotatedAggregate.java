@@ -404,23 +404,20 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        AtomicBoolean hasHandler = new AtomicBoolean(false);
         MessageHandlingMember<? super T> handler =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> hasHandler.compareAndSet(mh.canHandle(commandMessage),true)
-                                                  && mh.unwrap(CommandMessageHandlingMember.class)
-                                                 .map(c -> c.canResolve(commandMessage, aggregateRoot))
-                                                 .orElse(false))
+                         .filter(mh -> mh.canHandle(commandMessage))
+                         .collect(Collectors.collectingAndThen(Collectors.toList(), Optional::of))
+                         .filter(mhl -> !mhl.isEmpty())
+                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
+                         .stream()
+                         .filter(mh -> mh.unwrap(CommandMessageHandlingMember.class)
+                                         .map(c -> c.canResolve(commandMessage, aggregateRoot))
+                                         .orElse(false))
                          .findFirst()
-                         .orElseThrow(() -> {
-                             if (!hasHandler.get()){
-                                 return new NoHandlerForCommandException(commandMessage);
-                             }
-                             return new AggregateEntityNotFoundException(
-                                     "Aggregate cannot handle command [" + commandMessage.getCommandName()
-                                             + "], as there is no entity instance within the aggregate to forward it to."
-                             );
-                         });
+                         .orElseThrow(() -> new AggregateEntityNotFoundException(
+                                 "Aggregate cannot handle command [" + commandMessage.getCommandName()
+                                         + "], as there is no entity instance within the aggregate to forward it to."));
 
         Object result;
         if (interceptors.isEmpty()) {
