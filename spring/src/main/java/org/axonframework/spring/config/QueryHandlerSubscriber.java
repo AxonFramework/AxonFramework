@@ -32,6 +32,7 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
  * @author Marc Gathier
  *
  */
+@Deprecated
 public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
     private ApplicationContext applicationContext;
     private boolean started;

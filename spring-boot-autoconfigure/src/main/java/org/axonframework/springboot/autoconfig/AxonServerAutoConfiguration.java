@@ -46,7 +46,6 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
@@ -61,6 +60,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.lang.Nullable;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -84,8 +84,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return configuration;
     }
 
-    private String clientName(String id) {
-        if (id.contains(":")) {
+    private String clientName(@Nullable String id) {
+        if (id == null) {
+            return "Unnamed";
+        } else if (id.contains(":")) {
             return id.substring(0, id.indexOf(":"));
         }
         return id;
@@ -165,7 +167,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
-                                       AxonConfiguration axonConfiguration,
+                                       org.axonframework.config.Configuration axonConfiguration,
                                        TransactionManager txManager,
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
@@ -219,7 +221,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
-                                 AxonConfiguration configuration,
+                                 org.axonframework.config.Configuration configuration,
                                  AxonServerConnectionManager axonServerConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer eventSerializer) {

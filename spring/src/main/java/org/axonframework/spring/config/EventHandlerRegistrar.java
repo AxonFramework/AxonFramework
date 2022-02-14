@@ -38,6 +38,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 3.0
  */
+@Deprecated
 public class EventHandlerRegistrar implements InitializingBean {
 
     private final AxonConfiguration axonConfiguration;

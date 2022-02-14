@@ -38,6 +38,7 @@ import java.util.Map;
  * @see ClasspathHandlerEnhancerDefinition
  * @since 3.3
  */
+@Deprecated
 public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
@@ -74,7 +75,7 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     @Override
     public Class<?> getObjectType() {
-        return HandlerEnhancerDefinition.class;
+        return MultiHandlerEnhancerDefinition.class;
     }
 
     @Override

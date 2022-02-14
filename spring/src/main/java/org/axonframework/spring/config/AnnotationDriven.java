@@ -20,7 +20,11 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.context.annotation.Import;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation for {@link org.springframework.context.annotation.Configuration @Configuration} that will automatically
@@ -28,12 +32,19 @@ import java.lang.annotation.*;
  * CommandBus and QueryBus, respectively.
  *
  * @author Allard Buijze
+ * @see MessageHandlerLookup
+ * @see SpringSagaLookup
+ * @see SpringAggregateLookup
+ * @see SpringConfigurer
+ * @see SpringAxonConfiguration
  * @since 2.3
+ * @deprecated Use Spring Boot Autoconfiguration or register the individual beans explicitly. See the list of
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Import(AnnotationDrivenRegistrar.class)
+@Deprecated
 public @interface AnnotationDriven {
 
 }

@@ -86,7 +86,6 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,10 +97,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
+import static org.axonframework.spring.config.SpringAggregateLookup.buildAggregateHierarchy;
 import static org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
@@ -128,6 +127,8 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  * @author Allard Buijze
  * @since 3.0
  */
+
+@Deprecated
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
     /**
@@ -323,60 +324,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <A> Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
-            String[] aggregatePrototypes) {
-        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = new HashMap<>();
-        for (String prototype : aggregatePrototypes) {
-            Class<A> aggregateType = (Class<A>) beanFactory.getType(prototype);
-            SpringAggregate<A> springAggregate = new SpringAggregate<>(prototype, aggregateType);
-            Class<? super A> topType = topAnnotatedAggregateType(aggregateType);
-            SpringAggregate<? super A> topSpringAggregate = new SpringAggregate<>(beanName(topType), topType);
-            hierarchy.compute(topSpringAggregate, (type, subtypes) -> {
-                if (subtypes == null) {
-                    subtypes = new HashMap<>();
-                }
-                if (!type.equals(springAggregate)) {
-                    subtypes.put(aggregateType, prototype);
-                }
-                return subtypes;
-            });
-        }
-        return hierarchy;
-    }
-
-    private <A> String beanName(Class<A> type) {
-        String[] beanNamesForType = beanFactory.getBeanNamesForType(type);
-        if (beanNamesForType.length == 0) {
-            throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
-        } else {
-            if (beanNamesForType.length != 1) {
-                logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
-            }
-            return beanNamesForType[0];
-        }
-    }
-
-    private <A> Class<? super A> topAnnotatedAggregateType(Class<A> type) {
-        Class<? super A> top = type;
-        Class<? super A> topAnnotated = top;
-        while(!top.getSuperclass().equals(Object.class)) {
-            top = top.getSuperclass();
-            if (top.isAnnotationPresent(Aggregate.class)) {
-                topAnnotated = top;
-            }
-        }
-        return topAnnotated;
-    }
-
     /**
      * @param <A> generic specifying the Aggregate type being registered
      */
     @SuppressWarnings("unchecked")
     private <A> void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
-        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(aggregates);
-        for (Map.Entry<SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
+        Map<SpringAggregateLookup.SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(beanFactory, aggregates);
+        for (Map.Entry<SpringAggregateLookup.SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
             Class<A> aggregateType = (Class<A>) aggregate.getKey().getClassType();
             String aggregatePrototype = aggregate.getKey().getBeanName();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
@@ -482,6 +437,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
      * Return the given {@code string}, with its first character lowercase
      *
      * @param string The input string
+     *
      * @return The input string, with first character lowercase
      */
     private String lcFirst(String string) {
@@ -518,7 +474,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
-        return Stream.of(beanNamesForTypeIncludingAncestors( beanFactory, componentType ))
+        return Stream.of(beanNamesForTypeIncludingAncestors(beanFactory, componentType))
                      .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
                      .findFirst();
     }
@@ -666,40 +622,4 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    private static class SpringAggregate<T> {
-
-        private final String beanName;
-        private final Class<T> classType;
-
-        private SpringAggregate(String beanName, Class<T> classType) {
-            this.beanName = beanName;
-            this.classType = classType;
-        }
-
-        public String getBeanName() {
-            return beanName;
-        }
-
-        public Class<T> getClassType() {
-            return classType;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            SpringAggregate<?> that = (SpringAggregate<?>) o;
-            return Objects.equals(beanName, that.beanName) &&
-                    Objects.equals(classType, that.classType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(beanName, classType);
-        }
-    }
 }

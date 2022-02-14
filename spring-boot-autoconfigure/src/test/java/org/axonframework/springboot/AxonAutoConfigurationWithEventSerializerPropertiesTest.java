@@ -46,9 +46,8 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -66,7 +65,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AxonAutoConfigurationWithEventSerializerPropertiesTest.TestContext.class)
@@ -96,7 +99,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertNotNull(applicationContext.getBean("messageSerializer", Serializer.class));
         assertNotNull(applicationContext.getBean("eventSerializer", Serializer.class));
-        AxonConfiguration axonConfiguration = applicationContext.getBean(AxonConfiguration.class);
+        org.axonframework.config.Configuration axonConfiguration = applicationContext.getBean(org.axonframework.config.Configuration.class);
         assertSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.messageSerializer());
         assertNotSame(axonConfiguration.messageSerializer(), axonConfiguration.eventSerializer());

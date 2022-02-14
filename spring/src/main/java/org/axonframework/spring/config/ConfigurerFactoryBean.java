@@ -41,6 +41,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 4.2
  */
+@Deprecated
 public class ConfigurerFactoryBean implements FactoryBean<Configurer>, ApplicationContextAware {
 
     private final Configurer configurer;
