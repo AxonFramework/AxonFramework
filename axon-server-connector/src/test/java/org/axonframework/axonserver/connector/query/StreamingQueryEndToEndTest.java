@@ -34,6 +34,8 @@ import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -52,18 +54,34 @@ import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("Disabled until Axon Server 4.6 is released.")
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
     private static String axonServerAddress;
+    private static String nonStreamingAxonServerAddress;
 
     private AxonServerQueryBus senderQueryBus;
+    private AxonServerQueryBus nonStreamingSenderQueryBus;
 
     private Registration subscription;
+    private Registration nonStreamingSubscription;
 
     @Container
     private static final GenericContainer<?> axonServerContainer =
             new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver"))
+                    .withExposedPorts(8024, 8124)
+                    .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
+                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
+                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
+                    .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
+                    .withNetwork(Network.newNetwork())
+                    .withNetworkAliases("axonserver")
+                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+
+    @Container
+    private static final GenericContainer<?> nonStreamingAxonServerContainer =
+            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver:4.5.10"))
                     .withExposedPorts(8024, 8124)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
                     .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
@@ -78,6 +96,9 @@ class StreamingQueryEndToEndTest {
         axonServerAddress = axonServerContainer.getContainerIpAddress()
                 + ":" +
                 axonServerContainer.getMappedPort(8124);
+        nonStreamingAxonServerAddress = nonStreamingAxonServerContainer.getContainerIpAddress()
+                + ":" +
+                nonStreamingAxonServerContainer.getMappedPort(8124);
     }
 
     @BeforeEach
@@ -85,80 +106,71 @@ class StreamingQueryEndToEndTest {
         SimpleQueryBus handlerLocalSegment = SimpleQueryBus.builder().build();
         SimpleQueryBus senderLocalSegment = SimpleQueryBus.builder().build();
 
-        QueryUpdateEmitter emitter = SimpleQueryUpdateEmitter.builder().build();
-        Serializer serializer = XStreamSerializer.builder()
-                                                 .xStream(new XStream())
-                                                 .build();
+        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(handlerLocalSegment, axonServerAddress);
+        senderQueryBus = axonServerQueryBus(senderLocalSegment, axonServerAddress);
 
-        AxonServerQueryBus handlerQueryBus = AxonServerQueryBus.builder()
-                                                               .localSegment(handlerLocalSegment)
-                                                               .configuration(handlerConfiguration())
-                                                               .axonServerConnectionManager(handlerConnectionManager())
-                                                               .updateEmitter(emitter)
-                                                               .genericSerializer(serializer)
-                                                               .messageSerializer(serializer)
-                                                               .build();
-        senderQueryBus = AxonServerQueryBus.builder()
-                                           .localSegment(senderLocalSegment)
-                                           .configuration(senderConfiguration())
-                                           .axonServerConnectionManager(senderConnectionManager())
-                                           .updateEmitter(emitter)
-                                           .genericSerializer(serializer)
-                                           .messageSerializer(serializer)
-                                           .build();
+        AxonServerQueryBus nonStreamingHandlerQueryBus =
+                axonServerQueryBus(handlerLocalSegment, nonStreamingAxonServerAddress);
+        nonStreamingSenderQueryBus =
+                axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
-        subscription = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler()).subscribe(handlerQueryBus);
+        subscription =
+                new AnnotationQueryHandlerAdapter<>(new MyQueryHandler()).subscribe(handlerQueryBus);
+        nonStreamingSubscription =
+                new AnnotationQueryHandlerAdapter<>(new MyQueryHandler()).subscribe(nonStreamingHandlerQueryBus);
     }
 
     @AfterEach
     void tearDown() {
         subscription.cancel();
+        nonStreamingSubscription.cancel();
     }
 
-    private AxonServerConnectionManager handlerConnectionManager() {
+    private AxonServerQueryBus axonServerQueryBus(SimpleQueryBus localSegment, String axonServerAddress) {
+        QueryUpdateEmitter emitter = SimpleQueryUpdateEmitter.builder().build();
+        Serializer serializer = XStreamSerializer.builder()
+                                                 .xStream(new XStream())
+                                                 .build();
+        return AxonServerQueryBus.builder()
+                                 .localSegment(localSegment)
+                                 .configuration(configuration(axonServerAddress))
+                                 .axonServerConnectionManager(connectionManager(axonServerAddress))
+                                 .updateEmitter(emitter)
+                                 .genericSerializer(serializer)
+                                 .messageSerializer(serializer)
+                                 .build();
+    }
+
+    private AxonServerConnectionManager connectionManager(String axonServerAddress) {
         return AxonServerConnectionManager.builder()
-                                          .axonServerConfiguration(handlerConfiguration())
+                                          .axonServerConfiguration(configuration(axonServerAddress))
                                           .build();
     }
 
-    private AxonServerConnectionManager senderConnectionManager() {
-        return AxonServerConnectionManager.builder()
-                                          .axonServerConfiguration(senderConfiguration())
-                                          .build();
-    }
-
-    private AxonServerConfiguration handlerConfiguration() {
+    private AxonServerConfiguration configuration(String axonServerAddress) {
         return AxonServerConfiguration.builder()
-                                      .componentName("Handler")
-                                      .clientId("Handler")
                                       .servers(axonServerAddress)
                                       .build();
     }
 
-    private AxonServerConfiguration senderConfiguration() {
-        return AxonServerConfiguration.builder()
-                                      .componentName("Sender")
-                                      .clientId("Sender")
-                                      .servers(axonServerAddress)
-                                      .build();
-    }
-
-    @Test
-    void testStreamingFluxQuery() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testStreamingFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<FluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
 
-        StepVerifier.create(streamingQueryPayloads(query))
+        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
                     .expectNextCount(1000)
                     .verifyComplete();
     }
 
-    @Test
-    void testStreamingErrorFluxQuery() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testStreamingErrorFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ErrorFluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new ErrorFluxQuery(), String.class);
 
-        StepVerifier.create(streamingQueryPayloads(query))
+        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().equals("oops"))
                     .verify();
@@ -169,35 +181,51 @@ class StreamingQueryEndToEndTest {
         StreamingQueryMessage<HandlerErrorFluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new HandlerErrorFluxQuery(), String.class);
 
-        StepVerifier.create(streamingQueryPayloads(query))
+        StepVerifier.create(streamingQueryPayloads(query, true))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().startsWith("No suitable handler"))
                     .verify();
     }
 
-    @Test
-    void testStreamingListQuery() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testStreamingListQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ListQuery, String> query =
                 new GenericStreamingQueryMessage<>(new ListQuery(), String.class);
 
-        StepVerifier.create(streamingQueryPayloads(query))
+        StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
 
-    @Test
-    void testListQuery() throws ExecutionException, InterruptedException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testListQuery(boolean supportsStreaming) throws ExecutionException, InterruptedException {
         QueryMessage<ListQuery, List<String>> query = new GenericQueryMessage<>(new ListQuery(),
                                                                                 multipleInstancesOf(String.class));
 
-        assertEquals(asList("a", "b", "c", "d"), senderQueryBus.query(query)
-                                                               .get()
-                                                               .getPayload());
+        assertEquals(asList("a", "b", "c", "d"), directQueryPayload(query, supportsStreaming));
     }
 
-    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<?, R> query) {
-        return Flux.from(senderQueryBus.streamingQuery(query))
+    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<?, R> query, boolean supportsStreaming) {
+        if (supportsStreaming) {
+            return Flux.from(senderQueryBus.streamingQuery(query))
+                       .map(Message::getPayload);
+        }
+        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query))
                    .map(Message::getPayload);
+    }
+
+    private <R> R directQueryPayload(QueryMessage<?, R> query, boolean supportsStreaming)
+            throws ExecutionException, InterruptedException {
+        if (supportsStreaming) {
+            return senderQueryBus.query(query)
+                                 .get()
+                                 .getPayload();
+        }
+        return nonStreamingSenderQueryBus.query(query)
+                                         .get()
+                                         .getPayload();
     }
 
     private static class MyQueryHandler {
