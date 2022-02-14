@@ -16,7 +16,13 @@
 
 package org.axonframework.axonserver.connector.query;
 
+/**
+ * A runnable with priority.
+ */
 public interface PrioritizedRunnable extends Runnable {
 
+    /**
+     * @return the priority of this runnable.
+     */
     long priority();
 }
