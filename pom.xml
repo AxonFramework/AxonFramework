@@ -105,7 +105,7 @@
         <postgresql.version>42.3.2</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
-        <axonserver-connector-java.version>4.5.4</axonserver-connector-java.version>
+        <axonserver-connector-java.version>4.6.0-SNAPSHOT</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.16.3</testcontainers.version>
         <xstream.version>1.4.18</xstream.version>
