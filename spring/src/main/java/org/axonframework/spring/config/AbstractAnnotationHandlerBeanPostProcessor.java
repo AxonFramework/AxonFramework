@@ -51,6 +51,7 @@ import static java.lang.reflect.Modifier.isAbstract;
  * @author Allard Buijze
  * @since 0.4
  */
+@Deprecated
 public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         implements BeanPostProcessor, BeanFactoryAware {
 

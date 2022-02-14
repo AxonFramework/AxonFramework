@@ -37,6 +37,7 @@ import org.springframework.util.ClassUtils;
  * @author Allard Buijze
  * @since 2.1
  */
+@Deprecated
 public final class SpringContextParameterResolverFactoryBuilder {
 
     private static final String PARAMETER_RESOLVER_FACTORY_BEAN_NAME = "__axon-parameter-resolver-factory";

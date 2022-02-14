@@ -33,6 +33,7 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
  *
  * @author Allard Buijze
  */
+@Deprecated
 public class CommandHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
 
     private ApplicationContext applicationContext;

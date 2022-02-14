@@ -31,6 +31,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
  * @author Milan Savic
  * @since 3.3
  */
+@Deprecated
 public final class SpringContextHandlerDefinitionBuilder {
 
     private static final String HANDLER_DEFINITION_BEAN_NAME = "__axon-handler-definition";

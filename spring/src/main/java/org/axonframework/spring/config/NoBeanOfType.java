@@ -35,6 +35,7 @@ import java.util.Map;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Conditional(NoBeanOfType.NoBeanOfTypeDefined.class)
+@Deprecated
 public @interface NoBeanOfType {
 
     /**

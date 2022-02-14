@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.5
  */
+@Deprecated
 public class AnnotationCommandHandlerBeanPostProcessor
         extends AbstractAnnotationHandlerBeanPostProcessor<MessageHandler<CommandMessage<?>>, AnnotationCommandHandlerAdapter<?>> {
 

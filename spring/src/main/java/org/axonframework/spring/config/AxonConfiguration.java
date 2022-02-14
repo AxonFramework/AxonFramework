@@ -52,6 +52,7 @@ import java.util.function.Supplier;
  * are available in the Configuration, but not made available as Spring beans by default.
  */
 @org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
+@Deprecated
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
     private final Configurer configurer;

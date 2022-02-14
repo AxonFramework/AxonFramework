@@ -16,8 +16,8 @@
 
  package org.axonframework.spring.config;
 
- import org.axonframework.modelling.command.Repository;
  import org.axonframework.config.AggregateConfiguration;
+ import org.axonframework.modelling.command.Repository;
  import org.springframework.beans.factory.FactoryBean;
 
  /**
@@ -28,6 +28,7 @@
   * @author Allard Buijze
   * @since 3.3
   */
+ @Deprecated
  public class RepositoryFactoryBean<T> implements FactoryBean<Repository<T>> {
 
      private final AggregateConfiguration<T> aggregateConfiguration;

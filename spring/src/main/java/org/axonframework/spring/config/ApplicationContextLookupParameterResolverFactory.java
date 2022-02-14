@@ -34,6 +34,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.1.2
  */
+@Deprecated
 public class ApplicationContextLookupParameterResolverFactory implements FactoryBean<ParameterResolverFactory>,
         ApplicationContextAware, InitializingBean {
 

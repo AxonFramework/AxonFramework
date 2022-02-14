@@ -32,6 +32,7 @@ import org.springframework.core.type.AnnotationMetadata;
  * @see AnnotationDriven
  * @since 2.3
  */
+@Deprecated
 public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar {
 
     /**

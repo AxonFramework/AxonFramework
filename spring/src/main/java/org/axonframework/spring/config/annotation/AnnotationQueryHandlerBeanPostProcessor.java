@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Marc Gathier
  * @since 3.1
  */
+@Deprecated
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {
     @Override
     protected Class<?>[] getAdapterInterfaces() {

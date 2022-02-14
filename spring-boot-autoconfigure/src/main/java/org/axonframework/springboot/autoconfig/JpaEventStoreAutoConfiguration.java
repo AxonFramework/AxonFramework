@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -53,7 +52,7 @@ public class JpaEventStoreAutoConfiguration {
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                 AxonConfiguration configuration,
+                                                 org.axonframework.config.Configuration configuration,
                                                  EntityManagerProvider entityManagerProvider,
                                                  TransactionManager transactionManager) {
         return JpaEventStorageEngine.builder()

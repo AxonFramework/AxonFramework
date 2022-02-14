@@ -29,6 +29,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  * @author Allard Buijze
  * @since 2.0
  */
+@Deprecated
 public class TransactionManagerFactoryBean implements FactoryBean<TransactionManager> {
 
     private TransactionManager transactionManager;
