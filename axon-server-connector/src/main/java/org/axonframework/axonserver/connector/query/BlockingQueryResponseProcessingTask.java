@@ -35,6 +35,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+/**
+ * Task that process responses of the query. It will block until all responses are received.
+ *
+ * @param <R> the type of expected final response
+ * @author Milan Savic
+ * @author Stefan Dragisic
+ * @since 4.6
+ */
 class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
 
     private final Publisher<QueryResponse> result;
@@ -55,6 +63,7 @@ class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
         this.expectedResponseType = expectedResponseType;
     }
 
+    @Override
     public long priority() {
         return priority;
     }
