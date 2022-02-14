@@ -16,7 +16,12 @@
 
 package org.axonframework.util;
 
-// TODO: 1/28/22 discuss
+/**
+ * Resolves certain parameters from the classpath.
+ *
+ * @author Milan Savic
+ * @since 4.6
+ */
 public class ClasspathResolver {
 
     private static final boolean projectReactorOnClasspath;
@@ -31,6 +36,9 @@ public class ClasspathResolver {
         projectReactorOnClasspath = fluxOnClasspath;
     }
 
+    /**
+     * @return {@code true} if Project Reactor is on classpath, {@code false} otherwise
+     */
     public static boolean projectReactorOnClasspath() {
         return projectReactorOnClasspath;
     }
