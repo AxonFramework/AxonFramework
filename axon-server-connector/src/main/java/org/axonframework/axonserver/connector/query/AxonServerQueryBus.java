@@ -48,10 +48,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
@@ -107,7 +106,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
+public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -169,8 +168,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * The {@link QueryPriorityCalculator} is defaulted to {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}
      * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
      * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
-     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the {@link
-     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic
+     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the
+     * {@link
+     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and
+     * generic
      * {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerQueryBus}
@@ -179,10 +180,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return new Builder();
     }
 
+    @Override
+    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INBOUND_QUERY_CONNECTOR, this::start);
+        lifecycle.onShutdown(Phase.INBOUND_QUERY_CONNECTOR, this::disconnect);
+        lifecycle.onShutdown(Phase.OUTBOUND_QUERY_CONNECTORS, this::shutdownDispatching);
+    }
+
     /**
      * Start the Axon Server {@link QueryBus} implementation.
      */
-    @StartHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
     public void start() {
         shutdownLatch.initialize();
     }
@@ -418,7 +425,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Disconnect the query bus from Axon Server, by unsubscribing all known query handlers. This shutdown operation is
      * performed in the {@link Phase#INBOUND_QUERY_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_QUERY_CONNECTOR)
     public void disconnect() {
         if (axonServerConnectionManager.isConnected(context)) {
             axonServerConnectionManager.getConnection(context).queryChannel().prepareDisconnect();
@@ -432,7 +438,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      *
      * @return a completable future which is resolved once all query dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_QUERY_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return shutdownLatch.initiateShutdown();
     }
@@ -443,8 +448,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * The {@link QueryPriorityCalculator} is defaulted to {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}
      * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
      * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
-     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the {@link
-     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic
+     * ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the
+     * {@link
+     * AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and
+     * generic
      * {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
@@ -467,6 +474,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param axonServerConnectionManager an {@link AxonServerConnectionManager} used to create connections between
          *                                    this application and an Axon Server instance
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder axonServerConnectionManager(AxonServerConnectionManager axonServerConnectionManager) {
@@ -481,6 +489,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param configuration an {@link AxonServerConfiguration} used to configure several components within the Axon
          *                      Server Query Bus
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder configuration(AxonServerConfiguration configuration) {
@@ -493,6 +502,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * Sets the local {@link QueryBus} used to dispatch incoming queries to the local environment.
          *
          * @param localSegment a {@link QueryBus} used to dispatch incoming queries to the local environment
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder localSegment(QueryBus localSegment) {
@@ -506,6 +516,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * {@link QueryBus#queryUpdateEmitter()} contract.
          *
          * @param updateEmitter a {@link QueryUpdateEmitter} which can be used to emit updates to queries
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateEmitter(QueryUpdateEmitter updateEmitter) {
@@ -519,6 +530,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param messageSerializer a {@link Serializer} used to de-/serialize incoming and outgoing queries and query
          *                          responses
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSerializer(Serializer messageSerializer) {
@@ -533,6 +545,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param genericSerializer a {@link Serializer} used to de-/serialize incoming and outgoing query {@link
          *                          org.axonframework.messaging.responsetypes.ResponseType} implementations.
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder genericSerializer(Serializer genericSerializer) {
@@ -548,6 +561,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param priorityCalculator a {@link QueryPriorityCalculator} used to deduce the priority of an incoming query
          *                           among other queries
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder priorityCalculator(QueryPriorityCalculator priorityCalculator) {
@@ -563,6 +577,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param targetContextResolver a {@link TargetContextResolver} used to resolve the target (bounded) context of
          *                              an ingested {@link QueryMessage}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder targetContextResolver(TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
@@ -584,6 +599,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         @SuppressWarnings("unused")
@@ -598,6 +614,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * UpstreamAwareStreamObserver#getRequestStream()}.
          *
          * @param requestStreamFactory factory that creates a request stream based on upstream
+         *
          * @return the current Builder instance, for fluent interfacing
          * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
          * java connector</a>
@@ -614,6 +631,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * DefaultInstructionAckSource}.
          *
          * @param instructionAckSource used to send instruction acknowledgements
+         *
          * @return the current Builder instance, for fluent interfacing
          * @deprecated in through use of the <a href="https://github.com/AxonIQ/axonserver-connector-java">AxonServer
          * java connector</a>

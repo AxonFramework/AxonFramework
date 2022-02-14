@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
@@ -27,6 +28,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
+import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -264,6 +267,20 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
+    public TrackingToken fetchToken(String processorName, Segment segment) throws UnableToClaimTokenException {
+        Connection connection = getConnection();
+        try {
+            return executeQuery(connection, c -> selectForUpdate(c, processorName, segment.getSegmentId()),
+                                resultSet -> loadToken(connection, resultSet, processorName, segment),
+                                e -> new JdbcException(
+                                        format("Could not load token for processor [%s] and segment [%d]",
+                                               processorName, segment.getSegmentId()), e));
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    @Override
     public void releaseClaim(String processorName, int segment) {
         Connection connection = getConnection();
         try {
@@ -313,6 +330,29 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Override
+    public List<Segment> fetchAvailableSegments(String processorName) {
+        Connection connection = getConnection();
+        try {
+            List<AbstractTokenEntry<?>> tokenEntries = executeQuery(connection,
+                                                                    c -> selectTokenEntries(c, processorName),
+                                                                    listResults(this::readTokenEntry),
+                                                                    e -> new JdbcException(format(
+                                                                            "Could not load segments for processor [%s]", processorName
+                                                                    ), e)
+            );
+            int[] allSegments = tokenEntries.stream()
+                                            .mapToInt(AbstractTokenEntry::getSegment)
+                                            .toArray();
+            return tokenEntries.stream()
+                               .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                               .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                               .collect(Collectors.toList());
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
     /**
      * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying
      * storage.
@@ -325,7 +365,27 @@ public class JdbcTokenStore implements TokenStore {
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
         final String sql = "SELECT " + schema.segmentColumn() +
                 " FROM " + schema.tokenTable() +
-                " WHERE " + schema.processorNameColumn() + " = ? ORDER BY " + schema.segmentColumn() + " ASC";
+                " WHERE " + schema.processorNameColumn() + " = ?" +
+                " ORDER BY " + schema.segmentColumn() + " ASC";
+        PreparedStatement preparedStatement =
+                connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        preparedStatement.setString(1, processorName);
+        return preparedStatement;
+    }
+
+    /**
+     * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from the underlying storage.
+     *
+     * @param connection    the connection to the underlying database
+     * @param processorName the name of the processor to fetch the segments for
+     * @return a {@link PreparedStatement} that will fetch TokenEntries when executed
+     * @throws SQLException when an exception occurs while creating the prepared statement
+     */
+    protected PreparedStatement selectTokenEntries(Connection connection, String processorName) throws SQLException {
+        final String sql = "SELECT *" +
+                " FROM " + schema.tokenTable() +
+                " WHERE " + schema.processorNameColumn() + " = ?" +
+                " ORDER BY " + schema.segmentColumn() + " ASC";
         PreparedStatement preparedStatement =
                 connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         preparedStatement.setString(1, processorName);
@@ -516,6 +576,105 @@ public class JdbcTokenStore implements TokenStore {
                            segment));
         }
         return claimToken(connection, readTokenEntry(resultSet));
+    }
+
+    /**
+     * Tries loading an existing token owned by a processor with given {@code processorName} and {@code segment}. If such a token entry exists an attempt will
+     * be made to claim the token. If that succeeds the token will be returned. If the token is already owned by another node an {@link
+     * UnableToClaimTokenException} will be thrown.
+     * <p>
+     * If no such token exists yet, a new token entry will be inserted with a {@code null} token, owned by this node, and this method returns {@code null}.
+     * <p>
+     * If a token has been claimed, the {@code segment} will be validated by checking the database for the split and merge candidate segments. If a concurrent
+     * split or merge operation has been detected, the calim will be released and an {@link UnableToClaimTokenException} will be thrown.}
+     *
+     * @param connection    the connection to the underlying database
+     * @param resultSet     the updatable result set from a prior select for update query
+     * @param processorName the name of the processor to load or insert a token entry for
+     * @param segment       the segment of the processor to load or insert a token entry for
+     * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
+     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token or if the segment has been split or
+     *                                     merged concurrently
+     * @throws SQLException                when an exception occurs while loading or inserting the entry
+     */
+    protected TrackingToken loadToken(Connection connection, ResultSet resultSet, String processorName,
+                                      Segment segment) throws SQLException {
+        if (!resultSet.next()) {
+            throw new UnableToClaimTokenException(
+                    format("Unable to claim token '%s[%s]'. It has not been initialized yet", processorName,
+                           segment.getSegmentId()));
+        }
+        AbstractTokenEntry<?> tokenEntry = readTokenEntry(resultSet);
+        validateSegment(processorName, segment);
+        return claimToken(connection, tokenEntry);
+    }
+
+    /**
+     * Validate a {@code segment} by checking for the existence of a split or merge candidate segment.
+     * <p>
+     * If the segment has been split concurrently, the split segment candidate will be found, indicating that we have claimed an incorrect {@code segment}. If
+     * the segment has been merged concurrently, the merge candidate segment will no longer exist, also indicating that we have claimed an incorrect {@code
+     * segment}.
+     *
+     * @param processorName the name of the processor to load or insert a token entry for
+     * @param segment       the segment of the processor to load or insert a token entry for
+     */
+    protected void validateSegment(String processorName, Segment segment) {
+        Connection connection = getConnection();
+        try {
+            int splitSegmentId = segment.splitSegmentId(); //This segment should not exist
+            int mergeableSegmentId = segment.mergeableSegmentId(); //This segment should exist
+            executeQuery(connection, c -> selectSegments(c, processorName, splitSegmentId, mergeableSegmentId),
+                         r -> containsOneElement(r, processorName, segment.getSegmentId()),
+                         e -> new JdbcException(format("Could not load segments for processor [%s]", processorName), e));
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    /**
+     * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the {@code splitSegmentId} and {@code mergableSegmetnId}.
+     *
+     * @param connection    the connection to the underlying database
+     * @param processorName the name of the processor to load or insert a token entry for
+     * @param splitSegmentId the id of the split candidate segment
+     * @param mergeableSegmentId the id of the merge candiate segment
+     * @return The PreparedStatement to execute
+     * @throws SQLException when an Exception occurs in building the {@link PreparedStatement}
+     */
+    protected PreparedStatement selectSegments(Connection connection, String processorName,
+                                               int splitSegmentId, int mergeableSegmentId) throws SQLException {
+        final String sql = "SELECT count(*) as size FROM " +
+                schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND (" + schema.segmentColumn() +
+                " = ? OR " + schema.segmentColumn() + " = ?)";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1, processorName);
+        preparedStatement.setInt(2, splitSegmentId);
+        preparedStatement.setInt(3, mergeableSegmentId);
+        return preparedStatement;
+    }
+
+    /**
+     * Confirm that the first row of the {@code resultSet} only contains a size of 1, indicating that the desired amount of segments has been found.
+     *
+     * @param resultSet the ResultSet returned by the {@code selectSegments} method.
+     * @param processorName The process name for which a token has been fetched
+     * @param segmentId      The segment we are validating
+     * @return true if only a single segment was found
+     * @throws SQLException when an exception occurs processing the {@code resultSet}
+     */
+    private boolean containsOneElement(ResultSet resultSet, String processorName, int segmentId) throws SQLException {
+        resultSet.next();
+        int size = resultSet.getInt("size");
+        if (size == 0) {
+            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
+                                                         processorName, segmentId));
+        }
+        if (size >= 2) {
+            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been split into two segments",
+                                                         processorName, segmentId));
+        }
+        return true;
     }
 
     /**

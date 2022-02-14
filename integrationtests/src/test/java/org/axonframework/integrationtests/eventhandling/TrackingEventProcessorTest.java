@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
@@ -54,6 +55,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -280,7 +282,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testBlacklist() throws Exception {
+    void testBlacklist() {
         when(mockHandler.canHandle(any())).thenReturn(false);
         when(mockHandler.canHandleType(String.class)).thenReturn(false);
         Set<Class<?>> skipped = new HashSet<>();
@@ -729,8 +731,7 @@ class TrackingEventProcessorTest {
         fail.set(false);
         assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
         assertEquals(5, acknowledgedEvents.size());
-        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(s -> s
-                .isErrorState()).findFirst();
+        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(EventTrackerStatus::isErrorState).findFirst();
         assertThat("no processor in error state when open stream succeeds again", !inErrorState.isPresent());
     }
 
@@ -1539,7 +1540,7 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow up from issue https://github.com/AxonIQ/axon-server-se/issues/135
+     * This test is a follow-up from issue https://github.com/AxonIQ/axon-server-se/issues/135
      */
     @Test
     @Timeout(value = 10)
@@ -1556,10 +1557,10 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
+     * This test is a follow-up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
-    public void testThrownErrorBubblesUp() {
+    void testThrownErrorBubblesUp() {
         AtomicReference<Throwable> thrownException = new AtomicReference<>();
 
         EventHandlerInvoker eventHandlerInvoker = mock(EventHandlerInvoker.class);
@@ -1904,6 +1905,54 @@ class TrackingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
+    }
+
+    @Test
+    void testProcessorOnlyTriesToClaimAvailableSegments() {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+
+        testSubject.start();
+
+        eventBus.publish(createEvents(1));
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
+        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+    }
+
+    @Test
+    void testShutdownTerminatesWorkersAfterConfiguredWorkerTerminationTimeout() throws Exception {
+        int numberOfEvents = 5;
+        List<String> handled = new CopyOnWriteArrayList<>();
+        int testWorkerTerminationTimeout = 50;
+        List<Thread> createdThreads = new CopyOnWriteArrayList<>();
+        // A higher event availability timeout will block a worker thread that should shut down
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                         .andInitialSegmentsCount(2)
+                                                         .andBatchSize(100)
+                                                         .andThreadFactory(n -> r -> {
+                                                             Thread thread = new Thread(r, n);
+                                                             createdThreads.add(thread);
+                                                             return thread;
+                                                         })
+                                                         .andWorkerTerminationTimeout(testWorkerTerminationTimeout)
+                                                         .andEventAvailabilityTimeout(20, TimeUnit.SECONDS));
+
+        testSubject.start();
+
+        // sleep a little to reach the EventAvailabilityTimeout usage on the Event Stream
+        Thread.sleep(500);
+
+        assertEquals(2, createdThreads.size());
+
+        CompletableFuture<Void> result = testSubject.shutdownAsync();
+        assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(createdThreads.get(0).isAlive());
+        assertFalse(createdThreads.get(1).isAlive());
     }
 
     private void waitForStatus(String description,

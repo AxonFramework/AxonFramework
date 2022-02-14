@@ -31,6 +31,7 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.util.ClassUtils;
 
@@ -70,7 +71,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
+        if (bean instanceof FactoryBean
+                || (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName))) {
             return bean;
         }
 
@@ -313,8 +315,9 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                                     .filter(m -> invocation.getMethod().getName().equals(m.getName()))
                                     .filter(m -> m.getParameterCount() == invocation.getArguments().length)
                                     .anyMatch(m -> {
-                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
-                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                        Class<?>[] parameterTypes = m.getParameterTypes();
+                                        for (int i = 0; i < m.getParameterCount(); i++) {
+                                            if (!parameterTypes[i].isInstance(invocation.getArguments()[i])) {
                                                 return false;
                                             }
                                         }

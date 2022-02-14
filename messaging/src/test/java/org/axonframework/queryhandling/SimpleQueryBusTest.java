@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,20 +32,25 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -63,13 +68,11 @@ class SimpleQueryBusTest {
 
     private static final String TRACE_ID = "traceId";
     private static final String CORRELATION_ID = "correlationId";
-
+    private final ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
     private SimpleQueryBus testSubject;
     private MessageMonitor<QueryMessage<?, ?>> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
     private MessageMonitor.MonitorCallback monitorCallback;
-
-    private final ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -609,6 +612,48 @@ class SimpleQueryBusTest {
                     "Exception by handler should be reported in result, not on Mono");
         //noinspection ConstantConditions
         assertTrue(initialResult.block().isExceptional());
+    }
+
+    @Test
+    void testSubscriptionQueryIncreasingProjection() throws InterruptedException {
+        CountDownLatch ten = new CountDownLatch(1);
+        CountDownLatch hundred = new CountDownLatch(1);
+        CountDownLatch thousand = new CountDownLatch(1);
+        final AtomicLong value = new AtomicLong();
+        testSubject.subscribe("queryName", Long.class, q -> value.get());
+        QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
+        Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
+            .doOnNext(next -> {
+                if (next == 10L) {
+                    ten.countDown();
+                }
+                if (next == 100L) {
+                    hundred.countDown();
+                }
+                if (next == 1000L) {
+                    thousand.countDown();
+                }
+                value.set(next);
+                updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+            })
+            .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+            .subscribe();
+
+
+        SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
+                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                         "queryName",
+                                                                         ResponseTypes.instanceOf(Long.class),
+                                                                         ResponseTypes.instanceOf(Long.class)));
+        Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
+        ten.await();
+        Long firstInitialResult = Objects.requireNonNull(initialResult.block()).getPayload();
+        hundred.await();
+        Long fistUpdate = Objects.requireNonNull(result.updates().next().block()).getPayload();
+        thousand.await();
+        Long anotherInitialResult = Objects.requireNonNull(initialResult.block()).getPayload();
+        assertTrue(fistUpdate <= firstInitialResult + 1);
+        assertTrue(firstInitialResult <= anotherInitialResult);
     }
 
     @Test

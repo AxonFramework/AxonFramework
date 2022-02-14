@@ -67,12 +67,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
-     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
-     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
-     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver} The {@link
+     * Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal is to
+     * provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
+     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
+     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
      * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
@@ -84,13 +84,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Instantiate a {@link AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw
-     * an {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's
-     * goal is to create an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
+     * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's goal
+     * is to create an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
      * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
      * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
-     * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown
-     * if this criteria is not met.
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown if
+     * this criteria is not met.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AggregateAnnotationCommandHandler} instance
      */
@@ -103,8 +103,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     /**
-     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed
-     * for each of the supported commands.
+     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed for each
+     * of the supported commands.
      *
      * @param commandBus The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
@@ -166,7 +166,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
     @Override
     public Object handle(CommandMessage<?> commandMessage) throws Exception {
-        return handlers.stream().filter(eh -> eh.canHandle(commandMessage))
+        return handlers.stream()
+                       .filter(ch -> ch.canHandle(commandMessage))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
                        .handle(commandMessage);
@@ -174,12 +175,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
     @Override
     public boolean canHandle(CommandMessage<?> message) {
-        return handlers.stream().anyMatch(ch -> ch.canHandle(message));
+        return handlers.stream()
+                       .anyMatch(ch -> ch.canHandle(message));
     }
 
     /**
-     * Resolves the value to return when the given {@code command} has created the given {@code aggregate}.
-     * This implementation returns the identifier of the created aggregate.
+     * Resolves the value to return when the given {@code command} has created the given {@code aggregate}. This
+     * implementation returns the identifier of the created aggregate.
      * <p>
      * This method may be overridden to change the return value of this Command Handler
      *
@@ -187,7 +189,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      * @param createdAggregate The aggregate that has been created as a result of the command
      * @return The value to report as result of the command
      */
-    protected Object resolveReturnValue(CommandMessage<?> command, Aggregate<T> createdAggregate) {
+    protected Object resolveReturnValue(@SuppressWarnings("unused") CommandMessage<?> command,
+                                        Aggregate<T> createdAggregate) {
         return createdAggregate.identifier();
     }
 
@@ -199,12 +202,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Builder class to instantiate a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to an {@link AnnotationCommandTargetResolver}
-     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
-     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
-     * aggregate). To instantiate this AggregateModel, either an AggregateModel can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link CommandTargetResolver} is defaulted to an {@link AnnotationCommandTargetResolver} The {@link
+     * Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal is to
+     * provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
+     * AggregateModel, either an AggregateModel can be provided directly or an {@code aggregateType} of type {@link
+     * Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel
+     * <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
      */
@@ -232,8 +235,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         /**
-         * Sets the {@link CommandTargetResolver} used to resolve the command handling target. Defaults to an
-         * {@link AnnotationCommandTargetResolver}.
+         * Sets the {@link CommandTargetResolver} used to resolve the command handling target. Defaults to an {@link
+         * AnnotationCommandTargetResolver}.
          *
          * @param commandTargetResolver a {@link CommandTargetResolver} used to resolve the command handling target
          * @return the current Builder instance, for fluent interfacing
@@ -274,11 +277,11 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         /**
-         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
-         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}. Only
+         * used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
-         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
-         *                          {@code aggregateType}
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given {@code
+         *                          aggregateType}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
@@ -292,8 +295,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
          * {@link AnnotationCommandHandlerAdapter} will handle. Either this field or the {@link #aggregateType(Class)}
          * should be provided to correctly instantiate an {@link AggregateAnnotationCommandHandler}.
          *
-         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
-         *                       {@link Repository} will store
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this {@link
+         *                       Repository} will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {

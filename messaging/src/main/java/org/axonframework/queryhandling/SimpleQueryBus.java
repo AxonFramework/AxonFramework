@@ -281,7 +281,10 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        MonoWrapper<QueryResponseMessage<I>> initialResult = getInitialResultMono(query);
+        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
+                                                          .doOnError(error -> logger.error(format(
+                                                                  "An error happened while trying to report an initial result. Query: %s",
+                                                                  query), error));
 
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, backpressure, updateBufferSize);
@@ -299,8 +302,10 @@ public class SimpleQueryBus implements QueryBus {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
-        MonoWrapper<QueryResponseMessage<I>> initialResult = getInitialResultMono(query);
-
+        Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
+                                                          .doOnError(error -> logger.error(format(
+                                                                  "An error happened while trying to report an initial result. Query: %s",
+                                                                  query), error));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -314,25 +319,11 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Subscription Query query does not support Flux as an update type.");
     }
 
-    private <Q, I, U> MonoWrapper<QueryResponseMessage<I>> getInitialResultMono(
-            SubscriptionQueryMessage<Q, I, U> query
-    ) {
-        return MonoWrapper.create(monoSink -> query(query)
-                .thenAccept(monoSink::success)
-                .exceptionally(t -> {
-                    logger.error(
-                            format("An error happened while trying to report an initial result. Query: %s", query), t
-                    );
-                    monoSink.error(t.getCause());
-                    return null;
-                }));
-    }
-
     private <I, U> DefaultSubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> getSubscriptionQueryResult(
-            MonoWrapper<QueryResponseMessage<I>> initialResult,
+            Mono<QueryResponseMessage<I>> initialResult,
             UpdateHandlerRegistration<U> updateHandlerRegistration
     ) {
-        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
+        return new DefaultSubscriptionQueryResult<>(initialResult,
                                                     updateHandlerRegistration.getUpdates(),
                                                     () -> {
                                                         updateHandlerRegistration.complete();
@@ -575,7 +566,7 @@ public class SimpleQueryBus implements QueryBus {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

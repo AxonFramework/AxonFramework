@@ -20,7 +20,7 @@ labels: 'Type: Feature'
 
 ### Wanted Behaviour
 
-<!-- Please described the desired outcome through Axon Framework around the suggested feature. -->
+<!-- Please describe the desired outcome through Axon Framework around the suggested feature. -->
 
 ### Possible Workarounds
 

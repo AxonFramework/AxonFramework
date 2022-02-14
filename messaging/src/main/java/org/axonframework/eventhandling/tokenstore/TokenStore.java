@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,13 @@
 package org.axonframework.eventhandling.tokenstore;
 
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
@@ -117,6 +121,28 @@ public interface TokenStore {
     TrackingToken fetchToken(String processorName, int segment) throws UnableToClaimTokenException;
 
     /**
+     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}. Returns {@code null} if the stored token for
+     * the given process and segment is {@code null}.
+     * <p>
+     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been initialized with a Token (albeit {@code
+     * null}) yet. In that case, a segment must have been explicitly initialized. A TokenStore implementation's ability to do so is exposed by the {@link
+     * #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly initialize a token and return that token upon
+     * invocation.
+     * <p>
+     * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release the claim, use {@link
+     * #releaseClaim(String, int)}
+     *
+     * @param processorName The process name for which to fetch the token
+     * @param segment       The segment for which to fetch the token
+     * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
+     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but they are claimed by another process, or
+     *                                     if the {@code segment has been split or merged concurrently}
+     */
+    default TrackingToken fetchToken(String processorName, Segment segment) throws UnableToClaimTokenException {
+        return fetchToken(processorName, segment.getSegmentId());
+    }
+
+    /**
      * Extends the claim on the current token held by the this node for the given {@code processorName} and
      * {@code segment}.
      *
@@ -206,6 +232,25 @@ public interface TokenStore {
      * @return an array of segment identifiers.
      */
     int[] fetchSegments(String processorName);
+
+    /**
+     * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered available if it is not claimed by any
+     * other event processor.
+     * <p>
+     * The segments returned are segments for which a token has been stored previously and have not been claimed by another processor. When the {@link
+     * TokenStore} is empty, an empty list is returned.
+     *
+     * By default, if this method is not implemented, we will return all segments instead, whether they are available or not.
+     *
+     * @param processorName the processor's name for which to fetch the segments
+     * @return a List of available segment identifiers for the specified {@code processorName}
+     */
+    default List<Segment> fetchAvailableSegments(String processorName) {
+        int[] allSegments = fetchSegments(processorName);
+        return Arrays.stream(allSegments).boxed()
+                     .map(segment -> Segment.computeSegment(segment, allSegments))
+                     .collect(Collectors.toList());
+    }
 
     /**
      * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token
