@@ -54,6 +54,9 @@ import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
+ */
 @Disabled("Disabled until Axon Server 4.6 is released.")
 @Testcontainers
 class StreamingQueryEndToEndTest {

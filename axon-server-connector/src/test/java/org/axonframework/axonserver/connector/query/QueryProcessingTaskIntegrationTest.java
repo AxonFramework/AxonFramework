@@ -54,6 +54,9 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Integration tests of {@link QueryProcessingTask}.
+ */
 class QueryProcessingTaskIntegrationTest {
 
     private static final String CLIENT_ID = "clientId";
@@ -765,7 +768,6 @@ class QueryProcessingTaskIntegrationTest {
 
         private final List<T> cache = new CopyOnWriteArrayList<>();
         private volatile boolean completed = false;
-        private volatile boolean acked = false;
 
         @Override
         public void send(T outboundMessage) {
@@ -774,12 +776,12 @@ class QueryProcessingTaskIntegrationTest {
 
         @Override
         public void sendAck() {
-            acked = true;
+            // noop
         }
 
         @Override
         public void sendNack(ErrorMessage errorMessage) {
-
+            // noop
         }
 
         @Override
@@ -789,12 +791,12 @@ class QueryProcessingTaskIntegrationTest {
 
         @Override
         public void completeWithError(ErrorMessage errorMessage) {
-
+            // noop
         }
 
         @Override
         public void completeWithError(ErrorCategory errorCategory, String message) {
-
+            // noop
         }
 
         public List<T> sent() {
@@ -803,10 +805,6 @@ class QueryProcessingTaskIntegrationTest {
 
         public boolean completed() {
             return completed;
-        }
-
-        public boolean acked() {
-            return acked;
         }
     }
 }

@@ -20,13 +20,29 @@ import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
+/**
+ * An implementation of {@link StreamableResult} that streams the whole result at once.
+ *
+ * @author Milan Savic
+ * @author Stefan Dragisic
+ * @since 4.6
+ */
 class StreamableInstanceResult implements StreamableResult {
 
     private final QueryResponseMessage<?> result;
     private final ReplyChannel<QueryResponse> responseHandler;
     private final QuerySerializer serializer;
     private final String requestId;
+    private volatile boolean cancelled = false;
 
+    /**
+     * Instantiates this streamable instance result.
+     *
+     * @param result          the result to be streamed
+     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
+     * @param serializer      the serializer used to serialize items
+     * @param requestId       the identifier of the request these responses refer to
+     */
     public StreamableInstanceResult(QueryResponseMessage<?> result,
                                     ReplyChannel<QueryResponse> responseHandler,
                                     QuerySerializer serializer,
@@ -39,9 +55,14 @@ class StreamableInstanceResult implements StreamableResult {
 
     @Override
     public void request(long requested) {
-        if (requested <= 0) {
+        if (requested <= 0 || cancelled) {
             return;
         }
         responseHandler.sendLast(serializer.serializeResponse(result, requestId));
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
     }
 }

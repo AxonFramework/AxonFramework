@@ -26,10 +26,28 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 
+/**
+ * An implementation of {@link StreamableResult} that uses a given {@link Flux} of results to send them one by on to the
+ * Axon Server.
+ *
+ * @author Milan Savic
+ * @author Stefan Dragisic
+ * @since 4.6
+ */
 class StreamableFluxResult implements StreamableResult {
 
     private final Subscription subscription;
 
+    /**
+     * Instantiates this streamable flux result.
+     *
+     * @param result          a {@link Flux} of responses to be sent
+     * @param responseHandler the {@link ReplyChannel} used for sending the result to the Axon Server
+     * @param serializer      the serializer used to serialize items
+     * @param requestId       the identifier of the request these responses refer to
+     * @param clientId        the identifier of the client
+     * @param <T>             the type of items to be sent
+     */
     public <T> StreamableFluxResult(Flux<QueryResponseMessage<T>> result,
                                     ReplyChannel<QueryResponse> responseHandler,
                                     QuerySerializer serializer,

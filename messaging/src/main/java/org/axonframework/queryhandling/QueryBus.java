@@ -76,8 +76,22 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      */
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
 
+    /**
+     * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until
+     * there is a subscription to the result. The query is dispatched to a single query handler. Implementations may opt
+     * for invoking several query handlers and then choosing a response from single one for performance or resilience
+     * reasons.
+     * <p>
+     * When no handlers are available that can answer the given {@code query}, the return Publisher will be completed
+     * with a {@link NoHandlerForQueryException}.
+     *
+     * @param query the streaming query message
+     * @param <Q>   the payload type of the streaming query
+     * @param <R>   the response type of the streaming query
+     * @return a Publisher of responses
+     */
     default <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        return Flux.empty();
+        throw new UnsupportedOperationException("Streaming query is not supported by this QueryBus.");
     }
 
     /**

@@ -18,15 +18,9 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.FlowControl;
 
+/**
+ * A specific type of {@link FlowControl} representing a result that can be streamed.
+ */
 interface StreamableResult extends FlowControl {
 
-    @Override
-    default void request(long requested) {
-        // noop
-    }
-
-    @Override
-    default void cancel() {
-        // noop
-    }
 }

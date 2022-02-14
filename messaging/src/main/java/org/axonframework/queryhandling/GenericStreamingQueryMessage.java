@@ -24,25 +24,70 @@ import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
+/**
+ * Generic implementation of {@link StreamingQueryMessage}.
+ *
+ * @param <Q> the type of streaming query payload
+ * @param <R> the type of the result streamed via {@link Flux}
+ * @author Milan Savic
+ * @author Stefan Dragisic
+ * @since 4.6.0
+ */
 public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, Flux<R>>
         implements StreamingQueryMessage<Q, R> {
 
+    /**
+     * Initializes the message with the given {@code payload} and expected {@code responseType}. The query name is set
+     * to the fully qualified class name of the {@code payload}.
+     *
+     * @param payload      The payload expressing the query
+     * @param responseType The expected response type
+     */
     public GenericStreamingQueryMessage(Q payload, Class<R> responseType) {
         this(payload, new FluxResponseType<>(responseType));
     }
 
+    /**
+     * Initializes the message with the given {@code payload}, {@code queryName} and expected {@code responseType}.
+     *
+     * @param payload      The payload expressing the query
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type
+     */
     public GenericStreamingQueryMessage(Q payload, String queryName, Class<R> responseType) {
         this(payload, queryName, new FluxResponseType<>(responseType));
     }
 
+    /**
+     * Initializes the message with the given {@code payload} and expected {@code responseType}. The query name is set
+     * to the fully qualified class name of the {@code payload}.
+     *
+     * @param payload      The payload expressing the query
+     * @param responseType The expected response type of type {@link FluxResponseType}
+     */
     public GenericStreamingQueryMessage(Q payload, FluxResponseType<R> responseType) {
         super(payload, responseType);
     }
 
+    /**
+     * Initializes the message with the given {@code payload}, {@code queryName} and expected {@code responseType}.
+     *
+     * @param payload      The payload expressing the query
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type of type {@link FluxResponseType}
+     */
     public GenericStreamingQueryMessage(Q payload, String queryName, FluxResponseType<R> responseType) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
+    /**
+     * Initialize the Query Message, using given {@code delegate} as the carrier of payload and metadata and given
+     * {@code queryName} and expecting the given {@code responseType}.
+     *
+     * @param delegate     The message containing the payload and meta-data for this message
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type of type {@link FluxResponseType}
+     */
     public GenericStreamingQueryMessage(Message<Q> delegate, String queryName, FluxResponseType<R> responseType) {
         super(delegate, queryName, responseType);
     }
@@ -64,5 +109,10 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, F
     @Override
     public FluxResponseType<R> getResponseType() {
         return (FluxResponseType<R>) super.getResponseType();
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericStreamingQueryMessage";
     }
 }
