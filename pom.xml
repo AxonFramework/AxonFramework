@@ -33,6 +33,7 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
+        <module>spring-native</module>
         <module>integrationtests</module>
         <module>legacy</module>
     </modules>
