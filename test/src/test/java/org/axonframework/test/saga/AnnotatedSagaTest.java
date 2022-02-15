@@ -17,6 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
@@ -369,5 +370,15 @@ class AnnotatedSagaTest {
         FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier)).whenAggregate(identifier)
                                                                .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
         assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
+    }
+
+    @Test
+    void testUnsupportedErrorHandler() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.registerListenerInvocationErrorHandler(new LoggingErrorHandler());
+
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenNoPriorActivity().whenPublishingA(new TriggerSagaStartEvent(identifier));
+        assertThrows(UnsupportedOperationException.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
 }

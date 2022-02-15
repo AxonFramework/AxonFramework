@@ -411,9 +411,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
-        if (listenerInvocationErrorHandler instanceof RecordingLoggingErrorHandler) {
-            fixtureExecutionResult.setLoggingErrorHandler((RecordingLoggingErrorHandler) listenerInvocationErrorHandler);
-        }
+        fixtureExecutionResult.setRecordingErrorHandler(listenerInvocationErrorHandler);
         return this;
     }
 

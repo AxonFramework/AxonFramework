@@ -22,6 +22,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -136,6 +137,13 @@ class FixtureExecutionResultImplTest {
         testSubject.expectPublishedEvents();
         testSubject.expectNoDispatchedCommands();
         testSubject.expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void testIncorrectErrorHandlerType() {
+        testSubject.setRecordingErrorHandler(new LoggingErrorHandler());
+        testSubject.startRecording();
+        assertThrows(UnsupportedOperationException.class, () -> testSubject.expectSuccessfulHandlerExecution());
     }
 
     @Test
