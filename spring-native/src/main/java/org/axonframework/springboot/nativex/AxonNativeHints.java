@@ -1,5 +1,6 @@
-package org.axonframework.springboot;
+package org.axonframework.springboot.nativex;
 
+import com.fasterxml.jackson.databind.ser.std.ClassSerializer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
@@ -16,7 +17,13 @@ import org.axonframework.config.ProcessingGroup;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.AllowReplay;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.MergedTrackingToken;
+import org.axonframework.eventhandling.MultiSourceTrackingToken;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
@@ -26,6 +33,10 @@ import org.axonframework.messaging.annotation.HasHandlerAttributes;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
+import org.axonframework.messaging.responsetypes.OptionalResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
@@ -38,11 +49,13 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.serialization.ContentTypeConverter;
 import org.springframework.aot.context.bootstrap.generator.infrastructure.nativex.BeanFactoryNativeConfigurationProcessor;
 import org.springframework.aot.context.bootstrap.generator.infrastructure.nativex.NativeConfigurationRegistry;
+import org.springframework.aot.context.bootstrap.generator.infrastructure.nativex.NativeProxyEntry;
 import org.springframework.aot.context.bootstrap.generator.infrastructure.nativex.NativeResourcesEntry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.nativex.hint.TypeAccess;
 
+import java.sql.Connection;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -82,39 +95,37 @@ public class AxonNativeHints implements BeanFactoryNativeConfigurationProcessor 
         registry.reflection().forType(HasHandlerAttributes.class).withAccess(TypeAccess.values());
         registry.reflection().forType(SagaEntry.class).withAccess(TypeAccess.values());
         registry.reflection().forType(AbstractSagaEntry.class).withAccess(TypeAccess.values());
+        registry.reflection().forType(GlobalSequenceTrackingToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(GapAwareTrackingToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(MergedTrackingToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(MultiSourceTrackingToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(ReplayToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(ConfigToken.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(MultipleInstancesResponseType.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(OptionalResponseType.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        registry.reflection().forType(InstanceResponseType.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+
+        tryRegister(() -> registry.reflection().forType(ClassSerializer.class).withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS));
 
         registry.resources().add(NativeResourcesEntry.of("axonserver_download.txt"));
         registry.resources().add(NativeResourcesEntry.of("org/axonframework/eventsourcing/eventstore/jpa/SQLErrorCode.properties"));
+        registry.proxy().add(NativeProxyEntry.ofInterfaceNames("java.sql.Connection", "org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper$UoWAttachedConnection"));
 
-        tryRegister(() -> {
-            registry.reflection().forType(TrackingEventProcessor.class).withExecutables(TrackingEventProcessor.class.getMethod("start"),
-                                                                                        TrackingEventProcessor.class.getMethod("shutdownAsync"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(MessageHandlerRegistrar.class).withExecutables(MessageHandlerRegistrar.class.getMethod("start"),
-                                                                                         MessageHandlerRegistrar.class.getMethod("shutdown"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(AxonServerCommandBus.class).withExecutables(AxonServerCommandBus.class.getDeclaredMethod("start"),
-                                                                                      AxonServerCommandBus.class.getDeclaredMethod("shutdownDispatching"),
-                                                                                      AxonServerCommandBus.class.getDeclaredMethod("disconnect"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(AxonServerConnectionManager.class).withExecutables(AxonServerConnectionManager.class.getDeclaredMethod("start"),
-                                                                                             AxonServerConnectionManager.class.getDeclaredMethod("shutdown"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(AxonServerEventScheduler.class).withExecutables(AxonServerEventScheduler.class.getDeclaredMethod("start"),
-                                                                                          AxonServerEventScheduler.class.getDeclaredMethod("shutdownDispatching"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(AxonServerQueryBus.class).withExecutables(AxonServerQueryBus.class.getDeclaredMethod("start"),
-                                                                                    AxonServerQueryBus.class.getDeclaredMethod("shutdownDispatching"),
-                                                                                    AxonServerQueryBus.class.getDeclaredMethod("disconnect"));
-        });
-        tryRegister(() -> {
-            registry.reflection().forType(EventProcessorControlService.class).withExecutables(EventProcessorControlService.class.getDeclaredMethod("start"));
-        });
+        tryRegister(() -> registry.reflection().forType(TrackingEventProcessor.class).withExecutables(TrackingEventProcessor.class.getMethod("start"),
+                                                                                                      TrackingEventProcessor.class.getMethod("shutdownAsync")));
+        tryRegister(() -> registry.reflection().forType(MessageHandlerRegistrar.class).withExecutables(MessageHandlerRegistrar.class.getMethod("start"),
+                                                                                                       MessageHandlerRegistrar.class.getMethod("shutdown")));
+        tryRegister(() -> registry.reflection().forType(AxonServerCommandBus.class).withExecutables(AxonServerCommandBus.class.getDeclaredMethod("start"),
+                                                                                                    AxonServerCommandBus.class.getDeclaredMethod("shutdownDispatching"),
+                                                                                                    AxonServerCommandBus.class.getDeclaredMethod("disconnect")));
+        tryRegister(() -> registry.reflection().forType(AxonServerConnectionManager.class).withExecutables(AxonServerConnectionManager.class.getDeclaredMethod("start"),
+                                                                                                           AxonServerConnectionManager.class.getDeclaredMethod("shutdown")));
+        tryRegister(() -> registry.reflection().forType(AxonServerEventScheduler.class).withExecutables(AxonServerEventScheduler.class.getDeclaredMethod("start"),
+                                                                                                        AxonServerEventScheduler.class.getDeclaredMethod("shutdownDispatching")));
+        tryRegister(() -> registry.reflection().forType(AxonServerQueryBus.class).withExecutables(AxonServerQueryBus.class.getDeclaredMethod("start"),
+                                                                                                  AxonServerQueryBus.class.getDeclaredMethod("shutdownDispatching"),
+                                                                                                  AxonServerQueryBus.class.getDeclaredMethod("disconnect")));
+        tryRegister(() -> registry.reflection().forType(EventProcessorControlService.class).withExecutables(EventProcessorControlService.class.getDeclaredMethod("start")));
     }
 
     private void tryRegister(ThrowingRunnable runnable) {
