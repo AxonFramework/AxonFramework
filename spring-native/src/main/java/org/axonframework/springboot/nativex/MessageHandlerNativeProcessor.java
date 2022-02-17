@@ -1,6 +1,5 @@
 package org.axonframework.springboot.nativex;
 
-import org.axonframework.commandhandling.RoutingKey;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.annotation.MessageHandler;
@@ -15,7 +14,6 @@ import org.springframework.nativex.hint.TypeAccess;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 

@@ -36,7 +36,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
@@ -55,7 +54,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.nativex.hint.TypeAccess;
 
-import java.sql.Connection;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
