@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -458,16 +458,6 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
-                if (serializer == null) {
-                    logger.warn(
-                            "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                    + " the security context of the XStream instance.",
-                            new AxonConfigurationException(
-                                    "A default XStreamSerializer is used, without specifying the security context"
-                            )
-                    );
-                    serializer = XStreamSerializer::defaultSerializer;
-                }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }
         }
