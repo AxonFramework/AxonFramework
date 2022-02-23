@@ -74,9 +74,9 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
-import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -199,8 +199,8 @@ public class SpringAxonAutoConfigurerTest {
     private QuartzEventScheduler quartzEventScheduler;
 
     @Autowired
-    @Qualifier("messageSerializer")
-    private Context.MyMessageSerializer messageSerializer;
+    @Qualifier("eventSerializer")
+    private Serializer eventSerializer;
 
     @Test
     void contextWiresMainComponents() {
@@ -385,9 +385,11 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void testEventSchedulerUsesMessageSerializer() {
+    void testEventSchedulerUsesEventSerializer() {
+        when(eventSerializer.serialize(any(), eq(byte[].class))).thenReturn(new SimpleSerializedObject<>(new byte[1], byte[].class, SerializedType.emptyType()));
         quartzEventScheduler.schedule(Instant.now(), "deadline");
-        assertEquals(2, messageSerializer.serializationCount); //This shows we have serialized both the payload and metadata using this serializer
+        //The below check shows we have serialized both the payload and metadata using this serializer
+        verify(eventSerializer, times(2)).serialize(any(), any());
     }
 
     @AnnotationDriven
@@ -395,6 +397,8 @@ public class SpringAxonAutoConfigurerTest {
     @Scope
     @Configuration
     public static class Context {
+
+        private final Serializer eventSerializer = mock(Serializer.class);
 
         @Bean
         public EventProcessingModule eventProcessingConfiguration(
@@ -468,8 +472,8 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Bean
-        public Serializer messageSerializer() {
-            return new MyMessageSerializer(JacksonSerializer.builder());
+        public Serializer eventSerializer() {
+            return eventSerializer;
         }
 
         @Bean
@@ -737,20 +741,6 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
-        public static class MyMessageSerializer extends JacksonSerializer {
-
-            private int serializationCount = 0;
-
-            protected MyMessageSerializer(Builder builder) {
-                super(builder);
-            }
-
-            @Override
-            public <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation) {
-                serializationCount++;
-                return super.serialize(object, expectedRepresentation);
-            }
-        }
     }
 
     public static class SomeEvent {

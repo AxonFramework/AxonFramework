@@ -77,7 +77,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
             scheduler = applicationContext.getBean(Scheduler.class);
         }
         if (serializer == null) {
-            serializer = applicationContext.getBean("messageSerializer", Serializer.class);
+            serializer = applicationContext.getBean("eventSerializer", Serializer.class);
         }
 
         QuartzEventScheduler.Builder eventSchedulerBuilder =
