@@ -398,8 +398,6 @@ public class SpringAxonAutoConfigurerTest {
     @Configuration
     public static class Context {
 
-        private final Serializer eventSerializer = mock(Serializer.class);
-
         @Bean
         public EventProcessingModule eventProcessingConfiguration(
                 @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
@@ -473,7 +471,7 @@ public class SpringAxonAutoConfigurerTest {
 
         @Bean
         public Serializer eventSerializer() {
-            return eventSerializer;
+            return mock(Serializer.class);
         }
 
         @Bean
