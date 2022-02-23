@@ -294,24 +294,6 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void streamingListQuery() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> testQuery =
-                new GenericQueryMessage<>("Hello, World", multipleInstancesOf(String.class));
-
-        StubResultStream stubResultStream = new StubResultStream(streamedStubResponse("<string>1</string>"),
-                                                                 streamedStubResponse("<string>2</string>"),
-                                                                 streamedStubResponse("<string>3</string>"));
-        when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
-
-        assertEquals(asList("1", "2", "3"), testSubject.query(testQuery).get().getPayload());
-
-        verify(targetContextResolver).resolveContext(testQuery);
-        verify(mockQueryChannel).query(argThat(
-                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-    }
-
-    @Test
     void streamingQueryReturnsError() {
         StreamingQueryMessage<String, String> testQuery =
                 new GenericStreamingQueryMessage<>("Hello, World", String.class);

@@ -91,10 +91,7 @@ class QueryProcessingTaskIntegrationTest {
                                                                                        ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .clearExpectedResponseType() // does not support streaming
-                               .build();
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
@@ -114,10 +111,7 @@ class QueryProcessingTaskIntegrationTest {
                                                                                        ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .clearExpectedResponseType() // does not support streaming
-                               .build();
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
         QueryProcessingTask task = new QueryProcessingTask(localSegment,
                                                            request,
                                                            responseHandler,
@@ -132,12 +126,12 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingDirectQuery() {
+    void testStreamingQuery() {
         QueryMessage<FluxQuery, Flux<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                        ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -163,13 +157,13 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAListViaDirectQuery() {
+    void testStreamingAList() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
                                           ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -195,13 +189,13 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAListViaDirectQueryWhenReactorIsNotOnClasspath() {
+    void testStreamingAListWhenReactorIsNotOnClasspath() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
                                           ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -228,14 +222,14 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAListViaDirectQueryWhenReactorIsNotOnClasspathWithConcurrentRequests()
+    void testStreamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests()
             throws InterruptedException {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
                                           ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -285,7 +279,7 @@ class QueryProcessingTaskIntegrationTest {
                                           ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -359,7 +353,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new MultipleInstanceQuery(1000), ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -387,7 +381,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -415,7 +409,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -443,7 +437,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new ErroringAfterAWhileFluxQuery(), ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -545,7 +539,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.fluxOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();
@@ -570,7 +564,7 @@ class QueryProcessingTaskIntegrationTest {
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
         QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
                                .toBuilder()
                                .addProcessingInstructions(asSupportsStreaming())
                                .build();

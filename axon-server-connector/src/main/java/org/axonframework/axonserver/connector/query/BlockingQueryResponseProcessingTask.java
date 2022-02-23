@@ -19,21 +19,13 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 
 /**
  * Task that process responses of the query. It will block until all responses are received.
@@ -70,7 +62,6 @@ class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
 
     @Override
     public void run() {
-        ConcurrentLinkedQueue<QueryResponse> elements = new ConcurrentLinkedQueue<>();
         result.subscribe(new Subscriber<QueryResponse>() {
             @Override
             public void onSubscribe(Subscription s) {
@@ -79,7 +70,7 @@ class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
 
             @Override
             public void onNext(QueryResponse queryResponse) {
-                elements.add(queryResponse);
+                queryTransaction.complete(serializer.deserializeResponse(queryResponse, expectedResponseType));
             }
 
             @Override
@@ -90,28 +81,8 @@ class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
 
             @Override
             public void onComplete() {
-                complete(elements);
+                // noop
             }
         });
-    }
-
-    private void complete(ConcurrentLinkedQueue<QueryResponse> elements) {
-        QueryResponse peeked = elements.peek();
-        if (peeked != null && (!peeked.getStreamed() || expectedResponseType instanceof InstanceResponseType)) {
-            queryTransaction.complete(serializer.deserializeResponse(elements.poll(), expectedResponseType));
-        } else {
-            ResponseType<?> responseType = ResponseTypes.instanceOf(expectedResponseType.getExpectedResponseType());
-            //noinspection unchecked
-            R payload = (R) elements.stream()
-                                    .map(qr -> serializer.deserializeResponse(qr, responseType))
-                                    .map(Message::getPayload)
-                                    .collect(Collectors.toList());
-
-            QueryResponseMessage<?> peekedResponse = serializer.deserializeResponse(peeked, responseType);
-            String identifier = peekedResponse.getIdentifier();
-            MetaData metaData = peekedResponse.getMetaData();
-            GenericMessage<R> delegate = new GenericMessage<>(identifier, payload, metaData);
-            queryTransaction.complete(new GenericQueryResponseMessage<>(delegate));
-        }
     }
 }

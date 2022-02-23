@@ -219,7 +219,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
         try {
             int priority = priorityCalculator.determinePriority(interceptedQuery);
-            QueryRequest queryRequest = serialize(interceptedQuery);
+            QueryRequest queryRequest = serialize(interceptedQuery, false);
             Publisher<QueryResponse> result = invoke(interceptedQuery, queryRequest);
 
             Runnable task = new BlockingQueryResponseProcessingTask<>(result,
@@ -241,7 +241,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
                    .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
-                                                .flatMapMany(intercepted -> Mono.just(serialize(intercepted))
+                                                .flatMapMany(intercepted -> Mono.just(serialize(intercepted, true))
                                                                                 .flatMapMany(queryRequest -> invoke(intercepted, queryRequest))
                                                                                 .flatMap(queryResponse -> deserialize(intercepted, queryResponse))
                                                                                 .doOnTerminate(activity::end)));
@@ -252,11 +252,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return shutdownLatch.registerActivity();
     }
 
-    private QueryRequest serialize(QueryMessage<?, ?> query) {
+    private QueryRequest serialize(QueryMessage<?, ?> query, boolean stream) {
         return serializer.serializeRequest(query,
                                            DIRECT_QUERY_NUMBER_OF_RESULTS,
                                            DIRECT_QUERY_TIMEOUT_MS,
-                                           priorityCalculator.determinePriority(query));
+                                           priorityCalculator.determinePriority(query),
+                                           stream);
     }
 
     private Publisher<QueryResponse> invoke(QueryMessage<?, ?> queryMessage, QueryRequest queryRequest) {

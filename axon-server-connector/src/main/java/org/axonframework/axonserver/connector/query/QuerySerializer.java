@@ -96,34 +96,70 @@ public class QuerySerializer {
                                                 int nrResults,
                                                 long timeout,
                                                 int priority) {
-        return QueryRequest.newBuilder()
-                           .setTimestamp(System.currentTimeMillis())
-                           .setMessageIdentifier(queryMessage.getIdentifier())
-                           .setQuery(queryMessage.getQueryName())
-                           .setClientId(configuration.getClientId())
-                           .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(
-                                   queryMessage.getResponseType().forSerialization()
-                           ))
-                           .setPayload(payloadSerializer.apply(queryMessage))
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.NR_OF_RESULTS)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(nrResults))
-                           )
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.TIMEOUT)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(timeout))
-                           )
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.PRIORITY)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(priority))
-                           )
-                           .setExpectedResponseType(queryMessage.getResponseType().getExpectedResponseType().getName())
-                           .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()))
-                           .build();
+        return serializeRequest(queryMessage, nrResults, timeout, priority, false);
+    }
+
+    /**
+     * Convert a {@link QueryMessage} into a {@link QueryRequest}. The provided {@code nrResults}, {@code timeout} and
+     * {@code priority} are all set on the QueryRequest to respectively define the number of results, after which time
+     * the query should be aborted and the priority of the query amont others.
+     *
+     * @param queryMessage the {@link QueryMessage} to convert into a {@link QueryRequest}
+     * @param nrResults    an {@code int} denoting the number of expected results
+     * @param timeout      a {@code long} specifying the timeout in milliseconds of the created {@link QueryRequest}
+     * @param priority     a {@code int} defining the priority among other {@link QueryRequest}s
+     * @param stream       indicates whether results of this query should be streamed or not
+     * @param <Q>          a generic specifying the payload type of the given {@code queryMessage}
+     * @param <R>          a generic specifying the response type of the given {@code queryMessage}
+     * @return a {@link QueryRequest} based on the provided {@code queryMessage}
+     */
+    public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage, int nrResults, long timeout,
+                                                int priority, boolean stream) {
+        QueryRequest.Builder builder =
+                QueryRequest.newBuilder()
+                            .setTimestamp(System.currentTimeMillis())
+                            .setMessageIdentifier(queryMessage.getIdentifier())
+                            .setQuery(queryMessage.getQueryName())
+                            .setClientId(configuration.getClientId())
+                            .setComponentName(configuration.getComponentName())
+                            .setResponseType(responseTypeSerializer.apply(
+                                    queryMessage.getResponseType().forSerialization()
+                            ))
+                            .setPayload(payloadSerializer.apply(queryMessage))
+                            .addProcessingInstructions(nrOfResults(nrResults))
+                            .addProcessingInstructions(timeout(timeout))
+                            .addProcessingInstructions(priority(priority))
+                            .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()));
+        if (stream) {
+            builder.setExpectedResponseType(queryMessage.getResponseType()
+                                                        .getExpectedResponseType()
+                                                        .getName());
+        }
+        return builder.build();
+    }
+
+    private ProcessingInstruction nrOfResults(int nrOfResults) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.NR_OF_RESULTS)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(nrOfResults))
+                                    .build();
+    }
+
+    private ProcessingInstruction timeout(long timeout) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.TIMEOUT)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(timeout))
+                                    .build();
+    }
+
+    private ProcessingInstruction priority(int priority) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.PRIORITY)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(priority))
+                                    .build();
     }
 
     /**
