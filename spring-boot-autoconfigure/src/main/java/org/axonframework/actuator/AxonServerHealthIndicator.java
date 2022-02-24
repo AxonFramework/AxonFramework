@@ -37,7 +37,7 @@ public class AxonServerHealthIndicator extends AbstractHealthIndicator {
     /**
      * Constructs this health indicator, extracting health information from the given {@code connectionManager}.
      *
-     * @param connectionManager The Axon Server CONNECTION manager to extract health information from.
+     * @param connectionManager The Axon Server connection manager to extract health information from.
      */
     public AxonServerHealthIndicator(AxonServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
