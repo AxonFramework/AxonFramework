@@ -404,32 +404,36 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        MessageHandlingMember<? super T> handler =
+        List<MessageHandlingMember<? super T>> handlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                         .filter(mh -> mh.canHandle(commandMessage))
-                         .collect(Collectors.collectingAndThen(Collectors.toList(), Optional::of))
-                         .filter(mhl -> !mhl.isEmpty())
-                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
-                         .stream()
-                         .filter(mh -> mh.unwrap(CommandMessageHandlingMember.class)
-                                         .map(c -> c.canResolve(commandMessage, aggregateRoot))
-                                         .orElse(false))
-                         .findFirst()
-                         .orElseThrow(() -> new AggregateEntityNotFoundException(
-                                 "Aggregate cannot handle command [" + commandMessage.getCommandName()
-                                         + "], as there is no entity instance within the aggregate to forward it to."));
+                        .filter(mh -> mh.canHandle(commandMessage))
+                        .collect(Collectors.toList());
 
-        Object result;
-        if (interceptors.isEmpty()) {
-            result = handler.handle(commandMessage, aggregateRoot);
-        } else {
-            result = new DefaultInterceptorChain<>(
-                    (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
-                    interceptors,
-                    m -> handler.handle(commandMessage, aggregateRoot)
-            ).proceed();
+        if (handlers.isEmpty()) {
+            throw new NoHandlerForCommandException(commandMessage);
         }
-        return result;
+        else {
+            MessageHandlingMember<? super T> handler =
+                    handlers.stream()
+                            .filter(mh -> mh.unwrap(ForwardingMessageHandlingMember.class)
+                            .map(c -> c.canForward(commandMessage, aggregateRoot))
+                            .orElse(true))
+                            .findFirst()
+                            .orElseThrow(() -> new AggregateEntityNotFoundException(
+                                    "Aggregate cannot handle command [" + commandMessage.getCommandName()
+                                            + "], as there is no entity instance within the aggregate to forward it to."));
+            Object result;
+            if (interceptors.isEmpty()) {
+                result = handler.handle(commandMessage, aggregateRoot);
+            } else {
+                result = new DefaultInterceptorChain<>(
+                        (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                        interceptors,
+                        m -> handler.handle(commandMessage, aggregateRoot)
+                ).proceed();
+            }
+            return result;
+        }
     }
 
     private Object handle(EventMessage<?> eventMessage) {

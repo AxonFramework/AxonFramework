@@ -50,12 +50,4 @@ public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T
      * @return {@code true} if this handler is also factory for entities, {@code false} otherwise.
      */
     boolean isFactoryHandler();
-
-    /**
-     * Check if this command message handler can resolve type of childEntity
-     * @param message
-     * @param parent
-     * @return {@code true} if this handler can handle or resolve target entity, {@code false} otherwise.
-     */
-    boolean canResolve(Message<?> message, T parent);
 }
