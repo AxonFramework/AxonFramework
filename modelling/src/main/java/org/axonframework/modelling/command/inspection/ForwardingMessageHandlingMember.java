@@ -6,7 +6,6 @@ import org.axonframework.messaging.Message;
 /**
  * Interface describing a message handler capable of forwarding a specific command.
  *
- * @author srmppn
  * @since 4.6
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the command
  */

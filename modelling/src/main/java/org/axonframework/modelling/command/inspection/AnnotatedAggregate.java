@@ -17,7 +17,6 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -36,8 +35,6 @@ import org.axonframework.modelling.command.*;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -404,32 +401,32 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        List<MessageHandlingMember<? super T>> handlers =
+        List<MessageHandlingMember<? super T>> potentialHandlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
-                        .filter(mh -> mh.canHandle(commandMessage))
-                        .collect(Collectors.toList());
+                         .filter(mh -> mh.canHandle(commandMessage))
+                         .collect(Collectors.toList());
 
-        if (handlers.isEmpty()) {
+        if (potentialHandlers.isEmpty()) {
             throw new NoHandlerForCommandException(commandMessage);
         }
         else {
-            MessageHandlingMember<? super T> handler =
-                    handlers.stream()
-                            .filter(mh -> mh.unwrap(ForwardingMessageHandlingMember.class)
-                            .map(c -> c.canForward(commandMessage, aggregateRoot))
-                            .orElse(true))
-                            .findFirst()
-                            .orElseThrow(() -> new AggregateEntityNotFoundException(
-                                    "Aggregate cannot handle command [" + commandMessage.getCommandName()
-                                            + "], as there is no entity instance within the aggregate to forward it to."));
+            MessageHandlingMember<? super T> suitableHandler =
+                    potentialHandlers.stream()
+                                     .filter(mh -> mh.unwrap(ForwardingMessageHandlingMember.class)
+                                                     .map(c -> c.canForward(commandMessage, aggregateRoot))
+                                                     .orElse(true))
+                                     .findFirst()
+                                     .orElseThrow(() -> new AggregateEntityNotFoundException(
+                                              "Aggregate cannot handle command [" + commandMessage.getCommandName()
+                                                      + "], as there is no entity instance within the aggregate to forward it to."));
             Object result;
             if (interceptors.isEmpty()) {
-                result = handler.handle(commandMessage, aggregateRoot);
+                result = suitableHandler.handle(commandMessage, aggregateRoot);
             } else {
                 result = new DefaultInterceptorChain<>(
                         (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                         interceptors,
-                        m -> handler.handle(commandMessage, aggregateRoot)
+                        m -> suitableHandler.handle(commandMessage, aggregateRoot)
                 ).proceed();
             }
             return result;
