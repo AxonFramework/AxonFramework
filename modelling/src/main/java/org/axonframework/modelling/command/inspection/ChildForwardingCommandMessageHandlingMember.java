@@ -96,7 +96,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canForward(Message<?> message, P target){
+    public boolean canForward(Message<?> message, P target) {
         return childEntityResolver.apply((CommandMessage<?>) message, target) != null;
     }
 
