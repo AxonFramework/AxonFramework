@@ -103,8 +103,7 @@ public class DefaultQueryGateway implements QueryGateway {
                     query,
                     queryName,
                     responseType)
-        ).flatMapMany(queryMessage->
-              Flux.from(queryBus.streamingQuery(processInterceptors(queryMessage)))
+        ).flatMapMany(queryMessage-> queryBus.streamingQuery(processInterceptors(queryMessage))
         ).map(Message::getPayload);
     }
 

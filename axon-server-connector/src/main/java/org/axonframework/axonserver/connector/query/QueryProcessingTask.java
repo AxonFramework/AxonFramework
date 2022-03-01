@@ -25,14 +25,12 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
-import org.axonframework.messaging.responsetypes.FluxResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
-import org.axonframework.serialization.SerializationException;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -47,10 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.axonServerSupportsQueryStreaming;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.numberOfResults;
-import static org.axonframework.common.StringUtils.nonEmptyOrNull;
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
 
 /**
  * The task that processes a single incoming query message from Axon Server. It decides which query type should be
@@ -179,10 +174,11 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     }
 
     private <Q, R> void streamingQuery(QueryMessage<Q, R> originalQueryMessage) {
+        // noinspection unchecked
         StreamingQueryMessage<Q, R> streamingQueryMessage = new GenericStreamingQueryMessage<>(
                 originalQueryMessage,
                 originalQueryMessage.getQueryName(),
-                fluxResponseType(queryRequest.getExpectedResponseType()));
+                (Class<R>) originalQueryMessage.getResponseType().getExpectedResponseType());
         Publisher<QueryResponseMessage<R>> resultPublisher = localSegment.streamingQuery(streamingQueryMessage);
         setResult(streamableFluxResult(resultPublisher));
     }
@@ -251,23 +247,10 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
         return new StreamableInstanceResult(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
     }
 
-    private <R> FluxResponseType<R> fluxResponseType(String className) {
-        try {
-            Class<?> responseType = Class.forName(className);
-            return new FluxResponseType<>(responseType);
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException(format("Unable to deserialize '%s'.", className), e);
-        }
-    }
-
     private boolean supportsStreaming(QueryRequest queryRequest) {
         boolean axonServerSupportsStreaming = axonServerSupportsQueryStreaming(queryRequest.getProcessingInstructionsList());
-        boolean clientSupportsStreaming = clientSupportsStreaming(queryRequest.getExpectedResponseType());
+        boolean clientSupportsStreaming = clientSupportsQueryStreaming(queryRequest.getProcessingInstructionsList());
         return axonServerSupportsStreaming && clientSupportsStreaming;
-    }
-
-    private boolean clientSupportsStreaming(String queryRequest) {
-        return nonEmptyOrNull(queryRequest);
     }
 
     private boolean requestIfInitialized(long requested) {

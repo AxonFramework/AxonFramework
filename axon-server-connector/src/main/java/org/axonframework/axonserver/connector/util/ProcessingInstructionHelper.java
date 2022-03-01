@@ -60,14 +60,28 @@ public abstract class ProcessingInstructionHelper {
 
     /**
      * Retrieves information whether Axon Server supports streaming from the given {@code processingInstructions}, by
-     * searching for the value of {@link ProcessingKey#SUPPORTS_STREAMING}.
+     * searching for the value of {@link ProcessingKey#AS_SUPPORTS_STREAMING}.
      *
      * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
-     *                               ProcessingKey#SUPPORTS_STREAMING} from
+     *                               ProcessingKey#AS_SUPPORTS_STREAMING} from
      * @return {@code true} if Axon Server supports streaming, {@code false} otherwise
      */
     public static boolean axonServerSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionBoolean(processingInstructions, ProcessingKey.SUPPORTS_STREAMING).orElse(false);
+        return getProcessingInstructionBoolean(processingInstructions,
+                                               ProcessingKey.AS_SUPPORTS_STREAMING).orElse(false);
+    }
+
+    /**
+     * Retrieves information whether Client (query issuer) supports streaming from the given {@code
+     * processingInstructions}, by searching for the value of {@link ProcessingKey#CLIENT_SUPPORTS_STREAMING}.
+     *
+     * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
+     *                               ProcessingKey#CLIENT_SUPPORTS_STREAMING} from
+     * @return {@code true} if Client supports streaming, {@code false} otherwise
+     */
+    public static boolean clientSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionBoolean(processingInstructions,
+                                               ProcessingKey.CLIENT_SUPPORTS_STREAMING).orElse(false);
     }
 
     /**

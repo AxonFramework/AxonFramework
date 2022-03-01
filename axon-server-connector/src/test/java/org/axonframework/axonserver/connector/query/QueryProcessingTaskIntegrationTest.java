@@ -583,29 +583,6 @@ class QueryProcessingTaskIntegrationTest {
         assertTrue(responseHandler.completed());
     }
 
-    @Test
-    void testQueryWithUnexistingResponseType() {
-        QueryMessage<ListQuery, List<String>> queryMessage =
-                new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
-
-        QueryRequest request =
-                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1)
-                               .toBuilder()
-                               .setExpectedResponseType("not.real.at.all.on.this.classpath.Ever")
-                               .addProcessingInstructions(asSupportsStreaming())
-                               .build();
-
-        QueryProcessingTask task = new QueryProcessingTask(localSegment,
-                                                           request,
-                                                           responseHandler,
-                                                           querySerializer,
-                                                           CLIENT_ID);
-        task.run();
-        assertEquals(1, responseHandler.sent().size());
-        assertTrue(responseHandler.sent().get(0).hasErrorMessage());
-        assertTrue(responseHandler.completed());
-    }
-
     private void assertOrder(List<QueryResponse> responses) {
         for (int i = 0; i < responses.size(); i++) {
             QueryResponseMessage<String> responseMessage =
@@ -625,7 +602,7 @@ class QueryProcessingTaskIntegrationTest {
 
     private ProcessingInstruction asSupportsStreaming() {
         return ProcessingInstruction.newBuilder()
-                                    .setKey(ProcessingKey.SUPPORTS_STREAMING)
+                                    .setKey(ProcessingKey.AS_SUPPORTS_STREAMING)
                                     .setValue(MetaDataValue.newBuilder()
                                                            .setBooleanValue(true)
                                                            .build())

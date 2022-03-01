@@ -143,7 +143,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query) {
-        Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Direct query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
@@ -230,7 +230,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
-        Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Scatter-Gather query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
@@ -313,9 +313,9 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, I, U> void assertSubQueryResponseTypes(SubscriptionQueryMessage<Q, I, U> query) {
-        Assert.isFalse(query.getResponseType() instanceof FluxResponseType,
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(query.getUpdateResponseType() instanceof FluxResponseType,
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as an update type.");
     }
 

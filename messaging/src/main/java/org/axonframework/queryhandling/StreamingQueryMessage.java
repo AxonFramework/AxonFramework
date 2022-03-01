@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.responsetypes.FluxResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
@@ -34,7 +35,7 @@ import java.util.Map;
 public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Flux<R>> {
 
     @Override
-    FluxResponseType<R> getResponseType();
+    ResponseType<Flux<R>> getResponseType();
 
     @Override
     StreamingQueryMessage<Q, R> withMetaData(Map<String, ?> metaData);

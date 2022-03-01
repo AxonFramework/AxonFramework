@@ -127,9 +127,6 @@ class StreamableMultiInstanceResult<T> implements StreamableResult {
                                             MetaData.emptyInstance());
         }
         GenericQueryResponseMessage<?> message = new GenericQueryResponseMessage<>(delegate);
-        responseHandler.send(serializer.serializeResponse(message, requestId)
-                                       .toBuilder()
-                                       .setStreamed(true)
-                                       .build());
+        responseHandler.send(serializer.serializeResponse(message, requestId));
     }
 }

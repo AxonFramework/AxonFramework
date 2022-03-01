@@ -277,9 +277,9 @@ class AxonServerQueryBusTest {
         StreamingQueryMessage<String, String> testQuery =
                 new GenericStreamingQueryMessage<>("Hello, World", String.class);
 
-        StubResultStream stubResultStream = new StubResultStream(streamedStubResponse("<string>1</string>"),
-                                                                 streamedStubResponse("<string>2</string>"),
-                                                                 streamedStubResponse("<string>3</string>"));
+        StubResultStream stubResultStream = new StubResultStream(stubResponse("<string>1</string>"),
+                                                                 stubResponse("<string>2</string>"),
+                                                                 stubResponse("<string>3</string>"));
         when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
         StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
@@ -451,12 +451,6 @@ class AxonServerQueryBusTest {
 
         assertThrows(ShutdownInProgressException.class,
                      () -> testSubject.subscriptionQuery(testSubscriptionQuery));
-    }
-
-    private QueryResponse streamedStubResponse(String payload) {
-        return stubResponse(payload).toBuilder()
-                                    .setStreamed(true)
-                                    .build();
     }
 
     private QueryResponse stubResponse(String payload) {

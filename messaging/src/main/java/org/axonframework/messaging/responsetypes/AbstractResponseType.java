@@ -18,6 +18,7 @@ package org.axonframework.messaging.responsetypes;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.TypeReflectionUtils;
+import org.axonframework.util.ClasspathResolver;
 import reactor.core.publisher.Flux;
 
 import java.lang.reflect.GenericArrayType;
@@ -162,12 +163,7 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean projectReactorOnClassPath() {
-        try {
-            Class.forName("reactor.core.publisher.Flux", false, getClass().getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
+        return ClasspathResolver.projectReactorOnClasspath();
     }
 
     @Override

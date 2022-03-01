@@ -55,7 +55,7 @@ class StreamableFluxResult implements StreamableResult {
                                     String clientId) {
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
-        result.map(message -> serialize(serializer, requestId, message))
+        result.map(message -> serializer.serializeResponse(message, requestId))
               .subscribeWith(subscriber);
     }
 
@@ -67,14 +67,6 @@ class StreamableFluxResult implements StreamableResult {
     @Override
     public void cancel() {
         subscription.cancel();
-    }
-
-    private <T> QueryResponse serialize(QuerySerializer serializer, String requestId,
-                                        QueryResponseMessage<T> message) {
-        return serializer.serializeResponse(message, requestId)
-                         .toBuilder()
-                         .setStreamed(true)
-                         .build();
     }
 
     private static class SendingSubscriber extends BaseSubscriber<QueryResponse> {
