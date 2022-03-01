@@ -22,6 +22,12 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 
 import java.util.Optional;
 
+/**
+ * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements {@link ListenerInvocationErrorHandler}. Any Exception encountered
+ * will be stored, after which the rest of the error handling will be handed off to the wrapped ListenerInvocationErrorHandler.
+ *
+ * @author Christian Vermorken
+ */
 public class RecordingListenerInvocationErrorHandler implements ListenerInvocationErrorHandler {
 
     private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
@@ -38,6 +44,9 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
         listenerInvocationErrorHandler.onError(exception, event, eventHandler);
     }
 
+    /**
+     * Clear any current Exception.
+     */
     public void startRecording() {
         exception = null;
     }
@@ -46,6 +55,11 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
+    /**
+     * Return the last encountered Exception after the startRecording method has been invoked, or an empty Optional of no Exception occurred.
+     *
+     * @return an Optional of the last encountered Exception
+     */
     public Optional<Exception> getException() {
         return Optional.ofNullable(exception);
     }
