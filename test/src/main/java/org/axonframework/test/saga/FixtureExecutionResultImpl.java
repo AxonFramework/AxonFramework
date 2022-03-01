@@ -21,7 +21,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
@@ -41,6 +40,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Default implementation of FixtureExecutionResult.
@@ -57,25 +57,26 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     private final CommandValidator commandValidator;
     private final FieldFilter fieldFilter;
     private final List<Runnable> onStartRecordingCallbacks;
-    private RecordingLoggingErrorHandler recordingErrorHandler;
+    private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
      *
-     * @param sagaStore             The SagaStore to monitor
-     * @param eventScheduler        The scheduler to monitor
-     * @param deadlineManager       The deadline manager to monitor
-     * @param eventBus              The event bus to monitor
-     * @param commandBus            The command bus to monitor
-     * @param sagaType              The type of Saga under test
-     * @param fieldFilter           The FieldFilter describing the fields to include in equality checks
-     * @param recordingErrorHandler The RecordingLoggingErrorHandler to monitor
+     * @param sagaStore                               The SagaStore to monitor
+     * @param eventScheduler                          The scheduler to monitor
+     * @param deadlineManager                         The deadline manager to monitor
+     * @param eventBus                                The event bus to monitor
+     * @param commandBus                              The command bus to monitor
+     * @param sagaType                                The type of Saga under test
+     * @param fieldFilter                             The FieldFilter describing the fields to include in equality checks
+     * @param recordingListenerInvocationErrorHandler The RecordingListenerInvocationErrorHandler to monitor
      */
     FixtureExecutionResultImpl(InMemorySagaStore sagaStore, StubEventScheduler eventScheduler,
                                StubDeadlineManager deadlineManager, EventBus eventBus, RecordingCommandBus commandBus,
-                               Class<T> sagaType, FieldFilter fieldFilter, RecordingLoggingErrorHandler recordingErrorHandler) {
+                               Class<T> sagaType, FieldFilter fieldFilter, RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler) {
+        assertNotNull(recordingListenerInvocationErrorHandler, "recordingListenerInvocationErrorHandler cannot be null");
         this.fieldFilter = fieldFilter;
-        this.recordingErrorHandler = recordingErrorHandler;
+        this.recordingListenerInvocationErrorHandler = recordingListenerInvocationErrorHandler;
         commandValidator = new CommandValidator(commandBus, fieldFilter);
         repositoryContentValidator = new RepositoryContentValidator<>(sagaType, sagaStore);
         eventValidator = new EventValidator(eventBus, fieldFilter);
@@ -104,9 +105,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public void startRecording() {
         eventValidator.startRecording();
         commandValidator.startRecording();
-        if (recordingErrorHandler != null) {
-            recordingErrorHandler.startRecording();
-        }
+        recordingListenerInvocationErrorHandler.startRecording();
         onStartRecordingCallbacks.forEach(Runnable::run);
     }
 
@@ -419,11 +418,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectSuccessfulHandlerExecution() {
-        if (recordingErrorHandler == null) {
-            throw new UnsupportedOperationException(
-                    "This method is not supported with the currently configured ListenerInvocationErrorHandler, please use a RecordingLoggingErrorHandler");
-        }
-        Optional<Exception> throwableOptional = recordingErrorHandler.getException();
+        Optional<Exception> throwableOptional = recordingListenerInvocationErrorHandler.getException();
         if (throwableOptional.isPresent()) {
             throw new AxonAssertionError(String.format("An exception occurred during event handling: [%s]",
                                                        throwableOptional.get().getMessage()));
@@ -431,11 +426,4 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         return this;
     }
 
-    public void setRecordingErrorHandler(ListenerInvocationErrorHandler recordingErrorHandler) {
-        if (recordingErrorHandler instanceof RecordingLoggingErrorHandler) {
-            this.recordingErrorHandler = (RecordingLoggingErrorHandler) recordingErrorHandler;
-        } else {
-            this.recordingErrorHandler = null;
-        }
-    }
 }

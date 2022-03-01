@@ -83,15 +83,15 @@ class FixtureExecutionResultImplTest {
         sagaStore = new InMemorySagaStore();
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
-                AllFieldsFilter.instance(), new RecordingLoggingErrorHandler());
+                AllFieldsFilter.instance(), new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler()));
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
     }
 
     @Test
-    void testStartRecording() {
-        RecordingLoggingErrorHandler errorHandler = new RecordingLoggingErrorHandler();
+    void testStartRecording() throws Exception {
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(
@@ -121,8 +121,8 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testStartRecording_ClearsEventsAndCommands() {
-        RecordingLoggingErrorHandler errorHandler = new RecordingLoggingErrorHandler();
+    void testStartRecording_ClearsEventsAndCommands() throws Exception {
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
@@ -137,13 +137,6 @@ class FixtureExecutionResultImplTest {
         testSubject.expectPublishedEvents();
         testSubject.expectNoDispatchedCommands();
         testSubject.expectSuccessfulHandlerExecution();
-    }
-
-    @Test
-    void testIncorrectErrorHandlerType() {
-        testSubject.setRecordingErrorHandler(new LoggingErrorHandler());
-        testSubject.startRecording();
-        assertThrows(UnsupportedOperationException.class, () -> testSubject.expectSuccessfulHandlerExecution());
     }
 
     @Test

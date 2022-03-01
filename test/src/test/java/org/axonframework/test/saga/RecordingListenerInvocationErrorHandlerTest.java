@@ -18,23 +18,24 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class RecordingLoggingErrorHandlerTest {
+class RecordingListenerInvocationErrorHandlerTest {
 
     @Test
     void testEmptyOnCreation() {
-        RecordingLoggingErrorHandler testSubject = new RecordingLoggingErrorHandler();
+        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
 
         assertFalse(testSubject.getException().isPresent());
     }
 
     @Test
-    void testLogExceptionOnError() {
-        RecordingLoggingErrorHandler testSubject = new RecordingLoggingErrorHandler();
+    void testLogExceptionOnError() throws Exception {
+        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         IllegalArgumentException expectedException = new IllegalArgumentException("This argument is illegal");
@@ -46,8 +47,8 @@ class RecordingLoggingErrorHandlerTest {
     }
 
     @Test
-    void testClearExceptionOnStartRecording() {
-        RecordingLoggingErrorHandler testSubject = new RecordingLoggingErrorHandler();
+    void testClearExceptionOnStartRecording() throws Exception {
+        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         IllegalArgumentException expectedException = new IllegalArgumentException("This argument is illegal");
