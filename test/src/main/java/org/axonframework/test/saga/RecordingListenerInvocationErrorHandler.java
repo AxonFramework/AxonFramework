@@ -27,6 +27,7 @@ import java.util.Optional;
  * will be stored, after which the rest of the error handling will be handed off to the wrapped ListenerInvocationErrorHandler.
  *
  * @author Christian Vermorken
+ * @since 4.6.0
  */
 public class RecordingListenerInvocationErrorHandler implements ListenerInvocationErrorHandler {
 
@@ -34,7 +35,15 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
 
     private Exception exception;
 
+    /**
+     * Create a new instance of this class, wrapping another {@link ListenerInvocationErrorHandler}.
+     *
+     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error handling, cannot be null.
+     */
     public RecordingListenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        if (listenerInvocationErrorHandler == null) {
+            throw new IllegalArgumentException("listenerInvocationErrorHandler cannot be null");
+        }
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
@@ -51,7 +60,15 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
         exception = null;
     }
 
+    /**
+     * Sets a new wrapped {@link ListenerInvocationErrorHandler}.
+     *
+     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error handling, cannot be null.
+     */
     public void setListenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        if (listenerInvocationErrorHandler == null) {
+            throw new IllegalArgumentException("listenerInvocationErrorHandler cannot be null");
+        }
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 

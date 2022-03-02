@@ -34,6 +34,18 @@ class RecordingListenerInvocationErrorHandlerTest {
     }
 
     @Test
+    void testWrappedHandlerCannotBeNull() {
+        assertThrows(IllegalArgumentException.class, () -> new RecordingListenerInvocationErrorHandler(null));
+    }
+
+    @Test
+    void testCannotSetWrappedHanlderToNull() {
+        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+
+        assertThrows(IllegalArgumentException.class, () -> testSubject.setListenerInvocationErrorHandler(null));
+    }
+
+    @Test
     void testLogExceptionOnError() throws Exception {
         RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
