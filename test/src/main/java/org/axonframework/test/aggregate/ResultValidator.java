@@ -159,6 +159,33 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectException(Matcher<?> matcher);
 
     /**
+     * Expect the given {@code exceptionDetails} to occur during command handler execution. The actual exception details
+     * should be exactly the same as {@code exceptionDetails}.
+     *
+     * @param exceptionDetails The exception details expected from the command handler execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Object exceptionDetails);
+
+    /**
+     * Expect the given {@code exceptionDetails} to occur during command handler execution. The actual exception details
+     * should be exactly of that type, subclasses are not accepted.
+     *
+     * @param exceptionDetails The exception details expected from the command handler execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails);
+
+    /**
+     * Expect an exception details to occur during command handler execution that matches with the given {@code
+     * matcher}.
+     *
+     * @param matcher The matcher to validate the actual exception details
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Matcher<?> matcher);
+
+    /**
      * Expect a successful execution of the given command handler, regardless of the actual return value.
      *
      * @return the current ResultValidator, for fluent interfacing

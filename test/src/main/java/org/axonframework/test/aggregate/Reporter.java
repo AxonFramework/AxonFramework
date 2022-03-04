@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
@@ -189,6 +190,26 @@ public class Reporter {
                                              description.toString() +
                                              "> but got <message [" +
                                              actualException.getMessage() +
+                                             "]>." +
+                                             NEWLINE +
+                                             NEWLINE);
+    }
+
+    /**
+     * Report an error due to a difference in exception details.
+     *
+     * @param actualException The actual exception
+     * @param description     A description describing the expected value
+     */
+    public void reportWrongExceptionDetails(Throwable actualException, Description description) {
+        throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
+                                             + NEWLINE +
+                                             NEWLINE +
+                                             "Expected <" + //NOSONAR
+                                             description.toString() +
+                                             "> but got <details [" +
+                                             HandlerExecutionException.resolveDetails(
+                                                     actualException).orElse(null) +
                                              "]>." +
                                              NEWLINE +
                                              NEWLINE);

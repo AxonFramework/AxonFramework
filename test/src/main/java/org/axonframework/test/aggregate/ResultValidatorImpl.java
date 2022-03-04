@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -427,6 +428,33 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         }
         if (!matcher.matches(actualException)) {
             reporter.reportWrongException(actualException, description);
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Object exceptionDetails) {
+        return expectExceptionDetails(CoreMatchers.equalTo(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails) {
+        return expectExceptionDetails(instanceOf(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Matcher<?> exceptionDetailsMatcher) {
+        StringDescription emptyMatcherDescription = new StringDescription(
+                new StringBuilder("Given exception details matcher is null!"));
+        if (exceptionDetailsMatcher == null) {
+            reporter.reportWrongExceptionDetails(actualException, emptyMatcherDescription);
+            return this;
+        }
+        StringDescription description = new StringDescription();
+        exceptionDetailsMatcher.describeTo(description);
+        if (actualException != null && !exceptionDetailsMatcher.matches(HandlerExecutionException.resolveDetails(
+                actualException).orElse(null))) {
+            reporter.reportWrongExceptionDetails(actualException, description);
         }
         return this;
     }
