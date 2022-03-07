@@ -168,10 +168,10 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectExceptionDetails(Object exceptionDetails);
 
     /**
-     * Expect the given {@code exceptionDetails} to occur during command handler execution. The actual exception details
+     * Expect the given {@code exceptionDetails} type to occur during command handler execution. The actual exception details
      * should be exactly of that type, subclasses are not accepted.
      *
-     * @param exceptionDetails The exception details expected from the command handler execution
+     * @param exceptionDetails The type of exception details expected from the command handler execution
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails);
