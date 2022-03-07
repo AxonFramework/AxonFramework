@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
@@ -35,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Patrick Haas
  */
 class FixtureTest_ExceptionHandling {
+
+    private static final String AGGREGATE_ID = "1";
 
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
 
@@ -107,6 +110,16 @@ class FixtureTest_ExceptionHandling {
                         new CreateMyAggregateCommand("1"),
                         new ValidMyAggregateCommand("2")
                 )
+        );
+    }
+
+    @Test
+    void testExpectExceptionMessageThrowsFixtureExecutionExceptionWhenNoExceptionIsThrown() {
+        assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID))
+                             .when(new ValidMyAggregateCommand(AGGREGATE_ID))
+                             .expectExceptionMessage("some-exception-message")
         );
     }
 
