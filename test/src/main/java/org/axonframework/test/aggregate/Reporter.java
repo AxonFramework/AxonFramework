@@ -198,18 +198,17 @@ public class Reporter {
     /**
      * Report an error due to a difference in exception details.
      *
-     * @param actualException The actual exception
-     * @param description     A description describing the expected value
+     * @param details       The actual details
+     * @param description   A description describing the expected value
      */
-    public void reportWrongExceptionDetails(Throwable actualException, Description description) {
+    public void reportWrongExceptionDetails(Object details, Description description) {
         throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
                                              + NEWLINE +
                                              NEWLINE +
                                              "Expected <" + //NOSONAR
                                              description.toString() +
                                              "> but got <details [" +
-                                             HandlerExecutionException.resolveDetails(
-                                                     actualException).orElse(null) +
+                                             details +
                                              "]>." +
                                              NEWLINE +
                                              NEWLINE);

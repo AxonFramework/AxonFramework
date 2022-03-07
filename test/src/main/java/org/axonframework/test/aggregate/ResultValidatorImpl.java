@@ -444,17 +444,24 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectExceptionDetails(Matcher<?> exceptionDetailsMatcher) {
-        StringDescription emptyMatcherDescription = new StringDescription(
-                new StringBuilder("Given exception details matcher is null!"));
+        Object actualDetails = HandlerExecutionException.resolveDetails(actualException).orElse(null);
         if (exceptionDetailsMatcher == null) {
-            reporter.reportWrongExceptionDetails(actualException, emptyMatcherDescription);
+            StringDescription emptyMatcherDescription = new StringDescription(
+                    new StringBuilder("Given exception details matcher is null!"));
+            reporter.reportWrongExceptionDetails(actualDetails, emptyMatcherDescription);
             return this;
         }
-        StringDescription description = new StringDescription();
-        exceptionDetailsMatcher.describeTo(description);
-        if (actualException != null && !exceptionDetailsMatcher.matches(HandlerExecutionException.resolveDetails(
-                actualException).orElse(null))) {
-            reporter.reportWrongExceptionDetails(actualException, description);
+        if (actualException == null) {
+            StringDescription description = new StringDescription(new StringBuilder(
+                    "an exception with details matching "));
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            return this;
+        }
+        if (!exceptionDetailsMatcher.matches(actualDetails)) {
+            StringDescription description = new StringDescription();
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportWrongExceptionDetails(actualDetails, description);
         }
         return this;
     }
