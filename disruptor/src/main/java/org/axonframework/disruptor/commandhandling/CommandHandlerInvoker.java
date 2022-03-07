@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
     private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<>();
 
-    private final Map<Class<?>, DisruptorRepository> repositories = new ConcurrentHashMap<>();
+    private final Map<Class<?>, DisruptorRepository<?>> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
     private final int segmentId;
 
@@ -82,7 +82,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
         Assert.state(invoker != null,
                      () -> "The repositories of a DisruptorCommandBus are only available " + "in the invoker thread");
-        return invoker.repositories.get(type);
+        return (DisruptorRepository<T>) invoker.repositories.get(type);
     }
 
     /**
@@ -157,7 +157,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
                                               HandlerDefinition handlerDefinition) {
-        return repositories.computeIfAbsent(
+        return (Repository<T>) repositories.computeIfAbsent(
                 aggregateFactory.getAggregateType(),
                 k -> new DisruptorRepository<>(
                         aggregateFactory,
@@ -171,7 +171,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     }
 
     private void removeEntry(String aggregateIdentifier) {
-        for (DisruptorRepository repository : repositories.values()) {
+        for (DisruptorRepository<?> repository : repositories.values()) {
             repository.removeFromCache(aggregateIdentifier);
         }
         cache.remove(aggregateIdentifier);
@@ -250,7 +250,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             EventSourcedAggregate<T> aggregateRoot = firstLevelCache.get(aggregateIdentifier);
             if (aggregateRoot == null) {
                 Object cachedItem = cache.get(aggregateIdentifier);
-                if (AggregateCacheEntry.class.isInstance(cachedItem)) {
+                if (cachedItem instanceof AggregateCacheEntry) {
                     EventSourcedAggregate<T> cachedAggregate = ((AggregateCacheEntry<T>) cachedItem).recreateAggregate(
                             model, eventStore, repositoryProvider, snapshotTriggerDefinition
                     );

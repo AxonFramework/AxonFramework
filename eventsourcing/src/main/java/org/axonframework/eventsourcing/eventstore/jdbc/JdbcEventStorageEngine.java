@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -492,7 +492,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                () -> "Unsupported token format: " + lastToken);
-        List<TrackedEventData<?>> trackedEventData = transactionManager.fetchInTransaction(() -> {
+
+        return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
             GapAwareTrackingToken cleanedToken;
             if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
@@ -518,8 +519,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
             }
             return eventData;
         });
-
-        return trackedEventData;
     }
 
     private List<TrackedEventData<?>> executeEventDataQuery(GapAwareTrackingToken cleanedToken, int batchSize) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private InterceptorChain publisherInterceptorChain;
     private CommandResultMessage<?> result;
     private int publisherSegmentId;
-    private BlacklistDetectingCallback callback;
+    private BlacklistDetectingCallback<?, ?> callback;
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
     private String aggregateIdentifier;
@@ -97,7 +97,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      *
      * @return the CommandCallback instance for the executed command
      */
-    public BlacklistDetectingCallback getCallback() {
+    public BlacklistDetectingCallback<?, ?> getCallback() {
         return callback;
     }
 
@@ -155,7 +155,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
                       MessageHandler<? super CommandMessage<?>> newCommandHandler,// NOSONAR - Not important
                       int newInvokerSegmentId,
                       int newPublisherSegmentId,
-                      BlacklistDetectingCallback newCallback,
+                      BlacklistDetectingCallback<? , ?> newCallback,
                       List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors,
                       List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors) {
         this.invokerSegmentId = newInvokerSegmentId;

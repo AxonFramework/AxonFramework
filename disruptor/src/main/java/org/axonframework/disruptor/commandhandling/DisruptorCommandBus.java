@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -185,7 +185,6 @@ public class DisruptorCommandBus implements CommandBus {
      *
      * @param builder the {@link Builder} used to instantiate a {@link DisruptorCommandBus} instance
      */
-    @SuppressWarnings("unchecked")
     protected DisruptorCommandBus(Builder builder) {
         builder.validate();
 
@@ -248,17 +247,16 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
-            commandToDispatch = (CommandMessage) interceptor.handle(commandToDispatch);
+            commandToDispatch = (CommandMessage<? extends C>) interceptor.handle(commandToDispatch);
         }
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandToDispatch);
 
         try {
-            doDispatch(commandToDispatch, new MonitorAwareCallback(callback, monitorCallback));
+            doDispatch(commandToDispatch, new MonitorAwareCallback<>(callback, monitorCallback));
         } catch (Exception e) {
             monitorCallback.reportFailure(e);
             callback.onResult(commandToDispatch, asCommandResultMessage(e));
@@ -981,7 +979,7 @@ public class DisruptorCommandBus implements CommandBus {
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            CompletableFuture future = new CompletableFuture();
+            CompletableFuture<?> future = new CompletableFuture<>();
             send(message, scopeDescription, future);
             try {
                 future.get();
@@ -1034,17 +1032,13 @@ public class DisruptorCommandBus implements CommandBus {
                         invokerSegment,
                         publisherSegment,
                         new BlacklistDetectingCallback<>(
-                                new CommandCallback<Object, Object>() {
-                                    @Override
-                                    public void onResult(CommandMessage<?> commandMessage,
-                                                         CommandResultMessage<?> commandResultMessage) {
-                                        if (commandResultMessage.isExceptional()) {
-                                            logger.warn("Failed sending message [{}] to aggregate with id [{}]",
-                                                        message, aggregateIdentifier);
-                                            future.completeExceptionally(commandResultMessage.exceptionResult());
-                                        } else {
-                                            future.complete(null);
-                                        }
+                                (commandMessage, commandResultMessage) -> {
+                                    if (commandResultMessage.isExceptional()) {
+                                        logger.warn("Failed sending message [{}] to aggregate with id [{}]",
+                                                    message, aggregateIdentifier);
+                                        future.completeExceptionally(commandResultMessage.exceptionResult());
+                                    } else {
+                                        future.complete(null);
                                     }
                                 },
                                 disruptor.getRingBuffer(),
@@ -1064,7 +1058,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private class ExceptionHandler implements com.lmax.disruptor.ExceptionHandler {
+    private class ExceptionHandler implements com.lmax.disruptor.ExceptionHandler<Object> {
 
         @Override
         public void handleEventException(Throwable ex, long sequence, Object event) {

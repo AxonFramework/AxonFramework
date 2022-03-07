@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -665,7 +665,7 @@ public class DefaultConfigurer implements Configurer {
      * lifecycle handlers are registered.
      */
     protected void prepareMessageHandlerRegistrars() {
-        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(config -> registrar.get()));
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(c -> registrar.get()));
     }
 
     /**
