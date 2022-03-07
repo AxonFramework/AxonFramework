@@ -111,6 +111,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private final AtomicInteger availableThreads;
     private final long tokenClaimInterval;
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+    private final int maxThreadCount;
 
     private final ConcurrentMap<Integer, List<Instruction>> instructions = new ConcurrentHashMap<>();
     private final boolean storeTokenBeforeProcessing;
@@ -142,6 +143,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.transactionManager = builder.transactionManager;
 
         this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
+        this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = config.getThreadFactory(builder.name);
         this.workerTerminationTimeout = config.getWorkerTerminationTimeout();
         this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
@@ -731,7 +733,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
     @Override
     public int maxCapacity() {
-        return availableProcessorThreads();
+        return maxThreadCount;
     }
 
     /**
