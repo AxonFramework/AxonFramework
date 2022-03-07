@@ -177,7 +177,7 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails);
 
     /**
-     * Expect an exception details to occur during command handler execution that matches with the given {@code
+     * Expect exception details to occur during command handler execution that matches with the given {@code
      * matcher}.
      *
      * @param matcher The matcher to validate the actual exception details
