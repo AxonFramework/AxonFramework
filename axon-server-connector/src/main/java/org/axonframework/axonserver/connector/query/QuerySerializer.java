@@ -219,7 +219,7 @@ public class QuerySerializer {
     }
 
     /**
-     * Converst a {@link QueryResponse} into a {@link QueryResponseMessage}. It does not assume the type of the payload.
+     * Converts a {@link QueryResponse} into a {@link QueryResponseMessage}. It does not assume the type of the payload.
      *
      * @param queryResponse a {@link QueryResponse} to convert into a {@link QueryResponseMessage}
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}

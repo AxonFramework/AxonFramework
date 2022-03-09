@@ -126,6 +126,25 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
+    void testDirectQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
+        QueryMessage<FluxQuery, Flux<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                       ResponseTypes.fluxOf(String.class));
+
+        QueryRequest request =
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask task = new QueryProcessingTask(localSegment,
+                                                           request,
+                                                           responseHandler,
+                                                           querySerializer,
+                                                           CLIENT_ID);
+
+        task.cancel();
+        task.run();
+        assertTrue(responseHandler.sent().isEmpty());
+        assertTrue(responseHandler.completed());
+    }
+
+    @Test
     void testStreamingQuery() {
         QueryMessage<FluxQuery, Flux<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                        ResponseTypes.fluxOf(String.class));
@@ -404,6 +423,28 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
+    void testStreamingFluxQueryWhenCancelMessageComesFirst() {
+        QueryMessage<FluxQuery, Flux<String>> queryMessage =
+                new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.fluxOf(String.class));
+
+        QueryRequest request =
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+                               .toBuilder()
+                               .addProcessingInstructions(asSupportsStreaming())
+                               .build();
+
+        QueryProcessingTask task = new QueryProcessingTask(localSegment,
+                                                           request,
+                                                           responseHandler,
+                                                           querySerializer,
+                                                           CLIENT_ID);
+        task.cancel();
+        task.run();
+        assertTrue(responseHandler.sent().isEmpty());
+        assertTrue(responseHandler.completed());
+    }
+
+    @Test
     void testCancellationOfStreamingListQuery() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
@@ -428,6 +469,29 @@ class QueryProcessingTaskIntegrationTest {
         task.cancel();
         assertEquals(100, responseHandler.sent().size());
         assertOrder(responseHandler.sent());
+        assertTrue(responseHandler.completed());
+    }
+
+    @Test
+    void testStreamingListQueryWhenCancelMessageComesFirst() {
+        QueryMessage<ListQuery, List<String>> queryMessage =
+                new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
+
+        QueryRequest request =
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
+                               .toBuilder()
+                               .addProcessingInstructions(asSupportsStreaming())
+                               .build();
+
+        QueryProcessingTask task = new QueryProcessingTask(localSegment,
+                                                           request,
+                                                           responseHandler,
+                                                           querySerializer,
+                                                           CLIENT_ID,
+                                                           () -> false);
+        task.cancel();
+        task.run();
+        assertTrue(responseHandler.sent().isEmpty());
         assertTrue(responseHandler.completed());
     }
 

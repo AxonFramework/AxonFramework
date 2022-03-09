@@ -40,6 +40,7 @@ import reactor.core.publisher.Flux;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -52,9 +53,11 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  * invoked based on the incoming query message. It is aware of flow control - it will send response messages only when
  * requested, and it is also possible to cancel sending.
  *
+ * @author Allard Buijze
+ * @author Steven van Beelen
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.6
+ * @since 4.6.0
  */
 class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
 
@@ -69,6 +72,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     private final String clientId;
     private final AtomicReference<StreamableResult> streamableResultRef = new AtomicReference<>();
     private final AtomicLong requestedBeforeInit = new AtomicLong();
+    private final AtomicBoolean cancelledBeforeInit = new AtomicBoolean();
     private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
@@ -167,9 +171,11 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
 
     @Override
     public void cancel() {
-        StreamableResult flowControl = streamableResultRef.get();
-        if (flowControl != null) {
-            flowControl.cancel();
+        StreamableResult result = streamableResultRef.get();
+        if (result != null) {
+            result.cancel();
+        } else {
+            cancelledBeforeInit.set(true);
         }
     }
 
@@ -211,7 +217,11 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
 
     private void setResult(StreamableResult result) {
         streamableResultRef.set(result);
-        request(requestedBeforeInit.get());
+        if (cancelledBeforeInit.get()) {
+            cancel();
+        } else {
+            request(requestedBeforeInit.get());
+        }
     }
 
     private <Q, R> void scatterGather(QueryMessage<Q, R> originalQueryMessage) {
@@ -254,9 +264,9 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     }
 
     private boolean requestIfInitialized(long requested) {
-        StreamableResult flowControl = streamableResultRef.get();
-        if (flowControl != null) {
-            flowControl.request(requested);
+        StreamableResult result = streamableResultRef.get();
+        if (result != null) {
+            result.request(requested);
             return true;
         }
         return false;

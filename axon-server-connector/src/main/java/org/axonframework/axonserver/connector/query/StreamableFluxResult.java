@@ -32,7 +32,7 @@ import reactor.core.publisher.Flux;
  *
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.6
+ * @since 4.6.0
  */
 class StreamableFluxResult implements StreamableResult {
 

@@ -20,6 +20,7 @@ import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.ResultStreamPublisher;
+import io.axoniq.axonserver.connector.impl.CloseAwareReplyChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
@@ -81,9 +82,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -126,7 +129,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService queryExecutor;
-    private final QueryHandler localSegmentAdapter;
+    private final LocalSegmentAdapter localSegmentAdapter;
     private final String context;
 
     /**
@@ -240,8 +243,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                    .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
                                                 .flatMapMany(intercepted -> Mono.just(serialize(intercepted, true))
                                                                                 .flatMapMany(queryRequest -> invoke(intercepted, queryRequest))
-                                                                                .flatMap(queryResponse -> deserialize(intercepted, queryResponse))
-                                                                                .doOnTerminate(activity::end)));
+                                                                                .flatMap(queryResponse -> deserialize(intercepted, queryResponse)))
+                                                .doFinally(s -> activity.end()));
     }
 
     private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
@@ -265,6 +268,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     private <R> Publisher<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
                                                                QueryResponse queryResponse) {
+        //noinspection unchecked
         Class<R> expectedResponseType = (Class<R>) queryMessage.getResponseType().getExpectedResponseType();
         QueryResponseMessage<?> responseMessage = serializer.deserializeResponse(queryResponse);
         if (responseMessage.isExceptional()) {
@@ -334,12 +338,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             queryInTransit.end();
             throw e;
         }
-    }
-
-    @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query) {
-        return QueryBus.super.subscriptionQuery(query);
     }
 
     /**
@@ -417,6 +415,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         if (axonServerConnectionManager.isConnected(context)) {
             axonServerConnectionManager.getConnection(context).queryChannel().prepareDisconnect();
         }
+        localSegmentAdapter.cancel();
     }
 
     /**
@@ -743,6 +742,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      */
     private class LocalSegmentAdapter implements QueryHandler {
 
+        private final Map<String, QueryProcessingTask> queriesInProgress = new ConcurrentHashMap<>();
+
+        public void cancel() {
+            queriesInProgress.values()
+                             .iterator()
+                             .forEachRemaining(QueryProcessingTask::cancel);
+        }
+
         @Override
         public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
             stream(query, responseHandler).request(Long.MAX_VALUE);
@@ -750,11 +757,15 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
         @Override
         public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
+            Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
+            CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
+                    new CloseAwareReplyChannel<>(responseHandler, onClose);
             QueryProcessingTask processingTask = new QueryProcessingTask(localSegment,
                                                                          query,
-                                                                         responseHandler,
+                                                                         closeAwareReplyChannel,
                                                                          serializer,
                                                                          configuration.getClientId());
+            queriesInProgress.put(query.getMessageIdentifier(), processingTask);
             queryExecutor.submit(processingTask);
             return new FlowControl() {
                 @Override

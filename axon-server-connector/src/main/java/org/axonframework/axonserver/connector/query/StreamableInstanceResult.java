@@ -25,7 +25,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
  *
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.6
+ * @since 4.6.0
  */
 class StreamableInstanceResult implements StreamableResult {
 
@@ -63,6 +63,7 @@ class StreamableInstanceResult implements StreamableResult {
 
     @Override
     public void cancel() {
+        responseHandler.complete();
         cancelled = true;
     }
 }

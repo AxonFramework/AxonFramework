@@ -20,7 +20,7 @@ package org.axonframework.util;
  * Resolves certain parameters from the classpath.
  *
  * @author Milan Savic
- * @since 4.6
+ * @since 4.6.0
  */
 public class ClasspathResolver {
 

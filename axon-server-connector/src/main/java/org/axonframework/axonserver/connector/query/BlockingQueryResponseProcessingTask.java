@@ -31,9 +31,11 @@ import java.util.concurrent.CompletableFuture;
  * Task that process responses of the query. It will block until all responses are received.
  *
  * @param <R> the type of expected final response
+ * @author Allard Buijze
+ * @author Steven van Beelen
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.6
+ * @since 4.6.0
  */
 class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
 

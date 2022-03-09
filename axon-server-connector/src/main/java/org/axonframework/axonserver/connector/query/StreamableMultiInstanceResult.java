@@ -36,7 +36,7 @@ import static java.util.Collections.emptyIterator;
  * @param <T> The type of result to be streamed
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.6
+ * @since 4.6.0
  */
 class StreamableMultiInstanceResult<T> implements StreamableResult {
 
