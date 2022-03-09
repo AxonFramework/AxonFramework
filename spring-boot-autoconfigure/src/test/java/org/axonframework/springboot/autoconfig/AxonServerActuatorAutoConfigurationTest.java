@@ -16,7 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.actuator.AxonServerHealthIndicator;
+import org.axonframework.actuator.axonserver.AxonServerHealthIndicator;
+import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -44,14 +45,20 @@ class AxonServerActuatorAutoConfigurationTest {
     void testAxonServerHealthIndicatorIsNotCreatedForAxonServerDisabled() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:false")
-                              .run(context -> assertThat(context).doesNotHaveBean(AxonServerHealthIndicator.class));
+                              .run(context -> {
+                                  assertThat(context).doesNotHaveBean(AxonServerHealthIndicator.class);
+                                  assertThat(context).doesNotHaveBean(AxonServerStatusAggregator.class);
+                              });
     }
 
     @Test
     void testAxonServerHealthIndicatorIsCreated() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:true")
-                              .run(context -> assertThat(context).hasSingleBean(AxonServerHealthIndicator.class));
+                              .run(context -> {
+                                  assertThat(context).hasSingleBean(AxonServerHealthIndicator.class);
+                                  assertThat(context).hasSingleBean(AxonServerStatusAggregator.class);
+                              });
     }
 
     @ContextConfiguration

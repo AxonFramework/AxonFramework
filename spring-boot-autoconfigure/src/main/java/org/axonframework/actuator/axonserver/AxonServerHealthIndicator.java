@@ -14,16 +14,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.actuator;
+package org.axonframework.actuator.axonserver;
 
+import org.axonframework.actuator.HealthStatus;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.Status;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An {@link AbstractHealthIndicator} implementation exposing the health of the connections made through the {@link
- * AxonServerConnectionManager}. Shares information per connected context under {@code
- * "{context-name}.connection.active"}.
+ * AxonServerConnectionManager}. This status is exposed through the {@code "axonServer"} component.
+ * <p>
+ * The status is regarded as {@link Status#UP} if <b>all</b> {@link AxonServerConnectionManager#connections()} are up.
+ * If one of them is down, the status is {@link HealthStatus#WARN}. If all of them are down the status will be {@link
+ * Status#DOWN}. This {@link org.springframework.boot.actuate.health.HealthIndicator} also shares connection details per
+ * context under {@code "{context-name}.connection.active"}.
  *
  * @author Steven van Beelen
  * @since 4.6.0
@@ -45,7 +54,23 @@ public class AxonServerHealthIndicator extends AbstractHealthIndicator {
 
     @Override
     protected void doHealthCheck(Health.Builder builder) {
-        connectionManager.connections()
-                         .forEach((key, value) -> builder.withDetail(String.format(CONNECTION, key), value));
+        builder.up();
+
+        AtomicBoolean anyConnectionUp = new AtomicBoolean(false);
+        Map<String, Boolean> connections = connectionManager.connections();
+
+        connections.forEach((context, connectionStatus) -> {
+            if (!connectionStatus) {
+                builder.status(HealthStatus.WARN);
+            } else {
+                anyConnectionUp.compareAndSet(false, true);
+            }
+            builder.withDetail(String.format(CONNECTION, context),
+                               connectionStatus ? Status.UP.getCode() : Status.DOWN.getCode());
+        });
+
+        if (!connections.isEmpty() && !anyConnectionUp.get()) {
+            builder.down();
+        }
     }
 }

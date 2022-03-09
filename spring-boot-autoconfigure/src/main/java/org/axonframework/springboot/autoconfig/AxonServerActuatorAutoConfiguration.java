@@ -16,7 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.actuator.AxonServerHealthIndicator;
+import org.axonframework.actuator.axonserver.AxonServerHealthIndicator;
+import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -40,5 +41,10 @@ public class AxonServerActuatorAutoConfiguration {
     @Bean
     public AxonServerHealthIndicator axonServerHealthIndicator(AxonServerConnectionManager connectionManager) {
         return new AxonServerHealthIndicator(connectionManager);
+    }
+
+    @Bean
+    public AxonServerStatusAggregator axonServerStatusAggregator() {
+        return new AxonServerStatusAggregator();
     }
 }
