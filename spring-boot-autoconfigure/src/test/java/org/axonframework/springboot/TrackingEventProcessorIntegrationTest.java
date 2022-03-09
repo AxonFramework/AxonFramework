@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.AfterEach;
@@ -83,7 +84,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class TrackingEventProcessorIntegrationTest {
