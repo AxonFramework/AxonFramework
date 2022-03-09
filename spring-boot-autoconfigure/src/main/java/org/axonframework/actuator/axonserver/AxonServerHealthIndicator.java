@@ -60,13 +60,15 @@ public class AxonServerHealthIndicator extends AbstractHealthIndicator {
         Map<String, Boolean> connections = connectionManager.connections();
 
         connections.forEach((context, connectionStatus) -> {
-            if (!connectionStatus) {
+            String contextStatusCode;
+            if (Boolean.FALSE.equals(connectionStatus)) {
+                contextStatusCode = Status.DOWN.getCode();
                 builder.status(HealthStatus.WARN);
             } else {
+                contextStatusCode = Status.UP.getCode();
                 anyConnectionUp.compareAndSet(false, true);
             }
-            builder.withDetail(String.format(CONNECTION, context),
-                               connectionStatus ? Status.UP.getCode() : Status.DOWN.getCode());
+            builder.withDetail(String.format(CONNECTION, context), contextStatusCode);
         });
 
         if (!connections.isEmpty() && !anyConnectionUp.get()) {

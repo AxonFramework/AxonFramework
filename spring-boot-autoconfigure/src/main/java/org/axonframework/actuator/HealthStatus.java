@@ -31,4 +31,8 @@ public abstract class HealthStatus {
      * A {@link Status} suggesting the connection is still working but not at full capacity.
      */
     public static final Status WARN = new Status("WARN");
+
+    private HealthStatus() {
+        // Utility class
+    }
 }
