@@ -1,7 +1,22 @@
+/* Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.integrationtests.commandhandling;
 
-
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.*;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -14,6 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Test whether aggregate member annotated collections of the same generic type be able to handle command.
+ *
+ * @author Somrak Monpengpinij
+ */
 public class AbstractAggregateMemberTest {
     private FixtureConfiguration<FactoryAggregate> fixture;
     private String factoryId = "factoryId";
@@ -31,19 +51,25 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    public void testEmployees_ShouldBeAbleToHandleCommand(){
+    public void testEmployeesAggregateMember_ShouldBeAbleToHandleCommand(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
-                .when(new SomethingCommand(factoryId, "employeeId"))
-                .expectEvents(new SomethingEvent(factoryId, "employeeId"));
+                .when(new CreateTaskCommand(factoryId, "employeeId"))
+                .expectEvents(new EmployeeTaskCreatedEvent(factoryId, "employeeId"));
     }
 
     @Test
-    public void testManagers_ShouldBeAbleToHandleCommand(){
+    public void testManagersAggregateMember_ShouldBeAbleToHandleCommand(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
-                .when(new SomethingCommand(factoryId, "managerId"))
-                .expectEvents(new SomethingEvent(factoryId, "managerId"));
+                .when(new CreateTaskCommand(factoryId, "managerId"))
+                .expectEvents(new ManagerTaskCreatedEvent(factoryId, "managerId"));
     }
 
+    @Test
+    public void testSendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
+        fixture.givenCommands(new CreateFactoryCommand(factoryId))
+                .when(new CreateTaskCommand(factoryId, "none-exist-id"))
+                .expectException(AggregateEntityNotFoundException.class);
+    }
 
     private static abstract class Person {
         @EntityId
@@ -60,12 +86,15 @@ public class AbstractAggregateMemberTest {
         }
 
         @CommandHandler
-        public void handle(SomethingCommand cmd){
-            AggregateLifecycle.apply(new SomethingEvent(cmd.factoryId, cmd.personId));
+        public void handle(CreateTaskCommand cmd){
+            AggregateLifecycle.apply(new EmployeeTaskCreatedEvent(
+                    cmd.getFactoryId(),
+                    cmd.getPersonId()
+            ));
         }
 
         @EventSourcingHandler
-        public void on(SomethingEvent event){
+        public void on(EmployeeTaskCreatedEvent event){
         }
 
         public String getPersonId(){
@@ -97,12 +126,15 @@ public class AbstractAggregateMemberTest {
         }
 
         @CommandHandler
-        public void handle(SomethingCommand cmd){
-            AggregateLifecycle.apply(new SomethingEvent(cmd.factoryId, cmd.personId));
+        public void handle(CreateTaskCommand cmd){
+            AggregateLifecycle.apply(new ManagerTaskCreatedEvent(
+                    cmd.getFactoryId(),
+                    cmd.getPersonId()
+            ));
         }
 
         @EventSourcingHandler
-        public void on(SomethingEvent event){
+        public void on(ManagerTaskCreatedEvent event){
         }
 
         public String getPersonId(){
@@ -134,15 +166,15 @@ public class AbstractAggregateMemberTest {
         @AggregateMember(type = Employee.class)
         public List<Person> employees(){
             return persons.stream()
-                    .filter(p -> p instanceof Employee)
-                    .collect(Collectors.toList());
+                          .filter(p -> p instanceof Employee)
+                          .collect(Collectors.toList());
         }
 
         @AggregateMember(type = Manager.class)
         public List<Person> managers(){
             return persons.stream()
-                    .filter(p -> p instanceof Manager)
-                    .collect(Collectors.toList());
+                          .filter(p -> p instanceof Manager)
+                          .collect(Collectors.toList());
         }
 
         public String getFactoryId(){
@@ -156,13 +188,13 @@ public class AbstractAggregateMemberTest {
         @CommandHandler
         public FactoryAggregate(CreateFactoryCommand cmd){
             AggregateLifecycle.apply(new FactoryCreatedEvent(
-                    cmd.factoryId
+                    cmd.getFactoryId()
             ));
         }
 
         @EventSourcingHandler
         public void on(FactoryCreatedEvent event){
-            this.factoryId = event.factoryId;
+            this.factoryId = event.getFactoryId();
             this.persons.add(new Employee(
                     "employeeId"
             ));
@@ -186,14 +218,14 @@ public class AbstractAggregateMemberTest {
         }
     }
 
-    private static class SomethingCommand {
+    private static class CreateTaskCommand {
         @TargetAggregateIdentifier
         public String factoryId;
         public String personId;
 
-        public SomethingCommand(){}
+        public CreateTaskCommand(){}
 
-        public SomethingCommand(String factoryId, String personId){
+        public CreateTaskCommand(String factoryId, String personId){
             this.factoryId = factoryId;
             this.personId = personId;
         }
@@ -207,10 +239,19 @@ public class AbstractAggregateMemberTest {
         }
     }
 
-    private static class SomethingEvent {
+    private static class EmployeeTaskCreatedEvent {
         String factoryId;
         String personId;
-        public SomethingEvent(String factoryId, String personId){
+        public EmployeeTaskCreatedEvent(String factoryId, String personId){
+            this.factoryId = factoryId;
+            this.personId = personId;
+        }
+    }
+
+    private static class ManagerTaskCreatedEvent {
+        String factoryId;
+        String personId;
+        public ManagerTaskCreatedEvent(String factoryId, String personId){
             this.factoryId = factoryId;
             this.personId = personId;
         }
@@ -222,12 +263,20 @@ public class AbstractAggregateMemberTest {
         public CreateFactoryCommand(String factoryId){
             this.factoryId = factoryId;
         }
+
+        public String getFactoryId(){
+            return factoryId;
+        }
     }
 
     private static class FactoryCreatedEvent {
         public String factoryId;
         public FactoryCreatedEvent(String factoryId){
             this.factoryId = factoryId;
+        }
+
+        public String getFactoryId(){
+            return factoryId;
         }
     }
 }
