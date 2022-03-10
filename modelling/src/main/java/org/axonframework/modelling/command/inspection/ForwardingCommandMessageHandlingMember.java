@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.CommandMessageHandlingMember;
  */
 public interface ForwardingCommandMessageHandlingMember<T> extends CommandMessageHandlingMember<T> {
     /**
-     * Check if this handler is in a state where it can currently accept the command
+     * Check if this handler is in a state where it can currently accept the command.
      *
      * @param message The message that is to be forwarded
      * @param target  The target to forward the command message
