@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Test whether aggregate member annotated collections of the same generic type be able to handle command.
+ * Test whether aggregate member annotated collections of the same generic type be able to forward command.
  *
  * @author Somrak Monpengpinij
  */
@@ -44,21 +44,21 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    public void testInitFactoryAggregate_ShouldHandleCommandNormally(){
+    public void testInitializingFactoryAggregate_ShouldHandleBeAbleToInitialize(){
         fixture.givenNoPriorActivity()
                 .when(new CreateFactoryCommand(factoryId))
                 .expectEvents(new FactoryCreatedEvent(factoryId));
     }
 
     @Test
-    public void testEmployeesAggregateMember_ShouldBeAbleToHandleCommand(){
+    public void testForwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToEmployeeAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "employeeId"))
                 .expectEvents(new EmployeeTaskCreatedEvent(factoryId, "employeeId"));
     }
 
     @Test
-    public void testManagersAggregateMember_ShouldBeAbleToHandleCommand(){
+    public void testForwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToManagerAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "managerId"))
                 .expectEvents(new ManagerTaskCreatedEvent(factoryId, "managerId"));
