@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
@@ -60,7 +61,10 @@ import static org.mockito.Mockito.*;
  */
 @ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshottingTest.TestContext.class)
 @ExtendWith(SpringExtension.class)
-@EnableAutoConfiguration(exclude = {AxonServerAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
+})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class JpaEventStoreAutoConfigurationWithSnapshottingTest {
 
