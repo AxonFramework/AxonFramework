@@ -16,7 +16,6 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.*;
 import org.axonframework.spring.stereotype.Aggregate;
