@@ -1,7 +1,5 @@
 ---
-name: 'Bug report'
-about: 'Report a bug in Axon Framework'
-title:
+name: 'Bug report' about: 'Report a bug in the Axon Framework plugin' title:
 labels: 'Type: Bug'
 ---
 

@@ -1,7 +1,5 @@
 ---
-name: 'Enhancement request'
-about: 'Suggest an enhancement/change to an existing feature for Axon Framework'
-title:
+name: 'Enhancement request' about: 'Suggest an enhancement/change to an existing feature for the Axon Framework plugin' title:
 labels: 'Type: Enhancement'
 ---
 

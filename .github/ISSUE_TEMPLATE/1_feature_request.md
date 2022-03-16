@@ -1,7 +1,5 @@
 ---
-name: 'Feature request'
-about: 'Suggest a feature for Axon Framework'
-title:
+name: 'Feature request' about: 'Suggest a feature for the Axon Framework plugin' title:
 labels: 'Type: Feature'
 ---
 
