@@ -28,6 +28,8 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.duplication.DuplicateQueryHandlerResolution;
+import org.axonframework.queryhandling.duplication.DuplicateQueryHandlerSubscriptionException;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -142,6 +144,22 @@ class SimpleQueryBusTest {
         assertTrue(subscription.cancel());
         assertTrue(testSubject.query(testQueryMessage).isDone());
         assertTrue(testSubject.query(testQueryMessage).isCompletedExceptionally());
+    }
+
+    @Test
+    void testSubscribingSameQueryTwiceWithThrowingDuplicateResolver() throws Exception {
+        // Modify query bus with failing duplicate resolver
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .errorHandler(errorHandler)
+                                    .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
+                                    .build();
+        MessageHandler<QueryMessage<?, String>> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>> handlerTwo = message -> "reply";
+        testSubject.subscribe("test", String.class, handlerOne);
+        assertThrows(DuplicateQueryHandlerSubscriptionException.class, () -> {
+            testSubject.subscribe("test", String.class, handlerTwo);
+        });
     }
 
     /*

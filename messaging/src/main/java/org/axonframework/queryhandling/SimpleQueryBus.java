@@ -30,6 +30,8 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.duplication.DuplicateQueryHandlerResolution;
+import org.axonframework.queryhandling.duplication.DuplicateQueryHandlerResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -73,8 +75,9 @@ public class SimpleQueryBus implements QueryBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     @SuppressWarnings("rawtypes")
-    private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+    private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
@@ -94,6 +97,7 @@ public class SimpleQueryBus implements QueryBus {
             registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
         }
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
+        this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
     }
 
     /**
@@ -109,15 +113,28 @@ public class SimpleQueryBus implements QueryBus {
         return new Builder();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public <R> Registration subscribe(String queryName,
                                       Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
-        //noinspection rawtypes
-        CopyOnWriteArrayList<QuerySubscription> handlers =
-                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
         QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
-        handlers.addIfAbsent(querySubscription);
+        List<QuerySubscription> handlers = subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
+        if(handlers.contains(querySubscription)) {
+            return () -> unsubscribe(queryName, querySubscription);
+        }
+        List<QuerySubscription> existingHandlers = handlers.stream()
+                                                           .filter(q -> q.getResponseType().equals(responseType))
+                                                           .collect(Collectors.toList());
+        if (existingHandlers.isEmpty()) {
+            handlers.add(querySubscription);
+        } else {
+            List<QuerySubscription> resolvedHandlers = duplicateQueryHandlerResolver.resolve(queryName,
+                                                                                             responseType,
+                                                                                             existingHandlers,
+                                                                                             querySubscription);
+            subscriptions.put(queryName, resolvedHandlers);
+        }
 
         return () -> unsubscribe(queryName, querySubscription);
     }
@@ -383,6 +400,7 @@ public class SimpleQueryBus implements QueryBus {
         private QueryInvocationErrorHandler errorHandler = LoggingQueryInvocationErrorHandler.builder()
                                                                                              .logger(logger)
                                                                                              .build();
+        private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
 
         /**
@@ -394,6 +412,22 @@ public class SimpleQueryBus implements QueryBus {
         public Builder messageMonitor(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the duplicate query handler resolver. This determines which registrations are added to the query bus
+         * when multiple handlers are detected for the same query.
+         * <p>
+         * {@link DuplicateQueryHandlerResolution} contains good examples on this and will most of the time suffice. The
+         * bus defaults to {@link DuplicateQueryHandlerResolution#logAndAccept()}
+         *
+         * @param duplicateQueryHandlerResolver The {@link} DuplicateQueryHandlerResolver to use when multiple
+         *                                      registrations are detected
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder duplicateQueryHandlerResolver(DuplicateQueryHandlerResolver duplicateQueryHandlerResolver) {
+            this.duplicateQueryHandlerResolver = duplicateQueryHandlerResolver;
             return this;
         }
 

@@ -32,7 +32,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 3.2
  */
-class QuerySubscription<R> {
+public class QuerySubscription<R> {
 
     private final Type responseType;
     private final MessageHandler<? super QueryMessage<?, R>> queryHandler;
