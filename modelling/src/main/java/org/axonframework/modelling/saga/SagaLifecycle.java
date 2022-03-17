@@ -19,6 +19,8 @@ package org.axonframework.modelling.saga;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
+import java.util.Set;
+
 /**
  * Abstract base class of a component that models a saga's life cycle.
  */
@@ -88,6 +90,15 @@ public abstract class SagaLifecycle extends Scope {
     }
 
     /**
+     * Retrieves all current {@link AssociationValue} that are currently associated with the saga that is being
+     * executed.
+     * @return All current {@link AssociationValue} that are currently associated with the saga
+     */
+    public static Set<AssociationValue> associationValues() {
+        return getInstance().getAssociationValues().asSet();
+    }
+
+    /**
      * {@link SagaLifecycle} instance method to mark the current saga as ended.
      */
     protected abstract void doEnd();
@@ -107,6 +118,8 @@ public abstract class SagaLifecycle extends Scope {
      * @param associationValue the association value to add
      */
     protected abstract void doAssociateWith(AssociationValue associationValue);
+
+    protected abstract AssociationValues getAssociationValues();
 
     /**
      * Get the current {@link SagaLifecycle} instance for the current thread. If none exists an {@link
