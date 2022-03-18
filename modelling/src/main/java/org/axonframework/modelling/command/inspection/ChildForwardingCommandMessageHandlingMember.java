@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 3.0
  */
-public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
+public class ChildForwardingCommandMessageHandlingMember<P, C> implements ForwardingCommandMessageHandlingMember<P> {
 
     private final List<MessageHandlingMember<? super C>> childHandlingInterceptors;
     private final MessageHandlingMember<? super C> childHandler;
@@ -93,6 +93,11 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     @Override
     public int priority() {
         return Integer.MIN_VALUE;
+    }
+
+    @Override
+    public boolean canForward(CommandMessage<?> message, P target) {
+        return childEntityResolver.apply(message, target) != null;
     }
 
     @Override

@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -81,45 +83,60 @@ class FixtureExecutionResultImplTest {
         sagaStore = new InMemorySagaStore();
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
-                AllFieldsFilter.instance()
-        );
+                AllFieldsFilter.instance(), new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler()));
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
     }
 
     @Test
-    void testStartRecording() {
+    void testStartRecording() throws Exception {
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+        EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
+        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(
                 sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, StubSaga.class,
-                AllFieldsFilter.instance()
-        );
+                AllFieldsFilter.instance(), errorHandler);
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));
+        GenericEventMessage<TriggerSagaStartEvent> firstEventMessage = new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
+        eventBus.publish(firstEventMessage);
+        errorHandler.onError(new IllegalArgumentException("First"), firstEventMessage, eventMessageHandler);
         testSubject.startRecording();
-        TriggerSagaEndEvent endEvent = new TriggerSagaEndEvent(identifier);
-        eventBus.publish(new GenericEventMessage<>(endEvent));
+        GenericEventMessage<TriggerSagaEndEvent> endEventMessage = new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
+        eventBus.publish(endEventMessage);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        IllegalArgumentException secondException = new IllegalArgumentException("Second");
+        errorHandler.onError(secondException, endEventMessage, eventMessageHandler);
 
-        testSubject.expectPublishedEvents(endEvent);
-        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEvent), andNoMore())));
+        testSubject.expectPublishedEvents(endEventMessage.getPayload());
+        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEventMessage.getPayload()), andNoMore())));
 
         testSubject.expectDispatchedCommands("Second");
         testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
+
+        assertThrows(AxonAssertionError.class, () -> testSubject.expectSuccessfulHandlerExecution());
+        assertTrue(errorHandler.getException().isPresent());
+        assertEquals(secondException, errorHandler.getException().get());
     }
 
     @Test
-    void testStartRecording_ClearsEventsAndCommands() {
+    void testStartRecording_ClearsEventsAndCommands() throws Exception {
+        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+        EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
+        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
-                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
+                                                       commandBus, StubSaga.class, AllFieldsFilter.instance(), errorHandler);
         testSubject.startRecording();
-        eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
+        GenericEventMessage<TriggerSagaEndEvent> eventMessage = new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
+        eventBus.publish(eventMessage);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Command"));
+        errorHandler.onError(new IllegalArgumentException("First"), eventMessage, eventMessageHandler);
 
         testSubject.startRecording();
         testSubject.expectPublishedEvents();
         testSubject.expectNoDispatchedCommands();
+        testSubject.expectSuccessfulHandlerExecution();
     }
 
     @Test

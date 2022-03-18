@@ -9,7 +9,6 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-    - "Target: 4.6.0"
   milestone: 59
   reviewers:
     - "lfgcampos"
@@ -25,7 +24,6 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-    - "Target: 4.6.0"
   milestone: 59
   reviewers:
     - "lfgcampos"
