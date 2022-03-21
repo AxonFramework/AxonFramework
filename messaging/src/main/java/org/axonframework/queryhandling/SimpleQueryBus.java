@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,10 +37,12 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,6 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -361,12 +364,23 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
-        return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
-                            .stream()
-                            .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
-                            .map(QuerySubscription::getQueryHandler)
-                            .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
-                            .collect(Collectors.toList());
+        Map<Integer, List<QuerySubscription>> querySubscriptionStream = subscriptions
+                .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+                .stream()
+                .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
+                .collect(Collectors.groupingBy(querySubscription -> responseType.matchPriority(querySubscription.getResponseType()),
+                                               Collectors.mapping(Function.identity(), Collectors.toList())));
+        Integer chosenPriority = querySubscriptionStream.keySet().stream()
+                                                        .max(Comparator.comparing(Function.identity()))
+                                                        .orElse(null);
+        if (querySubscriptionStream.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return querySubscriptionStream.get(chosenPriority)
+                                      .stream()
+                                      .map(QuerySubscription::getQueryHandler)
+                                      .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
+                                      .collect(Collectors.toList());
     }
 
     /**
