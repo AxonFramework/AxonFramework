@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 /**
- * A runnable with priority.
+ * A {@link Runable} with a priority.
  *
  * @author Stefan Dragisic
  * @author Milan Savic
