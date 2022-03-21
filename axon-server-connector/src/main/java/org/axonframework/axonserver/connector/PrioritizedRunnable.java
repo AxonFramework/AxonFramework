@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector;
 
 /**
- * A runnable with priority.
+ * A {@link Runable} with a priority.
  *
  * @author Stefan Dragisic
  * @author Milan Savic
@@ -26,6 +26,8 @@ package org.axonframework.axonserver.connector;
 public interface PrioritizedRunnable extends Runnable {
 
     /**
+     * The priority of this runnable.
+      *
      * @return the priority of this runnable.
      */
     long priority();

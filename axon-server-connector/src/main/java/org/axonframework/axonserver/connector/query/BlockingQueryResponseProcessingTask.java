@@ -29,7 +29,7 @@ import org.reactivestreams.Subscription;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Task that process responses of the query. It will block until all responses are received.
+ * Task that processes query responses. It will block until all responses are received.
  *
  * @param <R> the type of expected final response
  * @author Allard Buijze

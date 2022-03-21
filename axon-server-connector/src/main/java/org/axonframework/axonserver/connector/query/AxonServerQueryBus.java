@@ -213,7 +213,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
-                       () -> "Direct query does not support Flux as a return type.");
+                       () -> "The direct query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
@@ -312,7 +312,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
-                       () -> "Scatter-Gather query does not support Flux as a return type.");
+                       () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
@@ -368,9 +368,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             int updateBufferSize
     ) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as a return type.");
+                       () -> "The subscription Query query does not support Flux as a return type.");
         Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as an update type.");
+                       () -> "The subscription Query query does not support Flux as an update type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
