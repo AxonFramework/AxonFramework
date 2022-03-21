@@ -59,7 +59,7 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
-     * Retrieves information whether Axon Server supports streaming from the given {@code processingInstructions}, by
+     * Retrieve whether Axon Server supports streaming from the given {@code processingInstructions}, by
      * searching for the value of {@link ProcessingKey#AS_SUPPORTS_STREAMING}.
      *
      * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
@@ -72,7 +72,7 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
-     * Retrieves information whether Client (query issuer) supports streaming from the given {@code
+     * Retrieve whether Client (query issuer) supports streaming from the given {@code
      * processingInstructions}, by searching for the value of {@link ProcessingKey#CLIENT_SUPPORTS_STREAMING}.
      *
      * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link

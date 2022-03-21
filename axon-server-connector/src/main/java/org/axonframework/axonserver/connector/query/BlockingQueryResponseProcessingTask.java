@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryResponseMessage;

@@ -37,6 +37,7 @@ import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.InstructionAckSource;
+import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
@@ -77,6 +78,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -219,8 +221,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
         try {
             int priority = priorityCalculator.determinePriority(interceptedQuery);
-            QueryRequest queryRequest = serialize(interceptedQuery, false);
-            Publisher<QueryResponse> result = invoke(interceptedQuery, queryRequest);
+            QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
+            Publisher<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
             Runnable task = new BlockingQueryResponseProcessingTask<>(result,
                                                                       serializer,
@@ -241,10 +243,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
                    .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
-                                                .flatMapMany(intercepted -> Mono.just(serialize(intercepted, true))
-                                                                                .flatMapMany(queryRequest -> invoke(intercepted, queryRequest))
+                                                .flatMapMany(intercepted -> Mono.just(serializeStreaming(intercepted))
+                                                                                .flatMapMany(queryRequest -> sendRequest(intercepted, queryRequest))
                                                                                 .flatMap(queryResponse -> deserialize(intercepted, queryResponse)))
-                                                .doFinally(s -> activity.end()));
+                                                .doFinally(s -> activity.end()))
+                   .subscribeOn(Schedulers.fromExecutorService(queryExecutor));
     }
 
     private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
@@ -252,15 +255,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return shutdownLatch.registerActivity();
     }
 
-    private QueryRequest serialize(QueryMessage<?, ?> query, boolean stream) {
+    private QueryRequest serializeStreaming(QueryMessage<?, ?> query) {
+        return serialize(query, true, priorityCalculator.determinePriority(query));
+    }
+
+    private QueryRequest serialize(QueryMessage<?, ?> query, boolean stream, int priority) {
         return serializer.serializeRequest(query,
                                            DIRECT_QUERY_NUMBER_OF_RESULTS,
                                            DIRECT_QUERY_TIMEOUT_MS,
-                                           priorityCalculator.determinePriority(query),
+                                           priority,
                                            stream);
     }
 
-    private Publisher<QueryResponse> invoke(QueryMessage<?, ?> queryMessage, QueryRequest queryRequest) {
+    private Publisher<QueryResponse> sendRequest(QueryMessage<?, ?> queryMessage, QueryRequest queryRequest) {
         return new ResultStreamPublisher<>(() -> axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(queryMessage))
                                                                             .queryChannel()
                                                                             .query(queryRequest));

@@ -31,14 +31,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.util.Collections.emptyIterator;
 
 /**
- * An implementation of {@link StreamableResult} that can stream a {@link List} of results one by one.
+ * An implementation of the {@link StreamableResponse} that can stream a {@link List} of results one by one.
  *
  * @param <T> The type of result to be streamed
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-class StreamableMultiInstanceResult<T> implements StreamableResult {
+class StreamableMultiInstanceResponse<T> implements StreamableResponse {
 
     private final QueryResponseMessage<List<T>> resultMessage;
     private final Class<T> responseType;
@@ -61,11 +61,11 @@ class StreamableMultiInstanceResult<T> implements StreamableResult {
      * @param serializer      the serializer used to serialize items
      * @param requestId       the identifier of the request these responses refer to
      */
-    public StreamableMultiInstanceResult(QueryResponseMessage<List<T>> resultMessage,
-                                         Class<T> responseType,
-                                         ReplyChannel<QueryResponse> responseHandler,
-                                         QuerySerializer serializer,
-                                         String requestId) {
+    public StreamableMultiInstanceResponse(QueryResponseMessage<List<T>> resultMessage,
+                                           Class<T> responseType,
+                                           ReplyChannel<QueryResponse> responseHandler,
+                                           QuerySerializer serializer,
+                                           String requestId) {
         this.resultMessage = resultMessage;
         this.responseType = responseType;
         this.responseHandler = responseHandler;

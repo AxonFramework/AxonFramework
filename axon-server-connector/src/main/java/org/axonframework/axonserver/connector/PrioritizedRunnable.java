@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.query;
-
-import io.axoniq.axonserver.connector.FlowControl;
+package org.axonframework.axonserver.connector;
 
 /**
- * A specific type of {@link FlowControl} representing a result that can be streamed.
+ * A runnable with priority.
+ *
+ * @author Stefan Dragisic
+ * @author Milan Savic
+ * @since 4.6.0
  */
-interface StreamableResult extends FlowControl {
+public interface PrioritizedRunnable extends Runnable {
 
+    /**
+     * @return the priority of this runnable.
+     */
+    long priority();
 }

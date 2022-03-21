@@ -441,8 +441,8 @@ class DefaultQueryGatewayTest {
 
         //second try with subscribing
         StepVerifier.create(testSubject.streamingQuery("query", String.class))
-                .expectNext("a","b","c")
-                .verifyComplete();
+                    .expectNext("a", "b", "c")
+                    .verifyComplete();
 
         //expect query sent
         verify(mockBus, times(1)).streamingQuery(any(StreamingQueryMessage.class));

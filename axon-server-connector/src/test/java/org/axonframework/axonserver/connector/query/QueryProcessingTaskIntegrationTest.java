@@ -66,7 +66,7 @@ class QueryProcessingTaskIntegrationTest {
     private CachingReplyChannel<QueryResponse> responseHandler;
     private QuerySerializer querySerializer;
 
-    private QueryHandlers1 queryHandlers1;
+    private QueryHandlingComponent1 queryHandlingComponent1;
 
     @BeforeEach
     void setUp() {
@@ -80,9 +80,9 @@ class QueryProcessingTaskIntegrationTest {
                                                                 .componentName(COMPONENT_NAME)
                                                                 .build();
         querySerializer = new QuerySerializer(serializer, serializer, config);
-        queryHandlers1 = new QueryHandlers1();
-        new AnnotationQueryHandlerAdapter<>(queryHandlers1).subscribe(localSegment);
-        new AnnotationQueryHandlerAdapter<>(new QueryHandlers2()).subscribe(localSegment);
+        queryHandlingComponent1 = new QueryHandlingComponent1();
+        new AnnotationQueryHandlerAdapter<>(queryHandlingComponent1).subscribe(localSegment);
+        new AnnotationQueryHandlerAdapter<>(new QueryHandlingComponent2()).subscribe(localSegment);
     }
 
     @Test
@@ -418,7 +418,7 @@ class QueryProcessingTaskIntegrationTest {
         task.cancel();
         assertEquals(100, responseHandler.sent().size());
         assertOrder(responseHandler.sent());
-        assertTrue(queryHandlers1.fluxQueryCancelled());
+        assertTrue(queryHandlingComponent1.fluxQueryCancelled());
         assertTrue(responseHandler.completed());
     }
 
@@ -673,7 +673,7 @@ class QueryProcessingTaskIntegrationTest {
                                     .build();
     }
 
-    private static class QueryHandlers1 {
+    private static class QueryHandlingComponent1 {
 
         private final AtomicBoolean fluxQueryCancelled = new AtomicBoolean();
 
@@ -708,7 +708,7 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
-    private static class QueryHandlers2 {
+    private static class QueryHandlingComponent2 {
 
         @QueryHandler
         public List<String> listMultiInstance(MultipleInstanceQuery query) {

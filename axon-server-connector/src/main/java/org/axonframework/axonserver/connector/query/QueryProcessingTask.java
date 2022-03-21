@@ -23,6 +23,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
@@ -50,8 +51,9 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
 
 /**
  * The task that processes a single incoming query message from Axon Server. It decides which query type should be
- * invoked based on the incoming query message. It is aware of flow control - it will send response messages only when
- * requested, and it is also possible to cancel sending.
+ * invoked based on the incoming query message. It is aware of flow control, hence it will only send response messages
+ * when {@link FlowControl#request(long) requested}. Furthermore, sending can be {@link FlowControl#cancel()
+ * cancelled}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -70,7 +72,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     private final ReplyChannel<QueryResponse> responseHandler;
     private final QuerySerializer serializer;
     private final String clientId;
-    private final AtomicReference<StreamableResult> streamableResultRef = new AtomicReference<>();
+    private final AtomicReference<StreamableResponse> streamableResultRef = new AtomicReference<>();
     private final AtomicLong requestedBeforeInit = new AtomicLong();
     private final AtomicBoolean cancelledBeforeInit = new AtomicBoolean();
     private final boolean supportsStreaming;
@@ -78,7 +80,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     private final Supplier<Boolean> reactorOnClassPath;
 
     /**
-     * Instantiates query processing task.
+     * Instantiates a query processing task.
      *
      * @param localSegment    local instance of {@link QueryBus} used to actually execute the query withing this
      *                        application instance
@@ -101,7 +103,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     }
 
     /**
-     * Instantiates query processing task.
+     * Instantiates a query processing task.
      *
      * @param localSegment       local instance of {@link QueryBus} used to actually execute the query withing this
      *                           application instance
@@ -171,7 +173,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
 
     @Override
     public void cancel() {
-        StreamableResult result = streamableResultRef.get();
+        StreamableResponse result = streamableResultRef.get();
         if (result != null) {
             result.cancel();
         } else {
@@ -196,18 +198,18 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
                             sendError(e);
                         } else {
                             try {
-                                StreamableResult streamableResult;
+                                StreamableResponse streamableResponse;
                                 if (supportsStreaming
                                         && queryMessage.getResponseType() instanceof MultipleInstancesResponseType) {
                                     //noinspection unchecked
-                                    streamableResult =
+                                    streamableResponse =
                                             streamableMultiInstanceResult((QueryResponseMessage<List<T>>) result,
                                                                           (Class<T>) queryMessage.getResponseType()
                                                                                                  .getExpectedResponseType());
                                 } else {
-                                    streamableResult = streamableInstanceResult(result);
+                                    streamableResponse = streamableInstanceResult(result);
                                 }
-                                setResult(streamableResult);
+                                setResult(streamableResponse);
                             } catch (Throwable t) {
                                 sendError(t);
                             }
@@ -215,7 +217,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
                     });
     }
 
-    private void setResult(StreamableResult result) {
+    private void setResult(StreamableResponse result) {
         streamableResultRef.set(result);
         if (cancelledBeforeInit.get()) {
             cancel();
@@ -236,25 +238,25 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
         responseHandler.complete();
     }
 
-    private <R> StreamableResult streamableFluxResult(Publisher<QueryResponseMessage<R>> resultPublisher) {
-        return new StreamableFluxResult(Flux.from(resultPublisher),
-                                        responseHandler,
-                                        serializer,
-                                        queryRequest.getMessageIdentifier(),
-                                        clientId);
+    private <R> StreamableResponse streamableFluxResult(Publisher<QueryResponseMessage<R>> resultPublisher) {
+        return new StreamableFluxResponse(Flux.from(resultPublisher),
+                                          responseHandler,
+                                          serializer,
+                                          queryRequest.getMessageIdentifier(),
+                                          clientId);
     }
 
-    private <R> StreamableMultiInstanceResult<R> streamableMultiInstanceResult(QueryResponseMessage<List<R>> result,
-                                                                               Class<R> responseType) {
-        return new StreamableMultiInstanceResult<>(result,
-                                                   responseType,
-                                                   responseHandler,
-                                                   serializer,
-                                                   queryRequest.getMessageIdentifier());
+    private <R> StreamableMultiInstanceResponse<R> streamableMultiInstanceResult(QueryResponseMessage<List<R>> result,
+                                                                                 Class<R> responseType) {
+        return new StreamableMultiInstanceResponse<>(result,
+                                                     responseType,
+                                                     responseHandler,
+                                                     serializer,
+                                                     queryRequest.getMessageIdentifier());
     }
 
-    private StreamableInstanceResult streamableInstanceResult(QueryResponseMessage<?> result) {
-        return new StreamableInstanceResult(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
+    private StreamableInstanceResponse streamableInstanceResult(QueryResponseMessage<?> result) {
+        return new StreamableInstanceResponse(result, responseHandler, serializer, queryRequest.getMessageIdentifier());
     }
 
     private boolean supportsStreaming(QueryRequest queryRequest) {
@@ -264,7 +266,7 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     }
 
     private boolean requestIfInitialized(long requested) {
-        StreamableResult result = streamableResultRef.get();
+        StreamableResponse result = streamableResultRef.get();
         if (result != null) {
             result.request(requested);
             return true;

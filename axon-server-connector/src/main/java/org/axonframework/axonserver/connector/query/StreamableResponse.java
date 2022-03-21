@@ -16,17 +16,15 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import io.axoniq.axonserver.connector.FlowControl;
+
 /**
- * A runnable with priority.
+ * A specific type of {@link FlowControl} representing a response that can be streamed.
  *
- * @author Stefan Dragisic
  * @author Milan Savic
+ * @author Stefan Dragisic
  * @since 4.6.0
  */
-interface PrioritizedRunnable extends Runnable {
+interface StreamableResponse extends FlowControl {
 
-    /**
-     * @return the priority of this runnable.
-     */
-    long priority();
 }

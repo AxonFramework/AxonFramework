@@ -38,7 +38,8 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests Streaming Query functionality.
+ * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using {@link
+ * AnnotationQueryHandlerAdapter}.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
@@ -54,6 +55,8 @@ class StreamingQueryTest {
 
     private final AnnotationQueryHandlerAdapter<ErrorQueryHandler> errorQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             errorQueryHandler);
+
+    private static final ConcurrentLinkedQueue<String> handlersInvoked = new ConcurrentLinkedQueue<>();
 
     @BeforeEach
     void setUp() {
@@ -80,7 +83,7 @@ class StreamingQueryTest {
 
     @Test
     void testSwitchHandlerOnError() {
-        handlersInvoked.removeIf(n->true);
+        handlersInvoked.removeIf(n -> true);
         errorQueryHandlerAdapter.subscribe(queryBus);
 
         StreamingQueryMessage<String, String> queryMessage =
@@ -91,7 +94,7 @@ class StreamingQueryTest {
                     .verifyComplete();
 
         List<String> handlers_invoked = new ArrayList<>(handlersInvoked);
-        Assertions.assertEquals(asList("handler_error","handler_healthy"),handlers_invoked);
+        Assertions.assertEquals(asList("handler_error", "handler_healthy"), handlers_invoked);
     }
 
     @Test
@@ -265,15 +268,13 @@ class StreamingQueryTest {
                     .verifyErrorMatches(t -> t instanceof RuntimeException && t.getMessage().equals("oops"));
     }
 
-    public static ConcurrentLinkedQueue<String> handlersInvoked = new ConcurrentLinkedQueue<>();
     private static class ErrorQueryHandler {
 
         @QueryHandler(queryName = "listQuery")
         public Flux<String> listQuery(String criteria) {
             handlersInvoked.add("handler_error");
-           throw new RuntimeException("ooops");
+            throw new RuntimeException("ooops");
         }
-
     }
 
     private static class MyQueryHandler {

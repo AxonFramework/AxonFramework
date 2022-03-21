@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 /**
  * A {@link ResponseType} implementation that will match with query
- * handlers which return a Flux stream of the expected response type. If matching succeeds, the
+ * handlers that return a {@link Flux} stream of the expected response type. If matching succeeds, the
  * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
  * {@code R}.
  *

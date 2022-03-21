@@ -27,14 +27,14 @@ import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 
 /**
- * An implementation of {@link StreamableResult} that uses a given {@link Flux} of results to send them one by on to the
- * Axon Server.
+ * An implementation of {@link StreamableResponse} that uses a given {@link Flux} of results to send them one by one
+ * over the connected Axon Server instance.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-class StreamableFluxResult implements StreamableResult {
+class StreamableFluxResponse implements StreamableResponse {
 
     private final Subscription subscription;
 
@@ -48,11 +48,11 @@ class StreamableFluxResult implements StreamableResult {
      * @param clientId        the identifier of the client
      * @param <T>             the type of items to be sent
      */
-    public <T> StreamableFluxResult(Flux<QueryResponseMessage<T>> result,
-                                    ReplyChannel<QueryResponse> responseHandler,
-                                    QuerySerializer serializer,
-                                    String requestId,
-                                    String clientId) {
+    public <T> StreamableFluxResponse(Flux<QueryResponseMessage<T>> result,
+                                      ReplyChannel<QueryResponse> responseHandler,
+                                      QuerySerializer serializer,
+                                      String requestId,
+                                      String clientId) {
         SendingSubscriber subscriber = new SendingSubscriber(responseHandler, clientId, requestId);
         this.subscription = subscriber;
         result.map(message -> serializer.serializeResponse(message, requestId))

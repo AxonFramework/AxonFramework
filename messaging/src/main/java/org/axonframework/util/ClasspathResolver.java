@@ -22,7 +22,7 @@ package org.axonframework.util;
  * @author Milan Savic
  * @since 4.6.0
  */
-public class ClasspathResolver {
+public final class ClasspathResolver {
 
     private static final boolean projectReactorOnClasspath;
 
@@ -34,6 +34,10 @@ public class ClasspathResolver {
             fluxOnClasspath = false;
         }
         projectReactorOnClasspath = fluxOnClasspath;
+    }
+
+    private ClasspathResolver() {
+        // not to be instantiated
     }
 
     /**

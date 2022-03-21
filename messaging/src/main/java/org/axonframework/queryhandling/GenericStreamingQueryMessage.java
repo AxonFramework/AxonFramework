@@ -26,7 +26,7 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 /**
- * Generic implementation of {@link StreamingQueryMessage}.
+ * Generic implementation of the {@link StreamingQueryMessage}.
  *
  * @param <Q> the type of streaming query payload
  * @param <R> the type of the result streamed via {@link Flux}
@@ -82,7 +82,7 @@ public class GenericStreamingQueryMessage<Q, R> extends GenericQueryMessage<Q, F
     }
 
     /**
-     * Initializes the message with the given {@code payload}, {@code queryName} and expected {@code responseType}.
+     * Initializes the message with the given {@code delegate}, {@code queryName} and expected {@code responseType}.
      *
      * @param delegate     The message containing the payload and meta-data for this message
      * @param queryName    The name identifying the query to execute
