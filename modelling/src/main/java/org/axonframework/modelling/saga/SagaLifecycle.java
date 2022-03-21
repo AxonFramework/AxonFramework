@@ -90,9 +90,10 @@ public abstract class SagaLifecycle extends Scope {
     }
 
     /**
-     * Retrieves all current {@link AssociationValue} that are currently associated with the saga that is being
+     * Retrieves all current {@link AssociationValue AssociationValues} that are currently associated with the saga that is being
      * executed.
-     * @return All current {@link AssociationValue} that are currently associated with the saga
+     *
+     * @return All current {@link AssociationValue} that are currently associated with the saga.
      */
     public static Set<AssociationValue> associationValues() {
         return getInstance().getAssociationValues().asSet();
