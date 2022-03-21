@@ -18,7 +18,10 @@ package org.axonframework.spring.config;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
+import org.axonframework.spring.event.AxonStartedEvent;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.lang.NonNull;
 
@@ -40,6 +43,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     private final Configurer configurer;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicReference<Configuration> configuration = new AtomicReference<>();
+    private ApplicationContext applicationContext;
 
     /**
      * Initialize this {@link Configuration} instance.
@@ -70,6 +74,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     public void start() {
         if (isRunning.compareAndSet(false, true)) {
             getObject().start();
+            this.applicationContext.publishEvent(new AxonStartedEvent());
         }
     }
 
@@ -84,5 +89,10 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     @Override
     public boolean isRunning() {
         return isRunning.get();
+    }
+
+    @Autowired
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 }
