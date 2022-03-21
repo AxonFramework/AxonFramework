@@ -211,7 +211,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
-                       () -> "Direct query does not support Flux as a return type.");
+                       () -> "The direct query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
