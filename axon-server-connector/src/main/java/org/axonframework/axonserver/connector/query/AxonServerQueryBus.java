@@ -305,7 +305,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
-                       () -> "Scatter-Gather query does not support Flux as a return type.");
+                       () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
