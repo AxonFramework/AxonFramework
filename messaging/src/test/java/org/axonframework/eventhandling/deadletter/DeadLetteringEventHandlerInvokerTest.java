@@ -17,19 +17,28 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.*;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.QueueIdentifier;
 import org.axonframework.utils.EventTestUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,12 +50,13 @@ class DeadLetteringEventHandlerInvokerTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
     private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent();
-    private static final EventHandlingQueueIdentifier TEST_QUEUE_ID =
+    private static final QueueIdentifier TEST_QUEUE_ID =
             new EventHandlingQueueIdentifier(TEST_EVENT.getAggregateIdentifier(), TEST_PROCESSING_GROUP);
 
     private EventMessageHandler handler;
     private SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private DeadLetterQueue<EventMessage<?>> queue;
+    private TransactionManager transactionManager;
 
     private DeadLetteringEventHandlerInvoker testSubject;
 
@@ -56,6 +66,7 @@ class DeadLetteringEventHandlerInvokerTest {
         sequencingPolicy = spy(SequentialPerAggregatePolicy.instance());
         //noinspection unchecked
         queue = mock(DeadLetterQueue.class);
+        transactionManager = spy(new StubTransactionManager());
 
         setTestSubject(createTestSubject());
     }
@@ -77,7 +88,8 @@ class DeadLetteringEventHandlerInvokerTest {
                                                 .sequencingPolicy(sequencingPolicy)
                                                 .listenerInvocationErrorHandler(PropagatingErrorHandler.instance())
                                                 .queue(queue)
-                                                .processingGroup(TEST_PROCESSING_GROUP);
+                                                .processingGroup(TEST_PROCESSING_GROUP)
+                                                .transactionManager(transactionManager);
         return customization.apply(invokerBuilder).build();
     }
 
@@ -91,6 +103,8 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(handler).handle(TEST_EVENT);
         verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), eq(TEST_EVENT));
         verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
+        verify(transactionManager).fetchInTransaction(any());
+        verify(transactionManager, never()).executeInTransaction(any());
     }
 
     @Test
@@ -103,6 +117,7 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy).getSequenceIdentifierFor(TEST_EVENT);
         verifyNoInteractions(handler);
         verifyNoInteractions(queue);
+        verifyNoInteractions(transactionManager);
     }
 
     @Test
@@ -118,6 +133,8 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(handler).handle(TEST_EVENT);
         verify(queue).enqueueIfPresent(TEST_QUEUE_ID, TEST_EVENT);
         verify(queue).enqueue(TEST_QUEUE_ID, TEST_EVENT, testCause);
+        verify(transactionManager).fetchInTransaction(any());
+        verify(transactionManager).executeInTransaction(any());
     }
 
     @Test
@@ -130,6 +147,8 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler, never()).handle(TEST_EVENT);
         verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
+        verify(transactionManager).fetchInTransaction(any());
+        verify(transactionManager, never()).executeInTransaction(any());
     }
 
     @Test
@@ -139,6 +158,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset();
 
         verifyNoInteractions(queue);
+        verifyNoInteractions(transactionManager);
         verify(handler).prepareReset(null);
     }
 
@@ -149,6 +169,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset();
 
         verify(queue).clear(TEST_PROCESSING_GROUP);
+        verify(transactionManager).executeInTransaction(any());
         verify(handler).prepareReset(null);
     }
 
@@ -161,6 +182,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset(testContext);
 
         verifyNoInteractions(queue);
+        verifyNoInteractions(transactionManager);
         verify(handler).prepareReset(testContext);
     }
 
@@ -173,7 +195,36 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.performReset(testContext);
 
         verify(queue).clear(TEST_PROCESSING_GROUP);
+        verify(transactionManager).executeInTransaction(any());
         verify(handler).prepareReset(testContext);
+    }
+
+    @Test
+    void testRegisterLifecycleHandlersRegistersSingleStartHandler() {
+        AtomicInteger onStartInvoked = new AtomicInteger(0);
+        AtomicInteger onShutdownInvoked = new AtomicInteger(0);
+
+        testSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
+            @Override
+            public void onStart(int phase, Lifecycle.LifecycleHandler action) {
+                onStartInvoked.incrementAndGet();
+            }
+
+            @Override
+            public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
+                onShutdownInvoked.incrementAndGet();
+            }
+        });
+
+        assertEquals(1, onStartInvoked.get());
+        assertEquals(0, onShutdownInvoked.get());
+    }
+
+    @Test
+    void testStartRegistersOnAvailableRunnable() {
+        testSubject.start();
+
+        verify(queue).onAvailable(eq(TEST_PROCESSING_GROUP), any());
     }
 
     @Test
@@ -187,7 +238,9 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithoutDeadLetterQueueThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
-                                                .processingGroup(TEST_PROCESSING_GROUP);
+                                                .processingGroup(TEST_PROCESSING_GROUP)
+                                                .transactionManager(NoTransactionManager.instance());
+
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
@@ -209,15 +262,44 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithoutProcessingGroupThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
-                                                .queue(queue);
+                                                .queue(queue)
+                                                .transactionManager(NoTransactionManager.instance());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
-    void testBuildWithNullExecutorThrowsAxonConfigurationException() {
-        DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
+    void testBuildWithNullTransactionManagerThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
+                DeadLetteringEventHandlerInvoker.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.executorService(null));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.transactionManager(null));
+    }
+
+    @Test
+    void testBuildWithoutTransactionManagerThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
+                DeadLetteringEventHandlerInvoker.builder()
+                                                .queue(queue)
+                                                .processingGroup(TEST_PROCESSING_GROUP);
+
+        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
+                DeadLetteringEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
+    }
+
+    // This stub TransactionManager is used for spying.
+    private static class StubTransactionManager implements TransactionManager {
+
+        @Override
+        public Transaction startTransaction() {
+            return NoTransactionManager.INSTANCE.startTransaction();
+        }
     }
 }

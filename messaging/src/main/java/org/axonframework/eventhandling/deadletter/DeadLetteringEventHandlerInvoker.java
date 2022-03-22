@@ -34,13 +34,10 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.deadletter.QueueIdentifier;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.List;
 import java.util.Optional;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -153,67 +150,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
      * {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
      */
     public void start() {
-        queue.onAvailable(processingGroup, new EvaluationTask(super.eventHandlers(), listenerInvocationErrorHandler));
-    }
-
-    /**
-     * A {@link Runnable} implementation used to evaluate a {@link DeadLetterEntry} taken from the {@link
-     * DeadLetterQueue}. This task is added through {@link DeadLetterQueue#onAvailable(String, Runnable)}, so we can
-     * typically assume there are entries ready for evaluation.
-     */
-    // todo perhaps change to a method that returns true/false if it wants more letters to evaluate
-    private class EvaluationTask implements Runnable {
-
-        private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-        private final List<EventMessageHandler> eventHandlingComponents;
-        private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
-
-        private EvaluationTask(List<EventMessageHandler> eventHandlingComponents,
-                               ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-            this.eventHandlingComponents = eventHandlingComponents;
-            this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
-        }
-
-        @Override
-        public void run() {
-            Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter =
-                    transactionManager.fetchInTransaction(() -> queue.take(processingGroup));
-            if (!optionalLetter.isPresent()) {
-                logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
-                             processingGroup);
-                return;
-            }
-
-            DeadLetterEntry<EventMessage<?>> letter = optionalLetter.get();
-            UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
-            unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.onPrepareCommit(uow -> {
-                letter.acknowledge();
-                logger.info(
-                        "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
-                        letter.message().getIdentifier(), processingGroup
-                );
-            });
-            unitOfWork.onRollback(uow -> {
-                // TODO: 02-02-22 do we need a try-catch for this?
-                letter.requeue();
-                logger.info(
-                        "Reentered dead-letter [{}] for processing group [{}] in the queue since handling failed.",
-                        letter.message().getIdentifier(), processingGroup
-                );
-            });
-            unitOfWork.executeWithResult(() -> {
-                for (EventMessageHandler handler : eventHandlingComponents) {
-                    try {
-                        handler.handle(letter.message());
-                    } catch (Exception e) {
-                        listenerInvocationErrorHandler.onError(e, letter.message(), handler);
-                    }
-                }
-                return null;
-            });
-        }
+        queue.onAvailable(processingGroup, new EvaluationTask(
+                super.eventHandlers(), queue, processingGroup, transactionManager, listenerInvocationErrorHandler
+        ));
     }
 
     /**
@@ -228,32 +167,14 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         private DeadLetterQueue<EventMessage<?>> queue;
         private String processingGroup;
-        // TODO: 07-02-22 Default TransactionManager yes/no?
         private TransactionManager transactionManager;
         private boolean allowReset = false;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
 
         private Builder() {
-            // The parent's error handler defaults to propagating the error to trigger dead-lettering.
+            // The parent's error handler defaults to propagating the error.
+            // Otherwise, faulty events would not be dead-lettered.
             super.listenerInvocationErrorHandler(PropagatingErrorHandler.instance());
-        }
-
-        /**
-         * Sets the {@link ListenerInvocationErrorHandler} dealing with {@link Exception exceptions} thrown by the
-         * configured {@link EventMessageHandler event handlers} during <emn>dead-letter evaluation</emn>. {@code
-         * Exceptions} thrown during regular event handling are {@link DeadLetterQueue#enqueue(QueueIdentifier, Message,
-         * Throwable) enqueued} at all times. Defaults to a {@link LoggingErrorHandler}.
-         *
-         * @param listenerInvocationErrorHandler The error handler which deals with any {@link Exception exceptions}
-         *                                       thrown by the configured {@link EventMessageHandler event handlers}
-         *                                       during dead-letter evaluation.
-         * @return The current Builder instance for fluent interfacing.
-         */
-        @Override
-        public Builder listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-            assertNonNull(listenerInvocationErrorHandler, "The ListenerInvocationErrorHandler may not be null");
-            this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
-            return this;
         }
 
         /**
@@ -305,6 +226,24 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          */
         public Builder allowReset(boolean allowReset) {
             this.allowReset = allowReset;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ListenerInvocationErrorHandler} dealing with {@link Exception exceptions} thrown by the
+         * configured {@link EventMessageHandler event handlers} during <emn>dead-letter evaluation</emn>. {@code
+         * Exceptions} thrown during regular event handling are {@link DeadLetterQueue#enqueue(QueueIdentifier, Message,
+         * Throwable) enqueued} at all times. Defaults to a {@link LoggingErrorHandler}.
+         *
+         * @param listenerInvocationErrorHandler The error handler which deals with any {@link Exception exceptions}
+         *                                       thrown by the configured {@link EventMessageHandler event handlers}
+         *                                       during dead-letter evaluation.
+         * @return The current Builder instance for fluent interfacing.
+         */
+        @Override
+        public Builder listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+            assertNonNull(listenerInvocationErrorHandler, "The ListenerInvocationErrorHandler may not be null");
+            this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
             return this;
         }
 
