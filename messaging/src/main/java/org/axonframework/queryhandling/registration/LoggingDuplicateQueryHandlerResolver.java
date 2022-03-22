@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.duplication;
+package org.axonframework.queryhandling.registration;
 
 import org.axonframework.queryhandling.QuerySubscription;
 import org.slf4j.Logger;

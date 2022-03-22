@@ -14,44 +14,32 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.duplication;
+package org.axonframework.queryhandling.registration;
 
 import org.axonframework.queryhandling.QuerySubscription;
 import org.junit.jupiter.api.*;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class LoggingDuplicateQueryHandlerResolverTest {
+class FailingDuplicateQueryHandlerResolverTest {
+    private final FailingDuplicateQueryHandlerResolver resolver = FailingDuplicateQueryHandlerResolver.instance();
 
-    private final LoggingDuplicateQueryHandlerResolver resolver = LoggingDuplicateQueryHandlerResolver.instance();
-
-    private final class MyQuery {
-
-    }
-
-    private final class MyResponse {
-
-    }
+    private final class MyQuery {}
+    private final class MyResponse {}
 
     @Test
-    void throwsNoErrorOnDuplicateHandlerAndAddsItToList() {
+    void throwsErrorOnDuplicateRegistration() {
         QuerySubscription existingHandler = mockSubscription();
         QuerySubscription addedHandler = mockSubscription();
 
-        CopyOnWriteArrayList<QuerySubscription> existingHandlers = new CopyOnWriteArrayList<>();
-        existingHandlers.add(existingHandler);
-
-        List<QuerySubscription> resolvedList = resolver.resolve("org.axon.MyQuery",
-                                                           MyQuery.class,
-                                                           existingHandlers,
-                                                           addedHandler);
-        assertEquals(2, resolvedList.size());
-        assertTrue(resolvedList.contains(existingHandler));
-        assertTrue(resolvedList.contains(addedHandler));
+        Assertions.assertThrows(DuplicateQueryHandlerSubscriptionException.class, () -> {
+            resolver.resolve("org.axon.MyQuery",
+                             MyQuery.class,
+                             Collections.singletonList(existingHandler),
+                             addedHandler);
+        });
     }
 
     private QuerySubscription mockSubscription() {

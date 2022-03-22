@@ -14,32 +14,43 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.duplication;
+package org.axonframework.queryhandling.registration;
 
 import org.axonframework.queryhandling.QuerySubscription;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class FailingDuplicateQueryHandlerResolverTest {
-    private final FailingDuplicateQueryHandlerResolver resolver = FailingDuplicateQueryHandlerResolver.instance();
+class LoggingDuplicateQueryHandlerResolverTest {
 
-    private final class MyQuery {}
-    private final class MyResponse {}
+    private final LoggingDuplicateQueryHandlerResolver resolver = LoggingDuplicateQueryHandlerResolver.instance();
+
+    private final class MyQuery {
+
+    }
+
+    private final class MyResponse {
+    }
 
     @Test
-    void throwsErrorOnDuplicateRegistration() {
+    void throwsNoErrorOnDuplicateHandlerAndAddsItToList() {
         QuerySubscription existingHandler = mockSubscription();
         QuerySubscription addedHandler = mockSubscription();
 
-        Assertions.assertThrows(DuplicateQueryHandlerSubscriptionException.class, () -> {
-            resolver.resolve("org.axon.MyQuery",
-                             MyQuery.class,
-                             Collections.singletonList(existingHandler),
-                             addedHandler);
-        });
+        CopyOnWriteArrayList<QuerySubscription> existingHandlers = new CopyOnWriteArrayList<>();
+        existingHandlers.add(existingHandler);
+
+        List<QuerySubscription> resolvedList = resolver.resolve("org.axon.MyQuery",
+                                                           MyQuery.class,
+                                                           existingHandlers,
+                                                           addedHandler);
+        assertEquals(2, resolvedList.size());
+        assertTrue(resolvedList.contains(existingHandler));
+        assertTrue(resolvedList.contains(addedHandler));
     }
 
     private QuerySubscription mockSubscription() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.duplication;
+package org.axonframework.queryhandling.registration;
 
 /**
  * Enumeration describing a set of reasonable {@link DuplicateQueryHandlerResolver} implementations. Can be used to
