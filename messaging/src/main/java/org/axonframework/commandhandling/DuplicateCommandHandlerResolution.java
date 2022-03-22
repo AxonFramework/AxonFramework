@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ package org.axonframework.commandhandling;
  * @since 4.2
  */
 public abstract class DuplicateCommandHandlerResolution {
+    private DuplicateCommandHandlerResolution() {
+    }
 
     /**
      * A {@link DuplicateCommandHandlerResolver} implementation which logs a warning message and resolve to returning

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.List;
  * when a duplicate registration is detected.
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 public class FailingDuplicateQueryHandlerResolver implements DuplicateQueryHandlerResolver {
 
@@ -48,9 +48,9 @@ public class FailingDuplicateQueryHandlerResolver implements DuplicateQueryHandl
 
     @Override
     public List<QuerySubscription> resolve(String queryName,
-                                              Type responseType,
-                                              List<QuerySubscription> registeredHandlers,
-                                              QuerySubscription candidateHandler) {
+                                           Type responseType,
+                                           List<QuerySubscription> registeredHandlers,
+                                           QuerySubscription candidateHandler) {
         throw new DuplicateQueryHandlerSubscriptionException(queryName,
                                                              responseType,
                                                              registeredHandlers.get(0),

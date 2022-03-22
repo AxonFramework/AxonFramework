@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.queryhandling.duplication;
 
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QuerySubscription;
 
 import java.lang.reflect.Type;
@@ -28,7 +27,7 @@ import java.util.List;
  * ingests two {@link MessageHandler} instances and returns a list with the wanted handlers
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 @FunctionalInterface
 public interface DuplicateQueryHandlerResolver {

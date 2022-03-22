@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,12 @@ package org.axonframework.queryhandling.duplication;
  * query handling function.
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 public abstract class DuplicateQueryHandlerResolution {
+    private DuplicateQueryHandlerResolution() {
+
+    }
 
     /**
      * A {@link DuplicateQueryHandlerResolver} implementation which logs a warning message and resolve to returning
@@ -47,12 +50,12 @@ public abstract class DuplicateQueryHandlerResolution {
     }
 
     /**
-     * A {@link DuplicateQueryHandlerResolver} implementation that allows handlers to silently override previous
+     * A {@link DuplicateQueryHandlerResolver} implementation that allows handlers to silently add previous
      * registered handlers for the same query.
      *
-     * @return an instance that silently accepts duplicates, adding both to the bus
+     * @return an instance that silently add duplicates, adding both to the bus
      */
-    public static DuplicateQueryHandlerResolver silentAccept() {
+    public static DuplicateQueryHandlerResolver silentlyAdd() {
         return (queryName, type, registered, added) -> {
             registered.add(added);
             return registered;

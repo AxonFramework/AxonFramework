@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.List;
  * but logs this (on WARN level) to a given logger.
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 public class LoggingDuplicateQueryHandlerResolver implements DuplicateQueryHandlerResolver {
 

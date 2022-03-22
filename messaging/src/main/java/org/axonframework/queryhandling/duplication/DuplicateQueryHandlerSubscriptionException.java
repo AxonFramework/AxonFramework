@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.queryhandling.duplication;
 
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QuerySubscription;
 
 import java.lang.reflect.Type;
@@ -27,7 +26,7 @@ import java.lang.reflect.Type;
  * Exception indicating a duplicate Query Handler was subscribed whilst this behavior is purposefully guarded against.
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 public class DuplicateQueryHandlerSubscriptionException extends AxonNonTransientException {
     private static final long serialVersionUID = -3275563671982758910L;

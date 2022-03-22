@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -420,13 +420,14 @@ public class SimpleQueryBus implements QueryBus {
          * when multiple handlers are detected for the same query.
          * <p>
          * {@link DuplicateQueryHandlerResolution} contains good examples on this and will most of the time suffice. The
-         * bus defaults to {@link DuplicateQueryHandlerResolution#logAndAccept()}
+         * bus defaults to {@link DuplicateQueryHandlerResolution#logAndAccept()}.
          *
          * @param duplicateQueryHandlerResolver The {@link} DuplicateQueryHandlerResolver to use when multiple
          *                                      registrations are detected
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder duplicateQueryHandlerResolver(DuplicateQueryHandlerResolver duplicateQueryHandlerResolver) {
+            assertNonNull(duplicateQueryHandlerResolver, "DuplicateQueryHandlerResolver may not be null");
             this.duplicateQueryHandlerResolver = duplicateQueryHandlerResolver;
             return this;
         }
