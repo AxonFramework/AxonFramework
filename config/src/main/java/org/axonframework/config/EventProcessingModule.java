@@ -567,7 +567,6 @@ public class EventProcessingModule
         return this;
     }
 
-
     @Override
     public EventProcessingConfigurer usingPooledStreamingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) -> pooledStreamingEventProcessor(
