@@ -786,15 +786,15 @@ public class EventProcessingModule
                                                        EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
-                .name(name)
-                .eventHandlerInvoker(eventHandlerInvoker)
-                .rollbackConfiguration(rollbackConfiguration(name))
-                .errorHandler(errorHandler(name))
-                .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                .messageSource(messageSource)
-                .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                .transactionManager(transactionManager(name))
-                .build();
+                                        .name(name)
+                                        .eventHandlerInvoker(eventHandlerInvoker)
+                                        .rollbackConfiguration(rollbackConfiguration(name))
+                                        .errorHandler(errorHandler(name))
+                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                                        .messageSource(messageSource)
+                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                                        .transactionManager(transactionManager(name))
+                                        .build();
     }
 
     /**
