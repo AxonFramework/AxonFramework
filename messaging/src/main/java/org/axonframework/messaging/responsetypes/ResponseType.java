@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,18 +46,19 @@ public interface ResponseType<R> extends Serializable {
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
      * @return true if a response can be converted based on the given {@code responseType} and false if it cannot
      */
-    boolean matches(Type responseType);
+    default boolean matches(Type responseType) {
+        return matchPriority(responseType) > 0;
+    }
 
     /**
-     * Defines how the match should be prioritized. This is used for {@link MultipleInstancesResponseType} when there
-     * is a match on a single instance. Lists should be given priority for handling.
+     * Defines the match and its priority. The greater the value above 0, the better the match.
+     * This is particularly useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there
+     * are match on a both multiple and single instance types. Lists should be given priority for handling.
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
      * @return 0 if there is no match, greater than 0 if there is a match. Highest match should win.
      */
-    default Integer matchPriority(Type responseType) {
-        return 1;
-    }
+    Integer matchPriority(Type responseType);
 
     /**
      * Converts the given {@code response} of type {@link java.lang.Object} into the type {@code R} of this

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -55,6 +54,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
@@ -367,16 +368,17 @@ public class SimpleQueryBus implements QueryBus {
         Map<Integer, List<QuerySubscription>> querySubscriptionStream = subscriptions
                 .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                 .stream()
-                .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
-                .collect(Collectors.groupingBy(querySubscription -> responseType.matchPriority(querySubscription.getResponseType()),
-                                               Collectors.mapping(Function.identity(), Collectors.toList())));
-        Integer chosenPriority = querySubscriptionStream.keySet().stream()
-                                                        .max(Comparator.comparing(Function.identity()))
-                                                        .orElse(null);
-        if (querySubscriptionStream.isEmpty()) {
+                .collect(groupingBy(querySubscription -> responseType.matchPriority(querySubscription.getResponseType()),
+                                    mapping(Function.identity(), Collectors.toList())));
+
+        Integer highestMatchPriority = querySubscriptionStream.keySet().stream()
+                                                              .max(Comparator.comparing(Function.identity()))
+                                                              .orElse(0);
+        if (highestMatchPriority == 0) {
+            // No match was found on responseType
             return Collections.emptyList();
         }
-        return querySubscriptionStream.get(chosenPriority)
+        return querySubscriptionStream.get(highestMatchPriority)
                                       .stream()
                                       .map(QuerySubscription::getQueryHandler)
                                       .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)

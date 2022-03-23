@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,17 +52,18 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
     }
 
     /**
-     * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType
+     * Match the query handler its response {@link Type} with this implementation its responseType
      * {@code R}.
-     * Will return true if the expected type is assignable to the response type, taking generic types into account.
+     * Will return 1 if the expected type is assignable to the response type, taking generic types into account.
+     * Otherwise, returns 0 to indicate a non-match.
      *
-     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
-     * @return true if the response type is assignable to the expected type, taking generic types into account
+     * @param responseType the response {@link Type} of the query handler which is matched against
+     * @return 1 if the response type is assignable to the expected type, taking generic types into account. Otherwise 0
      */
     @Override
-    public boolean matches(Type responseType) {
+    public Integer matchPriority(Type responseType) {
         Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
-        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
+        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped) ? 1 : 0;
     }
 
     @SuppressWarnings("unchecked")

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Future;
 
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
@@ -45,11 +44,12 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
+    private final InstanceResponseType<R> instanceResponseType;
 
     /**
-     * Instantiate a {@link MultipleInstancesResponseType} with the given
-     * {@code expectedCollectionGenericType} as the type to be matched against and which the convert function will use
-     * as the generic for the {@link java.util.List} return value.
+     * Instantiate a {@link MultipleInstancesResponseType} with the given {@code expectedCollectionGenericType} as the
+     * type to be matched against and which the convert function will use as the generic for the {@link java.util.List}
+     * return value.
      *
      * @param expectedCollectionGenericType the response type which is expected to be matched against and returned
      */
@@ -57,48 +57,39 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     @ConstructorProperties({"expectedResponseType"})
     public MultipleInstancesResponseType(@JsonProperty("expectedResponseType") Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
+        instanceResponseType = new InstanceResponseType<>(expectedCollectionGenericType);
     }
 
+
     /**
-     * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType
-     * {@code R}. Will return true in the following scenarios:
+     * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
+     * return a value greater than 0 in the following scenarios:
      * <ul>
-     * <li>If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
-     * <li>If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
+     * <li>1024: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
+     * <li>1024: If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
      * For example a {@code <E extends ExpectedType> E[]}</li>
-     * <li>If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * <li>1024: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
      * {@link java.lang.reflect.TypeVariable} which is assignable to the response type, taking generic types into
      * account. For example a {@code List<ExpectedType>} or {@code <E extends ExpectedType> List<E>}.</li>
-     * <li>If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * <li>1024: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
      * {@link java.lang.reflect.WildcardType} which is assignable to the response type, taking generic types into
      * account. For example a {@code <E extends ExpectedType> List<? extends E>}.</li>
+     * <li>1: If the responseType is a single instance type matching the given {@link Type}</li>
      * </ul>
+     * <p>
+     * If there is no match at all, it will return 0 to indicate a non-match
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
-     * @return true for arrays, generic arrays and {@link java.lang.reflect.ParameterizedType}s (like a {@link
-     * java.lang.Iterable}) for which the contained type is assignable to the expected type
-     */
-    @Override
-    public boolean matches(Type responseType) {
-        return matchPriority(responseType) > 0;
-    }
-
-    /**
-     * Overrides the default priority for this type. Will outrank matches that match on collection type.
-     * If the handler matches by single instance, it will match but with a lower priority.
-     *
-     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
-     * @return Priority of match
+     * @return 1024 for arrays, generic arrays and {@link java.lang.reflect.ParameterizedType}s (like a {@link
+     * java.lang.Iterable}) for which the contained type is assignable to the expected type, 1 for matching single
+     * instances and 0 for non-matches
      */
     @Override
     public Integer matchPriority(Type responseType) {
         if (isMatchingIterable(responseType)) {
             return 1024;
         }
-        if (isMatchingSingleInstance(responseType)) {
-            return 1;
-        }
-        return 0;
+        return instanceResponseType.matchPriority(responseType);
     }
 
     private boolean isMatchingIterable(Type responseType) {
@@ -107,11 +98,6 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||
                 isArrayOfExpectedType(unwrapped);
-    }
-
-    private boolean isMatchingSingleInstance(Type responseType) {
-        Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
-        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 
     /**
@@ -128,17 +114,18 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     @SuppressWarnings("unchecked") // Suppress cast to array R, since in proper use of this function it is allowed
     @Override
     public List<R> convert(Object response) {
-        if(response == null) {
+        if (response == null) {
             return Collections.emptyList();
         }
         Class<?> responseType = response.getClass();
-
         if (isArrayOfExpectedType(responseType)) {
             return Arrays.asList((R[]) response);
         } else if (isIterableOfExpectedType(response)) {
-            return convertToList((Iterable) response);
-        } else if(!isMatchingIterable(responseType) && isMatchingSingleInstance(responseType)) {
-            return Collections.singletonList((R) response);
+            return convertToList((Iterable<R>) response);
+        }
+
+        if (instanceResponseType.matches(responseType)) {
+            return Collections.singletonList(instanceResponseType.convert(response));
         }
 
         throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
