@@ -75,15 +75,15 @@ public class AxonServerBusAutoConfiguration {
                                                      CommandLoadFactorProvider loadFactorProvider,
                                                      TargetContextResolver<? super CommandMessage<?>> targetContextResolver) {
         return AxonServerCommandBus.builder()
-                .axonServerConnectionManager(axonServerConnectionManager)
-                .configuration(axonServerConfiguration)
-                .localSegment(localSegment)
-                .serializer(messageSerializer)
-                .routingStrategy(routingStrategy)
-                .priorityCalculator(priorityCalculator)
-                .loadFactorProvider(loadFactorProvider)
-                .targetContextResolver(targetContextResolver)
-                .build();
+                                   .axonServerConnectionManager(axonServerConnectionManager)
+                                   .configuration(axonServerConfiguration)
+                                   .localSegment(localSegment)
+                                   .serializer(messageSerializer)
+                                   .routingStrategy(routingStrategy)
+                                   .priorityCalculator(priorityCalculator)
+                                   .loadFactorProvider(loadFactorProvider)
+                                   .targetContextResolver(targetContextResolver)
+                                   .build();
     }
 
     @Bean
@@ -99,25 +99,25 @@ public class AxonServerBusAutoConfiguration {
                                        TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
-                        .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
-                        .transactionManager(txManager)
-                        .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
-                        .errorHandler(queryInvocationErrorHandler)
-                        .build();
+                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                              .transactionManager(txManager)
+                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                              .errorHandler(queryInvocationErrorHandler)
+                              .build();
         simpleQueryBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
         );
 
         return AxonServerQueryBus.builder()
-                .axonServerConnectionManager(axonServerConnectionManager)
-                .configuration(axonServerConfiguration)
-                .localSegment(simpleQueryBus)
-                .updateEmitter(simpleQueryBus.queryUpdateEmitter())
-                .messageSerializer(messageSerializer)
-                .genericSerializer(genericSerializer)
-                .priorityCalculator(priorityCalculator)
-                .targetContextResolver(targetContextResolver)
-                .build();
+                                 .axonServerConnectionManager(axonServerConnectionManager)
+                                 .configuration(axonServerConfiguration)
+                                 .localSegment(simpleQueryBus)
+                                 .updateEmitter(simpleQueryBus.queryUpdateEmitter())
+                                 .messageSerializer(messageSerializer)
+                                 .genericSerializer(genericSerializer)
+                                 .priorityCalculator(priorityCalculator)
+                                 .targetContextResolver(targetContextResolver)
+                                 .build();
     }
 
     @Bean
@@ -128,15 +128,15 @@ public class AxonServerBusAutoConfiguration {
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer eventSerializer) {
         return AxonServerEventStore.builder()
-                .messageMonitor(configuration
-                        .messageMonitor(AxonServerEventStore.class, "eventStore"))
-                .configuration(axonServerConfiguration)
-                .platformConnectionManager(axonServerConnectionManager)
-                .snapshotSerializer(snapshotSerializer)
-                .eventSerializer(eventSerializer)
-                .snapshotFilter(configuration.snapshotFilter())
-                .upcasterChain(configuration.upcasterChain())
-                .build();
+                                   .messageMonitor(configuration
+                                                           .messageMonitor(AxonServerEventStore.class, "eventStore"))
+                                   .configuration(axonServerConfiguration)
+                                   .platformConnectionManager(axonServerConnectionManager)
+                                   .snapshotSerializer(snapshotSerializer)
+                                   .eventSerializer(eventSerializer)
+                                   .snapshotFilter(configuration.snapshotFilter())
+                                   .upcasterChain(configuration.upcasterChain())
+                                   .build();
     }
 }
 

@@ -812,16 +812,16 @@ public class EventProcessingModule
                                                     TrackingEventProcessorConfiguration config,
                                                     StreamableMessageSource<TrackedEventMessage<?>> source) {
         return TrackingEventProcessor.builder()
-                .name(name)
-                .eventHandlerInvoker(eventHandlerInvoker)
-                .rollbackConfiguration(rollbackConfiguration(name))
-                .errorHandler(errorHandler(name))
-                .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
-                .messageSource(source)
-                .tokenStore(tokenStore(name))
-                .transactionManager(transactionManager(name))
-                .trackingEventProcessorConfiguration(config)
-                .build();
+                                     .name(name)
+                                     .eventHandlerInvoker(eventHandlerInvoker)
+                                     .rollbackConfiguration(rollbackConfiguration(name))
+                                     .errorHandler(errorHandler(name))
+                                     .messageMonitor(messageMonitor(TrackingEventProcessor.class, name))
+                                     .messageSource(source)
+                                     .tokenStore(tokenStore(name))
+                                     .transactionManager(transactionManager(name))
+                                     .trackingEventProcessorConfiguration(config)
+                                     .build();
     }
 
     /**
@@ -843,8 +843,8 @@ public class EventProcessingModule
     ) {
         PooledStreamingEventProcessor.Builder builder =
                 PooledStreamingEventProcessor.builder()
-                        .name(name)
-                        .eventHandlerInvoker(eventHandlerInvoker)
+                                             .name(name)
+                                             .eventHandlerInvoker(eventHandlerInvoker)
                                              .rollbackConfiguration(rollbackConfiguration(name))
                                              .errorHandler(errorHandler(name))
                                              .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
