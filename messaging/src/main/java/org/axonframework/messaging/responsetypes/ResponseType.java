@@ -20,16 +20,16 @@ import java.io.Serializable;
 import java.lang.reflect.Type;
 
 /**
- * Specifies the expected response type required when performing a query through the
- * {@link org.axonframework.queryhandling.QueryBus}/{@link org.axonframework.queryhandling.QueryGateway}.
- * By wrapping the response type as a generic {@code R}, we can easily service the expected response as a single
- * instance, a list, a page etc., based on the selected implementation even while the query handler return type might be
- * slightly different.
+ * Specifies the expected response type required when performing a query through the {@link
+ * org.axonframework.queryhandling.QueryBus}/{@link org.axonframework.queryhandling.QueryGateway}. By wrapping the
+ * response type as a generic {@code R}, we can easily service the expected response as a single instance, a list, a
+ * page etc., based on the selected implementation even while the query handler return type might be slightly
+ * different.
  * </p>
- * It is in charge of matching the response type of a query handler with the given generic {@code R}.
- * If this match returns true, it signals the found query handler can handle the intended query.
- * As a follow up, the response retrieved from a query handler should move through the
- * {@link ResponseType#convert(Object)} function to guarantee the right response type is returned.
+ * It is in charge of matching the response type of a query handler with the given generic {@code R}. If this match
+ * returns true, it signals the found query handler can handle the intended query. As a follow up, the response
+ * retrieved from a query handler should move through the {@link ResponseType#convert(Object)} function to guarantee the
+ * right response type is returned.
  *
  * @param <R> the generic type of this {@link ResponseType} to be matched and converted.
  * @author Steven van Beelen
@@ -38,32 +38,43 @@ import java.lang.reflect.Type;
  */
 public interface ResponseType<R> extends Serializable {
 
+    int NO_MATCH = 0;
+    int MATCHES_SINGLE = 1;
+    int MATCHES_LIST = 1024;
+
     /**
      * Match the query handler its response {@link java.lang.reflect.Type} with the {@link ResponseType} implementation
-     * its expected response type {@code R}. Will return true if a response can be converted based on the given
-     * {@code responseType} and false if it cannot.
+     * its expected response type {@code R}. Will return true if a response can be converted based on the given {@code
+     * responseType} and false if it cannot.
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
      * @return true if a response can be converted based on the given {@code responseType} and false if it cannot
      */
-    default boolean matches(Type responseType) {
-        return matchPriority(responseType) > 0;
+    boolean matches(Type responseType);
+
+    /**
+     * Defines the match and its priority. The greater the value above 0, the better the match. This is particularly
+     * useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there are match on a both
+     * multiple and single instance types. Lists should be given priority for handling.
+     * <p>
+     * See also the constants defined to indicate match priority: {@link ResponseType#MATCHES_LIST}, {@link
+     * ResponseType#MATCHES_SINGLE} and {@link ResponseType#NO_MATCH}.
+     *
+     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
+     * @return {@link ResponseType#NO_MATCH} if there is no match, greater than 0 if there is a match. Highest match
+     * should win when choosing a query handler.
+     */
+    default Integer matchPriority(Type responseType) {
+        if(matches(responseType)) {
+            return MATCHES_SINGLE;
+        }
+        return NO_MATCH;
     }
 
     /**
-     * Defines the match and its priority. The greater the value above 0, the better the match.
-     * This is particularly useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there
-     * are match on a both multiple and single instance types. Lists should be given priority for handling.
-     *
-     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
-     * @return 0 if there is no match, greater than 0 if there is a match. Highest match should win.
-     */
-    Integer matchPriority(Type responseType);
-
-    /**
-     * Converts the given {@code response} of type {@link java.lang.Object} into the type {@code R} of this
-     * {@link ResponseType} instance. Should only be called if {@link ResponseType#matches(Type)} returns true.
-     * It is unspecified what this function does if the {@link ResponseType#matches(Type)} returned false.
+     * Converts the given {@code response} of type {@link java.lang.Object} into the type {@code R} of this {@link
+     * ResponseType} instance. Should only be called if {@link ResponseType#matches(Type)} returns true. It is
+     * unspecified what this function does if the {@link ResponseType#matches(Type)} returned false.
      *
      * @param response the {@link java.lang.Object} to convert into {@code R}
      * @return a {@code response} of type {@code R}
@@ -88,10 +99,10 @@ public interface ResponseType<R> extends Serializable {
     Class<?> getExpectedResponseType();
 
     /**
-     * Returns the {@code ResponseType} instance that should be used when serializing responses. This method
-     * has a default implementation that returns {@code this}. Implementations that describe a Response Type
-     * that is not suited for serialization, should return an alternative that is suitable, and ensure the
-     * {@link #convert(Object)} is capable of converting that type of response to the request type in this instance.
+     * Returns the {@code ResponseType} instance that should be used when serializing responses. This method has a
+     * default implementation that returns {@code this}. Implementations that describe a Response Type that is not
+     * suited for serialization, should return an alternative that is suitable, and ensure the {@link #convert(Object)}
+     * is capable of converting that type of response to the request type in this instance.
      *
      * @return a {@code ResponseType} instance describing a type suitable for serialization
      */

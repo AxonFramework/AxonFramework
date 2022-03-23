@@ -27,10 +27,9 @@ import java.util.concurrent.Future;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
- * A {@link ResponseType} implementation that will match with query
- * handlers which return a single instance of the expected response type. If matching succeeds, the
- * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
- * {@code R}.
+ * A {@link ResponseType} implementation that will match with query handlers which return a single instance of the
+ * expected response type. If matching succeeds, the {@link ResponseType#convert(Object)} function will be called, which
+ * will cast the query handler it's response to {@code R}.
  *
  * @param <R> The response type which will be matched against and converted to
  * @author Steven van Beelen
@@ -39,9 +38,8 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class InstanceResponseType<R> extends AbstractResponseType<R> {
 
     /**
-     * Instantiate a {@link InstanceResponseType} with the given
-     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
-     * converted to.
+     * Instantiate a {@link InstanceResponseType} with the given {@code expectedResponseType} as the type to be matched
+     * against and to which the query response should be converted to.
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
@@ -52,18 +50,17 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
     }
 
     /**
-     * Match the query handler its response {@link Type} with this implementation its responseType
+     * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType
      * {@code R}.
-     * Will return 1 if the expected type is assignable to the response type, taking generic types into account.
-     * Otherwise, returns 0 to indicate a non-match.
+     * Will return true if the expected type is assignable to the response type, taking generic types into account.
      *
-     * @param responseType the response {@link Type} of the query handler which is matched against
-     * @return 1 if the response type is assignable to the expected type, taking generic types into account. Otherwise 0
+     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
+     * @return true if the response type is assignable to the expected type, taking generic types into account
      */
     @Override
-    public Integer matchPriority(Type responseType) {
+    public boolean matches(Type responseType) {
         Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
-        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped) ? 1 : 0;
+        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 
     @SuppressWarnings("unchecked")

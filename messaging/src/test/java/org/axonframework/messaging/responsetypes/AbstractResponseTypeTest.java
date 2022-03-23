@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractResponseTypeTest<R> {
 
-    protected static final Integer MATCHES_LIST = 1024;
-    protected static final Integer MATCHES = 1;
-    protected static final Integer DOES_NOT_MATCH = 0;
+    protected static final Integer MATCHES_LIST = ResponseType.MATCHES_LIST;
+    protected static final Integer MATCHES = ResponseType.MATCHES_SINGLE;
+    protected static final Integer DOES_NOT_MATCH = ResponseType.NO_MATCH;
 
     protected final ResponseType<R> testSubject;
 
@@ -52,14 +52,14 @@ public abstract class AbstractResponseTypeTest<R> {
 
     /**
      * Helper function to make testing of the
-     * {@link ResponseType#matches(Type)} function easier.
+     * {@link ResponseType#matchPriority(Type)} function easier.
      * Takes a {@code methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract
      * class. There after it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as
-     * input for the test subject's match function.
+     * input for the test subject's matchPriority function.
      *
      * @param methodNameToTest a {@link java.lang.String} representing the function you want to extract a return type
      *                         from
-     * @param expectedResult   a {@link java.lang.Boolean} which is the expected result of the matches call
+     * @param expectedResult   a {@link java.lang.Integer} which is the expected result of the matchPriority call
      * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given
      *                               {@code methodNameToTest}
      */

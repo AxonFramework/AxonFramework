@@ -55,20 +55,18 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
         super(expectedResponseType);
     }
 
-
     /**
      * Match the query handler its response {@link Type} with this implementation its responseType
      * {@code R}.
-     * Will return 1 if the expected type is assignable to the response type, taking generic types into account.
-     * Otherwise, returns 0 to indicate a non-match.
+     * Will return true if the expected type is assignable to the response type, taking generic types into account.
      *
      * @param responseType the response {@link Type} of the query handler which is matched against
-     * @return 1 if the response type is assignable to the expected type, taking generic types into account. Otherwise 0
+     * @return true if the response type is assignable to the expected type, taking generic types into account
      */
     @Override
-    public Integer matchPriority(Type responseType) {
+    public boolean matches(Type responseType) {
         Type unwrapped = ReflectionUtils.unwrapIfType(responseType, Future.class, Optional.class);
-        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped) ? 1 : 0;
+        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 
     @SuppressWarnings("unchecked")

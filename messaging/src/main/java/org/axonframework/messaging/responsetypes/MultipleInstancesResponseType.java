@@ -65,29 +65,62 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
      * return a value greater than 0 in the following scenarios:
      * <ul>
-     * <li>1024: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
-     * <li>1024: If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
+     * <li>true: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
+     * <li>true: If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
      * For example a {@code <E extends ExpectedType> E[]}</li>
-     * <li>1024: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * <li>true: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
      * {@link java.lang.reflect.TypeVariable} which is assignable to the response type, taking generic types into
      * account. For example a {@code List<ExpectedType>} or {@code <E extends ExpectedType> List<E>}.</li>
-     * <li>1024: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * <li>true: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
      * {@link java.lang.reflect.WildcardType} which is assignable to the response type, taking generic types into
      * account. For example a {@code <E extends ExpectedType> List<? extends E>}.</li>
-     * <li>1: If the responseType is a single instance type matching the given {@link Type}</li>
+     * <li>true: If the responseType is a single instance type matching the given {@link Type}.</li>
      * </ul>
      * <p>
-     * If there is no match at all, it will return 0 to indicate a non-match
+     * If there is no match at all, it will return false to indicate a non-match.
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
-     * @return 1024 for arrays, generic arrays and {@link java.lang.reflect.ParameterizedType}s (like a {@link
-     * java.lang.Iterable}) for which the contained type is assignable to the expected type, 1 for matching single
-     * instances and 0 for non-matches
+     * @return true for arrays, generic arrays and {@link
+     * java.lang.reflect.ParameterizedType}s (like a {@link java.lang.Iterable}) for which the contained type is
+     * assignable to the expected type, {@link ResponseType#MATCHES_SINGLE} for matching single instances and {@link
+     * ResponseType#NO_MATCH} for non-matches
+     */
+    @Override
+    public boolean matches(Type responseType) {
+        if (isMatchingIterable(responseType)) {
+            return true;
+        }
+        return instanceResponseType.matches(responseType);
+    }
+
+    /**
+     * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
+     * return a value greater than 0 in the following scenarios:
+     * <ul>
+     * <li>{@link ResponseType#MATCHES_LIST}: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
+     * <li>{@link ResponseType#MATCHES_LIST}: If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
+     * For example a {@code <E extends ExpectedType> E[]}</li>
+     * <li>{@link ResponseType#MATCHES_LIST}: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * {@link java.lang.reflect.TypeVariable} which is assignable to the response type, taking generic types into
+     * account. For example a {@code List<ExpectedType>} or {@code <E extends ExpectedType> List<E>}.</li>
+     * <li>{@link ResponseType#MATCHES_LIST}: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * {@link java.lang.reflect.WildcardType} which is assignable to the response type, taking generic types into
+     * account. For example a {@code <E extends ExpectedType> List<? extends E>}.</li>
+     * <li>1: If the responseType is a single instance type matching the given {@link Type}.</li>
+     * </ul>
+     * <p>
+     * If there is no match at all, it will return {@link ResponseType#NO_MATCH} to indicate a non-match.
+     *
+     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
+     * @return {@link ResponseType#MATCHES_LIST} for arrays, generic arrays and {@link
+     * java.lang.reflect.ParameterizedType}s (like a {@link java.lang.Iterable}) for which the contained type is
+     * assignable to the expected type, {@link ResponseType#MATCHES_SINGLE} for matching single instances and {@link
+     * ResponseType#NO_MATCH} for non-matches
      */
     @Override
     public Integer matchPriority(Type responseType) {
         if (isMatchingIterable(responseType)) {
-            return 1024;
+            return MATCHES_LIST;
         }
         return instanceResponseType.matchPriority(responseType);
     }
