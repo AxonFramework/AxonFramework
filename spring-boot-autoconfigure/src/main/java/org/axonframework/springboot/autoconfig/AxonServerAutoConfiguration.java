@@ -24,7 +24,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
-import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
+import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -137,12 +137,13 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnMissingClass("org.axonframework.extensions.multitenancy.autoconfig.MultiTenancyAxonServerAutoConfiguration")
-    @ConditionalOnMissingBean
-    public EventProcessorControlService eventProcessorControlService(
+    public EventProcessorInfoConfiguration processorInfoConfiguration(
             EventProcessingConfiguration eventProcessingConfiguration,
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration) {
-        return new EventProcessorControlService(connectionManager,eventProcessingConfiguration,configuration);
+        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
+                                                   c -> connectionManager,
+                                                   c -> configuration);
     }
 
     @Bean

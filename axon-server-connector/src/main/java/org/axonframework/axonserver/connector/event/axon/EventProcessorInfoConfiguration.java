@@ -33,10 +33,8 @@ import java.util.function.Function;
  * EventProcessor}s with AxonServer.
  *
  * @author Sara Pellegrini
- * @deprecated because {@link EventProcessorControlService} is lifecycle aware
  * @since 4.0
  */
-@Deprecated
 public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 
     private final Component<EventProcessorControlService> eventProcessorControlService;
