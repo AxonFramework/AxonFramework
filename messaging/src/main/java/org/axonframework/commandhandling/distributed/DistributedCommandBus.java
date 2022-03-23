@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -129,13 +130,13 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
         handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
         handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         if (defaultCommandCallback != null) {
             dispatch(command, defaultCommandCallback);
             return;
@@ -171,7 +172,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
      */
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
@@ -212,7 +214,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * In the DistributedCommandBus, the handler is subscribed to the local segment only.
      */
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. "
                              + "Expect similar logging on the local segment.", commandName);
         Registration reg = connector.subscribe(commandName, handler);
@@ -268,14 +271,14 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * @return handle to unregister the interceptor
      */
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return connector.registerHandlerInterceptor(handlerInterceptor);
     }
 

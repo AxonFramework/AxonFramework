@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import static java.lang.reflect.Modifier.isAbstract;
 
@@ -62,7 +63,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * {@inheritDoc}
      */
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessBeforeInitialization(@Nonnull Object bean, @Nonnull String beanName)
+            throws BeansException {
         return bean;
     }
 
@@ -70,9 +72,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * {@inheritDoc}
      */
     @Override
-    public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
+    public Object postProcessAfterInitialization(@Nonnull final Object bean, @Nonnull final String beanName)
+            throws BeansException {
         if (bean instanceof FactoryBean
-                || (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName))) {
+                || (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName)
+                && !beanFactory.isSingleton(beanName))) {
             return bean;
         }
 
@@ -210,7 +214,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@Nonnull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
@@ -228,7 +232,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         }
 
         @Override
-        public boolean implementsInterface(Class<?> intf) {
+        public boolean implementsInterface(@Nonnull Class<?> intf) {
             for (Class iFace : interfaces) {
                 if (intf.equals(iFace)) {
                     return true;
@@ -237,13 +241,14 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             return false;
         }
 
+        @Nonnull
         @Override
         public Class[] getInterfaces() {
             return interfaces;
         }
 
         @Override
-        public Object invoke(MethodInvocation invocation) throws Exception {
+        public Object invoke(@Nonnull MethodInvocation invocation) throws Exception {
             try {
                 // if the method is declared on the proxy, invoke it there
                 for (Method proxyMethod : proxyMethods) {
@@ -328,6 +333,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             }
         }
 
+        @Nonnull
         @Override
         public Class[] getInterfaces() {
             return new Class[]{adapterInterface};

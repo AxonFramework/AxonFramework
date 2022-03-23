@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
+
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -39,7 +41,7 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
      * @deprecated in favor of {@link #AbstractRoutingStrategy(RoutingStrategy)}
      */
     @Deprecated
-    public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy fallbackRoutingStrategy) {
+    public AbstractRoutingStrategy(@Nonnull UnresolvedRoutingKeyPolicy fallbackRoutingStrategy) {
         this((RoutingStrategy) fallbackRoutingStrategy);
     }
 
@@ -49,13 +51,13 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
      *
      * @param fallbackRoutingStrategy the fallback routing to use whenever this {@link RoutingStrategy} doesn't succeed
      */
-    protected AbstractRoutingStrategy(RoutingStrategy fallbackRoutingStrategy) {
+    protected AbstractRoutingStrategy(@Nonnull RoutingStrategy fallbackRoutingStrategy) {
         assertNonNull(fallbackRoutingStrategy, "Fallback RoutingStrategy may not be null");
         this.fallbackRoutingStrategy = fallbackRoutingStrategy;
     }
 
     @Override
-    public String getRoutingKey(CommandMessage<?> command) {
+    public String getRoutingKey(@Nonnull CommandMessage<?> command) {
         String routingKey = doResolveRoutingKey(command);
         if (routingKey == null) {
             routingKey = fallbackRoutingStrategy.getRoutingKey(command);
@@ -69,5 +71,5 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
      * @param command the command to resolve the routing key for
      * @return the String representing the Routing Key, or {@code null} if unresolved
      */
-    protected abstract String doResolveRoutingKey(CommandMessage<?> command);
+    protected abstract String doResolveRoutingKey(@Nonnull CommandMessage<?> command);
 }

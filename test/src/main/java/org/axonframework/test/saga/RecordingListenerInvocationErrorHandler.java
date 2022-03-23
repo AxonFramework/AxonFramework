@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements {@link ListenerInvocationErrorHandler}. Any Exception encountered
@@ -48,7 +49,8 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     }
 
     @Override
-    public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) throws Exception {
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                        @Nonnull EventMessageHandler eventHandler) throws Exception {
         this.exception = exception;
         listenerInvocationErrorHandler.onError(exception, event, eventHandler);
     }

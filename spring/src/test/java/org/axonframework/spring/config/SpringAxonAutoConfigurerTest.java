@@ -114,6 +114,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -702,7 +703,8 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
+            public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                                @Nonnull EventMessageHandler eventHandler) {
                 received.add(exception);
             }
         }
@@ -732,8 +734,9 @@ public class SpringAxonAutoConfigurerTest {
             }
 
             @Override
-            public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                                        ParameterResolverFactory parameterResolverFactory) {
+            public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                        @Nonnull Executable executable,
+                                                                        @Nonnull ParameterResolverFactory parameterResolverFactory) {
                 assertNotNull(commandBus);
                 return Optional.empty();
             }
@@ -770,8 +773,9 @@ public class SpringAxonAutoConfigurerTest {
     private static class MyHandlerDefinition implements HandlerDefinition {
 
         @Override
-        public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                                    ParameterResolverFactory parameterResolverFactory) {
+        public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                    @Nonnull Executable executable,
+                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory) {
             return Optional.empty();
         }
     }
@@ -779,7 +783,8 @@ public class SpringAxonAutoConfigurerTest {
     private static class MyHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
         @Override
-        public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        public @Nonnull
+        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
             return new MethodCommandHandlerDefinition().wrapHandler(original);
         }
     }

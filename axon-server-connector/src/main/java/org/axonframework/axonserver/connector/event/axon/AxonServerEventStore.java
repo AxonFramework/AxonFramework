@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import static java.util.Spliterator.*;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -185,7 +186,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }
@@ -548,7 +549,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public DomainEventStream readEvents(String aggregateIdentifier) {
+        public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
             AtomicLong lastSequenceNumber = new AtomicLong();
             Stream<? extends DomainEventData<?>> input =
                     this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE)
@@ -581,7 +582,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
             try {
                 Long lastSequenceNumber =
                         connectionManager.getConnection(context)
@@ -632,7 +633,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        public TrackingToken createTokenAt(Instant instant) {
+        public TrackingToken createTokenAt(@Nonnull Instant instant) {
             try {
                 Long token = connectionManager.getConnection(context)
                                               .eventChannel()

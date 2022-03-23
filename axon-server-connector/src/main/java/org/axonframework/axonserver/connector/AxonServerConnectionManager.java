@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -87,7 +88,7 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
         lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
     }

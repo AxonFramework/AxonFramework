@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.config;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing a configurer for a module in the Axon Configuration API. Allows the registration of modules on
@@ -30,7 +32,7 @@ public interface ConfigurerModule {
      *
      * @param configurer a {@link org.axonframework.config.Configurer} instance to configure this module with
      */
-    void configureModule(Configurer configurer);
+    void configureModule(@Nonnull Configurer configurer);
 
     /**
      * Returns the relative order this configurer should be invoked, compared to other intstances.

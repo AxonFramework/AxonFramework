@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.
@@ -48,7 +50,8 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param update incremental update message
      * @param <U>    the type of the update
      */
-    <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, SubscriptionQueryUpdateMessage<U> update);
+    <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
+                  @Nonnull SubscriptionQueryUpdateMessage<U> update);
 
     /**
      * Emits given incremental update to subscription queries matching given filter. If an {@code update} is {@code
@@ -59,7 +62,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param update incremental update
      * @param <U>    the type of the update
      */
-    default <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, U update) {
+    default <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter, @Nullable U update) {
         if (update != null) {
             emit(filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
         }
@@ -75,8 +78,9 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param <U>       the type of the update
      */
     @SuppressWarnings("unchecked")
-    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter,
-                             SubscriptionQueryUpdateMessage<U> update) {
+    default <Q, U> void emit(@Nonnull Class<Q> queryType,
+                             @Nonnull Predicate<? super Q> filter,
+                             @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         emit(sqmFilter, update);
@@ -93,7 +97,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param <Q>       the type of the query
      * @param <U>       the type of the update
      */
-    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter, U update) {
+    default <Q, U> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable U update) {
         if (update != null) {
             emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
         }
@@ -104,7 +108,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      */
-    void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
+    void complete(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
 
     /**
      * Completes subscription queries matching given query type and filter.
@@ -114,7 +118,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param <Q>       the type of the query
      */
     @SuppressWarnings("unchecked")
-    default <Q> void complete(Class<Q> queryType, Predicate<? super Q> filter) {
+    default <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         complete(sqmFilter);
@@ -126,7 +130,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param cause  the cause of an error
      */
-    void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause);
+    void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, @Nonnull Throwable cause);
 
     /**
      * Completes with an error subscription queries matching given query type and filter
@@ -137,7 +141,8 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param <Q>       the type of the query
      */
     @SuppressWarnings("unchecked")
-    default <Q> void completeExceptionally(Class<Q> queryType, Predicate<? super Q> filter, Throwable cause) {
+    default <Q> void completeExceptionally(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
+                                           @Nonnull Throwable cause) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
@@ -149,7 +154,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param query the subscription query for which we have registered the update handler
      * @return {@code true} if there is an update handler registered for given {@code query}, {@code false} otherwise
      */
-    boolean queryUpdateHandlerRegistered(SubscriptionQueryMessage<?, ?, ?> query);
+    boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query);
 
     /**
      * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code
@@ -177,7 +182,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      * @param <U>              the incremental response types of the query
      * @return the object which contains updates and a registration which can be used to cancel them
      */
-    <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+    <U> UpdateHandlerRegistration<U> registerUpdateHandler(@Nonnull SubscriptionQueryMessage<?, ?, ?> query,
                                                            int updateBufferSize);
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -220,7 +221,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             Aggregate<T> aggregate = load(aggregateIdentifier);
             if (expectedVersion != null && aggregate.version() > expectedVersion) {
@@ -233,7 +234,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             EventSourcedAggregate<T> aggregateRoot = firstLevelCache.get(aggregateIdentifier);
             if (aggregateRoot == null) {
@@ -275,7 +276,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
             EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod,
                                                                                   model,
@@ -294,7 +295,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod)
+                throws Exception {
             try {
                 return load(aggregateIdentifier);
             } catch (AggregateNotFoundException ex) {

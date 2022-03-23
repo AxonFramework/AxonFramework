@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.messaging.RemoteHandlingException;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -50,7 +51,7 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * @param command     The command to send to the (remote) member
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception;
+    <C> void send(@Nonnull Member destination, @Nonnull CommandMessage<? extends C> command) throws Exception;
 
     /**
      * Sends the given {@code command} to the node assigned to handle messages with the given {@code routingKey}. The
@@ -74,7 +75,8 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * @param <R>         The type of object expected as result of the command
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback)
+    <C, R> void send(@Nonnull Member destination, @Nonnull CommandMessage<C> command,
+                     @Nonnull CommandCallback<? super C, R> callback)
             throws Exception;
 
     /**
@@ -84,7 +86,7 @@ public interface CommandBusConnector extends MessageHandlerInterceptorSupport<Co
      * @param handler     the handler to subscribe
      * @return a handle that can be used to end the subscription
      */
-    Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
+    Registration subscribe(@Nonnull String commandName, @Nonnull MessageHandler<? super CommandMessage<?>> handler);
 
     /**
      * Return an {@link Optional} containing the {@link CommandBus} which is used by this {@link CommandBusConnector} to

@@ -50,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -110,9 +111,9 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <R> Registration subscribe(String queryName,
-                                      Type responseType,
-                                      MessageHandler<? super QueryMessage<?, R>> handler) {
+    public <R> Registration subscribe(@Nonnull String queryName,
+                                      @Nonnull Type responseType,
+                                      @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
         //noinspection rawtypes
         CopyOnWriteArrayList<QuerySubscription> handlers =
                 subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
@@ -134,7 +135,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query) {
+    public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
@@ -182,7 +183,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
+    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> query, long timeout,
+                                                                @Nonnull TimeUnit unit) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
@@ -223,7 +225,7 @@ public class SimpleQueryBus implements QueryBus {
     @Deprecated
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query,
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize
     ) {
@@ -244,7 +246,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query,
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
@@ -338,7 +340,8 @@ public class SimpleQueryBus implements QueryBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
         handlerInterceptors.add(interceptor);
         return () -> handlerInterceptors.remove(interceptor);
     }
@@ -351,8 +354,9 @@ public class SimpleQueryBus implements QueryBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
@@ -391,7 +395,7 @@ public class SimpleQueryBus implements QueryBus {
          * @param messageMonitor a {@link MessageMonitor} used to monitor query messages
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageMonitor(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super QueryMessage<?, ?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
@@ -404,7 +408,7 @@ public class SimpleQueryBus implements QueryBus {
          * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -418,7 +422,7 @@ public class SimpleQueryBus implements QueryBus {
          *                     invocation
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder errorHandler(QueryInvocationErrorHandler errorHandler) {
+        public Builder errorHandler(@Nonnull QueryInvocationErrorHandler errorHandler) {
             assertNonNull(errorHandler, "QueryInvocationErrorHandler may not be null");
             this.errorHandler = errorHandler;
             return this;
@@ -432,7 +436,7 @@ public class SimpleQueryBus implements QueryBus {
          *                           QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder queryUpdateEmitter(QueryUpdateEmitter queryUpdateEmitter) {
+        public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
             assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
             this.queryUpdateEmitter = queryUpdateEmitter;
             return this;

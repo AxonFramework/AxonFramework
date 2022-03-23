@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.Registration;
 
 import java.util.List;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 /**
  * Interface for a source of {@link Message messages} to which message processors can subscribe.
@@ -40,5 +41,5 @@ public interface SubscribableMessageSource<M extends Message<?>> {
      * @return a handle to unsubscribe the {@code messageProcessor}. When unsubscribed it will no longer receive
      * messages.
      */
-    Registration subscribe(Consumer<List<? extends M>> messageProcessor);
+    Registration subscribe(@Nonnull Consumer<List<? extends M>> messageProcessor);
 }

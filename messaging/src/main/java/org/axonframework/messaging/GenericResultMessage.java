@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * Generic implementation of {@link ResultMessage}.
@@ -151,12 +152,12 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public GenericResultMessage<R> withMetaData(Map<String, ?> metaData) {
+    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericResultMessage<R> andMetaData(Map<String, ?> metaData) {
+    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }
 

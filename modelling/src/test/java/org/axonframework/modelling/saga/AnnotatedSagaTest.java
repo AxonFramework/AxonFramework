@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
@@ -247,13 +248,13 @@ class AnnotatedSagaTest {
         }
 
         @Override
-        public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
+        public <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler) {
 
         }
 
         @Override
-        public <T> Object resolve(String associationPropertyName, EventMessage<?> message,
-                                  MessageHandlingMember<T> handler) {
+        public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+                                  @Nonnull MessageHandlingMember<T> handler) {
             return null;
         }
     }

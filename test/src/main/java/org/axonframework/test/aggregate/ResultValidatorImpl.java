@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.*;
@@ -485,7 +486,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                         @Nonnull CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
             actualException = commandResultMessage.exceptionResult();
         } else {
