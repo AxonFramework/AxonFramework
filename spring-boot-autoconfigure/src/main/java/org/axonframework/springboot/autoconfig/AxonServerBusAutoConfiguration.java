@@ -54,7 +54,8 @@ import org.springframework.context.annotation.Primary;
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
  *
  * @author Marc Gathier
- * @since 4.0
+ * @author Stefan Dragisic
+ * @since 4.6.0
  */
 @Configuration
 @AutoConfigureAfter(AxonServerAutoConfiguration.class)
