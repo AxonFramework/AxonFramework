@@ -23,7 +23,7 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 /**
- * A special type of {@link QueryMessage} used for initiating streaming queries. It is special since hard codes the
+ * A special type of {@link QueryMessage} used for initiating streaming queries. It's special since it hard codes the
  * response type to {@link FluxResponseType}.
  *
  * @param <Q> the type of streaming query payload

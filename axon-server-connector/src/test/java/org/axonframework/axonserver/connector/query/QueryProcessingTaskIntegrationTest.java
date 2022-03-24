@@ -666,7 +666,7 @@ class QueryProcessingTaskIntegrationTest {
 
     private ProcessingInstruction asSupportsStreaming() {
         return ProcessingInstruction.newBuilder()
-                                    .setKey(ProcessingKey.AS_SUPPORTS_STREAMING)
+                                    .setKey(ProcessingKey.SERVER_SUPPORTS_STREAMING)
                                     .setValue(MetaDataValue.newBuilder()
                                                            .setBooleanValue(true)
                                                            .build())

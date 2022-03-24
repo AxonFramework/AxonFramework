@@ -60,15 +60,15 @@ public abstract class ProcessingInstructionHelper {
 
     /**
      * Retrieve whether Axon Server supports streaming from the given {@code processingInstructions}, by
-     * searching for the value of {@link ProcessingKey#AS_SUPPORTS_STREAMING}.
+     * searching for the value of {@link ProcessingKey#SERVER_SUPPORTS_STREAMING}.
      *
      * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
-     *                               ProcessingKey#AS_SUPPORTS_STREAMING} from
+     *                               ProcessingKey#SERVER_SUPPORTS_STREAMING} from
      * @return {@code true} if Axon Server supports streaming, {@code false} otherwise
      */
     public static boolean axonServerSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
         return getProcessingInstructionBoolean(processingInstructions,
-                                               ProcessingKey.AS_SUPPORTS_STREAMING).orElse(false);
+                                               ProcessingKey.SERVER_SUPPORTS_STREAMING).orElse(false);
     }
 
     /**

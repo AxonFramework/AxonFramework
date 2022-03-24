@@ -27,7 +27,6 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.axonframework.messaging.responsetypes.FluxResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -152,7 +151,7 @@ public class SimpleQueryBus implements QueryBus {
         try {
             ResponseType<R> responseType = interceptedQuery.getResponseType();
             if (handlers.isEmpty()) {
-                throw noHandlerError(interceptedQuery);
+                throw noHandlerException(interceptedQuery);
             }
             Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
@@ -180,7 +179,7 @@ public class SimpleQueryBus implements QueryBus {
                 }
             }
             if (!invocationSuccess) {
-                throw noSuitableHandlerError(interceptedQuery);
+                throw noSuitableHandlerException(interceptedQuery);
             }
             monitorCallback.reportSuccess();
         } catch (Exception e) {
@@ -195,10 +194,10 @@ public class SimpleQueryBus implements QueryBus {
         return Mono.just(intercept(query))
                    .flatMapMany(interceptedQuery -> Mono.just(interceptedQuery)
                                                    .flatMapMany(this::getStreamingHandlersForMessage)
-                                                   .switchIfEmpty(Flux.error(noHandlerError(interceptedQuery)))
+                                                   .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
                                                    .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler))
                                                    .skipWhile(ResultMessage::isExceptional)
-                                                   .switchIfEmpty(Flux.error(noSuitableHandlerError(interceptedQuery)))
+                                                   .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
                                                    .next()
                                                    .doOnEach(this::monitorCallback)
                                                    .flatMapMany(Message::getPayload))
@@ -206,13 +205,13 @@ public class SimpleQueryBus implements QueryBus {
                                                 messageMonitor.onMessageIngested(query)));
     }
 
-    private NoHandlerForQueryException noHandlerError(QueryMessage<?, ?> intercepted) {
+    private NoHandlerForQueryException noHandlerException(QueryMessage<?, ?> intercepted) {
         return new NoHandlerForQueryException(format("No handler found for [%s] with response type [%s]",
                                                      intercepted.getQueryName(),
                                                      intercepted.getResponseType()));
     }
 
-    private NoHandlerForQueryException noSuitableHandlerError(QueryMessage<?, ?> intercepted) {
+    private NoHandlerForQueryException noSuitableHandlerException(QueryMessage<?, ?> intercepted) {
         return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
                                                      intercepted.getQueryName(),
                                                      intercepted.getResponseType()));
@@ -444,19 +443,19 @@ public class SimpleQueryBus implements QueryBus {
         return Flux.fromStream(subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                                             .stream()
                                             .filter(subscription -> responseType.matches(subscription.getResponseType()))
-                                            .sorted(new MessageHandlerComparator())
+                                            .sorted(new StreamingQueryHandlerComparator())
                                             .map(QuerySubscription::getQueryHandler)
                                             .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler));
     }
 
     /**
      * Comparator to prioritize handlers based on the response type.
-     *
-     * Because FluxResponseType can handle any response type, this comparator is used to prioritize the Flux(high priority)
-     * and List/Stream handlers (medium priority).
-     *
+     * <p>
+     * Because {@code FluxResponseType} can handle any response type, this comparator is used to prioritize the
+     * Flux(high priority) over {@code List}/{@code Stream} handlers (medium priority). All other handlers are
+     * prioritized after the {@code List}/{@code Stream} handlers (low priority).
      */
-    private static class MessageHandlerComparator implements Comparator<QuerySubscription> {
+    private static class StreamingQueryHandlerComparator implements Comparator<QuerySubscription> {
 
         private enum Priority {
             HIGH,
