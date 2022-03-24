@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -91,6 +94,17 @@ public class DefaultQueryGateway implements QueryGateway {
                          }
                      });
         return result;
+    }
+
+    @Override
+    public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
+        return Mono.fromSupplier(()->
+            new GenericStreamingQueryMessage<>(
+                    query,
+                    queryName,
+                    responseType)
+        ).flatMapMany(queryMessage-> queryBus.streamingQuery(processInterceptors(queryMessage))
+        ).map(Message::getPayload);
     }
 
     @Override

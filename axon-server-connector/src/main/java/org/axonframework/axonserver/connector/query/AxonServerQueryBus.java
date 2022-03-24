@@ -16,8 +16,11 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
+import io.axoniq.axonserver.connector.ResultStreamPublisher;
+import io.axoniq.axonserver.connector.impl.CloseAwareReplyChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
@@ -28,21 +31,21 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.grpc.stub.StreamObserver;
-import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.InstructionAckSource;
+import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.AxonThreadFactory;
@@ -51,40 +54,51 @@ import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.Distributed;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
+import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -117,7 +131,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService queryExecutor;
-    private final QueryHandler localSegmentAdapter;
+    private final LocalSegmentAdapter localSegmentAdapter;
     private final String context;
 
     /**
@@ -142,10 +156,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
                 QUERY_QUEUE_CAPACITY,
                 Comparator.comparingLong(
-                        r -> r instanceof QueryProcessingTask ? ((QueryProcessingTask) r).getPriority() :
-                             r instanceof ResponseProcessingTask
-                             ? ((ResponseProcessingTask<?>) r).getPriority()
-                             : DEFAULT_PRIORITY
+                        r -> r instanceof PrioritizedRunnable ? ((PrioritizedRunnable) r).priority()
+                                        : DEFAULT_PRIORITY
                 ).reversed()
         );
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
@@ -200,28 +212,24 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
-        shutdownLatch.ifShuttingDown(String.format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+                       () -> "The direct query does not support Flux as a return type.");
+        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
         CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
         try {
-            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
             int priority = priorityCalculator.determinePriority(interceptedQuery);
-            QueryRequest queryRequest =
-                    serializer.serializeRequest(interceptedQuery,
-                                                DIRECT_QUERY_NUMBER_OF_RESULTS,
-                                                DIRECT_QUERY_TIMEOUT_MS,
-                                                priority);
+            QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
+            Publisher<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            ResultStream<QueryResponse> result = axonServerConnectionManager.getConnection(targetContext)
-                                                                            .queryChannel()
-                                                                            .query(queryRequest);
-
-            ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
-                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
-            );
-            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
+            Runnable task = new BlockingQueryResponseProcessingTask<>(result,
+                                                                      serializer,
+                                                                      queryTransaction,
+                                                                      priority,
+                                                                      queryMessage.getResponseType());
+            queryExecutor.submit(task);
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -232,10 +240,80 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     }
 
     @Override
+    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+        return Mono.fromSupplier(this::registerStreamingQueryActivity)
+                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
+                                                .flatMapMany(intercepted -> Mono.just(serializeStreaming(intercepted))
+                                                                                .flatMapMany(queryRequest -> sendRequest(intercepted, queryRequest))
+                                                                                .flatMap(queryResponse -> deserialize(intercepted, queryResponse)))
+                                                .doFinally(s -> activity.end()))
+                   .subscribeOn(Schedulers.fromExecutorService(queryExecutor));
+    }
+
+    private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
+        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        return shutdownLatch.registerActivity();
+    }
+
+    private QueryRequest serializeStreaming(QueryMessage<?, ?> query) {
+        return serialize(query, true, priorityCalculator.determinePriority(query));
+    }
+
+    private QueryRequest serialize(QueryMessage<?, ?> query, boolean stream, int priority) {
+        return serializer.serializeRequest(query,
+                                           DIRECT_QUERY_NUMBER_OF_RESULTS,
+                                           DIRECT_QUERY_TIMEOUT_MS,
+                                           priority,
+                                           stream);
+    }
+
+    private Publisher<QueryResponse> sendRequest(QueryMessage<?, ?> queryMessage, QueryRequest queryRequest) {
+        return new ResultStreamPublisher<>(() -> axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(queryMessage))
+                                                                            .queryChannel()
+                                                                            .query(queryRequest));
+    }
+
+    private <R> Publisher<QueryResponseMessage<R>> deserialize(StreamingQueryMessage<?, R> queryMessage,
+                                                               QueryResponse queryResponse) {
+        //noinspection unchecked
+        Class<R> expectedResponseType = (Class<R>) queryMessage.getResponseType().getExpectedResponseType();
+        QueryResponseMessage<?> responseMessage = serializer.deserializeResponse(queryResponse);
+        if (responseMessage.isExceptional()) {
+            return Flux.error(responseMessage.exceptionResult());
+        }
+        if (expectedResponseType.isAssignableFrom(responseMessage.getPayloadType())) {
+            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
+            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
+        } else {
+            MultipleInstancesResponseType<R> multiResponseType =
+                    new MultipleInstancesResponseType<>(expectedResponseType);
+            ConvertingResponseMessage<List<R>> convertingMessage =
+                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
+            return Flux.fromStream(convertingMessage.getPayload()
+                                                    .stream()
+                                                    .map(payload -> singleMessage(responseMessage,
+                                                                                  payload,
+                                                                                  expectedResponseType)));
+        }
+    }
+
+    private <R> QueryResponseMessage<R> singleMessage(QueryResponseMessage<?> original,
+                                                      R newPayload,
+                                                      Class<R> expectedPayloadType) {
+        GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
+                                                          expectedPayloadType,
+                                                          newPayload,
+                                                          original.getMetaData());
+        return new GenericQueryResponseMessage<>(delegate);
+    }
+
+    @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 TimeUnit timeUnit) {
-        shutdownLatch.ifShuttingDown(String.format(
+        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
+                       () -> "The scatter-Gather query does not support Flux as a return type.");
+        shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
 
@@ -255,7 +333,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                  .query(queryRequest);
 
             return StreamSupport.stream(
-                    new QueryResponseSpliterator<>(queryMessage, queryResult, deadline, serializer, queryInTransit::end),
+                    new QueryResponseSpliterator<>(queryMessage,
+                                                   queryResult,
+                                                   deadline,
+                                                   serializer,
+                                                   queryInTransit::end),
                     false
             ).onClose(queryInTransit::end);
         } catch (Exception e) {
@@ -285,7 +367,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
     ) {
-        shutdownLatch.ifShuttingDown(String.format(
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+                       () -> "The subscription Query query does not support Flux as a return type.");
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getUpdateResponseType().getExpectedResponseType()),
+                       () -> "The subscription Query query does not support Flux as an update type.");
+        shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
 
@@ -336,6 +422,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         if (axonServerConnectionManager.isConnected(context)) {
             axonServerConnectionManager.getConnection(context).queryChannel().prepareDisconnect();
         }
+        localSegmentAdapter.cancel();
     }
 
     /**
@@ -347,82 +434,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      */
     public CompletableFuture<Void> shutdownDispatching() {
         return shutdownLatch.initiateShutdown();
-    }
-
-    /**
-     * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the query
-     * {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest} and
-     * used to priorities this {@link QueryProcessingTask} among others of it's kind.
-     */
-    private static class QueryProcessingTask implements Runnable {
-
-        private final QueryBus localSegment;
-        private final long priority;
-        private final QueryRequest queryRequest;
-        private final ReplyChannel<QueryResponse> responseHandler;
-        private final QuerySerializer serializer;
-        private final String clientId;
-
-        private QueryProcessingTask(QueryBus localSegment,
-                                    QueryRequest queryRequest,
-                                    ReplyChannel<QueryResponse> responseHandler,
-                                    QuerySerializer serializer, String clientId) {
-            this.localSegment = localSegment;
-            this.priority = priority(queryRequest.getProcessingInstructionsList());
-            this.queryRequest = queryRequest;
-            this.responseHandler = responseHandler;
-            this.serializer = serializer;
-            this.clientId = clientId;
-        }
-
-        public long getPriority() {
-            return priority;
-        }
-
-        @Override
-        public void run() {
-            try {
-                logger.debug("Will process query [{}]", queryRequest.getQuery());
-                QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
-                if (ProcessingInstructionHelper.numberOfResults(queryRequest.getProcessingInstructionsList()) == 1) {
-                    localSegment.query(queryMessage).whenComplete((r, e) -> {
-                        if (e != null) {
-                            ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
-                            QueryResponse response =
-                                    QueryResponse.newBuilder()
-                                                 .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())
-                                                 .setErrorMessage(ex)
-                                                 .setRequestIdentifier(queryRequest.getMessageIdentifier())
-                                                 .build();
-                            responseHandler.sendLast(response);
-                        } else {
-                            responseHandler.sendLast(
-                                    serializer.serializeResponse(r, queryRequest.getMessageIdentifier())
-                            );
-                        }
-                    });
-                } else {
-                    Stream<QueryResponseMessage<Object>> result = localSegment.scatterGather(
-                            queryMessage,
-                            ProcessingInstructionHelper.timeout(queryRequest.getProcessingInstructionsList()),
-                            TimeUnit.MILLISECONDS
-                    );
-                    result.forEach(r -> responseHandler.send(
-                            serializer.serializeResponse(r, queryRequest.getMessageIdentifier())
-                    ));
-                    responseHandler.complete();
-                }
-            } catch (RuntimeException | OutOfDirectMemoryError e) {
-                ErrorMessage ex = ExceptionSerializer.serialize(clientId, e);
-                responseHandler.sendLast(QueryResponse.newBuilder()
-                                                      .setErrorCode(ErrorCode.getQueryExecutionErrorCode(e).errorCode())
-                                                      .setErrorMessage(ex)
-                                                      .setRequestIdentifier(queryRequest.getMessageIdentifier())
-                                                      .build());
-                logger.warn("Query Processor had an exception when processing query [{}]",
-                            queryRequest.getQuery(), e);
-            }
-        }
     }
 
     /**
@@ -672,50 +683,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         }
     }
 
-    private static class ResponseProcessingTask<R> implements Runnable {
-
-        private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
-        private final ResultStream<QueryResponse> result;
-        private final QuerySerializer serializer;
-        private final CompletableFuture<QueryResponseMessage<R>> queryTransaction;
-        private final int priority;
-        private final ResponseType<R> expectedResponseType;
-
-        public ResponseProcessingTask(ResultStream<QueryResponse> result,
-                                      QuerySerializer serializer,
-                                      CompletableFuture<QueryResponseMessage<R>> queryTransaction,
-                                      int priority,
-                                      ResponseType<R> expectedResponseType) {
-            this.result = result;
-            this.serializer = serializer;
-            this.queryTransaction = queryTransaction;
-            this.priority = priority;
-            this.expectedResponseType = expectedResponseType;
-        }
-
-        @Override
-        public void run() {
-            if (singleExecutionCheck.compareAndSet(false, true)) {
-                QueryResponse nextAvailable = result.nextIfAvailable();
-                if (nextAvailable != null) {
-                    queryTransaction.complete(serializer.deserializeResponse(nextAvailable, expectedResponseType));
-                } else if (result.isClosed() && !queryTransaction.isDone()) {
-                    Exception exception = result.getError()
-                                                .map(ErrorCode.QUERY_DISPATCH_ERROR::convert)
-                                                .orElse(new AxonServerQueryDispatchException(
-                                                        ErrorCode.QUERY_DISPATCH_ERROR.errorCode(),
-                                                        "Query did not yield the expected number of results."
-                                                ));
-                    queryTransaction.completeExceptionally(exception);
-                }
-            }
-        }
-
-        public int getPriority() {
-            return priority;
-        }
-    }
-
     private static class QueryResponseSpliterator<Q, R> implements Spliterator<QueryResponseMessage<R>> {
 
         private final QueryMessage<Q, R> queryMessage;
@@ -775,18 +742,49 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return Spliterator.DISTINCT & Spliterator.IMMUTABLE & Spliterator.NONNULL;
         }
     }
+
     /**
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@link QueryBus} to push through the
      * message handling and subscription query registration.
      */
     private class LocalSegmentAdapter implements QueryHandler {
 
+        private final Map<String, QueryProcessingTask> queriesInProgress = new ConcurrentHashMap<>();
+
+        public void cancel() {
+            queriesInProgress.values()
+                             .iterator()
+                             .forEachRemaining(QueryProcessingTask::cancel);
+        }
+
         @Override
         public void handle(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-            QueryProcessingTask processingTask = new QueryProcessingTask(
-                    localSegment, query, responseHandler, serializer, configuration.getClientId()
-            );
+            stream(query, responseHandler).request(Long.MAX_VALUE);
+        }
+
+        @Override
+        public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
+            Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
+            CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
+                    new CloseAwareReplyChannel<>(responseHandler, onClose);
+            QueryProcessingTask processingTask = new QueryProcessingTask(localSegment,
+                                                                         query,
+                                                                         closeAwareReplyChannel,
+                                                                         serializer,
+                                                                         configuration.getClientId());
+            queriesInProgress.put(query.getMessageIdentifier(), processingTask);
             queryExecutor.submit(processingTask);
+            return new FlowControl() {
+                @Override
+                public void request(long requested) {
+                    queryExecutor.submit(() -> processingTask.request(requested));
+                }
+
+                @Override
+                public void cancel() {
+                    queryExecutor.submit(processingTask::cancel);
+                }
+            };
         }
 
         @Override
@@ -796,7 +794,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     updateEmitter.registerUpdateHandler(subscriptionSerializer.deserialize(query), 1024);
 
             updateHandler.getUpdates()
-                         .map(subscriptionSerializer::serialize)
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
@@ -808,6 +805,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                              sendUpdate.complete();
                          })
                          .doOnComplete(sendUpdate::complete)
+                         .map(subscriptionSerializer::serialize)
                          .subscribe(sendUpdate::sendUpdate);
 
             return () -> {

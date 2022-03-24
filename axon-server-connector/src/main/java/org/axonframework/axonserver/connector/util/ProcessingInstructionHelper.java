@@ -59,6 +59,32 @@ public abstract class ProcessingInstructionHelper {
     }
 
     /**
+     * Retrieve whether Axon Server supports streaming from the given {@code processingInstructions}, by
+     * searching for the value of {@link ProcessingKey#SERVER_SUPPORTS_STREAMING}.
+     *
+     * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
+     *                               ProcessingKey#SERVER_SUPPORTS_STREAMING} from
+     * @return {@code true} if Axon Server supports streaming, {@code false} otherwise
+     */
+    public static boolean axonServerSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionBoolean(processingInstructions,
+                                               ProcessingKey.SERVER_SUPPORTS_STREAMING).orElse(false);
+    }
+
+    /**
+     * Retrieve whether Client (query issuer) supports streaming from the given {@code
+     * processingInstructions}, by searching for the value of {@link ProcessingKey#CLIENT_SUPPORTS_STREAMING}.
+     *
+     * @param processingInstructions a {@link List} of {@link ProcessingInstruction}s to retrieve the {@link
+     *                               ProcessingKey#CLIENT_SUPPORTS_STREAMING} from
+     * @return {@code true} if Client supports streaming, {@code false} otherwise
+     */
+    public static boolean clientSupportsQueryStreaming(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionBoolean(processingInstructions,
+                                               ProcessingKey.CLIENT_SUPPORTS_STREAMING).orElse(false);
+    }
+
+    /**
      * Retrieve the desired 'number of results' as a {@code long} from the given {@code processingInstructions}, by
      * searching for the {@link ProcessingInstruction} who's key equals the {@link ProcessingKey#NR_OF_RESULTS}.
      *
@@ -75,6 +101,14 @@ public abstract class ProcessingInstructionHelper {
         return processingInstructions.stream()
                                      .filter(instruction -> processingKey.equals(instruction.getKey()))
                                      .map(instruction -> instruction.getValue().getNumberValue())
+                                     .findFirst();
+    }
+
+    private static Optional<Boolean> getProcessingInstructionBoolean(List<ProcessingInstruction> processingInstructions,
+                                                                     ProcessingKey processingKey) {
+        return processingInstructions.stream()
+                                     .filter(instruction -> processingKey.equals(instruction.getKey()))
+                                     .map(instruction -> instruction.getValue().getBooleanValue())
                                      .findFirst();
     }
 }
