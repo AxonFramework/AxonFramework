@@ -319,8 +319,6 @@ class FixtureTest_CommandInterceptors {
     }
 
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
-
-        @Nonnull
         @Override
         public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {

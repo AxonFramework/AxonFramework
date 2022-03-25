@@ -48,7 +48,6 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      *
      * @throws Exception any exception that occurs while handling the message
      */
-    @Nonnull
     Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception;
 }

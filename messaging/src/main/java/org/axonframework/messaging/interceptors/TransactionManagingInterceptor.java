@@ -44,7 +44,6 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
         this.transactionManager = transactionManager;
     }
 
-    @Nonnull
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {

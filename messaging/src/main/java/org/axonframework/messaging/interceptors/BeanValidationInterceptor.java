@@ -62,7 +62,6 @@ public class BeanValidationInterceptor<T extends Message<?>>
         this.validatorFactory = validatorFactory;
     }
 
-    @Nonnull
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {

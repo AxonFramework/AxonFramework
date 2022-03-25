@@ -1175,8 +1175,6 @@ class EventProcessingModuleTest {
     }
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
-
-        @Nonnull
         @Override
         public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain)

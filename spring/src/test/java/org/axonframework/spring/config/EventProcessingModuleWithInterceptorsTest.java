@@ -75,7 +75,6 @@ public class EventProcessingModuleWithInterceptorsTest {
 
         public class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
-            @Nonnull
             @Override
             public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  @Nonnull InterceptorChain interceptorChain)

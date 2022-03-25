@@ -49,7 +49,6 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
-    @Nonnull
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain)

@@ -76,7 +76,6 @@ public class LoggingInterceptor<T extends Message<?>>
         };
     }
 
-    @Nonnull
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {

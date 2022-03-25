@@ -60,7 +60,6 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
         this.correlationDataProviders = new ArrayList<>(correlationDataProviders);
     }
 
-    @Nonnull
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
