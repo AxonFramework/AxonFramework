@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.responsetypes;
 
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -62,6 +66,17 @@ public abstract class ResponseTypes {
      */
     public static <R> ResponseType<List<R>> multipleInstancesOf(Class<R> type) {
         return new MultipleInstancesResponseType<>(type);
+    }
+
+    /**
+     * Specify the desire to retrieve a Flux (reactive stream) of instances of type {@code R} when performing a query.
+     *
+     * @param type the {@code R} which is expected to be the response type
+     * @param <R>  the generic type of the instantiated {@link ResponseType}
+     * @return a {@link ResponseType} specifying the desire to retrieve a flux of instances of type {@code R}
+     */
+    public static <R> ResponseType<Flux<R>> fluxOf(Class<R> type) {
+        return new FluxResponseType<>(type);
     }
 
     private ResponseTypes() {
