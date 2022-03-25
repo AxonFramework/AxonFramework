@@ -35,6 +35,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -62,6 +63,7 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(classes = JpaEventStoreAutoConfigurationWithSnapshottingTest.TestContext.class)
 @ExtendWith(SpringExtension.class)
 @EnableAutoConfiguration(exclude = {
+        AxonServerBusAutoConfiguration.class,
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })

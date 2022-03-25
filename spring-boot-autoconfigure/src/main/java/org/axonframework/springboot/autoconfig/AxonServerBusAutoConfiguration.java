@@ -67,7 +67,7 @@ public class AxonServerBusAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
-    public AxonServerCommandBus commandBus(AxonServerConnectionManager axonServerConnectionManager,
+    public AxonServerCommandBus axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
                                                      AxonServerConfiguration axonServerConfiguration,
                                                      @Qualifier("localSegment") CommandBus localSegment,
                                                      @Qualifier("messageSerializer") Serializer messageSerializer,
