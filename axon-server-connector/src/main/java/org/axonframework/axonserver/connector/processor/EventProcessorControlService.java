@@ -47,9 +47,9 @@ public class EventProcessorControlService implements Lifecycle {
     private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
     private static final String UNKNOWN_EVENT_PROCESSOR_MODE = "Unknown";
 
-    private final AxonServerConnectionManager axonServerConnectionManager;
-    private final EventProcessingConfiguration eventProcessingConfiguration;
-    private final String context;
+    protected final AxonServerConnectionManager axonServerConnectionManager;
+    protected final EventProcessingConfiguration eventProcessingConfiguration;
+    protected final String context;
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
@@ -141,7 +141,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
 
-    private static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
+    protected static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
 
         private final EventProcessor processor;
         private final String name;

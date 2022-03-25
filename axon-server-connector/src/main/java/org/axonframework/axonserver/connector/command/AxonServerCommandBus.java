@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.common.StringUtils;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
@@ -54,6 +55,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -76,7 +78,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
     private final CommandLoadFactorProvider loadFactorProvider;
-
+    private final String context;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
     private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
     private final CommandCallback<Object, Object> defaultCommandCallback;
@@ -114,7 +116,11 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.priorityCalculator = builder.priorityCalculator;
         this.defaultCommandCallback = builder.defaultCommandCallback;
         this.loadFactorProvider = builder.loadFactorProvider;
-        String context = configuration.getContext();
+
+
+        String context = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
+
+        this.context = context;
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
         this.executorService = builder.executorServiceBuilder.apply(
@@ -191,7 +197,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                              + "Expect similar logging on the local segment.", commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
         io.axoniq.axonserver.connector.Registration serverRegistration =
-                axonServerConnectionManager.getConnection()
+                axonServerConnectionManager.getConnection(context)
                                            .commandChannel()
                                            .registerCommandHandler(
                                                    c -> {
@@ -231,8 +237,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
     public CompletableFuture<Void> disconnect() {
-        if (axonServerConnectionManager.isConnected(axonServerConnectionManager.getDefaultContext())) {
-            return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
+        if (axonServerConnectionManager.isConnected(context)) {
+            return axonServerConnectionManager.getConnection(context).commandChannel().prepareDisconnect();
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -306,11 +312,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private RoutingStrategy routingStrategy;
         private CommandPriorityCalculator priorityCalculator =
                 CommandPriorityCalculator.defaultCommandPriorityCalculator();
-        private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
-                c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
         private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
+        private String defaultContext;
+        private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
+                c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -455,6 +462,18 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         public Builder loadFactorProvider(CommandLoadFactorProvider loadFactorProvider) {
             assertNonNull(loadFactorProvider, "CommandLoadFactorProvider may not be null");
             this.loadFactorProvider = loadFactorProvider;
+            return this;
+        }
+
+        /**
+         * Sets the default context for this command bus to connect to.
+         *
+         * @param defaultContext for this bus to connect to.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultContext(String defaultContext) {
+            assertNonEmpty(defaultContext, "The context may not be null or empty");
+            this.defaultContext = defaultContext;
             return this;
         }
 
