@@ -19,18 +19,14 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
 import java.lang.reflect.Type;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -167,7 +163,6 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <I>              the response type of the query
      * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
-     *
      * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
      */
     @Deprecated

@@ -117,18 +117,16 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.defaultCommandCallback = builder.defaultCommandCallback;
         this.loadFactorProvider = builder.loadFactorProvider;
 
-
-        String context = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
-
-        this.context = context;
-        this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
+        String c = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
+        this.context = c;
+        this.targetContextResolver = builder.targetContextResolver.orElse(m -> c);
 
         this.executorService = builder.executorServiceBuilder.apply(
                 builder.configuration,
                 new PriorityBlockingQueue<>(1000, Comparator.comparingLong(
                         r -> r instanceof CommandProcessingTask
-                             ? ((CommandProcessingTask) r).getPriority()
-                             : DEFAULT_PRIORITY).reversed()
+                                ? ((CommandProcessingTask) r).getPriority()
+                                : DEFAULT_PRIORITY).reversed()
                 )
         );
 
@@ -166,14 +164,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
-            String context = targetContextResolver.resolveContext(commandMessage);
             Command command = serializer.serialize(commandMessage,
                                                    routingStrategy.getRoutingKey(commandMessage),
                                                    priorityCalculator.determinePriority(commandMessage));
 
-            CompletableFuture<CommandResponse> result = axonServerConnectionManager.getConnection(context)
-                                                                                   .commandChannel()
-                                                                                   .sendCommand(command);
+            CompletableFuture<CommandResponse> result =
+                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessage))
+                                               .commandChannel()
+                                               .sendCommand(command);
             //noinspection unchecked
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)

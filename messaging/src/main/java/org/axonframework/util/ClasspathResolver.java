@@ -24,7 +24,7 @@ package org.axonframework.util;
  */
 public final class ClasspathResolver {
 
-    private static final boolean projectReactorOnClasspath;
+    private static final boolean PROJECT_REACTOR_ON_CLASSPATH;
 
     static {
         boolean fluxOnClasspath = true;
@@ -33,17 +33,19 @@ public final class ClasspathResolver {
         } catch (ClassNotFoundException e) {
             fluxOnClasspath = false;
         }
-        projectReactorOnClasspath = fluxOnClasspath;
+        PROJECT_REACTOR_ON_CLASSPATH = fluxOnClasspath;
+    }
+
+    /**
+     * Return {@code true} if Project Reactor is on classpath, {@code false} otherwise.
+     *
+     * @return {@code true} if Project Reactor is on classpath, {@code false} otherwise.
+     */
+    public static boolean projectReactorOnClasspath() {
+        return PROJECT_REACTOR_ON_CLASSPATH;
     }
 
     private ClasspathResolver() {
         // not to be instantiated
-    }
-
-    /**
-     * @return {@code true} if Project Reactor is on classpath, {@code false} otherwise
-     */
-    public static boolean projectReactorOnClasspath() {
-        return projectReactorOnClasspath;
     }
 }

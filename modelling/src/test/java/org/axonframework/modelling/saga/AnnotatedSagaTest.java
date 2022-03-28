@@ -65,23 +65,22 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga_AssociationPropertyNotExistingInPayload() {
+    void testInvokeSagaAssociationPropertyNotExistingInPayload() {
+        AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
         assertThrows(
                 AxonConfigurationException.class,
-                () -> new AnnotationSagaMetaModelFactory().modelOf(SagaAssociationPropertyNotExistingInPayload.class)
+                () -> testSubject.modelOf(SagaAssociationPropertyNotExistingInPayload.class)
         );
     }
 
     @Test
-    void testInvokeSaga_AssociationPropertyEmpty() {
-        assertThrows(
-                AxonConfigurationException.class,
-                () -> new AnnotationSagaMetaModelFactory().modelOf(SagaAssociationPropertyEmpty.class)
-        );
+    void testInvokeSagaAssociationPropertyEmpty() {
+        AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
+        assertThrows(AxonConfigurationException.class, () -> testSubject.modelOf(SagaAssociationPropertyEmpty.class));
     }
 
     @Test
-    void testInvokeSaga_MetaDataAssociationResolver() {
+    void testInvokeSagaMetaDataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
@@ -92,7 +91,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga_ResolverWithoutNoArgConstructor() {
+    void testInvokeSagaResolverWithoutNoArgConstructor() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> new AnnotationSagaMetaModelFactory().modelOf(SagaUsingResolverWithoutNoArgConstructor.class)
@@ -100,7 +99,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_BeanProperty() {
+    void testEndedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -111,7 +110,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_WhenAssociationIsRemoved() {
+    void testEndedAfterInvocationWhenAssociationIsRemoved() {
         StubAnnotatedSaga testSaga = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         AnnotatedSaga<StubAnnotatedSaga> testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
@@ -128,7 +127,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_UniformAccessPrinciple() {
+    void testEndedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -153,7 +152,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testLifecycle_associationValues() {
+    void testLifecycleAssociationValues() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.execute(() -> {
             Set<AssociationValue> associationValues = SagaLifecycle.associationValues();
@@ -233,7 +232,6 @@ class AnnotatedSagaTest {
         @SagaEventHandler(associationProperty = "")
         public void handleStubDomainEvent(EventWithoutProperties event) {
         }
-
     }
 
     private static class RegularEvent {

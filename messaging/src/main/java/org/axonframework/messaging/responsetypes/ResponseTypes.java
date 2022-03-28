@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -45,9 +43,9 @@ public abstract class ResponseTypes {
     /**
      * Specify the desire to retrieve an {@code Optional<R>} when performing a query.
      * <p>
-     * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the
-     * {@code ResponseType} returned by {@link #instanceOf(Class)}. The difference is that the result provided by this
-     * {@code ResponseType} is wrapped in an {@code Optional}.
+     * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the {@code
+     * ResponseType} returned by {@link #instanceOf(Class)}. The difference is that the result provided by this {@code
+     * ResponseType} is wrapped in an {@code Optional}.
      *
      * @param type the {@code R} which is expected to be the response type
      * @param <R>  the generic type of the instantiated {@link ResponseType}
