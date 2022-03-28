@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.lang.reflect.Parameter;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
 import static org.axonframework.test.matchers.Matchers.predicate;
@@ -125,9 +126,9 @@ public class FixtureTest_RegisteringMethodEnhancements {
         }
 
         @Override
-        public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
-                                                                    Executable executable,
-                                                                    ParameterResolverFactory parameterResolverFactory) {
+        public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                    @Nonnull Executable executable,
+                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.
@@ -144,7 +145,8 @@ public class FixtureTest_RegisteringMethodEnhancements {
         }
 
         @Override
-        public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        public @Nonnull
+        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.

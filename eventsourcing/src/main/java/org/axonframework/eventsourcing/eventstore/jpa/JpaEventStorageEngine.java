@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,6 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -55,6 +52,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -335,7 +336,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
         List<Long> results = entityManager().createQuery(
                                                     "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
                                                             + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
@@ -361,7 +362,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         List<Long> results = entityManager()
                 .createQuery(
                         "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "

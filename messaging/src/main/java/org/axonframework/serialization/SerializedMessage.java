@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * A message containing serialized payload data and metadata. A SerializedMessage will deserialize the payload or
@@ -96,12 +97,12 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
     }
 
     @Override
-    public SerializedMessage<T> withMetaData(Map<String, ?> metaData) {
+    public SerializedMessage<T> withMetaData(@Nonnull Map<String, ?> metaData) {
         return (SerializedMessage<T>) super.withMetaData(metaData);
     }
 
     @Override
-    public SerializedMessage<T> andMetaData(Map<String, ?> metaData) {
+    public SerializedMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
         return (SerializedMessage<T>) super.andMetaData(metaData);
     }
 

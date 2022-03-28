@@ -1,10 +1,27 @@
-package org.axonframework.eventsourcing;
+/*
+ * Copyright (c) 2020-2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.io.Serializable;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+
+import java.io.Serializable;
+import javax.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.SnapshotTrigger} that schedules snapshots on
@@ -33,7 +50,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
     }
 
     @Override
-    public void eventHandled(EventMessage<?> msg) {
+    public void eventHandled(@Nonnull EventMessage<?> msg) {
         if (msg instanceof DomainEventMessage && exceedsThreshold()) {
             prepareSnapshotScheduling((DomainEventMessage<?>) msg);
             reset();
@@ -83,5 +100,4 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serial
      * This method is used to reset all the variables that are used to check if a threshold has been exceeded
      */
     protected abstract void reset();
-
 }

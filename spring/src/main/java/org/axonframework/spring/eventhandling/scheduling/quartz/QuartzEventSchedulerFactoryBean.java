@@ -31,11 +31,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
+import javax.annotation.Nonnull;
+
 /**
  * Spring FactoryBean that creates a QuartzEventScheduler instance using resources found in the Spring Application
- * Context. The
- * QuartzEventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it more suitable
- * for long-term triggers and triggers that must survive a system restart.
+ * Context. The QuartzEventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it
+ * more suitable for long-term triggers and triggers that must survive a system restart.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -99,7 +100,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

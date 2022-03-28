@@ -54,6 +54,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -134,7 +135,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
         handle.onStart(Phase.INBOUND_COMMAND_CONNECTOR, this::start);
         handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
         handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
@@ -148,13 +149,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> commandMessage,
-                                CommandCallback<? super C, ? super R> commandCallback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> commandMessage,
+                                @Nonnull CommandCallback<? super C, ? super R> commandCallback) {
         logger.debug("Dispatch command [{}] with callback", commandMessage.getCommandName());
         doDispatch(dispatchInterceptors.intercept(commandMessage), commandCallback);
     }
@@ -190,7 +191,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> messageHandler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> messageHandler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. "
                              + "Expect similar logging on the local segment.", commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
@@ -220,13 +222,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
     @Override
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 

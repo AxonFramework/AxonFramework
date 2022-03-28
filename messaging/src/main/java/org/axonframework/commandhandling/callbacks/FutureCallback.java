@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 
 package org.axonframework.commandhandling.callbacks;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -38,8 +43,8 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage
         implements CommandCallback<C, R> {
 
     @Override
-    public void onResult(CommandMessage<? extends C> commandMessage,
-                         CommandResultMessage<? extends R> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
+                         @Nonnull CommandResultMessage<? extends R> commandResultMessage) {
         super.complete(commandResultMessage);
     }
 

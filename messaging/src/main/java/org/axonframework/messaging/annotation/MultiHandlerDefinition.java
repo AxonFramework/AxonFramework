@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * HandlerDefinition instance that delegates to multiple other instances, in the order provided. Also, it wraps the
@@ -174,9 +175,9 @@ public class MultiHandlerDefinition implements HandlerDefinition {
     }
 
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
-                                                                Executable executable,
-                                                                ParameterResolverFactory parameterResolverFactory) {
+    public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                @Nonnull Executable executable,
+                                                                @Nonnull ParameterResolverFactory parameterResolverFactory) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
             handler = handlerDefinition.createHandler(declaringType, executable, parameterResolverFactory);

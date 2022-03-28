@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
@@ -77,12 +78,12 @@ public abstract class LifecycleHandlerInspector {
         if (component instanceof Lifecycle) {
             ((Lifecycle) component).registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
                 @Override
-                public void onStart(int phase, Lifecycle.LifecycleHandler action) {
+                public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                     configuration.onStart(phase, action::run);
                 }
 
                 @Override
-                public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
+                public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                     configuration.onShutdown(phase, action::run);
                 }
             });

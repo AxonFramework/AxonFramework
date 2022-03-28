@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import java.lang.reflect.Executable;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -42,7 +43,7 @@ public class PayloadAssociationResolver implements AssociationResolver {
      * to create a {@link Property}. It also caches the resulting {@link Property} instance.
      */
     @Override
-    public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
+    public <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler) {
         getProperty(associationPropertyName, handler);
     }
 
@@ -51,8 +52,8 @@ public class PayloadAssociationResolver implements AssociationResolver {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Object resolve(String associationPropertyName, EventMessage<?> message,
-                              MessageHandlingMember<T> handler) {
+    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+                              @Nonnull MessageHandlingMember<T> handler) {
         return getProperty(associationPropertyName, handler).getValue(message.getPayload());
     }
 

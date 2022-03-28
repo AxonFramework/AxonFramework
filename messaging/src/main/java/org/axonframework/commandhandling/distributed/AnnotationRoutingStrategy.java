@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -147,7 +148,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
     }
 
     @Override
-    protected String doResolveRoutingKey(CommandMessage<?> command) {
+    protected String doResolveRoutingKey(@Nonnull CommandMessage<?> command) {
         String routingKey;
         try {
             routingKey = findIdentifier(command);

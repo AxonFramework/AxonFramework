@@ -28,6 +28,7 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
@@ -281,13 +282,13 @@ class AnnotatedSagaTest {
         }
 
         @Override
-        public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
+        public <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler) {
 
         }
 
         @Override
-        public <T> Object resolve(String associationPropertyName, EventMessage<?> message,
-                                  MessageHandlingMember<T> handler) {
+        public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+                                  @Nonnull MessageHandlingMember<T> handler) {
             return null;
         }
     }
