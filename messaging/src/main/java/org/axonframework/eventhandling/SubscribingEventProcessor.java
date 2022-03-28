@@ -216,13 +216,11 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
          * implementation will subscribe itself to receive {@link EventMessage}s.
          *
-         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
-         *                      {@link EventProcessor} implementation will subscribe itself to receive
-         *                      {@link EventMessage}s
-         *
+         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link
+         *                      EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageSource(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+        public Builder messageSource(@Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
             assertNonNull(messageSource, "SubscribableMessageSource may not be null");
             this.messageSource = messageSource;
             return this;
@@ -237,7 +235,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder processingStrategy(EventProcessingStrategy processingStrategy) {
+        public Builder processingStrategy(@Nonnull EventProcessingStrategy processingStrategy) {
             assertNonNull(processingStrategy, "EventProcessingStrategy may not be null");
             this.processingStrategy = processingStrategy;
             return this;
@@ -250,7 +248,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;

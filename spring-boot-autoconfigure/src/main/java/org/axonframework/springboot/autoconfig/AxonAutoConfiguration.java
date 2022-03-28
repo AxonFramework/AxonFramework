@@ -344,7 +344,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
-                    "org.axonframework.axonserver.connector.command.AxonServerCommandBus"
+                    "org.axonframework.axonserver.connector.command.AxonServerCommandBus",
+                    "org.axonframework.extensions.multitenancy.components.commandhandeling.MultiTenantCommandBus"
             },
             value = CommandBus.class
     )

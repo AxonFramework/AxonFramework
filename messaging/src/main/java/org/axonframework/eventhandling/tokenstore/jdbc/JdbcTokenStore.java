@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -157,7 +158,7 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeSegment(@Nonnull TrackingToken token, @Nonnull String processorName, int segment)
+    public void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
             throws UnableToInitializeTokenException {
         Connection connection = getConnection();
         try {

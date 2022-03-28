@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.2
  */
-class QuerySubscription<R> {
+public class QuerySubscription<R> {
 
     private final Type responseType;
     private final MessageHandler<? super QueryMessage<?, R>> queryHandler;
@@ -44,7 +44,7 @@ class QuerySubscription<R> {
      * @param responseType a {@link java.lang.reflect.Type} as the response type of this subscription
      * @param queryHandler the subscribed {@link org.axonframework.messaging.MessageHandler}
      */
-    QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>> queryHandler) {
+    public QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>> queryHandler) {
         this.responseType = responseType;
         this.queryHandler = queryHandler;
     }

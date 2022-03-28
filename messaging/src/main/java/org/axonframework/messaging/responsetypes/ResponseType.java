@@ -18,6 +18,7 @@ package org.axonframework.messaging.responsetypes;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 /**
  * Specifies the expected response type required when performing a query through the
@@ -59,6 +60,17 @@ public interface ResponseType<R> extends Serializable {
     @SuppressWarnings("unchecked")
     default R convert(Object response) {
         return (R) response;
+    }
+
+    /**
+     * Converts the given {@link java.lang.Throwable} into the type {@code R} of this {@link ResponseType} instance.
+     * Used when an error is represented as the message payload.
+     * The {@link Optional} is not empty when an error is represented as the message payload.
+     *
+     * @return a {@link Optional} {@code response} of type {@code R}
+     */
+    default Optional<R> convertExceptional(Throwable e) {
+        return Optional.empty();
     }
 
     /**

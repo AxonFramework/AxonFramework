@@ -167,7 +167,7 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeSegment(@Nonnull TrackingToken token, @Nonnull String processorName, int segment)
+    public void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
             throws UnableToInitializeTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 

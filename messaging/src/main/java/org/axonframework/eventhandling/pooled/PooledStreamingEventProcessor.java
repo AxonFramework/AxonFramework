@@ -486,10 +486,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link
          *                      EventProcessor} will track
-         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+        public Builder messageSource(@Nonnull StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
             assertNonNull(messageSource, "StreamableMessageSource may not be null");
             this.messageSource = messageSource;
             return this;
@@ -504,7 +503,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tokenStore(TokenStore tokenStore) {
+        public Builder tokenStore(@Nonnull TokenStore tokenStore) {
             assertNonNull(tokenStore, "TokenStore may not be null");
             this.tokenStore = tokenStore;
             return this;
@@ -517,7 +516,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -532,7 +531,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
+        public Builder coordinatorExecutor(@Nonnull ScheduledExecutorService coordinatorExecutor) {
             assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
             this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
             return this;
@@ -547,7 +546,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
+        public Builder coordinatorExecutor(
+                @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
             assertNonNull(coordinatorExecutorBuilder,
                           "The Coordinator's ScheduledExecutorService builder may not be null");
             this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
@@ -565,7 +565,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
          */
         @Deprecated
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutorService(@Nonnull ScheduledExecutorService workerExecutor) {
             return workerExecutor(workerExecutor);
         }
 
@@ -578,7 +578,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutor(@Nonnull ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
             return this;
@@ -593,7 +593,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+        public Builder workerExecutor(@Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
             assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
             this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
@@ -626,7 +626,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(
-                Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
+                @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
             this.initialToken = initialToken;
@@ -708,7 +708,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder clock(Clock clock) {
+        public Builder clock(@Nonnull Clock clock) {
             assertNonNull(clock, "Clock may not be null");
             this.clock = clock;
             return this;

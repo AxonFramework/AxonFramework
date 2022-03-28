@@ -97,7 +97,8 @@ public class InMemoryTokenStore implements TokenStore {
     @Override
     public void initializeSegment(@Nonnull TrackingToken token, @Nonnull String processorName, int segment)
             throws UnableToInitializeTokenException {
-        TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment), token);
+        TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
+                                                    token == null ? NULL_TOKEN : token);
         if (previous != null) {
             throw new UnableToInitializeTokenException("Token was already present");
         }
