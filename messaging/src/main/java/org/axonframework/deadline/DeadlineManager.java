@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
 import java.time.Instant;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Contract for deadline managers. Contains methods for scheduling a deadline and for cancelling a deadline.
@@ -36,15 +38,15 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
 
     /**
      * Schedules a deadline at given {@code triggerDateTime} with given {@code deadlineName}. The payload of this
-     * deadline will be {@code null}, as none is provided. The returned {@code scheduleId} and provided
-     * {@code deadlineName} combination can be used to cancel the scheduled deadline. The scope within which this call
-     * is made will be retrieved by the DeadlineManager itself.
+     * deadline will be {@code null}, as none is provided. The returned {@code scheduleId} and provided {@code
+     * deadlineName} combination can be used to cancel the scheduled deadline. The scope within which this call is made
+     * will be retrieved by the DeadlineManager itself.
      *
      * @param triggerDateTime A {@link java.time.Instant} denoting the moment to trigger the deadline handling
      * @param deadlineName    A {@link String} representing the name of the deadline to schedule
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Instant triggerDateTime, String deadlineName) {
+    default String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName) {
         return schedule(triggerDateTime, deadlineName, null);
     }
 
@@ -65,7 +67,8 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      *                         {@link Object}
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Instant triggerDateTime, String deadlineName, Object messageOrPayload) {
+    default String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
+                            @Nullable Object messageOrPayload) {
         return schedule(triggerDateTime, deadlineName, messageOrPayload, Scope.describeCurrentScope());
     }
 
@@ -86,22 +89,22 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    String schedule(Instant triggerDateTime,
-                    String deadlineName,
-                    Object messageOrPayload,
-                    ScopeDescriptor deadlineScope);
+    String schedule(@Nonnull Instant triggerDateTime,
+                    @Nonnull String deadlineName,
+                    @Nullable Object messageOrPayload,
+                    @Nonnull ScopeDescriptor deadlineScope);
 
     /**
      * Schedules a deadline after the given {@code triggerDuration} with given {@code deadlineName}. The payload of this
-     * deadline will be {@code null}, as none is provided. The returned {@code scheduleId} and provided
-     * {@code deadlineName} combination can be used to cancel the scheduled deadline.
-     * The scope within which this call is made will be retrieved by the DeadlineManager itself.
+     * deadline will be {@code null}, as none is provided. The returned {@code scheduleId} and provided {@code
+     * deadlineName} combination can be used to cancel the scheduled deadline. The scope within which this call is made
+     * will be retrieved by the DeadlineManager itself.
      *
      * @param triggerDuration A {@link java.time.Duration} describing the waiting period before handling the deadline
      * @param deadlineName    A {@link String} representing the name of the deadline to schedule
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Duration triggerDuration, String deadlineName) {
+    default String schedule(@Nonnull Duration triggerDuration, @Nonnull String deadlineName) {
         return schedule(triggerDuration, deadlineName, null);
     }
 
@@ -123,7 +126,8 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      *                         {@link Object}
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Duration triggerDuration, String deadlineName, Object messageOrPayload) {
+    default String schedule(@Nonnull Duration triggerDuration, @Nonnull String deadlineName,
+                            @Nullable Object messageOrPayload) {
         return schedule(triggerDuration, deadlineName, messageOrPayload, Scope.describeCurrentScope());
     }
 
@@ -144,10 +148,10 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @return the {@code scheduleId} as a {@link String} to use when cancelling the schedule
      */
-    default String schedule(Duration triggerDuration,
-                            String deadlineName,
-                            Object messageOrPayload,
-                            ScopeDescriptor deadlineScope) {
+    default String schedule(@Nonnull Duration triggerDuration,
+                            @Nonnull String deadlineName,
+                            @Nullable Object messageOrPayload,
+                            @Nonnull ScopeDescriptor deadlineScope) {
         return schedule(Instant.now().plus(triggerDuration),
                         deadlineName,
                         messageOrPayload,
@@ -155,30 +159,29 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
     }
 
     /**
-     * Cancels the deadline corresponding to the given {@code deadlineName} / {@code scheduleId} combination.
-     * This method has no impact on deadlines which have already been triggered.
+     * Cancels the deadline corresponding to the given {@code deadlineName} / {@code scheduleId} combination. This
+     * method has no impact on deadlines which have already been triggered.
      *
      * @param deadlineName a {@link String} representing the name of the deadline to cancel
      * @param scheduleId   the {@link String} denoting the scheduled deadline to cancel
      */
-    void cancelSchedule(String deadlineName, String scheduleId);
+    void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId);
 
     /**
-     * Cancels all the deadlines corresponding to the given {@code deadlineName}.
-     * This method has no impact on deadlines which have already been triggered.
+     * Cancels all the deadlines corresponding to the given {@code deadlineName}. This method has no impact on deadlines
+     * which have already been triggered.
      *
      * @param deadlineName a {@link String} representing the name of the deadlines to cancel
      */
-    void cancelAll(String deadlineName);
+    void cancelAll(@Nonnull String deadlineName);
 
     /**
      * Cancels all deadlines corresponding to the given {@code deadlineName} that are scheduled within {@link
-     * Scope#describeCurrentScope()}.
-     * This method has no impact on deadlines which have already been triggered.
+     * Scope#describeCurrentScope()}. This method has no impact on deadlines which have already been triggered.
      *
      * @param deadlineName a {@link String} representing the name of the deadlines to cancel
      */
-    default void cancelAllWithinScope(String deadlineName) {
+    default void cancelAllWithinScope(@Nonnull String deadlineName) {
         cancelAllWithinScope(deadlineName, Scope.describeCurrentScope());
     }
 
@@ -189,7 +192,7 @@ public interface DeadlineManager extends MessageDispatchInterceptorSupport<Deadl
      * @param deadlineName a {@link String} representing the name of the deadlines to cancel
      * @param scope        a {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      */
-    void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope);
+    void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope);
 
     /**
      * Shuts down this deadline manager.

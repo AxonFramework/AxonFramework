@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -92,13 +92,13 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.subtypes.put(getAggregateType(), prototypeBeanName);
     }
 
     @Override
-    public void setBeanName(String beanName) {
+    public void setBeanName(@Nonnull String beanName) {
         this.beanName = beanName;
     }
 

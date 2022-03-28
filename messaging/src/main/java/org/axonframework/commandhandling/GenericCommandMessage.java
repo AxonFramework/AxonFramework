@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of the CommandMessage that takes all properties as constructor parameters.
@@ -48,7 +49,7 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
      * Message#getPayload()} and {@link Message#getMetaData()} for other {@link Message} implementations.
      */
     @SuppressWarnings("unchecked")
-    public static <C> CommandMessage<C> asCommandMessage(Object command) {
+    public static <C> CommandMessage<C> asCommandMessage(@Nonnull Object command) {
         if (command instanceof CommandMessage) {
             return (CommandMessage<C>) command;
         } else if (command instanceof Message) {
@@ -64,7 +65,7 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
      *
      * @param payload the payload for the Message
      */
-    public GenericCommandMessage(T payload) {
+    public GenericCommandMessage(@Nonnull T payload) {
         this(payload, MetaData.emptyInstance());
     }
 
@@ -74,7 +75,7 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
      * @param payload  the payload for the Message
      * @param metaData The meta data for this message
      */
-    public GenericCommandMessage(T payload, Map<String, ?> metaData) {
+    public GenericCommandMessage(@Nonnull T payload, @Nonnull Map<String, ?> metaData) {
         this(new GenericMessage<>(payload, metaData), payload.getClass().getName());
     }
 
@@ -85,7 +86,7 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
      * @param delegate    the delegate message
      * @param commandName The name of the command
      */
-    public GenericCommandMessage(Message<T> delegate, String commandName) {
+    public GenericCommandMessage(@Nonnull Message<T> delegate, @Nonnull String commandName) {
         super(delegate);
         this.commandName = commandName;
     }
@@ -96,12 +97,12 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
     }
 
     @Override
-    public GenericCommandMessage<T> withMetaData(Map<String, ?> metaData) {
+    public GenericCommandMessage<T> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericCommandMessage<>(getDelegate().withMetaData(metaData), commandName);
     }
 
     @Override
-    public GenericCommandMessage<T> andMetaData(Map<String, ?> metaData) {
+    public GenericCommandMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericCommandMessage<>(getDelegate().andMetaData(metaData), commandName);
     }
 

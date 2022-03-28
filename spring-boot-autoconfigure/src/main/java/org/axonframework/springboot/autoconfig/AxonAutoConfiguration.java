@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 /**
  * @author Allard Buijze
@@ -343,7 +344,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(
             ignoredType = {
                     "org.axonframework.commandhandling.distributed.DistributedCommandBus",
-                    "org.axonframework.axonserver.connector.command.AxonServerCommandBus"
+                    "org.axonframework.axonserver.connector.command.AxonServerCommandBus",
+                    "org.axonframework.extensions.multitenancy.components.commandhandeling.MultiTenantCommandBus"
             },
             value = CommandBus.class
     )
@@ -394,7 +396,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
+    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
 }

@@ -18,18 +18,21 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
@@ -62,7 +65,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
 
     /**
-     * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
+     * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType {@code R}. Will
      * return a value greater than 0 in the following scenarios:
      * <ul>
      * <li>true: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
@@ -130,7 +133,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         return isIterableOfExpectedType(unwrapped) ||
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||
-                isArrayOfExpectedType(unwrapped);
+                isArrayOfExpectedType(unwrapped) ||
+                isFluxOfExpectedType(unwrapped);
     }
 
     /**
@@ -152,9 +156,17 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         }
         Class<?> responseType = response.getClass();
         if (isArrayOfExpectedType(responseType)) {
-            return Arrays.asList((R[]) response);
+            return asList((R[]) response);
         } else if (isIterableOfExpectedType(response)) {
             return convertToList((Iterable<R>) response);
+        } else if (projectReactorOnClassPath()) {
+            if (Flux.class.isAssignableFrom(responseType)) {
+                return ((Flux<R>) response).collectList().block();
+            } else if (Mono.class.isAssignableFrom(responseType)) {
+                return Collections.singletonList(((Mono<R>) response).block());
+            } else if (Publisher.class.isAssignableFrom(responseType)) {
+                return Flux.from((Publisher<R>) response).collectList().block();
+            }
         }
 
         if (instanceResponseType.matches(responseType)) {
@@ -178,6 +190,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         if (!isIterableType) {
             return false;
         }
+        //noinspection rawtypes
         Iterator responseIterator = ((Iterable) response).iterator();
 
         boolean canMatchContainedType = responseIterator.hasNext();
@@ -190,11 +203,10 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
         return isAssignableFrom(responseIterator.next().getClass());
     }
 
-    @SuppressWarnings("unchecked") // Suppress cast to R, since in proper use of this function it is allowed
-    private List<R> convertToList(Iterable responseIterable) {
+    private List<R> convertToList(Iterable<R> responseIterable) {
         List<R> response = new ArrayList<>();
-        Iterator responseIterator = responseIterable.iterator();
-        responseIterator.forEachRemaining(responseInstance -> response.add((R) responseInstance));
+        Iterator<R> responseIterator = responseIterable.iterator();
+        responseIterator.forEachRemaining(response::add);
         return response;
     }
 

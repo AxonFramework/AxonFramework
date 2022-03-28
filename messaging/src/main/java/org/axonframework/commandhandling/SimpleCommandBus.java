@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -106,12 +107,13 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull final CommandCallback<? super C, ? super R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -189,7 +191,8 @@ public class SimpleCommandBus implements CommandBus {
      * should be subscribed.
      */
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         assertNonNull(handler, "handler may not be null");
         subscriptions.compute(commandName, (k, existingHandler) -> {
@@ -211,7 +214,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor
     ) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
@@ -226,7 +229,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor
     ) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
@@ -240,7 +243,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
      *                              rolled back
      */
-    public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+    public void setRollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
     }
 
@@ -269,7 +272,7 @@ public class SimpleCommandBus implements CommandBus {
          * @param transactionManager a {@link TransactionManager} used to manage transactions
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -282,7 +285,7 @@ public class SimpleCommandBus implements CommandBus {
          * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
@@ -297,7 +300,7 @@ public class SimpleCommandBus implements CommandBus {
          *                              rolled back
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
             assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
             this.rollbackConfiguration = rollbackConfiguration;
             return this;
@@ -312,7 +315,7 @@ public class SimpleCommandBus implements CommandBus {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder duplicateCommandHandlerResolver(
-                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+                @Nonnull DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
             assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
             this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
             return this;
@@ -326,7 +329,7 @@ public class SimpleCommandBus implements CommandBus {
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+        public Builder defaultCommandCallback(@Nonnull CommandCallback<Object, Object> defaultCommandCallback) {
             this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
             return this;
         }

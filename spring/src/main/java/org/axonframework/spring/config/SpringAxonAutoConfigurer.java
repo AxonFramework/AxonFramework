@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
@@ -149,7 +150,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
-    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+    public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
+                                        BeanDefinitionRegistry registry) {
         registry.registerBeanDefinition("commandHandlerSubscriber",
                                         genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
@@ -616,7 +618,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@Nonnull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
@@ -626,8 +628,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
      */
     public static class ImportSelector implements DeferredImportSelector {
 
+        @Nonnull
         @Override
-        public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+        public String[] selectImports(@Nonnull AnnotationMetadata importingClassMetadata) {
             return new String[]{SpringAxonAutoConfigurer.class.getName()};
         }
     }

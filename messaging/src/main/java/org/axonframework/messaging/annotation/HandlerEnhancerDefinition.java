@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import javax.annotation.Nonnull;
+
 /**
  * Interface describing objects that are capable of enhancing a {@link MessageHandler}, giving it additional
  * functionality.
@@ -28,9 +30,9 @@ public interface HandlerEnhancerDefinition {
     /**
      * Enhance the given {@code original} handler. Implementations may return the original message handler.
      *
-     * @param original The original message handler
      * @param <T>      The type of object that will perform the actual handling of the message
+     * @param original The original message handler
      * @return The enhanced message handler
      */
-    <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original);
+    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original);
 }

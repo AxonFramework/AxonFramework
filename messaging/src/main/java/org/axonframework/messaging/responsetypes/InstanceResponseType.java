@@ -18,6 +18,9 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -59,8 +62,30 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
+        Type unwrapped;
+        if (projectReactorOnClassPath()) {
+            unwrapped = unwrapIfType(responseType,
+                                     Future.class,
+                                     Optional.class,
+                                     Flux.class,
+                                     Mono.class,
+                                     Publisher.class);
+        } else {
+            unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
+        }
         return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
+    }
+
+    @Override
+    public R convert(Object response) {
+        if (response != null && projectReactorOnClassPath()) {
+            if (Mono.class.isAssignableFrom(response.getClass())) {
+                return (R) ((Mono) response).block();
+            } else if (Publisher.class.isAssignableFrom(response.getClass())) {
+                return (R) Mono.from((Publisher) response).block();
+            }
+        }
+        return super.convert(response);
     }
 
     @SuppressWarnings("unchecked")

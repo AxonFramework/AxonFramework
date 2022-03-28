@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,14 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -55,7 +57,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -65,11 +66,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -271,6 +273,60 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void streamingFluxQuery() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+
+        StubResultStream stubResultStream = new StubResultStream(stubResponse("<string>1</string>"),
+                                                                 stubResponse("<string>2</string>"),
+                                                                 stubResponse("<string>3</string>"));
+        when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
+
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+                                .map(Message::getPayload))
+                    .expectNext("1", "2", "3")
+                    .verifyComplete();
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
+    void streamingQueryReturnsError() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream(new RuntimeException("oops")));
+
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+                                .map(Message::getPayload))
+                    .verifyErrorMatches(t -> t instanceof RuntimeException && "oops".equals(t.getMessage()));
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
+    void streamingQueryReturnsNoResults() {
+        StreamingQueryMessage<String, String> testQuery =
+                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream());
+
+        StepVerifier.create(testSubject.streamingQuery(testQuery))
+                    .verifyComplete();
+
+        verify(targetContextResolver).resolveContext(testQuery);
+        verify(mockQueryChannel).query(argThat(
+                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
+                        && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+    }
+
+    @Test
     void queryForOptionalWillRequestInstanceOfFromRemoteDestination() {
         QueryMessage<String, Optional<String>> testQuery =
                 new GenericQueryMessage<>("Hello, World", optionalInstanceOf(String.class));
@@ -433,17 +489,22 @@ class AxonServerQueryBusTest {
         private final Iterator<T> responses;
         private final Throwable error;
         private T peeked;
-        private boolean closed;
+        private volatile boolean closed;
+        private final int totalNumberOfElements;
 
         public StubResultStream(Throwable error) {
             this.error = error;
             this.closed = true;
             this.responses = Collections.emptyIterator();
+            this.totalNumberOfElements = 1;
         }
 
         public StubResultStream(T... responses) {
             this.error = null;
-            this.responses = Arrays.asList(responses).iterator();
+            List<T> queryResponses = asList(responses);
+            this.responses = queryResponses.iterator();
+            this.totalNumberOfElements = queryResponses.size();
+            this.closed = totalNumberOfElements == 0;
         }
 
         @Override
@@ -459,9 +520,22 @@ class AxonServerQueryBusTest {
             if (peeked != null) {
                 T result = peeked;
                 peeked = null;
+                closeIfThereAreNoMoreElements();
                 return result;
             }
-            return responses.hasNext() ? responses.next() : null;
+            if (responses.hasNext()) {
+                T next = responses.next();
+                closeIfThereAreNoMoreElements();
+                return next;
+            } else {
+                return null;
+            }
+        }
+
+        private void closeIfThereAreNoMoreElements() {
+            if (!responses.hasNext()) {
+                close();
+            }
         }
 
         @Override
@@ -477,7 +551,8 @@ class AxonServerQueryBusTest {
         @Override
         public void onAvailable(Runnable r) {
             if (peeked != null || responses.hasNext() || isClosed()) {
-                r.run();
+                IntStream.rangeClosed(0, totalNumberOfElements)
+                         .forEach(i -> r.run());
             }
         }
 

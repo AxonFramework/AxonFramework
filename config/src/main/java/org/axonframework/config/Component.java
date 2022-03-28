@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * A Component used in the Axon Configurer. A Component describes an object that needs to be created, possibly based on
@@ -63,9 +64,9 @@ public class Component<B> {
      * @param name            The name of the component
      * @param builderFunction The builder function of the component
      */
-    public Component(Supplier<Configuration> config,
-                     String name,
-                     Function<Configuration, ? extends B> builderFunction) {
+    public Component(@Nonnull Supplier<Configuration> config,
+                     @Nonnull String name,
+                     @Nonnull Function<Configuration, ? extends B> builderFunction) {
         this.configSupplier = config;
         this.name = name;
         this.builderFunction = builderFunction;
@@ -94,7 +95,7 @@ public class Component<B> {
      * @param builderFunction The new builder function for the component
      * @throws IllegalStateException when the component has already been retrieved using {@link #get()}.
      */
-    public void update(Function<Configuration, ? extends B> builderFunction) {
+    public void update(@Nonnull Function<Configuration, ? extends B> builderFunction) {
         Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         this.builderFunction = builderFunction;
     }

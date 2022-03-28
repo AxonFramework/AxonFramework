@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.AxonConfigurationException;
@@ -28,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
@@ -69,7 +75,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     @Override
-    public <C, R> void send(C command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void send(@Nonnull C command, @Nonnull CommandCallback<? super C, ? super R> callback) {
         super.send(command, callback);
     }
 
@@ -85,7 +91,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <R> R sendAndWait(Object command) {
+    public <R> R sendAndWait(@Nonnull Object command) {
         FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult();
@@ -111,7 +117,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
+    public <R> R sendAndWait(@Nonnull Object command, long timeout, @Nonnull TimeUnit unit) {
         FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         CommandResultMessage<? extends R> commandResultMessage = futureCallback.getResult(timeout, unit);
@@ -122,7 +128,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     @Override
-    public <R> CompletableFuture<R> send(Object command) {
+    public <R> CompletableFuture<R> send(@Nonnull Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, new FailureLoggingCallback<>(logger, callback));
         CompletableFuture<R> result = new CompletableFuture<>();
@@ -142,8 +148,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return super.registerDispatchInterceptor(dispatchInterceptor);
     }
 
@@ -166,13 +173,13 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public static class Builder extends AbstractCommandGateway.Builder {
 
         @Override
-        public Builder commandBus(CommandBus commandBus) {
+        public Builder commandBus(@Nonnull CommandBus commandBus) {
             super.commandBus(commandBus);
             return this;
         }
 
         @Override
-        public Builder retryScheduler(RetryScheduler retryScheduler) {
+        public Builder retryScheduler(@Nonnull RetryScheduler retryScheduler) {
             super.retryScheduler(retryScheduler);
             return this;
         }

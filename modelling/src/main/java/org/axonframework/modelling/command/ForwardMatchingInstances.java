@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.util.Objects;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
@@ -44,7 +45,7 @@ public class ForwardMatchingInstances<T extends Message<?>> implements Forwardin
     private EntityModel childEntity;
 
     @Override
-    public void initialize(Member member, EntityModel childEntity) {
+    public void initialize(@Nonnull Member member, @Nonnull EntityModel childEntity) {
         this.childEntity = childEntity;
         this.routingKey = findAnnotationAttributes((AnnotatedElement) member, AggregateMember.class)
                 .map(map -> (String) map.get("routingKey"))
@@ -54,7 +55,7 @@ public class ForwardMatchingInstances<T extends Message<?>> implements Forwardin
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
         Property routingProperty = getProperty(message.getPayloadType(), routingKey);
         if (routingProperty == null) {
             return Stream.empty();

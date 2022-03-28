@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
+import javax.annotation.Nonnull;
 
 /**
  * Serializer that uses XStream to serialize and deserialize arbitrary objects. The XStream instance is configured to
@@ -174,31 +175,31 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
          * CompactDriver}.
          */
         @Override
-        public Builder xStream(XStream xStream) {
+        public Builder xStream(@Nonnull XStream xStream) {
             super.xStream(xStream);
             return this;
         }
 
         @Override
-        public Builder charset(Charset charset) {
+        public Builder charset(@Nonnull Charset charset) {
             super.charset(charset);
             return this;
         }
 
         @Override
-        public Builder revisionResolver(RevisionResolver revisionResolver) {
+        public Builder revisionResolver(@Nonnull RevisionResolver revisionResolver) {
             super.revisionResolver(revisionResolver);
             return this;
         }
 
         @Override
-        public Builder converter(Converter converter) {
+        public Builder converter(@Nonnull Converter converter) {
             super.converter(converter);
             return this;
         }
 
         @Override
-        public Builder classLoader(ClassLoader classLoader) {
+        public Builder classLoader(@Nonnull ClassLoader classLoader) {
             super.classLoader(classLoader);
             return this;
         }

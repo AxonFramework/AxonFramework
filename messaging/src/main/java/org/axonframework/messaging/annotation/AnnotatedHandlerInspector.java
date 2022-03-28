@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
@@ -348,9 +349,14 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(() -> next.handle(message, target, handler),
-                                                                                     () -> doHandle(message, target, handler));
+        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
+                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(() -> next.handle(message,
+                                                                                                       target,
+                                                                                                       handler),
+                                                                                     () -> doHandle(message,
+                                                                                                    target,
+                                                                                                    handler));
         }
 
         private Object doHandle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
@@ -368,7 +374,8 @@ public class AnnotatedHandlerInspector<T> {
         }
 
         @Override
-        public Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
+        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
+                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
             return handler.handle(message, target);
         }
     }

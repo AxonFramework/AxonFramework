@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import javax.annotation.Nonnull;
+
 /**
  * Interceptor that uses a {@link TransactionManager} to start a new transaction before a Message is handled. When the
  * Unit of Work is committed or rolled back this Interceptor also completes the Transaction.
@@ -43,7 +45,8 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
     }
 
     @Override
-    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+            throws Exception {
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());
