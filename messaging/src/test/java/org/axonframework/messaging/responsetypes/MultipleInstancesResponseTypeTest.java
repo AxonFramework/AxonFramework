@@ -39,153 +39,153 @@ public class MultipleInstancesResponseTypeTest
 
     @Test
     void testMatchesReturnsMatchSingleIfResponseTypeIsOfTheSame() throws NoSuchMethodException {
-        testMatchPriority("someQuery", MATCHES);
+        testMatchRanked("someQuery", MATCHES);
     }
 
     @Test
     void testMatchesReturnsMatchSingleIfResponseTypeIsSubTypeOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSubTypedQuery", MATCHES);
+        testMatchRanked("someSubTypedQuery", MATCHES);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSuperTypedQuery", DOES_NOT_MATCH);
+        testMatchRanked("someSuperTypedQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedGeneric() throws NoSuchMethodException {
-        testMatchPriority("someUnboundedGenericQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsSingleMatchIfResponseTypeIsBoundedGenericOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someBoundedGenericQuery", MATCHES);
+        testMatchRanked("someBoundedGenericQuery", MATCHES);
     }
 
     @Test
     void testMatchesReturnsSingleMatchIfResponseTypeIsMultiBoundedGenericOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someMultiBoundedGenericQuery", MATCHES);
+        testMatchRanked("someMultiBoundedGenericQuery", MATCHES);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsGenericOfOtherType() throws NoSuchMethodException {
-        testMatchPriority("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCH);
+        testMatchRanked("someNonMatchingBoundedGenericQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsArrayOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someArrayQuery", MATCHES_LIST);
+        testMatchRanked("someArrayQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsArrayWithSubTypeOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSubTypedArrayQuery", MATCHES_LIST);
+        testMatchRanked("someSubTypedArrayQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsArrayWithSuperTypeOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSuperTypedArrayQuery", DOES_NOT_MATCH);
+        testMatchRanked("someSuperTypedArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedGenericArray() throws NoSuchMethodException {
-        testMatchPriority("someUnboundedGenericArrayQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsBoundedGenericArrayOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someBoundedGenericArrayQuery", MATCHES_LIST);
+        testMatchRanked("someBoundedGenericArrayQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsMultiBoundedGenericArrayOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someMultiBoundedGenericArrayQuery", MATCHES_LIST);
+        testMatchRanked("someMultiBoundedGenericArrayQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsGenericArrayOfOtherType() throws NoSuchMethodException {
-        testMatchPriority("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCH);
+        testMatchRanked("someNonMatchingBoundedGenericArrayQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsListOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someListQuery", MATCHES_LIST);
+        testMatchRanked("someListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsSubListOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSubListQuery", MATCHES_LIST);
+        testMatchRanked("someSubListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsSuperListOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSuperListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someSuperListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsBoundedGenericListOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someBoundedGenericListQuery", MATCHES_LIST);
+        testMatchRanked("someBoundedGenericListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedGenericList() throws NoSuchMethodException {
-        testMatchPriority("someUnboundedGenericListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsMultiBoundedGenericListOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someMultiBoundedGenericListQuery", MATCHES_LIST);
+        testMatchRanked("someMultiBoundedGenericListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsGenericListOfOtherType() throws NoSuchMethodException {
-        testMatchPriority("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someNonMatchingBoundedGenericListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedWildcardList() throws NoSuchMethodException {
-        testMatchPriority("someUnboundedWildcardListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsLowerBoundedWildcardList() throws NoSuchMethodException {
-        testMatchPriority("someLowerBoundedWildcardListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someLowerBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someUpperBoundedWildcardListQuery", MATCHES_LIST);
+        testMatchRanked("someUpperBoundedWildcardListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsWildcardListOfOtherType() throws NoSuchMethodException {
-        testMatchPriority("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCH);
+        testMatchRanked("someNonMatchingUpperBoundedWildcardQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedGenericUpperBoundedWildcardList()
             throws NoSuchMethodException {
-        testMatchPriority("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someGenericUpperBoundedWildcardListQuery", MATCHES_LIST);
+        testMatchRanked("someGenericUpperBoundedWildcardListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsMultiGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someMultiGenericUpperBoundedWildcardListQuery", MATCHES_LIST);
+        testMatchRanked("someMultiGenericUpperBoundedWildcardListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsListImplementationOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someListImplementationQuery", MATCHES_LIST);
+        testMatchRanked("someListImplementationQuery", MATCHES_LIST);
     }
 
     /*
@@ -212,55 +212,55 @@ public class MultipleInstancesResponseTypeTest
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someUnboundedListImplementationQuery", DOES_NOT_MATCH);
+        testMatchRanked("someUnboundedListImplementationQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsBoundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someBoundedListImplementationQuery", MATCHES_LIST);
+        testMatchRanked("someBoundedListImplementationQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsMultiUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCH);
+        testMatchRanked("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsMultiBoundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
-        testMatchPriority("someMultiBoundedListImplementationQuery", MATCHES_LIST);
+        testMatchRanked("someMultiBoundedListImplementationQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsSetOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someSetQuery", MATCHES_LIST);
+        testMatchRanked("someSetQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsStreamOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someStreamQuery", MATCHES_LIST);
+        testMatchRanked("someStreamQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsMapOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someMapQuery", DOES_NOT_MATCH);
+        testMatchRanked("someMapQuery", DOES_NOT_MATCH);
     }
 
     @Test
     void testMatchesReturnsSingleMatchIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someFutureQuery", MATCHES);
+        testMatchRanked("someFutureQuery", MATCHES);
     }
 
     @Test
     void testMatchesReturnsListMatchIfResponseTypeIsListOfFutureOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someFutureListQuery", MATCHES_LIST);
+        testMatchRanked("someFutureListQuery", MATCHES_LIST);
     }
 
     @Test
     void testMatchesReturnsNoMatchIfResponseTypeIsOptionalOfProvidedType() throws NoSuchMethodException {
-        testMatchPriority("someOptionalQueryResponse", MATCHES);
+        testMatchRanked("someOptionalQueryResponse", MATCHES);
     }
 
     @SuppressWarnings("unused")

@@ -439,7 +439,7 @@ public class SimpleQueryBus implements QueryBus {
         Map<Integer, List<QuerySubscription>> querySubscriptionStream = subscriptions
                 .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                 .stream()
-                .collect(groupingBy(querySubscription -> responseType.matchPriority(querySubscription.getResponseType()),
+                .collect(groupingBy(querySubscription -> responseType.matchesRanked(querySubscription.getResponseType()),
                                     mapping(Function.identity(), Collectors.toList())));
 
         Integer highestMatchPriority = querySubscriptionStream.keySet().stream()

@@ -40,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractResponseTypeTest<R> {
 
-    protected static final Integer MATCHES_LIST = ResponseType.MATCHES_LIST;
-    protected static final Integer MATCHES = ResponseType.MATCHES_SINGLE;
+    protected static final Integer MATCHES_LIST = ResponseType.ITERABLE_MATCH;
+    protected static final Integer MATCHES = ResponseType.SINGLE_MATCH;
     protected static final Integer DOES_NOT_MATCH = ResponseType.NO_MATCH;
 
     protected final ResponseType<R> testSubject;
@@ -63,10 +63,11 @@ public abstract class AbstractResponseTypeTest<R> {
      * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given
      *                               {@code methodNameToTest}
      */
-    protected void testMatchPriority(String methodNameToTest, Integer expectedResult) throws NoSuchMethodException {
+    protected void testMatchRanked(String methodNameToTest, Integer expectedResult) throws NoSuchMethodException {
         Method methodToTest = methodOf(getClass(), methodNameToTest);
         Type methodReturnType = methodToTest.getGenericReturnType();
-        assertEquals(expectedResult, testSubject.matchPriority(methodReturnType));
+        assertEquals(expectedResult, testSubject.matchesRanked(methodReturnType));
+        assertEquals(expectedResult > 0, testSubject.matches(methodReturnType));
     }
 
     @SuppressWarnings("unused")

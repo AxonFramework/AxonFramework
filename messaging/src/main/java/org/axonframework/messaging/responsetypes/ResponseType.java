@@ -39,9 +39,20 @@ import java.util.Optional;
  */
 public interface ResponseType<R> extends Serializable {
 
+    /**
+     * Indicates that the response type does not match with a given {@link java.lang.reflect.Type}.
+     */
     int NO_MATCH = 0;
-    int MATCHES_SINGLE = 1;
-    int MATCHES_LIST = 1024;
+
+    /**
+     * Indicates that the response matches with the {@link java.lang.reflect.Type}.while returning a single result.
+     */
+    int SINGLE_MATCH = 1;
+
+    /**
+     * Indicates that the response matches with the {@link java.lang.reflect.Type}.while returning an iterable result.
+     */
+    int ITERABLE_MATCH = 1024;
 
     /**
      * Match the query handler its response {@link java.lang.reflect.Type} with the {@link ResponseType} implementation
@@ -58,16 +69,15 @@ public interface ResponseType<R> extends Serializable {
      * useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there are match on a both
      * multiple and single instance types. Lists should be given priority for handling.
      * <p>
-     * See also the constants defined to indicate match priority: {@link ResponseType#MATCHES_LIST}, {@link
-     * ResponseType#MATCHES_SINGLE} and {@link ResponseType#NO_MATCH}.
+     * {@see ResponseType#ITERABLE_MATCH} {@see ResponseType#SINGLE_MATCH} {@see ResponseType#NO_MATCH}
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
      * @return {@link ResponseType#NO_MATCH} if there is no match, greater than 0 if there is a match. Highest match
      * should win when choosing a query handler.
      */
-    default Integer matchPriority(Type responseType) {
-        if(matches(responseType)) {
-            return MATCHES_SINGLE;
+    default Integer matchesRanked(Type responseType) {
+        if (matches(responseType)) {
+            return SINGLE_MATCH;
         }
         return NO_MATCH;
     }
@@ -87,8 +97,8 @@ public interface ResponseType<R> extends Serializable {
 
     /**
      * Converts the given {@link java.lang.Throwable} into the type {@code R} of this {@link ResponseType} instance.
-     * Used when an error is represented as the message payload.
-     * The {@link Optional} is not empty when an error is represented as the message payload.
+     * Used when an error is represented as the message payload. The {@link Optional} is not empty when an error is
+     * represented as the message payload.
      *
      * @return a {@link Optional} {@code response} of type {@code R}
      */
