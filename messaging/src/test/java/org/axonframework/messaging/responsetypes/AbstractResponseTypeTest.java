@@ -66,7 +66,7 @@ public abstract class AbstractResponseTypeTest<R> {
     protected void testMatchRanked(String methodNameToTest, Integer expectedResult) throws NoSuchMethodException {
         Method methodToTest = methodOf(getClass(), methodNameToTest);
         Type methodReturnType = methodToTest.getGenericReturnType();
-        assertEquals(expectedResult, testSubject.matchesRanked(methodReturnType));
+        assertEquals(expectedResult, testSubject.matchRank(methodReturnType));
         assertEquals(expectedResult > 0, testSubject.matches(methodReturnType));
     }
 

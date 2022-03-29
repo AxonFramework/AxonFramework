@@ -436,24 +436,24 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
-        Map<Integer, List<QuerySubscription>> querySubscriptionStream = subscriptions
+        Map<Integer, List<QuerySubscription>> querySubscriptionsByRank = subscriptions
                 .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                 .stream()
-                .collect(groupingBy(querySubscription -> responseType.matchesRanked(querySubscription.getResponseType()),
+                .collect(groupingBy(querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
                                     mapping(Function.identity(), Collectors.toList())));
 
-        Integer highestMatchPriority = querySubscriptionStream.keySet().stream()
-                                                              .max(Comparator.comparing(Function.identity()))
-                                                              .orElse(0);
-        if (highestMatchPriority == 0) {
+        Integer highestMatchRank = querySubscriptionsByRank.keySet().stream()
+                                                           .max(Comparator.comparing(Function.identity()))
+                                                           .orElse(0);
+        if (highestMatchRank == 0) {
             // No match was found on responseType
             return Collections.emptyList();
         }
-        return querySubscriptionStream.get(highestMatchPriority)
-                                      .stream()
-                                      .map(QuerySubscription::getQueryHandler)
-                                      .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
-                                      .collect(Collectors.toList());
+        return querySubscriptionsByRank.get(highestMatchRank)
+                                       .stream()
+                                       .map(QuerySubscription::getQueryHandler)
+                                       .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
+                                       .collect(Collectors.toList());
     }
 
     private <Q, R> Publisher<MessageHandler<? super QueryMessage<?, ?>>> getStreamingHandlersForMessage(

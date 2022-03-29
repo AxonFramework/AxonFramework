@@ -120,11 +120,11 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      * ResponseType#NO_MATCH} for non-matches
      */
     @Override
-    public Integer matchesRanked(Type responseType) {
+    public Integer matchRank(Type responseType) {
         if (isMatchingIterable(responseType)) {
             return ITERABLE_MATCH;
         }
-        return instanceResponseType.matchesRanked(responseType);
+        return instanceResponseType.matchRank(responseType);
     }
 
     private boolean isMatchingIterable(Type responseType) {

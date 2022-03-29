@@ -75,7 +75,7 @@ public interface ResponseType<R> extends Serializable {
      * @return {@link ResponseType#NO_MATCH} if there is no match, greater than 0 if there is a match. Highest match
      * should win when choosing a query handler.
      */
-    default Integer matchesRanked(Type responseType) {
+    default Integer matchRank(Type responseType) {
         if (matches(responseType)) {
             return SINGLE_MATCH;
         }
