@@ -402,8 +402,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
             reporter.reportWrongExceptionMessage(actualException, emptyMatcherDescription);
             return this;
         }
+
         StringDescription description = new StringDescription();
         exceptionMessageMatcher.describeTo(description);
+
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+        }
         if (actualException != null && !exceptionMessageMatcher.matches(actualException.getMessage())) {
             reporter.reportWrongExceptionMessage(actualException, description);
         }

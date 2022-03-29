@@ -275,7 +275,6 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");

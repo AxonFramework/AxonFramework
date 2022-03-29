@@ -696,7 +696,7 @@ public class DefaultConfigurer implements Configurer {
      * lifecycle handlers are registered.
      */
     protected void prepareMessageHandlerRegistrars() {
-        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(cfg -> registrar.get()));
+        messageHandlerRegistrars.forEach(registrar -> initHandlers.add(c -> registrar.get()));
     }
 
     /**

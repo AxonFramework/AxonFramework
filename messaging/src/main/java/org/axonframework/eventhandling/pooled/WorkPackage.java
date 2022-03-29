@@ -228,7 +228,10 @@ class WorkPackage {
             ProcessingEntry entry = processingQueue.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.eventMessage().trackingToken());
             if (entry.canHandle()) {
-                eventBatch.add(entry.eventMessage());
+                eventBatch.add(
+                        entry.eventMessage()
+                             .withTrackingToken(lastConsumedToken)
+                );
             }
         }
 
