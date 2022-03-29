@@ -119,6 +119,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     @SuppressWarnings("PackageAccessibility")
     @Override
     public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {
+        //noinspection ConstantConditions
         if (message != null) {
             Tags tags = Tags.of(tagsBuilder.apply(message));
             AtomicLong actualCounter = gauges.computeIfAbsent(tags, k -> new AtomicLong());

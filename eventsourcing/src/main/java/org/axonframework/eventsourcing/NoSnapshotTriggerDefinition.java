@@ -45,10 +45,12 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
 
         @Override
         public void eventHandled(@Nonnull EventMessage<?> msg) {
+            // No operation necessary for a no-op implementation.
         }
 
         @Override
         public void initializationFinished() {
+            // No operation necessary for a no-op implementation.
         }
     }
 }

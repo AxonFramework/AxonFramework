@@ -144,6 +144,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
 
     @Override
     public GenericDomainEventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
+        //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;
         }

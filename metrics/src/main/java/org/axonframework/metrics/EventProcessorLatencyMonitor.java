@@ -60,6 +60,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
     @Override
     public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {
+        //noinspection ConstantConditions
         if (message != null) {
             this.processTime.set(Duration.between(message.getTimestamp(), clock.instant()).toMillis());
         }

@@ -74,6 +74,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     @Override
     public Object postProcessAfterInitialization(@Nonnull final Object bean, @Nonnull final String beanName)
             throws BeansException {
+        //noinspection ConstantConditions
         if (bean instanceof FactoryBean
                 || (beanName != null && !isNullBean(bean) && beanFactory.containsBean(beanName)
                 && !beanFactory.isSingleton(beanName))) {
@@ -110,16 +111,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     }
         
     /**
-     * Verify if the given {@code bean} is a {@link org.springframework.beans.factory.support.NullBean} instance.
-     * If this is the case, a call to {@link org.springframework.beans.factory.support.NullBean#equals} using {@code null} will return {@code true}.
+     * Verify if the given {@code bean} is a {@code org.springframework.beans.factory.support.NullBean} instance.
+     * If this is the case, a call to {@code org.springframework.beans.factory.support.NullBean#equals} using {@code null} will return {@code true}.
      *
      * {@link <a href="https://github.com/spring-cloud/spring-cloud-aws/blob/12c785a52d935d307f7caffe7894b04742229d17/spring-cloud-aws-autoconfigure/src/main/java/org/springframework/cloud/aws/autoconfigure/context/ContextStackAutoConfiguration.java#L80">NullBean example</a>}
-     * @see org.springframework.beans.factory.support.NullBean#equals
      *
-     * @param bean the {@link Object} to verify if it is a {@link org.springframework.beans.factory.support.NullBean}
-     * @return {@code true} if the given {@code bean} is of type {@link org.springframework.beans.factory.support.NullBean} and {@code false} otherwise
+     * @param bean the {@link Object} to verify if it is a {@code org.springframework.beans.factory.support.NullBean}
+     * @return {@code true} if the given {@code bean} is of type {@code org.springframework.beans.factory.support.NullBean} and {@code false} otherwise
      */
     private boolean isNullBean(final Object bean) {
+        //noinspection ConstantConditions
         return bean.equals(null);
     }
 
@@ -223,7 +224,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         private final Object proxy;
         private final Method[] proxyMethods;
-        private final Class[] interfaces;
+        private final Class<?>[] interfaces;
 
         private ProxyOrImplementationInvocationInterceptor(Object proxy, Object implementation) {
             this.proxy = proxy;
@@ -233,7 +234,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         @Override
         public boolean implementsInterface(@Nonnull Class<?> intf) {
-            for (Class iFace : interfaces) {
+            for (Class<?> iFace : interfaces) {
                 if (intf.equals(iFace)) {
                     return true;
                 }
@@ -243,7 +244,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         @Nonnull
         @Override
-        public Class[] getInterfaces() {
+        public Class<?>[] getInterfaces() {
             return interfaces;
         }
 
@@ -335,7 +336,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         @Nonnull
         @Override
-        public Class[] getInterfaces() {
+        public Class<?>[] getInterfaces() {
             return new Class[]{adapterInterface};
         }
     }

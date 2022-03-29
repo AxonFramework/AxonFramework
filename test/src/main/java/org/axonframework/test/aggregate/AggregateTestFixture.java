@@ -952,6 +952,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+            // A dedicated implementation is not necessary for test fixture.
         }
 
         @Nonnull

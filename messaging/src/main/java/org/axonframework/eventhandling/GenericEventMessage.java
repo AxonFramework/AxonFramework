@@ -58,7 +58,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         if (EventMessage.class.isInstance(event)) {
             return (EventMessage<T>) event;
         } else if (event instanceof Message) {
-            Message message = (Message) event;
+            Message<T> message = (Message<T>) event;
             return new GenericEventMessage<>(message, clock.instant());
         }
         return new GenericEventMessage<>(new GenericMessage<>((T) event), clock.instant());
@@ -91,7 +91,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
      * @param identifier The identifier of the Message
      * @param timestamp  The timestamp of the Message creation
      * @param payload    The payload of the message
-     * @param metaData   The meta data of the message
+     * @param metaData   The metadata of the message
      */
     public GenericEventMessage(@Nonnull String identifier, T payload, @Nonnull Map<String, ?> metaData,
                                @Nonnull Instant timestamp) {
@@ -114,7 +114,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
      * Initializes a {@link GenericEventMessage} with given message as delegate and given {@code timestamp}. The given
      * message will be used supply the payload, metadata and identifier of the resulting event message.
      *
-     * @param delegate  the message that will be used used as delegate
+     * @param delegate  the message that will be used as delegate
      * @param timestamp the timestamp of the resulting event message
      */
     protected GenericEventMessage(@Nonnull Message<T> delegate, @Nonnull Instant timestamp) {
@@ -137,6 +137,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
 
     @Override
     public GenericEventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData) {
+        //noinspection ConstantConditions
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;
         }
@@ -147,7 +148,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", timestamp='")
-                .append(getTimestamp().toString());
+                .append(getTimestamp());
     }
 
     @Override
