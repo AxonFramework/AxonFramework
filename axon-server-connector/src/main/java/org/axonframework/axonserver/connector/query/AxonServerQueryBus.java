@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,15 +158,22 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
                 QUERY_QUEUE_CAPACITY,
-                Comparator.comparingLong(
-                        r -> r instanceof QueryProcessingTask ? ((QueryProcessingTask) r).getPriority() :
-                                r instanceof ResponseProcessingTask
-                                        ? ((ResponseProcessingTask<?>) r).getPriority()
-                                        : DEFAULT_PRIORITY
-                ).reversed()
+                Comparator.comparingLong(this::queryProcessingTaskPriority).reversed()
         );
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
+    }
+
+    private long queryProcessingTaskPriority(Object r) {
+        return r instanceof QueryProcessingTask
+                ? ((QueryProcessingTask) r).getPriority() :
+                responseProcessingTaskPriority(r);
+    }
+
+    private int responseProcessingTaskPriority(Object r) {
+        return r instanceof ResponseProcessingTask
+                ? ((ResponseProcessingTask<?>) r).getPriority()
+                : DEFAULT_PRIORITY;
     }
 
     /**
