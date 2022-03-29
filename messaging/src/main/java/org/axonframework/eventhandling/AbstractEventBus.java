@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
@@ -71,7 +72,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         if (this.eventProcessors.add(eventProcessor)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor);
@@ -102,13 +103,13 @@ public abstract class AbstractEventBus implements EventBus {
      */
     @Override
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
-    public void publish(List<? extends EventMessage<?>> events) {
+    public void publish(@Nonnull List<? extends EventMessage<?>> events) {
         List<MessageMonitor.MonitorCallback> ingested = events.stream()
                                                               .map(messageMonitor::onMessageIngested)
                                                               .collect(Collectors.toList());
@@ -276,7 +277,7 @@ public abstract class AbstractEventBus implements EventBus {
          * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;

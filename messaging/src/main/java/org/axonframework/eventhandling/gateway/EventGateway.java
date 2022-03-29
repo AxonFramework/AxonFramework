@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Interface towards the Event Handling components of an application. This interface provides a friendlier API toward
@@ -49,10 +50,10 @@ public interface EventGateway extends MessageDispatchInterceptorSupport<EventMes
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
      * listeners.
      * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
-     * all subscribed EventListeners.
+     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to all
+     * subscribed EventListeners.
      *
      * @param events The collection of events to publish
      */
-    void publish(List<?> events);
+    void publish(@Nonnull List<?> events);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventhandling;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface of the error handler that will be invoked if event processing fails. The error handler is generally invoked
@@ -40,6 +42,6 @@ public interface ErrorHandler {
      * @param errorContext Contextual information describing the error
      * @throws Exception if the handler decides to propagate the error
      */
-    void handleError(ErrorContext errorContext) throws Exception;
+    void handleError(@Nonnull ErrorContext errorContext) throws Exception;
 
 }

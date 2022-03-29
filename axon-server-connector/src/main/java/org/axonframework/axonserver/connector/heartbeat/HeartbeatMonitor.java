@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 /**
  * Verifies if the connection is still alive, and react if it is not.
@@ -68,7 +69,7 @@ public class HeartbeatMonitor implements Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
         lifecycle.onShutdown(Phase.INSTRUCTION_COMPONENTS, this::shutdown);
     }

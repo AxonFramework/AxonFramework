@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import org.springframework.messaging.MessageHandler;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -75,8 +76,9 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
         this.eventMessageConverter = eventMessageConverter;
     }
 
+    @Nonnull
     @Override
-    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> messageProcessor) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> messageProcessor) {
         messageProcessors.add(messageProcessor);
         return () -> messageProcessors.remove(messageProcessor);
     }
@@ -88,7 +90,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void handleMessage(Message<?> message) {
+    public void handleMessage(@Nonnull Message<?> message) {
         List<? extends EventMessage<?>> messages = singletonList(transformMessage(message));
         for (Consumer<List<? extends EventMessage<?>>> messageProcessor : messageProcessors) {
             messageProcessor.accept(messages);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,13 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.*;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateEntityNotFoundException;
+import org.axonframework.modelling.command.AggregateInvocationException;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -544,7 +551,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> withMetaData(Map<String, ?> newMetaData) {
+        public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
@@ -556,7 +563,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> andMetaData(Map<String, ?> additionalMetaData) {
+        public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),

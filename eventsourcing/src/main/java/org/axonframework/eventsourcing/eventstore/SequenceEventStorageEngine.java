@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 /**
  * EventStorageEngine implementation that combines the streams of two event storage engines. The first event storage
@@ -68,12 +69,12 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void appendEvents(List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
         activeStorage.appendEvents(events);
     }
 
     @Override
-    public void storeSnapshot(DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         activeStorage.storeSnapshot(snapshot);
     }
 
@@ -91,14 +92,14 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
         DomainEventStream historic = historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber);
         return new ConcatenatingDomainEventStream(historic, aggregateIdentifier, firstSequenceNumber,
                                                   (id, seq) -> activeStorage.readEvents(aggregateIdentifier, seq));
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
+    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalDomainEventMessage = activeStorage.readSnapshot(aggregateIdentifier);
         return optionalDomainEventMessage.isPresent()
                 ? optionalDomainEventMessage
@@ -106,7 +107,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
         Optional<Long> result = activeStorage.lastSequenceNumberFor(aggregateIdentifier);
         if (result.isPresent()) {
             return result;
@@ -125,7 +126,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         TrackingToken tokenFromActiveStorage = activeStorage.createTokenAt(dateTime);
         if (tokenFromActiveStorage == null) {
             return historicStorage.createTokenAt(dateTime);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import java.util.Objects;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
@@ -35,7 +37,7 @@ public interface EventHandlerInvoker {
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise
      */
-    boolean canHandle(EventMessage<?> eventMessage, Segment segment);
+    boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment);
 
     /**
      * Check whether or not this invoker has handlers that can handle the given {@code payloadType}.
@@ -44,7 +46,7 @@ public interface EventHandlerInvoker {
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise
      */
-    default boolean canHandleType(Class<?> payloadType) {
+    default boolean canHandleType(@Nonnull Class<?> payloadType) {
         return true;
     }
 
@@ -58,7 +60,7 @@ public interface EventHandlerInvoker {
      * @param segment The segment for which to handle the message
      * @throws Exception when an exception occurs while handling the message
      */
-    void handle(EventMessage<?> message, Segment segment) throws Exception;
+    void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception;
 
     /**
      * Indicates whether the handlers managed by this invoker support a reset.
@@ -81,7 +83,7 @@ public interface EventHandlerInvoker {
      * @param resetContext a {@code R} used to support the reset operation
      * @param <R>          the type of the provided {@code resetContext}
      */
-    default <R> void performReset(R resetContext) {
+    default <R> void performReset(@Nullable R resetContext) {
         if (Objects.isNull(resetContext)) {
             performReset();
         } else {

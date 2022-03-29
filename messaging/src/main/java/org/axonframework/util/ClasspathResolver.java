@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ package org.axonframework.util;
  */
 public final class ClasspathResolver {
 
-    private static final boolean projectReactorOnClasspath;
+    private static final boolean PROJECT_REACTOR_ON_CLASSPATH;
 
     static {
         boolean fluxOnClasspath = true;
@@ -33,17 +33,19 @@ public final class ClasspathResolver {
         } catch (ClassNotFoundException e) {
             fluxOnClasspath = false;
         }
-        projectReactorOnClasspath = fluxOnClasspath;
+        PROJECT_REACTOR_ON_CLASSPATH = fluxOnClasspath;
+    }
+
+    /**
+     * Return {@code true} if Project Reactor is on classpath, {@code false} otherwise.
+     *
+     * @return {@code true} if Project Reactor is on classpath, {@code false} otherwise.
+     */
+    public static boolean projectReactorOnClasspath() {
+        return PROJECT_REACTOR_ON_CLASSPATH;
     }
 
     private ClasspathResolver() {
         // not to be instantiated
-    }
-
-    /**
-     * @return {@code true} if Project Reactor is on classpath, {@code false} otherwise
-     */
-    public static boolean projectReactorOnClasspath() {
-        return projectReactorOnClasspath;
     }
 }

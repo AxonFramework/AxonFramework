@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
+
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -88,7 +90,7 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy {
     }
 
     @Override
-    protected String doResolveRoutingKey(CommandMessage<?> command) {
+    protected String doResolveRoutingKey(@Nonnull CommandMessage<?> command) {
         Object value = command.getMetaData().get(metaDataKey);
         return value == null ? null : value.toString();
     }

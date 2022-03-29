@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,19 @@
 package org.axonframework.messaging;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents MetaData that is passed along with a payload in a Message. Typically, the MetaData contains information
@@ -45,13 +51,13 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
-     * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
-     * Modifications in the items themselves <em>are</em> reflected in the MetaData.
+     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied into the
+     * MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa. Modifications in the
+     * items themselves <em>are</em> reflected in the MetaData.
      *
      * @param items the items to populate the MetaData with
      */
-    public MetaData(Map<String, ?> items) {
+    public MetaData(@Nonnull Map<String, ?> items) {
         values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
@@ -65,14 +71,14 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Creates a new MetaData instance from the given {@code metaDataEntries}. If {@code metaDataEntries} is
-     * already a MetaData instance, it is returned as is. This makes this method more suitable than the {@link
+     * Creates a new MetaData instance from the given {@code metaDataEntries}. If {@code metaDataEntries} is already a
+     * MetaData instance, it is returned as is. This makes this method more suitable than the {@link
      * #MetaData(java.util.Map)} copy-constructor.
      *
      * @param metaDataEntries the items to populate the MetaData with
      * @return a MetaData instance with the given {@code metaDataEntries} as content
      */
-    public static MetaData from(Map<String, ?> metaDataEntries) {
+    public static MetaData from(@Nullable Map<String, ?> metaDataEntries) {
         if (metaDataEntries instanceof MetaData) {
             return (MetaData) metaDataEntries;
         } else if (metaDataEntries == null || metaDataEntries.isEmpty()) {
@@ -82,14 +88,13 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Creates a MetaData instances with a single entry, with the given {@code key} and
-     * given {@code value}.
+     * Creates a MetaData instances with a single entry, with the given {@code key} and given {@code value}.
      *
      * @param key   The key for the entry
      * @param value The value of the entry
      * @return a MetaData instance with a single entry
      */
-    public static MetaData with(String key, Object value) {
+    public static MetaData with(@Nonnull String key, @Nullable Object value) {
         return MetaData.from(Collections.singletonMap(key, value));
     }
 
@@ -103,7 +108,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @param value The value of the entry
      * @return a MetaData instance with an additional entry
      */
-    public MetaData and(String key, Object value) {
+    public MetaData and(@Nonnull String key, @Nullable Object value) {
         HashMap<String, Object> newValues = new HashMap<>(values);
         newValues.put(key, value);
         return new MetaData(newValues);
@@ -119,7 +124,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @param value A Supplier function which provides the value
      * @return a MetaData instance with an additional entry
      */
-    public MetaData andIfNotPresent(String key, Supplier<Object> value) {
+    public MetaData andIfNotPresent(@Nonnull String key, @Nonnull Supplier<Object> value) {
         return containsKey(key) ? this : this.and(key, value.get());
     }
 
@@ -154,7 +159,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * {@inheritDoc}
      */
     @Override
-    public void putAll(Map<? extends String, ?> m) {
+    public void putAll(@Nonnull Map<? extends String, ?> m) {
         throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
@@ -231,7 +236,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @return a MetaData instance containing values of {@code this}, combined with the given
      * {@code additionalEntries}
      */
-    public MetaData mergedWith(Map<String, ?> additionalEntries) {
+    public MetaData mergedWith(@Nonnull Map<String, ?> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
         }
@@ -251,7 +256,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @param keys The keys of the entries to remove
      * @return a MetaData instance without the given {@code keys}
      */
-    public MetaData withoutKeys(Set<String> keys) {
+    public MetaData withoutKeys(@Nonnull Set<String> keys) {
         if (keys.isEmpty()) {
             return this;
         }

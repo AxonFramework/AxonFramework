@@ -33,6 +33,7 @@ import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
+        AxonServerBusAutoConfiguration.class,
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })

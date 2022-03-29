@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -89,7 +90,7 @@ public interface Configuration extends LifecycleOperations {
      * @return configuration modules of {@code moduleType} defined in this configuration
      */
     @SuppressWarnings("unchecked")
-    default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
+    default <T extends ModuleConfiguration> List<T> findModules(@Nonnull Class<T> moduleType) {
         return getModules().stream()
                            .filter(m -> m.isType(moduleType))
                            .map(m -> (T) m.unwrap())
@@ -201,7 +202,7 @@ public interface Configuration extends LifecycleOperations {
      * @param <A>           the aggregate type
      * @return the {@link AggregateConfiguration} for the given {@code aggregateType}
      */
-    default <A> AggregateConfiguration<A> aggregateConfiguration(Class<A> aggregateType) {
+    default <A> AggregateConfiguration<A> aggregateConfiguration(@Nonnull Class<A> aggregateType) {
         //noinspection unchecked
         return findModules(AggregateConfiguration.class)
                 .stream()
@@ -220,7 +221,7 @@ public interface Configuration extends LifecycleOperations {
      * @param <A>           the aggregate type
      * @return the {@link Repository} from which aggregates of the given {@code aggregateType} can be loaded
      */
-    default <A> Repository<A> repository(Class<A> aggregateType) {
+    default <A> Repository<A> repository(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).repository();
     }
 
@@ -231,7 +232,7 @@ public interface Configuration extends LifecycleOperations {
      * @param <A>           the aggregate type
      * @return the {@link AggregateFactory} which constructs aggregate of the given {@code aggregateType}
      */
-    default <A> AggregateFactory<A> aggregateFactory(Class<A> aggregateType) {
+    default <A> AggregateFactory<A> aggregateFactory(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).aggregateFactory();
     }
 
@@ -243,7 +244,7 @@ public interface Configuration extends LifecycleOperations {
      * @param <T>           The type of component
      * @return the component registered for the given type, or {@code null} if no such component exists
      */
-    default <T> T getComponent(Class<T> componentType) {
+    default <T> T getComponent(@Nonnull Class<T> componentType) {
         return getComponent(componentType, () -> null);
     }
 
@@ -259,7 +260,7 @@ public interface Configuration extends LifecycleOperations {
      * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
      * if no component was registered
      */
-    <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl);
+    <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl);
 
     /**
      * Returns the message monitor configured for a component of given {@code componentType} and {@code componentName}.
@@ -269,7 +270,8 @@ public interface Configuration extends LifecycleOperations {
      * @param <M>           The type of message the monitor can deal with
      * @return The monitor to be used for the described component
      */
-    <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName);
+    <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+                                                                    @Nonnull String componentName);
 
     /**
      * Returns the serializer defined in this Configuration
