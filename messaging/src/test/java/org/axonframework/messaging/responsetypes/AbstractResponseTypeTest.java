@@ -51,17 +51,16 @@ public abstract class AbstractResponseTypeTest<R> {
     }
 
     /**
-     * Helper function to make testing of the
-     * {@link ResponseType#matchPriority(Type)} function easier.
-     * Takes a {@code methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract
-     * class. There after it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as
-     * input for the test subject's matchPriority function.
+     * Helper function to make testing of the {@link ResponseType#matchRank(Type)} function easier. Takes a {@code
+     * methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract class. There after
+     * it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as input for the test
+     * subject's matchRank and matches functions.
      *
      * @param methodNameToTest a {@link java.lang.String} representing the function you want to extract a return type
      *                         from
-     * @param expectedResult   a {@link java.lang.Integer} which is the expected result of the matchPriority call
-     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given
-     *                               {@code methodNameToTest}
+     * @param expectedResult   a {@link java.lang.Integer} which is the expected result of the matchRank call
+     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given {@code
+     *                               methodNameToTest}
      */
     protected void testMatchRanked(String methodNameToTest, Integer expectedResult) throws NoSuchMethodException {
         Method methodToTest = methodOf(getClass(), methodNameToTest);
