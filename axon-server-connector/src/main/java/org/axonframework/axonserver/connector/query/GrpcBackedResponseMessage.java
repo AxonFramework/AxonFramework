@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link QueryResponse} as a {@link QueryResponseMessage}.
@@ -115,14 +116,14 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public GrpcBackedResponseMessage<R> withMetaData(Map<String, ?> metaData) {
+    public GrpcBackedResponseMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GrpcBackedResponseMessage<>(
                 queryResponse, serializedPayload, exception, () -> MetaData.from(metaData)
         );
     }
 
     @Override
-    public GrpcBackedResponseMessage<R> andMetaData(Map<String, ?> metaData) {
+    public GrpcBackedResponseMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }

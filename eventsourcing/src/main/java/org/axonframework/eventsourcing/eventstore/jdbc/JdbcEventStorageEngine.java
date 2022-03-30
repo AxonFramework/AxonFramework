@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,16 +73,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.isTrue;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.jdbc.JdbcUtils.executeBatch;
-import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
-import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
-import static org.axonframework.common.jdbc.JdbcUtils.nextAndExtract;
+import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
  * An {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation that uses JDBC to store and
@@ -432,7 +430,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
         return Optional.ofNullable(transactionManager.fetchInTransaction(
                 () -> executeQuery(getConnection(),
                                    connection -> lastSequenceNumberFor(connection, aggregateIdentifier),
@@ -460,7 +458,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         Long index = transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
                 connection -> createTokenAt(connection, dateTime),
@@ -1151,10 +1149,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
          *
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
-         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder connectionProvider(ConnectionProvider connectionProvider) {
+        public Builder connectionProvider(@Nonnull ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
             this.connectionProvider = connectionProvider;
             return this;

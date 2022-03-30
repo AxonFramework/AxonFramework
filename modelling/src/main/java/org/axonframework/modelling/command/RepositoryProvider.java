@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.modelling.command;
+
+import javax.annotation.Nonnull;
 
 /**
  * Provides a repository for given aggregate type.
@@ -32,5 +34,5 @@ public interface RepositoryProvider {
      * @param <T>           type of the aggregate
      * @return repository given for aggregate type
      */
-    <T> Repository<T> repositoryFor(Class<T> aggregateType);
+    <T> Repository<T> repositoryFor(@Nonnull Class<T> aggregateType);
 }

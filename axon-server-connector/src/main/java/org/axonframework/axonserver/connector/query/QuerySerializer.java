@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 
 /**
@@ -219,7 +218,8 @@ public class QuerySerializer {
     }
 
     /**
-     * Converts a {@link QueryResponse} into a {@link QueryResponseMessage}. It does not assume the type of the payload.
+     * Converts a {@link QueryResponse} into a {@link QueryResponseMessage}. It does not assume the type of the
+     * payload.
      *
      * @param queryResponse a {@link QueryResponse} to convert into a {@link QueryResponseMessage}
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}

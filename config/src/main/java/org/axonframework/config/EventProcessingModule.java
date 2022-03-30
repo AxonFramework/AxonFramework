@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,29 +90,32 @@ public class EventProcessingModule
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
-    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
-    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
-    private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
-    private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
-    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
-    private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
-    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, String> processingGroupsAssignments = new HashMap<>();
-    private final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-    private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
-    private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
-    private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
-    private final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
-
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
+
+    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
+    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
+
+    protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+
+    protected final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
+    protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+    protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
+    protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
+    protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+
+    protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
+    protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     private Configuration configuration;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -171,7 +174,7 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
+    protected PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -771,9 +774,17 @@ public class EventProcessingModule
         return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
     }
 
-    private SubscribingEventProcessor subscribingEventProcessor(String name,
-                                                                EventHandlerInvoker eventHandlerInvoker,
-                                                                SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+    /**
+     * Default {@link SubscribingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the vent handling
+     * @param messageSource where to retrieve events from
+     * @return Default {@link SubscribingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor subscribingEventProcessor(String name,
+                                                       EventHandlerInvoker eventHandlerInvoker,
+                                                       SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
                                         .name(name)
                                         .eventHandlerInvoker(eventHandlerInvoker)
@@ -786,10 +797,19 @@ public class EventProcessingModule
                                         .build();
     }
 
-    private TrackingEventProcessor trackingEventProcessor(String name,
-                                                          EventHandlerInvoker eventHandlerInvoker,
-                                                          TrackingEventProcessorConfiguration config,
-                                                          StreamableMessageSource<TrackedEventMessage<?>> source) {
+    /**
+     * Default {@link TrackingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config for the tracking event processor construction
+     * @param source where to retrieve events from
+     * @return Default {@link TrackingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor trackingEventProcessor(String name,
+                                                    EventHandlerInvoker eventHandlerInvoker,
+                                                    TrackingEventProcessorConfiguration config,
+                                                    StreamableMessageSource<TrackedEventMessage<?>> source) {
         return TrackingEventProcessor.builder()
                                      .name(name)
                                      .eventHandlerInvoker(eventHandlerInvoker)
@@ -803,7 +823,17 @@ public class EventProcessingModule
                                      .build();
     }
 
-    private PooledStreamingEventProcessor pooledStreamingEventProcessor(
+    /**
+     * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config main configuration providing access for Axon components
+     * @param messageSource where to retrieve events from
+     * @param processorConfiguration for the pooled event processor construction
+     * @return Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,
             Configuration config,

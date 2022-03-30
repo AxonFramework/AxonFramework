@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Generic {@link SubscriptionQueryUpdateMessage} which holds incremental update of an subscription query.
@@ -131,12 +132,12 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends GenericResultMessa
     }
 
     @Override
-    public GenericSubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public GenericSubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, ?> metaData) {
         return new GenericSubscriptionQueryUpdateMessage<>(getDelegate().andMetaData(metaData));
     }
 

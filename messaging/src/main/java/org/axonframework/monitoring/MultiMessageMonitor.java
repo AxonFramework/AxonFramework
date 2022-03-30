@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Delegates messages and callbacks to the given list of message monitors
@@ -55,17 +56,18 @@ public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor
     }
 
     /**
-     * Calls the message monitors with the given message and returns a callback
-     * that will trigger all the message monitor callbacks
+     * Calls the message monitors with the given message and returns a callback that will trigger all the message
+     * monitor callbacks
      *
      * @param message the message to delegate to the message monitors
      * @return the callback that will trigger all the message monitor callbacks
      */
     @Override
-    public MonitorCallback onMessageIngested(T message) {
+    public MonitorCallback onMessageIngested(@Nonnull T message) {
         final List<MonitorCallback> monitorCallbacks = messageMonitors.stream()
-                .map(messageMonitor -> messageMonitor.onMessageIngested(message))
-                .collect(Collectors.toList());
+                                                                      .map(messageMonitor -> messageMonitor.onMessageIngested(
+                                                                              message))
+                                                                      .collect(Collectors.toList());
 
         return new MonitorCallback() {
             @Override

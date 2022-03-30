@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -55,12 +56,12 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
      * listeners.
      * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
-     * all subscribed EventListeners.
+     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to all
+     * subscribed EventListeners.
      *
      * @param events The collection of events to publish
      */
-    void publish(List<? extends EventMessage<?>> events);
+    void publish(@Nonnull List<? extends EventMessage<?>> events);
 
     /**
      * Register the given {@code interceptor} with this bus. When subscribed it will intercept any event messages
@@ -72,6 +73,7 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
      * @return a handle to unregister the {@code dispatchInterceptor}. When unregistered it will no longer be given
      * event messages published on this bus.
      */
-    Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor);
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor);
 
 }

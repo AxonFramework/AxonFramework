@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
+
+import javax.annotation.Nonnull;
 
 /**
  * CommandTargetResolver implementation that uses MetaData entries to extract the identifier and optionally the version
@@ -64,7 +66,7 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
+    public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
         String identifier = (String) command.getMetaData().get(identifierKey);
         Assert.notNull(identifier, () -> "The MetaData for the command does not exist or contains a null value");
         Long version = (Long) (versionKey == null ? null : command.getMetaData().get(versionKey));

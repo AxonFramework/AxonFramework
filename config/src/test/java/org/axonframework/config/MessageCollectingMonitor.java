@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
     private final List<Message<?>> messages = new ArrayList<>();
@@ -38,7 +39,7 @@ public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
         messages.add(message);
         if (latch != null) {
             latch.countDown();

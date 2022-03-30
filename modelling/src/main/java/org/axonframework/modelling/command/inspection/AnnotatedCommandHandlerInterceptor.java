@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+
+import javax.annotation.Nonnull;
 
 /**
  * Annotated command handler interceptor on aggregate. Will invoke the delegate to the real interceptor method.
@@ -48,12 +50,13 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     }
 
     @Override
-    public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork, InterceptorChain interceptorChain)
+    public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                         @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 interceptorChain,
                 () -> delegate.canHandle(unitOfWork.getMessage())
-                      ? delegate.handle(unitOfWork.getMessage(), target)
-                      : interceptorChain.proceed());
+                        ? delegate.handle(unitOfWork.getMessage(), target)
+                        : interceptorChain.proceed());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -66,8 +67,8 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onResult(CommandMessage<? extends C> commandMessage,
-                         CommandResultMessage<? extends R> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
+                         @Nonnull CommandResultMessage<? extends R> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
             Throwable cause = commandResultMessage.exceptionResult();
             history.add(simplify(cause));

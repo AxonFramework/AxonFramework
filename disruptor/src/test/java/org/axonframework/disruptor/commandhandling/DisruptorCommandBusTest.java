@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -849,13 +850,13 @@ class DisruptorCommandBusTest {
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
-        public DomainEventStream readEvents(String aggregateIdentifier) {
+        public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
             DomainEventMessage<?> message = storedEvents.get(aggregateIdentifier);
             return message == null ? DomainEventStream.empty() : DomainEventStream.of(message);
         }
 
         @Override
-        public void publish(List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
             if (events == null || events.isEmpty()) {
                 return;
             }
@@ -877,18 +878,18 @@ class DisruptorCommandBusTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+                @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         }
     }
 

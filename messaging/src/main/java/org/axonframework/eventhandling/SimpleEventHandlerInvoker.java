@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -104,7 +106,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(EventMessage<?> message, Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!sequencingPolicyMatchesSegment(message, segment)) {
             return;
         }
@@ -130,16 +132,16 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
         return hasHandler(eventMessage) && sequencingPolicyMatchesSegment(eventMessage, segment);
     }
 
     @Override
-    public boolean canHandleType(Class<?> payloadType) {
+    public boolean canHandleType(@Nonnull Class<?> payloadType) {
         return eventHandlingComponents.stream().anyMatch(eh -> eh.canHandleType(payloadType));
     }
 
-    private boolean hasHandler(EventMessage<?> eventMessage) {
+    private boolean hasHandler(@Nonnull EventMessage<?> eventMessage) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
             if (eventHandler.canHandle(eventMessage)) {
                 return true;
@@ -164,7 +166,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public <R> void performReset(R resetContext) {
+    public <R> void performReset(@Nullable R resetContext) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
             eventHandler.prepareReset(resetContext);
         }
@@ -223,7 +225,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public B eventHandlers(List<?> eventHandlers) {
+        public B eventHandlers(@Nonnull List<?> eventHandlers) {
             assertThat(eventHandlers,
                        list -> list != null && !list.isEmpty(),
                        "At least one EventMessageHandler should be provided");
@@ -242,7 +244,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                 instantiated {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public B parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public B parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
             this.parameterResolverFactory = parameterResolverFactory;
             //noinspection unchecked
@@ -259,7 +261,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                          {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public B handlerDefinition(HandlerDefinition handlerDefinition) {
+        public B handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
             //noinspection unchecked
@@ -274,7 +276,9 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                       the configured {@link EventMessageHandler event handlers}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        public B listenerInvocationErrorHandler(
+                @Nonnull ListenerInvocationErrorHandler listenerInvocationErrorHandler
+        ) {
             assertNonNull(listenerInvocationErrorHandler, "ListenerInvocationErrorHandler may not be null");
             this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
             //noinspection unchecked
@@ -283,7 +287,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
         /**
          * Sets the {@link SequencingPolicy} in charge of deciding whether a given event should be handled (through
-         * {@link SimpleEventHandlerInvoker#handle(EventMessage, Segment)}) by the given {@link Segment}. Used when this
+         * {@link EventHandlerInvoker#handle(EventMessage, Segment)}) by the given {@link Segment}. Used when this
          * {@link EventHandlerInvoker} is invoked for multiple Segments (i.e. using parallel processing). Defaults to a
          * {@link SequentialPerAggregatePolicy},
          *
@@ -291,7 +295,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        public B sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
             assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked
@@ -316,7 +320,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandler an {@link Object} which will be wrapped in an {@link AnnotationEventHandlerAdapter}
          * @return an {@link AnnotationEventHandlerAdapter} which the given {@code eventHandler} will be wrapped in
          */
-        public AnnotationEventHandlerAdapter wrapEventMessageHandler(Object eventHandler) {
+        public AnnotationEventHandlerAdapter wrapEventMessageHandler(@Nonnull Object eventHandler) {
             if (parameterResolverFactory == null && handlerDefinition == null) {
                 return new AnnotationEventHandlerAdapter(eventHandler);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {

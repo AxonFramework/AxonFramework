@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
 import java.beans.ConstructorProperties;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link CommandMessageFilter} implementation that matches whenever either of the supplied {@link
@@ -50,7 +51,7 @@ public class OrCommandMessageFilter implements CommandMessageFilter {
     }
 
     @Override
-    public boolean matches(CommandMessage<?> commandMessage) {
+    public boolean matches(@Nonnull CommandMessage<?> commandMessage) {
         return first.matches(commandMessage) || second.matches(commandMessage);
     }
 

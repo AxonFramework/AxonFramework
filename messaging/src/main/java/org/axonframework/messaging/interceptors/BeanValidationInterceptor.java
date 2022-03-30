@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -62,13 +63,15 @@ public class BeanValidationInterceptor<T extends Message<?>>
     }
 
     @Override
-    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+            throws Exception {
         handle(unitOfWork.getMessage());
         return interceptorChain.proceed();
     }
 
     @Override
-    public BiFunction<Integer, T, T> handle(List<? extends T> messages) {
+    @Nonnull
+    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
         return (index, message) -> {
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);

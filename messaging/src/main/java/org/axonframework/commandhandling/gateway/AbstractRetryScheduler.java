@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -119,10 +120,10 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
      * @return {@code true} if rescheduling succeeded, {@code false} if otherwise.
      */
     @Override
-    public boolean scheduleRetry(CommandMessage commandMessage,
-                                 RuntimeException lastFailure,
-                                 List<Class<? extends Throwable>[]> failures,
-                                 Runnable dispatchTask) {
+    public boolean scheduleRetry(@Nonnull CommandMessage commandMessage,
+                                 @Nonnull RuntimeException lastFailure,
+                                 @Nonnull List<Class<? extends Throwable>[]> failures,
+                                 @Nonnull Runnable dispatchTask) {
         int failureCount = failures.size();
         if (!isExplicitlyNonTransient(lastFailure) && failureCount <= maxRetryCount) {
             if (logger.isInfoEnabled()) {
@@ -169,7 +170,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @param retryExecutor a {@link ScheduledExecutorService} used to schedule a command retry
          * @return the current Builder instance, for fluent interfacing
          */
-        public B retryExecutor(ScheduledExecutorService retryExecutor) {
+        public B retryExecutor(@Nonnull ScheduledExecutorService retryExecutor) {
             assertNonNull(retryExecutor, "ScheduledExecutorService may not be null");
             this.retryExecutor = retryExecutor;
 
@@ -188,7 +189,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          *                                     testing transiency of provided failure
          * @return the current Builder instance, for fluent interfacing
          */
-        public B nonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
+        public B nonTransientFailurePredicate(@Nonnull Predicate<Throwable> nonTransientFailurePredicate) {
             assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
             this.nonTransientFailurePredicate = nonTransientFailurePredicate;
 
@@ -211,7 +212,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @param <E> type of the failure to handle
          * @return the current Builder instance, for fluent interfacing
          */
-        public <E extends Throwable> B nonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
+        public <E extends Throwable> B nonTransientFailurePredicate(@Nonnull Class<E> failureType,
+                                                                    @Nonnull Predicate<? super E> nonTransientFailurePredicate) {
             assertNonNull(failureType, "Class of failure type may not be null");
             assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
 
@@ -219,7 +221,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
 
             // noinspection unchecked
-            this.nonTransientFailurePredicate = ((Predicate<Throwable>)typeCheckPredicate.and(nonTransientFailurePredicate));
+            this.nonTransientFailurePredicate = ((Predicate<Throwable>) typeCheckPredicate.and(
+                    nonTransientFailurePredicate));
 
             // noinspection unchecked
             return (B) this;
@@ -236,7 +239,7 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          *                                     testing transiency of provided failure
          * @return the current Builder instance, for fluent interfacing
          */
-        public B addNonTransientFailurePredicate(Predicate<Throwable> nonTransientFailurePredicate) {
+        public B addNonTransientFailurePredicate(@Nonnull Predicate<Throwable> nonTransientFailurePredicate) {
             assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
             this.nonTransientFailurePredicate = nonTransientFailurePredicate.or(this.nonTransientFailurePredicate);
 
@@ -260,7 +263,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
          * @param <E> type of the failure to handle
          * @return the current Builder instance, for fluent interfacing
          */
-        public <E extends Throwable> B addNonTransientFailurePredicate(Class<E> failureType, Predicate<? super E> nonTransientFailurePredicate) {
+        public <E extends Throwable> B addNonTransientFailurePredicate(@Nonnull Class<E> failureType,
+                                                                       @Nonnull Predicate<? super E> nonTransientFailurePredicate) {
             assertNonNull(failureType, "Class of failure type may not be null");
             assertNonNull(nonTransientFailurePredicate, "Non-transient failure predicate may not be null");
 
@@ -268,7 +272,8 @@ public abstract class AbstractRetryScheduler implements RetryScheduler {
             Predicate<E> typeCheckPredicate = (failureAtRuntime) -> failureType.isInstance(failureAtRuntime);
 
             //noinspection unchecked
-            Predicate<Throwable> typeCheckingNonTransientFailurePredicate = ((Predicate<Throwable>)typeCheckPredicate.and(nonTransientFailurePredicate));
+            Predicate<Throwable> typeCheckingNonTransientFailurePredicate = ((Predicate<Throwable>) typeCheckPredicate.and(
+                    nonTransientFailurePredicate));
 
             this.nonTransientFailurePredicate = typeCheckingNonTransientFailurePredicate.or(this.nonTransientFailurePredicate);
 

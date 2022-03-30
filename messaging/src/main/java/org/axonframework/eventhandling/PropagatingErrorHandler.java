@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventhandling;
+
+import javax.annotation.Nonnull;
 
 /**
  * Singleton ErrorHandler implementation that does not do anything.
@@ -38,12 +40,13 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
     }
 
     @Override
-    public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) throws Exception {
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                        @Nonnull EventMessageHandler eventHandler) throws Exception {
         throw exception;
     }
 
     @Override
-    public void handleError(ErrorContext errorContext) throws Exception {
+    public void handleError(@Nonnull ErrorContext errorContext) throws Exception {
         Throwable error = errorContext.error();
         if (error instanceof Error) {
             throw (Error) error;
@@ -52,6 +55,5 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
         } else {
             throw new EventProcessingException("An error occurred while handling an event", error);
         }
-
     }
 }
