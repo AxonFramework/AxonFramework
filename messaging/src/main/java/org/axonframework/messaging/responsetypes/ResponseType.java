@@ -66,7 +66,7 @@ public interface ResponseType<R> extends Serializable {
 
     /**
      * Defines the match and its priority. The greater the value above 0, the better the match. This is particularly
-     * useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there are match on a both
+     * useful for {@link MultipleInstancesResponseType MultipleInstancesResponseTypes} when there are matches on a both
      * multiple and single instance types. Lists should be given priority for handling.
      * <p>
      * {@see ResponseType#ITERABLE_MATCH} {@see ResponseType#SINGLE_MATCH} {@see ResponseType#NO_MATCH}
