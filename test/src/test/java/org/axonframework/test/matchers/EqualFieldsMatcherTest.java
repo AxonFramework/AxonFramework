@@ -39,7 +39,15 @@ class EqualFieldsMatcherTest {
     }
 
     @Test
-    void testMatches_SameInstance() {
+    void testMatches_SameInstanceByEqualsMethod() {
+        AlwaysEqualsEvent firstEvent = new AlwaysEqualsEvent("value");
+        AlwaysEqualsEvent secondEvent = new AlwaysEqualsEvent("anotherValue");
+        EqualFieldsMatcher<AlwaysEqualsEvent> testSubject = Matchers.equalTo(firstEvent);
+        assertTrue(testSubject.matches(secondEvent));
+    }
+
+    @Test
+    void testMatches_SameInstanceByMatchingFields() {
         assertTrue(testSubject.matches(expectedEvent));
     }
 
@@ -93,5 +101,24 @@ class EqualFieldsMatcherTest {
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
         assertEquals("org.axonframework.test.aggregate.MyEvent (failed on field 'someValue')", description.toString());
+    }
+
+    private static class AlwaysEqualsEvent {
+
+        private final String value;
+
+        AlwaysEqualsEvent(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
     }
 }

@@ -63,7 +63,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     @SuppressWarnings({"unchecked"})
     @Override
     public boolean matches(Object item) {
-        return expected.getClass().isInstance(item) && matchesSafely(item);
+        return expected.equals(item) || expected.getClass().isInstance(item) && matchesSafely(item);
     }
 
     private boolean matchesSafely(Object actual) {
