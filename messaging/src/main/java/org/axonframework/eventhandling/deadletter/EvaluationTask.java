@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetterEvaluationException;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -76,19 +77,32 @@ class EvaluationTask implements Runnable {
         UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.onPrepareCommit(uow -> {
-            letter.acknowledge();
-            logger.info(
-                    "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
-                    letter.message().getIdentifier(), processingGroup
-            );
+            try {
+                letter.acknowledge();
+                logger.info(
+                        "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
+                        uow.getMessage().getIdentifier(), processingGroup
+                );
+            } catch (Exception e) {
+                throw new DeadLetterEvaluationException(
+                        "Failed while acknowledging dead-letter [" + uow.getMessage().getIdentifier()
+                                + "] after successfully evaluation.", e
+                );
+            }
         });
         unitOfWork.onRollback(uow -> {
-            // TODO: 02-02-22 do we need a try-catch for this?
-            letter.requeue();
-            logger.info(
-                    "Reentered dead-letter [{}] for processing group [{}] in the queue since handling failed.",
-                    letter.message().getIdentifier(), processingGroup
-            );
+            try {
+                letter.requeue();
+                logger.warn(
+                        "Reentered dead-letter [{}] for processing group [{}] in the queue since evaluation failed.",
+                        uow.getMessage().getIdentifier(), processingGroup, uow.getExecutionResult().getExceptionResult()
+                );
+            } catch (Exception e) {
+                throw new DeadLetterEvaluationException(
+                        "Failed while enqueueing dead-letter [" + uow.getMessage().getIdentifier()
+                                + "] again after a failed evaluation.", e
+                );
+            }
         });
         unitOfWork.executeWithResult(() -> {
             for (EventMessageHandler handler : eventHandlingComponents) {

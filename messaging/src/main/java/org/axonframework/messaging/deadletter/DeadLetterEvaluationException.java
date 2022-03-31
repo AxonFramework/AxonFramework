@@ -19,31 +19,33 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.common.AxonException;
 
 /**
- * Exception signaling a {@link DeadLetterQueue} is overflowing.
+ * Exception signalling evaluation of a {@link DeadLetterEntry dead-letter} encountered an unexpected exception. This
+ * can, for example, occur when {@link DeadLetterEntry#acknowledge()} or {@link DeadLetterEntry#requeue()} fail after
+ * evaluation.
  *
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class DeadLetterQueueOverflowException extends AxonException {
+public class DeadLetterEvaluationException extends AxonException {
 
-    private static final long serialVersionUID = -5062977764457680918L;
+    private static final long serialVersionUID = 3396791562723986396L;
 
     /**
      * Constructs an exception based on the given {@code message}.
      *
-     * @param message The description of this {@link DeadLetterQueueOverflowException}.
+     * @param message The description of this {@link DeadLetterEvaluationException}.
      */
-    public DeadLetterQueueOverflowException(String message) {
+    public DeadLetterEvaluationException(String message) {
         super(message);
     }
 
     /**
      * Constructs an exception based on the given {@code message} and {@code cause}.
      *
-     * @param message The description of this {@link DeadLetterQueueOverflowException}.
+     * @param message The description of this {@link DeadLetterEvaluationException}.
      * @param cause   The reason for this exception to be constructed.
      */
-    public DeadLetterQueueOverflowException(String message, Throwable cause) {
+    public DeadLetterEvaluationException(String message, Throwable cause) {
         super(message, cause);
     }
 }
