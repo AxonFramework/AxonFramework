@@ -35,6 +35,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -43,6 +44,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 /**
  * Defines a contract for configuring event processing.
@@ -644,6 +646,24 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
             String name, PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     );
+
+    /**
+     * Register a {@link DeadLetterQueue} for the given {@code processingGroup}. The {@code DeadLetterQueue} will
+     * automatically enqueue failed events and evaluate them per the queue's configuration.
+     *
+     * @param processingGroup A {@link String} specifying the name of the processing group to register the given {@link
+     *                        DeadLetterQueue} for.
+     * @param queueBuilder    A builder method returning a {@link DeadLetterQueue} based on a {@link Configuration}. The
+     *                        outcome is used by the given {@code processingGroup} to enqueue and evaluate failed
+     *                        events in.
+     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     */
+    default EventProcessingConfigurer registerDeadLetterQueue(
+            @Nonnull String processingGroup,
+            @Nonnull Function<Configuration, DeadLetterQueue<EventMessage<?>>> queueBuilder
+    ) {
+        return this;
+    }
 
     /**
      * Contract which defines how to build an event processor.

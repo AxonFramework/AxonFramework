@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -43,6 +44,7 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -52,6 +54,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -1067,6 +1070,48 @@ class EventProcessingModuleTest {
             config.shutdown();
         }
         verifyNoInteractions(defaultTransactionManager);
+    }
+
+    @Test
+    void testRegisterDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
+            @Mock DeadLetterQueue<EventMessage<?>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+
+        ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
+        Configuration config = configurer.start();
+
+        assertEquals(deadLetterQueue, config.eventProcessingConfiguration().deadLetterQueue(processingGroup));
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+        PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
+
+        EventHandlerInvoker resultInvoker =
+                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
+
+        MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
+        List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
+        assertFalse(delegates.isEmpty());
+        DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
+                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+
+        assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
+        assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
+        assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", resultDeadLetteringInvoker));
+        assertEquals(listenerInvocationErrorHandler,
+                     getField("listenerInvocationErrorHandler", resultDeadLetteringInvoker));
     }
 
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {

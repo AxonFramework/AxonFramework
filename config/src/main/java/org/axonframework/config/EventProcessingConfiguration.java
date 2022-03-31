@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,18 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * Defines a contract for accessor methods regarding event processing configuration.
@@ -212,4 +214,16 @@ public interface EventProcessingConfiguration {
      * @return the {@link TransactionManager}belonging to the given {@code processorName}
      */
     TransactionManager transactionManager(String processorName);
+
+    /**
+     * Returns the {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return {@code null} when
+     * there's no {@code DeadLetterQueue} present for the given {@code processingGroup}.
+     *
+     * @param processingGroup The processing group for which to return a {@link DeadLetterQueue}.
+     * @return The {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return {@code null} if no
+     * queue is present.
+     */
+    default DeadLetterQueue<EventMessage<?>> deadLetterQueue(@Nonnull String processingGroup) {
+        return null;
+    }
 }

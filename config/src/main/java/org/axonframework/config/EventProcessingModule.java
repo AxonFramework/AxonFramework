@@ -36,6 +36,7 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -44,6 +45,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -65,6 +67,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
@@ -113,11 +116,13 @@ public class EventProcessingModule
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+    protected final Map<String, Component<DeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
 
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     private Configuration configuration;
+
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
             "listenerInvocationErrorHandler",
@@ -258,15 +263,33 @@ public class EventProcessingModule
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
-                    c -> SimpleEventHandlerInvoker.builder()
-                                                  .eventHandlers(handlers)
-                                                  .handlerDefinition(retrieveHandlerDefinition(handlers))
-                                                  .parameterResolverFactory(configuration.parameterResolverFactory())
-                                                  .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
-                                                          processingGroup
-                                                  ))
-                                                  .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                  .build()
+                    c -> {
+                        if (deadLetterQueues.containsKey(processingGroup)) {
+                            return DeadLetteringEventHandlerInvoker.builder()
+                                                                   .eventHandlers(handlers)
+                                                                   .handlerDefinition(retrieveHandlerDefinition(handlers))
+                                                                   .parameterResolverFactory(configuration.parameterResolverFactory())
+                                                                   .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                                   .queue(deadLetterQueue(processingGroup))
+                                                                   .processingGroup(processingGroup)
+                                                                   .transactionManager(transactionManager(processorName))
+                                                                   .listenerInvocationErrorHandler(
+                                                                           listenerInvocationErrorHandler(
+                                                                                   processingGroup
+                                                                           )
+                                                                   )
+                                                                   .build();
+                        }
+                        return SimpleEventHandlerInvoker.builder()
+                                                        .eventHandlers(handlers)
+                                                        .handlerDefinition(retrieveHandlerDefinition(handlers))
+                                                        .parameterResolverFactory(configuration.parameterResolverFactory())
+                                                        .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
+                                                                processingGroup
+                                                        ))
+                                                        .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                        .build();
+                    }
             );
         });
     }
@@ -439,6 +462,12 @@ public class EventProcessingModule
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
+    }
+
+    @Override
+    public DeadLetterQueue<EventMessage<?>> deadLetterQueue(@Nonnull String processingGroup) {
+        ensureInitialized();
+        return deadLetterQueues.containsKey(processingGroup) ? deadLetterQueues.get(processingGroup).get() : null;
     }
 
     private void ensureInitialized() {
@@ -744,6 +773,17 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         psepConfigs.put(name, pooledStreamingProcessorConfiguration);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDeadLetterQueue(
+            @Nonnull String processingGroup,
+            @Nonnull Function<Configuration, DeadLetterQueue<EventMessage<?>>> queueBuilder
+    ) {
+        this.deadLetterQueues.put(
+                processingGroup, new Component<>(()-> configuration, "deadLetterQueue", queueBuilder)
+        );
         return this;
     }
 
