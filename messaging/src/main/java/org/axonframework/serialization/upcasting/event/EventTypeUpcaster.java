@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.dom4j.Document;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -123,17 +120,9 @@ public class EventTypeUpcaster extends SingleEventUpcaster {
 
     @Override
     protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation intermediateRepresentation) {
-        if (intermediateRepresentation.canConvertDataTo(JsonNode.class)) {
-            return intermediateRepresentation.upcastPayload(upcastedType(), JsonNode.class, Function.identity());
-        } else if (intermediateRepresentation.canConvertDataTo(Document.class)) {
-            return intermediateRepresentation.upcastPayload(upcastedType(), Document.class, (doc) -> {
-                final Document newDoc = (Document) doc.clone();
-                newDoc.getRootElement().setName(new XmlFriendlyNameCoder().encodeNode(upcastedPayloadType));
-                return newDoc;
-            });
-        } else {
-            return intermediateRepresentation.upcastPayload(upcastedType(), Object.class, Function.identity());
-        }
+        return intermediateRepresentation.upcastPayload(upcastedType(),
+                                                        intermediateRepresentation.getContentType(),
+                                                        Function.identity());
     }
 
     /**

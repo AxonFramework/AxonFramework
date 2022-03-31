@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,9 @@ class EventTypeUpcasterTest {
     public static final String UPCASTED_PAYLOAD_TYPE = RenamedTestEvent.class.getName();
     public static final String UPCASTED_REVISION = "2";
 
-    private final EventTypeUpcaster testSubject =
-            new EventTypeUpcaster(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
-
     private static final String SOURCE_METHOD_NAME = "provideSerializers";
+
+    @SuppressWarnings("unused") // Used by all parameterized tests
     private static Stream<Arguments> provideSerializers() {
         return Stream.of(
                 Arguments.of(TestSerializer.XSTREAM.getSerializer()),
@@ -58,6 +57,9 @@ class EventTypeUpcasterTest {
                 Arguments.of(TestSerializer.JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS.getSerializer())
         );
     }
+
+    private final EventTypeUpcaster testSubject =
+            new EventTypeUpcaster(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
 
     @Test
     void testUpcasterBuilderFailsForNullExpectedPayloadTypeClass() {
@@ -163,7 +165,9 @@ class EventTypeUpcasterTest {
 
         final IntermediateEventRepresentation result = testSubject.doUpcast(testRepresentation);
 
-        assertInstanceOf(RenamedTestEvent.class, serializer.deserialize(result.getData()));
+        Object deserialize = serializer.deserialize(result.getData());
+
+        assertEquals(RenamedTestEvent.class, deserialize.getClass());
     }
 
     @Test
