@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
@@ -33,12 +31,11 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -76,14 +72,14 @@ class PooledStreamingEventProcessorTest {
 
     private PooledStreamingEventProcessor testSubject;
     private EventHandlerInvoker stubEventHandler;
-    private InMemoryMessageSource stubMessageSource;
+    private InMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
 
     @BeforeEach
     void setUp() {
-        stubMessageSource = new InMemoryMessageSource();
+        stubMessageSource = new InMemoryStreamableEventSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = Executors.newScheduledThreadPool(2);
@@ -301,7 +297,7 @@ class PooledStreamingEventProcessorTest {
     void testWorkPackageIsAbortedWhenExtendingClaimFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)
-                                               .messageSource(new InMemoryMessageSource(true))
+                                               .messageSource(new InMemoryStreamableEventSource(true))
                                                .claimExtensionThreshold(10)));
 
         doThrow(new MockException("Simulated failure")).when(spy)
@@ -426,8 +422,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void testCoordinationIsTriggeredThroughEventAvailabilityCallback() {
         boolean streamCallbackSupported = true;
-        //noinspection ConstantConditions
-        InMemoryMessageSource testMessageSource = new InMemoryMessageSource(streamCallbackSupported);
+        InMemoryStreamableEventSource testMessageSource = new InMemoryStreamableEventSource(streamCallbackSupported);
         setTestSubject(createTestSubject(builder -> builder.messageSource(testMessageSource)));
         mockEventHandlerInvoker();
 
@@ -535,7 +530,7 @@ class PooledStreamingEventProcessorTest {
 
         assertFalse(testSubject.isError());
 
-        stubMessageSource.publishMessage(InMemoryMessageSource.FAIL_EVENT);
+        stubMessageSource.publishMessage(InMemoryStreamableEventSource.FAIL_EVENT);
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.isError()));
 
@@ -548,7 +543,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void testIsErrorWhenOpeningTheStreamFails() {
-        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryMessageSource());
+        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryStreamableEventSource());
         when(spiedMessageSource.openStream(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
                                                   .thenCallRealMethod();
         setTestSubject(createTestSubject(builder -> builder.messageSource(spiedMessageSource)));
@@ -1068,117 +1063,5 @@ class PooledStreamingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
-    }
-
-    private static class InMemoryMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
-
-        private static final String FAIL_PAYLOAD = "FAIL";
-        private static final EventMessage<String> FAIL_EVENT = GenericEventMessage.asEventMessage(FAIL_PAYLOAD);
-
-        private List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
-        private final boolean streamCallbackSupported;
-        private final List<TrackedEventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
-        private Runnable onAvailableCallback = null;
-
-        private InMemoryMessageSource() {
-            this(false);
-        }
-
-        private InMemoryMessageSource(boolean streamCallbackSupported) {
-            this.streamCallbackSupported = streamCallbackSupported;
-        }
-
-        @Override
-        public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
-            return new BlockingStream<TrackedEventMessage<?>>() {
-
-                private int lastToken;
-
-                @Override
-                public Optional<TrackedEventMessage<?>> peek() {
-                    if (messages.size() > lastToken) {
-                        return Optional.of(messages.get(lastToken));
-                    }
-                    return Optional.empty();
-                }
-
-                @Override
-                public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-                    return peek().isPresent();
-                }
-
-                @Override
-                public TrackedEventMessage<?> nextAvailable() {
-                    TrackedEventMessage<?> next = peek().orElseThrow(
-                            () -> new RuntimeException("The processor should never perform a blocking call")
-                    );
-                    this.lastToken = (int) next.trackingToken()
-                                               .position()
-                                               .orElseThrow(() -> new UnsupportedOperationException("Not supported"));
-
-                    if (next.getPayload().equals(FAIL_PAYLOAD)) {
-                        throw new IllegalStateException("Cannot retrieve event at position [" + lastToken + "].");
-                    }
-
-                    return next;
-                }
-
-                @Override
-                public void close() {
-                    clearAllMessages();
-                }
-
-                @Override
-                public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredEvent) {
-                    ignoredEvents.add(ignoredEvent);
-                }
-
-                @Override
-                public boolean setOnAvailableCallback(Runnable callback) {
-                    onAvailableCallback = callback;
-                    return streamCallbackSupported;
-                }
-            };
-        }
-
-        @Override
-        public TrackingToken createTailToken() {
-            return null;
-        }
-
-        @Override
-        public TrackingToken createHeadToken() {
-            if (messages.isEmpty()) {
-                return null;
-            }
-            return messages.get(messages.size() - 1).trackingToken();
-        }
-
-        @Override
-        public TrackingToken createTokenAt(Instant dateTime) {
-            throw new UnsupportedOperationException("Not supported for InMemoryMessageSource");
-        }
-
-        @Override
-        public TrackingToken createTokenSince(Duration duration) {
-            throw new UnsupportedOperationException("Not supported for InMemoryMessageSource");
-        }
-
-        private synchronized void publishMessage(EventMessage<?> message) {
-            int nextToken = messages.size();
-            messages.add(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(nextToken + 1), message));
-        }
-
-        private synchronized void clearAllMessages() {
-            messages = new CopyOnWriteArrayList<>();
-        }
-
-        public List<TrackedEventMessage<?>> getIgnoredEvents() {
-            return ignoredEvents;
-        }
-
-        private void runOnAvailableCallback() {
-            onAvailableCallback.run();
-        }
     }
 }
