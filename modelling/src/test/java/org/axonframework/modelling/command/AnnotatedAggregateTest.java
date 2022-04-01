@@ -24,16 +24,22 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 public class AnnotatedAggregateTest {
 
@@ -88,6 +94,26 @@ public class AnnotatedAggregateTest {
         assertNull(testSubject.lastSequence());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testConditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyEvent2) {
+        Command_2 command = new Command_2(ID, 0, applyEvent2);
+        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
+        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
+                .newInstance(() -> new AggregateRoot(command))).getPayload();
+        assertNotNull(aggregate);
+
+        InOrder inOrder = inOrder(eventBus);
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType())));
+        if (applyEvent2) {
+            inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
+                    .equals(x.getPayloadType())));
+        }
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_3.class
+                .equals(x.getPayloadType())));
+    }
+
     private static class Command {
 
         private final String id;
@@ -104,6 +130,31 @@ public class AnnotatedAggregateTest {
 
         public int getValue() {
             return value;
+        }
+    }
+
+    private static class Command_2 {
+
+        private final String id;
+        private final int value;
+        private boolean condition;
+
+        private Command_2(String id, int value, boolean condition) {
+            this.id = id;
+            this.value = value;
+            this.condition = condition;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        public boolean condition() {
+            return condition;
         }
     }
 
@@ -140,6 +191,20 @@ public class AnnotatedAggregateTest {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
+    private static class Event_3 {
+
+        private final String id;
+
+        Event_3(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AggregateRoot {
 
@@ -159,6 +224,13 @@ public class AnnotatedAggregateTest {
             }
         }
 
+        @CommandHandler
+        public AggregateRoot(Command_2 command) {
+            apply(new Event_1(command.getId(), 0))
+                    .andThenApplyIf(() -> command.condition, () -> new Event_2(id))
+                    .andThenApply(() -> new Event_3(id));
+        }
+
         @EventHandler
         public void on(Event_1 event) {
             this.id = event.getId();
@@ -168,6 +240,10 @@ public class AnnotatedAggregateTest {
 
         @EventHandler
         public void on(Event_2 event) {
+        }
+
+        @EventHandler
+        public void on(Event_3 event) {
         }
     }
 
