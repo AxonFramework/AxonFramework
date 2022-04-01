@@ -48,7 +48,12 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
 
     @Override
     EventHandlingQueueIdentifier generateQueueId() {
-        return new EventHandlingQueueIdentifier(generateId(), generateId());
+        return generateQueueId(generateId());
+    }
+
+    @Override
+    EventHandlingQueueIdentifier generateQueueId(String group) {
+        return new EventHandlingQueueIdentifier(generateId(), group);
     }
 
     @Override

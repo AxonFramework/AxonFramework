@@ -63,6 +63,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     abstract I generateQueueId();
 
     /**
+     * Constructs a {@link QueueIdentifier} implementation expected by the test subject.
+     *
+     * @return A {@link QueueIdentifier} implementation expected by the test subject.
+     */
+    abstract I generateQueueId(String group);
+
+    /**
      * Constructs a {@link Message} implementation expected by the test subject.
      *
      * @return A {@link Message} implementation expected by the test subject.
@@ -279,12 +286,16 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     @Test
     void testContains() {
         I testId = generateQueueId();
+        I otherTestId = generateQueueId();
+        I otherTestIdWithSameGroup = generateQueueId(testId.group());
 
         assertFalse(testSubject.contains(testId));
 
         testSubject.enqueue(testId, generateMessage(), generateCause());
 
         assertTrue(testSubject.contains(testId));
+        assertFalse(testSubject.contains(otherTestId));
+        assertFalse(testSubject.contains(otherTestIdWithSameGroup));
     }
 
     @Test

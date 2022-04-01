@@ -53,7 +53,7 @@ public interface QueueIdentifier extends Comparable<QueueIdentifier> {
     }
 
     @Override
-    default int compareTo(QueueIdentifier queueIdentifier) {
-        return this.group().compareTo(queueIdentifier.group());
+    default int compareTo(QueueIdentifier other) {
+        return this.combinedIdentifier().compareTo(other.combinedIdentifier());
     }
 }
