@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Encapsulates the identifying fields of a Query Handler when one is subscribed to the {@link
@@ -32,7 +33,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 3.2
  */
-class QuerySubscription<R> {
+public class QuerySubscription<R> {
 
     private final Type responseType;
     private final MessageHandler<? super QueryMessage<?, R>> queryHandler;
@@ -43,7 +44,7 @@ class QuerySubscription<R> {
      * @param responseType a {@link java.lang.reflect.Type} as the response type of this subscription
      * @param queryHandler the subscribed {@link org.axonframework.messaging.MessageHandler}
      */
-    QuerySubscription(Type responseType, MessageHandler<? super QueryMessage<?, R>> queryHandler) {
+    public QuerySubscription(@Nonnull Type responseType, @Nonnull MessageHandler<? super QueryMessage<?, R>> queryHandler) {
         this.responseType = responseType;
         this.queryHandler = queryHandler;
     }
@@ -65,7 +66,7 @@ class QuerySubscription<R> {
      * @return true of the given {@code queryResponseType} its {@link ResponseType#matches(Type)} returns true, false if
      * otherwise
      */
-    public boolean canHandle(ResponseType<?> queryResponseType) {
+    public boolean canHandle(@Nonnull ResponseType<?> queryResponseType) {
         return queryResponseType.matches(responseType);
     }
 

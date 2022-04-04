@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -269,13 +270,13 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
@@ -532,7 +533,8 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {
@@ -570,15 +572,16 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         invokerInterceptors.add(handlerInterceptor);
         return () -> invokerInterceptors.remove(handlerInterceptor);
     }
@@ -591,7 +594,8 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                             @Nonnull CommandResultMessage<?> commandResultMessage) {
             if (commandResultMessage.isExceptional()) {
                 logger.info("An error occurred while handling a command [{}].",
                             commandMessage.getCommandName(),
@@ -981,23 +985,24 @@ public class DisruptorCommandBus implements CommandBus {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier, expectedVersion);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier);
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod)
+                throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).loadOrCreate(aggregateIdentifier, factoryMethod);
         }
 

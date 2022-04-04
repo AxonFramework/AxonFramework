@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
@@ -171,7 +172,7 @@ class WorkPackageTest {
         TrackedEventMessage<String> testEvent =
                 new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("some-event"));
         batchProcessorPredicate = event -> {
-            if (event.contains(testEvent)) {
+            if (event.stream().anyMatch(e -> ((TrackedEventMessage<?>) e).trackingToken().equals(testToken))) {
                 throw new IllegalStateException("Some exception");
             }
             return true;
@@ -207,7 +208,7 @@ class WorkPackageTest {
 
         List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent, processedEvents.get(0));
+        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -217,6 +218,48 @@ class WorkPackageTest {
         OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());
+    }
+
+    @Test
+    void testReplayTokenIsPropagatedAndAdvancedWithoutCurrent() {
+        testSubjectBuilder.initialToken(new ReplayToken(new GlobalSequenceTrackingToken(1L)));
+        testSubject = testSubjectBuilder.build();
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> expectedEvent =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+
+        testSubject.scheduleEvent(expectedEvent);
+
+        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+
+        ReplayToken expectedAdvancedToken = new ReplayToken(
+                new GlobalSequenceTrackingToken(1L),
+                new GlobalSequenceTrackingToken(1L)
+        );
+        assertEquals(expectedAdvancedToken, ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+    }
+
+
+    @Test
+    void testReplayTokenIsPropagatedAndAdvancedWithCurrent() {
+        testSubjectBuilder.initialToken(new ReplayToken(new GlobalSequenceTrackingToken(1L),
+                                                        new GlobalSequenceTrackingToken(0L)));
+        testSubject = testSubjectBuilder.build();
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> expectedEvent =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("some-event"));
+
+        testSubject.scheduleEvent(expectedEvent);
+
+        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+
+        ReplayToken expectedAdvancedToken = new ReplayToken(
+                new GlobalSequenceTrackingToken(1L),
+                new GlobalSequenceTrackingToken(1L)
+        );
+        assertEquals(expectedAdvancedToken, ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
     }
 
     /**
@@ -236,7 +279,7 @@ class WorkPackageTest {
 
         List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent, processedEvents.get(0));
+        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
@@ -264,7 +307,7 @@ class WorkPackageTest {
         // Should have handled one event, so a subsequent run of WorkPackage#processEvents will extend the claim.
         List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent, processedEvents.get(0));
+        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
         // We  need to verify the TokenStore#storeToken operation, otherwise the extendClaim verify will not succeed.
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));

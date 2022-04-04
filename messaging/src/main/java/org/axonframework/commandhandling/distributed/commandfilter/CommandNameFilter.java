@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * A {@link CommandMessageFilter} implementation which filters {@link CommandMessage}s by the {@link
@@ -61,7 +62,7 @@ public class CommandNameFilter implements CommandMessageFilter {
     }
 
     @Override
-    public boolean matches(CommandMessage<?> commandMessage) {
+    public boolean matches(@Nonnull CommandMessage<?> commandMessage) {
         return commandNames.contains(commandMessage.getCommandName());
     }
 
@@ -71,7 +72,7 @@ public class CommandNameFilter implements CommandMessageFilter {
     }
 
     @Override
-    public CommandMessageFilter and(CommandMessageFilter other) {
+    public CommandMessageFilter and(@Nonnull CommandMessageFilter other) {
         if (other instanceof CommandNameFilter) {
             return new CommandNameFilter(commandNames.stream()
                                                      .filter(((CommandNameFilter) other).commandNames::contains)
@@ -82,12 +83,12 @@ public class CommandNameFilter implements CommandMessageFilter {
     }
 
     @Override
-    public CommandMessageFilter or(CommandMessageFilter other) {
+    public CommandMessageFilter or(@Nonnull CommandMessageFilter other) {
         if (other instanceof CommandNameFilter) {
             return new CommandNameFilter(
                     Stream.concat(
-                            commandNames.stream(),
-                            ((CommandNameFilter) other).commandNames.stream())
+                                  commandNames.stream(),
+                                  ((CommandNameFilter) other).commandNames.stream())
                           .collect(Collectors.toSet()));
         } else {
             return new OrCommandMessageFilter(this, other);

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -125,32 +126,32 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         );
 
         @Override
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             super.transactionManager(transactionManager);
             return this;
         }
 
         @Override
-        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }
 
         @Override
-        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
             super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 
         @Override
-        public Builder defaultCommandCallback(CommandCallback<Object, Object> defaultCommandCallback) {
+        public Builder defaultCommandCallback(@Nonnull CommandCallback<Object, Object> defaultCommandCallback) {
             super.defaultCommandCallback(defaultCommandCallback);
             return this;
         }
 
         @Override
         public Builder duplicateCommandHandlerResolver(
-                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+                @Nonnull DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
             super.duplicateCommandHandlerResolver(duplicateCommandHandlerResolver);
             return this;
         }

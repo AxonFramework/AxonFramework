@@ -148,7 +148,8 @@ class AggregateAnnotationCommandHandlerTest {
                 UpdateNestedEntityStateCommand.class.getName(),
                 UpdateEntityStateCommand.class.getName(),
                 UpdateEntityFromCollectionStateCommand.class.getName(),
-                UpdateEntityFromMapStateCommand.class.getName()));
+                UpdateEntityFromMapStateCommand.class.getName(),
+                UpdateAbstractEntityFromCollectionStateCommand.class.getName()));
 
         assertEquals(expected, actual);
     }
@@ -544,6 +545,46 @@ class AggregateAnnotationCommandHandlerTest {
         verify(mockRepository).load(aggregateIdentifier, null);
     }
 
+    @Test
+    void testCommandHandlerByAbstractEntityWithTheSameCommandType() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        root.initializeEntity("1");
+        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+        commandBus.dispatch(asCommandMessage(
+                new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
+                (commandMessage, commandResultMessage) -> {
+                    if (commandResultMessage.isExceptional()) {
+                        commandResultMessage.optionalExceptionResult()
+                                .ifPresent(Throwable::printStackTrace);
+                        fail("Did not expect exception");
+                    }
+                    assertEquals("handled by 1_b", commandResultMessage.getPayload());
+                }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test
+    void testCommandHandlerByAbstractEntityWithNoAvailableEntity() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        root.initializeEntity("1");
+        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+        commandBus.dispatch(asCommandMessage(
+                new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
+                (commandMessage, commandResultMessage) -> {
+                    if (commandResultMessage.isExceptional()) {
+                        Throwable cause = commandResultMessage.exceptionResult();
+                        assertTrue(cause instanceof AggregateEntityNotFoundException);
+                    } else {
+                        fail("Expected exception");
+                    }
+                }
+        );
+    }
+
     @SuppressWarnings("unused")
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
@@ -580,6 +621,12 @@ class AggregateAnnotationCommandHandlerTest {
 
         @AggregateMember(type = StubCommandAnnotatedMapEntity.class)
         private Map<String, StubCommandAnnotatedMapEntity> entityMap;
+
+        @AggregateMember
+        private List<StubCommandAnnotatedAbstractEntityA> absEntitiesA;
+
+        @AggregateMember
+        private List<StubCommandAnnotatedAbstractEntityB> absEntitiesB;
 
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
@@ -664,6 +711,12 @@ class AggregateAnnotationCommandHandlerTest {
                 this.entityMap = new HashMap<>();
             }
             this.entityMap.put(id, new StubCommandAnnotatedMapEntity(id));
+            if (absEntitiesA == null && absEntitiesB == null){
+                this.absEntitiesA = new ArrayList<>();
+                this.absEntitiesB = new ArrayList<>();
+            }
+            this.absEntitiesA.add(new StubCommandAnnotatedAbstractEntityA(id+"_a"));
+            this.absEntitiesB.add(new StubCommandAnnotatedAbstractEntityB(id+"_b"));
         }
     }
 
@@ -741,6 +794,51 @@ class AggregateAnnotationCommandHandlerTest {
 
         private String getId() {
             return id;
+        }
+    }
+
+    private static abstract class StubCommandAbstractEntity {
+        @EntityId
+        public String abstractId;
+    }
+
+    private static class StubCommandAnnotatedAbstractEntityA extends StubCommandAbstractEntity {
+
+        public StubCommandAnnotatedAbstractEntityA() {
+        }
+
+        public StubCommandAnnotatedAbstractEntityA(String abstractId) {
+            super();
+            this.abstractId = abstractId;
+        }
+
+        @CommandHandler
+        public String handle(UpdateAbstractEntityFromCollectionStateCommand command) {
+            return "handled by " + getAbstractId();
+        }
+
+        public String getAbstractId() {
+            return abstractId;
+        }
+    }
+
+    private static class StubCommandAnnotatedAbstractEntityB extends StubCommandAbstractEntity {
+
+        public StubCommandAnnotatedAbstractEntityB() {
+        }
+
+        public StubCommandAnnotatedAbstractEntityB(String abstractId) {
+            super();
+            this.abstractId = abstractId;
+        }
+
+        @CommandHandler
+        public String handle(UpdateAbstractEntityFromCollectionStateCommand command) {
+            return "handled by " + getAbstractId();
+        }
+
+        public String getAbstractId() {
+            return abstractId;
         }
     }
 
@@ -979,6 +1077,29 @@ class AggregateAnnotationCommandHandlerTest {
 
         public String getEntityId() {
             return entityId;
+        }
+    }
+
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
+    private static class UpdateAbstractEntityFromCollectionStateCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private final String abstractId;
+
+        UpdateAbstractEntityFromCollectionStateCommand(String aggregateId,
+                                                       String abstractId) {
+            this.aggregateId = aggregateId;
+            this.abstractId = abstractId;
+        }
+
+        public String getAggregateId() {
+            return aggregateId;
+        }
+
+        public String getAbstractId() {
+            return abstractId;
         }
     }
 }

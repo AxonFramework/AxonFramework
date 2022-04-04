@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.axonframework.serialization.Serializer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link QueryUpdate} as a {@link SubscriptionQueryUpdateMessage}.
@@ -115,12 +116,15 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public GrpcBackedQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData) {
-        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, serializedPayload, exception, () -> MetaData.from(metaData));
+    public GrpcBackedQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, ?> metaData) {
+        return new GrpcBackedQueryUpdateMessage<>(queryUpdate,
+                                                  serializedPayload,
+                                                  exception,
+                                                  () -> MetaData.from(metaData));
     }
 
     @Override
-    public GrpcBackedQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData) {
+    public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, ?> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }

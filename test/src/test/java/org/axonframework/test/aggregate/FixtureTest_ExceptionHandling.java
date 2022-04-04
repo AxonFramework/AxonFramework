@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
@@ -35,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Patrick Haas
  */
 class FixtureTest_ExceptionHandling {
+
+    private static final String AGGREGATE_ID = "1";
 
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
 
@@ -101,12 +105,46 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
+    void testExceptionDetailsCheckWithEquality() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+                .when(new ExceptionWithDetailsTriggeringCommand("1"))
+                .expectException(CommandExecutionException.class)
+                .expectExceptionDetails("Details");
+    }
+
+    @Test
+    void testExceptionDetailsCheckWithType() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ExceptionWithDetailsTriggeringCommand("1"))
+               .expectException(CommandExecutionException.class)
+               .expectExceptionDetails(String.class);
+    }
+
+    @Test
+    void testExceptionDetailsCheckWithMatcher() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ExceptionWithDetailsTriggeringCommand("1"))
+               .expectException(CommandExecutionException.class)
+               .expectExceptionDetails(containsString("Details"));
+    }
+
+    @Test
     void testWhenCommandWithInvalidIdentifier() {
         assertThrows(FixtureExecutionException.class, () ->
                 fixture.givenCommands(
                         new CreateMyAggregateCommand("1"),
                         new ValidMyAggregateCommand("2")
                 )
+        );
+    }
+
+    @Test
+    void testExpectExceptionMessageThrowsFixtureExecutionExceptionWhenNoExceptionIsThrown() {
+        assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID))
+                             .when(new ValidMyAggregateCommand(AGGREGATE_ID))
+                             .expectExceptionMessage("some-exception-message")
         );
     }
 
@@ -130,6 +168,13 @@ class FixtureTest_ExceptionHandling {
     private static class ExceptionTriggeringCommand extends AbstractMyAggregateCommand {
 
         protected ExceptionTriggeringCommand(String id) {
+            super(id);
+        }
+    }
+
+    private static class ExceptionWithDetailsTriggeringCommand extends AbstractMyAggregateCommand {
+
+        protected ExceptionWithDetailsTriggeringCommand(String id) {
             super(id);
         }
     }
@@ -179,6 +224,11 @@ class FixtureTest_ExceptionHandling {
         @CommandHandler
         public void handle(ExceptionTriggeringCommand cmd) {
             throw new RuntimeException("Error");
+        }
+
+        @CommandHandler
+        public void handle(ExceptionWithDetailsTriggeringCommand cmd) {
+            throw new CommandExecutionException("Error", null, "Details");
         }
 
         @EventHandler

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.commandhandling;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing a callback that is invoked when command handler execution has finished.
@@ -33,5 +35,6 @@ public interface CommandCallback<C, R> {
      * @param commandMessage       the {@link CommandMessage} that was dispatched
      * @param commandResultMessage the {@link CommandResultMessage} of the command handling execution
      */
-    void onResult(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage);
+    void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
+                  @Nonnull CommandResultMessage<? extends R> commandResultMessage);
 }

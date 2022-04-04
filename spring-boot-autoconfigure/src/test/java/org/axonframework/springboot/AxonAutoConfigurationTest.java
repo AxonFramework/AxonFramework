@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,7 +46,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -64,10 +64,7 @@ import java.util.List;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AxonAutoConfigurationTest {
 
@@ -96,7 +93,9 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
                     assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
-                    assertEquals(2, applicationContext.getBean(org.axonframework.config.Configuration.class).correlationDataProviders().size());
+                    assertEquals(2,
+                                 applicationContext.getBean(org.axonframework.config.Configuration.class)
+                                                   .correlationDataProviders().size());
 
                     Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
                     assertEquals(0, someComponent.invocations.size());
@@ -104,8 +103,10 @@ class AxonAutoConfigurationTest {
                     assertEquals(1, someComponent.invocations.size());
 
                     assertTrue(applicationContext.getBean(Serializer.class) instanceof XStreamSerializer);
-                    assertSame(applicationContext.getBean("eventSerializer"), applicationContext.getBean("messageSerializer"));
-                    assertSame(applicationContext.getBean("serializer"), applicationContext.getBean("messageSerializer"));
+                    assertSame(applicationContext.getBean("eventSerializer"),
+                               applicationContext.getBean("messageSerializer"));
+                    assertSame(applicationContext.getBean("serializer"),
+                               applicationContext.getBean("messageSerializer"));
                 });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,17 +49,11 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.EVENT_BUS_KEY;
-import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.EVENT_JOB_DATA_BINDER_KEY;
-import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.TRANSACTION_MANAGER_KEY;
-import static org.axonframework.messaging.Headers.MESSAGE_ID;
-import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
-import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
-import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
-import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
-import static org.axonframework.messaging.Headers.SERIALIZED_MESSAGE_PAYLOAD;
+import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -215,7 +209,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
     }
 
