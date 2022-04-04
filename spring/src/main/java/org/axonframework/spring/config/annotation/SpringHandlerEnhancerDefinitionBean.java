@@ -38,6 +38,7 @@ import javax.annotation.Nonnull;
  * @author Milan Savic
  * @see ClasspathHandlerEnhancerDefinition
  * @since 3.3
+ * @deprecated Replaced by the {@link HandlerDefinitionFactoryBean}.
  */
 @Deprecated
 public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,

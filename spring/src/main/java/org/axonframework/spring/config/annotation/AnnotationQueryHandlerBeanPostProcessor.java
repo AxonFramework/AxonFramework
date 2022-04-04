@@ -35,6 +35,8 @@ import javax.annotation.Nonnull;
  *
  * @author Marc Gathier
  * @since 3.1
+ * @deprecated Replaced by the {@link org.axonframework.spring.config.MessageHandlerLookup} and {@link
+ * org.axonframework.spring.config.MessageHandlerConfigurer}.
  */
 @Deprecated
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {

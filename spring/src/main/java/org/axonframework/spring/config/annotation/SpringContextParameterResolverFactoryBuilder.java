@@ -37,6 +37,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 2.1
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly.
  */
 @Deprecated
 public final class SpringContextParameterResolverFactoryBuilder {

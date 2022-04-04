@@ -30,6 +30,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
  * @author Tyler Thrailkill
  * @author Milan Savic
  * @since 3.3
+ * @deprecated Replaced by the {@link HandlerDefinitionFactoryBean}.
  */
 @Deprecated
 public final class SpringContextHandlerDefinitionBuilder {

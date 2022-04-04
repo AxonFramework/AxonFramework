@@ -38,7 +38,8 @@ import java.lang.annotation.Target;
  * @see SpringConfigurer
  * @see SpringAxonConfiguration
  * @since 2.3
- * @deprecated Use Spring Boot Autoconfiguration or register the individual beans explicitly. See the list of
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly. Check the "See also" list
+ * for which individual beans to register.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

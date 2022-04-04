@@ -297,7 +297,8 @@ public class DefaultConfigurer implements Configurer {
      * @return an Optional containing a default component, or empty if none can be provided
      */
     protected <T> Optional<T> defaultComponent(Class<T> type, Configuration configuration) {
-        return Optional.empty();
+        //noinspection unchecked
+        return components.containsKey(type) ? Optional.of(((T) components.get(type).get())) : Optional.empty();
     }
 
     /**

@@ -28,6 +28,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  *
  * @author Allard Buijze
  * @since 2.0
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly.
  */
 @Deprecated
 public class TransactionManagerFactoryBean implements FactoryBean<TransactionManager> {

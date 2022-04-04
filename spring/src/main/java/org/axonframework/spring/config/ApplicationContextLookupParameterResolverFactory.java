@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 2.1.2
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly.
  */
 @Deprecated
 public class ApplicationContextLookupParameterResolverFactory implements FactoryBean<ParameterResolverFactory>,

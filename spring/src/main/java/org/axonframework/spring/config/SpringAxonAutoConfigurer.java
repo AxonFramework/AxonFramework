@@ -127,8 +127,8 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  *
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated Replaced by the {@link SpringConfigurer} and {@link SpringAxonConfiguration}.
  */
-
 @Deprecated
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 

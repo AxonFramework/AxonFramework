@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -10,14 +26,18 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
- * Spring Factory Bean that creates a {@link HandlerDefinition} using configured {@link HandlerDefinition} and
- * {@link HandlerEnhancerDefinition) beans (e.g. those configured in a Spring Application Context) and complements
- * those found using a service loader on the Bean Class Loader.
+ * Spring {@link FactoryBean} that creates a {@link HandlerDefinition} using configured {@link HandlerDefinition} and
+ * {@link HandlerEnhancerDefinition) beans (e.g. those configured in a Spring Application Context) and complements those
+ * found using a service loader on the Bean Class Loader.
  * <p>
- * This bean is to be use from a Configuration file with autowires the other {@link HandlerDefinition} and
- * {@link HandlerEnhancerDefinition} beans from the application context.
+ * This bean is to be used from a configuration file that auto wires the other {@link HandlerDefinition} and {@link
+ * HandlerEnhancerDefinition} beans from the Application Context.
+ *
+ * @author Allard Buijze
+ * @since 4.6.0
  */
 public class HandlerDefinitionFactoryBean implements FactoryBean<HandlerDefinition>, BeanClassLoaderAware {
 
@@ -52,7 +72,7 @@ public class HandlerDefinitionFactoryBean implements FactoryBean<HandlerDefiniti
     }
 
     @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
+    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
 }

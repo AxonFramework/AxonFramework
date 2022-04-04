@@ -80,7 +80,8 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
-        org.axonframework.config.Configuration axonConfiguration = applicationContext.getBean(org.axonframework.config.Configuration.class);
+        org.axonframework.config.Configuration axonConfiguration =
+                applicationContext.getBean(org.axonframework.config.Configuration.class);
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));

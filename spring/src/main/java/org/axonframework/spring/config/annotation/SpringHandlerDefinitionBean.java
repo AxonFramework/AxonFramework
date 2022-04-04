@@ -31,7 +31,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
@@ -42,6 +41,7 @@ import javax.annotation.Nonnull;
  * @author Milan Savic
  * @see ClasspathHandlerDefinition
  * @since 3.3
+ * @deprecated Replaced by the {@link HandlerDefinitionFactoryBean}.
  */
 @Deprecated
 public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinition>,
