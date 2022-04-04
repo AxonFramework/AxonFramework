@@ -12,8 +12,11 @@ updates:
     - "Status: In Progress"
   # Add reviewers
   reviewers:
-    - "sandjelkovic"
+    - "gklijs"
+    - "Morlack"
+    - "sandjelkovic" # Main
     - "smcvb"
+    - "YvonneCeelie"
   milestone: 3
 - package-ecosystem: maven
   directory: "/"
@@ -27,6 +30,9 @@ updates:
     - "Status: In Progress"
   # Add reviewers
   reviewers:
-    - "sandjelkovic"
+    - "gklijs"
+    - "Morlack"
+    - "sandjelkovic" # Main
     - "smcvb"
+    - "YvonneCeelie"
   milestone: 3
