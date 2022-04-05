@@ -23,10 +23,10 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.Serializable;
 import java.util.stream.Stream;
@@ -118,7 +118,8 @@ class EventTypeUpcasterTest {
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
     void testCanUpcastReturnsFalseForIncorrectPayloadType(Serializer serializer) {
-        EventData<?> testEventData = new TestEventEntry("some-non-matching-payload-type", EXPECTED_REVISION, serializer);
+        EventData<?> testEventData =
+                new TestEventEntry("some-non-matching-payload-type", EXPECTED_REVISION, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         assertFalse(testSubject.canUpcast(testRepresentation));
@@ -127,7 +128,8 @@ class EventTypeUpcasterTest {
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
     void testCanUpcastReturnsFalseForIncorrectRevision(Serializer serializer) {
-        EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, "some-non-matching-revision", serializer);
+        EventData<?> testEventData =
+                new TestEventEntry(EXPECTED_PAYLOAD_TYPE, "some-non-matching-revision", serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         assertFalse(testSubject.canUpcast(testRepresentation));
@@ -160,6 +162,12 @@ class EventTypeUpcasterTest {
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
     void testShouldDeserializeToNewType(Serializer serializer) {
+        // If we're dealing with an XStreamSerializer the FQCN in the XML tags defines the type.
+        // Due to this, it's more reasonable to use type aliases on the XStream instance i.o. using this upcaster.
+        if (serializer instanceof XStreamSerializer) {
+            return;
+        }
+
         final EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, serializer);
         final InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -181,18 +189,23 @@ class EventTypeUpcasterTest {
      * payloadRevision}. All other {@code AbstractEventEntry} parameters are defaulted.
      */
     private static class TestEventEntry extends AbstractEventEntry<byte[]> {
-        private static final TestEvent payload = new TestEvent("payload");
-        private static final TestEvent metaData = new TestEvent("metadata");
+
+        private static final TestEvent PAYLOAD = new TestEvent("payload");
+        private static final TestEvent META_DATA = new TestEvent("metadata");
 
         public TestEventEntry(String payloadType, String payloadRevision, Serializer serializer) {
-            super("eventIdentifier", "timestamp", payloadType, payloadRevision, serializer.serialize(payload, byte[].class).getData(), serializer.serialize(metaData, byte[].class).getData());
+            super("eventIdentifier", "timestamp", payloadType, payloadRevision,
+                  serializer.serialize(PAYLOAD, byte[].class).getData(),
+                  serializer.serialize(META_DATA, byte[].class).getData());
         }
     }
 
     /**
-     * A simple event used for testing
+     * A simple event used for testing.
      */
+    @SuppressWarnings("unused")
     private static class TestEvent implements Serializable {
+
         private String testField;
 
         public TestEvent() {
@@ -212,9 +225,11 @@ class EventTypeUpcasterTest {
     }
 
     /**
-     * Latest revision of {@code TestEvent} (renamed event type)
+     * Latest revision of {@code TestEvent} (renamed event type).
      */
+    @SuppressWarnings("unused")
     private static class RenamedTestEvent implements Serializable {
+
         private String testField;
 
         public RenamedTestEvent() {
