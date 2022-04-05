@@ -83,8 +83,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    @SuppressWarnings("rawtypes")
-    private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription<?>>> subscriptions = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
@@ -124,8 +123,7 @@ public class SimpleQueryBus implements QueryBus {
     public <R> Registration subscribe(@Nonnull String queryName,
                                       @Nonnull Type responseType,
                                       @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
-        //noinspection rawtypes
-        CopyOnWriteArrayList<QuerySubscription> handlers =
+        CopyOnWriteArrayList<QuerySubscription<?>> handlers =
                 subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
         QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
         handlers.addIfAbsent(querySubscription);
@@ -196,15 +194,19 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         return Mono.just(intercept(query))
-                   .flatMapMany(interceptedQuery -> Mono.just(interceptedQuery)
+                   .flatMapMany(
+                           interceptedQuery -> Mono.just(interceptedQuery)
                                                    .flatMapMany(this::getStreamingHandlersForMessage)
                                                    .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
-                                                   .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler))
+                                                   .map(handler -> interceptAndInvokeStreaming(
+                                                           interceptedQuery, handler
+                                                   ))
                                                    .skipWhile(ResultMessage::isExceptional)
                                                    .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
                                                    .next()
                                                    .doOnEach(this::monitorCallback)
-                                                   .flatMapMany(Message::getPayload))
+                                                   .flatMapMany(Message::getPayload)
+                   )
                    .contextWrite(ctx -> ctx.put(MessageMonitor.MonitorCallback.class,
                                                 messageMonitor.onMessageIngested(query)));
     }
@@ -399,7 +401,7 @@ public class SimpleQueryBus implements QueryBus {
      *
      * @return the subscriptions for this query bus
      */
-    protected Map<String, Collection<QuerySubscription>> getSubscriptions() {
+    protected Map<String, Collection<QuerySubscription<?>>> getSubscriptions() {
         return Collections.unmodifiableMap(subscriptions);
     }
 
@@ -436,7 +438,7 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
-        Map<Integer, List<QuerySubscription>> querySubscriptionsByRank = subscriptions
+        Map<Integer, List<QuerySubscription<?>>> querySubscriptionsByRank = subscriptions
                 .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                 .stream()
                 .collect(groupingBy(querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
@@ -457,9 +459,12 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, R> Publisher<MessageHandler<? super QueryMessage<?, ?>>> getStreamingHandlersForMessage(
-            StreamingQueryMessage<Q, R> queryMessage) {
+            StreamingQueryMessage<Q, R> queryMessage
+    ) {
         ResponseType<?> responseType = queryMessage.getResponseType();
-        return Flux.fromStream(subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+        //noinspection unchecked
+        return Flux.fromStream(subscriptions.computeIfAbsent(queryMessage.getQueryName(),
+                                                             k -> new CopyOnWriteArrayList<>())
                                             .stream()
                                             .filter(subscription -> responseType.matches(subscription.getResponseType()))
                                             .sorted(new StreamingQueryHandlerComparator())
@@ -474,7 +479,7 @@ public class SimpleQueryBus implements QueryBus {
      * Flux(high priority) over {@code List}/{@code Stream} handlers (medium priority). All other handlers are
      * prioritized after the {@code List}/{@code Stream} handlers (low priority).
      */
-    private static class StreamingQueryHandlerComparator implements Comparator<QuerySubscription> {
+    private static class StreamingQueryHandlerComparator implements Comparator<QuerySubscription<?>> {
 
         private enum Priority {
             HIGH,
@@ -483,12 +488,11 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         @Override
-        public int compare(QuerySubscription o1, QuerySubscription o2) {
+        public int compare(QuerySubscription<?> o1, QuerySubscription<?> o2) {
             return getPriority(o1) - getPriority(o2);
         }
 
-        @SuppressWarnings("rawtypes")
-        private int getPriority(QuerySubscription handler) {
+        private int getPriority(QuerySubscription<?> handler) {
             if (handler.getResponseType().getTypeName().contains("reactor.core.publisher.Flux")) {
                 return Priority.HIGH.ordinal();
             } else if (handler.getResponseType().getTypeName().contains("java.util.")) {
