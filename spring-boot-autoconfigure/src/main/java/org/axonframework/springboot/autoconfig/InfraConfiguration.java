@@ -42,13 +42,21 @@ import org.springframework.context.annotation.Role;
 
 import java.util.List;
 
+/**
+ * Infrastructure autoconfiguration class for Axon Framework application. Constructs the look-up components, like the
+ * {@link MessageHandlerLookup} to find Axon components and register them with the {@link SpringConfigurer}.
+ *
+ * @author Allard Buijze
+ * @since 3.0.4
+ */
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
         AxonAutoConfiguration.class,
         JpaAutoConfiguration.class,
         JpaEventStoreAutoConfiguration.class,
         NoOpTransactionAutoConfiguration.class,
-        TransactionAutoConfiguration.class})
+        TransactionAutoConfiguration.class
+})
 @Configuration
 public class InfraConfiguration {
 
