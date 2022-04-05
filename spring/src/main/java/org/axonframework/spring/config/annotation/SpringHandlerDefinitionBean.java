@@ -17,8 +17,11 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -28,7 +31,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
@@ -39,11 +41,14 @@ import javax.annotation.Nonnull;
  * @author Milan Savic
  * @see ClasspathHandlerDefinition
  * @since 3.3
+ * @deprecated Replaced by the {@link HandlerDefinitionFactoryBean}.
  */
+@Deprecated
 public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
     private final List<HandlerDefinition> definitions = new ArrayList<>();
+    private final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
@@ -66,7 +71,7 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
 
     @Override
     public HandlerDefinition getObject() {
-        return MultiHandlerDefinition.ordered(definitions);
+        return MultiHandlerDefinition.ordered(definitions, MultiHandlerEnhancerDefinition.ordered(enhancers));
     }
 
     @Override
@@ -89,11 +94,25 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
      * the classpath, as well as a SpringBeanParameterResolverFactory are registered.
      *
      * @param additionalFactories The extra definitions to register
+     *
      * @see SpringBeanParameterResolverFactory
      * @see ClasspathHandlerDefinition
      */
     public void setAdditionalHandlers(List<HandlerDefinition> additionalFactories) {
         this.definitions.addAll(additionalFactories);
+    }
+
+    /**
+     * Defines any additional handler definitions that should be used. By default, the HandlerDefinitions are found on
+     * the classpath, as well as a SpringBeanParameterResolverFactory are registered.
+     *
+     * @param additionalFactories The extra definitions to register
+     *
+     * @see SpringBeanParameterResolverFactory
+     * @see ClasspathHandlerDefinition
+     */
+    public void setAdditionalHandlerEnhancers(List<HandlerEnhancerDefinition> additionalFactories) {
+        this.enhancers.addAll(additionalFactories);
     }
 
     @Override
@@ -108,7 +127,8 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
 
     private void initialize() {
         definitions.addAll(ClasspathHandlerDefinition.forClassLoader(classLoader).getDelegates());
-        Map<String, HandlerDefinition> definitionsFound = applicationContext.getBeansOfType(HandlerDefinition.class);
-        definitions.addAll(definitionsFound.values());
+        definitions.addAll(applicationContext.getBeansOfType(HandlerDefinition.class).values());
+        enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
+        enhancers.addAll(applicationContext.getBeansOfType(HandlerEnhancerDefinition.class).values());
     }
 }

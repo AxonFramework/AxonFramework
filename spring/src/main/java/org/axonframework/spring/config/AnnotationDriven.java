@@ -32,12 +32,20 @@ import java.lang.annotation.Target;
  * CommandBus and QueryBus, respectively.
  *
  * @author Allard Buijze
+ * @see MessageHandlerLookup
+ * @see SpringSagaLookup
+ * @see SpringAggregateLookup
+ * @see SpringConfigurer
+ * @see SpringAxonConfiguration
  * @since 2.3
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly. Check the "See also" list
+ * for which individual beans to register.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Import(AnnotationDrivenRegistrar.class)
+@Deprecated
 public @interface AnnotationDriven {
 
 }
