@@ -22,8 +22,8 @@ package org.axonframework.eventhandling;
  * before.
  * <p>
  * Note that this is only sensible for event handlers that are assigned to a {@link StreamingEventProcessor}. Event
- * Handlers assigned to a {@link SubscribingEventProcessor}, which is immediately invoked during command handling, will
- * only receive events in "Regular" operation since it does not support replaying.
+ * Handlers assigned to a different mechanism, such as the {@link SubscribingEventProcessor} or certain extensions, will
+ * always receive {@code ReplayStatus.REGULAR} as value.
  *
  * @author Allard Buijze
  * @see AllowReplay @AllowReplay
