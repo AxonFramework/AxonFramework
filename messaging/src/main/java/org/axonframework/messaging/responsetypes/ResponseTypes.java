@@ -57,6 +57,8 @@ public abstract class ResponseTypes {
 
     /**
      * Specify the desire to retrieve a collection of instances of type {@code R} when performing a query.
+     * If no handler is found that can retrieve the type as a collection, a handler is selected that returns a single
+     * instance of the provided type.
      *
      * @param type the {@code R} which is expected to be the response type
      * @param <R>  the generic type of the instantiated {@link ResponseType}
