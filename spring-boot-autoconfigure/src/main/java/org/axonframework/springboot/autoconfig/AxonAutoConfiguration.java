@@ -57,6 +57,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.JavaSerializer;
@@ -389,6 +390,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                              ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                              .build();
+    }
+
+    @Bean
+    public QueryUpdateEmitter queryUpdateEmitter(Configuration configuration) {
+        return SimpleQueryUpdateEmitter.builder()
+                                       .updateMessageMonitor(configuration.messageMonitor(
+                                               QueryUpdateEmitter.class, "queryUpdateEmitter"
+                                       ))
+                                       .build();
     }
 
     @Override

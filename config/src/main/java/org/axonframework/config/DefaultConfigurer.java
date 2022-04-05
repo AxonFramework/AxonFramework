@@ -290,15 +290,14 @@ public class DefaultConfigurer implements Configurer {
      * Method returning a default component to use for given {@code type} for given {@code configuration}, or an empty
      * Optional if no default can be provided.
      *
-     * @param type          The type of component to find a default for
-     * @param configuration The configuration the component is configured in
-     * @param <T>           The type of component
+     * @param type          The type of component to find a default for.
+     * @param configuration The configuration the component is configured in.
+     * @param <T>           The type of component.
      *
-     * @return an Optional containing a default component, or empty if none can be provided
+     * @return An Optional containing a default component, or empty if none can be provided.
      */
     protected <T> Optional<T> defaultComponent(Class<T> type, Configuration configuration) {
-        //noinspection unchecked
-        return components.containsKey(type) ? Optional.of(((T) components.get(type).get())) : Optional.empty();
+        return Optional.empty();
     }
 
     /**

@@ -23,8 +23,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.MessageHandlerLookup;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -87,13 +85,6 @@ public class InfraConfiguration {
         return configurer;
     }
 
-    @Bean
-    public QueryUpdateEmitter queryUpdateEmitter(org.axonframework.config.Configuration configuration) {
-        return SimpleQueryUpdateEmitter.builder()
-                                       .updateMessageMonitor(configuration.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"))
-                                       .build();
-    }
-
     @Primary
     @Bean
     public HandlerDefinitionFactoryBean handlerDefinition(List<HandlerDefinition> handlerDefinitions,
@@ -103,7 +94,9 @@ public class InfraConfiguration {
 
     @Primary
     @Bean
-    public SpringParameterResolverFactoryBean parameterResolverFactory(List<ParameterResolverFactory> parameterResolverFactories) {
+    public SpringParameterResolverFactoryBean parameterResolverFactory(
+            List<ParameterResolverFactory> parameterResolverFactories
+    ) {
         SpringParameterResolverFactoryBean springParameterResolverFactoryBean = new SpringParameterResolverFactoryBean();
         springParameterResolverFactoryBean.setAdditionalFactories(parameterResolverFactories);
         return springParameterResolverFactoryBean;
