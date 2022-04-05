@@ -69,7 +69,9 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry beanDefinitionRegistry) throws BeansException {
-
+    public void postProcessBeanDefinitionRegistry(
+            @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
+    ) throws BeansException {
+        // No action required.
     }
 }

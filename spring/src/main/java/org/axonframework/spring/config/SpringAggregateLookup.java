@@ -38,6 +38,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
+import static org.axonframework.common.StringUtils.nonEmptyOrNull;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a {@link
@@ -49,6 +50,12 @@ import static java.lang.String.format;
 public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAggregateLookup.class);
+
+    private static final String SNAPSHOT_FILTER = "snapshotFilter";
+    private static final String SNAPSHOT_TRIGGER_DEFINITION = "snapshotTriggerDefinition";
+    private static final String COMMAND_TARGET_RESOLVER = "commandTargetResolver";
+    private static final String REPOSITORY = "repository";
+    private static final String REPOSITORY_BEAN = "Repository";
 
     /**
      * Builds a hierarchy model from the given {@code aggregatePrototypes} found in the given {@code beanFactory}.
@@ -66,6 +73,11 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = new HashMap<>();
         for (String prototype : aggregatePrototypes) {
             Class<A> aggregateType = (Class<A>) beanFactory.getType(prototype);
+            if (aggregateType == null) {
+                logger.info("Cannot find Aggregate class for type [{}], hence ignoring.", prototype);
+                break;
+            }
+
             SpringAggregate<A> springAggregate = new SpringAggregate<>(prototype, aggregateType);
             Class<? super A> topType = topAnnotatedAggregateType(aggregateType);
             SpringAggregate<? super A> topSpringAggregate =
@@ -155,21 +167,21 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                                      .setRole(BeanDefinition.ROLE_APPLICATION)
                                      .addConstructorArgValue(aggregateType)
                                      .addConstructorArgValue(subTypes);
-        if (!"".equals(props.get("snapshotFilter"))) {
-            beanDefinitionBuilder.addPropertyValue("snapshotFilter", props.get("snapshotFilter"));
+        if (nonEmptyOrNull((String) props.get(SNAPSHOT_FILTER))) {
+            beanDefinitionBuilder.addPropertyValue(SNAPSHOT_FILTER, props.get(SNAPSHOT_FILTER));
         }
-        if (!"".equals(props.get("snapshotTriggerDefinition"))) {
-            beanDefinitionBuilder.addPropertyValue("snapshotTriggerDefinition", props.get("snapshotTriggerDefinition"));
+        if (nonEmptyOrNull((String) props.get(SNAPSHOT_TRIGGER_DEFINITION))) {
+            beanDefinitionBuilder.addPropertyValue(SNAPSHOT_TRIGGER_DEFINITION, props.get(SNAPSHOT_TRIGGER_DEFINITION));
         }
-        if (!"".equals(props.get("commandTargetResolver"))) {
-            beanDefinitionBuilder.addPropertyValue("commandTargetResolver", props.get("commandTargetResolver"));
+        if (nonEmptyOrNull((String) props.get(COMMAND_TARGET_RESOLVER))) {
+            beanDefinitionBuilder.addPropertyValue(COMMAND_TARGET_RESOLVER, props.get(COMMAND_TARGET_RESOLVER));
         }
-        if (!"".equals(props.get("repository"))) {
-            beanDefinitionBuilder.addPropertyValue("repository", props.get("repository"));
-        } else if (registry.containsBean(aggregateBeanName + "Repository")) {
-            Class<?> type = registry.getType(aggregateBeanName + "Repository");
+        if (nonEmptyOrNull((String) props.get(REPOSITORY))) {
+            beanDefinitionBuilder.addPropertyValue(REPOSITORY, props.get(REPOSITORY));
+        } else if (registry.containsBean(aggregateBeanName + REPOSITORY_BEAN)) {
+            Class<?> type = registry.getType(aggregateBeanName + REPOSITORY_BEAN);
             if (type == null || Repository.class.isAssignableFrom(type)) {
-                beanDefinitionBuilder.addPropertyReference("repository", aggregateBeanName + "Repository");
+                beanDefinitionBuilder.addPropertyReference(REPOSITORY, aggregateBeanName + REPOSITORY_BEAN);
             }
         }
         String aggregateFactory = aggregateBeanName + "AggregateFactory";

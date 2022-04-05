@@ -64,22 +64,25 @@ public class SpringConfigurer extends DefaultConfigurer {
             } else if (candidates.length == 1) {
                 return Optional.of(beanFactory.getBean(candidates[0], componentType));
             } else {
-                // find primary
-                String primary = null;
-                for (String candidate : candidates) {
-                    if (beanFactory.getBeanDefinition(candidate).isPrimary()) {
-                        if (primary != null) {
-                            return Optional.empty();
-                        } else {
-                            primary = candidate;
-                        }
+                return findPrimary(componentType, candidates);
+            }
+        }
+
+        private <T> Optional<T> findPrimary(Class<T> componentType, String[] candidates) {
+            String primary = null;
+            for (String candidate : candidates) {
+                if (beanFactory.getBeanDefinition(candidate).isPrimary()) {
+                    if (primary != null) {
+                        return Optional.empty();
+                    } else {
+                        primary = candidate;
                     }
                 }
-                if (primary == null) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(beanFactory.getBean(primary, componentType));
-                }
+            }
+            if (primary == null) {
+                return Optional.empty();
+            } else {
+                return Optional.of(beanFactory.getBean(primary, componentType));
             }
         }
     }
