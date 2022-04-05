@@ -45,14 +45,9 @@ public interface ResponseType<R> extends Serializable {
     int NO_MATCH = 0;
 
     /**
-     * Indicates that the response matches with the {@link java.lang.reflect.Type}.while returning a single result.
+     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning a single result.
      */
-    int SINGLE_MATCH = 1;
-
-    /**
-     * Indicates that the response matches with the {@link java.lang.reflect.Type}.while returning an iterable result.
-     */
-    int ITERABLE_MATCH = 1024;
+    int MATCH = 1;
 
     /**
      * Match the query handler its response {@link java.lang.reflect.Type} with the {@link ResponseType} implementation
@@ -77,7 +72,7 @@ public interface ResponseType<R> extends Serializable {
      */
     default Integer matchRank(Type responseType) {
         if (matches(responseType)) {
-            return SINGLE_MATCH;
+            return MATCH;
         }
         return NO_MATCH;
     }

@@ -46,6 +46,14 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
  */
 public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
 
+    /**
+     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning an iterable result.
+     *
+     * @see ResponseType#MATCH
+     * @see ResponseType#NO_MATCH
+     */
+    public static final int ITERABLE_MATCH = 1024;
+
     private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
     private final InstanceResponseType<R> instanceResponseType;
 

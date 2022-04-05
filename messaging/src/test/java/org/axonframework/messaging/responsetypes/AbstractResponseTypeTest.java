@@ -39,9 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @param <R> a generic for the expected response type of the {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
-
-    protected static final Integer MATCHES_LIST = ResponseType.ITERABLE_MATCH;
-    protected static final Integer MATCHES = ResponseType.SINGLE_MATCH;
+    protected static final Integer MATCHES = ResponseType.MATCH;
     protected static final Integer DOES_NOT_MATCH = ResponseType.NO_MATCH;
 
     protected final ResponseType<R> testSubject;

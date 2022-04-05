@@ -27,11 +27,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test all possible permutations of Query Handler return types through the {@link MultipleInstancesResponseType}. To
- * that end, leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different
- * {@link ResponseType} implementations.
+ * that end, leveraging the  {@link AbstractResponseTypeTest} to cover all usual suspects between the different {@link
+ * ResponseType} implementations.
  */
 public class MultipleInstancesResponseTypeTest
         extends AbstractResponseTypeTest<List<AbstractResponseTypeTest.QueryResponse>> {
+
+    protected static final Integer MATCHES_LIST = MultipleInstancesResponseType.ITERABLE_MATCH;
 
     public MultipleInstancesResponseTypeTest() {
         super(new MultipleInstancesResponseType<>(QueryResponse.class));
