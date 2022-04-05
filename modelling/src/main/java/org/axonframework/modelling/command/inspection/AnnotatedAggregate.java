@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
@@ -47,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -409,20 +411,31 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
                          .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                          .collect(Collectors.toList());
-        MessageHandlingMember<? super T> handler =
+        List<MessageHandlingMember<? super T>> potentialHandlers =
                 inspector.commandHandlers((Class<? extends T>) aggregateRoot.getClass())
                          .filter(mh -> mh.canHandle(commandMessage))
-                         .findFirst()
-                         .orElseThrow(() -> new NoHandlerForCommandException(commandMessage));
+                         .collect(Collectors.toList());
 
+        if (potentialHandlers.isEmpty()) {
+            throw new NoHandlerForCommandException(commandMessage);
+        }
+        MessageHandlingMember<? super T> suitableHandler =
+                potentialHandlers.stream()
+                                 .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
+                                                 .map(c -> c.canForward(commandMessage, aggregateRoot))
+                                                 .orElse(true))
+                                 .findFirst()
+                                 .orElseThrow(() -> new AggregateEntityNotFoundException(
+                                         "Aggregate cannot handle command [" + commandMessage.getCommandName()
+                                                 + "], as there is no entity instance within the aggregate to forward it to."));
         Object result;
         if (interceptors.isEmpty()) {
-            result = handler.handle(commandMessage, aggregateRoot);
+            result = suitableHandler.handle(commandMessage, aggregateRoot);
         } else {
             result = new DefaultInterceptorChain<>(
                     (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                     interceptors,
-                    m -> handler.handle(commandMessage, aggregateRoot)
+                    m -> suitableHandler.handle(commandMessage, aggregateRoot)
             ).proceed();
         }
         return result;
@@ -538,7 +551,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> withMetaData(Map<String, ?> newMetaData) {
+        public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, ?> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
@@ -550,7 +563,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        public GenericDomainEventMessage<P> andMetaData(Map<String, ?> additionalMetaData) {
+        public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, ?> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -226,14 +227,14 @@ class DisruptorCommandBusMultiThreadedTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String identifier) {
+        public DomainEventStream readEvents(@Nonnull String identifier) {
             loadCounter.incrementAndGet();
             DomainEventMessage<?> message = storedEvents.get(identifier);
             return message == null ? DomainEventStream.of() : DomainEventStream.of(message);
         }
 
         @Override
-        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         }
 
         @Override

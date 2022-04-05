@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -47,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerConnectionManager implements Lifecycle {
+public class AxonServerConnectionManager implements Lifecycle, ConnectionManager {
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
@@ -86,7 +88,7 @@ public class AxonServerConnectionManager implements Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
         lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
     }
@@ -194,6 +196,13 @@ public class AxonServerConnectionManager implements Lifecycle {
     @Deprecated
     public Channel getChannel(String context) {
         return ((ContextConnection) getConnection(context)).getManagedChannel();
+    }
+
+    @Override
+    public Map<String, Boolean> connections() {
+        return connections.entrySet()
+                          .stream()
+                          .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().isConnected()));
     }
 
     /**

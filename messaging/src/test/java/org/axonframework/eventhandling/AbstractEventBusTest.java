@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
@@ -261,7 +262,7 @@ class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 
@@ -277,7 +278,7 @@ class AbstractEventBusTest {
             }
 
             @Override
-            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
                 super.messageMonitor(messageMonitor);
                 return this;
             }

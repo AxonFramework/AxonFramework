@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -75,7 +76,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public A newInstance(Callable<T> factoryMethod) throws Exception {
+    public A newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
@@ -115,7 +116,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public A load(String aggregateIdentifier, Long expectedVersion) {
+    public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
@@ -129,7 +130,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
 
     @Override
-    public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) {
+    public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
@@ -164,7 +165,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public A load(String aggregateIdentifier) {
+    public A load(@Nonnull String aggregateIdentifier) {
         return load(aggregateIdentifier, null);
     }
 
@@ -327,7 +328,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+    public void send(@Nonnull Message<?> message, @Nonnull ScopeDescriptor scopeDescription) throws Exception {
         if (canResolve(scopeDescription)) {
             String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
             try {
@@ -340,7 +341,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public boolean canResolve(ScopeDescriptor scopeDescription) {
+    public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof AggregateScopeDescriptor
                 && Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
     }
@@ -381,21 +382,21 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *                                 handlers contained in the Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
             this.parameterResolverFactory = parameterResolverFactory;
             return this;
         }
 
         /**
-         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
-         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}. Only
+         * used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
-         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
-         *                          {@code aggregateType}.
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given {@code
+         *                          aggregateType}.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
             return this;
@@ -405,11 +406,11 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate this
          * {@link Repository} will store.
          *
-         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
-         *                       {@link Repository} will store
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this {@link
+         *                       Repository} will store
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
             assertNonNull(aggregateModel, "AggregateModel may not be null");
             this.aggregateModel = aggregateModel;
             return this;

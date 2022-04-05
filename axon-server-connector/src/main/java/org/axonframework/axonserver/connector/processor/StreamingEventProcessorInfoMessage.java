@@ -58,7 +58,7 @@ public class StreamingEventProcessorInfoMessage {
                                  .setTokenStoreIdentifier(eventProcessor.getTokenStoreIdentifier())
                                  .setMode(defineMode(eventProcessor.getClass()))
                                  .setActiveThreads(eventProcessor.processingStatus().size())
-                                 .setAvailableThreads(eventProcessor.maxCapacity())
+                                 .setAvailableThreads(eventProcessor.maxCapacity()-eventProcessor.processingStatus().size())
                                  .setRunning(eventProcessor.isRunning())
                                  .setError(eventProcessor.isError())
                                  .addAllSegmentStatus(segmentStatuses)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.distributed.commandfilter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandMessageFilter;
 
+import javax.annotation.Nonnull;
+
 /**
  * A {@link CommandMessageFilter} that denies all {@link CommandMessage}s.
  *
@@ -33,12 +35,12 @@ public enum DenyAll implements CommandMessageFilter {
     INSTANCE;
 
     @Override
-    public boolean matches(CommandMessage<?> message) {
+    public boolean matches(@Nonnull CommandMessage<?> message) {
         return false;
     }
 
     @Override
-    public CommandMessageFilter and(CommandMessageFilter other) {
+    public CommandMessageFilter and(@Nonnull CommandMessageFilter other) {
         return this;
     }
 
@@ -49,7 +51,7 @@ public enum DenyAll implements CommandMessageFilter {
     }
 
     @Override
-    public CommandMessageFilter or(CommandMessageFilter other) {
+    public CommandMessageFilter or(@Nonnull CommandMessageFilter other) {
         return other;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 /**
  * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets sensible
  * default to use when the AxonServer connector is available on the classpath.
@@ -56,7 +58,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectorConfigurerModule.class);
 
     @Override
-    public void configureModule(Configurer configurer) {
+    public void configureModule(@Nonnull Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.registerComponent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());

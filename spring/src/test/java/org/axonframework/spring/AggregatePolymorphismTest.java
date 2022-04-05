@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,12 +30,10 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Scope;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -62,21 +60,24 @@ public class AggregatePolymorphismTest {
     @Test
     void testConfig() {
         List<AggregateConfigurer> configurers = configuration.findModules(AggregateConfigurer.class);
-        assertEquals(2, configurers.size());
+        assertEquals(3, configurers.size());
 
         String bId = commandGateway.sendAndWait(new CreateBCommand("123"));
         String cId = commandGateway.sendAndWait(new CreateCCommand("456"));
         String dId = commandGateway.sendAndWait(new CreateDCommand("789"));
         String fId = commandGateway.sendAndWait(new CreateFCommand("000"));
+        String iId = commandGateway.sendAndWait(new CreateICommand("111"));
         String bResult = commandGateway.sendAndWait(new CommonCommand(bId));
         String cResult = commandGateway.sendAndWait(new CommonCommand(cId));
         String dResult = commandGateway.sendAndWait(new CommonCommand(dId));
         String fResult = commandGateway.sendAndWait(new FCommand(fId));
+        String iResult = commandGateway.sendAndWait(new HCommand(iId));
 
         assertEquals("B123", bResult);
         assertEquals("C456", cResult);
         assertEquals("D789", dResult);
         assertEquals("F000", fResult);
+        assertEquals("I111", iResult);
     }
 
     private static class CreateBCommand {
@@ -176,6 +177,34 @@ public class AggregatePolymorphismTest {
         }
     }
 
+    private static class CreateICommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private CreateICommand(String id) {
+            this.id = id;
+        }
+
+        public String id() {
+            return id;
+        }
+    }
+
+    private static class HCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private HCommand(String id) {
+            this.id = id;
+        }
+
+        public String id() {
+            return id;
+        }
+    }
+
     @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
     public static class Context {
@@ -259,6 +288,38 @@ public class AggregatePolymorphismTest {
             @CommandHandler
             public F(CreateFCommand cmd) {
                 apply(new CreatedEvent(cmd.getId()));
+            }
+        }
+
+        @Aggregate
+        public abstract static class G {
+
+            @AggregateIdentifier
+            private String id;
+
+            @EventSourcingHandler
+            public void on(CreatedEvent evt) {
+                this.id = evt.getId();
+            }
+        }
+
+        public abstract static class H extends G {
+
+            @CommandHandler
+            public String handle(HCommand cmd) {
+                return this.getClass().getSimpleName() + cmd.id();
+            }
+        }
+
+        @Aggregate
+        public static class I extends H {
+
+            public I() {
+            }
+
+            @CommandHandler
+            public I(CreateICommand cmd) {
+                apply(new CreatedEvent(cmd.id()));
             }
         }
 

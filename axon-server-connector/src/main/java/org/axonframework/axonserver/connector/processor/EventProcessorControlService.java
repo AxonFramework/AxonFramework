@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
@@ -47,9 +48,9 @@ public class EventProcessorControlService implements Lifecycle {
     private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
     private static final String UNKNOWN_EVENT_PROCESSOR_MODE = "Unknown";
 
-    private final AxonServerConnectionManager axonServerConnectionManager;
-    private final EventProcessingConfiguration eventProcessingConfiguration;
-    private final String context;
+    protected final AxonServerConnectionManager axonServerConnectionManager;
+    protected final EventProcessingConfiguration eventProcessingConfiguration;
+    protected final String context;
 
     /**
      * Initialize a {@link EventProcessorControlService} which adds {@link java.util.function.Consumer}s to the given
@@ -89,7 +90,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
     }
 
@@ -141,7 +142,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
 
-    private static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
+    protected static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
 
         private final EventProcessor processor;
         private final String name;

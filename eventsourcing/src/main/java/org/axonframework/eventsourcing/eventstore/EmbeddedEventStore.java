@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
@@ -507,7 +508,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }

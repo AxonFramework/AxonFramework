@@ -268,6 +268,14 @@ class TrackingEventProcessorTest {
     }
 
     @Test
+    void testSequenceMaxCapacity() {
+        testSubject.start();
+        assertEquals(1, testSubject.maxCapacity());
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
+        assertEquals(1, testSubject.activeProcessorThreads());
+    }
+
+    @Test
     void testPublishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {

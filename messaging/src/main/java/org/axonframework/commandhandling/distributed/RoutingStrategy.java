@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 
+import javax.annotation.Nonnull;
+
 /**
- * Interface describing a mechanism that generates a routing key for a given command. Commands that should be handled
- * by the same segment, should result in the same routing key.
+ * Interface describing a mechanism that generates a routing key for a given command. Commands that should be handled by
+ * the same segment, should result in the same routing key.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -34,5 +36,5 @@ public interface RoutingStrategy {
      * @param command the command to create a routing key for
      * @return the routing key for the command
      */
-    String getRoutingKey(CommandMessage<?> command);
+    String getRoutingKey(@Nonnull CommandMessage<?> command);
 }

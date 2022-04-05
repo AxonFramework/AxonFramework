@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
+import java.sql.SQLException;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
-import java.sql.SQLException;
 
 /**
  * Auto configuration class for Axon's JPA specific infrastructure components.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void processPublication(CommandHandlingEntry entry,
-                                    DisruptorUnitOfWork<?> unitOfWork,
+                                    DisruptorUnitOfWork<CommandMessage<?>> unitOfWork,
                                     String aggregateIdentifier) {
         invokeInterceptorChain(entry);
 
@@ -142,7 +142,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         entry.setResult(commandResultMessage);
     }
 
-    private Throwable performRollback(DisruptorUnitOfWork<?> unitOfWork,
+    private Throwable performRollback(DisruptorUnitOfWork<CommandMessage<?>> unitOfWork,
                                       String aggregateIdentifier,
                                       Throwable exceptionResult) {
         unitOfWork.rollback(exceptionResult);
@@ -152,7 +152,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
-    private Throwable performCommit(DisruptorUnitOfWork<?> unitOfWork,
+    private Throwable performCommit(DisruptorUnitOfWork<CommandMessage<?>> unitOfWork,
                                     Throwable exceptionResult,
                                     String aggregateIdentifier) {
         try {
@@ -178,7 +178,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
-    private Throwable notifyBlacklisted(DisruptorUnitOfWork<?> unitOfWork,
+    private Throwable notifyBlacklisted(DisruptorUnitOfWork<CommandMessage<?>> unitOfWork,
                                         String aggregateIdentifier,
                                         Throwable cause) {
         blackListedAggregates.add(aggregateIdentifier);

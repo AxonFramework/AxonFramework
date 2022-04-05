@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -49,16 +51,17 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class})
+        AxonServerBusAutoConfiguration.class,
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
+})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationWithEventSerializerTest {
 
@@ -77,7 +80,8 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
-        org.axonframework.config.Configuration axonConfiguration = applicationContext.getBean(org.axonframework.config.Configuration.class);
+        org.axonframework.config.Configuration axonConfiguration =
+                applicationContext.getBean(org.axonframework.config.Configuration.class);
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));

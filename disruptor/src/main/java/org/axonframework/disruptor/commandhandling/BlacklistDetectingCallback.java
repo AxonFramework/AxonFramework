@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.BiConsumer;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -67,8 +68,8 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onResult(CommandMessage<? extends C> commandMessage,
-                         CommandResultMessage<? extends R> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
+                         @Nonnull CommandResultMessage<? extends R> commandResultMessage) {
         if (!commandResultMessage.isExceptional()) {
             if (delegate != null) {
                 delegate.onResult(commandMessage, commandResultMessage);

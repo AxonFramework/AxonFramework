@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -45,6 +46,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.*;
@@ -400,8 +402,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
             reporter.reportWrongExceptionMessage(actualException, emptyMatcherDescription);
             return this;
         }
+
         StringDescription description = new StringDescription();
         exceptionMessageMatcher.describeTo(description);
+
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+        }
         if (actualException != null && !exceptionMessageMatcher.matches(actualException.getMessage())) {
             reporter.reportWrongExceptionMessage(actualException, description);
         }
@@ -432,6 +439,40 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectExceptionDetails(Object exceptionDetails) {
+        return expectExceptionDetails(CoreMatchers.equalTo(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails) {
+        return expectExceptionDetails(instanceOf(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Matcher<?> exceptionDetailsMatcher) {
+        Object actualDetails = HandlerExecutionException.resolveDetails(actualException).orElse(null);
+        if (exceptionDetailsMatcher == null) {
+            StringDescription emptyMatcherDescription = new StringDescription(
+                    new StringBuilder("Given exception details matcher is null!"));
+            reporter.reportWrongExceptionDetails(actualDetails, emptyMatcherDescription);
+            return this;
+        }
+        if (actualException == null) {
+            StringDescription description = new StringDescription(new StringBuilder(
+                    "an exception with details matching "));
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            return this;
+        }
+        if (!exceptionDetailsMatcher.matches(actualDetails)) {
+            StringDescription description = new StringDescription();
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportWrongExceptionDetails(actualDetails, description);
+        }
+        return this;
+    }
+
+    @Override
     public ResultValidator<T> expectMarkedDeleted() {
         if (!state.get().isDeleted()) {
             reporter.reportIncorrectDeletedState(true);
@@ -450,7 +491,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                         @Nonnull CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
             actualException = commandResultMessage.exceptionResult();
         } else {

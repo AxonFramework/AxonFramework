@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,8 +23,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.MessageHandlerLookup;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -44,13 +42,21 @@ import org.springframework.context.annotation.Role;
 
 import java.util.List;
 
+/**
+ * Infrastructure autoconfiguration class for Axon Framework application. Constructs the look-up components, like the
+ * {@link MessageHandlerLookup} to find Axon components and register them with the {@link SpringConfigurer}.
+ *
+ * @author Allard Buijze
+ * @since 3.0.4
+ */
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
         AxonAutoConfiguration.class,
         JpaAutoConfiguration.class,
         JpaEventStoreAutoConfiguration.class,
         NoOpTransactionAutoConfiguration.class,
-        TransactionAutoConfiguration.class})
+        TransactionAutoConfiguration.class
+})
 @Configuration
 public class InfraConfiguration {
 
@@ -87,13 +93,6 @@ public class InfraConfiguration {
         return configurer;
     }
 
-    @Bean
-    public QueryUpdateEmitter queryUpdateEmitter(org.axonframework.config.Configuration configuration) {
-        return SimpleQueryUpdateEmitter.builder()
-                                       .updateMessageMonitor(configuration.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"))
-                                       .build();
-    }
-
     @Primary
     @Bean
     public HandlerDefinitionFactoryBean handlerDefinition(List<HandlerDefinition> handlerDefinitions,
@@ -103,7 +102,9 @@ public class InfraConfiguration {
 
     @Primary
     @Bean
-    public SpringParameterResolverFactoryBean parameterResolverFactory(List<ParameterResolverFactory> parameterResolverFactories) {
+    public SpringParameterResolverFactoryBean parameterResolverFactory(
+            List<ParameterResolverFactory> parameterResolverFactories
+    ) {
         SpringParameterResolverFactoryBean springParameterResolverFactoryBean = new SpringParameterResolverFactoryBean();
         springParameterResolverFactoryBean.setAdditionalFactories(parameterResolverFactories);
         return springParameterResolverFactoryBean;

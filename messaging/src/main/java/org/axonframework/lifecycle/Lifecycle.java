@@ -1,6 +1,23 @@
+/*
+ * Copyright (c) 2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.lifecycle;
 
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
 
 /**
  * Interface for components that can be started and shut down as part of the Application lifecycle.
@@ -21,7 +38,7 @@ public interface Lifecycle {
      * @see LifecycleRegistry#onStart(int, Runnable)
      * @see LifecycleRegistry#onStart(int, LifecycleHandler)
      */
-    void registerLifecycleHandlers(LifecycleRegistry lifecycle);
+    void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle);
 
     /**
      * Interface towards the registry that holds all lifecycle handlers for components.
@@ -43,10 +60,9 @@ public interface Lifecycle {
          *
          * @param phase  The phase in which to execute this action
          * @param action The action to perform
-         *
          * @see Phase
          */
-        default void onStart(int phase, Runnable action) {
+        default void onStart(int phase, @Nonnull Runnable action) {
             onStart(phase, () -> {
                 try {
                     action.run();
@@ -68,7 +84,7 @@ public interface Lifecycle {
          *
          * @see Phase
          */
-        default void onShutdown(int phase, Runnable action) {
+        default void onShutdown(int phase, @Nonnull Runnable action) {
             onShutdown(phase, () -> {
                 try {
                     action.run();
@@ -93,7 +109,7 @@ public interface Lifecycle {
          *
          * @see Phase
          */
-        void onStart(int phase, LifecycleHandler action);
+        void onStart(int phase, @Nonnull LifecycleHandler action);
 
         /**
          * Registers the given {@code action} to run during the given {@code phase} during shutdown. Higher
@@ -107,8 +123,7 @@ public interface Lifecycle {
          *
          * @see Phase
          */
-        void onShutdown(int phase, LifecycleHandler action);
-
+        void onShutdown(int phase, @Nonnull LifecycleHandler action);
     }
 
     /**

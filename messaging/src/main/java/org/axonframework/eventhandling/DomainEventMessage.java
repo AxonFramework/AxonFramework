@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a Message that wraps a DomainEvent and an Event representing an important change in the Domain. In
@@ -63,17 +64,17 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> withMetaData(Map<String, ?> metaData);
+    DomainEventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The
-     * payload, {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the
-     * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
+     * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
+     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link
+     * #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DomainEventMessage<T> andMetaData(Map<String, ?> metaData);
+    DomainEventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
 }

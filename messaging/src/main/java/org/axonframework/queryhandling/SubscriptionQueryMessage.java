@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Message type that carries a Subscription Query: a request for information. Besides a payload, Subscription Query
@@ -49,7 +50,7 @@ public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    SubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData);
+    SubscriptionQueryMessage<Q, I, U> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this SubscriptionQueryMessage with its MetaData merged with given {@code metaData}. The payload
@@ -59,5 +60,5 @@ public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {
      * @return a copy of this message with the given additional MetaData
      */
     @Override
-    SubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> additionalMetaData);
+    SubscriptionQueryMessage<Q, I, U> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.
@@ -40,7 +42,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 3.0
  */
-public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
+public class ChildForwardingCommandMessageHandlingMember<P, C> implements ForwardingCommandMessageHandlingMember<P> {
 
     private final List<MessageHandlingMember<? super C>> childHandlingInterceptors;
     private final MessageHandlingMember<? super C> childHandler;
@@ -96,19 +98,24 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     }
 
     @Override
-    public boolean canHandle(Message<?> message) {
+    public boolean canForward(CommandMessage<?> message, P target) {
+        return childEntityResolver.apply(message, target) != null;
+    }
+
+    @Override
+    public boolean canHandle(@Nonnull Message<?> message) {
         return childHandler.canHandle(message);
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(Message<?> message, P target) throws Exception {
+    public Object handle(@Nonnull Message<?> message, @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new AggregateEntityNotFoundException(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package org.axonframework.modelling.command;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -84,7 +86,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
      * {@inheritDoc}
      */
     @Override
-    public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
+    public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
         String aggregateIdentifier;
         Long aggregateVersion;
         try {
