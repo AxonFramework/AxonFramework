@@ -203,6 +203,11 @@ public class SpringAxonAutoConfigurerTest {
     @Qualifier("eventSerializer")
     private Serializer eventSerializer;
 
+    @AfterEach
+    void tearDown() {
+        reset(primaryCommandTargetResolver);
+    }
+
     @Test
     void contextWiresMainComponents() {
         assertNotNull(axonConfig);
@@ -259,7 +264,7 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
-        verify(primaryCommandTargetResolver, timeout(100)).resolveTarget(any());
+        verify(primaryCommandTargetResolver, timeout(500)).resolveTarget(any());
     }
 
     @Test
