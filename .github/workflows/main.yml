@@ -49,7 +49,7 @@ jobs:
           ./mvnw -B -U -Possrh -Pintegration-test clean verify
 
       - name: Experimental Build
-        if: experimental-enabled
+        if: matrix.experimental-enabled
         run: |
           ./mvnw -B -U -Possrh -Pintegration-test -Pexperimental clean verify
 
