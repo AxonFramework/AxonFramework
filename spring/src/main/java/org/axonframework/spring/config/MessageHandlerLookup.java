@@ -120,9 +120,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
                                              .addConstructorArgValue(found)
                                              .getBeanDefinition();
 
-                ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
-                        configurerBeanName, beanDefinition
-                );
+                ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(configurerBeanName, beanDefinition);
             }
         }
     }
