@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nonnull;
+import org.springframework.lang.Nullable;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -72,8 +73,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return configuration;
     }
 
-    private String clientName(String id) {
-        if (id.contains(":")) {
+    private String clientName(@Nullable String id) {
+        if (id == null) {
+            return "Unnamed";
+        } else if (id.contains(":")) {
             return id.substring(0, id.indexOf(":"));
         }
         return id;

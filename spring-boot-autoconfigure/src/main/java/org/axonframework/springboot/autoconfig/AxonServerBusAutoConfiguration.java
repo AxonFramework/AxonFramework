@@ -38,7 +38,6 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -91,7 +90,7 @@ public class AxonServerBusAutoConfiguration {
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
-                                       AxonConfiguration axonConfiguration,
+                                       org.axonframework.config.Configuration axonConfiguration,
                                        TransactionManager txManager,
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
@@ -124,7 +123,7 @@ public class AxonServerBusAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
-                                 AxonConfiguration configuration,
+                                 org.axonframework.config.Configuration configuration,
                                  AxonServerConnectionManager axonServerConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer eventSerializer) {

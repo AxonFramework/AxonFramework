@@ -14,7 +14,7 @@ updates:
     - "gklijs"
     - "Morlack"
     - "sandjelkovic"
-    - "smcvb"
+    - "smcvb" # Main
     - "YvonneCeelie"
 # Updates for `master`
 - package-ecosystem: maven
@@ -34,7 +34,7 @@ updates:
     - "gklijs"
     - "Morlack"
     - "sandjelkovic"
-    - "smcvb"
+    - "smcvb" # Main
     - "YvonneCeelie"
 # Patch and security updates for patch branches
 - package-ecosystem: maven
@@ -48,12 +48,12 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 70
+  milestone: 71
   open-pull-requests-limit: 5
   reviewers:
     - "gklijs"
     - "Morlack"
     - "sandjelkovic"
-    - "smcvb"
+    - "smcvb" # Main
     - "YvonneCeelie"
   target-branch: "axon-4.5.x"

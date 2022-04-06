@@ -37,7 +37,9 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 2.1
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly.
  */
+@Deprecated
 public final class SpringContextParameterResolverFactoryBuilder {
 
     private static final String PARAMETER_RESOLVER_FACTORY_BEAN_NAME = "__axon-parameter-resolver-factory";

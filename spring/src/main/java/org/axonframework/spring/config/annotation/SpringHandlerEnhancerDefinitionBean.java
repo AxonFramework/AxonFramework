@@ -38,7 +38,9 @@ import javax.annotation.Nonnull;
  * @author Milan Savic
  * @see ClasspathHandlerEnhancerDefinition
  * @since 3.3
+ * @deprecated Replaced by the {@link HandlerDefinitionFactoryBean}.
  */
+@Deprecated
 public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
@@ -75,7 +77,7 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     @Override
     public Class<?> getObjectType() {
-        return HandlerEnhancerDefinition.class;
+        return MultiHandlerEnhancerDefinition.class;
     }
 
     @Override

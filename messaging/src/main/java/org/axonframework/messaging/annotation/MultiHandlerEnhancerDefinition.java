@@ -60,7 +60,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      * @param delegates The delegates to include in the factory
      * @return an instance delegating to the given {@code delegates}
      */
-    public static MultiHandlerEnhancerDefinition ordered(List<HandlerEnhancerDefinition> delegates) {
+    public static MultiHandlerEnhancerDefinition ordered(Collection<HandlerEnhancerDefinition> delegates) {
         return new MultiHandlerEnhancerDefinition(flatten(delegates));
     }
 
@@ -84,7 +84,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
         this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
-    private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
+    private static HandlerEnhancerDefinition[] flatten(Collection<HandlerEnhancerDefinition> factories) {
         List<HandlerEnhancerDefinition> flattened = new ArrayList<>(factories.size());
         for (HandlerEnhancerDefinition handlerEnhancer : factories) {
             if (handlerEnhancer instanceof MultiHandlerEnhancerDefinition) {
