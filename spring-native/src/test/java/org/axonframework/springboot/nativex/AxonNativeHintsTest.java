@@ -61,9 +61,7 @@ import org.springframework.aot.context.bootstrap.generator.infrastructure.native
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
@@ -77,13 +75,26 @@ import static org.mockito.Mockito.*;
  */
 class AxonNativeHintsTest {
 
+    private ConfigurableListableBeanFactory beanFactory;
+    private NativeConfigurationRegistry registry;
+
     private final AxonNativeHints testSubject = new AxonNativeHints();
 
-    @Test
-    void testProcessRegisteredNativeResourceFromAxon() {
-        ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
-        NativeConfigurationRegistry registry = new NativeConfigurationRegistry();
+    @BeforeEach
+    void setUp() {
+        beanFactory = mock(ConfigurableListableBeanFactory.class);
+        registry = new NativeConfigurationRegistry();
+    }
 
+    @Test
+    void testProcessDoesNothingWithTheBeanFactory() {
+        testSubject.process(beanFactory, registry);
+
+        verifyNoInteractions(beanFactory);
+    }
+
+    @Test
+    void testProcessRegistersServiceLoaderImplementations() {
         testSubject.process(beanFactory, registry);
 
         List<Class<?>> registeredTypes = registry.reflection()
@@ -97,6 +108,26 @@ class AxonNativeHintsTest {
         assertServiceLoaderRegisteredType(registeredTypes, ContentTypeConverter.class);
         assertServiceLoaderRegisteredType(registeredTypes, PropertyAccessStrategy.class);
         assertServiceLoaderRegisteredType(registeredTypes, IdentifierFactory.class);
+    }
+
+    private void assertServiceLoaderRegisteredType(List<Class<?>> registeredTypes, Class<?> type) {
+        for (Object loadedService : ServiceLoader.load(type)) {
+            assertTrue(registeredTypes.contains(loadedService.getClass()));
+        }
+    }
+
+    @Test
+    void testProcessRegistersHasHandlerAttributesAnnotatedAnnotations() {
+        ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
+        NativeConfigurationRegistry registry = new NativeConfigurationRegistry();
+
+        testSubject.process(beanFactory, registry);
+
+        List<Class<?>> registeredTypes = registry.reflection()
+                                                 .reflectionEntries()
+                                                 .map(DefaultNativeReflectionEntry::getType)
+                                                 .collect(Collectors.toList());
+
         assertTrue(registeredTypes.contains(Priority.class));
         assertTrue(registeredTypes.contains(AggregateRoot.class));
         assertTrue(registeredTypes.contains(CommandHandler.class));
@@ -119,6 +150,17 @@ class AxonNativeHintsTest {
         assertTrue(registeredTypes.contains(TargetAggregateIdentifier.class));
         assertTrue(registeredTypes.contains(DeadlineHandler.class));
         assertTrue(registeredTypes.contains(HasHandlerAttributes.class));
+    }
+
+    @Test
+    void testProcessRegistersSerializedAxonClasses() {
+        testSubject.process(beanFactory, registry);
+
+        List<Class<?>> registeredTypes = registry.reflection()
+                                                 .reflectionEntries()
+                                                 .map(DefaultNativeReflectionEntry::getType)
+                                                 .collect(Collectors.toList());
+
         assertTrue(registeredTypes.contains(SagaEntry.class));
         assertTrue(registeredTypes.contains(AbstractSagaEntry.class));
         assertTrue(registeredTypes.contains(GlobalSequenceTrackingToken.class));
@@ -131,22 +173,13 @@ class AxonNativeHintsTest {
         assertTrue(registeredTypes.contains(OptionalResponseType.class));
         assertTrue(registeredTypes.contains(InstanceResponseType.class));
         assertTrue(registeredTypes.contains(ClassSerializer.class));
+    }
+
+    @Test
+    void testProcessRegistersResourcesAndProxies() {
+        testSubject.process(beanFactory, registry);
 
         assertFalse(registry.resources().toResourcesDescriptor().isEmpty());
         assertFalse(registry.proxy().getEntries().isEmpty());
-
-        verifyNoInteractions(beanFactory);
-    }
-
-    private void assertServiceLoaderRegisteredType(List<Class<?>> registeredTypes, Class<?> type) {
-        Iterator<?> services = ServiceLoader.load(type).iterator();
-        while (services.hasNext()) {
-            try {
-                Object next = services.next();
-                assertTrue(registeredTypes.contains(next.getClass()));
-            } catch (ServiceConfigurationError | NoClassDefFoundError e) {
-                // Ignore these errors, as they shouldn't block application start-up.
-            }
-        }
     }
 }

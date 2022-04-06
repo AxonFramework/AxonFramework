@@ -142,8 +142,12 @@ public class AxonNativeHints implements BeanFactoryNativeConfigurationProcessor 
                   .withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
         // We need this registration from Jackson because we serializer the type from time to time.
         // Spring Native doesn't register this itself, so we do it for it.
-        tryRegister(() -> reflection.forType(ClassSerializer.class)
-                                    .withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS));
+        try {
+            reflection.forType(ClassSerializer.class)
+                      .withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
+        } catch (Exception | LinkageError e) {
+            // Probably a method or class not found. Ignore this exception or error.
+        }
 
         // Register resources.
         registry.resources()
@@ -169,18 +173,5 @@ public class AxonNativeHints implements BeanFactoryNativeConfigurationProcessor 
                 // Ignore these errors, as they shouldn't block application start-up.
             }
         }
-    }
-
-    private void tryRegister(ExceptionThrowingRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (Exception | LinkageError e) {
-            // Probably a method or class not found. Ignore this exception or error.
-        }
-    }
-
-    private interface ExceptionThrowingRunnable {
-
-        void run() throws Exception;
     }
 }
