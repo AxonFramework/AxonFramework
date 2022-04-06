@@ -12,8 +12,10 @@ jobs:
         include:
           - java-version: 8
             sonar-enabled: false
+            experimental-enabled: false
           - java-version: 11
             sonar-enabled: true
+            experimental-enabled: true
       fail-fast: false # run both to the end
 
     steps:
@@ -34,6 +36,11 @@ jobs:
         if: ${{ !matrix.sonar-enabled }}
         run: |
           ./mvnw -B -U -Possrh -Pintegration-test clean verify
+
+      - name: Experimental Build
+        if: experimental-enabled
+        run: |
+          ./mvnw -B -U -Possrh -Pintegration-test -Pexperimental clean verify
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled

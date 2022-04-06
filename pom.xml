@@ -33,7 +33,6 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
-        <module>spring-native</module>
         <module>integrationtests</module>
         <module>legacy</module>
     </modules>
@@ -744,6 +743,20 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>experimental</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
+
+            <modules>
+                <module>spring-native</module>
+            </modules>
         </profile>
     </profiles>
 
