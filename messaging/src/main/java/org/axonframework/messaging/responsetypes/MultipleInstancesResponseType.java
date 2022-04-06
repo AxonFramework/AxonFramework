@@ -46,7 +46,16 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
  */
 public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
 
+    /**
+     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning an iterable result.
+     *
+     * @see ResponseType#MATCH
+     * @see ResponseType#NO_MATCH
+     */
+    public static final int ITERABLE_MATCH = 1024;
+
     private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
+    private final InstanceResponseType<R> instanceResponseType;
 
     /**
      * Instantiate a {@link MultipleInstancesResponseType} with the given {@code expectedCollectionGenericType} as the
@@ -59,7 +68,9 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     @ConstructorProperties({"expectedResponseType"})
     public MultipleInstancesResponseType(@JsonProperty("expectedResponseType") Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
+        instanceResponseType = new InstanceResponseType<>(expectedCollectionGenericType);
     }
+
 
     /**
      * Match the query handler its response {@link java.lang.reflect.Type} with this implementation its responseType
@@ -74,14 +85,57 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      * <li>If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
      * {@link java.lang.reflect.WildcardType} which is assignable to the response type, taking generic types into
      * account. For example a {@code <E extends ExpectedType> List<? extends E>}.</li>
+     * <li>If the responseType is a single instance type matching the given {@link Type}.</li>
      * </ul>
+     * <p>
+     * If there is no match at all, it will return false to indicate a non-match.
      *
      * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
      * @return true for arrays, generic arrays and {@link java.lang.reflect.ParameterizedType}s (like a {@link
-     * java.lang.Iterable}) for which the contained type is assignable to the expected type
+     * java.lang.Iterable}) for which the contained type is assignable to the expected type, {@link
+     * ResponseType#MATCHES_SINGLE} for matching single instances and {@link ResponseType#NO_MATCH} for non-matches
      */
     @Override
     public boolean matches(Type responseType) {
+        if (isMatchingIterable(responseType)) {
+            return true;
+        }
+        return instanceResponseType.matches(responseType);
+    }
+
+    /**
+     * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
+     * return a value greater than 0 in the following scenarios:
+     * <ul>
+     * <li>{@link ResponseType#ITERABLE_MATCH}: If the response type is an array of the expected type. For example a {@code ExpectedType[]}</li>
+     * <li>{@link ResponseType#ITERABLE_MATCH}: If the response type is a {@link java.lang.reflect.GenericArrayType} of the expected type.
+     * For example a {@code <E extends ExpectedType> E[]}</li>
+     * <li>{@link ResponseType#ITERABLE_MATCH}: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * {@link java.lang.reflect.TypeVariable} which is assignable to the response type, taking generic types into
+     * account. For example a {@code List<ExpectedType>} or {@code <E extends ExpectedType> List<E>}.</li>
+     * <li>{@link ResponseType#ITERABLE_MATCH}: If the response type is a {@link java.lang.reflect.ParameterizedType} containing a single
+     * {@link java.lang.reflect.WildcardType} which is assignable to the response type, taking generic types into
+     * account. For example a {@code <E extends ExpectedType> List<? extends E>}.</li>
+     * <li>{@link ResponseType#MATCHES_SINGLE}: If the responseType is a single instance type matching the given {@link Type}.</li>
+     * </ul>
+     * <p>
+     * If there is no match at all, it will return {@link ResponseType#NO_MATCH} to indicate a non-match.
+     *
+     * @param responseType the response {@link java.lang.reflect.Type} of the query handler which is matched against
+     * @return {@link ResponseType#ITERABLE_MATCH} for arrays, generic arrays and {@link
+     * java.lang.reflect.ParameterizedType}s (like a {@link java.lang.Iterable}) for which the contained type is
+     * assignable to the expected type, {@link ResponseType#MATCHES_SINGLE} for matching single instances and {@link
+     * ResponseType#NO_MATCH} for non-matches
+     */
+    @Override
+    public Integer matchRank(Type responseType) {
+        if (isMatchingIterable(responseType)) {
+            return ITERABLE_MATCH;
+        }
+        return instanceResponseType.matchRank(responseType);
+    }
+
+    private boolean isMatchingIterable(Type responseType) {
         Type unwrapped = unwrapIfType(responseType, Future.class);
         return isIterableOfExpectedType(unwrapped) ||
                 isStreamOfExpectedType(unwrapped) ||
@@ -104,8 +158,10 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     @SuppressWarnings("unchecked") // Suppress cast to array R, since in proper use of this function it is allowed
     @Override
     public List<R> convert(Object response) {
+        if (response == null) {
+            return Collections.emptyList();
+        }
         Class<?> responseType = response.getClass();
-
         if (isArrayOfExpectedType(responseType)) {
             return asList((R[]) response);
         } else if (isIterableOfExpectedType(response)) {
@@ -118,6 +174,10 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
             } else if (Publisher.class.isAssignableFrom(responseType)) {
                 return Flux.from((Publisher<R>) response).collectList().block();
             }
+        }
+
+        if (instanceResponseType.matches(responseType)) {
+            return Collections.singletonList(instanceResponseType.convert(response));
         }
 
         throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
