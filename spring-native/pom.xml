@@ -37,7 +37,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <spring-native.version>0.11.2</spring-native.version>
+        <spring-native.version>0.11.4</spring-native.version>
     </properties>
 
     <dependencies>
