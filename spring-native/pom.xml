@@ -41,20 +41,22 @@
     </properties>
 
     <dependencies>
+        <!-- Axon -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- Spring Experimental -->
+        <dependency>
             <groupId>org.springframework.experimental</groupId>
             <artifactId>spring-aot</artifactId>
             <version>${spring-native.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -63,9 +65,10 @@
             <version>${spring-native.version}</version>
             <optional>true</optional>
         </dependency>
+        <!-- Other -->
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>
