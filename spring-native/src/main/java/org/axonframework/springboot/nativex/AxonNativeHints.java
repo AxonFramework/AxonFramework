@@ -140,7 +140,7 @@ public class AxonNativeHints implements BeanFactoryNativeConfigurationProcessor 
                   .withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
         reflection.forType(InstanceResponseType.class)
                   .withAccess(TypeAccess.PUBLIC_METHODS, TypeAccess.PUBLIC_CONSTRUCTORS);
-        // We need this registration from Jackson because we serializer the type from time to time.
+        // We need this registration from Jackson because we serialize the type from time to time.
         // Spring Native doesn't register this itself, so we do it for it.
         try {
             reflection.forType(ClassSerializer.class)
