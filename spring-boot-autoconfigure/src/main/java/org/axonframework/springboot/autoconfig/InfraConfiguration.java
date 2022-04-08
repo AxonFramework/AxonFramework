@@ -79,7 +79,7 @@ public class InfraConfiguration {
     }
 
     @Bean
-    public SpringAxonConfiguration configuration(Configurer configurer) {
+    public SpringAxonConfiguration springAxonConfiguration(Configurer configurer) {
         return new SpringAxonConfiguration(configurer);
     }
 
