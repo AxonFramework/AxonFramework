@@ -182,35 +182,29 @@ public class EventProcessingModule
     public void initialize(Configuration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
-
-        instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
-
-        Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
-        registerSimpleEventHandlerInvokers(handlerInvokers);
-        registerSagaManagers(handlerInvokers);
-
-        handlerInvokers.forEach((processorName, invokers) -> {
-            Component<EventProcessor> eventProcessorComponent =
-                    new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
-            eventProcessors.put(processorName, eventProcessorComponent);
-        });
-
-        initializeProcessors();
+        configuration.onStart(Integer.MIN_VALUE, this::initializeProcessors);
     }
 
     /**
-     * Ideally we would be able to just call {@code eventProcessors.values().forEach(Component::get)} to have the {@link
-     * Component} register the lifecycle handlers through the {@link LifecycleHandlerInspector} directly upon
-     * initialization. However, the Spring {@code AxonConfiguration} and {@code EventHandlerRegistrar} will call the
-     * {@link #initialize(Configuration)} method twice. As the {@code #initialize(Configuration)} clears out the list of
-     * processors, some processors (for example those for registered Sagas) might pop up twice; once in the first {@code
-     * #initialize(Configuration)} call and once in the second. Registering the {@code
-     * eventProcessors.values().forEach(Component::get)} at the earliest stage in the start cycle will resolve the
-     * problem. Note that this functionality should be adjusted once the Spring configuration is more inline with the
-     * default and auto Configuration.
+     * Initializes the event processors by assigning each of the event handlers according to the defined selectors. When
+     * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        this.configuration.onStart(Integer.MIN_VALUE, () -> eventProcessors.values().forEach(Component::get));
+        if (eventProcessors.isEmpty()) {
+            instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
+
+            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
+            registerSimpleEventHandlerInvokers(handlerInvokers);
+            registerSagaManagers(handlerInvokers);
+
+            handlerInvokers.forEach((processorName, invokers) -> {
+                Component<EventProcessor> eventProcessorComponent =
+                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                eventProcessors.put(processorName, eventProcessorComponent);
+            });
+
+            eventProcessors.values().forEach(Component::get);
+        }
     }
 
     private String selectProcessingGroupByType(Class<?> type) {
@@ -336,13 +330,13 @@ public class EventProcessingModule
     @SuppressWarnings("unchecked")
     @Override
     public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
-        ensureInitialized();
         return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
     }
 
     @Override
     public Map<String, EventProcessor> eventProcessors() {
         ensureInitialized();
+        initializeProcessors();
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
         return result;
@@ -640,6 +634,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
+            initializeProcessors();
             Component<EventProcessor> eps = eventProcessors.get(processorName);
             if (eps != null && eps.isInitialized()) {
                 eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
