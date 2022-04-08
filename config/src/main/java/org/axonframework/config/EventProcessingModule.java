@@ -335,7 +335,7 @@ public class EventProcessingModule
 
     @Override
     public Map<String, EventProcessor> eventProcessors() {
-        ensureInitialized();
+        validateConfigInitialization();
         initializeProcessors();
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
@@ -350,14 +350,14 @@ public class EventProcessingModule
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
                                             .orElse(Collections.emptyList());
     }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return listenerInvocationErrorHandlers.containsKey(processingGroup)
                 ? listenerInvocationErrorHandlers.get(processingGroup).get()
                 : defaultListenerInvocationErrorHandler.get();
@@ -365,7 +365,7 @@ public class EventProcessingModule
 
     @Override
     public SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
                 : defaultSequencingPolicy.get();
@@ -373,7 +373,7 @@ public class EventProcessingModule
 
     @Override
     public RollbackConfiguration rollbackConfiguration(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return rollbackConfigurations.containsKey(processorName)
                 ? rollbackConfigurations.get(processorName).get()
                 : defaultRollbackConfiguration.get();
@@ -381,7 +381,7 @@ public class EventProcessingModule
 
     @Override
     public ErrorHandler errorHandler(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return errorHandlers.containsKey(processorName)
                 ? errorHandlers.get(processorName).get()
                 : defaultErrorHandler.get();
@@ -389,18 +389,18 @@ public class EventProcessingModule
 
     @Override
     public SagaStore sagaStore() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaStore.get();
     }
 
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return processingGroupsAssignments.getOrDefault(processingGroup,
                                                         defaultProcessingGroupAssignment
                                                                 .apply(processingGroup));
@@ -409,7 +409,7 @@ public class EventProcessingModule
     @Override
     public MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
             return messageMonitorFactories.get(eventProcessorName).create(configuration,
                                                                           componentType,
@@ -421,7 +421,7 @@ public class EventProcessingModule
 
     @Override
     public TokenStore tokenStore(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return tokenStore.containsKey(processorName)
                 ? tokenStore.get(processorName).get()
                 : defaultTokenStore.get();
@@ -429,14 +429,16 @@ public class EventProcessingModule
 
     @Override
     public TransactionManager transactionManager(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
     }
 
-    private void ensureInitialized() {
-        assertNonNull(configuration, "Configuration is not initialized yet");
+    private void validateConfigInitialization() {
+        assertNonNull(
+                configuration, "Cannot proceed because the Configuration is not initialized for this module yet."
+        );
     }
 
     //<editor-fold desc="configurer methods">
