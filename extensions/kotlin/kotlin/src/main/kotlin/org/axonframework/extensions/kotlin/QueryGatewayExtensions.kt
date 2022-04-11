@@ -72,7 +72,7 @@ inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(quer
 inline fun <reified R, reified Q> QueryGateway.queryMany(queryName: String, query: Q): CompletableFuture<List<R>> {
     return this.query(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java))
 }
-
+//
 /**
  * Reified version of [QueryGateway.query]
  * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
