@@ -18,6 +18,7 @@ package org.axonframework.extensions.kotlin
 
 import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
+import org.axonframework.queryhandling.SubscriptionQueryResult
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -40,9 +41,21 @@ import java.util.stream.Stream
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
-    return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
-}
+inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> = this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
+
+/**
+ * Reified version of [QueryGateway.subscriptionQuery]
+ * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
+ * @param query Query to send
+ * @param Q the type of payload of the query
+ * @param R the type of result of the query
+ * @return [SubscriptionQueryResult] wrapping the result of the query
+ * @see QueryGateway.subscriptionQuery
+ * @see ResponseTypes
+ * @since 0.1.0
+ */
+inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
+    this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
 
 /**
  * Reified version of [QueryGateway.query] with explicit query name
