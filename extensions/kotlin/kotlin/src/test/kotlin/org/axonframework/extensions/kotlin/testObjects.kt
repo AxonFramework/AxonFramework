@@ -15,20 +15,29 @@ internal data class ExampleQuery(val value: Number)
  */
 internal data class ExampleCommand(@TargetAggregateIdentifier val id: String)
 
-internal data class UpdateType(val dummy:String)
+/**
+ * Class used as update response type in subscriptionQuery method.
+ */
+internal data class UpdateResponseType(val dummy: String)
 
-internal class ExampleSubscriptionQueryResult:SubscriptionQueryResult<String, UpdateType> {
+/**
+ * Class used as initial response type in subscriptionQuery method.
+ */
+internal data class InitialResponseType(val dummy: String)
+
+/**
+ * Dummy class used as return object from subscriptionQuery method in the mock.
+ */
+internal class ExampleSubscriptionQueryResult : SubscriptionQueryResult<InitialResponseType, UpdateResponseType> {
     override fun cancel(): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun initialResult(): Mono<String> {
+    override fun initialResult(): Mono<InitialResponseType> {
         TODO("Not yet implemented")
     }
 
-    override fun updates(): Flux<UpdateType> {
+    override fun updates(): Flux<UpdateResponseType> {
         TODO("Not yet implemented")
     }
-
-
 }
