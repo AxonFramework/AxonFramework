@@ -41,7 +41,9 @@ import java.util.stream.Stream
  * @see ResponseTypes
  * @since 0.1.0
  */
-inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> = this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
+inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> {
+    return this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
+}
 
 /**
  * Reified version of [QueryGateway.query] with explicit query name
