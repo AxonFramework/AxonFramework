@@ -65,10 +65,10 @@ internal class QueryGatewayExtensionsTest {
         every { subjectGateway.subscriptionQuery(exampleQuery, matchInstanceResponseType<InitialResponseType>(), matchInstanceResponseType<UpdateResponseType>()) } returns subscriptionQueryResult
         every {
             subjectGateway.subscriptionQuery(
-                queryName,
-                exampleQuery,
-                matchInstanceResponseType<InitialResponseType>(),
-                matchInstanceResponseType<UpdateResponseType>()
+                    queryName,
+                    exampleQuery,
+                    matchInstanceResponseType<InitialResponseType>(),
+                    matchInstanceResponseType<UpdateResponseType>()
             )
         } returns subscriptionQueryResult
     }
@@ -206,9 +206,9 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Single should invoke scatterGather method with correct generic parameters`() {
         val result = subjectGateway.scatterGather<String, ExampleQuery>(
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamInstanceReturnValue)
@@ -218,9 +218,9 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Multiple should invoke scatterGather method with correct generic parameters`() {
         val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamMultipleReturnValue)
@@ -230,9 +230,9 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Optional should invoke scatterGather method with correct generic parameters`() {
         val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamOptionalReturnValue)
@@ -242,10 +242,10 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Single should invoke scatterGather method with explicit query name`() {
         val result = subjectGateway.scatterGather<String, ExampleQuery>(
-            queryName = queryName,
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamInstanceReturnValue)
@@ -255,10 +255,10 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Multiple should invoke scatterGather method with explicit query name`() {
         val result = subjectGateway.scatterGatherMany<String, ExampleQuery>(
-            queryName = queryName,
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamMultipleReturnValue)
@@ -268,10 +268,10 @@ internal class QueryGatewayExtensionsTest {
     @Test
     fun `ScatterGather for Optional should invoke scatterGather method with explicit query name`() {
         val result = subjectGateway.scatterGatherOptional<String, ExampleQuery>(
-            queryName = queryName,
-            query = exampleQuery,
-            timeout = timeout,
-            timeUnit = timeUnit
+                queryName = queryName,
+                query = exampleQuery,
+                timeout = timeout,
+                timeUnit = timeUnit
         )
 
         assertSame(result, streamOptionalReturnValue)
@@ -284,9 +284,9 @@ internal class QueryGatewayExtensionsTest {
         assertSame(queryResult, subscriptionQueryResult)
         verify(exactly = 1) {
             subjectGateway.subscriptionQuery(
-                exampleQuery,
-                matchExpectedResponseType(InitialResponseType::class.java),
-                matchExpectedResponseType(UpdateResponseType::class.java)
+                    exampleQuery,
+                    matchExpectedResponseType(InitialResponseType::class.java),
+                    matchExpectedResponseType(UpdateResponseType::class.java)
             )
         }
     }
@@ -297,9 +297,9 @@ internal class QueryGatewayExtensionsTest {
         assertSame(queryResult, subscriptionQueryResult)
         verify(exactly = 1) {
             subjectGateway.subscriptionQuery(
-                exampleQuery,
-                matchExpectedResponseType(InitialResponseType::class.java),
-                matchExpectedResponseType(UpdateResponseType::class.java)
+                    exampleQuery,
+                    matchExpectedResponseType(InitialResponseType::class.java),
+                    matchExpectedResponseType(UpdateResponseType::class.java)
             )
         }
     }
@@ -310,10 +310,10 @@ internal class QueryGatewayExtensionsTest {
         assertSame(queryResult, subscriptionQueryResult)
         verify(exactly = 1) {
             subjectGateway.subscriptionQuery(
-                queryName,
-                exampleQuery,
-                matchExpectedResponseType(InitialResponseType::class.java),
-                matchExpectedResponseType(UpdateResponseType::class.java)
+                    queryName,
+                    exampleQuery,
+                    matchExpectedResponseType(InitialResponseType::class.java),
+                    matchExpectedResponseType(UpdateResponseType::class.java)
             )
         }
     }
@@ -324,10 +324,10 @@ internal class QueryGatewayExtensionsTest {
         assertSame(queryResult, subscriptionQueryResult)
         verify(exactly = 1) {
             subjectGateway.subscriptionQuery(
-                queryName,
-                exampleQuery,
-                matchExpectedResponseType(InitialResponseType::class.java),
-                matchExpectedResponseType(UpdateResponseType::class.java)
+                    queryName,
+                    exampleQuery,
+                    matchExpectedResponseType(InitialResponseType::class.java),
+                    matchExpectedResponseType(UpdateResponseType::class.java)
             )
         }
     }

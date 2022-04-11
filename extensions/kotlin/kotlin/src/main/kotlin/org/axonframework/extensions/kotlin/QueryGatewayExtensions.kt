@@ -135,7 +135,7 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: Long,
-                                                                      timeUnit: TimeUnit): Stream<R> {
+                                                             timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -154,7 +154,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
-                                                                      timeUnit: TimeUnit): Stream<R> {
+                                                             timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -172,7 +172,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+                                                                 timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
@@ -191,7 +191,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeo
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+                                                                 timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
@@ -209,7 +209,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: Stri
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+                                                                     timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -228,7 +228,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, t
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+                                                                     timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -245,7 +245,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: 
  * @since 0.1.0
  */
 inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
-    this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
+        this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
 
 /**
  * Reified version of [QueryGateway.subscriptionQuery]
@@ -261,4 +261,4 @@ inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(quer
  * @since 0.1.0
  */
 inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
-    this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
+        this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
