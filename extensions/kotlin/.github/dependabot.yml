@@ -5,34 +5,24 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 5
-  # Specify labels for pull requests
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  # Add reviewers
   reviewers:
-    - "gklijs"
-    - "Morlack"
     - "sandjelkovic" # Main
-    - "smcvb"
-    - "YvonneCeelie"
+    - "Morlack"
   milestone: 3
 - package-ecosystem: maven
   directory: "/"
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-  # Specify labels for pull requests
   labels:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  # Add reviewers
   reviewers:
-    - "gklijs"
-    - "Morlack"
     - "sandjelkovic" # Main
-    - "smcvb"
-    - "YvonneCeelie"
+    - "Morlack"
   milestone: 3
