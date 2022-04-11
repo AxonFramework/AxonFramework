@@ -44,20 +44,6 @@ import java.util.stream.Stream
 inline fun <reified R, reified Q> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> = this.query(query, ResponseTypes.multipleInstancesOf(R::class.java))
 
 /**
- * Reified version of [QueryGateway.subscriptionQuery]
- * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
- * @param query Query to send
- * @param Q the type of payload of the query
- * @param R the type of result of the query
- * @return [SubscriptionQueryResult] wrapping the result of the query
- * @see QueryGateway.subscriptionQuery
- * @see ResponseTypes
- * @since 0.1.0
- */
-inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
-    this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
-
-/**
  * Reified version of [QueryGateway.query] with explicit query name
  * which expects a collection as a response using [org.axonframework.messaging.responsetypes.MultipleInstancesResponseType]
  * @param queryName Name of the query
@@ -245,3 +231,34 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: 
                                                                         timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
+
+/**
+ * Reified version of [QueryGateway.subscriptionQuery]
+ * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param query Query to send
+ * @param Q the type of payload of the query
+ * @param I the type of initial response
+ * @param U the type of update response
+ * @return [SubscriptionQueryResult] wrapping the result of the query
+ * @see QueryGateway.subscriptionQuery
+ * @see ResponseTypes
+ * @since 0.1.0
+ */
+inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
+    this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
+
+/**
+ * Reified version of [QueryGateway.subscriptionQuery]
+ * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param queryName Name of the query
+ * @param query Query to send
+ * @param Q the type of payload of the query
+ * @param I the type of initial response
+ * @param U the type of update response
+ * @return [SubscriptionQueryResult] wrapping the result of the query
+ * @see QueryGateway.subscriptionQuery
+ * @see ResponseTypes
+ * @since 0.1.0
+ */
+inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
+    this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))

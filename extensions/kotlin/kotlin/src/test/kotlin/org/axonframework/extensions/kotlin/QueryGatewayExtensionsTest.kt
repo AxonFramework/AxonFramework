@@ -64,6 +64,14 @@ internal class QueryGatewayExtensionsTest {
         every { subjectGateway.scatterGather(queryName, exampleQuery, matchMultipleInstancesResponseType<String>(), timeout, timeUnit) } returns streamMultipleReturnValue
         every { subjectGateway.scatterGather(queryName, exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) } returns streamOptionalReturnValue
         every { subjectGateway.subscriptionQuery(exampleQuery, matchInstanceResponseType<String>(), matchInstanceResponseType<UpdateType>()) } returns subscriptionQueryResult
+        every {
+            subjectGateway.subscriptionQuery(
+                queryName,
+                exampleQuery,
+                matchInstanceResponseType<String>(),
+                matchInstanceResponseType<UpdateType>()
+            )
+        } returns subscriptionQueryResult
     }
 
     @AfterTest
@@ -81,15 +89,6 @@ internal class QueryGatewayExtensionsTest {
     }
 
     @Test
-    fun `Query without queryName should invoke subscription query method with correct generic parameters`() {
-        val queryResult = subjectGateway.subscriptionQuery<ExampleQuery, String, UpdateType>(query = exampleQuery)
-        assertSame(queryResult, subscriptionQueryResult)
-        verify(exactly = 1) {
-            subjectGateway.subscriptionQuery(exampleQuery, matchExpectedResponseType(String::class.java), matchExpectedResponseType(UpdateType::class.java))
-        }
-    }
-
-    @Test
     fun `Query without queryName should invoke query method and not require explicit generic types`() {
         val queryResult: CompletableFuture<String> = subjectGateway.query(query = exampleQuery)
         assertSame(queryResult, instanceReturnValue)
@@ -99,22 +98,8 @@ internal class QueryGatewayExtensionsTest {
     }
 
     @Test
-    fun `Query without queryName should invoke subscription query method and not require explicit generic types`() {
-        val queryResult: SubscriptionQueryResult<String, UpdateType> = subjectGateway.subscriptionQuery(query = exampleQuery)
-        assertSame(queryResult, subscriptionQueryResult)
-        verify(exactly = 1) {
-            subjectGateway.subscriptionQuery(
-                exampleQuery,
-                matchExpectedResponseType(String::class.java),
-                matchExpectedResponseType(UpdateType::class.java)
-            )
-        }
-    }
-
-    @Test
     fun `Query without queryName Optional should invoke query method with correct generic parameters`() {
         val queryResult = subjectGateway.queryOptional<String, ExampleQuery>(query = exampleQuery)
-
         assertSame(queryResult, optionalReturnValue)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, matchExpectedResponseType(String::class.java)) }
     }
@@ -294,4 +279,57 @@ internal class QueryGatewayExtensionsTest {
         verify(exactly = 1) { subjectGateway.scatterGather(queryName, exampleQuery, matchOptionalResponseType<String>(), timeout, timeUnit) }
     }
 
+    @Test
+    fun `Query without queryName should invoke subscription query method with correct generic parameters`() {
+        val queryResult = subjectGateway.subscriptionQuery<ExampleQuery, String, UpdateType>(query = exampleQuery)
+        assertSame(queryResult, subscriptionQueryResult)
+        verify(exactly = 1) {
+            subjectGateway.subscriptionQuery(
+                exampleQuery,
+                matchExpectedResponseType(String::class.java),
+                matchExpectedResponseType(UpdateType::class.java)
+            )
+        }
+    }
+
+    @Test
+    fun `Query without queryName should invoke subscriptionQuery method and not require explicit generic types`() {
+        val queryResult: SubscriptionQueryResult<String, UpdateType> = subjectGateway.subscriptionQuery(query = exampleQuery)
+        assertSame(queryResult, subscriptionQueryResult)
+        verify(exactly = 1) {
+            subjectGateway.subscriptionQuery(
+                exampleQuery,
+                matchExpectedResponseType(String::class.java),
+                matchExpectedResponseType(UpdateType::class.java)
+            )
+        }
+    }
+
+    @Test
+    fun `Query should invoke subscriptionQuery method with correct generic parameters`() {
+        val queryResult = subjectGateway.subscriptionQuery<ExampleQuery, String, UpdateType>(queryName = queryName, query = exampleQuery)
+        assertSame(queryResult, subscriptionQueryResult)
+        verify(exactly = 1) {
+            subjectGateway.subscriptionQuery(
+                queryName,
+                exampleQuery,
+                matchExpectedResponseType(String::class.java),
+                matchExpectedResponseType(UpdateType::class.java)
+            )
+        }
+    }
+
+    @Test
+    fun `Query should invoke subscriptionQuery method and not require explicit generic types`() {
+        val queryResult: SubscriptionQueryResult<String, UpdateType> = subjectGateway.subscriptionQuery(queryName = queryName, query = exampleQuery)
+        assertSame(queryResult, subscriptionQueryResult)
+        verify(exactly = 1) {
+            subjectGateway.subscriptionQuery(
+                queryName,
+                exampleQuery,
+                matchExpectedResponseType(String::class.java),
+                matchExpectedResponseType(UpdateType::class.java)
+            )
+        }
+    }
 }
