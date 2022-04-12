@@ -1,0 +1,17 @@
+name: Add Dependabot PR's to project
+
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  add-to-project:
+    name: Add dependabot pr to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@main
+        with:
+          project-url: https://github.com/orgs/<orgName>/projects/<projectNumber>
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          labeled: Dependency Upgrade
