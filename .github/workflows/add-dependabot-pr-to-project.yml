@@ -14,4 +14,4 @@ jobs:
         with:
           project-url: https://github.com/orgs/AxonFramework/projects/2
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
-          labeled: Dependency Upgrade
+          labeled: 'Type: Dependency Upgrade'
