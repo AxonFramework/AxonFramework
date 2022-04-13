@@ -244,7 +244,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: 
  * @return [SubscriptionQueryResult] wrapping the result of the query
  * @see QueryGateway.subscriptionQuery
  * @see ResponseTypes
- * @since 0.1.0
+ * @since 0.3.0
  */
 inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
         this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
@@ -260,7 +260,7 @@ inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(quer
  * @return [SubscriptionQueryResult] wrapping the result of the query
  * @see QueryGateway.subscriptionQuery
  * @see ResponseTypes
- * @since 0.1.0
+ * @since 0.3.0
  */
 inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
         this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
