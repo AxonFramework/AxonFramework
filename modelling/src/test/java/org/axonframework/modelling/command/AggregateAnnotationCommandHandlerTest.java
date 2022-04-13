@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -88,6 +89,17 @@ class AggregateAnnotationCommandHandlerTest {
                         aggregateModel,
                         mock(EventBus.class)
                 ));
+        when(mockRepository.newInstance(any(), any())).thenAnswer(
+                invocation -> {
+                    AnnotatedAggregate<StubCommandAnnotatedAggregate> aggregate = AnnotatedAggregate.initialize(
+                            (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                            aggregateModel,
+                            mock(EventBus.class)
+                    );
+                    Consumer<Aggregate<?>> consumer = (Consumer<Aggregate<?>>) invocation.getArguments()[1];
+                    consumer.accept(aggregate);
+                    return aggregate;
+                });
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
@@ -136,6 +148,7 @@ class AggregateAnnotationCommandHandlerTest {
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
                 CreateOrUpdateCommand.class.getName(),
+                AlwaysCreateCommand.class.getName(),
                 CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
@@ -194,6 +207,21 @@ class AggregateAnnotationCommandHandlerTest {
         verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+    }
+
+    @Test
+    public void testCommandHandlerAlwaysCreatesAggregateInstance() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
     }
 
     @Test
@@ -620,6 +648,14 @@ class AggregateAnnotationCommandHandlerTest {
             return "Create or update works fine";
         }
 
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public String handleAlwaysCreate(AlwaysCreateCommand alwaysCreateCommand) {
+            this.setIdentifier(alwaysCreateCommand.id);
+            return "Always create works fine";
+        }
+
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
@@ -782,6 +818,26 @@ class AggregateAnnotationCommandHandlerTest {
         private final String parameter;
 
         private CreateOrUpdateCommand(String id, String parameter) {
+            this.id = id;
+            this.parameter = parameter;
+        }
+
+        public String getParameter() {
+            return parameter;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    private static class AlwaysCreateCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+        private final String parameter;
+
+        private AlwaysCreateCommand(String id, String parameter) {
             this.id = id;
             this.parameter = parameter;
         }
