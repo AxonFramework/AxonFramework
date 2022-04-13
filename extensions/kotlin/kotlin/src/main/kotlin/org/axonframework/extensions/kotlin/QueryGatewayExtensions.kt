@@ -18,6 +18,7 @@ package org.axonframework.extensions.kotlin
 
 import org.axonframework.messaging.responsetypes.ResponseTypes
 import org.axonframework.queryhandling.QueryGateway
+import org.axonframework.queryhandling.SubscriptionQueryResult
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -136,7 +137,7 @@ inline fun <reified R, reified Q> QueryGateway.queryOptional(queryName: String, 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: Long,
-                                                                      timeUnit: TimeUnit): Stream<R> {
+                                                             timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -155,7 +156,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(query: Q, timeout: 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, query: Q, timeout: Long,
-                                                                      timeUnit: TimeUnit): Stream<R> {
+                                                             timeUnit: TimeUnit): Stream<R> {
     return this.scatterGather(queryName, query, ResponseTypes.instanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -173,7 +174,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGather(queryName: String, 
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+                                                                 timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
@@ -192,7 +193,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(query: Q, timeo
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: String, query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<List<R>> {
+                                                                 timeUnit: TimeUnit): Stream<List<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.multipleInstancesOf(R::class.java), timeout, timeUnit)
 }
 
@@ -210,7 +211,7 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherMany(queryName: Stri
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+                                                                     timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
 
@@ -229,6 +230,37 @@ inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(query: Q, t
  * @since 0.2.0
  */
 inline fun <reified R, reified Q> QueryGateway.scatterGatherOptional(queryName: String, query: Q, timeout: Long,
-                                                                        timeUnit: TimeUnit): Stream<Optional<R>> {
+                                                                     timeUnit: TimeUnit): Stream<Optional<R>> {
     return this.scatterGather(queryName, query, ResponseTypes.optionalInstanceOf(R::class.java), timeout, timeUnit)
 }
+
+/**
+ * Reified version of [QueryGateway.subscriptionQuery]
+ * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param query Query to send
+ * @param Q the type of payload of the query
+ * @param I the type of initial response
+ * @param U the type of update response
+ * @return [SubscriptionQueryResult] wrapping the result of the query
+ * @see QueryGateway.subscriptionQuery
+ * @see ResponseTypes
+ * @since 0.3.0
+ */
+inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(query: Q): SubscriptionQueryResult<I, U> =
+        this.subscriptionQuery(query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
+
+/**
+ * Reified version of [QueryGateway.subscriptionQuery]
+ * which expects a single object as a response using [org.axonframework.messaging.responsetypes.InstanceResponseType]
+ * @param queryName Name of the query
+ * @param query Query to send
+ * @param Q the type of payload of the query
+ * @param I the type of initial response
+ * @param U the type of update response
+ * @return [SubscriptionQueryResult] wrapping the result of the query
+ * @see QueryGateway.subscriptionQuery
+ * @see ResponseTypes
+ * @since 0.3.0
+ */
+inline fun <reified Q, reified I, reified U> QueryGateway.subscriptionQuery(queryName: String, query: Q): SubscriptionQueryResult<I, U> =
+        this.subscriptionQuery(queryName, query, ResponseTypes.instanceOf(I::class.java), ResponseTypes.instanceOf(U::class.java))
