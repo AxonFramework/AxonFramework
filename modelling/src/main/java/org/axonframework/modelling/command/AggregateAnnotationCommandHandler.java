@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -429,15 +429,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             String commandMessageAggregateId = commandMessageVersionedId.getIdentifier();
 
             Aggregate<T> instance = repository.loadOrCreate(commandMessageAggregateId, factoryMethod);
-            Object commandResult = instance.handle(command);
-            Object aggregateId = instance.identifier();
-
-            assertThat(
-                    aggregateId,
-                    id -> id != null && id.toString() != null && id.toString().equals(commandMessageAggregateId),
-                    "Identifier must be set after handling the message"
-            );
-            return commandResult;
+            return instance.handle(command);
         }
 
         @Override
