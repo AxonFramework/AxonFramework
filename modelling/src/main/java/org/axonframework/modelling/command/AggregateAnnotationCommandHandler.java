@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -394,9 +395,22 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            Aggregate<T> aggregate = repository.newInstance(factoryMethod);
-            Object response = aggregate.handle(command);
-            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response;
+            AtomicReference<Object> response = new AtomicReference<>();
+            AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
+
+            Aggregate<T> aggregate = repository.newInstance(factoryMethod, agg -> {
+                try {
+                    response.set(agg.handle(command));
+                } catch (Exception e) {
+                    exceptionDuringInit.set(e);
+                }
+            });
+
+            if (exceptionDuringInit.get() != null) {
+                throw exceptionDuringInit.get();
+            }
+
+            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response.get();
         }
 
         public boolean handlerHasVoidReturnType() {
