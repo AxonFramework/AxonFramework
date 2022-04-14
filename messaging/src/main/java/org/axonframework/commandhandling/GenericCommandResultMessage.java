@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,8 @@ import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Generic implementation of {@link CommandResultMessage}.
@@ -44,7 +46,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * implements {@link CommandResultMessage}
      */
     @SuppressWarnings("unchecked")
-    public static <T> CommandResultMessage<T> asCommandResultMessage(Object commandResult) {
+    public static <T> CommandResultMessage<T> asCommandResultMessage(@Nonnull Object commandResult) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<T>) commandResult;
         } else if (commandResult instanceof Message) {
@@ -58,10 +60,10 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * Creates a Command Result Message with the given {@code exception} result.
      *
      * @param exception the Exception describing the cause of an error
-     * @param <T> the type of payload
+     * @param <T>       the type of payload
      * @return a message containing exception result
      */
-    public static <T> CommandResultMessage<T> asCommandResultMessage(Throwable exception) {
+    public static <T> CommandResultMessage<T> asCommandResultMessage(@Nonnull Throwable exception) {
         return new GenericCommandResultMessage<>(exception);
     }
 
@@ -70,7 +72,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      *
      * @param commandResult the payload for the Message
      */
-    public GenericCommandResultMessage(R commandResult) {
+    public GenericCommandResultMessage(@Nullable R commandResult) {
         super(commandResult);
     }
 
@@ -79,18 +81,18 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      *
      * @param exception the Exception describing the cause of an error
      */
-    public GenericCommandResultMessage(Throwable exception) {
+    public GenericCommandResultMessage(@Nonnull Throwable exception) {
         super(exception);
     }
 
     /**
-     * Creates a Command Result Message with the given {@code commandResult} as the payload and {@code metaData} as
-     * the meta data.
+     * Creates a Command Result Message with the given {@code commandResult} as the payload and {@code metaData} as the
+     * meta data.
      *
      * @param commandResult the payload for the Message
      * @param metaData      the meta data for the Message
      */
-    public GenericCommandResultMessage(R commandResult, Map<String, ?> metaData) {
+    public GenericCommandResultMessage(@Nonnull R commandResult, @Nonnull Map<String, ?> metaData) {
         super(commandResult, metaData);
     }
 
@@ -100,7 +102,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * @param exception the Exception describing the cause of an error
      * @param metaData  the meta data for the Message
      */
-    public GenericCommandResultMessage(Throwable exception, Map<String, ?> metaData) {
+    public GenericCommandResultMessage(@Nonnull Throwable exception, @Nonnull Map<String, ?> metaData) {
         super(exception, metaData);
     }
 
@@ -109,7 +111,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      *
      * @param delegate the message delegate
      */
-    public GenericCommandResultMessage(Message<R> delegate) {
+    public GenericCommandResultMessage(@Nonnull Message<R> delegate) {
         super(delegate);
     }
 
@@ -119,18 +121,18 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * @param delegate  the Message delegate
      * @param exception the Exception describing the cause of an error
      */
-    public GenericCommandResultMessage(Message<R> delegate, Throwable exception) {
+    public GenericCommandResultMessage(@Nonnull Message<R> delegate, @Nullable Throwable exception) {
         super(delegate, exception);
     }
 
     @Override
-    public GenericCommandResultMessage<R> withMetaData(Map<String, ?> metaData) {
+    public GenericCommandResultMessage<R> withMetaData(@Nonnull Map<String, ?> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericCommandResultMessage<R> andMetaData(Map<String, ?> metaData) {
+    public GenericCommandResultMessage<R> andMetaData(@Nonnull Map<String, ?> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
         return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
     }

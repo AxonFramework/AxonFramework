@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -100,7 +101,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, this::start);
         lifecycle.onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS, this::shutdownDispatching);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.commandhandling.distributed.DistributedCommandBus.INITIAL_LOAD_FACTOR;
@@ -262,12 +263,13 @@ class DistributedCommandBusTest {
     private static class StubCommandBusConnector implements CommandBusConnector {
 
         @Override
-        public <C> void send(Member destination, CommandMessage<? extends C> command) {
+        public <C> void send(@Nonnull Member destination, @Nonnull CommandMessage<? extends C> command) {
             //Do nothing
         }
 
         @Override
-        public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+        public <C, R> void send(@Nonnull Member destination, @Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, R> callback) {
             if ("fail".equals(command.getPayload())) {
                 callback.onResult(command, asCommandResultMessage(new Exception("Failing")));
             } else {
@@ -276,13 +278,14 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        public Registration subscribe(@Nonnull String commandName,
+                                      @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
             return null;
         }
 
         @Override
         public Registration registerHandlerInterceptor(
-                MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor
+                @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor
         ) {
             return null;
         }

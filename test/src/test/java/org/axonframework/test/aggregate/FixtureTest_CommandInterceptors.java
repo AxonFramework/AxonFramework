@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.test.aggregate.FixtureTest_CommandInterceptors.InterceptorAggregate.AGGREGATE_IDENTIFIER;
@@ -303,9 +304,10 @@ class FixtureTest_CommandInterceptors {
 
     private static class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
+        @Nonnull
         @Override
         public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
-                List<? extends CommandMessage<?>> messages
+                @Nonnull List<? extends CommandMessage<?>> messages
         ) {
             return (index, message) -> {
                 Map<String, Object> testMetaDataMap = new HashMap<>();
@@ -317,10 +319,9 @@ class FixtureTest_CommandInterceptors {
     }
 
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
-
         @Override
-        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                             InterceptorChain interceptorChain) throws Exception {
+        public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                             @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceed();
         }

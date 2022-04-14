@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,18 @@ import org.springframework.context.annotation.Bean;
 
 import java.util.List;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Spring Configuration class that defines a number of conditional beans. It also allows for access to components that
  * are available in the Configuration, but not made available as Spring beans by default.
+ *
+ * @author Allard Buijze
+ * @since 3.0
+ * @deprecated Replaced by the {@link SpringConfigurer} and {@link SpringAxonConfiguration}.
  */
 @org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
+@Deprecated
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
     private final Configurer configurer;
@@ -140,17 +146,18 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
-    public <T> Repository<T> repository(Class<T> aggregateType) {
+    public <T> Repository<T> repository(@Nonnull Class<T> aggregateType) {
         return config.repository(aggregateType);
     }
 
     @Override
-    public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
+    public <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
         return config.getComponent(componentType, defaultImpl);
     }
 
     @Override
-    public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName) {
+    public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+                                                                           @Nonnull String componentName) {
         return config.messageMonitor(componentType, componentName);
     }
 
@@ -239,7 +246,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         configurer.registerComponent(ApplicationContext.class, c -> applicationContext);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,12 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
-import org.axonframework.spring.config.annotation.SpringHandlerDefinitionBean;
-import org.axonframework.spring.config.annotation.SpringHandlerEnhancerDefinitionBean;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -42,8 +40,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when
@@ -91,14 +91,13 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (handlerDefinition == null) {
-            HandlerDefinition definitions = new SpringHandlerDefinitionBean(applicationContext).getObject();
-            HandlerEnhancerDefinition enhancers = new SpringHandlerEnhancerDefinitionBean(applicationContext)
+            handlerDefinition = new HandlerDefinitionFactoryBean(new ArrayList<>(applicationContext.getBeansOfType(HandlerDefinition.class).values()),
+                                                                 new ArrayList<>(applicationContext.getBeansOfType(HandlerEnhancerDefinition.class).values()))
                     .getObject();
-            handlerDefinition = MultiHandlerDefinition.ordered(enhancers, definitions);
         }
 
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
-                new SpringTransactionManager(transactionManager, transactionDefinition);
+                                       new SpringTransactionManager(transactionManager, transactionDefinition);
 
         SpringAggregateSnapshotter snapshotter =
                 SpringAggregateSnapshotter.builder()
@@ -172,7 +171,7 @@ public class SpringAggregateSnapshotterFactoryBean
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

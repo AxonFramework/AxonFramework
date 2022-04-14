@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,13 +25,18 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 
+import javax.annotation.Nonnull;
+
 /**
  * Spring @Configuration related class that adds Axon Annotation PostProcessors to the BeanDefinitionRegistry.
  *
  * @author Allard Buijze
  * @see AnnotationDriven
  * @since 2.3
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly. {@link AnnotationDriven}
+ * contains a list of look-up and registration components to replace this component with.
  */
+@Deprecated
 public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar {
 
     /**
@@ -42,10 +47,10 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
 
 
     @Override
-    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+    public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
+                                        @Nonnull BeanDefinitionRegistry registry) {
         registerAnnotationCommandHandlerBeanPostProcessor(registry);
         registerAnnotationQueryHandlerBeanPostProcessor(registry);
-
     }
 
     /**

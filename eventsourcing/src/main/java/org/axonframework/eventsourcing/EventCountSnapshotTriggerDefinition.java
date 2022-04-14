@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventsourcing;
+
+import javax.annotation.Nonnull;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
@@ -52,12 +54,12 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
     }
 
     @Override
-    public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {
+    public SnapshotTrigger prepareTrigger(@Nonnull Class<?> aggregateType) {
         return new EventCountSnapshotTrigger(snapshotter, aggregateType, threshold);
     }
 
     @Override
-    public SnapshotTrigger reconfigure(Class<?> aggregateType, SnapshotTrigger trigger) {
+    public SnapshotTrigger reconfigure(@Nonnull Class<?> aggregateType, @Nonnull SnapshotTrigger trigger) {
         if (trigger instanceof EventCountSnapshotTrigger) {
             ((EventCountSnapshotTrigger) trigger).setSnapshotter(snapshotter);
             return trigger;

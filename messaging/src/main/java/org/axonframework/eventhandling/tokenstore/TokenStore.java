@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
@@ -49,7 +51,8 @@ public interface TokenStore {
      * @param segmentCount  The number of segments to initialize
      * @throws UnableToClaimTokenException when a segment has already been created
      */
-    default void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+    default void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
+            throws UnableToClaimTokenException {
         for (int segment = 0; segment < segmentCount; segment++) {
             fetchToken(processorName, segment);
             releaseClaim(processorName, segment);
@@ -71,7 +74,8 @@ public interface TokenStore {
      * @param initialToken  The initial token which is used as a starting point for processor
      * @throws UnableToClaimTokenException when a segment has already been created
      */
-    default void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
+    default void initializeTokenSegments(@Nonnull String processorName, int segmentCount,
+                                         @Nullable TrackingToken initialToken)
             throws UnableToClaimTokenException {
         for (int segment = 0; segment < segmentCount; segment++) {
             storeToken(initialToken, processorName, segment);
@@ -96,7 +100,8 @@ public interface TokenStore {
      * @param segment       The index of the segment for which to store the token
      * @throws UnableToClaimTokenException when the token being updated has been claimed by another process.
      */
-    void storeToken(TrackingToken token, String processorName, int segment) throws UnableToClaimTokenException;
+    void storeToken(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException;
 
     /**
      * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
@@ -118,7 +123,7 @@ public interface TokenStore {
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     they are claimed by another process.
      */
-    TrackingToken fetchToken(String processorName, int segment) throws UnableToClaimTokenException;
+    TrackingToken fetchToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException;
 
     /**
      * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}. Returns {@code null} if the stored token for
@@ -138,7 +143,8 @@ public interface TokenStore {
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but they are claimed by another process, or
      *                                     if the {@code segment has been split or merged concurrently}
      */
-    default TrackingToken fetchToken(String processorName, Segment segment) throws UnableToClaimTokenException {
+    default TrackingToken fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
+            throws UnableToClaimTokenException {
         return fetchToken(processorName, segment.getSegmentId());
     }
 
@@ -154,7 +160,7 @@ public interface TokenStore {
      * token is held. TokenStore implementations may choose to implement this method if they can provide a more efficient
      * way of extending this claim.
      */
-    default void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
+    default void extendClaim(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
         fetchToken(processorName, segment);
     }
 
@@ -167,7 +173,7 @@ public interface TokenStore {
      * @param processorName The name of the process owning the token (e.g. a TrackingEventProcessor name)
      * @param segment       the segment for which a token was obtained
      */
-    void releaseClaim(String processorName, int segment);
+    void releaseClaim(@Nonnull String processorName, int segment);
 
     /**
      * Initializes a segment with given {@code segment} for the processor with given {@code processorName} to contain
@@ -186,8 +192,10 @@ public interface TokenStore {
      * @throws UnsupportedOperationException    if this implementation does not support explicit initialization.
      *                                          See {@link #requiresExplicitSegmentInitialization()}.
      */
-    default void initializeSegment(TrackingToken token, String processorName, int segment) throws UnableToInitializeTokenException {
-        throw new UnsupportedOperationException("Explicit initialization is not supported by this TokenStore implementation");
+    default void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+            throws UnableToInitializeTokenException {
+        throw new UnsupportedOperationException(
+                "Explicit initialization is not supported by this TokenStore implementation");
     }
 
     /**
@@ -204,8 +212,9 @@ public interface TokenStore {
      * @throws UnableToClaimTokenException   if the token is not currently claimed by this node
      * @throws UnsupportedOperationException if this operation is not supported by this implementation
      */
-    default void deleteToken(String processorName, int segment) throws UnableToClaimTokenException {
-        throw new UnsupportedOperationException("Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
+    default void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
+        throw new UnsupportedOperationException(
+                "Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
     }
 
     /**
@@ -228,10 +237,9 @@ public interface TokenStore {
      * empty, an empty array is returned.
      *
      * @param processorName The process name for which to fetch the segments
-     *
      * @return an array of segment identifiers.
      */
-    int[] fetchSegments(String processorName);
+    int[] fetchSegments(@Nonnull String processorName);
 
     /**
      * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered available if it is not claimed by any
@@ -245,7 +253,7 @@ public interface TokenStore {
      * @param processorName the processor's name for which to fetch the segments
      * @return a List of available segment identifiers for the specified {@code processorName}
      */
-    default List<Segment> fetchAvailableSegments(String processorName) {
+    default List<Segment> fetchAvailableSegments(@Nonnull String processorName) {
         int[] allSegments = fetchSegments(processorName);
         return Arrays.stream(allSegments).boxed()
                      .map(segment -> Segment.computeSegment(segment, allSegments))

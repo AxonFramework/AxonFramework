@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
@@ -118,7 +119,8 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
      * This feature is not supported by this Unit of Work.
      */
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task,
+                                                  @Nonnull RollbackConfiguration rollbackConfiguration) {
         throw new UnsupportedOperationException();
     }
 

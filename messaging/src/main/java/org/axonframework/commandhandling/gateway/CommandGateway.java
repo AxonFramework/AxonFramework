@@ -27,6 +27,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 /**
  * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward
@@ -52,7 +53,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @param callback the callback to notify when the command has been processed
      * @param <R>      the type of result expected from command execution
      */
-    <C, R> void send(C command, CommandCallback<? super C, ? super R> callback);
+    <C, R> void send(@Nonnull C command, @Nonnull CommandCallback<? super C, ? super R> callback);
 
     /**
      * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
@@ -75,7 +76,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @throws CommandExecutionException when an exception occurred while processing the command
      * @throws CommandDispatchException when an exception occurred while dispatching the command
      */
-    <R> R sendAndWait(Object command);
+    <R> R sendAndWait(@Nonnull Object command);
 
     /**
      * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
@@ -99,7 +100,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @throws CommandExecutionException when an exception occurred while processing the command
      * @throws CommandDispatchException  when an exception occurred while dispatching the command
      */
-    default <R> R sendAndWait(Object command, MetaData metaData) {
+    default <R> R sendAndWait(@Nonnull Object command, @Nonnull MetaData metaData) {
         return sendAndWait(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData));
     }
 
@@ -126,7 +127,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @throws CommandExecutionException when an exception occurred while processing the command
      * @throws CommandDispatchException when an exception occurred while dispatching the command
      */
-    <R> R sendAndWait(Object command, long timeout, TimeUnit unit);
+    <R> R sendAndWait(@Nonnull Object command, long timeout, @Nonnull TimeUnit unit);
 
     /**
      * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
@@ -153,7 +154,8 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @throws CommandExecutionException when an exception occurred while processing the command
      * @throws CommandDispatchException  when an exception occurred while dispatching the command
      */
-    default <R> R sendAndWait(Object command, MetaData metaData, long timeout, TimeUnit unit) {
+    default <R> R sendAndWait(@Nonnull Object command, @Nonnull MetaData metaData, long timeout,
+                              @Nonnull TimeUnit unit) {
         return sendAndWait(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), timeout, unit);
     }
 
@@ -172,7 +174,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @return a {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
      * command execution result
      */
-    <R> CompletableFuture<R> send(Object command);
+    <R> CompletableFuture<R> send(@Nonnull Object command);
 
     /**
      * Sends the given {@code command} with the given {@code metaData} and returns a {@link CompletableFuture}
@@ -190,7 +192,7 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @return a {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
      * command execution result
      */
-    default <R> CompletableFuture<R> send(Object command, MetaData metaData) {
+    default <R> CompletableFuture<R> send(@Nonnull Object command, @Nonnull MetaData metaData) {
         return send(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData));
     }
 }

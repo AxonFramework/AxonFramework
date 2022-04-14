@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * FactoryBean that creates an instance of a {@link Configurer} for use in a Spring Application Context.
@@ -40,7 +41,9 @@ import java.util.List;
  *
  * @author Allard Buijze
  * @since 4.2
+ * @deprecated Replaced by the {@link SpringConfigurer}, which itself is a {@link Configurer} implementation.
  */
+@Deprecated
 public class ConfigurerFactoryBean implements FactoryBean<Configurer>, ApplicationContextAware {
 
     private final Configurer configurer;
@@ -78,7 +81,7 @@ public class ConfigurerFactoryBean implements FactoryBean<Configurer>, Applicati
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         configurer.registerComponent(ApplicationContext.class, c -> applicationContext);
     }
 

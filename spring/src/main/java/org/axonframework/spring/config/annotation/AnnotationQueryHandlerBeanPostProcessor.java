@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nonnull;
 
 /**
  * Spring Bean post processor that automatically generates an adapter for each bean containing {@link QueryHandler}
@@ -34,7 +35,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Marc Gathier
  * @since 3.1
+ * @deprecated Replaced by the {@link org.axonframework.spring.config.MessageHandlerLookup} and {@link
+ * org.axonframework.spring.config.MessageHandlerConfigurer}.
  */
+@Deprecated
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {
     @Override
     protected Class<?>[] getAdapterInterfaces() {
@@ -68,7 +72,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
         }
 
         @Override
-        public void doWith(Method method) throws IllegalArgumentException {
+        public void doWith(@Nonnull Method method) throws IllegalArgumentException {
             if (AnnotationUtils.findAnnotationAttributes(method, QueryHandler.class).isPresent()) {
                 result.set(true);
             }

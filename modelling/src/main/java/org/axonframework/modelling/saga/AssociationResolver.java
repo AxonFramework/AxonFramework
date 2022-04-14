@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package org.axonframework.modelling.saga;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import javax.annotation.Nonnull;
+
 /**
  * Used to derive the value of an association property as designated by the association property name.
- * 
+ *
  * @author Sofia Guy Ang
  */
 public interface AssociationResolver {
@@ -29,10 +31,11 @@ public interface AssociationResolver {
     /**
      * Validates that the associationPropertyName supplied is compatible with the handler.
      */
-    <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler);
+    <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler);
 
     /**
      * Resolves the associationPropertyName as a value.
      */
-    <T> Object resolve(String associationPropertyName, EventMessage<?> message, MessageHandlingMember<T> handler);
+    <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+                       @Nonnull MessageHandlingMember<T> handler);
 }

@@ -47,10 +47,10 @@ public class FailingDuplicateQueryHandlerResolver implements DuplicateQueryHandl
     }
 
     @Override
-    public List<QuerySubscription> resolve(String queryName,
+    public List<QuerySubscription<?>> resolve(String queryName,
                                            Type responseType,
-                                           List<QuerySubscription> registeredHandlers,
-                                           QuerySubscription candidateHandler) {
+                                           List<QuerySubscription<?>> registeredHandlers,
+                                           QuerySubscription<?> candidateHandler) {
         throw new DuplicateQueryHandlerSubscriptionException(queryName,
                                                              responseType,
                                                              registeredHandlers.get(0),

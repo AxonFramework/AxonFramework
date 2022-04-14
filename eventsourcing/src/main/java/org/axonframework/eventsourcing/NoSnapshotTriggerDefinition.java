@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.io.Serializable;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of {@link SnapshotTriggerDefinition} that doesn't trigger snapshots at all.
@@ -36,18 +37,20 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
     public static final SnapshotTrigger TRIGGER = new NoSnapshotTrigger();
 
     @Override
-    public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {
+    public SnapshotTrigger prepareTrigger(@Nonnull Class<?> aggregateType) {
         return TRIGGER;
     }
 
     private static class NoSnapshotTrigger implements SnapshotTrigger, Serializable {
 
         @Override
-        public void eventHandled(EventMessage<?> msg) {
+        public void eventHandled(@Nonnull EventMessage<?> msg) {
+            // No operation necessary for a no-op implementation.
         }
 
         @Override
         public void initializationFinished() {
+            // No operation necessary for a no-op implementation.
         }
     }
 }

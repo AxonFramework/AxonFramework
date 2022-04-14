@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.annotation.PriorityAnnotationComparator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import org.axonframework.common.annotation.PriorityAnnotationComparator;
+import javax.annotation.Nonnull;
 
 /**
  * HandlerEnhancerDefinition instance that delegates to multiple other instances, in the order provided.
@@ -59,7 +60,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      * @param delegates The delegates to include in the factory
      * @return an instance delegating to the given {@code delegates}
      */
-    public static MultiHandlerEnhancerDefinition ordered(List<HandlerEnhancerDefinition> delegates) {
+    public static MultiHandlerEnhancerDefinition ordered(Collection<HandlerEnhancerDefinition> delegates) {
         return new MultiHandlerEnhancerDefinition(flatten(delegates));
     }
 
@@ -83,7 +84,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
         this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
-    private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
+    private static HandlerEnhancerDefinition[] flatten(Collection<HandlerEnhancerDefinition> factories) {
         List<HandlerEnhancerDefinition> flattened = new ArrayList<>(factories.size());
         for (HandlerEnhancerDefinition handlerEnhancer : factories) {
             if (handlerEnhancer instanceof MultiHandlerEnhancerDefinition) {
@@ -106,7 +107,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         MessageHandlingMember<T> resolver = original;
         for (HandlerEnhancerDefinition enhancer : enhancers) {
             resolver = enhancer.wrapHandler(resolver);

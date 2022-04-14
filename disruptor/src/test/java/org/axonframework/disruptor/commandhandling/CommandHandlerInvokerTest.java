@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,12 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateCacheEntry;
+import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.SnapshotTrigger;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
@@ -35,9 +40,8 @@ import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-import org.mockito.ArgumentMatchers;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;

@@ -38,6 +38,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +70,7 @@ class SimpleQueryBusTest {
     private static final String TRACE_ID = "traceId";
     private static final String CORRELATION_ID = "correlationId";
     private final ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
+    private final ResponseType<List<String>> multipleStringResponse = ResponseTypes.multipleInstancesOf(String.class);
     private SimpleQueryBus testSubject;
     private MessageMonitor<QueryMessage<?, ?>> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
@@ -247,6 +249,35 @@ class SimpleQueryBusTest {
         assertEquals("hello1234", result.get());
         verify(mockTxManager).startTransaction();
         verify(mockTx).commit();
+    }
+
+    @Test
+    void testQueryListWithSingleHandlerReturnsSingleAsList() throws Exception {
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
+                                                      .thenApply(QueryResponseMessage::getPayload);
+
+        assertEquals(1, result.get().size());
+        assertEquals("hello1234", result.get().get(0));
+    }
+
+
+    @Test
+    void testQueryListWithBothSingleHandlerAndListHandlerReturnsListResult() throws Exception {
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String[].class, (q) -> Arrays.asList(
+                q.getPayload() + "1234", q.getPayload() + "5678"
+        ));
+
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
+                                                            .thenApply(QueryResponseMessage::getPayload);
+
+        assertEquals(2, result.get().size());
+        assertEquals("hello1234", result.get().get(0));
+        assertEquals("hello5678", result.get().get(1));
     }
 
     @Test

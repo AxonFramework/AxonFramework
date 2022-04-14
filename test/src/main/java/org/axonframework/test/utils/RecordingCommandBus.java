@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
@@ -47,13 +48,14 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatchedCommands.add(command);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C,? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         dispatchedCommands.add(command);
         try {
             callback.onResult(command, asCommandResultMessage(
@@ -65,7 +67,8 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         subscriptions.putIfAbsent(commandName, handler);
         return () -> subscriptions.remove(commandName, handler);
     }
@@ -136,12 +139,14 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return null;
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return () -> true;
     }
 }

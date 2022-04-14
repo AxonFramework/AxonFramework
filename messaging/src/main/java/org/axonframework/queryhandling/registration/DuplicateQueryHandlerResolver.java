@@ -44,8 +44,8 @@ public interface DuplicateQueryHandlerResolver {
      * already in the list
      * @throws RuntimeException when registration should fail
      */
-    List<QuerySubscription> resolve(String queryName,
+    List<QuerySubscription<?>> resolve(String queryName,
                                     Type responseType,
-                                    List<QuerySubscription> registeredHandlers,
-                                    QuerySubscription candidateHandler);
+                                    List<QuerySubscription<?>> registeredHandlers,
+                                    QuerySubscription<?> candidateHandler);
 }

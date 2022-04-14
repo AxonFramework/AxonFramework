@@ -49,10 +49,10 @@ public class LoggingDuplicateQueryHandlerResolver implements DuplicateQueryHandl
     }
 
     @Override
-    public List<QuerySubscription> resolve(String queryName,
+    public List<QuerySubscription<?>> resolve(String queryName,
                                            Type responseType,
-                                           List<QuerySubscription> registeredHandlers,
-                                           QuerySubscription candidateHandler) {
+                                           List<QuerySubscription<?>> registeredHandlers,
+                                           QuerySubscription<?> candidateHandler) {
 
         logger.warn("A duplicate query handler was found for query [{}] and response type [{}]. It has also been registered to the query bus. "
                             + "This is only valid for ScatterGather queries. Normal queries will only use one of these handlers.",

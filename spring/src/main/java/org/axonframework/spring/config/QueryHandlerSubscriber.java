@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,15 +23,18 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.Collection;
+import javax.annotation.Nonnull;
 
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
  * Registers Spring beans that implement {@link QueryHandlerAdapter} with the query bus.
- * @since 3.1
- * @author Marc Gathier
  *
+ * @author Marc Gathier
+ * @since 3.1
+ * @deprecated Replaced by the {@link MessageHandlerLookup} and {@link MessageHandlerConfigurer}.
  */
+@Deprecated
 public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
     private ApplicationContext applicationContext;
     private boolean started;
@@ -39,7 +42,7 @@ public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLif
     private QueryBus queryBus;
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

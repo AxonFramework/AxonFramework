@@ -38,13 +38,13 @@ class LoggingDuplicateQueryHandlerResolverTest {
 
     @Test
     void throwsNoErrorOnDuplicateHandlerAndAddsItToList() {
-        QuerySubscription existingHandler = mockSubscription();
-        QuerySubscription addedHandler = mockSubscription();
+        QuerySubscription<?> existingHandler = mockSubscription();
+        QuerySubscription<?> addedHandler = mockSubscription();
 
-        CopyOnWriteArrayList<QuerySubscription> existingHandlers = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<QuerySubscription<?>> existingHandlers = new CopyOnWriteArrayList<>();
         existingHandlers.add(existingHandler);
 
-        List<QuerySubscription> resolvedList = resolver.resolve("org.axon.MyQuery",
+        List<QuerySubscription<?>> resolvedList = resolver.resolve("org.axon.MyQuery",
                                                            MyQuery.class,
                                                            existingHandlers,
                                                            addedHandler);
@@ -53,8 +53,8 @@ class LoggingDuplicateQueryHandlerResolverTest {
         assertTrue(resolvedList.contains(addedHandler));
     }
 
-    private QuerySubscription mockSubscription() {
-        QuerySubscription mock = mock(QuerySubscription.class);
+    private QuerySubscription<?> mockSubscription() {
+        QuerySubscription<?> mock = mock(QuerySubscription.class);
         when(mock.getQueryHandler()).thenReturn(message -> null);
         when(mock.getResponseType()).thenReturn(MyResponse.class);
         return mock;

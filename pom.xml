@@ -69,14 +69,14 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
-        <spring.version>5.3.16</spring.version>
+        <spring.version>5.3.17</spring.version>
         <spring-security.version>5.6.2</spring-security.version>
-        <spring.boot.version>2.6.4</spring.boot.version>
+        <spring.boot.version>2.6.5</spring.boot.version>
         <mockito.version>4.4.0</mockito.version>
         <projectreactor.version>3.4.16</projectreactor.version>
-        <micrometer.version>1.8.3</micrometer.version>
+        <micrometer.version>1.8.4</micrometer.version>
         <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
-        <jackson.version>2.13.2</jackson.version>
+        <jackson.version>2.13.2.20220324</jackson.version>
 
         <!-- Validation -->
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
@@ -105,11 +105,11 @@
         <postgresql.version>42.3.3</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
-        <axonserver-connector-java.version>4.5.4</axonserver-connector-java.version>
+        <axonserver-connector-java.version>4.6.0-SNAPSHOT</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.16.3</testcontainers.version>
-        <xstream.version>1.4.18</xstream.version>
-
+        <testcontainers.version>1.17.0</testcontainers.version>
+        <xstream.version>1.4.19</xstream.version>
+        <reactive.streams.spec.version>1.0.3</reactive.streams.spec.version>
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.4</felix.maven-bundle-plugin.version>
 
@@ -221,6 +221,11 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>${reactive.streams.spec.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
@@ -402,7 +407,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
