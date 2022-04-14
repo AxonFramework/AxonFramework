@@ -137,6 +137,8 @@
 
         <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
 
+        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
+        <jobrunr.version>5.0.0</jobrunr.version>
     </properties>
 
     <dependencies>
@@ -344,6 +346,11 @@
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
                 <version>${quartz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jobrunr</groupId>
+                <artifactId>jobrunr</artifactId>
+                <version>${jobrunr.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
