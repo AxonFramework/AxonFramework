@@ -23,6 +23,7 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Wrapper around standard Axon Framework serializer that can deserialize Metadata from AxonServer events.
@@ -81,5 +82,22 @@ public final class GrpcMetaDataAwareSerializer implements Serializer {
     @Override
     public Converter getConverter() {
         return delegate.getConverter();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof GrpcMetaDataAwareSerializer)) {
+            return false;
+        }
+        GrpcMetaDataAwareSerializer that = (GrpcMetaDataAwareSerializer) o;
+        return delegate.equals(that.delegate) && metaDataConverter.equals(that.metaDataConverter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate, metaDataConverter);
     }
 }
