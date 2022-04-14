@@ -42,8 +42,8 @@ public class DuplicateQueryHandlerSubscriptionException extends AxonNonTransient
      */
     public DuplicateQueryHandlerSubscriptionException(String queryName,
                                                       Type responseType,
-                                                      QuerySubscription initialHandler,
-                                                      QuerySubscription duplicateHandler) {
+                                                      QuerySubscription<?> initialHandler,
+                                                      QuerySubscription<?> duplicateHandler) {
         this(String.format("A duplicate Query Handler for query [%s] and response type [%s] has been subscribed residing in class [%s]"
                                    + " that would override an identical handler in class [%s].",
                            queryName,
