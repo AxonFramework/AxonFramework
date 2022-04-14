@@ -39,13 +39,13 @@ public interface DuplicateQueryHandlerResolver {
      * @param queryName          The name of the query for which the duplicate was detected
      * @param registeredHandlers the {@link MessageHandler} instances already registered with the Query Bus
      * @param candidateHandler   the {@link MessageHandler} that is newly registered and conflicts with the existing
-     *                           registration
+     *                           registrations
      * @return the resolved {@link MessageHandler} instances. It is up to the implementation to discard implementations
      * already in the list
      * @throws RuntimeException when registration should fail
      */
     List<QuerySubscription> resolve(String queryName,
-                                           Type responseType,
-                                           List<QuerySubscription> registeredHandlers,
-                                           QuerySubscription candidateHandler);
+                                    Type responseType,
+                                    List<QuerySubscription> registeredHandlers,
+                                    QuerySubscription candidateHandler);
 }
