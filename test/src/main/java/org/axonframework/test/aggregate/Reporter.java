@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -195,15 +195,35 @@ public class Reporter {
     }
 
     /**
+     * Report an error due to a difference between the primitive message payloads.
+     *
+     * @param messageType The (runtime) type of the message the difference was found in.
+     * @param actual      The actual value of the payload.
+     * @param expected    The expected value of the payload.
+     */
+    public void reportDifferentPrimitivePayloads(Class<?> messageType, Object actual, Object expected) {
+        throw new AxonAssertionError("One of the messages contained a different payload than expected"
+                                             + NEWLINE + NEWLINE
+                                             + "The message of type [" + messageType.getSimpleName() + "], "
+                                             + "was not as expected."
+                                             + NEWLINE
+                                             + "Expected <" //NOSONAR
+                                             + nullSafeToString(expected)
+                                             + "> but got <"
+                                             + nullSafeToString(actual)
+                                             + ">"
+                                             + NEWLINE);
+    }
+
+    /**
      * Report an error due to a difference in one of the fields of the message payload.
      *
-     * @param messageType The (runtime) type of the message the difference was found in
-     * @param field       The field that contains the difference
-     * @param actual      The actual value of the field
-     * @param expected    The expected value of the field
+     * @param messageType The (runtime) type of the message the difference was found in.
+     * @param field       The field that contains the difference.
+     * @param actual      The actual value of the field.
+     * @param expected    The expected value of the field.
      */
-    public void reportDifferentPayloads(Class<?> messageType, Field field, Object actual,
-                                        Object expected) {
+    public void reportDifferentPayloads(Class<?> messageType, Field field, Object actual, Object expected) {
         StringBuilder sb = new StringBuilder("One of the messages contained different values than expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
