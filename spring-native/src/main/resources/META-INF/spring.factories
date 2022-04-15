@@ -1,3 +1,0 @@
-org.springframework.aot.context.bootstrap.generator.infrastructure.nativex.BeanFactoryNativeConfigurationProcessor=\
-  org.axonframework.springboot.nativex.AxonNativeHints,\
-  org.axonframework.springboot.nativex.MessageHandlerNativeProcessor

@@ -744,20 +744,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>experimental</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>coverage</name>
-                </property>
-            </activation>
-
-            <modules>
-                <module>spring-native</module>
-            </modules>
-        </profile>
     </profiles>
 
     <!-- deploy and release configuration -->
