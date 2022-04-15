@@ -125,7 +125,8 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
         }
         events.stream()
               .filter(e -> e.getAggregateIdentifier().equals(request.getAggregateId()))
-              .filter(e -> snapshot == null || snapshot.getAggregateSequenceNumber() < e.getAggregateSequenceNumber())
+              .filter(e -> e.getAggregateSequenceNumber() >= request.getInitialSequence()
+                      && (snapshot == null || snapshot.getAggregateSequenceNumber() < e.getAggregateSequenceNumber()))
               .forEach(responseObserver::onNext);
         responseObserver.onCompleted();
     }
