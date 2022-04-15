@@ -140,6 +140,8 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
 
     /**
      * Returns whether this matcher failed matching primitive types.
+     * <p>
+     * Note that this may include an expected or actual of type {@link String}.
      *
      * @return {@code true} if this matcher failed matching primitive types, {@code false} otherwise.
      */

@@ -495,7 +495,9 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Check whether the given Object is a primitive types. Validates both boxed and unboxed instances.
+     * Check whether the given Object is a primitive type. Validates both boxed and unboxed instances.
+     * <p>
+     * Note that this check includes {@link String} as well.
      *
      * @param o The Object to check whether it's a primitive type.
      * @return {@code true} if the given Object is a primitive, {@code false} otherwise.
