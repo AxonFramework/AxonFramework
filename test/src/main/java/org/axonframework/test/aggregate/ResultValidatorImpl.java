@@ -30,6 +30,7 @@ import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
@@ -442,12 +443,18 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedPayload, fieldFilter);
+        EqualFieldsMatcher<Object> matcher = Matchers.equalTo(expectedPayload, fieldFilter);
         if (!matcher.matches(actualPayload)) {
-            reporter.reportDifferentPayloads(expectedPayload.getClass(),
-                                             matcher.getFailedField(),
-                                             matcher.getFailedFieldActualValue(),
-                                             matcher.getFailedFieldExpectedValue());
+            if (matcher.isFailedPrimitive()) {
+                reporter.reportDifferentPrimitivePayloads(expectedPayload.getClass(),
+                                                          matcher.getFailedFieldActualValue(),
+                                                          matcher.getFailedFieldExpectedValue());
+            } else {
+                reporter.reportDifferentPayloads(expectedPayload.getClass(),
+                                                 matcher.getFailedField(),
+                                                 matcher.getFailedFieldActualValue(),
+                                                 matcher.getFailedFieldExpectedValue());
+            }
         }
         return true;
     }

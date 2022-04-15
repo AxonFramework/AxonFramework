@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,6 +292,55 @@ class ReflectionUtilsTest {
         Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
         String memberGenericString = getMemberGenericString(constructor);
         assertEquals(constructor.toGenericString(), memberGenericString);
+    }
+
+    @Test
+    void testIsPrimitive() {
+        boolean bool = true;
+        assertTrue(ReflectionUtils.isPrimitive(bool));
+        Boolean boxedBool = true;
+        assertTrue(ReflectionUtils.isPrimitive(boxedBool));
+
+        byte b = (byte) 42;
+        assertTrue(ReflectionUtils.isPrimitive(b));
+        Byte boxedByte = (byte) 42;
+        assertTrue(ReflectionUtils.isPrimitive(boxedByte));
+
+        char c = 'a';
+        assertTrue(ReflectionUtils.isPrimitive(c));
+        Character boxedChar = 'a';
+        assertTrue(ReflectionUtils.isPrimitive(boxedChar));
+
+        short s = (short) 42;
+        assertTrue(ReflectionUtils.isPrimitive(s));
+        Short boxedShort = (short) 42;
+        assertTrue(ReflectionUtils.isPrimitive(boxedShort));
+
+        int i = 42;
+        assertTrue(ReflectionUtils.isPrimitive(i));
+        Integer boxedInteger = 42;
+        assertTrue(ReflectionUtils.isPrimitive(boxedInteger));
+
+        float f = 42F;
+        assertTrue(ReflectionUtils.isPrimitive(f));
+        Float boxedFloat = 42F;
+        assertTrue(ReflectionUtils.isPrimitive(boxedFloat));
+
+        double d = 42.42;
+        assertTrue(ReflectionUtils.isPrimitive(d));
+        Double boxedDouble = 42.42;
+        assertTrue(ReflectionUtils.isPrimitive(boxedDouble));
+
+        long l = 42L;
+        assertTrue(ReflectionUtils.isPrimitive(l));
+        Long boxedLong = 42L;
+        assertTrue(ReflectionUtils.isPrimitive(boxedLong));
+
+        String sampleString = "some-text";
+        assertTrue(ReflectionUtils.isPrimitive(sampleString));
+
+        SomeType nonPrimitive = new SomeType();
+        assertFalse(ReflectionUtils.isPrimitive(nonPrimitive));
     }
 
     @SuppressWarnings("FieldCanBeLocal")

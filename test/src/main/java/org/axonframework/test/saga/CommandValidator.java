@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -130,15 +131,23 @@ public class CommandValidator {
                                                     expected.getClass().getSimpleName(),
                                                     actual.getClass().getSimpleName()));
             }
-            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expected, fieldFilter);
+            EqualFieldsMatcher<Object> matcher = Matchers.equalTo(expected, fieldFilter);
             if (!matcher.matches(actual)) {
-                throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
-                                                            + "Field value of '%s.%s', expected <%s>, but got <%s>",
-                                                    commandIndex,
-                                                    expected.getClass().getSimpleName(),
-                                                    matcher.getFailedField().getName(),
-                                                    matcher.getFailedFieldExpectedValue(),
-                                                    matcher.getFailedFieldActualValue()));
+                if (matcher.isFailedPrimitive()) {
+                    throw new AxonAssertionError(format("Unexpected primitive typed command at index %s (0-based). "
+                                                                + "Expected <%s>, but got <%s>",
+                                                        commandIndex,
+                                                        matcher.getFailedFieldExpectedValue(),
+                                                        matcher.getFailedFieldActualValue()));
+                } else {
+                    throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
+                                                                + "Field value of '%s.%s', expected <%s>, but got <%s>",
+                                                        commandIndex,
+                                                        expected.getClass().getSimpleName(),
+                                                        matcher.getFailedField().getName(),
+                                                        matcher.getFailedFieldExpectedValue(),
+                                                        matcher.getFailedFieldActualValue()));
+                }
             }
         }
     }
