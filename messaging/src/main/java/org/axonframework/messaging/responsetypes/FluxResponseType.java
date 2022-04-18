@@ -22,6 +22,9 @@ import java.util.stream.Stream;
  */
 public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
 
+    public static final int FLUX_MATCH = 2048;
+    private final ResponseType<?> multipleInstanceResponseType;
+
     /**
      * Instantiate a {@link FluxResponseType} with the given
      * {@code expectedResponseType} as the type to be matched against and to which the query response should be
@@ -31,6 +34,7 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
      */
     public FluxResponseType(Class<?> expectedResponseType) {
         super(expectedResponseType);
+        multipleInstanceResponseType = new MultipleInstancesResponseType<>(expectedResponseType);
     }
 
     /**
@@ -43,7 +47,15 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
      */
     @Override
     public boolean matches(Type responseType) {
-        return true;
+        return matchRank(responseType) > ResponseType.NO_MATCH;
+    }
+
+    @Override
+    public Integer matchRank(Type responseType) {
+        if (isFluxOfExpectedType(responseType)) {
+            return FLUX_MATCH;
+        }
+        return multipleInstanceResponseType.matchRank(responseType);
     }
 
     @SuppressWarnings("unchecked")

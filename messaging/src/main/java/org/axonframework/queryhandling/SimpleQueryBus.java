@@ -438,69 +438,23 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
-        Map<Integer, List<QuerySubscription<?>>> querySubscriptionsByRank = subscriptions
-                .computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
-                .stream()
-                .collect(groupingBy(querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
-                                    mapping(Function.identity(), Collectors.toList())));
-
-        Integer highestMatchRank = querySubscriptionsByRank.keySet().stream()
-                                                           .max(Comparator.comparing(Function.identity()))
-                                                           .orElse(0);
-        if (highestMatchRank == 0) {
-            // No match was found on responseType
-            return Collections.emptyList();
-        }
-        return querySubscriptionsByRank.get(highestMatchRank)
-                                       .stream()
-                                       .map(QuerySubscription::getQueryHandler)
-                                       .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
-                                       .collect(Collectors.toList());
+        return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+                            .stream()
+                            .collect(groupingBy(querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
+                                                mapping(Function.identity(), Collectors.toList()))).entrySet()
+                            .stream()
+                            .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
+                            .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
+                            .map(Map.Entry::getValue)
+                            .flatMap(Collection::stream)
+                            .map(QuerySubscription::getQueryHandler)
+                            .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
+                            .collect(Collectors.toList());
     }
 
     private <Q, R> Publisher<MessageHandler<? super QueryMessage<?, ?>>> getStreamingHandlersForMessage(
-            StreamingQueryMessage<Q, R> queryMessage
-    ) {
-        ResponseType<?> responseType = queryMessage.getResponseType();
-        //noinspection unchecked
-        return Flux.fromStream(subscriptions.computeIfAbsent(queryMessage.getQueryName(),
-                                                             k -> new CopyOnWriteArrayList<>())
-                                            .stream()
-                                            .filter(subscription -> responseType.matches(subscription.getResponseType()))
-                                            .sorted(new StreamingQueryHandlerComparator())
-                                            .map(QuerySubscription::getQueryHandler)
-                                            .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler));
-    }
-
-    /**
-     * Comparator to prioritize handlers based on the response type.
-     * <p>
-     * Because {@code FluxResponseType} can handle any response type, this comparator is used to prioritize the
-     * Flux(high priority) over {@code List}/{@code Stream} handlers (medium priority). All other handlers are
-     * prioritized after the {@code List}/{@code Stream} handlers (low priority).
-     */
-    private static class StreamingQueryHandlerComparator implements Comparator<QuerySubscription<?>> {
-
-        private enum Priority {
-            HIGH,
-            MEDIUM,
-            LOW
-        }
-
-        @Override
-        public int compare(QuerySubscription<?> o1, QuerySubscription<?> o2) {
-            return getPriority(o1) - getPriority(o2);
-        }
-
-        private int getPriority(QuerySubscription<?> handler) {
-            if (handler.getResponseType().getTypeName().contains("reactor.core.publisher.Flux")) {
-                return Priority.HIGH.ordinal();
-            } else if (handler.getResponseType().getTypeName().contains("java.util.")) {
-                return Priority.MEDIUM.ordinal();
-            } else {
-                return Priority.LOW.ordinal();
-            }
-        }
+            StreamingQueryMessage<Q, R> queryMessage) {
+        return Flux.fromIterable(getHandlersForMessage(queryMessage));
     }
 
     /**
