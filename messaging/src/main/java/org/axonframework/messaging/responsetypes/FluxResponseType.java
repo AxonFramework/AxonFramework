@@ -22,6 +22,12 @@ import java.util.stream.Stream;
  */
 public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
 
+    /**
+     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning a flux result.
+     *
+     * @see ResponseType#MATCH
+     * @see ResponseType#NO_MATCH
+     */
     public static final int FLUX_MATCH = 2048;
     private final ResponseType<?> multipleInstanceResponseType;
 
