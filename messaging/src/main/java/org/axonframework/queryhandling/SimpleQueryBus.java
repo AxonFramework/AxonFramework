@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,7 +44,6 @@ import reactor.core.publisher.Signal;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -113,9 +112,9 @@ public class SimpleQueryBus implements QueryBus {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
-     * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
-     * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
+     * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
+     * and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryBus}
      */
@@ -123,26 +122,24 @@ public class SimpleQueryBus implements QueryBus {
         return new Builder();
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public <R> Registration subscribe(@Nonnull String queryName,
                                       @Nonnull Type responseType,
                                       @Nonnull MessageHandler<? super QueryMessage<?, R>> handler) {
         QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
-        List<QuerySubscription<?>> handlers = subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
-        if(handlers.contains(querySubscription)) {
+        List<QuerySubscription<?>> handlers =
+                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
+        if (handlers.contains(querySubscription)) {
             return () -> unsubscribe(queryName, querySubscription);
         }
         List<QuerySubscription<?>> existingHandlers = handlers.stream()
-                                                           .filter(q -> q.getResponseType().equals(responseType))
-                                                           .collect(Collectors.toList());
+                                                              .filter(q -> q.getResponseType().equals(responseType))
+                                                              .collect(Collectors.toList());
         if (existingHandlers.isEmpty()) {
             handlers.add(querySubscription);
         } else {
-            List<QuerySubscription<?>> resolvedHandlers = duplicateQueryHandlerResolver.resolve(queryName,
-                                                                                             responseType,
-                                                                                             existingHandlers,
-                                                                                             querySubscription);
+            List<QuerySubscription<?>> resolvedHandlers =
+                    duplicateQueryHandlerResolver.resolve(queryName, responseType, existingHandlers, querySubscription);
             subscriptions.put(queryName, resolvedHandlers);
         }
 
@@ -458,8 +455,11 @@ public class SimpleQueryBus implements QueryBus {
         ResponseType<R> responseType = queryMessage.getResponseType();
         return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
                             .stream()
-                            .collect(groupingBy(querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
-                                                mapping(Function.identity(), Collectors.toList()))).entrySet()
+                            .collect(groupingBy(
+                                    querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
+                                    mapping(Function.identity(), Collectors.toList())
+                            ))
+                            .entrySet()
                             .stream()
                             .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
                             .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
@@ -478,9 +478,9 @@ public class SimpleQueryBus implements QueryBus {
     /**
      * Builder class to instantiate a {@link SimpleQueryBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to {@link
-     * NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler}, and
-     * {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
+     * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
+     * and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
      */
     public static class Builder {
 
@@ -522,8 +522,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a {@link
-         * NoTransactionManager}.
+         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a
+         * {@link NoTransactionManager}.
          *
          * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
          * @return the current Builder instance, for fluent interfacing
@@ -549,11 +549,12 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link QueryUpdateEmitter} used to emits updates for the {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}.
-         * Defaults to a {@link SimpleQueryUpdateEmitter}.
+         * Sets the {@link QueryUpdateEmitter} used to emits updates for the
+         * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}. Defaults to a
+         * {@link SimpleQueryUpdateEmitter}.
          *
-         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the {@link
-         *                           QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
+         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the
+         *                           {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
