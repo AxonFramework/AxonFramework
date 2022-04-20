@@ -42,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -153,6 +154,39 @@ class DefaultCommandGatewayTest {
         assertTrue(future.isDone());
         assertEquals("returnValue", future.get());
     }
+
+    @Test
+    void testSendWithoutCallbackCustomizedCallbackIsCalled() throws ExecutionException, InterruptedException {
+        AtomicBoolean finalCallbackCalled = new AtomicBoolean(false);
+        AtomicBoolean customizedCallbackCalled = new AtomicBoolean(false);
+        testSubject = DefaultCommandGateway.builder()
+                                           .commandBus(mockCommandBus)
+                                           .retryScheduler(mockRetryScheduler)
+                                           .dispatchInterceptors(mockCommandMessageTransformer)
+                                           .commandCallback((commandMessage, commandResultMessage) -> {
+                                               customizedCallbackCalled.set(true);
+                                               // The customized callback should be called before the final callback
+                                               assertFalse(finalCallbackCalled.get());
+                                           })
+                                           .build();
+        doAnswer(invocation -> {
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        CompletableFuture<?> future = testSubject.send("Command")
+                                                 .whenComplete((o, throwable) -> {
+                                                     finalCallbackCalled.set(true);
+                                                 });
+
+        assertTrue(future.isDone());
+        assertTrue(customizedCallbackCalled.get());
+        assertEquals("returnValue", future.get());
+    }
+
 
     @SuppressWarnings({"unchecked"})
     @Test
@@ -391,6 +425,42 @@ class DefaultCommandGatewayTest {
 
         assertEquals(expectedPayload, result.getPayload());
         assertEquals(expectedMetaData, result.getMetaData());
+    }
+
+    @Test
+    void testCommandCallbackIsCustomized() {
+        AtomicBoolean customizedCallbackIsCalled = new AtomicBoolean();
+
+        testSubject = DefaultCommandGateway.builder()
+                                           .commandBus(mockCommandBus)
+                                           .retryScheduler(mockRetryScheduler)
+                                           .dispatchInterceptors(mockCommandMessageTransformer)
+                                           .commandCallback((commandMessage, commandResultMessage) -> customizedCallbackIsCalled.set(
+                                                   true))
+                                           .build();
+
+        //noinspection unchecked
+        doAnswer(invocation -> {
+            //noinspection unchecked
+            ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
+                    (CommandMessage<Object>) invocation.getArguments()[0],
+                    asCommandResultMessage("returnValue")
+            );
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        String expectedPayload = "command";
+        testSubject.send(expectedPayload, MetaData.emptyInstance());
+
+        //noinspection unchecked
+        ArgumentCaptor<CommandMessage<?>> messageCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+
+        //noinspection unchecked
+        verify(mockCommandBus).dispatch(messageCaptor.capture(), isA(CommandCallback.class));
+        CommandMessage<?> result = messageCaptor.getValue();
+
+        assertEquals(expectedPayload, result.getPayload());
+        assertTrue(customizedCallbackIsCalled.get());
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {
