@@ -56,6 +56,7 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
      *
      * @param delegate The command callback to forward invocations to
      */
+    @Deprecated
     public FailureLoggingCallback(CommandCallback<C, R> delegate) {
         this(LoggerFactory.getLogger(FailureLoggingCallback.class), delegate);
     }
