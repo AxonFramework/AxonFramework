@@ -47,6 +47,8 @@ public interface CommandCallback<C, R> {
      *
      * @param wrappingCallback The command callback that should wrap the current instance
      * @return The {@link WrappedCommandCallback} representing the execution of both callbacks
+     * @since 4.6.0
+     * @author Mitchell Herrijgers
      */
     default CommandCallback<C, R> wrap(CommandCallback<C, R> wrappingCallback) {
         if (wrappingCallback == null) {
