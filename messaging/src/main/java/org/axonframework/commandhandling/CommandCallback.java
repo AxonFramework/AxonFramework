@@ -39,8 +39,8 @@ public interface CommandCallback<C, R> {
                   @Nonnull CommandResultMessage<? extends R> commandResultMessage);
 
     /**
-     * Wraps the command callback with another using an {@link WrappedCommandCallback}. If provided with a null
-     * callback, will not wrap it and keep the original callback.
+     * Wraps the command callback with another using a {@link WrappedCommandCallback}. If provided with a null
+     * callback this method will not wrap it, keeping the original callback instead.
      * <p>
      * In effect, the given callback will be executed first, and then the original will be executed second. You can wrap
      * callback as many times as you'd like.
