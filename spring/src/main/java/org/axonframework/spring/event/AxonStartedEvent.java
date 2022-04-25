@@ -21,7 +21,7 @@ package org.axonframework.spring.event;
  * and can handle all commands, events and queries.
  *
  * @author Mitchell Herrijgers
- * @since 4.6
+ * @since 4.6.0
  */
 public class AxonStartedEvent {
 
