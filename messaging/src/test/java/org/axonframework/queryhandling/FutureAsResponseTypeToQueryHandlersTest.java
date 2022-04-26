@@ -16,8 +16,11 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.AxonException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -30,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -164,11 +168,23 @@ class FutureAsResponseTypeToQueryHandlersTest {
                     .expectNext(asList("Response1", "Response2"))
                     .verifyComplete();
     }
+    @Test
+    void testDirectQueryWithSingleResponseThrowsException() throws ExecutionException, InterruptedException {
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>(
+                "criteria",
+                "myQueryThrowsAnException",
+                ResponseTypes.instanceOf(String.class));
+        Assertions.assertThrows(ExecutionException.class, () -> queryBus.query(queryMessage).get().getPayload());
+        Assertions.assertEquals(1, MyQueryHandler.numberOfInvocations);
+    }
+;
 
     @SuppressWarnings("unused")
     private static class MyQueryHandler {
 
         private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+        private static int numberOfInvocations = 0;
 
         @QueryHandler(queryName = "myQueryWithMultipleResponses")
         public CompletableFuture<List<String>> queryHandler1(String criteria) {
@@ -191,6 +207,19 @@ class FutureAsResponseTypeToQueryHandlersTest {
             return executor.schedule(() -> asList("Response1", "Response2"),
                                      FUTURE_RESOLVING_TIMEOUT,
                                      TimeUnit.MILLISECONDS);
+        }
+
+        @QueryHandler(queryName = "myQueryThrowsAnException")
+        public Future<String> queryHandler4(String criteria){
+            CompletableFuture<String> f = new CompletableFuture<>();
+            f.completeExceptionally(new Exception("Something went wrong") {
+            });
+            return f;
+        }
+
+        @ExceptionHandler
+        public void handle(Exception e, UnitOfWork<?> uow) throws Exception {
+           numberOfInvocations++;
         }
     }
 }

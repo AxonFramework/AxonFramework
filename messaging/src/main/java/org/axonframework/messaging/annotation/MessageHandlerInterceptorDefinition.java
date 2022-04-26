@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
@@ -76,8 +77,10 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         @Override
         public Object handle(Message<?> message, T target) throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
+            Object result = null;
             try {
-                return chain.proceed();
+                result = chain.proceed();
+                return result;
             } catch (Exception e) {
                 if (!expectedResultType.isInstance(e)) {
                     throw e;
@@ -88,6 +91,24 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                     }
                     throw e;
                 });
+            }
+            finally {
+                if (result instanceof CompletableFuture){
+                    // Invoke the exception handler in case of an exception
+                    ((CompletableFuture<?>) result).exceptionally(exception -> {
+                        try {
+                            ResultParameterResolverFactory.callWithResult(exception, () -> {
+                                if (super.canHandle(message)){
+                                    return super.handle(message, target);
+                                }
+                                return null;
+                            });
+                        } catch (Exception ignored) {
+                         // exception is expected here while handling an exception
+                        }
+                        return null;
+                    });
+                }
             }
         }
     }
