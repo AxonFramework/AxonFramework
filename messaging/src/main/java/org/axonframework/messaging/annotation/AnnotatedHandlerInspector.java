@@ -19,7 +19,9 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -213,7 +215,12 @@ public class AnnotatedHandlerInspector<T> {
                                              .forEach((key, value) -> value.forEach(h -> registerHandler(key, (MessageHandlingMember<T>) h))));
         superClassInspectors.forEach(sci -> sci.getAllHandlers()
                                                .forEach((key, value) -> value.forEach(h -> {
-                                                   registerHandler(key, h);
+                                                   boolean isAbstract = h.unwrap(Executable.class)
+                                                                       .map(e -> Modifier.isAbstract(e.getModifiers()))
+                                                                       .orElse(false);
+                                                   if (!isAbstract) {
+                                                       registerHandler(key, h);
+                                                   }
                                                    registerHandler(inspectedType, h);
                                                })));
 
