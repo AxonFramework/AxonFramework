@@ -20,6 +20,8 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolution;
+import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.AxonConfigurationException;
@@ -170,7 +172,9 @@ class AggregateAnnotationCommandHandlerTest {
     void testCommandHandlerSubscribesToCommands() {
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
                                      any(MessageHandler.class));
-        verify(commandBus).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
+        // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
+        // DuplicateCommandHandlerResolver
+        verify(commandBus, times(2)).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
                                      any(MessageHandler.class));
     }
 
@@ -572,6 +576,29 @@ class AggregateAnnotationCommandHandlerTest {
         verify(mockRepository).load(aggregateIdentifier, null);
     }
 
+    @Test
+    void testUsesDuplicateCommandHandlerResolver() throws Exception {
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(DuplicateCommandHandlerResolution.rejectDuplicates())
+                                     .build();
+        commandBus = spy(commandBus);
+        mockRepository = mock(Repository.class);
+
+        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
+                new CustomParameterResolverFactory());
+        aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
+                                                                             parameterResolverFactory);
+        testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
+                                                       .aggregateType(StubCommandAnnotatedAggregate.class)
+                                                       .repository(mockRepository)
+                                                       .build();
+
+        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> {
+            testSubject.subscribe(commandBus);
+        });
+    }
+
     @SuppressWarnings("unused")
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
@@ -658,6 +685,11 @@ class AggregateAnnotationCommandHandlerTest {
 
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
+            return "Method works fine";
+        }
+
+        @CommandHandler
+        public String handleUpdateDuplicate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
         }
 
