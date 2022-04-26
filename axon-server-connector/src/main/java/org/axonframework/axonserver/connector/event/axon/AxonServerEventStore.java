@@ -349,7 +349,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                 );
                 snapshotSerializer = () -> XStreamSerializer.builder()
                                                             .xStream(new XStream(new CompactDriver()))
-                                                            .build();;
+                                                            .build();
             }
             if (eventSerializer == null) {
                 logger.warn(
@@ -362,7 +362,7 @@ public class AxonServerEventStore extends AbstractEventStore {
                 );
                 eventSerializer = () -> XStreamSerializer.builder()
                                                          .xStream(new XStream(new CompactDriver()))
-                                                         .build();;
+                                                         .build();
             }
 
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");
