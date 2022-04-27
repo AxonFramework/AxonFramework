@@ -16,7 +16,9 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.Assert;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Structure that holds an Aggregate Identifier and an expected version of an aggregate.
@@ -26,26 +28,38 @@ import java.util.Objects;
  */
 public class VersionedAggregateIdentifier {
 
-    private final String identifier;
+    private final Object identifier;
     private final Long version;
 
     /**
      * Initializes a VersionedAggregateIdentifier with the given {@code identifier} and {@code version}.
      *
-     * @param identifier The identifier of the targeted aggregate
+     * @param identifier The non-null identifier of the targeted aggregate
      * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
      */
-    public VersionedAggregateIdentifier(String identifier, Long version) {
+    public VersionedAggregateIdentifier(@Nonnull Object identifier, Long version) {
+        Assert.notNull(identifier, () -> "Identifier must not be null");
         this.identifier = identifier;
         this.version = version;
     }
 
     /**
-     * Returns the identifier of the targeted Aggregate. May never return {@code null}.
+     * Returns the string representation of the identifier of the targeted Aggregate. May never return {@code null}.
      *
-     * @return the identifier of the targeted Aggregate
+     * @return the string representation of identifier of the targeted Aggregate
      */
+    @Nonnull
     public String getIdentifier() {
+        return identifier.toString();
+    }
+
+    /**
+     * Returns the object representation of the identifier of the targeted Aggregate. May never return {@code null}.
+     *
+     * @return the object representation of the identifier of the targeted Aggregate
+     */
+    @Nonnull
+    public Object getIdentifierValue() {
         return identifier;
     }
 

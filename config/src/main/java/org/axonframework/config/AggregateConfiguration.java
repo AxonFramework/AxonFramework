@@ -20,6 +20,8 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.Repository;
 
+import java.util.function.Function;
+
 /**
  * Specialization of the Module Configuration for modules that define an Aggregate Configuration. This interface allows
  * components to retrieve the Repository used to load Aggregates of the type defined in this Configuration.
@@ -57,4 +59,11 @@ public interface AggregateConfiguration<A> extends ModuleConfiguration {
      * @return the {@link SnapshotFilter} defined in this configuration
      */
     SnapshotFilter snapshotFilter();
+
+    /**
+     * Returns the CommandHandlerAggregateFactory {@link Function} defined in this configuration.
+     *
+     * @return the CommandHandlerAggregateFactory {@link Function} defined in this configuration.
+     */
+    Function<Object, A> commandHandlerAggregateFactory();
 }

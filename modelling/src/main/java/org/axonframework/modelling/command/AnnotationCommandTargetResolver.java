@@ -54,7 +54,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     /**
      * Instantiate a Builder to be able to create a {@link AnnotationCommandTargetResolver}.
      * <p>
-     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier},
      * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
      *
      * @return a Builder to be able to create a{@link AnnotationCommandTargetResolver}
@@ -87,8 +87,8 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
      */
     @Override
     public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
-        String aggregateIdentifier;
         Long aggregateVersion;
+        Object aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);
             aggregateVersion = findVersion(command);
@@ -111,8 +111,8 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
 
-    private String findIdentifier(Message<?> command)throws InvocationTargetException, IllegalAccessException {
-        return Optional.ofNullable(invokeAnnotated(command, identifierAnnotation)).map(Object::toString).orElse(null);
+    private Object findIdentifier(Message<?> command) throws InvocationTargetException, IllegalAccessException {
+        return invokeAnnotated(command, identifierAnnotation);
     }
 
     private Long findVersion(Message<?> command) throws InvocationTargetException, IllegalAccessException {
@@ -154,9 +154,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     /**
      * Builder class to instantiate a {@link AnnotationCommandTargetResolver}.
      * <p>
-     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier}, 
+     * The TargetAggregateIdentifierAnnotation is defaulted to {@link TargetAggregateIdentifier},
      * TargetAggregateVersionAnnotation to {@link TargetAggregateVersion}.
-     * 
+     *
      * @author JohT
      */
     public static final class Builder {
@@ -173,7 +173,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * that identifies the target aggregate
          * and it is not possible to put @{@link TargetAggregateIdentifier}
          * into that annotation (to use it as meta-annotation).
-         * 
+         *
          * @param annotation {@link Class} of type {@link Annotation}.
          * @return the current {@link Builder} instance, for fluent interfacing
          */
@@ -192,7 +192,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * that identifies the version of the aggregate
          * and it is not possible to put @{@link TargetAggregateVersion}
          * into that annotation (to use it as meta-annotation).
-         * 
+         *
          * @param annotation {@link Class} of type {@link Annotation}.
          * @return the current {@link Builder} instance, for fluent interfacing
          */

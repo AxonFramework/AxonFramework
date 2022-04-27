@@ -48,6 +48,7 @@ import org.axonframework.serialization.Revision;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
+import java.util.function.Function;
 import javax.persistence.EntityManager;
 
 import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
@@ -164,6 +165,14 @@ public class AggregateConfigurerTest {
         testSubject.configureAggregateFactory(configuration -> expectedAggregateFactory);
 
         assertEquals(expectedAggregateFactory, testSubject.aggregateFactory());
+    }
+
+    @Test
+    void testCommandHandlingAggregateFactoryConfiguration() {
+        Function<Object, TestAggregate> aggregateFactoryFunction = id -> new TestAggregate();
+        testSubject.configureCommandHandlerAggregateFactory(configuration -> aggregateFactoryFunction);
+
+        assertEquals(aggregateFactoryFunction, testSubject.commandHandlerAggregateFactory());
     }
 
     @Test

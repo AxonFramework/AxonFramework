@@ -43,6 +43,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -234,6 +235,17 @@ public interface Configuration extends LifecycleOperations {
      */
     default <A> AggregateFactory<A> aggregateFactory(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).aggregateFactory();
+    }
+
+    /**
+     * Returns the CommandHandlerAggregateFactory {@link Function} configured for the given {@code aggregateType}.
+     *
+     * @param aggregateType the aggregate type to find the CommandHandlerAggregateFactory for
+     * @param <A>           the aggregate type
+     * @return the {@link Function} which constructs aggregate of the given {@code aggregateType} when needed to handle commands
+     */
+    default <A> Function<Object, A> commandHandlerAggregateFactory(@Nonnull Class<A> aggregateType) {
+        return aggregateConfiguration(aggregateType).commandHandlerAggregateFactory();
     }
 
     /**

@@ -42,6 +42,7 @@ import org.axonframework.modelling.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
+import org.mockito.internal.verification.*;
 import org.mockito.junit.jupiter.*;
 import org.mockito.quality.*;
 
@@ -55,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -76,13 +78,16 @@ class AggregateAnnotationCommandHandlerTest {
     private SimpleCommandBus commandBus;
     private Repository<StubCommandAnnotatedAggregate> mockRepository;
     private AggregateModel<StubCommandAnnotatedAggregate> aggregateModel;
+    private Function<Object, StubCommandAnnotatedAggregate> functionFactoryMock;
+    private ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> newInstanceCallableFactoryCaptor;
 
     @BeforeEach
     void setUp() throws Exception {
         commandBus = SimpleCommandBus.builder().build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
-        when(mockRepository.newInstance(any())).thenAnswer(
+        newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture())).thenAnswer(
                 invocation -> AnnotatedAggregate.initialize(
                         (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                         aggregateModel,
@@ -94,11 +99,15 @@ class AggregateAnnotationCommandHandlerTest {
                 new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
+        functionFactoryMock = mock(Function.class);
+        when(functionFactoryMock.apply(any())).thenReturn(new StubCommandAnnotatedAggregate("id"));
+
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
-                .aggregateType(StubCommandAnnotatedAggregate.class)
-                .parameterResolverFactory(parameterResolverFactory)
-                .repository(mockRepository)
-                .build();
+                                                       .aggregateType(StubCommandAnnotatedAggregate.class)
+                                                       .parameterResolverFactory(parameterResolverFactory)
+                                                       .repository(mockRepository)
+                                                       .aggregateFactory(functionFactoryMock)
+                                                       .build();
         testSubject.subscribe(commandBus);
     }
 
@@ -136,6 +145,7 @@ class AggregateAnnotationCommandHandlerTest {
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
                 CreateOrUpdateCommand.class.getName(),
+                CreateAlwaysCommand.class.getName(),
                 CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
@@ -178,12 +188,31 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    void testCommandHandlerCreatesAlwaysAggregateInstance() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new CreateAlwaysCommand("id"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any());
+        // make sure the identifier was invoked in the callback
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Create always works fine", responseCaptor.getValue().getPayload());
+        verify(functionFactoryMock).apply(eq("id"));
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(functionFactoryMock, VerificationModeFactory.times(2)).apply(eq("id"));
+    }
+
+    @Test
     public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
 
         AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
-        when(mockRepository.loadOrCreate(anyString(), any()))
+        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> factoryCaptor = ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.loadOrCreate(anyString(), factoryCaptor.capture()))
                 .thenReturn(spyAggregate);
 
         commandBus.dispatch(message, callback);
@@ -195,6 +224,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+        verifyNoInteractions(functionFactoryMock);
+        factoryCaptor.getValue().call();
+        verify(functionFactoryMock).apply(eq("id"));
     }
 
     @Test
@@ -667,6 +699,13 @@ class AggregateAnnotationCommandHandlerTest {
             return "Create or update works fine";
         }
 
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public String handleCreateOrUpdate(CreateAlwaysCommand createAlwaysCommand) {
+            this.setIdentifier(createAlwaysCommand.id);
+            return "Create always works fine";
+        }
+
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
@@ -886,6 +925,21 @@ class AggregateAnnotationCommandHandlerTest {
 
         public String getParameter() {
             return parameter;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class CreateAlwaysCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private CreateAlwaysCommand(String id) {
+            this.id = id;
         }
 
         public String getId() {
