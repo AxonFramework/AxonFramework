@@ -29,10 +29,12 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 
 /**
  * Registers Spring beans that implement {@link QueryHandlerAdapter} with the query bus.
- * @since 3.1
- * @author Marc Gathier
  *
+ * @author Marc Gathier
+ * @since 3.1
+ * @deprecated Replaced by the {@link MessageHandlerLookup} and {@link MessageHandlerConfigurer}.
  */
+@Deprecated
 public class QueryHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
     private ApplicationContext applicationContext;
     private boolean started;

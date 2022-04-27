@@ -51,8 +51,13 @@ import javax.annotation.Nonnull;
 /**
  * Spring Configuration class that defines a number of conditional beans. It also allows for access to components that
  * are available in the Configuration, but not made available as Spring beans by default.
+ *
+ * @author Allard Buijze
+ * @since 3.0
+ * @deprecated Replaced by the {@link SpringConfigurer} and {@link SpringAxonConfiguration}.
  */
 @org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
+@Deprecated
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
     private final Configurer configurer;

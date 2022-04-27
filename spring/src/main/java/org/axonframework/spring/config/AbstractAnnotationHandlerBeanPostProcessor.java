@@ -51,7 +51,10 @@ import static java.lang.reflect.Modifier.isAbstract;
  * @param <T> The type of adapter created by this class
  * @author Allard Buijze
  * @since 0.4
+ * @deprecated Replaced by the {@link MessageHandlerLookup} and {@link MessageHandlerConfigurer}, eliminating the need
+ * of an abstract implementation used for command and query registration.
  */
+@Deprecated
 public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         implements BeanPostProcessor, BeanFactoryAware {
 
@@ -109,7 +112,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         }
         return bean;
     }
-        
+
     /**
      * Verify if the given {@code bean} is a {@code org.springframework.beans.factory.support.NullBean} instance.
      * If this is the case, a call to {@code org.springframework.beans.factory.support.NullBean#equals} using {@code null} will return {@code true}.

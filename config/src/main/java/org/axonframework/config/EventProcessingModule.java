@@ -182,35 +182,29 @@ public class EventProcessingModule
     public void initialize(Configuration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
-
-        instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
-
-        Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
-        registerSimpleEventHandlerInvokers(handlerInvokers);
-        registerSagaManagers(handlerInvokers);
-
-        handlerInvokers.forEach((processorName, invokers) -> {
-            Component<EventProcessor> eventProcessorComponent =
-                    new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
-            eventProcessors.put(processorName, eventProcessorComponent);
-        });
-
-        initializeProcessors();
+        configuration.onStart(Integer.MIN_VALUE, this::initializeProcessors);
     }
 
     /**
-     * Ideally we would be able to just call {@code eventProcessors.values().forEach(Component::get)} to have the {@link
-     * Component} register the lifecycle handlers through the {@link LifecycleHandlerInspector} directly upon
-     * initialization. However, the Spring {@code AxonConfiguration} and {@code EventHandlerRegistrar} will call the
-     * {@link #initialize(Configuration)} method twice. As the {@code #initialize(Configuration)} clears out the list of
-     * processors, some processors (for example those for registered Sagas) might pop up twice; once in the first {@code
-     * #initialize(Configuration)} call and once in the second. Registering the {@code
-     * eventProcessors.values().forEach(Component::get)} at the earliest stage in the start cycle will resolve the
-     * problem. Note that this functionality should be adjusted once the Spring configuration is more inline with the
-     * default and auto Configuration.
+     * Initializes the event processors by assigning each of the event handlers according to the defined selectors. When
+     * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        this.configuration.onStart(Integer.MIN_VALUE, () -> eventProcessors.values().forEach(Component::get));
+        if (eventProcessors.isEmpty()) {
+            instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
+
+            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
+            registerSimpleEventHandlerInvokers(handlerInvokers);
+            registerSagaManagers(handlerInvokers);
+
+            handlerInvokers.forEach((processorName, invokers) -> {
+                Component<EventProcessor> eventProcessorComponent =
+                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                eventProcessors.put(processorName, eventProcessorComponent);
+            });
+
+            eventProcessors.values().forEach(Component::get);
+        }
     }
 
     private String selectProcessingGroupByType(Class<?> type) {
@@ -336,13 +330,13 @@ public class EventProcessingModule
     @SuppressWarnings("unchecked")
     @Override
     public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
-        ensureInitialized();
         return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
     }
 
     @Override
     public Map<String, EventProcessor> eventProcessors() {
-        ensureInitialized();
+        validateConfigInitialization();
+        initializeProcessors();
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
         return result;
@@ -356,14 +350,14 @@ public class EventProcessingModule
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
                                             .orElse(Collections.emptyList());
     }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return listenerInvocationErrorHandlers.containsKey(processingGroup)
                 ? listenerInvocationErrorHandlers.get(processingGroup).get()
                 : defaultListenerInvocationErrorHandler.get();
@@ -371,7 +365,7 @@ public class EventProcessingModule
 
     @Override
     public SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
                 : defaultSequencingPolicy.get();
@@ -379,7 +373,7 @@ public class EventProcessingModule
 
     @Override
     public RollbackConfiguration rollbackConfiguration(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return rollbackConfigurations.containsKey(processorName)
                 ? rollbackConfigurations.get(processorName).get()
                 : defaultRollbackConfiguration.get();
@@ -387,7 +381,7 @@ public class EventProcessingModule
 
     @Override
     public ErrorHandler errorHandler(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return errorHandlers.containsKey(processorName)
                 ? errorHandlers.get(processorName).get()
                 : defaultErrorHandler.get();
@@ -395,18 +389,18 @@ public class EventProcessingModule
 
     @Override
     public SagaStore sagaStore() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaStore.get();
     }
 
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return processingGroupsAssignments.getOrDefault(processingGroup,
                                                         defaultProcessingGroupAssignment
                                                                 .apply(processingGroup));
@@ -415,7 +409,7 @@ public class EventProcessingModule
     @Override
     public MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
             return messageMonitorFactories.get(eventProcessorName).create(configuration,
                                                                           componentType,
@@ -427,7 +421,7 @@ public class EventProcessingModule
 
     @Override
     public TokenStore tokenStore(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return tokenStore.containsKey(processorName)
                 ? tokenStore.get(processorName).get()
                 : defaultTokenStore.get();
@@ -435,14 +429,16 @@ public class EventProcessingModule
 
     @Override
     public TransactionManager transactionManager(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
     }
 
-    private void ensureInitialized() {
-        assertNonNull(configuration, "Configuration is not initialized yet");
+    private void validateConfigInitialization() {
+        assertNonNull(
+                configuration, "Cannot proceed because the Configuration is not initialized for this module yet."
+        );
     }
 
     //<editor-fold desc="configurer methods">
@@ -640,6 +636,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
+            initializeProcessors();
             Component<EventProcessor> eps = eventProcessors.get(processorName);
             if (eps != null && eps.isInitialized()) {
                 eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));

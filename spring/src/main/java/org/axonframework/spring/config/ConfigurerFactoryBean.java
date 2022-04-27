@@ -41,7 +41,9 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 4.2
+ * @deprecated Replaced by the {@link SpringConfigurer}, which itself is a {@link Configurer} implementation.
  */
+@Deprecated
 public class ConfigurerFactoryBean implements FactoryBean<Configurer>, ApplicationContextAware {
 
     private final Configurer configurer;

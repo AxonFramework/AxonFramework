@@ -35,6 +35,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
  * {@link MessageDispatchInterceptor CommandDispatchInterceptors}. The Retry Scheduler allows for Command to be
@@ -46,8 +48,9 @@ import javax.annotation.Nonnull;
  * @since 2.0
  */
 public class DefaultCommandGateway extends AbstractCommandGateway implements CommandGateway {
-
     private static final Logger logger = LoggerFactory.getLogger(DefaultCommandGateway.class);
+
+    private final CommandCallback<Object, Object> commandCallback;
 
     /**
      * Instantiate a {@link DefaultCommandGateway} based on the fields contained in the {@link Builder}.
@@ -60,6 +63,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     protected DefaultCommandGateway(Builder builder) {
         super(builder);
+        this.commandCallback = builder.commandCallback;
     }
 
     /**
@@ -127,10 +131,11 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
         return commandResultMessage.getPayload();
     }
 
+    @SuppressWarnings("unchecked") // Cast for commandCallback wrap
     @Override
     public <R> CompletableFuture<R> send(@Nonnull Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
-        send(command, new FailureLoggingCallback<>(logger, callback));
+        send(command, callback.wrap((CommandCallback<Object, R>) commandCallback));
         CompletableFuture<R> result = new CompletableFuture<>();
         callback.exceptionally(GenericCommandResultMessage::asCommandResultMessage)
                 .thenAccept(r -> {
@@ -171,10 +176,25 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends AbstractCommandGateway.Builder {
+        private CommandCallback<Object, Object> commandCallback = new FailureLoggingCallback<>(logger);
 
         @Override
         public Builder commandBus(@Nonnull CommandBus commandBus) {
             super.commandBus(commandBus);
+            return this;
+        }
+
+        /**
+         * Set a {@link CommandCallback} on the command bus. This will be used as callback for all asynchronous
+         * commands that are sent.
+         * By default, the {@link FailureLoggingCallback} is used. This will log to the default logger on failure.
+         *
+         * @param commandCallback The {@link CommandCallback} to use for asynchronous commands
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder commandCallback(CommandCallback<Object, Object> commandCallback) {
+            assertNonNull(commandCallback, "CommandCallback may not be null");
+            this.commandCallback = commandCallback;
             return this;
         }
 

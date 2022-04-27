@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,8 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
+import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -36,6 +38,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +70,7 @@ class SimpleQueryBusTest {
     private static final String TRACE_ID = "traceId";
     private static final String CORRELATION_ID = "correlationId";
     private final ResponseType<String> singleStringResponse = ResponseTypes.instanceOf(String.class);
+    private final ResponseType<List<String>> multipleStringResponse = ResponseTypes.multipleInstancesOf(String.class);
     private SimpleQueryBus testSubject;
     private MessageMonitor<QueryMessage<?, ?>> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
@@ -142,6 +146,22 @@ class SimpleQueryBusTest {
         assertTrue(subscription.cancel());
         assertTrue(testSubject.query(testQueryMessage).isDone());
         assertTrue(testSubject.query(testQueryMessage).isCompletedExceptionally());
+    }
+
+    @Test
+    void testSubscribingSameQueryTwiceWithThrowingDuplicateResolver() throws Exception {
+        // Modify query bus with failing duplicate resolver
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .errorHandler(errorHandler)
+                                    .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
+                                    .build();
+        MessageHandler<QueryMessage<?, String>> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>> handlerTwo = message -> "reply";
+        testSubject.subscribe("test", String.class, handlerOne);
+        assertThrows(DuplicateQueryHandlerSubscriptionException.class, () -> {
+            testSubject.subscribe("test", String.class, handlerTwo);
+        });
     }
 
     /*
@@ -229,6 +249,35 @@ class SimpleQueryBusTest {
         assertEquals("hello1234", result.get());
         verify(mockTxManager).startTransaction();
         verify(mockTx).commit();
+    }
+
+    @Test
+    void testQueryListWithSingleHandlerReturnsSingleAsList() throws Exception {
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
+                                                      .thenApply(QueryResponseMessage::getPayload);
+
+        assertEquals(1, result.get().size());
+        assertEquals("hello1234", result.get().get(0));
+    }
+
+
+    @Test
+    void testQueryListWithBothSingleHandlerAndListHandlerReturnsListResult() throws Exception {
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String[].class, (q) -> Arrays.asList(
+                q.getPayload() + "1234", q.getPayload() + "5678"
+        ));
+
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
+                                                            .thenApply(QueryResponseMessage::getPayload);
+
+        assertEquals(2, result.get().size());
+        assertEquals("hello1234", result.get().get(0));
+        assertEquals("hello5678", result.get().get(1));
     }
 
     @Test

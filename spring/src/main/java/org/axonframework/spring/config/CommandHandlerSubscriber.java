@@ -33,7 +33,10 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
  * Registers Spring beans that implement both MessageHandler and SupportedCommandNamesAware with the command bus.
  *
  * @author Allard Buijze
+ * @since 3.0
+ * @deprecated Replaced by the {@link MessageHandlerLookup} and {@link MessageHandlerConfigurer}.
  */
+@Deprecated
 public class CommandHandlerSubscriber implements ApplicationContextAware, SmartLifecycle {
 
     private ApplicationContext applicationContext;

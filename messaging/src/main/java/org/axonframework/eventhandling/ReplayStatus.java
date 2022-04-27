@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ package org.axonframework.eventhandling;
  * a replay, or in regular operations. Messages delivered as part of a replay may have been handled by this handler
  * before.
  * <p>
- * Note that this is only sensible for event handlers that are assigned to a Tracking Processor. Event Handlers assigned
- * to another type of processor will only receive events in "Regular" operation.
+ * Note that this is only sensible for event handlers that are assigned to a {@link StreamingEventProcessor}. Event
+ * Handlers assigned to a different mechanism, such as the {@link SubscribingEventProcessor} or certain extensions, will
+ * always receive {@code ReplayStatus.REGULAR} as value.
  *
  * @author Allard Buijze
  * @see AllowReplay @AllowReplay

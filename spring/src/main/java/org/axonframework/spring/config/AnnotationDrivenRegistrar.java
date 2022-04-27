@@ -33,7 +33,10 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @see AnnotationDriven
  * @since 2.3
+ * @deprecated Use Spring Boot autoconfiguration or register the individual beans explicitly. {@link AnnotationDriven}
+ * contains a list of look-up and registration components to replace this component with.
  */
+@Deprecated
 public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar {
 
     /**

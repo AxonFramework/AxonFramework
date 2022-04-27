@@ -25,6 +25,8 @@ package org.axonframework.commandhandling;
  * @since 4.2
  */
 public abstract class DuplicateCommandHandlerResolution {
+    private DuplicateCommandHandlerResolution() {
+    }
 
     /**
      * A {@link DuplicateCommandHandlerResolver} implementation which logs a warning message and resolve to returning
