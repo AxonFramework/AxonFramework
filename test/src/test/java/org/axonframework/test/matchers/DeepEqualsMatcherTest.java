@@ -16,6 +16,7 @@
 
 package org.axonframework.test.matchers;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 import org.junit.jupiter.api.*;
@@ -74,8 +75,15 @@ class DeepEqualsMatcherTest {
         assertTrue(new DeepEqualsMatcher<>("foo").matches("foo"));
     }
 
+    @Test
+    void testMatchesIsNullSafe() {
+        assertFalse(new DeepEqualsMatcher<>("foo").matches(null));
+        assertThrows(AxonConfigurationException.class, () -> new DeepEqualsMatcher<>(null).matches("foo"));
+    }
+
     private static class ObjectNotOverridingEquals {
 
+        @SuppressWarnings({"FieldCanBeLocal", "unused"})
         private final String someField;
 
         private ObjectNotOverridingEquals(String someField) {

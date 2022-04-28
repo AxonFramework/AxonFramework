@@ -25,6 +25,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ReflectionUtils.hasEqualsMethod;
 
 /**
@@ -68,6 +69,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
      * @param filter   The filter describing the fields to include or exclude in the comparison.
      */
     public DeepEqualsMatcher(T expected, FieldFilter filter) {
+        assertNonNull(expected, "The expected value should be non-null.");
         this.expected = expected;
         this.filter = filter;
     }
@@ -140,7 +142,8 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
                        .appendValue(failedFieldActual)
                        .appendText("].");
         } else if (failedForAccessibilityException) {
-            description.appendText(" failed during field equality with InaccessibleObjectException.");
+            description.appendText(" failed during field equality with InaccessibleObjectException. ")
+                       .appendText("Cause for this is that the object being matched does not allow reflective access.");
         }
     }
 }

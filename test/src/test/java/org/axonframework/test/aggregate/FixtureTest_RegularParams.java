@@ -334,13 +334,12 @@ class FixtureTest_RegularParams {
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
 
+        ResultValidator<StandardAggregate> resultValidator = fixture.registerAnnotatedCommandHandler(commandHandler)
+                                                                    .given(givenEvents)
+                                                                    .when(new TestCommand("aggregateId"));
+        // Should be 4 instead of 5.
         AxonAssertionError e = assertThrows(
-                AxonAssertionError.class,
-                () -> fixture.registerAnnotatedCommandHandler(commandHandler)
-                             .given(givenEvents)
-                             .when(new TestCommand("aggregateId"))
-                             .expectEvents(new MyEvent("aggregateId", 5)) // should be 4
-                             .expectSuccessfulHandlerExecution()
+                AxonAssertionError.class, () -> resultValidator.expectEvents(new MyEvent("aggregateId", 5))
         );
         assertTrue(e.getMessage().contains(
                 "The message of type [MyEvent] was not as expected."));
@@ -355,13 +354,13 @@ class FixtureTest_RegularParams {
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
+
+        ResultValidator<StandardAggregate> resultValidator = fixture.registerAnnotatedCommandHandler(commandHandler)
+                                                                    .given(givenEvents)
+                                                                    .when(new TestCommand("aggregateId"));
+        // Should be 4 instead of null.
         AxonAssertionError e = assertThrows(
-                AxonAssertionError.class,
-                () -> fixture.registerAnnotatedCommandHandler(commandHandler)
-                             .given(givenEvents)
-                             .when(new TestCommand("aggregateId"))
-                             .expectEvents(new MyEvent("aggregateId", null)) // should be 4
-                             .expectSuccessfulHandlerExecution()
+                AxonAssertionError.class, () -> resultValidator.expectEvents(new MyEvent("aggregateId", null))
         );
         assertTrue(e.getMessage().contains("The message of type [MyEvent] was not as expected."));
         assertTrue(e.getMessage().contains("Expected <MyEvent{someValue=null"));

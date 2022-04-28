@@ -163,8 +163,10 @@ public abstract class Matchers {
      * @param expected The event with the expected field values
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
-     * @deprecated Please use the {@link #deepEquals(Object)} instead.
+     * @deprecated Please use the {@link #deepEquals(Object)} instead. Using this method will lead to unwanted
+     * exceptions when ran on JDK 17 and up, due to adjustments in reflective access.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed") // Used in tests
     @Deprecated
     public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
         return new EqualFieldsMatcher<>(expected);
@@ -179,8 +181,10 @@ public abstract class Matchers {
      * @param filter   The filter describing the Fields to include in the comparison
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
-     * @deprecated Please use the {@link #deepEquals(Object, FieldFilter)} instead.
+     * @deprecated Please use the {@link #deepEquals(Object, FieldFilter)} instead. Using this method will lead to
+     * unwanted exceptions when ran on JDK 17 and up, due to adjustments in reflective access.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed") // Used in tests
     @Deprecated
     public static <T> EqualFieldsMatcher<T> equalTo(T expected, FieldFilter filter) {
         return new EqualFieldsMatcher<>(expected, filter);
