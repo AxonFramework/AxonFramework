@@ -1,4 +1,4 @@
-name: Add Dependabot PR's to project
+name: Axon Framework
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   add-to-project:
-    name: Add dependabot pr to project
+    name: Add Dependency Upgrade PR to project
     runs-on: ubuntu-latest
     steps:
       - uses: actions/add-to-project@main
