@@ -49,7 +49,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
     private Field failedField;
     private Object failedFieldExpected;
     private Object failedFieldActual;
-    private boolean fieldMatchingFailed;
+    private boolean failedForAccessibilityException;
 
 
     /**
@@ -78,7 +78,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
             noneMatchingTypes = true;
             return false;
         }
-        if (expected.equals(actual)) {
+        if (Objects.equals(expected, actual)) {
             return true;
         }
         if (hasEqualsMethod(actual.getClass())) {
@@ -108,10 +108,12 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
                         return false;
                     }
                 } catch (Exception e) {
-                    logger.warn("Could not confirm object field equality due to an exception. "
-                                        + "Assuming objects are not equal.", e);
-                    fieldMatchingFailed = true;
-                    return false;
+                    if (e.getClass().getSimpleName().equals("InaccessibleObjectException")) {
+                        logger.warn("Could not confirm object field equality due to InaccessibleObjectException.");
+                        failedForAccessibilityException = true;
+                        return false;
+                    }
+                    throw new MatcherExecutionException("Could not confirm object equality due to an exception.", e);
                 }
             }
         }
@@ -137,8 +139,8 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
                        .appendText("], but actual field value was [")
                        .appendValue(failedFieldActual)
                        .appendText("].");
-        } else if (fieldMatchingFailed) {
-            description.appendText(" failed during field equality.");
+        } else if (failedForAccessibilityException) {
+            description.appendText(" failed during field equality with InaccessibleObjectException.");
         }
     }
 }
