@@ -19,8 +19,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.core.IsNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -28,9 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
@@ -337,17 +334,18 @@ class FixtureTest_RegularParams {
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
 
-        AxonAssertionError e = assertThrows(AxonAssertionError.class, () ->
-                fixture
-                        .registerAnnotatedCommandHandler(commandHandler)
-                        .given(givenEvents)
-                        .when(new TestCommand("aggregateId"))
-                        .expectEvents(new MyEvent("aggregateId", 5)) // should be 4
-                        .expectSuccessfulHandlerExecution()
+        AxonAssertionError e = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.registerAnnotatedCommandHandler(commandHandler)
+                             .given(givenEvents)
+                             .when(new TestCommand("aggregateId"))
+                             .expectEvents(new MyEvent("aggregateId", 5)) // should be 4
+                             .expectSuccessfulHandlerExecution()
         );
         assertTrue(e.getMessage().contains(
-                "In a message of type [MyEvent], the property [someValue] was not as expected."));
-        assertTrue(e.getMessage().contains("Expected <5> but got <4>"));
+                "The message of type [MyEvent] was not as expected."));
+        assertTrue(e.getMessage().contains("Expected <MyEvent{someValue=5"));
+        assertTrue(e.getMessage().contains("but got <MyEvent{someValue=4"));
     }
 
     @Test
@@ -357,17 +355,17 @@ class FixtureTest_RegularParams {
                                             new MyEvent("aggregateId", 3));
         MyCommandHandler commandHandler = new MyCommandHandler(fixture.getRepository(),
                                                                fixture.getEventBus());
-        AxonAssertionError e = assertThrows(AxonAssertionError.class, () ->
-                fixture
-                        .registerAnnotatedCommandHandler(commandHandler)
-                        .given(givenEvents)
-                        .when(new TestCommand("aggregateId"))
-                        .expectEvents(new MyEvent("aggregateId", null)) // should be 4
-                        .expectSuccessfulHandlerExecution()
+        AxonAssertionError e = assertThrows(
+                AxonAssertionError.class,
+                () -> fixture.registerAnnotatedCommandHandler(commandHandler)
+                             .given(givenEvents)
+                             .when(new TestCommand("aggregateId"))
+                             .expectEvents(new MyEvent("aggregateId", null)) // should be 4
+                             .expectSuccessfulHandlerExecution()
         );
-        assertTrue(e.getMessage().contains(
-                "In a message of type [MyEvent], the property [someValue] was not as expected."));
-        assertTrue(e.getMessage().contains("Expected <<null>> but got <4>"));
+        assertTrue(e.getMessage().contains("The message of type [MyEvent] was not as expected."));
+        assertTrue(e.getMessage().contains("Expected <MyEvent{someValue=null"));
+        assertTrue(e.getMessage().contains("but got <MyEvent{someValue=4"));
     }
 
     @Test

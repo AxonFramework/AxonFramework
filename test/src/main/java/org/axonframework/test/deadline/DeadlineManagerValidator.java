@@ -183,7 +183,7 @@ public class DeadlineManagerValidator {
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
         List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object deadline : expected) {
-            matchers.add(equalTo(deadline, fieldFilter));
+            matchers.add(deepEquals(deadline, fieldFilter));
         }
         return matchers.toArray(new Matcher[0]);
     }

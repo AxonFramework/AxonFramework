@@ -108,7 +108,7 @@ public class EventValidator implements EventMessageHandler {
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
         List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object event : expected) {
-            matchers.add(equalTo(unwrapEvent(event), fieldFilter));
+            matchers.add(deepEquals(unwrapEvent(event), fieldFilter));
         }
         return matchers.toArray(new Matcher[0]);
     }

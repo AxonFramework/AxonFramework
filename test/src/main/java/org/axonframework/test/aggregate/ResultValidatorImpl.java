@@ -27,10 +27,8 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
-import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
-import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
@@ -47,7 +45,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -154,7 +151,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline) {
-        return expectScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
+        return expectScheduledDeadlineMatching(duration, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override
@@ -181,7 +178,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline) {
         return expectScheduledDeadlineMatching(
                 scheduledTime,
-                messageWithPayload(equalTo(deadline, fieldFilter))
+                messageWithPayload(deepEquals(deadline, fieldFilter))
         );
     }
 
@@ -220,7 +217,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
         return expectNoScheduledDeadlineMatching(
-                durationToScheduledTime, messageWithPayload(equalTo(deadline, fieldFilter))
+                durationToScheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter))
         );
     }
 
@@ -250,7 +247,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
         return expectNoScheduledDeadlineMatching(
                 scheduledTime,
-                messageWithPayload(equalTo(deadline, fieldFilter))
+                messageWithPayload(deepEquals(deadline, fieldFilter))
         );
     }
 
@@ -443,18 +440,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = Matchers.equalTo(expectedPayload, fieldFilter);
+        Matcher<Object> matcher = deepEquals(expectedPayload, fieldFilter);
         if (!matcher.matches(actualPayload)) {
-            if (matcher.isFailedPrimitive()) {
-                reporter.reportDifferentPrimitivePayloads(expectedPayload.getClass(),
-                                                          matcher.getFailedFieldActualValue(),
-                                                          matcher.getFailedFieldExpectedValue());
-            } else {
-                reporter.reportDifferentPayloads(expectedPayload.getClass(),
-                                                 matcher.getFailedField(),
-                                                 matcher.getFailedFieldActualValue(),
-                                                 matcher.getFailedFieldExpectedValue());
-            }
+            reporter.reportDifferentPayloads(expectedPayload.getClass(), actualPayload, expectedPayload);
         }
         return true;
     }
