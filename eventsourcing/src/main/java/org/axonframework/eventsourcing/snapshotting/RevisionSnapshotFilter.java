@@ -5,6 +5,7 @@ import org.axonframework.eventhandling.DomainEventData;
 
 import java.util.Objects;
 
+import static org.axonframework.common.BuilderUtils.assertNonBlank;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
@@ -24,7 +25,8 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
     /**
      * Instantiate a Builder to be able to create a {@link RevisionSnapshotFilter}.
      * <p>
-     * The {@code type} and {@code revision} are <b>hard requirements</b> and as such should be provided.
+     * The {@code type} is <b>hard requirements</b> and as such should be provided.
+     * The {@code revision} should not be an empty String
      *
      * @return a Builder to be able to create a {@link RevisionSnapshotFilter}
      */
@@ -35,7 +37,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
     /**
      * Instantiate a {@link RevisionSnapshotFilter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@code type} and {@code revision} are not {@code null} and will throw an {@link
+     * Will assert that the {@code type} is not {@code null} or an empty String and the {@code revision} is not an empty String and will throw an {@link
      * AxonConfigurationException} if this is the case.
      *
      * @param builder the {@link Builder} used to instantiate a {@link RevisionSnapshotFilter} instance
@@ -113,7 +115,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder revision(String revision) {
-            assertNonEmpty(revision, "The revision may not be null or empty");
+            assertNonBlank(revision, "The revision may not be an empty String");
             this.revision = revision;
             return this;
         }
@@ -135,7 +137,7 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
          */
         protected void validate() {
             assertNonEmpty(type, "The type is a hard requirement and should be provided");
-            assertNonEmpty(revision, "The revision is a hard requirement and should be provided");
+            assertNonBlank(revision, "The revision should not be an empty String");
         }
     }
 }

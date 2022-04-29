@@ -104,7 +104,6 @@ class RevisionSnapshotFilterTest {
         RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(""));
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(null));
     }
 
     @Test
@@ -116,12 +115,11 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testBuildWithoutRevisionThrowsAxonConfigurationException() {
-        RevisionSnapshotFilter.Builder builderTestSubject =
-                RevisionSnapshotFilter.builder()
-                                      .type(RightAggregateTypeAndRevision.class);
-
-        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    void testBuildWithBlankRevisionThrowsAxonConfigurationException() {
+        assertThrows(AxonConfigurationException.class, () -> RevisionSnapshotFilter.builder()
+                                                                                   .type(RightAggregateTypeAndRevision.class)
+                                                                                   .revision("")
+                                                                                   .build());
     }
 
     @Revision(EXPECTED_REVISION)
