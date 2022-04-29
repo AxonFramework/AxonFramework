@@ -87,7 +87,7 @@ public class AggregateConfigurerTest {
                                                                    new AnnotatedMessageHandlingMemberDefinition()));
 
         revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
-        when(revisionResolver.revisionOf(RevisionTestAggregate.class)).thenReturn("1.0");
+        when(revisionResolver.revisionOf(TestAggregateWithRevision.class)).thenReturn("1.0");
 
         testSubject = new AggregateConfigurer<>(TestAggregate.class);
     }
@@ -216,13 +216,13 @@ public class AggregateConfigurerTest {
     }
     @Test
     void testNullRevisionEventAndNullRevisionAggregateAllowed(){
-        DomainEventMessage<RevisionTestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                RevisionTestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new RevisionTestAggregate()
+        DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
+                TestAggregateWithRevision.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
         );
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
 
-        AggregateConfigurer<RevisionTestAggregate> revisionAggregateConfigurerTestSubject =
-                new AggregateConfigurer<>(RevisionTestAggregate.class);
+        AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
+                new AggregateConfigurer<>(TestAggregateWithRevision.class);
 
         revisionAggregateConfigurerTestSubject.initialize(mockConfiguration);
 
@@ -234,8 +234,8 @@ public class AggregateConfigurerTest {
 
     @Test
     void testNonNullEventRevisionAndNullAggregateRevisionNotAllowed(){
-        DomainEventMessage<RevisionTestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
-                RevisionTestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new RevisionTestAggregate()
+        DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
+                TestAggregateWithRevision.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
         );
         Serializer serializer = XStreamSerializer.builder()
                                                  .xStream(new XStream(new CompactDriver()))
@@ -244,8 +244,8 @@ public class AggregateConfigurerTest {
 
         DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
 
-        AggregateConfigurer<RevisionTestAggregate> revisionAggregateConfigurerTestSubject =
-                new AggregateConfigurer<>(RevisionTestAggregate.class);
+        AggregateConfigurer<TestAggregateWithRevision> revisionAggregateConfigurerTestSubject =
+                new AggregateConfigurer<>(TestAggregateWithRevision.class);
 
         revisionAggregateConfigurerTestSubject.initialize(mockConfiguration);
 
