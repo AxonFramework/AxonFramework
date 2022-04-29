@@ -206,6 +206,10 @@ class AxonAutoConfigurationTest {
 
             private final List<String> invocations = new ArrayList<>();
 
+            public SomeComponent(org.axonframework.config.Configuration axonConfig) {
+                // just to see if wiring the configuration causes circular dependencies.
+            }
+
             @EventHandler
             public void handle(String event, SomeOtherComponent test, Integer testing) {
                 invocations.add(event);

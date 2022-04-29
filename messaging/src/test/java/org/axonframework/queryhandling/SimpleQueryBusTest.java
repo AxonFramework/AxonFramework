@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,8 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
+import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -144,6 +146,22 @@ class SimpleQueryBusTest {
         assertTrue(subscription.cancel());
         assertTrue(testSubject.query(testQueryMessage).isDone());
         assertTrue(testSubject.query(testQueryMessage).isCompletedExceptionally());
+    }
+
+    @Test
+    void testSubscribingSameQueryTwiceWithThrowingDuplicateResolver() throws Exception {
+        // Modify query bus with failing duplicate resolver
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .errorHandler(errorHandler)
+                                    .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
+                                    .build();
+        MessageHandler<QueryMessage<?, String>> handlerOne = message -> "reply";
+        MessageHandler<QueryMessage<?, String>> handlerTwo = message -> "reply";
+        testSubject.subscribe("test", String.class, handlerOne);
+        assertThrows(DuplicateQueryHandlerSubscriptionException.class, () -> {
+            testSubject.subscribe("test", String.class, handlerTwo);
+        });
     }
 
     /*

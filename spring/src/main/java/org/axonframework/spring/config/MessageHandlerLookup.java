@@ -51,7 +51,8 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
 
     /**
      * Returns a list of beans found in the given {@code register} that contain a handler for the given {@code
-     * messageType}.
+     * messageType}. The search will not consider prototype beans (or any other non-singleton or abstract bean
+     * definitions).
      *
      * @param messageType The type of message to find handlers for.
      * @param registry    The registry to find these handlers in.
@@ -59,10 +60,25 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      */
     public static List<String> messageHandlerBeans(Class<? extends Message<?>> messageType,
                                                    ConfigurableListableBeanFactory registry) {
+        return messageHandlerBeans(messageType, registry, false);
+    }
+
+    /**
+     * Returns a list of beans found in the given {@code register} that contain a handler for the given {@code
+     * messageType}. The search will only consider prototype beans (or any other non-singleton or abstract bean
+     * definitions) when {@code includePrototypeBeans} is {@code true}.
+     *
+     * @param messageType The type of message to find handlers for.
+     * @param registry    The registry to find these handlers in.
+     * @return A list of bean names with message handlers.
+     */
+    public static List<String> messageHandlerBeans(Class<? extends Message<?>> messageType,
+                                                   ConfigurableListableBeanFactory registry,
+                                                   boolean includePrototypeBeans) {
         List<String> found = new ArrayList<>();
         for (String beanName : registry.getBeanDefinitionNames()) {
             BeanDefinition bd = registry.getBeanDefinition(beanName);
-            if (bd.isSingleton() && !bd.isAbstract()) {
+            if (includePrototypeBeans || (bd.isSingleton() && !bd.isAbstract())) {
                 Class<?> beanType = registry.getType(beanName);
                 if (beanType != null && hasMessageHandler(messageType, beanType)) {
                     found.add(beanName);
@@ -104,8 +120,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
                                              .addConstructorArgValue(found)
                                              .getBeanDefinition();
 
-                ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(configurerBeanName,
-                                                                           beanDefinition);
+                ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(configurerBeanName, beanDefinition);
             }
         }
     }

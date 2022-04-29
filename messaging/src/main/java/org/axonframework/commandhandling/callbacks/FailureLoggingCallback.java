@@ -36,12 +36,27 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
     private final CommandCallback<C, R> delegate;
     private final Logger logger;
 
+
+    /**
+     * Initialize the callback to log failures on the given {@code logger} (on warn level).
+     *
+     * @param logger   The logger to log exceptions on
+     */
+    public FailureLoggingCallback(Logger logger) {
+        this.logger = logger;
+        this.delegate = null;
+    }
+
     /**
      * Initialize the callback to delegate calls to the given {@code delegate}, logging failures on a logger
      * for this class (on warn level).
      *
+     * @deprecated Please use {@link CommandCallback#wrap(CommandCallback)} to wrap a command with a delegate and use
+     * the {@link FailureLoggingCallback#FailureLoggingCallback} to create this callback
+     *
      * @param delegate The command callback to forward invocations to
      */
+    @Deprecated
     public FailureLoggingCallback(CommandCallback<C, R> delegate) {
         this(LoggerFactory.getLogger(FailureLoggingCallback.class), delegate);
     }
@@ -50,9 +65,13 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
      * Initialize the callback to delegate calls to the given {@code delegate}, logging failures on the given {@code
      * logger} (on warn level).
      *
+     * @deprecated Please use {@link CommandCallback#wrap(CommandCallback)} to wrap a command with a delegate and use
+     * the {@link FailureLoggingCallback#FailureLoggingCallback(Logger)} to specify you custom logger.
+     *
      * @param logger   The logger to log exceptions on
      * @param delegate The command callback to forward invocations to
      */
+    @Deprecated
     public FailureLoggingCallback(@Nonnull Logger logger, @Nonnull CommandCallback<C, R> delegate) {
         this.logger = logger;
         this.delegate = delegate;
@@ -67,6 +86,8 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
                                                            commandMessage.getCommandName(),
                                                            cause.getClass().getName(),
                                                            cause.getMessage()));
-        delegate.onResult(commandMessage, commandResultMessage);
+        if (delegate != null) {
+            delegate.onResult(commandMessage, commandResultMessage);
+        }
     }
 }
