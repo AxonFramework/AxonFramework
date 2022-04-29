@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -585,33 +584,57 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                        eventSourcedAggregate.rootType().getName()));
         }
         ensureValuesEqual(workingAggregate.invoke(Function.identity()),
-                          eventSourcedAggregate.invoke(Function.identity()), eventSourcedAggregate.rootType().getName(),
-                          comparedEntries, fieldFilter);
+                          eventSourcedAggregate.invoke(Function.identity()),
+                          eventSourcedAggregate.rootType().getName(),
+                          comparedEntries,
+                          fieldFilter);
     }
 
-    private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath,
-                                   Set<ComparationEntry> comparedEntries, FieldFilter fieldFilter) {
-        if (explicitlyUnequal(workingValue, eventSourcedValue)) {
-            throw new AxonAssertionError(format("Illegal state change detected! " +
-                                                        "Property \"%s\" has different value when sourcing events.\n" +
-                                                        "Working aggregate value:     <%s>\n" +
-                                                        "Value after applying events: <%s>", propertyPath, workingValue,
-                                                eventSourcedValue));
-        } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue)) &&
-                !hasEqualsMethod(workingValue.getClass())) {
-            for (Field field : fieldsOf(workingValue.getClass())) {
-                if (fieldFilter.accept(field) && !Modifier.isStatic(field.getModifiers()) &&
-                        !Modifier.isTransient(field.getModifiers())) {
-                    ensureAccessible(field);
-                    String newPropertyPath = propertyPath + "." + field.getName();
+    private void ensureValuesEqual(Object workingValue,
+                                   Object eventSourcedValue,
+                                   String propertyPath,
+                                   Set<ComparationEntry> comparedEntries,
+                                   FieldFilter fieldFilter) {
+        if (Objects.equals(workingValue, eventSourcedValue)) {
+            // they're equal, nothing more to check...
+            return;
+        }
 
-                    Object workingFieldValue = ReflectionUtils.getFieldValue(field, workingValue);
-                    Object eventSourcedFieldValue = ReflectionUtils.getFieldValue(field, eventSourcedValue);
-                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries,
-                                      fieldFilter);
+        if ((workingValue == null || hasEqualsMethod(workingValue.getClass()))
+                || (eventSourcedValue == null || hasEqualsMethod(eventSourcedValue.getClass()))) {
+            failIllegalStateChange(workingValue, eventSourcedValue, propertyPath);
+        } else if (comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
+                && !hasEqualsMethod(workingValue.getClass())) {
+            try {
+                for (Field field : fieldsOf(workingValue.getClass())) {
+                    if (fieldFilter.accept(field)
+                            && !Modifier.isStatic(field.getModifiers())
+                            && !Modifier.isTransient(field.getModifiers())) {
+                        ensureAccessible(field);
+                        String newPropertyPath = propertyPath + "." + field.getName();
+
+                        Object workingFieldValue = getFieldValue(field, workingValue);
+                        Object eventSourcedFieldValue = getFieldValue(field, eventSourcedValue);
+                        ensureValuesEqual(workingFieldValue,
+                                          eventSourcedFieldValue,
+                                          newPropertyPath,
+                                          comparedEntries,
+                                          fieldFilter);
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("Exception while attempting to verify deep equality.", e);
+                failIllegalStateChange(workingValue, eventSourcedValue, propertyPath);
             }
         }
+    }
+
+    private void failIllegalStateChange(Object workingValue, Object eventSourcedValue, String propertyPath) {
+        throw new AxonAssertionError(format("Illegal state change detected! " +
+                                                    "Property \"%s\" has different value when sourcing events.\n" +
+                                                    "Working aggregate value:     <%s>\n" +
+                                                    "Value after applying events: <%s>", propertyPath, workingValue,
+                                            eventSourcedValue));
     }
 
     private void clearGivenWhenState() {

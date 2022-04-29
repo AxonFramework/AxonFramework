@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -150,11 +151,12 @@ public abstract class ReflectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static boolean explicitlyUnequal(Object value, Object otherValue) {
-        if (value == otherValue) { // NOSONAR (The == comparison is intended here)
+        if (Objects.equals(value, otherValue)) {
             return false;
         } else if (value == null || otherValue == null) {
             return true;
         } else if (value instanceof Comparable) {
+            //noinspection rawtypes
             return ((Comparable) value).compareTo(otherValue) != 0;
         } else if (hasEqualsMethod(value.getClass())) {
             return !value.equals(otherValue);
