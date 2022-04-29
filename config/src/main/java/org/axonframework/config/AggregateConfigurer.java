@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -192,22 +191,19 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
-            Optional<String> revisionValue =
-                    AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision");
-            if (revisionValue.isPresent()) {
-                String declaredAggregateType =
-                        metaModel.get()
-                                 .declaredType(aggregate)
-                                 .orElseThrow(() -> new AxonConfigurationException(
-                                         "No declared type found for Aggregate [" + aggregate + "]"
-                                 ));
-                return RevisionSnapshotFilter.builder()
-                                             .type(declaredAggregateType)
-                                             .revision(revisionValue.get())
-                                             .build();
-            } else {
-                return SnapshotFilter.allowAll();
-            }
+            final String revisionValue =
+                    (String) AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision")
+                                            .orElse(null);
+            final String declaredAggregateType =
+                    metaModel.get()
+                             .declaredType(aggregate)
+                             .orElseThrow(() -> new AxonConfigurationException(
+                                     "No declared type found for Aggregate [" + aggregate + "]"
+                             ));
+            return RevisionSnapshotFilter.builder()
+                                         .type(declaredAggregateType)
+                                         .revision(revisionValue)
+                                         .build();
         });
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));

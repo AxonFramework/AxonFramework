@@ -27,4 +27,17 @@ public abstract class StringUtils {
     public static boolean nonEmptyOrNull(String s) {
         return Objects.nonNull(s) && !EMPTY_STRING.equals(s);
     }
+
+    /**
+     * Validate whether the given {@link String} {@code s} not empty (where empty is defined as
+     * {@code ""}.
+     *
+     * @param s the {@link String} to validate whether not empty
+     * @return {@code true} if the given {@link String} {@code s} is not empty, {@code false}
+     * otherwise
+     */
+    public static boolean nonEmpty(String s) {
+        return !EMPTY_STRING.equals(s);
+    }
 }
+
