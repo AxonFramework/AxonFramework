@@ -113,7 +113,6 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder revision(String revision) {
-            assertNonEmpty(revision, "The revision may not be null or empty");
             this.revision = revision;
             return this;
         }
@@ -135,7 +134,6 @@ public class RevisionSnapshotFilter implements SnapshotFilter {
          */
         protected void validate() {
             assertNonEmpty(type, "The type is a hard requirement and should be provided");
-            assertNonEmpty(revision, "The revision is a hard requirement and should be provided");
         }
     }
 }

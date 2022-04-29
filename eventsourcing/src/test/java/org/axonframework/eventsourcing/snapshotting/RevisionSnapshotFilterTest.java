@@ -98,28 +98,11 @@ class RevisionSnapshotFilterTest {
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.type(""));
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.type((String) null));
     }
-
-    @Test
-    void testBuildWithNullOrEmptyRevisionThrowsAxonConfigurationException() {
-        RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(""));
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(null));
-    }
-
+    
     @Test
     void testBuildWithoutTypeThrowsAxonConfigurationException() {
         RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder()
                                                                                   .revision(EXPECTED_REVISION);
-
-        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
-    }
-
-    @Test
-    void testBuildWithoutRevisionThrowsAxonConfigurationException() {
-        RevisionSnapshotFilter.Builder builderTestSubject =
-                RevisionSnapshotFilter.builder()
-                                      .type(RightAggregateTypeAndRevision.class);
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }

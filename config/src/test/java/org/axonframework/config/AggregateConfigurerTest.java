@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -41,8 +42,14 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.Revision;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.CompactDriver;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Optional;
 
@@ -62,7 +69,7 @@ public class AggregateConfigurerTest {
 
     private EventStore testEventStore;
     private ParameterResolverFactory testParameterResolverFactory;
-
+    private RevisionResolver revisionResolver;
     private AggregateConfigurer<TestAggregate> testSubject;
 
     @BeforeEach
@@ -78,6 +85,9 @@ public class AggregateConfigurerTest {
         when(mockConfiguration.getComponent(eq(AggregateMetaModelFactory.class), any()))
                 .thenReturn(new AnnotatedAggregateMetaModelFactory(testParameterResolverFactory,
                                                                    new AnnotatedMessageHandlingMemberDefinition()));
+
+        revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
+        when(revisionResolver.revisionOf(RevisionTestAggregate.class)).thenReturn("1.0");
 
         testSubject = new AggregateConfigurer<>(TestAggregate.class);
     }
@@ -171,11 +181,6 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testSnapshotFilterDefaultsToAllowAll() {
-        assertEquals(SnapshotFilter.allowAll(), testSubject.snapshotFilter());
-    }
-
-    @Test
     void testAggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
         DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
@@ -209,6 +214,50 @@ public class AggregateConfigurerTest {
 
         assertThrows(AxonConfigurationException.class, undefinedDeclaredAggregateTypeTestSubject::snapshotFilter);
     }
+    @Test
+    void testNullRevisionEventAndNullRevisionAggregateAllowed(){
+        DomainEventMessage<RevisionTestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
+                RevisionTestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new RevisionTestAggregate()
+        );
+        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, xStreamSerializer());
+
+        AggregateConfigurer<RevisionTestAggregate> revisionAggregateConfigurerTestSubject =
+                new AggregateConfigurer<>(RevisionTestAggregate.class);
+
+        revisionAggregateConfigurerTestSubject.initialize(mockConfiguration);
+
+        SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
+
+        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertTrue(result.allow(testDomainEventData));
+    }
+
+    @Test
+    void testNonNullEventRevisionAndNullAggregateRevisionNotAllowed(){
+        DomainEventMessage<RevisionTestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
+                RevisionTestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new RevisionTestAggregate()
+        );
+        Serializer serializer = XStreamSerializer.builder()
+                                                 .xStream(new XStream(new CompactDriver()))
+                                                 .revisionResolver(revisionResolver)
+                                                 .build();
+
+        DomainEventData<byte[]> testDomainEventData = new SnapshotEventEntry(snapshotEvent, serializer);
+
+        AggregateConfigurer<RevisionTestAggregate> revisionAggregateConfigurerTestSubject =
+                new AggregateConfigurer<>(RevisionTestAggregate.class);
+
+        revisionAggregateConfigurerTestSubject.initialize(mockConfiguration);
+
+        SnapshotFilter result = revisionAggregateConfigurerTestSubject.snapshotFilter();
+
+        assertTrue(result instanceof RevisionSnapshotFilter);
+        assertFalse(result.allow(testDomainEventData));
+    }
+
+
+
+
 
     private static class TestAggregate {
 
