@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import reactor.core.publisher.Flux;
+import org.reactivestreams.Publisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,8 +75,8 @@ public abstract class ResponseTypes {
      * @param <R>  the generic type of the instantiated {@link ResponseType}
      * @return a {@link ResponseType} specifying the desire to retrieve a flux of instances of type {@code R}
      */
-    public static <R> ResponseType<Flux<R>> fluxOf(Class<R> type) {
-        return new FluxResponseType<>(type);
+    public static <R> ResponseType<Publisher<R>> fluxOf(Class<R> type) {
+        return new PublisherResponseType<>(type);
     }
 
     private ResponseTypes() {

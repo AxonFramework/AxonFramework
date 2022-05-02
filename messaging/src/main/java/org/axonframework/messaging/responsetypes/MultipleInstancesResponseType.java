@@ -138,7 +138,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||
                 isArrayOfExpectedType(unwrapped) ||
-                isFluxOfExpectedType(unwrapped);
+                isPublisherOfExpectedType(unwrapped);
     }
 
     /**
