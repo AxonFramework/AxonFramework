@@ -69,13 +69,14 @@ public abstract class ResponseTypes {
     }
 
     /**
-     * Specify the desire to retrieve a Flux (reactive stream) of instances of type {@code R} when performing a query.
+     * Specify the desire to retrieve a Publisher (reactive stream) of instances of type {@code R} when performing a
+     * query.
      *
      * @param type the {@code R} which is expected to be the response type
      * @param <R>  the generic type of the instantiated {@link ResponseType}
-     * @return a {@link ResponseType} specifying the desire to retrieve a flux of instances of type {@code R}
+     * @return a {@link ResponseType} specifying the desire to retrieve a publisher of instances of type {@code R}
      */
-    public static <R> ResponseType<Publisher<R>> fluxOf(Class<R> type) {
+    public static <R> ResponseType<Publisher<R>> publisherOf(Class<R> type) {
         return new PublisherResponseType<>(type);
     }
 
