@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -78,7 +77,7 @@ class AggregateAnnotationCommandHandlerTest {
     private SimpleCommandBus commandBus;
     private Repository<StubCommandAnnotatedAggregate> mockRepository;
     private AggregateModel<StubCommandAnnotatedAggregate> aggregateModel;
-    private Function<Object, StubCommandAnnotatedAggregate> functionFactoryMock;
+    private CreationPolicyAggregateFactory<StubCommandAnnotatedAggregate> functionFactory;
     private ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> newInstanceCallableFactoryCaptor;
 
     @BeforeEach
@@ -99,14 +98,14 @@ class AggregateAnnotationCommandHandlerTest {
                 new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
-        functionFactoryMock = mock(Function.class);
-        when(functionFactoryMock.apply(any())).thenReturn(new StubCommandAnnotatedAggregate("id"));
+        functionFactory = mock(CreationPolicyAggregateFactory.class);
+        when(functionFactory.createAggregateRoot(any())).thenReturn(new StubCommandAnnotatedAggregate("id"));
 
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
                                                        .parameterResolverFactory(parameterResolverFactory)
                                                        .repository(mockRepository)
-                                                       .aggregateFactory(functionFactoryMock)
+                                                       .aggregateFactory(functionFactory)
                                                        .build();
         testSubject.subscribe(commandBus);
     }
@@ -200,9 +199,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create always works fine", responseCaptor.getValue().getPayload());
-        verify(functionFactoryMock).apply(eq("id"));
+        verify(functionFactory).createAggregateRoot(eq("id"));
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(functionFactoryMock, VerificationModeFactory.times(2)).apply(eq("id"));
+        verify(functionFactory, VerificationModeFactory.times(2)).createAggregateRoot(eq("id"));
     }
 
     @Test
@@ -224,9 +223,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
-        verifyNoInteractions(functionFactoryMock);
+        verifyNoInteractions(functionFactory);
         factoryCaptor.getValue().call();
-        verify(functionFactoryMock).apply(eq("id"));
+        verify(functionFactory).createAggregateRoot(eq("id"));
     }
 
     @Test

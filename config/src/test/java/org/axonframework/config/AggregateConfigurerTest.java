@@ -39,6 +39,7 @@ import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
@@ -169,10 +170,10 @@ public class AggregateConfigurerTest {
 
     @Test
     void testCommandHandlingAggregateFactoryConfiguration() {
-        Function<Object, TestAggregate> aggregateFactoryFunction = id -> new TestAggregate();
-        testSubject.configureCommandHandlerAggregateFactory(configuration -> aggregateFactoryFunction);
+        CreationPolicyAggregateFactory<TestAggregate> aggregateFactoryFunction = id -> new TestAggregate();
+        testSubject.configureCreationPolicyAggregateFactory(configuration -> aggregateFactoryFunction);
 
-        assertEquals(aggregateFactoryFunction, testSubject.commandHandlerAggregateFactory());
+        assertEquals(aggregateFactoryFunction, testSubject.creationPolicyAggregateFactory());
     }
 
     @Test

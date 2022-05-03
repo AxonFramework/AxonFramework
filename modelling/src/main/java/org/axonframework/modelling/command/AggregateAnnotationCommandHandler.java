@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -63,7 +62,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private final CommandTargetResolver commandTargetResolver;
     private final List<MessageHandler<CommandMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
-    private final Function<Object, T> aggregateFactory;
+    private final CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -101,12 +100,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
-        this.aggregateFactory = initializeAggregateFactory(aggregateModel, builder.aggregateFactory);
+        this.creationPolicyAggregateFactory = initializeAggregateFactory(aggregateModel, builder.creationPolicyAggregateFactory);
         this.handlers = initializeHandlers(aggregateModel);
     }
 
-    private Function<Object, T> initializeAggregateFactory(AggregateModel<T> aggregateModel,
-                                                           Function<Object, T> configuredAggregateFactory) {
+    private CreationPolicyAggregateFactory<T> initializeAggregateFactory(AggregateModel<T> aggregateModel,
+                                                           CreationPolicyAggregateFactory<T> configuredAggregateFactory) {
         if (configuredAggregateFactory != null) {
             return configuredAggregateFactory;
         }
@@ -164,12 +163,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                 switch (policy.orElse(NEVER)) {
                     case ALWAYS:
                         handlersFound.add(new AlwaysCreateAggregateCommandHandler(
-                                handler, aggregateFactory
+                                handler, creationPolicyAggregateFactory
                         ));
                         break;
                     case CREATE_IF_MISSING:
                         handlersFound.add(new AggregateCreateOrUpdateCommandHandler(
-                                handler, aggregateFactory
+                                handler, creationPolicyAggregateFactory
                         ));
                         break;
                     case NEVER:
@@ -236,7 +235,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
-        private Function<Object, T> aggregateFactory;
+        private CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
@@ -324,15 +323,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
 
         /**
-         * Sets the Aggregate Factory function for generic type {@code T}. The aggregate factory function must produce a
-         * new instance of the Aggregate based on the supplied Identifier.
+         * Sets the {@link CreationPolicyAggregateFactory<T>} for generic type {@code T}. The aggregate factory must produce a
+         * new instance of the Aggregate root based on the supplied Identifier.
          *
-         * @param aggregateFactory the function that returns the aggregate instance based on the identifier
+         * @param creationPolicyAggregateFactory that returns the aggregate instance based on the identifier
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> aggregateFactory(Function<Object, T> aggregateFactory) {
-            assertNonNull(aggregateFactory, "AggregateFactory may not be null");
-            this.aggregateFactory = aggregateFactory;
+        public Builder<T> aggregateFactory(CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory) {
+            assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
+            this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
             return this;
         }
 
@@ -418,10 +417,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private class AlwaysCreateAggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
-        private final Function<Object, T> factoryMethod;
+        private final CreationPolicyAggregateFactory<T> factoryMethod;
 
         private AlwaysCreateAggregateCommandHandler(MessageHandlingMember<? super T> handler,
-                                                    Function<Object, T> factoryMethod) {
+                                                    CreationPolicyAggregateFactory<T> factoryMethod) {
             this.handler = handler;
             this.factoryMethod = factoryMethod;
         }
@@ -430,7 +429,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
             Object commandMessageAggregateId = commandMessageVersionedId.getIdentifierValue();
-            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.apply(commandMessageAggregateId));
+            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.createAggregateRoot(commandMessageAggregateId));
             Object response = aggregate.handle(command);
             return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response;
         }
@@ -451,10 +450,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private class AggregateCreateOrUpdateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
-        private final Function<Object, T> factoryMethod;
+        private final CreationPolicyAggregateFactory<T> factoryMethod;
 
         public AggregateCreateOrUpdateCommandHandler(MessageHandlingMember<? super T> handler,
-                                                     Function<Object, T> factoryMethod) {
+                                                     CreationPolicyAggregateFactory<T> factoryMethod) {
             this.handler = handler;
             this.factoryMethod = factoryMethod;
         }
@@ -466,7 +465,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             String commandMessageStringAggregateId = commandMessageVersionedId.getIdentifier();
 
             Aggregate<T> instance = repository.loadOrCreate(commandMessageStringAggregateId,
-                                                            () -> factoryMethod.apply(commandMessageAggregateId));
+                                                            () -> factoryMethod.createAggregateRoot(commandMessageAggregateId));
             Object commandResult = instance.handle(command);
             Object aggregateId = instance.identifier();
 

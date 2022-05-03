@@ -18,9 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
-
-import java.util.function.Function;
 
 /**
  * Specialization of the Module Configuration for modules that define an Aggregate Configuration. This interface allows
@@ -61,9 +60,9 @@ public interface AggregateConfiguration<A> extends ModuleConfiguration {
     SnapshotFilter snapshotFilter();
 
     /**
-     * Returns the CommandHandlerAggregateFactory {@link Function} defined in this configuration.
+     * Returns the {@link CreationPolicyAggregateFactory} defined in this configuration.
      *
-     * @return the CommandHandlerAggregateFactory {@link Function} defined in this configuration.
+     * @return the {@link CreationPolicyAggregateFactory} defined in this configuration.
      */
-    Function<Object, A> commandHandlerAggregateFactory();
+    CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory();
 }

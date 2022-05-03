@@ -41,6 +41,7 @@ import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
@@ -77,7 +78,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Repository<A>> repository;
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
-    private final Component<Function<Object, A>> commandHandlerAggregateFactory;
+    private final Component<CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactory;
     private final Component<LockFactory> lockFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<SnapshotFilter> snapshotFilter;
@@ -250,11 +251,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     }
                     return builder.build();
                 });
-        commandHandlerAggregateFactory = new Component<Function<Object, A>>(
-                () -> parent, name("commandHandlerAggregateFactory"),
-                c -> c.<Function>getComponent(Function.class, () -> id -> {
+        creationPolicyAggregateFactory = new Component<CreationPolicyAggregateFactory<A>>(
+                () -> parent, name("creationPolicyAggregateFactory"),
+                c -> c.getComponent(CreationPolicyAggregateFactory.class, () -> id -> {
                     try {
-                        return aggregateType().newInstance();
+                        return aggregateType().getDeclaredConstructor().newInstance();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -264,7 +265,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                .repository(repository.get())
                                                                                .commandTargetResolver(commandTargetResolver.get())
                                                                                .aggregateModel(metaModel.get())
-                                                                               .aggregateFactory(commandHandlerAggregateFactory.get())
+                                                                               .aggregateFactory(creationPolicyAggregateFactory.get())
                                                                                .build());
     }
 
@@ -314,15 +315,15 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the factory to use to create new Aggregates instances of the type under configuration when initializing
-     * those instances from non constructor Command handlers
+     * Defines the factory to create new Aggregates instances of the type under configuration when initializing
+     * those instances from non constructor Command handlers annotated with {@link org.axonframework.modelling.command.CreationPolicy}
      *
-     * @param commandHandlerAggregateFactoryBuilder The builder function for the AggregateFactory
+     * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureCommandHandlerAggregateFactory(
-            Function<Configuration, Function<Object, A>> commandHandlerAggregateFactoryBuilder) {
-        commandHandlerAggregateFactory.update(commandHandlerAggregateFactoryBuilder);
+    public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
+            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder) {
+        creationPolicyAggregateFactory.update(creationPolicyAggregateFactoryBuilder);
         return this;
     }
 
@@ -478,8 +479,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
-    public Function<Object, A> commandHandlerAggregateFactory() {
-        return commandHandlerAggregateFactory.get();
+    public CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory() {
+        return creationPolicyAggregateFactory.get();
     }
 
     @Override

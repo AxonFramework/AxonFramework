@@ -32,6 +32,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.NoResourceInjector;
@@ -238,14 +239,14 @@ public interface Configuration extends LifecycleOperations {
     }
 
     /**
-     * Returns the CommandHandlerAggregateFactory {@link Function} configured for the given {@code aggregateType}.
+     * Returns the {@link CreationPolicyAggregateFactory} configured for the given {@code aggregateType}.
      *
      * @param aggregateType the aggregate type to find the CommandHandlerAggregateFactory for
      * @param <A>           the aggregate type
-     * @return the {@link Function} which constructs aggregate of the given {@code aggregateType} when needed to handle commands
+     * @return the {@link CreationPolicyAggregateFactory} which constructs aggregate of the given {@code aggregateType} when needed to handle commands
      */
-    default <A> Function<Object, A> commandHandlerAggregateFactory(@Nonnull Class<A> aggregateType) {
-        return aggregateConfiguration(aggregateType).commandHandlerAggregateFactory();
+    default <A> CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory(@Nonnull Class<A> aggregateType) {
+        return aggregateConfiguration(aggregateType).creationPolicyAggregateFactory();
     }
 
     /**
