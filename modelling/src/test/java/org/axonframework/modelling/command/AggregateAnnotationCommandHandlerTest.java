@@ -77,7 +77,7 @@ class AggregateAnnotationCommandHandlerTest {
     private SimpleCommandBus commandBus;
     private Repository<StubCommandAnnotatedAggregate> mockRepository;
     private AggregateModel<StubCommandAnnotatedAggregate> aggregateModel;
-    private CreationPolicyAggregateFactory<StubCommandAnnotatedAggregate> functionFactory;
+    private CreationPolicyAggregateFactory<StubCommandAnnotatedAggregate> creationPolicyFactory;
     private ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> newInstanceCallableFactoryCaptor;
 
     @BeforeEach
@@ -98,14 +98,13 @@ class AggregateAnnotationCommandHandlerTest {
                 new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
-        functionFactory = mock(CreationPolicyAggregateFactory.class);
-        when(functionFactory.createAggregateRoot(any())).thenReturn(new StubCommandAnnotatedAggregate("id"));
+        creationPolicyFactory = spy(new NoArgumentConstructorCreationPolicyAggregateFactory<>(StubCommandAnnotatedAggregate.class));
 
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
                                                        .parameterResolverFactory(parameterResolverFactory)
                                                        .repository(mockRepository)
-                                                       .aggregateFactory(functionFactory)
+                                                       .aggregateFactory(creationPolicyFactory)
                                                        .build();
         testSubject.subscribe(commandBus);
     }
@@ -199,9 +198,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create always works fine", responseCaptor.getValue().getPayload());
-        verify(functionFactory).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory).createAggregateRoot(eq("id"));
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(functionFactory, VerificationModeFactory.times(2)).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).createAggregateRoot(eq("id"));
     }
 
     @Test
@@ -223,9 +222,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
-        verifyNoInteractions(functionFactory);
+        verifyNoInteractions(creationPolicyFactory);
         factoryCaptor.getValue().call();
-        verify(functionFactory).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory).createAggregateRoot(eq("id"));
     }
 
     @Test

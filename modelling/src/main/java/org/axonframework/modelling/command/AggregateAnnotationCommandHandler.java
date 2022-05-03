@@ -109,13 +109,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         if (configuredAggregateFactory != null) {
             return configuredAggregateFactory;
         }
-        return id -> {
-            try {
-                return aggregateModel.entityClass().getDeclaredConstructor().newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return new NoArgumentConstructorCreationPolicyAggregateFactory<T>(aggregateModel.entityClass());
     }
 
     /**

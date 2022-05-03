@@ -43,6 +43,7 @@ import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -253,13 +254,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                 });
         creationPolicyAggregateFactory = new Component<CreationPolicyAggregateFactory<A>>(
                 () -> parent, name("creationPolicyAggregateFactory"),
-                c -> c.getComponent(CreationPolicyAggregateFactory.class, () -> id -> {
-                    try {
-                        return aggregateType().getDeclaredConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
+                c -> c.getComponent(CreationPolicyAggregateFactory.class,
+                                    () -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType())));
         commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
                                                                                .repository(repository.get())
