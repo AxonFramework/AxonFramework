@@ -34,6 +34,19 @@ public class VersionedAggregateIdentifier {
     /**
      * Initializes a VersionedAggregateIdentifier with the given {@code identifier} and {@code version}.
      *
+     * @param identifier The non-null string identifier of the targeted aggregate
+     * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
+     */
+    @Deprecated
+    public VersionedAggregateIdentifier(String identifier, Long version) {
+        Assert.notNull(identifier, () -> "Identifier must not be null");
+        this.identifier = identifier;
+        this.version = version;
+    }
+
+    /**
+     * Initializes a VersionedAggregateIdentifier with the given {@code identifier} and {@code version}.
+     *
      * @param identifier The non-null identifier of the targeted aggregate
      * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
      */
