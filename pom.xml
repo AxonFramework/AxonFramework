@@ -69,11 +69,11 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
-        <spring.version>5.3.17</spring.version>
+        <spring.version>5.3.19</spring.version>
         <spring-security.version>5.6.2</spring-security.version>
         <spring.boot.version>2.6.5</spring.boot.version>
         <mockito.version>4.5.0</mockito.version>
-        <projectreactor.version>3.4.16</projectreactor.version>
+        <projectreactor.version>3.4.17</projectreactor.version>
         <micrometer.version>1.8.4</micrometer.version>
         <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
         <jackson.version>2.13.2.20220324</jackson.version>
@@ -90,7 +90,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.29</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -113,7 +113,7 @@
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.4</felix.maven-bundle-plugin.version>
 
-        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     </properties>
 
     <dependencies>

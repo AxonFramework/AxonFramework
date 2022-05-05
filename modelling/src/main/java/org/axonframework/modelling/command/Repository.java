@@ -19,6 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.messaging.ScopeAware;
 
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -60,6 +61,22 @@ public interface Repository<T> extends ScopeAware {
      * @throws Exception when the factoryMethod throws an exception
      */
     Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception;
+
+    /**
+     * Creates a new managed instance for the aggregate, using the given {@code factoryMethod} to instantiate the
+     * aggregate's root, and then applying the {@code initMethod} consumer to it to perform additional
+     * initialization.
+     *
+     * @param factoryMethod The method to create the aggregate's root instance
+     * @param initMethod    The consumer to initialize the aggregate instance further
+     * @return an Aggregate instance describing the aggregate's state
+     * @throws Exception when the factoryMethod throws an exception
+     */
+    default Aggregate<T> newInstance(Callable<T> factoryMethod, Consumer<Aggregate<T>> initMethod) throws Exception {
+        Aggregate<T> aggregate = newInstance(factoryMethod);
+        initMethod.accept(aggregate);
+        return aggregate;
+    }
 
     /**
      * Loads an aggregate from the repository. If the aggregate is not found it creates the aggregate using the

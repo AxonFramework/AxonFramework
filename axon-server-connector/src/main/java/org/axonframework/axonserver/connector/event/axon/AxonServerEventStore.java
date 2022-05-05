@@ -70,7 +70,6 @@ import java.util.Spliterators;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -159,6 +158,14 @@ public class AxonServerEventStore extends AbstractEventStore {
             throw new EventStoreException("Error occurred while communicating with Axon Server", e);
         }
         return super.handleSnapshotReadingError(aggregateIdentifier, e);
+    }
+
+    @Override
+    public DomainEventStream readEvents(String aggregateIdentifier) {
+        if (Objects.equals(storageEngine().eventSerializer, storageEngine().snapshotSerializer)) {
+            return storageEngine().readEventsWithAutoSnapshot(aggregateIdentifier, storageEngine().eventSerializer);
+        }
+        return super.readEvents(aggregateIdentifier);
     }
 
     /**
@@ -570,37 +577,11 @@ public class AxonServerEventStore extends AbstractEventStore {
             );
         }
 
-        @Override
-        public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
-            AtomicLong lastSequenceNumber = new AtomicLong();
+        public DomainEventStream readEventsWithAutoSnapshot(@Nonnull String aggregateIdentifier, Serializer serializer) {
             Stream<? extends DomainEventData<?>> input =
-                    this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE)
-                        .peek(i -> lastSequenceNumber.getAndUpdate(seq -> Math.max(seq, i.getSequenceNumber())));
+                    this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE);
 
-            return DomainEventStream.of(
-                    input.flatMap(ded -> upcastAndDeserializeDomainEvent(
-                            ded, isSnapshot(ded) ? snapshotSerializer : eventSerializer)
-                    ).filter(Objects::nonNull),
-                    lastSequenceNumber::get
-            );
-        }
-
-        private Stream<? extends DomainEventMessage<?>> upcastAndDeserializeDomainEvent(
-                DomainEventData<?> domainEventData,
-                Serializer serializer
-        ) {
-            DomainEventStream upcastedStream = EventStreamUtils.upcastAndDeserializeDomainEvents(
-                    Stream.of(domainEventData), serializer, upcasterChain
-            );
-            return upcastedStream.asStream();
-        }
-
-        private boolean isSnapshot(DomainEventData<?> domainEventData) {
-            if (domainEventData instanceof GrpcBackedDomainEventData) {
-                GrpcBackedDomainEventData grpcBackedDomainEventData = (GrpcBackedDomainEventData) domainEventData;
-                return grpcBackedDomainEventData.isSnapshot();
-            }
-            return false;
+            return EventStreamUtils.upcastAndDeserializeDomainEvents(input, serializer, upcasterChain);
         }
 
         @Override
