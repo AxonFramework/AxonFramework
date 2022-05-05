@@ -26,7 +26,9 @@ import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -44,6 +46,7 @@ import static org.mockito.Mockito.*;
  *
  * @author bliessens
  */
+@ExtendWith(MockitoExtension.class)
 class ResultValidatorImplTest {
 
     @Mock
