@@ -143,7 +143,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
                        .appendText("].");
         } else if (failedForAccessibilityException) {
             description.appendText(" failed during field equality with InaccessibleObjectException. ")
-                       .appendText("Cause for this is that the object being matched does not allow reflective access.");
+                       .appendText("The cause for this is that the matched object does not allow reflective access.");
         }
     }
 }
