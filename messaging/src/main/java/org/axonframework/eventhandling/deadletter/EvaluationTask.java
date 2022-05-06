@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link Runnable} implementation used to evaluate a {@link DeadLetterEntry} taken from the {@link DeadLetterQueue}.
@@ -65,54 +66,64 @@ class EvaluationTask implements Runnable {
 
     @Override
     public void run() {
-        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter =
-                transactionManager.fetchInTransaction(() -> queue.take(processingGroup));
-        if (!optionalLetter.isPresent()) {
-            logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
-                         processingGroup);
-            return;
+        AtomicBoolean evaluationFailed = new AtomicBoolean(false);
+        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter;
+        while ((optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
+                && !evaluationFailed.get()) {
+            DeadLetterEntry<EventMessage<?>> letter = optionalLetter.get();
+            logger.debug("Start evaluation of dead-letter [{}] for processing group [{}].",
+                         letter.message().getIdentifier(), processingGroup);
+
+            UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
+            unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.onPrepareCommit(uow -> {
+                try {
+                    letter.acknowledge();
+                    logger.info(
+                            "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
+                            uow.getMessage().getIdentifier(), processingGroup
+                    );
+                } catch (Exception e) {
+                    throw new DeadLetterEvaluationException(
+                            "Failed while acknowledging dead-letter [" + uow.getMessage().getIdentifier()
+                                    + "] after successfully evaluation.", e
+                    );
+                }
+            });
+            unitOfWork.onRollback(uow -> {
+                try {
+                    letter.requeue();
+                    logger.warn(
+                            "Reentered dead-letter [{}] for processing group [{}] in the queue since evaluation failed.",
+                            uow.getMessage().getIdentifier(),
+                            processingGroup,
+                            uow.getExecutionResult().getExceptionResult()
+                    );
+                } catch (Exception e) {
+                    throw new DeadLetterEvaluationException(
+                            "Failed while enqueueing dead-letter [" + uow.getMessage().getIdentifier()
+                                    + "] again after a failed evaluation.", e
+                    );
+                }
+            });
+            unitOfWork.executeWithResult(() -> {
+                for (EventMessageHandler handler : eventHandlingComponents) {
+                    try {
+                        handler.handle(letter.message());
+                    } catch (Exception e) {
+                        evaluationFailed.set(true);
+                        listenerInvocationErrorHandler.onError(e, letter.message(), handler);
+                    }
+                }
+                return null;
+            });
         }
 
-        DeadLetterEntry<EventMessage<?>> letter = optionalLetter.get();
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
-        unitOfWork.attachTransaction(transactionManager);
-        unitOfWork.onPrepareCommit(uow -> {
-            try {
-                letter.acknowledge();
-                logger.info(
-                        "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
-                        uow.getMessage().getIdentifier(), processingGroup
-                );
-            } catch (Exception e) {
-                throw new DeadLetterEvaluationException(
-                        "Failed while acknowledging dead-letter [" + uow.getMessage().getIdentifier()
-                                + "] after successfully evaluation.", e
-                );
-            }
-        });
-        unitOfWork.onRollback(uow -> {
-            try {
-                letter.requeue();
-                logger.warn(
-                        "Reentered dead-letter [{}] for processing group [{}] in the queue since evaluation failed.",
-                        uow.getMessage().getIdentifier(), processingGroup, uow.getExecutionResult().getExceptionResult()
-                );
-            } catch (Exception e) {
-                throw new DeadLetterEvaluationException(
-                        "Failed while enqueueing dead-letter [" + uow.getMessage().getIdentifier()
-                                + "] again after a failed evaluation.", e
-                );
-            }
-        });
-        unitOfWork.executeWithResult(() -> {
-            for (EventMessageHandler handler : eventHandlingComponents) {
-                try {
-                    handler.handle(letter.message());
-                } catch (Exception e) {
-                    listenerInvocationErrorHandler.onError(e, letter.message(), handler);
-                }
-            }
-            return null;
-        });
+        if (evaluationFailed.get()) {
+            logger.debug("Ending the evaluation task since evaluation failed.");
+        } else {
+            logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
+                         processingGroup);
+        }
     }
 }

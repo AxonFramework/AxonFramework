@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -38,21 +37,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Implementation of the {@link SimpleEventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue {@link
- * EventMessage events} for which handling failed.
+ * Implementation of the {@link SimpleEventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue
+ * {@link EventMessage events} for which handling failed.
  * <p>
  * This dead-lettering {@link EventHandlerInvoker} takes into account that events part of the same sequence (as
  * according to the {@link org.axonframework.eventhandling.async.SequencingPolicy}) should be enqueued in order.
  * <p>
- * Upon starting this invoker, it registers a dead-letter evaluation task with the queue's {@link
- * DeadLetterQueue#onAvailable(String, Runnable)}. Doing so ensures that whenever letters are ready to be retried, they
- * are provided to the {@link EventMessageHandler event handlers} this invoker is in charge of.
+ * Upon starting this invoker, it registers a dead-letter evaluation task with the queue's
+ * {@link DeadLetterQueue#onAvailable(String, Runnable)}. Doing so ensures that whenever letters are ready to be
+ * retried, they are provided to the {@link EventMessageHandler event handlers} this invoker is in charge of.
  *
  * @author Steven van Beelen
  * @since 4.6.0
@@ -85,10 +86,10 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     /**
      * Instantiate a builder to construct a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler}, the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to {@code false}.
-     * Providing at least one Event Handler, a {@link DeadLetterQueue}, a {@code processingGroup} name, and a {@link
-     * TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
+     * {@code false}. Providing at least one Event Handler, a {@link DeadLetterQueue}, a {@code processingGroup} name,
+     * and a {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
      *
      * @return A builder that can construct a {@link DeadLetteringEventHandlerInvoker}.
      */
@@ -105,9 +106,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         EventHandlingQueueIdentifier identifier =
                 new EventHandlingQueueIdentifier(super.sequenceIdentifier(message), processingGroup);
-        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter = transactionManager.fetchInTransaction(
-                () -> queue.enqueueIfPresent(identifier, message)
-        );
+        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter =
+                transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(identifier, message));
         if (optionalLetter.isPresent()) {
             logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
                         message, identifier.combinedIdentifier());
@@ -145,23 +145,29 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     }
 
     /**
-     * Registers a dead-letter evaluation task with the {@link DeadLetterQueue queue's} {@link
-     * DeadLetterQueue#onAvailable(String, Runnable)} operation. This lifecycle handler is registered right after the
+     * Registers a dead-letter evaluation task with the {@link DeadLetterQueue queue's}
+     * {@link DeadLetterQueue#onAvailable(String, Runnable)} operation. After registration the letters within the queue
+     * are {@link DeadLetterQueue#release(Predicate) released} for this invoker's processing group right away to
+     * evaluate remaining entries. This lifecycle handler is registered right after the
      * {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
      */
     public void start() {
-        queue.onAvailable(processingGroup, new EvaluationTask(
-                super.eventHandlers(), queue, processingGroup, transactionManager, listenerInvocationErrorHandler
-        ));
+        EvaluationTask evaluationTask = new EvaluationTask(super.eventHandlers(),
+                                                           queue,
+                                                           processingGroup,
+                                                           transactionManager,
+                                                           listenerInvocationErrorHandler);
+        queue.onAvailable(processingGroup, evaluationTask);
+        queue.release(entry -> Objects.equals(entry.queueIdentifier().group(), processingGroup));
     }
 
     /**
      * Builder class to instantiate a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler}, the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to {@code false}.
-     * Providing at least one Event Handler, a {@link DeadLetterQueue}, a {@code processingGroup} name, and a {@link
-     * TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
+     * {@code false}. Providing at least one Event Handler, a {@link DeadLetterQueue}, a {@code processingGroup} name,
+     * and a {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
@@ -169,7 +175,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         private String processingGroup;
         private TransactionManager transactionManager;
         private boolean allowReset = false;
-        private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+        private ListenerInvocationErrorHandler listenerInvocationErrorHandler = PropagatingErrorHandler.instance();
 
         private Builder() {
             // The parent's error handler defaults to propagating the error.
@@ -216,9 +222,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         }
 
         /**
-         * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided {@link
-         * DeadLetterQueue}. If set to {@code true}, {@link DeadLetterQueue#clear(String)} will be invoked upon a {@link
-         * #performReset()}/{@link #performReset(Object)} invocation. Defaults to {@code false}.
+         * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided
+         * {@link DeadLetterQueue}. If set to {@code true}, {@link DeadLetterQueue#clear(String)} will be invoked upon a
+         * {@link #performReset()}/{@link #performReset(Object)} invocation. Defaults to {@code false}.
          *
          * @param allowReset A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports resets of
          *                   the provided {@link DeadLetterQueue}.
@@ -231,9 +237,10 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         /**
          * Sets the {@link ListenerInvocationErrorHandler} dealing with {@link Exception exceptions} thrown by the
-         * configured {@link EventMessageHandler event handlers} during <emn>dead-letter evaluation</emn>. {@code
-         * Exceptions} thrown during regular event handling are {@link DeadLetterQueue#enqueue(QueueIdentifier, Message,
-         * Throwable) enqueued} at all times. Defaults to a {@link LoggingErrorHandler}.
+         * configured {@link EventMessageHandler event handlers} during <emn>dead-letter evaluation</emn>.
+         * {@code Exceptions} thrown during regular event handling are
+         * {@link DeadLetterQueue#enqueue(QueueIdentifier, Message, Throwable) enqueued} at all times. Defaults to a
+         * {@link PropagatingErrorHandler} to ensure failed evaluation requeue a dead-letter.
          *
          * @param listenerInvocationErrorHandler The error handler which deals with any {@link Exception exceptions}
          *                                       thrown by the configured {@link EventMessageHandler event handlers}

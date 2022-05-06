@@ -200,14 +200,16 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testRegisterLifecycleHandlersRegistersSingleStartHandler() {
+    void testRegisterLifecycleHandlersRegistersInvokersStart() {
+        DeadLetteringEventHandlerInvoker spiedTestSubject = spy(createTestSubject());
         AtomicInteger onStartInvoked = new AtomicInteger(0);
         AtomicInteger onShutdownInvoked = new AtomicInteger(0);
 
-        testSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
+        spiedTestSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
             @Override
             public void onStart(int phase, Lifecycle.LifecycleHandler action) {
                 onStartInvoked.incrementAndGet();
+                action.run();
             }
 
             @Override
@@ -218,13 +220,15 @@ class DeadLetteringEventHandlerInvokerTest {
 
         assertEquals(1, onStartInvoked.get());
         assertEquals(0, onShutdownInvoked.get());
+        verify(spiedTestSubject).start();
     }
 
     @Test
-    void testStartRegistersOnAvailableRunnable() {
+    void testStartRegistersOnAvailableRunnableAndReleasesDeadLetters() {
         testSubject.start();
 
         verify(queue).onAvailable(eq(TEST_PROCESSING_GROUP), any());
+        verify(queue).release(any());
     }
 
     @Test

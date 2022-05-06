@@ -43,6 +43,7 @@ import static org.mockito.Mockito.*;
 class EvaluationTaskTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
+    @SuppressWarnings("rawtypes") // The DeadLetterEntry mocks don't like the generic, at all...
     private static final EventMessage TEST_EVENT =
             GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
 
@@ -93,7 +94,8 @@ class EvaluationTaskTest {
         DeadLetterEntry<EventMessage<?>> testDeadLetter = mock(DeadLetterEntry.class);
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
-        when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter));
+        when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter))
+                                               .thenReturn(Optional.empty());
 
         testSubject.run();
 
@@ -111,7 +113,8 @@ class EvaluationTaskTest {
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
         doThrow(new RuntimeException()).when(testDeadLetter).acknowledge();
-        when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter));
+        when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter))
+                                               .thenReturn(Optional.empty());
 
         testSubject.run();
 

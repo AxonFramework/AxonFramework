@@ -150,7 +150,6 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         deadLetters.computeIfAbsent(identifier, id -> new ConcurrentLinkedDeque<>())
                    .addLast(entry);
-
         scheduleAvailabilityCallbacks(identifier);
 
         return entry;
@@ -172,7 +171,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         QueueIdentifier queueId = letter.queueIdentifier();
         Deque<DeadLetterEntry<T>> sequence = deadLetters.get(queueId);
         sequence.remove(letter);
+        logger.trace("Removed letter [{}].", letter.message().getIdentifier());
         if (sequence.isEmpty()) {
+            logger.trace("Queue [{}] is empty and will be removed.", queueId);
             deadLetters.remove(queueId);
         }
         takenSequences.remove(queueId);
@@ -238,7 +239,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     @Override
     public synchronized Optional<DeadLetterEntry<T>> take(String group) {
         if (deadLetters.isEmpty()) {
-            logger.debug("Queue is empty while peeking. Returning an empty optional.");
+            logger.debug("Queue is empty while taking. Returning an empty optional.");
             return Optional.empty();
         }
 
@@ -249,7 +250,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                                                               .collect(Collectors.toList());
         if (availableSequences.isEmpty()) {
             logger.debug(
-                    "No queues present with a group matching [{}] while peeking. Returning an empty optional.", group
+                    "No queues present with a group matching [{}] while taking. Returning an empty optional.", group
             );
             return Optional.empty();
         }
