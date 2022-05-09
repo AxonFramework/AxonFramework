@@ -239,17 +239,6 @@ public interface Configuration extends LifecycleOperations {
     }
 
     /**
-     * Returns the {@link CreationPolicyAggregateFactory} configured for the given {@code aggregateType}.
-     *
-     * @param aggregateType the aggregate type to find the CommandHandlerAggregateFactory for
-     * @param <A>           the aggregate type
-     * @return the {@link CreationPolicyAggregateFactory} which constructs aggregate of the given {@code aggregateType} when needed to handle commands
-     */
-    default <A> CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory(@Nonnull Class<A> aggregateType) {
-        return aggregateConfiguration(aggregateType).creationPolicyAggregateFactory();
-    }
-
-    /**
      * Returns the Component declared under the given {@code componentType}, typically the interface the component
      * implements.
      *

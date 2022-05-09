@@ -475,11 +475,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
-    public CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory() {
-        return creationPolicyAggregateFactory.get();
-    }
-
-    @Override
     public SnapshotFilter snapshotFilter() {
         return snapshotFilter.get();
     }
@@ -506,5 +501,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> withSubtypes(Collection<Class<? extends A>> subtypes) {
         this.subtypes.addAll(subtypes);
         return this;
+    }
+
+    /**
+     * Returns the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     *
+     * @return the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     */
+    public CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory() {
+        return creationPolicyAggregateFactory.get();
     }
 }
