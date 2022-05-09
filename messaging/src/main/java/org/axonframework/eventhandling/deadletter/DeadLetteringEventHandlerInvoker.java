@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -98,7 +99,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     }
 
     @Override
-    public void handle(EventMessage<?> message, Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event [{}] as it is not meant for segment [{}].", message, segment);
             return;
@@ -189,7 +190,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          * @param queue The {@link DeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
          * @return The current Builder instance for fluent interfacing.
          */
-        public Builder queue(DeadLetterQueue<EventMessage<?>> queue) {
+        public Builder queue(@Nonnull DeadLetterQueue<EventMessage<?>> queue) {
             assertNonNull(queue, "The DeadLetterQueue may not be null");
             this.queue = queue;
             return this;
@@ -201,7 +202,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          * @param processingGroup The processing group name of this {@link EventHandlerInvoker}.
          * @return The current Builder instance for fluent interfacing.
          */
-        public Builder processingGroup(String processingGroup) {
+        public Builder processingGroup(@Nonnull String processingGroup) {
             assertNonEmpty(processingGroup, "The processing group may not be null or empty");
             this.processingGroup = processingGroup;
             return this;
@@ -215,7 +216,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          *                           involving the configured {@link DeadLetterQueue}
          * @return The current Builder instance for fluent interfacing.
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "The TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -248,7 +249,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          * @return The current Builder instance for fluent interfacing.
          */
         @Override
-        public Builder listenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        public Builder listenerInvocationErrorHandler(
+                @Nonnull ListenerInvocationErrorHandler listenerInvocationErrorHandler
+        ) {
             assertNonNull(listenerInvocationErrorHandler, "The ListenerInvocationErrorHandler may not be null");
             this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
             return this;

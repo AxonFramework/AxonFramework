@@ -37,6 +37,7 @@ import org.junit.jupiter.api.*;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -207,13 +208,13 @@ class DeadLetteringEventHandlerInvokerTest {
 
         spiedTestSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
             @Override
-            public void onStart(int phase, Lifecycle.LifecycleHandler action) {
+            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                 onStartInvoked.incrementAndGet();
                 action.run();
             }
 
             @Override
-            public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
+            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                 onShutdownInvoked.incrementAndGet();
             }
         });
@@ -235,6 +236,7 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithNullDeadLetterQueueThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.queue(null));
     }
 
@@ -252,6 +254,7 @@ class DeadLetteringEventHandlerInvokerTest {
     void testBuildWithNullProcessingGroupThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.processingGroup(null));
     }
 
@@ -277,6 +280,7 @@ class DeadLetteringEventHandlerInvokerTest {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.transactionManager(null));
     }
 
@@ -295,6 +299,7 @@ class DeadLetteringEventHandlerInvokerTest {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
     }
 

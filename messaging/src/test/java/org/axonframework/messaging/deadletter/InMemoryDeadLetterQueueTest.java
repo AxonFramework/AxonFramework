@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -108,12 +109,12 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
 
         testSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
             @Override
-            public void onStart(int phase, Lifecycle.LifecycleHandler action) {
+            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                 onStartInvoked.incrementAndGet();
             }
 
             @Override
-            public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
+            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
                 onShutdownInvoked.incrementAndGet();
                 action.run();
             }

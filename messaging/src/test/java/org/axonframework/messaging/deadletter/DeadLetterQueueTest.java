@@ -85,8 +85,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     abstract void setClock(Clock clock);
 
     /**
-     * Retrieve expiry threshold used by the {@link DeadLetterQueue} under test. The threshold dictates the {@link
-     * DeadLetterEntry#expiresAt()}.
+     * Retrieve expiry threshold used by the {@link DeadLetterQueue} under test. The threshold dictates the
+     * {@link DeadLetterEntry#expiresAt()}.
      *
      * @return The expiry threshold used by the {@link DeadLetterQueue} under test.
      */
@@ -469,10 +469,11 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     /**
-     * An "active sequence" in this case means that a letter with {@link QueueIdentifier} {@code x} is not {@link
-     * DeadLetterEntry#acknowledge() acknowledged} or {@link DeadLetterEntry#requeue() requeued} yet. Furthermore, if
-     * it's the sole entry for that {@code group}, nothing should be returned. This approach ensure the events for a
-     * given {@link QueueIdentifier} are handled in the order they've been dead-lettered (a.k.a., in sequence).
+     * An "active sequence" in this case means that a letter with {@link QueueIdentifier} {@code x} is not
+     * {@link DeadLetterEntry#acknowledge() acknowledged} or {@link DeadLetterEntry#requeue() requeued} yet.
+     * Furthermore, if it's the sole entry for that {@code group}, nothing should be returned. This approach ensure the
+     * events for a given {@link QueueIdentifier} are handled in the order they've been dead-lettered (a.k.a., in
+     * sequence).
      */
     @Test
     void testTakeReturnsEmptyOptionalForAnActiveSequenceAndOtherwiseEmptyQueue() {

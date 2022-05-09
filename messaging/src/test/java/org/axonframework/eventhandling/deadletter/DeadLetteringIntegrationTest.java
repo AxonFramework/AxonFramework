@@ -127,7 +127,6 @@ class DeadLetteringIntegrationTest {
     }
 
     @Test
-//    @RepeatedTest(100)
     void testFailedEventHandlingEnqueuesTheEvent() {
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent("success", SUCCEED)));
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent("failure", FAIL)));
@@ -150,7 +149,6 @@ class DeadLetteringIntegrationTest {
     }
 
     @Test
-//    @RepeatedTest(100)
     void testEventsInTheSameSequenceAreAllEnqueuedIfOneOfThemFails() {
         int expectedSuccessfulHandlingCount = 3;
         String aggregateId = UUID.randomUUID().toString();
@@ -199,7 +197,6 @@ class DeadLetteringIntegrationTest {
     }
 
     @Test
-//    @RepeatedTest(100)
     void testSuccessfulEvaluationRemovesTheDeadLetterFromTheQueue() {
         int expectedSuccessfulHandlingCount = 3;
         int expectedSuccessfulHandlingCountAfterEvaluation = 6;
@@ -243,7 +240,6 @@ class DeadLetteringIntegrationTest {
     }
 
     @Test
-//    @RepeatedTest(100)
     void testUnsuccessfulEvaluationRequeuesTheDeadLetterInTheQueue() {
         int expectedSuccessfulHandlingCount = 3;
         int expectedSuccessfulHandlingCountAfterEvaluation = 5;

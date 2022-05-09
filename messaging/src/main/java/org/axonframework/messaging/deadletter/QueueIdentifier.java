@@ -19,9 +19,9 @@ package org.axonframework.messaging.deadletter;
 /**
  * Interface describing an identifier for queues maintained by a {@link DeadLetterQueue}.
  * <p>
- * Describes a {@link #identifier()} of the queue, as well as a {@link #group()} the queue belongs to. The {@code
- * identifier} may, for example, refer to a sequence of messages, whereas the {@code group} can describe a specific
- * message processing component.
+ * Describes a {@link #identifier()} of the queue, as well as a {@link #group()} the queue belongs to. The
+ * {@code identifier} may, for example, refer to a sequence of messages, whereas the {@code group} can describe a
+ * specific message processing component.
  *
  * @author Steven van Beelen
  * @see DeadLetterQueue

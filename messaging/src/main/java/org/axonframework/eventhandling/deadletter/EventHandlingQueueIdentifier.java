@@ -20,13 +20,14 @@ package org.axonframework.eventhandling.deadletter;
 import org.axonframework.messaging.deadletter.QueueIdentifier;
 
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of the {@link QueueIdentifier} dedicated for dead-lettering in event handling components.
  * <p>
  * This identifier is used to uniquely identify a sequence of events for a specific {@code processingGroup}. The
- * sequence identifier is typically the result of a {@link org.axonframework.eventhandling.async.SequencingPolicy#getSequenceIdentifierFor(Object)}
- * operation.
+ * sequence identifier is typically the result of a
+ * {@link org.axonframework.eventhandling.async.SequencingPolicy#getSequenceIdentifierFor(Object)} operation.
  *
  * @author Steven van Beelen
  * @see DeadLetteringEventHandlerInvoker
@@ -43,7 +44,7 @@ public class EventHandlingQueueIdentifier implements QueueIdentifier {
      * @param sequenceIdentifier The identifier of a sequence of events to enqueue.
      * @param processingGroup    The processing group that is required to enqueue events.
      */
-    public EventHandlingQueueIdentifier(Object sequenceIdentifier, String processingGroup) {
+    public EventHandlingQueueIdentifier(@Nonnull Object sequenceIdentifier, @Nonnull String processingGroup) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.processingGroup = processingGroup;
     }

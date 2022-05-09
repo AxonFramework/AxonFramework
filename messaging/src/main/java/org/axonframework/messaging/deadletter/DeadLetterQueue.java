@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the required functionality for a dead-letter queue. Contains not a single queue of letters, but
@@ -33,8 +34,8 @@ import java.util.function.Predicate;
  * may be reentered in the queue through {@link DeadLetterEntry#requeue()}.
  * <p>
  * A callback can be configured through {@link #onAvailable(String, Runnable)} that is automatically invoked when
- * dead-letters are released and thus ready to be taken. Entries may be released earlier by invoking {@link
- * #release(Predicate)}.
+ * dead-letters are released and thus ready to be taken. Entries may be released earlier by invoking
+ * {@link #release(Predicate)}.
  *
  * @param <T> An implementation of {@link Message} that represent the dead-letter.
  * @author Steven van Beelen
@@ -55,8 +56,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * @throws DeadLetterQueueOverflowException Thrown when this queue is {@link #isFull(QueueIdentifier)} for the given
      *                                          {@code identifier}.
      */
-    DeadLetterEntry<T> enqueue(QueueIdentifier identifier,
-                               T deadLetter,
+    DeadLetterEntry<T> enqueue(@Nonnull QueueIdentifier identifier,
+                               @Nonnull T deadLetter,
                                Throwable cause) throws DeadLetterQueueOverflowException;
 
     /**
@@ -65,21 +66,21 @@ public interface DeadLetterQueue<T extends Message<?>> {
      *
      * @param identifier The identifier of the queue to store the {@code deadLetter} in.
      * @param message    The {@link Message} validated if it should be enqueued.
-     * @return An empty {@link Optional} if there are no {@link DeadLetterEntry dead-letters} for the given {@code
-     * identifier}. A non-empty {@code Optional} is the result of the execution of {@link #enqueue(QueueIdentifier,
-     * Message, Throwable)}.
+     * @return An empty {@link Optional} if there are no {@link DeadLetterEntry dead-letters} for the given
+     * {@code identifier}. A non-empty {@code Optional} is the result of the execution of
+     * {@link #enqueue(QueueIdentifier, Message, Throwable)}.
      * @throws DeadLetterQueueOverflowException Thrown when this queue is {@link #isFull(QueueIdentifier)} for the given
      *                                          {@code identifier}.
      */
-    default Optional<DeadLetterEntry<T>> enqueueIfPresent(QueueIdentifier identifier,
-                                                          T message) throws DeadLetterQueueOverflowException {
+    default Optional<DeadLetterEntry<T>> enqueueIfPresent(@Nonnull QueueIdentifier identifier,
+                                                          @Nonnull T message) throws DeadLetterQueueOverflowException {
         if (isEmpty() || !contains(identifier)) {
             return Optional.empty();
         }
 
         if (isFull(identifier)) {
             throw new DeadLetterQueueOverflowException(
-                    "No room left to enqueue message [" + message.toString() + "] for identifier ["
+                    "No room left to enqueue message [" + message + "] for identifier ["
                             + identifier.combinedIdentifier() + "] since the queue is full."
             );
         }
@@ -88,14 +89,14 @@ public interface DeadLetterQueue<T extends Message<?>> {
     }
 
     /**
-     * Check whether there's a FIFO ordered queue of {@link DeadLetterEntry dead-letters} for the given {@code
-     * identifier}.
+     * Check whether there's a FIFO ordered queue of {@link DeadLetterEntry dead-letters} for the given
+     * {@code identifier}.
      *
      * @param identifier The identifier used to validate for contained {@link DeadLetterEntry dead-letters} instances.
      * @return {@code true} if there are {@link DeadLetterEntry dead-letters} present for the given {@code identifier},
      * {@code false} otherwise.
      */
-    boolean contains(QueueIdentifier identifier);
+    boolean contains(@Nonnull QueueIdentifier identifier);
 
     /**
      * Validates whether this queue is empty.
@@ -116,7 +117,7 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * @return {@code true} either when {@link #maxQueues()} is reached or when the {@link #maxQueueSize()} is reached.
      * Returns {@code false} otherwise.
      */
-    boolean isFull(QueueIdentifier queueIdentifier);
+    boolean isFull(@Nonnull QueueIdentifier queueIdentifier);
 
     /**
      * The maximum number of distinct queues this dead-letter queue can hold. This comes down to the maximum number of
@@ -130,8 +131,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
     long maxQueues();
 
     /**
-     * The maximum number of entries a single queue can contain. A single queue is referenced based on it's {@link
-     * QueueIdentifier}.
+     * The maximum number of entries a single queue can contain. A single queue is referenced based on it's
+     * {@link QueueIdentifier}.
      * <p>
      * Note that there's a window of opportunity where the queue might exceed the {@code maxQueueSize} value to
      * accompany concurrent usage.
@@ -144,9 +145,9 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * Take the oldest {@link DeadLetterEntry} from this dead-letter queue for the given {@code group} that is ready to
      * be released. Entries can be made available earlier through {@link #release(Predicate)} when necessary.
      * <p>
-     * Upon taking, the returned {@link DeadLetterEntry dead-letter} is kept in the queue with an updated {@link
-     * DeadLetterEntry#expiresAt()} and {@link DeadLetterEntry#numberOfRetries()}. Doing so guards the queue against
-     * concurrent take operations accidentally retrieving (and thus handling) the same letter.
+     * Upon taking, the returned {@link DeadLetterEntry dead-letter} is kept in the queue with an updated
+     * {@link DeadLetterEntry#expiresAt()} and {@link DeadLetterEntry#numberOfRetries()}. Doing so guards the queue
+     * against concurrent take operations accidentally retrieving (and thus handling) the same letter.
      * <p>
      * Will return an {@link Optional#empty()} if there are no entries ready to be released or present for the given
      * {@code group}.
@@ -155,7 +156,7 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * @return The oldest {@link DeadLetterEntry} belonging to the given {@code group} from this dead-letter queue.
      * @see #release(Predicate)
      */
-    Optional<DeadLetterEntry<T>> take(String group);
+    Optional<DeadLetterEntry<T>> take(@Nonnull String group);
 
     /**
      * Release all {@link DeadLetterEntry dead-letters} within this queue that match the given {@code letterFilter}.
@@ -165,7 +166,7 @@ public interface DeadLetterQueue<T extends Message<?>> {
      *
      * @param letterFilter A lambda selecting the letters within this queue to be released.
      */
-    void release(Predicate<DeadLetterEntry<T>> letterFilter);
+    void release(@Nonnull Predicate<DeadLetterEntry<T>> letterFilter);
 
     /**
      * Release all {@link DeadLetterEntry dead-letters} within this queue.
@@ -178,15 +179,16 @@ public interface DeadLetterQueue<T extends Message<?>> {
     }
 
     /**
-     * Set the given {@code callback} for the given {@code group} to be invoked when {@link DeadLetterEntry
-     * dead-letters} are ready to be {@link #take(String) taken} from the queue. Dead-letters may be released earlier
-     * through {@link #release(Predicate)} to automatically trigger the {@code callback} if the {@code group} matches.
+     * Set the given {@code callback} for the given {@code group} to be invoked when
+     * {@link DeadLetterEntry dead-letters} are ready to be {@link #take(String) taken} from the queue. Dead-letters may
+     * be released earlier through {@link #release(Predicate)} to automatically trigger the {@code callback} if the
+     * {@code group} matches.
      *
      * @param group    The group descriptor of a {@link QueueIdentifier} to register a {@code callback} for.
      * @param callback The operation to run whenever {@link DeadLetterEntry dead-letters} are released and ready to be
      *                 taken.
      */
-    void onAvailable(String group, Runnable callback);
+    void onAvailable(@Nonnull String group, @Nonnull Runnable callback);
 
     /**
      * Clears out all {@link DeadLetterEntry dead-letters} matching the given {@link Predicate queueFilter}.
@@ -194,15 +196,15 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * @param queueFilter The {@link Predicate lambda} filtering the queues based on a {@link QueueIdentifier} to clear
      *                    out all {@link DeadLetterEntry dead-letters} for.
      */
-    void clear(Predicate<QueueIdentifier> queueFilter);
+    void clear(@Nonnull Predicate<QueueIdentifier> queueFilter);
 
     /**
      * Clears out all {@link DeadLetterEntry dead-letters} belonging to the given {@code group}.
      *
-     * @param group The group descriptor of a {@link QueueIdentifier} to clear out all {@link DeadLetterEntry
-     *              dead-letters} for.
+     * @param group The group descriptor of a {@link QueueIdentifier} to clear out all
+     *              {@link DeadLetterEntry dead-letters} for.
      */
-    default void clear(String group) {
+    default void clear(@Nonnull String group) {
         clear(identifier -> Objects.equals(identifier.group(), group));
     }
 
@@ -214,8 +216,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
     }
 
     /**
-     * Shutdown this queue. Invoking this operation ensure any {@link #onAvailable(String, Runnable) registered
-     * callbacks} that are active are properly stopped too.
+     * Shutdown this queue. Invoking this operation ensure any
+     * {@link #onAvailable(String, Runnable) registered callbacks} that are active are properly stopped too.
      *
      * @return A {@link CompletableFuture} that's completed asynchronously once all active on available callbacks have
      * completed.

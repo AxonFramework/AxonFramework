@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -56,8 +57,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * <p>
  * Maintains a {@link Deque} per unique {@link QueueIdentifier} entry. The maximum amount of {@code Deques} contained by
  * this {@code DeadLetterQueue} is {@code 1024} (configurable through {@link Builder#maxQueues(int)}). The maximum
- * amount of {@link DeadLetterEntry letters} per queue also defaults to {@code 1024} (configurable through {@link
- * Builder#maxQueueSize(int)}).
+ * amount of {@link DeadLetterEntry letters} per queue also defaults to {@code 1024} (configurable through
+ * {@link Builder#maxQueueSize(int)}).
  *
  * @param <T> The type of {@link Message} maintained in this {@link DeadLetterQueue}.
  * @author Steven van Beelen
@@ -128,12 +129,12 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public DeadLetterEntry<T> enqueue(QueueIdentifier identifier,
-                                      T deadLetter,
+    public DeadLetterEntry<T> enqueue(@Nonnull QueueIdentifier identifier,
+                                      @Nonnull T deadLetter,
                                       Throwable cause) throws DeadLetterQueueOverflowException {
         if (isFull(identifier)) {
             throw new DeadLetterQueueOverflowException(
-                    "No room left to enqueue message [" + deadLetter.toString() + "] for identifier ["
+                    "No room left to enqueue message [" + deadLetter + "] for identifier ["
                             + identifier.combinedIdentifier() + "] since the queue is full.",
                     cause
             );
@@ -203,7 +204,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public boolean contains(QueueIdentifier identifier) {
+    public boolean contains(@Nonnull QueueIdentifier identifier) {
         logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
         return deadLetters.containsKey(identifier);
     }
@@ -214,7 +215,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public boolean isFull(QueueIdentifier queueIdentifier) {
+    public boolean isFull(@Nonnull QueueIdentifier queueIdentifier) {
         return maximumNumberOfQueuesReached(queueIdentifier) || maximumQueueSizeReached(queueIdentifier);
     }
 
@@ -237,7 +238,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public synchronized Optional<DeadLetterEntry<T>> take(String group) {
+    public synchronized Optional<DeadLetterEntry<T>> take(@Nonnull String group) {
         if (deadLetters.isEmpty()) {
             logger.debug("Queue is empty while taking. Returning an empty optional.");
             return Optional.empty();
@@ -284,7 +285,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public void release(Predicate<DeadLetterEntry<T>> letterFilter) {
+    public void release(@Nonnull Predicate<DeadLetterEntry<T>> letterFilter) {
         Instant expiresAt = clock.instant();
         Set<String> releasedGroups = new HashSet<>();
         logger.debug("Received a request to release matching dead-letters for evaluation.");
@@ -306,14 +307,14 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public void onAvailable(String group, Runnable callback) {
+    public void onAvailable(@Nonnull String group, @Nonnull Runnable callback) {
         if (availabilityCallbacks.put(group, callback) != null) {
             logger.info("Replaced the availability callback for group [{}].", group);
         }
     }
 
     @Override
-    public void clear(Predicate<QueueIdentifier> queueFilter) {
+    public void clear(@Nonnull Predicate<QueueIdentifier> queueFilter) {
         List<QueueIdentifier> queuesToClear = deadLetters.keySet()
                                                          .stream()
                                                          .filter(queueFilter)
@@ -397,8 +398,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
          * Sets the threshold when newly {@link #enqueue(QueueIdentifier, Message, Throwable) enqueued} letters are
          * considered ready to be {@link #take(String) taken}.
          * <p>
-         * The provided threshold is also used to schedule {@link #onAvailable(String, Runnable) configured availability
-         * checks}. Defaults to a {@link Duration} of 5000 milliseconds.
+         * The provided threshold is also used to schedule
+         * {@link #onAvailable(String, Runnable) configured availability checks}. Defaults to a {@link Duration} of 5000
+         * milliseconds.
          *
          * @param expireThreshold The threshold for enqueued {@link DeadLetterEntry letters} to be considered ready to
          *                        be {@link #take(String) taken}.
@@ -413,12 +415,12 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
 
         /**
-         * Sets the {@link ScheduledExecutorService} this queue uses to invoke {@link #onAvailable(String, Runnable)
-         * configured availability callbacks}. Defaults to a {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)},
-         * using an {@link AxonThreadFactory}.
+         * Sets the {@link ScheduledExecutorService} this queue uses to invoke
+         * {@link #onAvailable(String, Runnable) configured availability callbacks}. Defaults to a
+         * {@link Executors#newSingleThreadScheduledExecutor(ThreadFactory)}, using an {@link AxonThreadFactory}.
          *
-         * @param scheduledExecutorService The {@link ScheduledExecutorService} this queue uses to invoke {@link
-         *                                 #onAvailable(String, Runnable) configured availability callbacks}.
+         * @param scheduledExecutorService The {@link ScheduledExecutorService} this queue uses to invoke
+         *                                 {@link #onAvailable(String, Runnable) configured availability callbacks}.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<T> scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
