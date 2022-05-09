@@ -312,7 +312,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     /**
      * Defines the factory to create new Aggregates instances of the type under configuration when initializing
-     * those instances from non constructor Command handlers annotated with {@link org.axonframework.modelling.command.CreationPolicy}
+     * those instances from non constructor Command handlers annotated with {@link org.axonframework.modelling.command.CreationPolicy}.
      *
      * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
      * @return this configurer instance for chaining
