@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-// TODO: 22-03-22 deduce a nicer name
 class EvaluationTask implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

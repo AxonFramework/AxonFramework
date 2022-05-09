@@ -255,7 +255,6 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
             return Optional.empty();
         }
 
-        // TODO: 31-01-22 when deadLetter and expiresAt are identical, they can be checked as soon as their parent is validated
         DeadLetterEntry<T> letter = getEarliestLetter(availableSequences);
         if (letter == null) {
             return Optional.empty();
@@ -299,7 +298,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                        entry.setExpiresAt(expiresAt);
                        releasedGroups.add(entry.queueIdentifier().group());
                    });
-        // TODO: 03-02-22 Should this callback be invoked automatically as long as letters are available in the sequence?
+
         releasedGroups.stream()
                       .map(availabilityCallbacks::get)
                       .filter(Objects::nonNull)
@@ -334,7 +333,6 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
     @Override
     public CompletableFuture<Void> shutdown() {
-        // TODO: 07-02-22 cleaner solution required?
         // When the executor is customized by the user, it's their job to shut it down.
         return customExecutor
                 ? CompletableFuture.completedFuture(null)
@@ -355,7 +353,6 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         private int maxQueues = 1024;
         private int maxQueueSize = 1024;
-        // TODO: 01-02-22 should we increase this value to something higher to not trigger to many checks?
         private Duration expireThreshold = Duration.ofMillis(5000);
         private ScheduledExecutorService scheduledExecutorService =
                 Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory("InMemoryDeadLetterQueue"));

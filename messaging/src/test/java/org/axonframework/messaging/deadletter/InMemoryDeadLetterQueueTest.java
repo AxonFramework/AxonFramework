@@ -20,15 +20,21 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.deadletter.EventHandlingQueueIdentifier;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link InMemoryDeadLetterQueue}.
@@ -91,6 +97,45 @@ class InMemoryDeadLetterQueueTest extends DeadLetterQueueTest<EventHandlingQueue
                                                                                  .build();
 
         assertEquals(expectedMaxQueueSize, testSubject.maxQueueSize());
+    }
+
+    @Test
+    void testRegisterLifecycleHandlerRegistersQueuesShutdown() {
+        InMemoryDeadLetterQueue<Message<?>> testSubject = spy(InMemoryDeadLetterQueue.defaultQueue());
+
+        AtomicInteger onStartInvoked = new AtomicInteger(0);
+        AtomicInteger onShutdownInvoked = new AtomicInteger(0);
+
+        testSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
+            @Override
+            public void onStart(int phase, Lifecycle.LifecycleHandler action) {
+                onStartInvoked.incrementAndGet();
+            }
+
+            @Override
+            public void onShutdown(int phase, Lifecycle.LifecycleHandler action) {
+                onShutdownInvoked.incrementAndGet();
+                action.run();
+            }
+        });
+
+        assertEquals(0, onStartInvoked.get());
+        assertEquals(1, onShutdownInvoked.get());
+        verify(testSubject).shutdown();
+    }
+
+    @Test
+    void testShutdownReturnsCompletedFutureForCustomizedExecutor() {
+        ScheduledExecutorService scheduledExecutor = spy(Executors.newScheduledThreadPool(1));
+        InMemoryDeadLetterQueue<Message<?>> testSubject =
+                InMemoryDeadLetterQueue.builder()
+                                       .scheduledExecutorService(scheduledExecutor)
+                                       .build();
+
+        CompletableFuture<Void> result = testSubject.shutdown();
+
+        assertTrue(result.isDone());
+        verifyNoInteractions(scheduledExecutor);
     }
 
     @Test
