@@ -30,8 +30,8 @@ import static org.axonframework.common.ReflectionUtils.hasEqualsMethod;
 
 /**
  * A {@link BaseMatcher} implementation that first matches based on {@link Object#equals(Object)}. When this fails and
- * {@code equals()} is not implemented by {@code T}, the fields are matched for equality. If this fails due to
- * inaccessibility of the class or its fields, this matcher will not match.
+ * {@code equals()} is not overridden from {@link Object} by {@code T}, the instance's field values are checked for
+ * equality. If this fails due to inaccessibility of the class or its fields, this matcher will not match.
  *
  * @param <T> The type of object to match.
  * @author Steven van Beelen
@@ -110,7 +110,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
                         return false;
                     }
                 } catch (Exception e) {
-                    if (e.getClass().getSimpleName().equals("InaccessibleObjectException")) {
+                    if ("InaccessibleObjectException".equals(e.getClass().getSimpleName())) {
                         logger.warn("Could not confirm object field equality due to InaccessibleObjectException.");
                         failedForAccessibilityException = true;
                         return false;
