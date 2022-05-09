@@ -699,7 +699,7 @@ class AggregateAnnotationCommandHandlerTest {
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
-        public String handleCreateOrUpdate(CreateAlwaysCommand createAlwaysCommand) {
+        public String handleCreateAlways(CreateAlwaysCommand createAlwaysCommand) {
             this.setIdentifier(createAlwaysCommand.id);
             return "Create always works fine";
         }
