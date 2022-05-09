@@ -25,9 +25,8 @@ import javax.annotation.Nullable;
  *
  * @param <A> The type of aggregate this factory creates
  * @author Stefan Andjelkovic
- * @since 4.6
+ * @since 4.6.0
  */
-
 @FunctionalInterface
 public interface CreationPolicyAggregateFactory<A> {
 
