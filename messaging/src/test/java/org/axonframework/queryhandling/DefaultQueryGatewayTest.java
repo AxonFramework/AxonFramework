@@ -20,7 +20,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -421,9 +420,6 @@ class DefaultQueryGatewayTest {
 
     @Test
     void streamingQueryIsLazy() {
-        QueryMessage<String, Flux<String>> queryMessage =
-                new GenericQueryMessage<>("criteria", "fluxQuery", ResponseTypes.fluxOf(String.class));
-
         Publisher<QueryResponseMessage<Object>> response = Flux.just(
                 new GenericQueryResponseMessage("a"),
                 new GenericQueryResponseMessage("b"),

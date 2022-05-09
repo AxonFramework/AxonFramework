@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 /**
  * A {@link ResponseType} implementation that will match with query
- * handlers that return a {@link Flux} stream of the expected response type. If matching succeeds, the
+ * handlers that return a {@link Publisher} stream of the expected response type. If matching succeeds, the
  * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
  * {@code R}.
  *
@@ -20,25 +20,25 @@ import java.util.stream.Stream;
  * @author Milan Savic
  * @since 4.6.0
  */
-public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
+public class PublisherResponseType<R> extends AbstractResponseType<Publisher<R>> {
 
     /**
-     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning a flux result.
+     * Indicates that the response matches with the {@link java.lang.reflect.Type} while returning a publisher result.
      *
      * @see ResponseType#MATCH
      * @see ResponseType#NO_MATCH
      */
-    public static final int FLUX_MATCH = 2048;
+    public static final int PUBLISHER_MATCH = 2048;
     private final ResponseType<?> multipleInstanceResponseType;
 
     /**
-     * Instantiate a {@link FluxResponseType} with the given
+     * Instantiate a {@link PublisherResponseType} with the given
      * {@code expectedResponseType} as the type to be matched against and to which the query response should be
      * converted to.
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
-    public FluxResponseType(Class<?> expectedResponseType) {
+    public PublisherResponseType(Class<?> expectedResponseType) {
         super(expectedResponseType);
         multipleInstanceResponseType = new MultipleInstancesResponseType<>(expectedResponseType);
     }
@@ -58,8 +58,8 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
 
     @Override
     public Integer matchRank(Type responseType) {
-        if (isFluxOfExpectedType(responseType)) {
-            return FLUX_MATCH;
+        if (isPublisherOfExpectedType(responseType)) {
+            return PUBLISHER_MATCH;
         }
         return multipleInstanceResponseType.matchRank(responseType);
     }
@@ -71,29 +71,28 @@ public class FluxResponseType<R> extends AbstractResponseType<Flux<R>> {
     }
 
     @Override
-    public Flux<R> convert(Object queryResponse) {
+    public Publisher<R> convert(Object queryResponse) {
+        if (!projectReactorOnClassPath()) {
+            return null;
+        }
         if (queryResponse == null) {
             return Flux.empty();
-        } else if (Flux.class.isAssignableFrom(queryResponse.getClass())) {
-            return (Flux<R>) queryResponse;
+        } else if (Publisher.class.isAssignableFrom(queryResponse.getClass())) {
+            return Flux.from((Publisher) queryResponse);
         } else if (Iterable.class.isAssignableFrom(queryResponse.getClass())) {
             return Flux.fromIterable((Iterable) queryResponse);
         } else if (Stream.class.isAssignableFrom(queryResponse.getClass())) {
             return Flux.fromStream((Stream) queryResponse);
-        } else if (Mono.class.isAssignableFrom(queryResponse.getClass())) {
-            return Flux.from((Mono) queryResponse);
         } else if (CompletableFuture.class.isAssignableFrom(queryResponse.getClass())) {
             return Flux.from(Mono.fromCompletionStage((CompletableFuture) queryResponse));
         } else if (Optional.class.isAssignableFrom(queryResponse.getClass())) {
             return (Flux<R>) ((Optional) queryResponse).map(Flux::just).orElse(Flux.<R>empty());
-        } else if (Publisher.class.isAssignableFrom(queryResponse.getClass())) {
-            return Flux.from((Publisher) queryResponse);
         }
         return Flux.just((R) queryResponse);
     }
 
     @Override
-    public Optional<Flux<R>> convertExceptional(Throwable e) {
+    public Optional<Publisher<R>> convertExceptional(Throwable e) {
         return Optional.of(Flux.error(e));
     }
 
