@@ -423,7 +423,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
             Object commandMessageAggregateId = commandMessageVersionedId.getIdentifierValue();
-            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.createAggregateRoot(commandMessageAggregateId));
+            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId));
             Object response = aggregate.handle(command);
             return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response;
         }
@@ -459,7 +459,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             String commandMessageStringAggregateId = commandMessageVersionedId.getIdentifier();
 
             Aggregate<T> instance = repository.loadOrCreate(commandMessageStringAggregateId,
-                                                            () -> factoryMethod.createAggregateRoot(commandMessageAggregateId));
+                                                            () -> factoryMethod.create(commandMessageAggregateId));
             Object commandResult = instance.handle(command);
             Object aggregateId = instance.identifier();
 

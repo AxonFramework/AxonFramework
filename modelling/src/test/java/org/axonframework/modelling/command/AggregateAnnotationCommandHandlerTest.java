@@ -198,9 +198,9 @@ class AggregateAnnotationCommandHandlerTest {
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create always works fine", responseCaptor.getValue().getPayload());
-        verify(creationPolicyFactory).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory).create(eq("id"));
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq("id"));
     }
 
     @Test
@@ -224,7 +224,7 @@ class AggregateAnnotationCommandHandlerTest {
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
         verifyNoInteractions(creationPolicyFactory);
         factoryCaptor.getValue().call();
-        verify(creationPolicyFactory).createAggregateRoot(eq("id"));
+        verify(creationPolicyFactory).create(eq("id"));
     }
 
     @Test

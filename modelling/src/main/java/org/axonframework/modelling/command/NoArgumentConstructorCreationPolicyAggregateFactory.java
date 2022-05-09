@@ -29,7 +29,7 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
 
     @Nonnull
     @Override
-    public A createAggregateRoot(@Nullable Object identifier) {
+    public A create(@Nullable Object identifier) {
         try {
             return aggregateRootClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {

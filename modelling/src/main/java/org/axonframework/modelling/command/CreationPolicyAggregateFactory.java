@@ -37,5 +37,5 @@ public interface CreationPolicyAggregateFactory<A> {
      * @param identifier the identifier extracted from the command message
      * @return an identifier initialized aggregate root instance ready to handle commands
      */
-    @Nonnull A createAggregateRoot(@Nullable Object identifier);
+    @Nonnull A create(@Nullable Object identifier);
 }
