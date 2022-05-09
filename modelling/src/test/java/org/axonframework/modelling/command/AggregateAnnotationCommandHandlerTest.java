@@ -89,13 +89,13 @@ class AggregateAnnotationCommandHandlerTest {
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
-        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture())).thenAnswer(
-                invocation -> AnnotatedAggregate.initialize(
+        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture()))
+                .thenAnswer(invocation -> AnnotatedAggregate.initialize(
                         (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                         aggregateModel,
                         mock(EventBus.class)
                 ));
-        when(mockRepository.newInstance(any(), any())).thenAnswer(invocation -> {
+        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture(), any())).thenAnswer(invocation -> {
             AnnotatedAggregate<StubCommandAnnotatedAggregate> aggregate = AnnotatedAggregate.initialize(
                     (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                     aggregateModel,
@@ -156,7 +156,6 @@ class AggregateAnnotationCommandHandlerTest {
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
                 CreateOrUpdateCommand.class.getName(),
-                CreateAlwaysCommand.class.getName(),
                 AlwaysCreateCommand.class.getName(),
                 CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
@@ -204,16 +203,16 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     void testCommandHandlerCreatesAlwaysAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new CreateAlwaysCommand("id"));
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
         commandBus.dispatch(message, callback);
-        verify(mockRepository).newInstance(any());
+        verify(mockRepository).newInstance(any(), any());
         // make sure the identifier was invoked in the callback
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
                 .forClass(CommandResultMessage.class);
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
-        assertEquals("Create always works fine", responseCaptor.getValue().getPayload());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
         verify(creationPolicyFactory).create(eq("id"));
         newInstanceCallableFactoryCaptor.getValue().call();
         verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq("id"));
@@ -758,13 +757,6 @@ class AggregateAnnotationCommandHandlerTest {
             return "Always create works fine";
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
-        public String handleCreateAlways(CreateAlwaysCommand createAlwaysCommand) {
-            this.setIdentifier(createAlwaysCommand.id);
-            return "Create always works fine";
-        }
-
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
@@ -1012,21 +1004,6 @@ class AggregateAnnotationCommandHandlerTest {
 
         public String getParameter() {
             return parameter;
-        }
-
-        public String getId() {
-            return id;
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private static class CreateAlwaysCommand {
-
-        @TargetAggregateIdentifier
-        private final String id;
-
-        private CreateAlwaysCommand(String id) {
-            this.id = id;
         }
 
         public String getId() {
