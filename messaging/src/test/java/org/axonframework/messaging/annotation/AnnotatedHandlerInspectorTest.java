@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -116,6 +117,15 @@ class AnnotatedHandlerInspectorTest {
                 asList(aOn, bOn, aHandle, bHandle, dHandle, paHandle),
                 unwrapToList(inspector.getHandlers(D.class))
         );
+    }
+
+    @Test
+    void testDoesNotRegisterAbstractHandlersTwice() {
+        AnnotatedHandlerInspector<AB> aaInspector = AnnotatedHandlerInspector.inspectType(AB.class,
+                                                                                          parameterResolverFactory);
+
+        assertEquals(1, aaInspector.getAllHandlers().size());
+        assertEquals(1, (int) aaInspector.getAllHandlers().values().stream().flatMap(Collection::stream).count());
     }
 
     private <T extends MessageHandlingMember<?>> List<AnnotatedMessageHandlingMember<?>> unwrapToList(
@@ -219,6 +229,20 @@ class AnnotatedHandlerInspectorTest {
 
         @CommandHandler
         public void dHandle(String d) {
+        }
+    }
+
+    public static abstract class AA {
+
+        @CommandHandler
+        public abstract String handleAbstractly(String command);
+    }
+
+    public static class AB extends AA {
+
+        @Override
+        public String handleAbstractly(String command) {
+            return "Some result";
         }
     }
 }

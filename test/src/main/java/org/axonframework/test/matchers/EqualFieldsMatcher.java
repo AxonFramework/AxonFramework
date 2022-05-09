@@ -22,6 +22,8 @@ import org.hamcrest.Description;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
+import static org.axonframework.common.ReflectionUtils.isPrimitive;
+
 /**
  * Matcher that will match an Object if all the fields on that Object contain values equal to the same field in the
  * expected instance.
@@ -37,10 +39,11 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     private Field failedField;
     private Object failedFieldExpectedValue;
     private Object failedFieldActualValue;
+    private boolean failedPrimitive;
 
     /**
-     * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
-     * {@code expected} object.
+     * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given {@code expected}
+     * object.
      *
      * @param expected The expected object
      */
@@ -49,8 +52,8 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     }
 
     /**
-     * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
-     * {@code expected} object.
+     * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given {@code expected}
+     * object.
      *
      * @param expected The expected object
      * @param filter   The filter describing the fields to include in the comparison
@@ -60,13 +63,22 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
         this.filter = filter;
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
-    public boolean matches(Object item) {
-        return expected.getClass().isInstance(item) && matchesSafely(item);
+    public boolean matches(Object actual) {
+        return expected.getClass().isInstance(actual) && matchesSafely(actual);
     }
 
     private boolean matchesSafely(Object actual) {
+        if ((isPrimitive(expected) || isPrimitive(actual))) {
+            if (expected.equals(actual)) {
+                return true;
+            } else {
+                failedPrimitive = true;
+                failedFieldExpectedValue = expected;
+                failedFieldActualValue = actual;
+                return false;
+            }
+        }
         return expected.getClass().equals(actual.getClass())
                 && fieldsMatch(expected.getClass(), expected, actual);
     }
@@ -107,8 +119,8 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     }
 
     /**
-     * Returns the expected value of a failed field comparison, if any. This value is only populated after {@link
-     * #matches(Object)} is called and a mismatch has been detected.
+     * Returns the expected value of a failed field comparison, if any. This value is only populated after
+     * {@link #matches(Object)} is called and a mismatch has been detected.
      *
      * @return the expected value of the field that failed comparison, if any
      */
@@ -117,13 +129,24 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     }
 
     /**
-     * Returns the actual value of a failed field comparison, if any. This value is only populated after {@link
-     * #matches(Object)} is called and a mismatch has been detected.
+     * Returns the actual value of a failed field comparison, if any. This value is only populated after
+     * {@link #matches(Object)} is called and a mismatch has been detected.
      *
      * @return the actual value of the field that failed comparison, if any
      */
     public Object getFailedFieldActualValue() {
         return failedFieldActualValue;
+    }
+
+    /**
+     * Returns whether this matcher failed matching primitive types.
+     * <p>
+     * Note that this may include an expected or actual of type {@link String}.
+     *
+     * @return {@code true} if this matcher failed matching primitive types, {@code false} otherwise.
+     */
+    public boolean isFailedPrimitive() {
+        return failedPrimitive;
     }
 
     @Override

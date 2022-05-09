@@ -388,9 +388,9 @@ public class SimpleQueryBus implements QueryBus {
         DefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(query);
         return uow.executeWithResult(() -> {
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            return query.getResponseType()
-                        .convert(queryResponse)
-                        .map(GenericQueryResponseMessage::asResponseMessage);
+            return Flux.from(query.getResponseType()
+                                  .convert(queryResponse))
+                       .map(GenericQueryResponseMessage::asResponseMessage);
         });
     }
 

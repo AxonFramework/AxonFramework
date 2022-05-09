@@ -16,15 +16,16 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.responsetypes.FluxResponseType;
+import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
 /**
  * A special type of {@link QueryMessage} used for initiating streaming queries. It's special since it hard codes the
- * response type to {@link FluxResponseType}.
+ * response type to {@link PublisherResponseType}.
  *
  * @param <Q> the type of streaming query payload
  * @param <R> the type of the result streamed via {@link Flux}
@@ -32,10 +33,10 @@ import java.util.Map;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Flux<R>> {
+public interface StreamingQueryMessage<Q, R> extends QueryMessage<Q, Publisher<R>> {
 
     @Override
-    ResponseType<Flux<R>> getResponseType();
+    ResponseType<Publisher<R>> getResponseType();
 
     @Override
     StreamingQueryMessage<Q, R> withMetaData(Map<String, ?> metaData);

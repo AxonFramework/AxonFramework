@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
@@ -36,6 +37,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.upcasting.ContextAwareSingleEntryUpcaster;
+import org.axonframework.serialization.upcasting.event.ContextAwareSingleEventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
@@ -45,7 +48,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
@@ -193,6 +199,38 @@ class AxonServerEventStoreTest {
     }
 
     @Test
+    void testLoadEventsWithContextAwareUpcaster() {
+        reset(upcasterChain);
+        ContextAwareSingleEventUpcaster<AtomicInteger> upcaster = new ContextAwareSingleEventUpcaster<AtomicInteger>() {
+            @Override
+            protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation, AtomicInteger context) {
+                return true;
+            }
+
+            @Override
+            protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation intermediateRepresentation, AtomicInteger context) {
+                return intermediateRepresentation.upcast(intermediateRepresentation.getType(), String.class, Function.identity(), m -> m.and("counter", context.getAndIncrement()));
+            }
+
+            @Override
+            protected AtomicInteger buildContext() {
+                return new AtomicInteger();
+            }
+        };
+        when(upcasterChain.upcast(any())).thenAnswer(i -> upcaster.upcast(i.getArgument(0)));
+        testSubject.publish(new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1"),
+                            new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Test2"),
+                            new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 2, "Test3"));
+
+        DomainEventStream actual = testSubject.readEvents(AGGREGATE_ID);
+        assertTrue(actual.hasNext());
+        assertEquals(0, actual.next().getMetaData().get("counter"));
+        assertEquals(1, actual.next().getMetaData().get("counter"));
+        assertEquals(2, actual.next().getMetaData().get("counter"));
+        assertFalse(actual.hasNext());
+    }
+
+    @Test
     void testLastSequenceNumberFor() {
         assertThrows(EventStoreException.class, () -> testSubject.lastSequenceNumberFor("Agg1"));
     }
@@ -296,13 +334,14 @@ class AxonServerEventStoreTest {
 
     @Test
     void testReadEventsWithMagicSequenceNumberAndNoSnapshotFilterIncludesSnapshots() {
+        JacksonSerializer eventSerializer = JacksonSerializer.defaultSerializer();
         AxonServerEventStore testSubjectWithoutSnapshotFilter =
                 AxonServerEventStore.builder()
                                     .configuration(config)
                                     .platformConnectionManager(axonServerConnectionManager)
                                     .upcasterChain(upcasterChain)
-                                    .eventSerializer(JacksonSerializer.defaultSerializer())
-                                    .snapshotSerializer(JacksonSerializer.defaultSerializer())
+                                    .eventSerializer(eventSerializer)
+                                    .snapshotSerializer(eventSerializer)
                                     .build();
 
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");

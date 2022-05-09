@@ -25,6 +25,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -137,5 +138,22 @@ public class GrpcMetaDataConverter {
             default:
                 return null;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof GrpcMetaDataConverter)) {
+            return false;
+        }
+        GrpcMetaDataConverter that = (GrpcMetaDataConverter) o;
+        return serializer.equals(that.serializer);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serializer);
     }
 }

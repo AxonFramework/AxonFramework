@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,12 +44,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     private final transient boolean lastMessageWasReplay;
 
     /**
-     * Creates a new TrackingToken that represents the given {@code startPosition} of a stream, in reset state,
-     * when appropriate.
+     * Creates a new TrackingToken that represents the given {@code startPosition} of a stream. It will be in replay
+     * state until the position of the provided {@code tokenAtReset}. After that, the {@code tokenAtReset} will become
+     * the active token and the stream will no longer be considered as replaying.
      *
      * @param tokenAtReset  The token present when the reset was triggered
-     * @param startPosition The position where the token should be reset to
-     * @return A token that represents a reset to the tail of the stream
+     * @param startPosition The position where the token should be reset to and start replaying from
+     * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, TrackingToken startPosition) {
         if (tokenAtReset == null) {
@@ -65,7 +66,9 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Creates a new TrackingToken that represents the tail position of a stream, in reset state, when appropriate.
+     * Creates a new TrackingToken that represents the tail of the stream. It will be in replay
+     * state until the position of the provided {@code tokenAtReset}. After that, the {@code tokenAtReset} will become
+      * the active token and the stream will no longer be considered as replaying.
      *
      * @param tokenAtReset The token present when the reset was triggered
      * @return A token that represents a reset to the tail of the stream
@@ -265,5 +268,4 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         }
         return OptionalLong.empty();
     }
-
 }
