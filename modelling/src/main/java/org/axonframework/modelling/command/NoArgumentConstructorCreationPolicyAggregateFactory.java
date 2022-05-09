@@ -29,7 +29,7 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
     private final Class<? extends A> aggregateClass;
 
     /**
-     * Construct an instance of the {@link NoArgumentConstructorCreationPolicyAggregateFactory} for the given type
+     * Construct an instance of the {@link NoArgumentConstructorCreationPolicyAggregateFactory} for the given type.
      * @param aggregateClass aggregate type
      */
     public NoArgumentConstructorCreationPolicyAggregateFactory(@Nonnull Class<? extends A> aggregateClass) {

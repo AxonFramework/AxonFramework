@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 
 /**
  * Interface to describe a way to create Aggregate instances based on an identifier when an instance has to be
- * created in order to be used in Command handlers annotated with {@link CreationPolicy}
+ * created in order to be used in Command handlers annotated with {@link CreationPolicy}.
  *
  * @param <A> The type of aggregate this factory creates
  * @author Stefan Andjelkovic
@@ -32,7 +32,7 @@ public interface CreationPolicyAggregateFactory<A> {
 
     /**
      * Instantiates the aggregate instance based on the provided identifier. The identifier can be a null if no
-     * identifier is found or provided in the command message
+     * identifier is found or provided in the command message.
      *
      * @param identifier the identifier extracted from the command message
      * @return an identifier initialized aggregate root instance ready to handle commands
