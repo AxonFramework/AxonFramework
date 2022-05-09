@@ -37,6 +37,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.mockito.Mockito.*;
 
 /**
+ * Tests various ways to create aggregates based on incoming Commands.
+ * Some cases will use aggregate class's constructors while others might use regular or static methods
  * @author Stefan Andjelkovic
  */
 class AggregateCreationFromCommandsTest {
