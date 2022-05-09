@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,9 @@ import java.util.function.Supplier;
  */
 public class InitialEventRepresentation implements IntermediateEventRepresentation {
 
-    private final SerializedType type;
     private final SerializedObject<Object> data;
+    private final SerializedType type;
+    private final Class<?> contentType;
     private final LazyDeserializingObject<MetaData> metaData;
     private final String eventIdentifier;
     private final Supplier<Instant> timestamp;
@@ -68,8 +69,9 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
      */
     @SuppressWarnings("unchecked")
     public InitialEventRepresentation(EventData<?> eventData, Serializer serializer) {
-        type = eventData.getPayload().getType();
         data = (SerializedObject<Object>) eventData.getPayload();
+        type = data.getType();
+        contentType = data.getContentType();
         metaData = new LazyDeserializingObject<>(eventData.getMetaData(), serializer);
         eventIdentifier = eventData.getEventIdentifier();
         timestamp = CachingSupplier.of(eventData::getTimestamp);
@@ -112,6 +114,11 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     @Override
     public <D> SerializedObject<D> getData(Class<D> requiredType) {
         return serializer.getConverter().convert(data, requiredType);
+    }
+
+    @Override
+    public Class<?> getContentType() {
+        return contentType;
     }
 
     @Override

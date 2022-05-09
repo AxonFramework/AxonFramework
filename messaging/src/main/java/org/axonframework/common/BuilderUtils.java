@@ -116,4 +116,14 @@ public abstract class BuilderUtils {
     public static void assertNonEmpty(String string, String exceptionMessage) {
         assertThat(string, StringUtils::nonEmptyOrNull, exceptionMessage);
     }
+    /**
+     * Assert that the given {@code string} does not equals an empty String. If not, an {@link
+     * AxonConfigurationException} is thrown containing the provided {@code exceptionMessage}.
+     *
+     * @param string           the value to assert
+     * @param exceptionMessage the message for the exception.
+     */
+    public static void assertNonBlank(String string, String exceptionMessage) {
+        assertThat(string, StringUtils::nonEmpty, exceptionMessage);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.AxonConfigurationException;
@@ -56,7 +57,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
+import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.rejectDuplicates;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -92,6 +95,16 @@ class AggregateAnnotationCommandHandlerTest {
                         aggregateModel,
                         mock(EventBus.class)
                 ));
+        when(mockRepository.newInstance(any(), any())).thenAnswer(invocation -> {
+            AnnotatedAggregate<StubCommandAnnotatedAggregate> aggregate = AnnotatedAggregate.initialize(
+                    (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                    aggregateModel,
+                    mock(EventBus.class)
+            );
+            Consumer<Aggregate<?>> consumer = (Consumer<Aggregate<?>>) invocation.getArguments()[1];
+            consumer.accept(aggregate);
+            return aggregate;
+        });
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
@@ -144,6 +157,7 @@ class AggregateAnnotationCommandHandlerTest {
                 CreateCommand.class.getName(),
                 CreateOrUpdateCommand.class.getName(),
                 CreateAlwaysCommand.class.getName(),
+                AlwaysCreateCommand.class.getName(),
                 CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
@@ -166,8 +180,10 @@ class AggregateAnnotationCommandHandlerTest {
     void testCommandHandlerSubscribesToCommands() {
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
                                      any(MessageHandler.class));
-        verify(commandBus).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
-                                     any(MessageHandler.class));
+        // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
+        // DuplicateCommandHandlerResolver
+        verify(commandBus, times(2)).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
+                                               any(MessageHandler.class));
     }
 
     @Test
@@ -225,6 +241,21 @@ class AggregateAnnotationCommandHandlerTest {
         verifyNoInteractions(creationPolicyFactory);
         factoryCaptor.getValue().call();
         verify(creationPolicyFactory).create(eq("id"));
+    }
+
+    @Test
+    public void testCommandHandlerAlwaysCreatesAggregateInstance() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
     }
 
     @Test
@@ -576,17 +607,39 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    void testUsesDuplicateCommandHandlerResolver() {
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(rejectDuplicates())
+                                     .build();
+        commandBus = spy(commandBus);
+        mockRepository = mock(Repository.class);
+
+        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
+                new CustomParameterResolverFactory()
+        );
+        aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
+                                                                             parameterResolverFactory);
+        testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
+                                                       .aggregateType(StubCommandAnnotatedAggregate.class)
+                                                       .repository(mockRepository)
+                                                       .build();
+
+        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> testSubject.subscribe(commandBus));
+    }
+
+    @Test
     void testCommandHandlerByAbstractEntityWithTheSameCommandType() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
+        commandBus.dispatch(
+                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
                 (commandMessage, commandResultMessage) -> {
                     if (commandResultMessage.isExceptional()) {
                         commandResultMessage.optionalExceptionResult()
-                                .ifPresent(Throwable::printStackTrace);
+                                            .ifPresent(Throwable::printStackTrace);
                         fail("Did not expect exception");
                     }
                     assertEquals("handled by 1_b", commandResultMessage.getPayload());
@@ -602,8 +655,8 @@ class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
+        commandBus.dispatch(
+                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
                 (commandMessage, commandResultMessage) -> {
                     if (commandResultMessage.isExceptional()) {
                         Throwable cause = commandResultMessage.exceptionResult();
@@ -697,6 +750,14 @@ class AggregateAnnotationCommandHandlerTest {
             return "Create or update works fine";
         }
 
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public String handleAlwaysCreate(AlwaysCreateCommand alwaysCreateCommand) {
+            this.setIdentifier(alwaysCreateCommand.id);
+            return "Always create works fine";
+        }
+
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public String handleCreateAlways(CreateAlwaysCommand createAlwaysCommand) {
@@ -706,6 +767,11 @@ class AggregateAnnotationCommandHandlerTest {
 
         @Override
         public String handleUpdate(UpdateCommandWithAnnotatedMethod updateCommand) {
+            return "Method works fine";
+        }
+
+        @CommandHandler
+        public String handleUpdateDuplicate(UpdateCommandWithAnnotatedMethod updateCommand) {
             return "Method works fine";
         }
 
@@ -752,8 +818,8 @@ class AggregateAnnotationCommandHandlerTest {
                 this.absEntitiesA = new ArrayList<>();
                 this.absEntitiesB = new ArrayList<>();
             }
-            this.absEntitiesA.add(new StubCommandAnnotatedAbstractEntityA(id+"_a"));
-            this.absEntitiesB.add(new StubCommandAnnotatedAbstractEntityB(id+"_b"));
+            this.absEntitiesA.add(new StubCommandAnnotatedAbstractEntityA(id + "_a"));
+            this.absEntitiesB.add(new StubCommandAnnotatedAbstractEntityB(id + "_b"));
         }
     }
 
@@ -839,6 +905,7 @@ class AggregateAnnotationCommandHandlerTest {
         public String abstractId;
     }
 
+    @SuppressWarnings("unused")
     private static class StubCommandAnnotatedAbstractEntityA extends StubCommandAbstractEntity {
 
         public StubCommandAnnotatedAbstractEntityA() {
@@ -859,6 +926,7 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class StubCommandAnnotatedAbstractEntityB extends StubCommandAbstractEntity {
 
         public StubCommandAnnotatedAbstractEntityB() {
@@ -917,6 +985,27 @@ class AggregateAnnotationCommandHandlerTest {
         private final String parameter;
 
         private CreateOrUpdateCommand(String id, String parameter) {
+            this.id = id;
+            this.parameter = parameter;
+        }
+
+        public String getParameter() {
+            return parameter;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class AlwaysCreateCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+        private final String parameter;
+
+        private AlwaysCreateCommand(String id, String parameter) {
             this.id = id;
             this.parameter = parameter;
         }

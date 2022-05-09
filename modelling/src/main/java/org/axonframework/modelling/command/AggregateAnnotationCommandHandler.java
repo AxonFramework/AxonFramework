@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,14 @@ import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -48,9 +51,13 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
 
 /**
- * Command handler that handles commands based on {@link CommandHandler} annotations on an aggregate. Those annotations
+ * Command handler that registers a set of {@link CommandHandler} based on annotations of an aggregate. Those annotations
  * may appear on methods, in which case a specific aggregate instance needs to be targeted by the command, or on the
  * constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
+ *
+ * Despite being an {@link CommandMessageHandler} it does not actually handle the commands. During registration to the
+ * {@link CommandBus} it registers the {@link CommandMessageHandler}s directly instead of itself so duplicate command
+ * handlers can be detected and handled correctly.
  *
  * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
@@ -62,6 +69,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private final CommandTargetResolver commandTargetResolver;
     private final List<MessageHandler<CommandMessage<?>>> handlers;
     private final Set<String> supportedCommandNames;
+    private final Map<String, Set<MessageHandler<CommandMessage<?>>>> supportedCommandsByName;
     private final CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
 
     /**
@@ -99,6 +107,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         this.repository = builder.repository;
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
+        this.supportedCommandsByName = new HashMap<>();
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
         this.creationPolicyAggregateFactory = initializeAggregateFactory(aggregateModel, builder.creationPolicyAggregateFactory);
         this.handlers = initializeHandlers(aggregateModel);
@@ -120,10 +129,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        List<Registration> subscriptions = supportedCommandNames()
+        List<Registration> subscriptions = supportedCommandsByName
+                .entrySet()
                 .stream()
-                .map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                .flatMap(entry ->
+                    entry.getValue().stream().map(messageHandler ->
+                        commandBus.subscribe(entry.getKey(), messageHandler)
+                    )
+                )
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
@@ -146,30 +161,33 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
                                                               .map(CreationPolicyMember::creationPolicy);
 
+            MessageHandler<CommandMessage<?>> messageHandler = null;
             if (cmh.isFactoryHandler()) {
                 assertThat(
                         policy,
                         p -> p.map(AggregateCreationPolicy.ALWAYS::equals).orElse(true),
                         aggregateModel.type() + ": Static methods/constructors can only use creationPolicy ALWAYS"
                 );
-                handlersFound.add(new AggregateConstructorCommandHandler(handler));
+                messageHandler = new AggregateConstructorCommandHandler(handler);
             } else {
                 switch (policy.orElse(NEVER)) {
                     case ALWAYS:
-                        handlersFound.add(new AlwaysCreateAggregateCommandHandler(
+                        messageHandler = new AlwaysCreateAggregateCommandHandler(
                                 handler, creationPolicyAggregateFactory
-                        ));
+                        );
                         break;
                     case CREATE_IF_MISSING:
-                        handlersFound.add(new AggregateCreateOrUpdateCommandHandler(
+                        messageHandler = new AggregateCreateOrUpdateCommandHandler(
                                 handler, creationPolicyAggregateFactory
-                        ));
+                        );
                         break;
                     case NEVER:
-                        handlersFound.add(new AggregateCommandHandler(handler));
+                        messageHandler = new AggregateCommandHandler(handler);
                         break;
                 }
             }
+            handlersFound.add(messageHandler);
+            supportedCommandsByName.computeIfAbsent(cmh.commandName(), key -> new HashSet<>()).add(messageHandler);
             supportedCommandNames.add(cmh.commandName());
         });
     }
@@ -421,11 +439,24 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
+            AtomicReference<Object> response = new AtomicReference<>();
+            AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
             VersionedAggregateIdentifier commandMessageVersionedId = commandTargetResolver.resolveTarget(command);
             Object commandMessageAggregateId = commandMessageVersionedId.getIdentifierValue();
-            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId));
-            Object response = aggregate.handle(command);
-            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response;
+
+            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId), agg -> {
+                try {
+                    response.set(agg.handle(command));
+                } catch (Exception e) {
+                    exceptionDuringInit.set(e);
+                }
+            });
+
+            if (exceptionDuringInit.get() != null) {
+                throw exceptionDuringInit.get();
+            }
+
+            return handlerHasVoidReturnType() ? resolveReturnValue(command, aggregate) : response.get();
         }
 
         public boolean handlerHasVoidReturnType() {
@@ -460,15 +491,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
             Aggregate<T> instance = repository.loadOrCreate(commandMessageStringAggregateId,
                                                             () -> factoryMethod.create(commandMessageAggregateId));
-            Object commandResult = instance.handle(command);
-            Object aggregateId = instance.identifier();
-
-            assertThat(
-                    aggregateId,
-                    id -> id != null && id.toString() != null && id.toString().equals(commandMessageAggregateId.toString()),
-                    "Identifier must be set after handling the message"
-            );
-            return commandResult;
+            return instance.handle(command);
         }
 
         @Override

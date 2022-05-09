@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -77,6 +78,12 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public A newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
+        return newInstance(factoryMethod, a -> {});
+    }
+
+    @Override
+    public A newInstance(@Nonnull Callable<T> factoryMethod,
+                         @Nonnull Consumer<Aggregate<T>> initMethod) throws Exception {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
@@ -89,6 +96,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         });
 
         A aggregate = doCreateNew(factoryMethod);
+        initMethod.accept(aggregate);
         aggregateReference.set(aggregate);
         Assert.isTrue(aggregateModel.entityClass().isAssignableFrom(aggregate.rootType()),
                       () -> "Unsuitable aggregate for this repository: wrong type");
