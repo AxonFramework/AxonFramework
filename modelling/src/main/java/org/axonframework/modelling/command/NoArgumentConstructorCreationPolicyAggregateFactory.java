@@ -19,19 +19,34 @@ package org.axonframework.modelling.command;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * Default implementation of {@link CreationPolicyAggregateFactory} that invokes the default, No-Arguments
+ * constructor of the class.
+ * @param <A> aggregate type
+ */
 public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements CreationPolicyAggregateFactory<A> {
 
-    private final Class<? extends A> aggregateRootClass;
+    private final Class<? extends A> aggregateClass;
 
-    public NoArgumentConstructorCreationPolicyAggregateFactory(@Nonnull Class<? extends A> aggregateRootClass) {
-        this.aggregateRootClass = aggregateRootClass;
+    /**
+     * Construct an instance of the {@link NoArgumentConstructorCreationPolicyAggregateFactory} for the given type
+     * @param aggregateClass aggregate type
+     */
+    public NoArgumentConstructorCreationPolicyAggregateFactory(@Nonnull Class<? extends A> aggregateClass) {
+        this.aggregateClass = aggregateClass;
     }
 
+    /**
+     * Creates the aggregate instance based on the previously provided type. Invokes the default,
+     * no-argument constructor of the class.
+     * @param identifier ignored identifier
+     * @return Aggregate instance
+     */
     @Nonnull
     @Override
     public A create(@Nullable Object identifier) {
         try {
-            return aggregateRootClass.getDeclaredConstructor().newInstance();
+            return aggregateClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
