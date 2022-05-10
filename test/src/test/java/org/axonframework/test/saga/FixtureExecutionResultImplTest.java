@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,10 +88,10 @@ class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
         testSubject.expectPublishedEvents(endEvent);
-        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEvent), andNoMore())));
+        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(deepEquals(endEvent), andNoMore())));
 
         testSubject.expectDispatchedCommands("Second");
-        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
+        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(deepEquals("Second"), andNoMore())));
     }
 
     @Test
@@ -181,7 +181,7 @@ class FixtureExecutionResultImplTest {
                 AxonAssertionError.class,
                 () -> testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Third"))
         );
-        assertTrue(e.getMessage().contains("expected <Second>"), "Wrong message: " + e.getMessage());
+        assertTrue(e.getMessage().contains("Expected <SimpleCommand{content='Second'"), "Wrong message: " + e.getMessage());
     }
 
     @Test
@@ -374,7 +374,7 @@ class FixtureExecutionResultImplTest {
         testSubject.registerStartRecordingCallback(startRecordingCallbackInvocations::incrementAndGet);
         testSubject.startRecording();
 
-        assertThat(startRecordingCallbackInvocations.get(), equalTo(1));
+        assertThat(startRecordingCallbackInvocations.get(), deepEquals(1));
     }
 
     private static class SimpleCommand {
@@ -384,6 +384,13 @@ class FixtureExecutionResultImplTest {
 
         public SimpleCommand(String content) {
             this.content = content;
+        }
+
+        @Override
+        public String toString() {
+            return "SimpleCommand{" +
+                    "content='" + content + '\'' +
+                    '}';
         }
     }
 

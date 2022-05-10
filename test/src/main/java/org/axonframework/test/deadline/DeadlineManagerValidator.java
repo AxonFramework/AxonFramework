@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ public class DeadlineManagerValidator {
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
         List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object deadline : expected) {
-            matchers.add(equalTo(deadline, fieldFilter));
+            matchers.add(deepEquals(deadline, fieldFilter));
         }
         return matchers.toArray(new Matcher[0]);
     }

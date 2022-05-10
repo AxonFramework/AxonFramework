@@ -195,16 +195,16 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a difference between the primitive message payloads.
+     * Report an error due to a difference between the message payloads.
      *
      * @param messageType The (runtime) type of the message the difference was found in.
      * @param actual      The actual value of the payload.
      * @param expected    The expected value of the payload.
      */
-    public void reportDifferentPrimitivePayloads(Class<?> messageType, Object actual, Object expected) {
+    public void reportDifferentPayloads(Class<?> messageType, Object actual, Object expected) {
         throw new AxonAssertionError("One of the messages contained a different payload than expected"
                                              + NEWLINE + NEWLINE
-                                             + "The message of type [" + messageType.getSimpleName() + "], "
+                                             + "The message of type [" + messageType.getSimpleName() + "] "
                                              + "was not as expected."
                                              + NEWLINE
                                              + "Expected <" //NOSONAR
