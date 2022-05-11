@@ -27,12 +27,10 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.DeadLetterEntry;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
-import org.axonframework.messaging.deadletter.InMemoryDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class DeadLetteringIntegrationTest {
+public abstract class DeadLetteringEventIntegrationTest {
 
     private static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
@@ -74,15 +72,19 @@ class DeadLetteringIntegrationTest {
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
 
+    /**
+     * Constructs the {@link DeadLetterQueue} implementation used during the integration test.
+     *
+     * @return A {@link DeadLetterQueue} implementation used during the integration test.
+     */
+    abstract DeadLetterQueue<EventMessage<?>> buildDeadLetterQueue();
+
     @BeforeEach
     void setUp() {
         TransactionManager transactionManager = NoTransactionManager.instance();
 
         eventHandlingComponent = new ProblematicEventHandlingComponent();
-        deadLetterQueue = InMemoryDeadLetterQueue.<EventMessage<?>>builder()
-                                                 .expireThreshold(Duration.ofMillis(50))
-                                                 .scheduledExecutorService(Executors.newSingleThreadScheduledExecutor())
-                                                 .build();
+        deadLetterQueue = buildDeadLetterQueue();
         deadLetteringInvoker = DeadLetteringEventHandlerInvoker.builder()
                                                                .eventHandlers(eventHandlingComponent)
                                                                .sequencingPolicy(event -> ((DeadLetterableEvent) event.getPayload()).getAggregateIdentifier())
@@ -283,7 +285,7 @@ class DeadLetteringIntegrationTest {
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertEquals(2, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId)));
         assertFalse(deadLetterQueue.isEmpty());
-        assertWithin(1, TimeUnit.SECONDS, () ->{
+        assertWithin(1, TimeUnit.SECONDS, () -> {
             Optional<DeadLetterEntry<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
             assertTrue(requeuedLetter.isPresent());
             DeadLetterEntry<EventMessage<?>> result = requeuedLetter.get();
