@@ -103,14 +103,21 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens
-                .forEach((tokenSourceName, otherToken) ->
-                                 tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName) == null ?
-                                                    otherToken :
-                                                    trackingTokens.get(tokenSourceName).upperBound(otherToken))
-        );
+        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) -> tokenMap.put(
+                tokenSourceName, getUpperBound(trackingTokens.get(tokenSourceName), otherToken)
+        ));
 
         return new MultiSourceTrackingToken(tokenMap);
+    }
+
+    private TrackingToken getUpperBound(TrackingToken thisToken, TrackingToken otherToken) {
+        if (thisToken == null) {
+            return otherToken;
+        } else if (otherToken == null) {
+            return thisToken;
+        } else {
+            return thisToken.upperBound(otherToken);
+        }
     }
 
     /**
