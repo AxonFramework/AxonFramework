@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -24,10 +24,10 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
+import org.axonframework.eventhandling.MultiStreamableMessageSource;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
@@ -84,7 +84,7 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.close();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "resource"})
     @Test
     void testConnectionsAreClosedWhenOpeningFails() {
         StreamableMessageSource<TrackedEventMessage<?>> source1 = mock(StreamableMessageSource.class);
@@ -95,10 +95,9 @@ class MultiStreamableMessageSourceTest {
                                                   .build();
         BlockingStream<TrackedEventMessage<?>> mockStream = mock(BlockingStream.class);
         when(source1.openStream(any())).thenReturn(mockStream);
-        when(source2.openStream(any())).thenThrow(new MockException());
+        when(source2.openStream(any())).thenThrow(new RuntimeException());
 
-        assertThrows(MockException.class, () ->
-                testSubject.openStream(null));
+        assertThrows(RuntimeException.class, () -> testSubject.openStream(null));
 
         verify(mockStream).close();
         verify(source1).openStream(null);
@@ -122,6 +121,7 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.close();
     }
 
+    @SuppressWarnings("resource")
     @Test
     void testPeekingLastMessageKeepsItAvailable() throws InterruptedException {
         EventMessage<?> publishedEvent1 = GenericEventMessage.asEventMessage("Event1");
@@ -135,6 +135,7 @@ class MultiStreamableMessageSourceTest {
         assertTrue(stream.hasNextAvailable(10, TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("resource")
     @Test
     void openStreamWithWrongToken() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.openStream(new GlobalSequenceTrackingToken(0L)));
@@ -261,10 +262,10 @@ class MultiStreamableMessageSourceTest {
     }
 
     /**
-     * Create a timestamp a bit prior to {@link Instant#now()}. This can for example be used on {@link
-     * StreamableMessageSource#createTokenAt(Instant)} right after the insertion of some events, so that the created
-     * token will take in these new events. Simply using {@link Instant#now()} allows for a window of opportunity which
-     * misses these recent events.
+     * Create a timestamp a bit prior to {@link Instant#now()}. This can for example be used on
+     * {@link StreamableMessageSource#createTokenAt(Instant)} right after the insertion of some events, so that the
+     * created token will take in these new events. Simply using {@link Instant#now()} allows for a window of
+     * opportunity which misses these recent events.
      *
      * @return a timestamp a bit prior to {@link Instant#now()}
      */
@@ -323,7 +324,7 @@ class MultiStreamableMessageSourceTest {
         // Token should track events in eventStoreB and skip those in eventStoreA
         MultiSourceTrackingToken createdAtToken = testSubject.createTokenAt(Instant.now().minusMillis(10));
 
-        // storeA's token resembles an storeA head token since the create token at timestamp is after all its events
+        // storeA's token resembles an storeA head token since the created token at timestamp is after all its events
         assertEquals(eventStoreA.createHeadToken(), createdAtToken.getTokenForStream("eventStoreA"));
         OptionalLong storeBPosition = createdAtToken.getTokenForStream("eventStoreB").position();
         assertTrue(storeBPosition.isPresent());
@@ -344,13 +345,14 @@ class MultiStreamableMessageSourceTest {
         // Token should track events in eventStoreB and skip those in eventStoreA
         MultiSourceTrackingToken createdSinceToken = testSubject.createTokenSince(Duration.ofMillis(10));
 
-        // storeA's token resembles an storeA head token since the create token at timestamp is after all its events
+        // storeA's token resembles an storeA head token since the created token at timestamp is after all its events
         assertEquals(eventStoreA.createHeadToken(), createdSinceToken.getTokenForStream("eventStoreA"));
         OptionalLong storeBPosition = createdSinceToken.getTokenForStream("eventStoreB").position();
         assertTrue(storeBPosition.isPresent());
         assertEquals(-1L, storeBPosition.getAsLong());
     }
 
+    @SuppressWarnings("resource")
     @Test
     void configuredDifferentComparator() throws InterruptedException {
         Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
@@ -381,8 +383,8 @@ class MultiStreamableMessageSourceTest {
         EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event3");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream = prioritySourceTestSubject.openStream(
-                prioritySourceTestSubject.createTailToken());
+        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+                prioritySourceTestSubject.openStream(prioritySourceTestSubject.createTailToken());
 
         singleEventStream.nextAvailable();
         singleEventStream.nextAvailable();
@@ -391,7 +393,7 @@ class MultiStreamableMessageSourceTest {
         assertEquals(pubToStreamB.getPayload(), singleEventStream.nextAvailable().getPayload());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "resource"})
     @Test
     void testSkipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
@@ -425,7 +427,7 @@ class MultiStreamableMessageSourceTest {
         verify(streamThree).skipMessagesWithPayloadTypeOf(testEvent);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "resource"})
     @Test
     void testSetOnAvailableCallbackReturnsTrueIfAllStreamsReturnTrue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
@@ -463,7 +465,7 @@ class MultiStreamableMessageSourceTest {
         assertTrue(invoked.get());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "resource"})
     @Test
     void testSetOnAvailableCallbackReturnsFalseIfOneStreamsReturnsFalse() {
         AtomicBoolean invoked = new AtomicBoolean(false);
@@ -517,6 +519,7 @@ class MultiStreamableMessageSourceTest {
             throw new UnsupportedOperationException();
         }
 
+        @SuppressWarnings("RedundantThrows")
         @Override
         public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
             throw new UnsupportedOperationException();

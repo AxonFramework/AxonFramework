@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
@@ -32,14 +30,14 @@ import java.util.OptionalLong;
 import java.util.StringJoiner;
 
 /**
- * Combined tracking token used when processing from multiple event sources
+ * A {@link TrackingToken} implementation combining several {@code TrackingTokens} into one. Used to keep track of
+ * several message sources at once, like the {@link MultiStreamableMessageSource}.
  *
  * @author Greg Woods
  * @since 4.2
  */
 public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
-    private static final Logger logger = LoggerFactory.getLogger(MultiSourceTrackingToken.class);
     private static final long serialVersionUID = 4541799074835933645L;
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
@@ -63,7 +61,7 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      * {@code MultiStreamableMessageSource}s.
      *
      * @param other The token to compare to this one
-     * @return token representing the lower bound of of both tokens
+     * @return token representing the lower bound of both tokens
      */
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
@@ -76,12 +74,11 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens
-                .forEach((tokenSourceName, otherToken) ->
-                                 tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName) == null ?
-                                                    null :
-                                                    trackingTokens.get(tokenSourceName).lowerBound(otherToken))
-        );
+        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) -> {
+            TrackingToken thisToken = trackingTokens.get(tokenSourceName);
+            tokenMap.put(tokenSourceName,
+                         thisToken == null || otherToken == null ? null : thisToken.lowerBound(otherToken));
+        });
 
         return new MultiSourceTrackingToken(tokenMap);
     }
@@ -106,14 +103,21 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
 
-        otherMultiToken.trackingTokens
-                .forEach((tokenSourceName, otherToken) ->
-                                 tokenMap.put(tokenSourceName, trackingTokens.get(tokenSourceName) == null ?
-                                                    otherToken :
-                                                    trackingTokens.get(tokenSourceName).upperBound(otherToken))
-        );
+        otherMultiToken.trackingTokens.forEach((tokenSourceName, otherToken) -> tokenMap.put(
+                tokenSourceName, getUpperBound(trackingTokens.get(tokenSourceName), otherToken)
+        ));
 
         return new MultiSourceTrackingToken(tokenMap);
+    }
+
+    private TrackingToken getUpperBound(TrackingToken thisToken, TrackingToken otherToken) {
+        if (thisToken == null) {
+            return otherToken;
+        } else if (otherToken == null) {
+            return thisToken;
+        } else {
+            return thisToken.upperBound(otherToken);
+        }
     }
 
     /**
@@ -189,7 +193,6 @@ public class MultiSourceTrackingToken implements TrackingToken, Serializable {
      */
     @Override
     public OptionalLong position() {
-
         //If all delegated tokens are empty then return empty
         if (trackingTokens.entrySet().stream().noneMatch(token -> token.getValue() != null && token.getValue().position().isPresent())) {
             return OptionalLong.empty();
