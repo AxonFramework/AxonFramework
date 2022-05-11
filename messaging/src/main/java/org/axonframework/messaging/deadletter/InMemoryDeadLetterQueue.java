@@ -272,16 +272,19 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                            .filter(entry -> queueIds.contains(entry.getKey()))
                            .collect(Collectors.toSet());
 
-        Instant earliestSequence = Instant.MAX;
-        DeadLetterEntry<T> earliestLetter = null;
+        Instant current = clock.instant();
+        Instant earliestExpiredSequence = Instant.MAX;
+        DeadLetterEntry<T> earliestExpiredLetter = null;
         for (Map.Entry<QueueIdentifier, Deque<DeadLetterEntry<T>>> sequence : availableSequences) {
             DeadLetterEntry<T> letter = sequence.getValue().peekFirst();
-            if (letter != null && letter.expiresAt().isBefore(earliestSequence)) {
-                earliestSequence = letter.expiresAt();
-                earliestLetter = letter;
+            if (letter != null
+                    && letter.expiresAt().isBefore(current)
+                    && letter.expiresAt().isBefore(earliestExpiredSequence)) {
+                earliestExpiredSequence = letter.expiresAt();
+                earliestExpiredLetter = letter;
             }
         }
-        return earliestLetter;
+        return earliestExpiredLetter;
     }
 
     @Override

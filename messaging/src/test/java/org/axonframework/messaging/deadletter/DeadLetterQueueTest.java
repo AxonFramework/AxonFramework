@@ -231,6 +231,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, enqueueResult.expiresAt());
         assertEquals(0, enqueueResult.numberOfRetries());
 
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
+
         Optional<DeadLetterEntry<M>> takenResult = testSubject.take(testId.group());
         assertTrue(takenResult.isPresent());
         assertEquals(enqueueResult, takenResult.get());
@@ -300,6 +303,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
     @Test
     void testIsEmpty() {
+        Instant deadLetteredTime = setAndGetTime();
+
         I testId = generateQueueId();
 
         assertTrue(testSubject.isEmpty());
@@ -307,6 +312,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testId, generateMessage(), generateCause());
 
         assertFalse(testSubject.isEmpty());
+
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(deadLetteredTime.plus(expireThreshold()).plusMillis(1));
 
         // The queue should be empty again after releasing the only letter present
         testSubject.take(testId.group()).ifPresent(DeadLetterEntry::acknowledge);
@@ -358,6 +366,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         testSubject.enqueue(testId, testFirstLetter, testCause);
         testSubject.enqueue(testId, testSecondLetter, testCause);
+
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
 
         Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
         assertTrue(firstOptionalResult.isPresent());
@@ -430,6 +441,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testThatId, testThatFirstLetter, testThatCause);
         testSubject.enqueueIfPresent(testThatId, testThatSecondLetter);
 
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
+
         Optional<DeadLetterEntry<M>> thisOptionalFirstResult = testSubject.take(testThisId.group());
         assertTrue(thisOptionalFirstResult.isPresent());
         DeadLetterEntry<M> thisFirstResult = thisOptionalFirstResult.get();
@@ -488,6 +502,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testId, testFirstLetter, testThisCause);
         testSubject.enqueueIfPresent(testId, testSecondLetter);
 
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
+
         Optional<DeadLetterEntry<M>> firstOptionalResult = testSubject.take(testId.group());
         assertTrue(firstOptionalResult.isPresent());
         DeadLetterEntry<M> firstResult = firstOptionalResult.get();
@@ -504,6 +521,40 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
+    void testTakeReturnsEmptyOptionalForNotExpiredEntries() {
+        Instant expectedDeadLettered = setAndGetTime();
+        Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
+
+        I testId = generateQueueId();
+        M testLetter = generateMessage();
+        Throwable testCause = generateCause();
+
+        testSubject.enqueue(testId, testLetter, testCause);
+
+        // Set the test's time right before the expireAt time.
+        setAndGetTime(expectedDeadLettered.plus(expireThreshold().minusMillis(50)));
+
+        Optional<DeadLetterEntry<M>> optionalResult = testSubject.take(testId.group());
+        assertFalse(optionalResult.isPresent());
+
+        // Set the test's time after the expireAt time.
+        setAndGetTime(expectedDeadLettered.plus(expireThreshold().plusMillis(50)));
+
+        optionalResult = testSubject.take(testId.group());
+        assertTrue(optionalResult.isPresent());
+        DeadLetterEntry<M> result = optionalResult.get();
+        assertEquals(testId, result.queueIdentifier());
+        assertEquals(testLetter, result.message());
+        assertEquals(testCause, result.cause());
+        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedExpireAt, result.expiresAt());
+        assertEquals(0, result.numberOfRetries());
+        result.acknowledge();
+
+        assertTrue(testSubject.isEmpty());
+    }
+
+    @Test
     void testAcknowledgeRemovesLetterFromQueue() {
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
@@ -515,6 +566,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(testId, testLetter, testCause);
 
         assertFalse(testSubject.isEmpty());
+
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
 
         Optional<DeadLetterEntry<M>> optionalResult = testSubject.take(testId.group());
         assertTrue(optionalResult.isPresent());
@@ -546,6 +600,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.isEmpty());
 
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
+
         Optional<DeadLetterEntry<M>> optionalFirstTryResult = testSubject.take(testId.group());
         assertTrue(optionalFirstTryResult.isPresent());
         DeadLetterEntry<M> firstTryResult = optionalFirstTryResult.get();
@@ -559,6 +616,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Instant expectedUpdatedExpireAt = setAndGetTime().plus(expireThreshold());
         // Evaluation of the dead-letter was unsuccessful, so its requeued and thus kept in the queue.
         firstTryResult.requeue();
+
+        // Move time again, as requeue changed the expiry time.
+        setAndGetTime(expectedUpdatedExpireAt.plusMillis(1));
 
         assertFalse(testSubject.isEmpty());
         Optional<DeadLetterEntry<M>> optionalSecondTry = testSubject.take(testId.group());
@@ -591,6 +651,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         setAndGetTime(expectedExpireAt);
         // Release all letters.
         testSubject.release();
+
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedExpireAt.plusMillis(1));
 
         Optional<DeadLetterEntry<M>> thisOptionalResult = testSubject.take(testThisId.group());
         assertTrue(thisOptionalResult.isPresent());
@@ -643,6 +706,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedDeadLettered, thisResult.deadLettered());
         assertEquals(expectedOriginalExpireAt, thisResult.expiresAt());
         assertEquals(0, thisResult.numberOfRetries());
+
+        // Let the letters expire in the queue by move the clock to after the expected expiry time.
+        setAndGetTime(expectedUpdatedExpireAt.plusMillis(1));
 
         Optional<DeadLetterEntry<M>> thatOptionalResult = testSubject.take(testThatId.group());
         assertTrue(thatOptionalResult.isPresent());

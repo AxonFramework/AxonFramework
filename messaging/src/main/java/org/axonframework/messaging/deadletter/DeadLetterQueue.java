@@ -149,8 +149,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
      * {@link DeadLetterEntry#expiresAt()} and {@link DeadLetterEntry#numberOfRetries()}. Doing so guards the queue
      * against concurrent take operations accidentally retrieving (and thus handling) the same letter.
      * <p>
-     * Will return an {@link Optional#empty()} if there are no entries ready to be released or present for the given
-     * {@code group}.
+     * Will return an {@link Optional#empty()} if there are no entries ready to be released (i.e., they have not
+     * {@link DeadLetterEntry#expiresAt() expired} yet) or present for the given {@code group}.
      *
      * @param group The group descriptor of a {@link QueueIdentifier} to peek an entry for.
      * @return The oldest {@link DeadLetterEntry} belonging to the given {@code group} from this dead-letter queue.

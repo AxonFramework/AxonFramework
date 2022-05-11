@@ -182,6 +182,10 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         assertFalse(deadLetterQueue.isEmpty());
         assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)));
+
+        // Release all entries so that they may be taken.
+        deadLetterQueue.release();
+
         Optional<DeadLetterEntry<EventMessage<?>>> first = deadLetterQueue.take(PROCESSING_GROUP);
         assertTrue(first.isPresent());
         assertEquals(firstDeadLetter, first.get().message().getPayload());

@@ -64,8 +64,9 @@ public interface DeadLetterEntry<T extends Message<?>> {
     Instant deadLettered();
 
     /**
-     * The moment in time when this letter will expire. Can be used to deduce whether the letter should be evaluated
-     * again. Will equal the {@link #deadLettered()} value if this entry is enqueued as part of a sequence.
+     * The moment in time when this letter will expire. Should be used to deduce whether the letter is ready to be
+     * evaluated. Will equal the {@link #deadLettered()} value if this entry is enqueued as part of a sequence to ensure
+     * it is available right after a previous letter within the same sequence.
      *
      * @return The moment in time when this letter will expire.
      */
