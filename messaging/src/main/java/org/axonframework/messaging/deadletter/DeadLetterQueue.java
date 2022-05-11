@@ -74,7 +74,7 @@ public interface DeadLetterQueue<T extends Message<?>> {
      */
     default Optional<DeadLetterEntry<T>> enqueueIfPresent(@Nonnull QueueIdentifier identifier,
                                                           @Nonnull T message) throws DeadLetterQueueOverflowException {
-        if (isEmpty() || !contains(identifier)) {
+        if (!contains(identifier)) {
             return Optional.empty();
         }
 

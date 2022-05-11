@@ -49,7 +49,8 @@ public interface DeadLetterEntry<T extends Message<?>> {
     T message();
 
     /**
-     * The cause for the {@link #message()} to be dead-lettered.
+     * The cause for the {@link #message()} to be dead-lettered. May be {@code null} in case this letter is enqueued as
+     * a consequence of earlier letters with the same {@link QueueIdentifier}.
      *
      * @return The cause for the {@link #message()} to be dead-lettered
      */
@@ -85,7 +86,10 @@ public interface DeadLetterEntry<T extends Message<?>> {
 
     /**
      * Reenters this {@link DeadLetterEntry dead-letter} in the queue it originates from. This method should be used to
-     * signal the evaluation failed. This operation might remove the entry from the {@link DeadLetterQueue queue} it
+     * signal the evaluation failed.
+     * <p>
+     * The operation will adjust the {@link #expiresAt()} to the current time and increment the
+     * {@link #numberOfRetries()}. This operation might remove the entry from the {@link DeadLetterQueue queue} it
      * originated from.
      */
     void requeue();
