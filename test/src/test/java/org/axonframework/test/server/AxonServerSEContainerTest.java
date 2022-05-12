@@ -61,7 +61,7 @@ class AxonServerSEContainerTest {
             assertTrue(axonServerSEContainer.isRunning());
             assertNotNull(axonServerSEContainer.getAxonServerAddress());
             assertNotNull(axonServerSEContainer.getGrpcPort());
-            assertNotNull(axonServerSEContainer.getContainerIpAddress());
+            assertNotNull(axonServerSEContainer.getHost());
             assertEquals(2, axonServerSEContainer.getExposedPorts().size());
             assertEquals("true", axonServerSEContainer.getEnvMap().get("AXONIQ_AXONSERVER_DEVMODE_ENABLED"));
         }
