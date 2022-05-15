@@ -54,7 +54,7 @@ class CoordinatorTest {
     }
 
     @Test
-    void testIfNewCoordinationTaskCanBeSchedulledAfterTokenReleaseClaimFails() {
+    void testIfCoordinationTaskRescheduledAfterTokenReleaseClaimFails() {
         //arrange
         final RuntimeException streamOpenException = new RuntimeException("Some exception during event stream open");
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
@@ -64,9 +64,9 @@ class CoordinatorTest {
         doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
         doThrow(streamOpenException).when(messageSource).openStream(any());
-        doReturn(completedFuture(releaseClaimException)).when(workPackage).abort(any());
+        doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
         doReturn(segment).when(workPackage).segment();
-        doAnswer(runTask()).when(executorService).submit(any(Runnable.class));
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
 
         //act
         testSubject.start();
@@ -75,11 +75,11 @@ class CoordinatorTest {
         verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
     }
 
-    private Answer<Future<Integer>> runTask() {
+    private Answer<Future<Void>> runTaskSync() {
         return invocationOnMock -> {
             final Runnable runnable = invocationOnMock.getArgument(0);
             runnable.run();
-            return completedFuture(0);
+            return completedFuture(null);
         };
     }
 }
