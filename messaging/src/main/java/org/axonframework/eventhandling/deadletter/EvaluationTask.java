@@ -20,7 +20,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterEvaluationException;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -34,7 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A {@link Runnable} implementation used to evaluate a {@link DeadLetterEntry} taken from the {@link DeadLetterQueue}.
+ * A {@link Runnable} implementation used to evaluate a {@link DeadLetter} taken from the {@link DeadLetterQueue}.
  * This task is added through {@link DeadLetterQueue#onAvailable(String, Runnable)}, so we can typically assume there
  * are entries ready for evaluation.
  *
@@ -66,10 +66,10 @@ class EvaluationTask implements Runnable {
     @Override
     public void run() {
         AtomicBoolean evaluationFailed = new AtomicBoolean(false);
-        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter;
+        Optional<DeadLetter<EventMessage<?>>> optionalLetter;
         while ((optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
                 && !evaluationFailed.get()) {
-            DeadLetterEntry<EventMessage<?>> letter = optionalLetter.get();
+            DeadLetter<EventMessage<?>> letter = optionalLetter.get();
             logger.debug("Start evaluation of dead-letter [{}] for processing group [{}].",
                          letter.message().getIdentifier(), processingGroup);
 

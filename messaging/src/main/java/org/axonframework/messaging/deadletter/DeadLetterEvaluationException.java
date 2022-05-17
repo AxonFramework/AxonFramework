@@ -19,8 +19,8 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.common.AxonException;
 
 /**
- * Exception signalling evaluation of a {@link DeadLetterEntry dead-letter} encountered an unexpected exception. This
- * can, for example, occur when {@link DeadLetterEntry#acknowledge()} or {@link DeadLetterEntry#requeue()} fail after
+ * Exception signalling evaluation of a {@link DeadLetter dead-letter} encountered an unexpected exception. This
+ * can, for example, occur when {@link DeadLetter#acknowledge()} or {@link DeadLetter#requeue()} fail after
  * evaluation.
  *
  * @author Steven van Beelen

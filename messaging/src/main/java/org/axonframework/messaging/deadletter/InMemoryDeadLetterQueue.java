@@ -44,7 +44,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -55,9 +54,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 /**
  * In memory implementation of the {@link DeadLetterQueue}.
  * <p>
- * Maintains a {@link Deque} per unique {@link QueueIdentifier} entry. The maximum amount of {@code Deques} contained by
+ * Maintains a {@link Deque} per unique {@link QueueIdentifier}. The maximum amount of {@code Deques} contained by
  * this {@code DeadLetterQueue} is {@code 1024} (configurable through {@link Builder#maxQueues(int)}). The maximum
- * amount of {@link DeadLetterEntry letters} per queue also defaults to {@code 1024} (configurable through
+ * amount of {@link DeadLetter letters} per queue also defaults to {@code 1024} (configurable through
  * {@link Builder#maxQueueSize(int)}).
  *
  * @param <T> The type of {@link Message} maintained in this {@link DeadLetterQueue}.
@@ -69,12 +68,12 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
-     * {@link Clock} instance used to set the time on new {@link DeadLetterEntry}s. To fix the time while testing set
-     * this value to a constant value.
+     * {@link Clock} instance used to set the time on new {@link DeadLetter DeadLetters}. To fix the time while testing set this
+     * value to a constant value.
      */
     public static Clock clock = Clock.systemUTC();
 
-    private final Map<QueueIdentifier, Deque<DeadLetterEntry<T>>> deadLetters = new ConcurrentSkipListMap<>();
+    private final Map<QueueIdentifier, Deque<DeadLetter<T>>> deadLetters = new ConcurrentSkipListMap<>();
     private final Set<QueueIdentifier> takenSequences = new ConcurrentSkipListSet<>();
     private final Map<String, Runnable> availabilityCallbacks = new ConcurrentSkipListMap<>();
 
@@ -129,9 +128,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public DeadLetterEntry<T> enqueue(@Nonnull QueueIdentifier identifier,
-                                      @Nonnull T deadLetter,
-                                      Throwable cause) throws DeadLetterQueueOverflowException {
+    public DeadLetter<T> enqueue(@Nonnull QueueIdentifier identifier,
+                                 @Nonnull T deadLetter,
+                                 Throwable cause) throws DeadLetterQueueOverflowException {
         if (isFull(identifier)) {
             throw new DeadLetterQueueOverflowException(
                     "No room left to enqueue message [" + deadLetter + "] for identifier ["
@@ -147,30 +146,30 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                          deadLetter, identifier);
         }
 
-        DeadLetterEntry<T> entry = buildEntry(identifier, deadLetter, cause);
+        DeadLetter<T> letter = buildLetter(identifier, deadLetter, cause);
 
         deadLetters.computeIfAbsent(identifier, id -> new ConcurrentLinkedDeque<>())
-                   .addLast(entry);
+                   .addLast(letter);
         scheduleAvailabilityCallbacks(identifier);
 
-        return entry;
+        return letter;
     }
 
-    private DeadLetterEntry<T> buildEntry(QueueIdentifier identifier, T deadLetter, Throwable cause) {
+    private DeadLetter<T> buildLetter(QueueIdentifier identifier, T deadLetter, Throwable cause) {
         Instant deadLettered = clock.instant();
         Instant expiresAt = cause == null ? deadLettered : deadLettered.plus(expireThreshold);
-        return new GenericDeadLetterEntry(identifier,
-                                          deadLetter,
-                                          cause,
-                                          deadLettered,
-                                          expiresAt,
-                                          this::acknowledge,
-                                          this::requeue);
+        return new GenericDeadLetter<>(identifier,
+                                       deadLetter,
+                                       cause,
+                                       deadLettered,
+                                       expiresAt,
+                                       this::acknowledge,
+                                       this::requeue);
     }
 
-    private void acknowledge(DeadLetterEntry<T> letter) {
+    private void acknowledge(DeadLetter<T> letter) {
         QueueIdentifier queueId = letter.queueIdentifier();
-        Deque<DeadLetterEntry<T>> sequence = deadLetters.get(queueId);
+        Deque<DeadLetter<T>> sequence = deadLetters.get(queueId);
         sequence.remove(letter);
         logger.trace("Removed letter [{}].", letter.message().getIdentifier());
         if (sequence.isEmpty()) {
@@ -180,14 +179,14 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         takenSequences.remove(queueId);
     }
 
-    private void requeue(DeadLetterEntry<T> letter) {
+    private void requeue(DeadLetter<T> letter) {
         QueueIdentifier queueId = letter.queueIdentifier();
-        Deque<DeadLetterEntry<T>> sequence = deadLetters.get(queueId);
+        Deque<DeadLetter<T>> sequence = deadLetters.get(queueId);
         sequence.remove(letter);
 
         Instant newExpiresAt = clock.instant().plus(expireThreshold);
-        DeadLetterEntry<T> updatedLetter =
-                new GenericDeadLetterEntry(letter, newExpiresAt, this::acknowledge, this::requeue);
+        DeadLetter<T> updatedLetter =
+                new GenericDeadLetter<>(letter, newExpiresAt, this::acknowledge, this::requeue);
         sequence.addFirst(updatedLetter);
 
         takenSequences.remove(queueId);
@@ -238,7 +237,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public synchronized Optional<DeadLetterEntry<T>> take(@Nonnull String group) {
+    public synchronized Optional<DeadLetter<T>> take(@Nonnull String group) {
         if (deadLetters.isEmpty()) {
             logger.debug("Queue is empty while taking. Returning an empty optional.");
             return Optional.empty();
@@ -256,7 +255,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
             return Optional.empty();
         }
 
-        DeadLetterEntry<T> letter = getEarliestLetter(availableSequences);
+        DeadLetter<T> letter = getEarliestLetter(availableSequences);
         if (letter == null) {
             return Optional.empty();
         }
@@ -265,8 +264,8 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         return Optional.of(letter);
     }
 
-    private DeadLetterEntry<T> getEarliestLetter(List<QueueIdentifier> queueIds) {
-        Set<Map.Entry<QueueIdentifier, Deque<DeadLetterEntry<T>>>> availableSequences =
+    private DeadLetter<T> getEarliestLetter(List<QueueIdentifier> queueIds) {
+        Set<Map.Entry<QueueIdentifier, Deque<DeadLetter<T>>>> availableSequences =
                 deadLetters.entrySet()
                            .stream()
                            .filter(entry -> queueIds.contains(entry.getKey()))
@@ -274,9 +273,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
 
         Instant current = clock.instant();
         Instant earliestExpiredSequence = Instant.MAX;
-        DeadLetterEntry<T> earliestExpiredLetter = null;
-        for (Map.Entry<QueueIdentifier, Deque<DeadLetterEntry<T>>> sequence : availableSequences) {
-            DeadLetterEntry<T> letter = sequence.getValue().peekFirst();
+        DeadLetter<T> earliestExpiredLetter = null;
+        for (Map.Entry<QueueIdentifier, Deque<DeadLetter<T>>> sequence : availableSequences) {
+            DeadLetter<T> letter = sequence.getValue().peekFirst();
             if (letter != null
                     && letter.expiresAt().isBefore(current)
                     && letter.expiresAt().isBefore(earliestExpiredSequence)) {
@@ -288,7 +287,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
     }
 
     @Override
-    public void release(@Nonnull Predicate<DeadLetterEntry<T>> letterFilter) {
+    public void release(@Nonnull Predicate<DeadLetter<T>> letterFilter) {
         Instant expiresAt = clock.instant();
         Set<String> releasedGroups = new HashSet<>();
         logger.debug("Received a request to release matching dead-letters for evaluation.");
@@ -297,10 +296,10 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
                    .stream()
                    .flatMap(Collection::stream)
                    .filter(letterFilter)
-                   .map(entry -> (GenericDeadLetterEntry) entry)
-                   .forEach(entry -> {
-                       entry.setExpiresAt(expiresAt);
-                       releasedGroups.add(entry.queueIdentifier().group());
+                   .map(letter -> (GenericDeadLetter<T>) letter)
+                   .forEach(letter -> {
+                       letter.setExpiresAt(expiresAt);
+                       releasedGroups.add(letter.queueIdentifier().group());
                    });
 
         releasedGroups.stream()
@@ -381,12 +380,12 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         }
 
         /**
-         * Sets the maximum amount of {@link DeadLetterEntry letters} per queue this {@link DeadLetterQueue} can store.
+         * Sets the maximum amount of {@link DeadLetter letters} per queue this {@link DeadLetterQueue} can store.
          * <p>
          * The given {@code maxQueueSize} is required to be a positive number, higher or equal to {@code 128}. It
          * defaults to {@code 1024}.
          *
-         * @param maxQueueSize The maximum amount of {@link DeadLetterEntry letters} per queue.
+         * @param maxQueueSize The maximum amount of {@link DeadLetter letters} per queue.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<T> maxQueueSize(int maxQueueSize) {
@@ -405,8 +404,8 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
          * {@link #onAvailable(String, Runnable) configured availability checks}. Defaults to a {@link Duration} of 5000
          * milliseconds.
          *
-         * @param expireThreshold The threshold for enqueued {@link DeadLetterEntry letters} to be considered ready to
-         *                        be {@link #take(String) taken}.
+         * @param expireThreshold The threshold for enqueued {@link DeadLetter letters} to be considered ready to be
+         *                        {@link #take(String) taken}.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<T> expireThreshold(Duration expireThreshold) {
@@ -450,142 +449,6 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
          */
         protected void validate() {
             // No assertions required, kept for overriding
-        }
-    }
-
-    /**
-     * Generic implementation of the {@link DeadLetterEntry} allowing any type of {@link Message} to be dead lettered.
-     */
-    private class GenericDeadLetterEntry implements DeadLetterEntry<T> {
-
-        private final QueueIdentifier queueIdentifier;
-        private final T message;
-        private final Throwable cause;
-        private Instant expiresAt;
-        private final int numberOfRetries;
-        private final Instant deadLettered;
-        private final Consumer<GenericDeadLetterEntry> acknowledgeOperation;
-        private final Consumer<GenericDeadLetterEntry> requeueOperation;
-
-        private GenericDeadLetterEntry(DeadLetterEntry<T> entry,
-                                       Instant expiresAt,
-                                       Consumer<GenericDeadLetterEntry> acknowledgeOperation,
-                                       Consumer<GenericDeadLetterEntry> requeueOperation) {
-            this(entry.queueIdentifier(),
-                 entry.message(),
-                 entry.cause(),
-                 entry.deadLettered(),
-                 expiresAt,
-                 entry.numberOfRetries() + 1,
-                 acknowledgeOperation,
-                 requeueOperation);
-        }
-
-        private GenericDeadLetterEntry(QueueIdentifier queueIdentifier,
-                                       T message,
-                                       Throwable cause,
-                                       Instant deadLettered,
-                                       Instant expiresAt,
-                                       Consumer<GenericDeadLetterEntry> acknowledgeOperation,
-                                       Consumer<GenericDeadLetterEntry> requeueOperation) {
-            this(queueIdentifier, message, cause, deadLettered, expiresAt, 0, acknowledgeOperation, requeueOperation);
-        }
-
-        private GenericDeadLetterEntry(QueueIdentifier queueIdentifier,
-                                       T message,
-                                       Throwable cause,
-                                       Instant deadLettered,
-                                       Instant expiresAt,
-                                       int numberOfRetries,
-                                       Consumer<GenericDeadLetterEntry> acknowledgeOperation,
-                                       Consumer<GenericDeadLetterEntry> requeueOperation) {
-            this.queueIdentifier = queueIdentifier;
-            this.message = message;
-            this.cause = cause;
-            this.deadLettered = deadLettered;
-            this.expiresAt = expiresAt;
-            this.numberOfRetries = numberOfRetries;
-            this.acknowledgeOperation = acknowledgeOperation;
-            this.requeueOperation = requeueOperation;
-        }
-
-        @Override
-        public QueueIdentifier queueIdentifier() {
-            return queueIdentifier;
-        }
-
-        @Override
-        public T message() {
-            return message;
-        }
-
-        @Override
-        public Throwable cause() {
-            return cause;
-        }
-
-        @Override
-        public Instant deadLettered() {
-            return deadLettered;
-        }
-
-        @Override
-        public Instant expiresAt() {
-            return expiresAt;
-        }
-
-        public void setExpiresAt(Instant expiresAt) {
-            this.expiresAt = expiresAt;
-        }
-
-        @Override
-        public int numberOfRetries() {
-            return numberOfRetries;
-        }
-
-        @Override
-        public void acknowledge() {
-            acknowledgeOperation.accept(this);
-        }
-
-        @Override
-        public void requeue() {
-            requeueOperation.accept(this);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            // Check does not include the expiresAt, numberOfRetries, and releaseOperation allowing easy entry removal.
-            //noinspection unchecked
-            GenericDeadLetterEntry that = (GenericDeadLetterEntry) o;
-            return Objects.equals(queueIdentifier, that.queueIdentifier)
-                    && Objects.equals(message, that.message)
-                    && Objects.equals(cause, that.cause)
-                    && Objects.equals(deadLettered, that.deadLettered);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(queueIdentifier, message, cause, expiresAt, deadLettered, acknowledgeOperation);
-        }
-
-        @Override
-        public String toString() {
-            return "GenericDeadLetterEntry{" +
-                    "queueIdentifier=" + queueIdentifier +
-                    ", message=" + message +
-                    ", cause=" + cause +
-                    ", expiresAt=" + expiresAt +
-                    ", numberOfRetries=" + numberOfRetries +
-                    ", deadLettered=" + deadLettered +
-                    '}';
         }
     }
 }

@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.deadletter.QueueIdentifier;
 import org.axonframework.utils.EventTestUtils;
@@ -141,7 +141,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
         //noinspection unchecked
-        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.of(mock(DeadLetterEntry.class)));
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.of(mock(DeadLetter.class)));
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 

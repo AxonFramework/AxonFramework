@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.annotation.MessageIdentifier;
-import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
@@ -186,16 +186,16 @@ public abstract class DeadLetteringEventIntegrationTest {
         // Release all entries so that they may be taken.
         deadLetterQueue.release();
 
-        Optional<DeadLetterEntry<EventMessage<?>>> first = deadLetterQueue.take(PROCESSING_GROUP);
+        Optional<DeadLetter<EventMessage<?>>> first = deadLetterQueue.take(PROCESSING_GROUP);
         assertTrue(first.isPresent());
         assertEquals(firstDeadLetter, first.get().message().getPayload());
-        // Acknowledging removes the letter from the queue, allowing us to check the following entry
+        // Acknowledging removes the letter from the queue, allowing us to check the following letter
         first.get().acknowledge();
-        Optional<DeadLetterEntry<EventMessage<?>>> second = deadLetterQueue.take(PROCESSING_GROUP);
+        Optional<DeadLetter<EventMessage<?>>> second = deadLetterQueue.take(PROCESSING_GROUP);
         assertTrue(second.isPresent());
         assertEquals(secondDeadLetter, second.get().message().getPayload());
         second.get().acknowledge();
-        Optional<DeadLetterEntry<EventMessage<?>>> third = deadLetterQueue.take(PROCESSING_GROUP);
+        Optional<DeadLetter<EventMessage<?>>> third = deadLetterQueue.take(PROCESSING_GROUP);
         assertTrue(third.isPresent());
         assertEquals(thirdDeadLetter, third.get().message().getPayload());
         third.get().acknowledge();
@@ -290,13 +290,15 @@ public abstract class DeadLetteringEventIntegrationTest {
                      () -> assertEquals(2, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId)));
         assertFalse(deadLetterQueue.isEmpty());
         assertWithin(1, TimeUnit.SECONDS, () -> {
-            Optional<DeadLetterEntry<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
+            Optional<DeadLetter<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
             assertTrue(requeuedLetter.isPresent());
-            DeadLetterEntry<EventMessage<?>> result = requeuedLetter.get();
+            DeadLetter<EventMessage<?>> result = requeuedLetter.get();
             assertEquals(thirdDeadLetter, result.message().getPayload());
             assertEquals(1, result.numberOfRetries());
         });
     }
+
+    // TODO: 09-05-22 concurrency tests
 
     private static class ProblematicEventHandlingComponent {
 

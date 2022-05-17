@@ -21,18 +21,25 @@ import org.axonframework.messaging.Message;
 import java.time.Instant;
 
 /**
- * Entry describing a dead-lettered {@link Message}.
+ * Interface describing a dead-lettered {@link Message} implementation of generic type {@code T}.
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #deadLettered()}. This letter can be regarded for
- * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the entry can be cleared through
- * {@link #acknowledge()}. The {@link #requeue()} method should be used to signal evaluation failed, reentering the
- * letter into its queue.
+ * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the letter can be cleared
+ * through {@link #acknowledge()}. The {@link #requeue()} method should be used to signal evaluation failed, reentering
+ * the letter into its queue.
  *
- * @param <T> The type of {@link Message} represented by this entry.
+ * @param <T> The type of {@link Message} represented by this interface.
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public interface DeadLetterEntry<T extends Message<?>> {
+public interface DeadLetter<T extends Message<?>> {
+
+    /**
+     * The identifier of this dead-letter.
+     *
+     * @return The identifier of this dead-letter.
+     */
+    String identifier();
 
     /**
      * The {@link QueueIdentifier} this dead-letter belongs to.
@@ -42,9 +49,9 @@ public interface DeadLetterEntry<T extends Message<?>> {
     QueueIdentifier queueIdentifier();
 
     /**
-     * The {@link Message} of type {@code T} contained in this entry.
+     * The {@link Message} of type {@code T} contained in this letter.
      *
-     * @return The {@link Message} of type {@code T} contained in this entry.
+     * @return The {@link Message} of type {@code T} contained in this letter.
      */
     T message();
 
@@ -65,32 +72,32 @@ public interface DeadLetterEntry<T extends Message<?>> {
 
     /**
      * The moment in time when this letter will expire. Should be used to deduce whether the letter is ready to be
-     * evaluated. Will equal the {@link #deadLettered()} value if this entry is enqueued as part of a sequence to ensure
-     * it is available right after a previous letter within the same sequence.
+     * evaluated. Will equal the {@link #deadLettered()} value if this letter is enqueued as part of a sequence to
+     * ensure it is available right after a previous letter within the same sequence.
      *
      * @return The moment in time when this letter will expire.
      */
     Instant expiresAt();
 
     /**
-     * The number of retries this {@link DeadLetterEntry dead-letter} has gone through.
+     * The number of retries this {@link DeadLetter dead-letter} has gone through.
      *
-     * @return The number of retries this {@link DeadLetterEntry dead-letter} has gone through.
+     * @return The number of retries this {@link DeadLetter dead-letter} has gone through.
      */
     int numberOfRetries();
 
     /**
-     * Acknowledges this {@link DeadLetterEntry dead-letter} as successfully evaluated. This operation will remove the
-     * entry from its queue.
+     * Acknowledges this {@link DeadLetter dead-letter} as successfully evaluated. This operation will remove this
+     * letter from its queue.
      */
     void acknowledge();
 
     /**
-     * Reenters this {@link DeadLetterEntry dead-letter} in the queue it originates from. This method should be used to
+     * Reenters this {@link DeadLetter dead-letter} in the queue it originates from. This method should be used to
      * signal the evaluation failed.
      * <p>
      * The operation will adjust the {@link #expiresAt()} to the current time and increment the
-     * {@link #numberOfRetries()}. This operation might remove the entry from the {@link DeadLetterQueue queue} it
+     * {@link #numberOfRetries()}. This operation might remove this letter from the {@link DeadLetterQueue queue} it
      * originated from.
      */
     void requeue();

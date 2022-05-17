@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.junit.jupiter.api.*;
 
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 class EvaluationTaskTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
-    @SuppressWarnings("rawtypes") // The DeadLetterEntry mocks don't like the generic, at all...
+    @SuppressWarnings("rawtypes") // The DeadLetter mocks don't like the generic, at all...
     private static final EventMessage TEST_EVENT =
             GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());
 
@@ -91,7 +91,7 @@ class EvaluationTaskTest {
     @Test
     void testRunEvaluatesDeadLetterSuccessfully() throws Exception {
         //noinspection unchecked
-        DeadLetterEntry<EventMessage<?>> testDeadLetter = mock(DeadLetterEntry.class);
+        DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
         when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter))
@@ -109,7 +109,7 @@ class EvaluationTaskTest {
     @Test
     void testRunEvaluatesDeadLetterSuccessfullyAndFailsOnAcknowledge() throws Exception {
         //noinspection unchecked
-        DeadLetterEntry<EventMessage<?>> testDeadLetter = mock(DeadLetterEntry.class);
+        DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
         doThrow(new RuntimeException()).when(testDeadLetter).acknowledge();
@@ -130,7 +130,7 @@ class EvaluationTaskTest {
     @Test
     void testRunEvaluatesDeadLetterUnsuccessfully() throws Exception {
         //noinspection unchecked
-        DeadLetterEntry<EventMessage<?>> testDeadLetter = mock(DeadLetterEntry.class);
+        DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
         Exception testException = new RuntimeException();
 
         //noinspection unchecked
@@ -153,7 +153,7 @@ class EvaluationTaskTest {
     @Test
     void testRunEvaluatesDeadLetterUnsuccessfullyAndFailsOnRequeue() throws Exception {
         //noinspection unchecked
-        DeadLetterEntry<EventMessage<?>> testDeadLetter = mock(DeadLetterEntry.class);
+        DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
         Exception testException = new RuntimeException();
 
         //noinspection unchecked

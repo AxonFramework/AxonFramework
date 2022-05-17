@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.deadletter.DeadLetterEntry;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.deadletter.QueueIdentifier;
 import org.slf4j.Logger;
@@ -107,7 +107,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         EventHandlingQueueIdentifier identifier =
                 new EventHandlingQueueIdentifier(super.sequenceIdentifier(message), processingGroup);
-        Optional<DeadLetterEntry<EventMessage<?>>> optionalLetter =
+        Optional<DeadLetter<EventMessage<?>>> optionalLetter =
                 transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(identifier, message));
         if (optionalLetter.isPresent()) {
             logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
@@ -159,7 +159,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
                                                            transactionManager,
                                                            listenerInvocationErrorHandler);
         queue.onAvailable(processingGroup, evaluationTask);
-        queue.release(entry -> Objects.equals(entry.queueIdentifier().group(), processingGroup));
+        queue.release(letter -> Objects.equals(letter.queueIdentifier().group(), processingGroup));
     }
 
     /**
