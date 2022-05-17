@@ -52,7 +52,7 @@ class AxonServerEEContainerTest {
             assertTrue(axonServerEEContainer.isRunning());
             assertNotNull(axonServerEEContainer.getAxonServerAddress());
             assertNotNull(axonServerEEContainer.getGrpcPort());
-            assertNotNull(axonServerEEContainer.getContainerIpAddress());
+            assertNotNull(axonServerEEContainer.getHost());
             assertEquals(2, axonServerEEContainer.getExposedPorts().size());
             assertEquals("axon-server-name", axonServerEEContainer.getEnvMap().get("AXONIQ_AXONSERVER_NAME"));
             assertEquals("axon-server-internal-host-name",
