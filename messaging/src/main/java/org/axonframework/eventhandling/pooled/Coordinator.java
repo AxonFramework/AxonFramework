@@ -845,10 +845,14 @@ class Coordinator {
             logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
-            abortWorkPackages(cause).thenRun(
-                    () -> {
-                        logger.debug("Work packages have aborted. Scheduling new coordination task to run in {}ms",
-                                     errorWaitBackOff);
+            abortWorkPackages(cause).whenComplete(
+                    (unused, throwable) -> {
+                        if (throwable != null) {
+                            logger.error("An exception occurred during work packages abort on [{}] processor.", name, throwable);
+                        } else {
+                            logger.debug("Work packages have aborted successfully.");
+                        }
+                        logger.debug("Scheduling new coordination task to run in {}ms", errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
                         executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
