@@ -848,7 +848,7 @@ class Coordinator {
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
-                            logger.error("An exception occurred during work packages abort on [{}] processor.", name, throwable);
+                            logger.warn("An exception occurred during work packages abort on [{}] processor.", name, throwable);
                         } else {
                             logger.debug("Work packages have aborted successfully.");
                         }
@@ -871,7 +871,12 @@ class Coordinator {
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
-                       ));
+                       ))
+                       .exceptionally(throwable -> {
+                           logger.info("An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
+                                       work.segment().getSegmentId(), name, throwable);
+                           return null;
+                       });
         }
     }
 }
