@@ -22,6 +22,8 @@ import javax.annotation.Nullable;
 /**
  * Default implementation of {@link CreationPolicyAggregateFactory} that invokes the default, No-Arguments
  * constructor of the class.
+ * @author Stefan Andjelkovic
+ * @since 4.6.0
  * @param <A> aggregate type
  */
 public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements CreationPolicyAggregateFactory<A> {
