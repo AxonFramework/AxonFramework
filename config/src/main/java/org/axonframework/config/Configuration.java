@@ -32,7 +32,6 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.NoResourceInjector;
