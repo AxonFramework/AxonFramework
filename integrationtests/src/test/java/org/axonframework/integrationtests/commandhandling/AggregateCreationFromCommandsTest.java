@@ -162,7 +162,7 @@ class AggregateCreationFromCommandsTest {
                 .<StubAggregateForCreation>builder()
                 .repository(repository)
                 .aggregateType(StubAggregateForCreation.class)
-                .aggregateFactory(id ->  {
+                .creationPolicyAggregateFactory(id ->  {
                     factoryInvocationCounter.incrementAndGet();
                     return new StubAggregateForCreation(id.toString());
                 })

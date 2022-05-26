@@ -117,7 +117,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
                                                        .parameterResolverFactory(parameterResolverFactory)
                                                        .repository(mockRepository)
-                                                       .aggregateFactory(creationPolicyFactory)
+                                                       .creationPolicyAggregateFactory(creationPolicyFactory)
                                                        .build();
         testSubject.subscribe(commandBus);
     }

@@ -342,7 +342,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
          * @param creationPolicyAggregateFactory that returns the aggregate instance based on the identifier
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> aggregateFactory(CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory) {
+        public Builder<T> creationPolicyAggregateFactory(CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory) {
             assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
             return this;

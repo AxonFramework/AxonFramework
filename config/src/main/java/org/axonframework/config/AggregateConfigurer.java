@@ -257,7 +257,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                .repository(repository.get())
                                                                                .commandTargetResolver(commandTargetResolver.get())
                                                                                .aggregateModel(metaModel.get())
-                                                                               .aggregateFactory(creationPolicyAggregateFactory.get())
+                                                                               .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
                                                                                .build());
     }
 
