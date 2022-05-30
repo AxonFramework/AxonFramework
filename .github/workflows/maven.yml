@@ -19,13 +19,13 @@ jobs:
         include:
           - java-version: 8
             sonar-enabled: false
-            deploy: true
+            deploy-enabled: true
           - java-version: 11
             sonar-enabled: true
-            deploy: false
+            deploy-enabled: false
           - java-version: 17
             sonar-enabled: false
-            deploy: false
+            deploy-enabled: false
 
     steps:
       - name: Checkout code
@@ -63,7 +63,7 @@ jobs:
 
       - name: Deploy to Sonatype
         # The github.repository validation ensures this job is not invoked for forked branches, since those don't have access to the secrets.
-        if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository }}
+        if: success() && ${{ matrix.deploy-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           ./mvnw -B -U -Possrh deploy -DskipTests=true
         env:
