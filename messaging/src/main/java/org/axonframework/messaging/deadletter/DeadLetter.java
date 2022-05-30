@@ -19,6 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
+import javax.annotation.Nullable;
 
 /**
  * Interface describing a dead-lettered {@link Message} implementation of generic type {@code T}.
@@ -56,12 +57,13 @@ public interface DeadLetter<T extends Message<?>> {
     T message();
 
     /**
-     * The cause for the {@link #message()} to be dead-lettered. May be {@code null} in case this letter is enqueued as
-     * a consequence of earlier letters with the same {@link QueueIdentifier}.
+     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. May be {@code null} in case this letter
+     * is enqueued as a consequence of earlier letters with the same {@link QueueIdentifier}.
      *
-     * @return The cause for the {@link #message()} to be dead-lettered
+     * @return The {@link Cause cause} for the {@link #message()} to be dead-lettered
      */
-    Throwable cause();
+    @Nullable
+    Cause cause();
 
     /**
      * The moment in time when the {@link #message()} was dead-lettered.

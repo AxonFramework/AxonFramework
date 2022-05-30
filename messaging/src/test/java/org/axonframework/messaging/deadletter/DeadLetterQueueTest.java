@@ -99,14 +99,14 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testDeadLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
-        DeadLetter<M> result = testSubject.enqueue(testId, testDeadLetter, testCause);
+        DeadLetter<M> result = testSubject.enqueue(testId, testDeadLetter, testThrowable);
 
         assertTrue(testSubject.contains(testId));
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testDeadLetter, result.message());
-        assertEquals(testCause, result.cause());
+        assertEquals(expectedCause(testThrowable), result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
@@ -118,12 +118,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(maxQueues > 0);
 
         for (int i = 0; i < maxQueues; i++) {
-            testSubject.enqueue(generateQueueId(), generateMessage(), generateCause());
+            testSubject.enqueue(generateQueueId(), generateMessage(), generateThrowable());
         }
 
         assertThrows(
                 DeadLetterQueueOverflowException.class,
-                () -> testSubject.enqueue(generateQueueId(), generateMessage(), generateCause())
+                () -> testSubject.enqueue(generateQueueId(), generateMessage(), generateThrowable())
         );
     }
 
@@ -135,12 +135,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(maxQueueSize > 0);
 
         for (int i = 0; i < maxQueueSize; i++) {
-            testSubject.enqueue(testId, generateMessage(), generateCause());
+            testSubject.enqueue(testId, generateMessage(), generateThrowable());
         }
 
         assertThrows(
                 DeadLetterQueueOverflowException.class,
-                () -> testSubject.enqueue(testId, generateMessage(), generateCause())
+                () -> testSubject.enqueue(testId, generateMessage(), generateThrowable())
         );
     }
 
@@ -149,7 +149,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Duration testExpireThreshold = expireThreshold();
         I testId = generateQueueId();
         M testLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
         Instant expectedDeadLettered = setAndGetTime();
         Instant expectedExpireAt = expectedDeadLettered.plus(testExpireThreshold);
@@ -158,12 +158,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         // Set the callback that's invoked after the expiry threshold is reached that's followed by enqueue.
         testSubject.onAvailable(testId.group(), expectedCallbackInvocations::countDown);
 
-        DeadLetter<M> result = testSubject.enqueue(testId, testLetter, testCause);
+        DeadLetter<M> result = testSubject.enqueue(testId, testLetter, testThrowable);
 
         assertTrue(testSubject.contains(testId));
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
-        assertEquals(testCause, result.cause());
+        assertEquals(expectedCause(testThrowable), result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
@@ -188,9 +188,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     @Test
     void testEnqueueIfPresentDoesNotEnqueueForNonExistentQueueIdentifier() {
         I testFirstId = generateQueueId();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
-        testSubject.enqueue(testFirstId, generateMessage(), testCause);
+        testSubject.enqueue(testFirstId, generateMessage(), testThrowable);
 
         I testSecondId = generateQueueId();
 
@@ -207,11 +207,11 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Instant expectedExpireAt = expectedDeadLettered.plus(expireThreshold());
 
         I testId = generateQueueId();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
         // First dead letter inserted...
         M testFirstLetter = generateMessage();
-        DeadLetter<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testCause);
+        DeadLetter<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testThrowable);
         // Second dead letter inserted...
         M testSecondLetter = generateMessage();
         testSubject.enqueueIfPresent(testId, testSecondLetter);
@@ -219,7 +219,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(testSubject.contains(testId));
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
-        assertEquals(testCause, enqueueResult.cause());
+        assertEquals(expectedCause(testThrowable), enqueueResult.cause());
         assertEquals(expectedDeadLettered, enqueueResult.deadLettered());
         assertEquals(expectedExpireAt, enqueueResult.expiresAt());
         assertEquals(0, enqueueResult.numberOfRetries());
@@ -238,7 +238,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         I testId = generateQueueId();
         M testFirstLetter = generateMessage();
         M testSecondLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
         Instant expectedFirstDeadLettered = setAndGetTime();
         Instant expectedFirstExpireAt = expectedFirstDeadLettered.plus(testExpireThreshold);
@@ -247,12 +247,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         // Set the callback that's invoked after the expiry threshold is reached that's followed by enqueue.
         testSubject.onAvailable(testId.group(), expectedCallbackInvocations::countDown);
 
-        DeadLetter<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testCause);
+        DeadLetter<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testThrowable);
 
         assertTrue(testSubject.contains(testId));
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
-        assertEquals(testCause, enqueueResult.cause());
+        assertEquals(expectedCause(testThrowable), enqueueResult.cause());
         assertEquals(expectedFirstDeadLettered, enqueueResult.deadLettered());
         assertEquals(expectedFirstExpireAt, enqueueResult.expiresAt());
         assertEquals(0, enqueueResult.numberOfRetries());
@@ -285,7 +285,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.contains(testId));
 
-        testSubject.enqueue(testId, generateMessage(), generateCause());
+        testSubject.enqueue(testId, generateMessage(), generateThrowable());
 
         assertTrue(testSubject.contains(testId));
         assertFalse(testSubject.contains(otherTestId));
@@ -300,7 +300,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(maxQueues > 0);
 
         for (int i = 0; i < maxQueues; i++) {
-            testSubject.enqueue(generateQueueId(), generateMessage(), generateCause());
+            testSubject.enqueue(generateQueueId(), generateMessage(), generateThrowable());
         }
 
         assertTrue(testSubject.isFull(generateQueueId()));
@@ -316,7 +316,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(maxQueueSize > 0);
 
         for (int i = 0; i < maxQueueSize; i++) {
-            testSubject.enqueue(testId, generateMessage(), generateCause());
+            testSubject.enqueue(testId, generateMessage(), generateThrowable());
         }
 
         assertTrue(testSubject.isFull(testId));
@@ -329,11 +329,11 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testFirstLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
         M testSecondLetter = generateMessage();
 
-        testSubject.enqueue(testId, testFirstLetter, testCause);
-        testSubject.enqueue(testId, testSecondLetter, testCause);
+        testSubject.enqueue(testId, testFirstLetter, testThrowable);
+        testSubject.enqueue(testId, testSecondLetter, testThrowable);
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
         setAndGetTime(expectedExpireAt.plusMillis(1));
@@ -343,7 +343,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> firstResult = firstOptionalResult.get();
         assertEquals(testId, firstResult.queueIdentifier());
         assertEquals(testFirstLetter, firstResult.message());
-        assertEquals(testCause, firstResult.cause());
+        assertEquals(expectedCause(testThrowable), firstResult.cause());
         assertEquals(expectedDeadLettered, firstResult.deadLettered());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         assertEquals(0, firstResult.numberOfRetries());
@@ -354,7 +354,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> secondResult = secondOptionalResult.get();
         assertEquals(testId, secondResult.queueIdentifier());
         assertEquals(testSecondLetter, secondResult.message());
-        assertEquals(testCause, secondResult.cause());
+        assertEquals(expectedCause(testThrowable), secondResult.cause());
         assertEquals(expectedDeadLettered, secondResult.deadLettered());
         assertEquals(expectedExpireAt, secondResult.expiresAt());
         assertEquals(0, secondResult.numberOfRetries());
@@ -377,9 +377,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(testSubject.contains(testId));
 
-        testSubject.enqueue(testId, generateMessage(), generateCause());
-        testSubject.enqueue(testId, generateMessage(), generateCause());
-        testSubject.enqueue(testId, generateMessage(), generateCause());
+        testSubject.enqueue(testId, generateMessage(), generateThrowable());
+        testSubject.enqueue(testId, generateMessage(), generateThrowable());
+        testSubject.enqueue(testId, generateMessage(), generateThrowable());
 
         assertTrue(testSubject.contains(testId));
         assertFalse(testSubject.take(testGroup).isPresent());
@@ -392,18 +392,18 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testThisId = generateQueueId();
         M testThisFirstLetter = generateMessage();
-        Throwable testThisCause = generateCause();
+        Throwable testThisThrowable = generateThrowable();
         M testThisSecondLetter = generateMessage();
 
-        testSubject.enqueue(testThisId, testThisFirstLetter, testThisCause);
+        testSubject.enqueue(testThisId, testThisFirstLetter, testThisThrowable);
         testSubject.enqueueIfPresent(testThisId, testThisSecondLetter);
 
         I testThatId = generateQueueId();
         M testThatFirstLetter = generateMessage();
-        Throwable testThatCause = generateCause();
+        Throwable testThatThrowable = generateThrowable();
         M testThatSecondLetter = generateMessage();
 
-        testSubject.enqueue(testThatId, testThatFirstLetter, testThatCause);
+        testSubject.enqueue(testThatId, testThatFirstLetter, testThatThrowable);
         testSubject.enqueueIfPresent(testThatId, testThatSecondLetter);
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
@@ -414,7 +414,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thisFirstResult = thisOptionalFirstResult.get();
         assertEquals(testThisId, thisFirstResult.queueIdentifier());
         assertEquals(testThisFirstLetter, thisFirstResult.message());
-        assertEquals(testThisCause, thisFirstResult.cause());
+        assertEquals(expectedCause(testThisThrowable), thisFirstResult.cause());
         assertEquals(expectedDeadLettered, thisFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thisFirstResult.expiresAt());
         assertEquals(0, thisFirstResult.numberOfRetries());
@@ -437,7 +437,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thatFirstResult = thatOptionalFirstResult.get();
         assertEquals(testThatId, thatFirstResult.queueIdentifier());
         assertEquals(testThatFirstLetter, thatFirstResult.message());
-        assertEquals(testThatCause, thatFirstResult.cause());
+        assertEquals(expectedCause(testThatThrowable), thatFirstResult.cause());
         assertEquals(expectedDeadLettered, thatFirstResult.deadLettered());
         assertEquals(expectedExpireAt, thatFirstResult.expiresAt());
         assertEquals(0, thatFirstResult.numberOfRetries());
@@ -459,10 +459,10 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testFirstLetter = generateMessage();
-        Throwable testThisCause = generateCause();
+        Throwable testThisThrowable = generateThrowable();
         M testSecondLetter = generateMessage();
 
-        testSubject.enqueue(testId, testFirstLetter, testThisCause);
+        testSubject.enqueue(testId, testFirstLetter, testThisThrowable);
         testSubject.enqueueIfPresent(testId, testSecondLetter);
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
@@ -473,7 +473,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> firstResult = firstOptionalResult.get();
         assertEquals(testId, firstResult.queueIdentifier());
         assertEquals(testFirstLetter, firstResult.message());
-        assertEquals(testThisCause, firstResult.cause());
+        assertEquals(expectedCause(testThisThrowable), firstResult.cause());
         assertEquals(expectedDeadLettered, firstResult.deadLettered());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         assertEquals(0, firstResult.numberOfRetries());
@@ -489,9 +489,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
-        testSubject.enqueue(testId, testLetter, testCause);
+        testSubject.enqueue(testId, testLetter, testThrowable);
 
         // Set the test's time right before the expireAt time.
         setAndGetTime(expectedDeadLettered.plus(expireThreshold().minusMillis(50)));
@@ -507,7 +507,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
-        assertEquals(testCause, result.cause());
+        assertEquals(expectedCause(testThrowable), result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
@@ -522,9 +522,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
-        testSubject.enqueue(testId, testLetter, testCause);
+        testSubject.enqueue(testId, testLetter, testThrowable);
         assertTrue(testSubject.contains(testId));
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
@@ -535,7 +535,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> result = optionalResult.get();
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
-        assertEquals(testCause, result.cause());
+        assertEquals(expectedCause(testThrowable), result.cause());
         assertEquals(expectedDeadLettered, result.deadLettered());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
@@ -554,9 +554,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testId = generateQueueId();
         M testLetter = generateMessage();
-        Throwable testCause = generateCause();
+        Throwable testThrowable = generateThrowable();
 
-        testSubject.enqueue(testId, testLetter, testCause);
+        testSubject.enqueue(testId, testLetter, testThrowable);
         assertTrue(testSubject.contains(testId));
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
@@ -567,7 +567,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> firstTryResult = optionalFirstTryResult.get();
         assertEquals(testId, firstTryResult.queueIdentifier());
         assertEquals(testLetter, firstTryResult.message());
-        assertEquals(testCause, firstTryResult.cause());
+        assertEquals(expectedCause(testThrowable), firstTryResult.cause());
         assertEquals(expectedDeadLettered, firstTryResult.deadLettered());
         assertEquals(expectedExpireAt, firstTryResult.expiresAt());
         assertEquals(0, firstTryResult.numberOfRetries());
@@ -598,13 +598,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testThisId = generateQueueId();
         M testThisLetter = generateMessage();
-        Throwable testThisCause = generateCause();
-        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+        Throwable testThisThrowable = generateThrowable();
+        testSubject.enqueue(testThisId, testThisLetter, testThisThrowable);
 
         I testThatId = generateQueueId();
         M testThatLetter = generateMessage();
-        Throwable testThatCause = generateCause();
-        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+        Throwable testThatThrowable = generateThrowable();
+        testSubject.enqueue(testThatId, testThatLetter, testThatThrowable);
 
         // Set the time to the expected expireAt.
         setAndGetTime(expectedExpireAt);
@@ -619,7 +619,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thisResult = thisOptionalResult.get();
         assertEquals(testThisId, thisResult.queueIdentifier());
         assertEquals(testThisLetter, thisResult.message());
-        assertEquals(testThisCause, thisResult.cause());
+        assertEquals(expectedCause(testThisThrowable), thisResult.cause());
         assertEquals(expectedDeadLettered, thisResult.deadLettered());
         assertEquals(expectedExpireAt, thisResult.expiresAt());
         assertEquals(0, thisResult.numberOfRetries());
@@ -629,7 +629,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thatResult = thatOptionalResult.get();
         assertEquals(testThatId, thatResult.queueIdentifier());
         assertEquals(testThatLetter, thatResult.message());
-        assertEquals(testThatCause, thatResult.cause());
+        assertEquals(expectedCause(testThatThrowable), thatResult.cause());
         assertEquals(expectedDeadLettered, thatResult.deadLettered());
         assertEquals(expectedExpireAt, thatResult.expiresAt());
         assertEquals(0, thatResult.numberOfRetries());
@@ -643,13 +643,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testThisId = generateQueueId();
         M testThisLetter = generateMessage();
-        Throwable testThisCause = generateCause();
-        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+        Throwable testThisThrowable = generateThrowable();
+        testSubject.enqueue(testThisId, testThisLetter, testThisThrowable);
 
         I testThatId = generateQueueId();
         M testThatLetter = generateMessage();
-        Throwable testThatCause = generateCause();
-        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+        Throwable testThatThrowable = generateThrowable();
+        testSubject.enqueue(testThatId, testThatLetter, testThatThrowable);
 
         // Set the time to the expected expireAt.
         setAndGetTime(expectedUpdatedExpireAt);
@@ -661,7 +661,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thisResult = thisOptionalResult.get();
         assertEquals(testThisId, thisResult.queueIdentifier());
         assertEquals(testThisLetter, thisResult.message());
-        assertEquals(testThisCause, thisResult.cause());
+        assertEquals(expectedCause(testThisThrowable), thisResult.cause());
         assertEquals(expectedDeadLettered, thisResult.deadLettered());
         assertEquals(expectedOriginalExpireAt, thisResult.expiresAt());
         assertEquals(0, thisResult.numberOfRetries());
@@ -674,7 +674,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> thatResult = thatOptionalResult.get();
         assertEquals(testThatId, thatResult.queueIdentifier());
         assertEquals(testThatLetter, thatResult.message());
-        assertEquals(testThatCause, thatResult.cause());
+        assertEquals(expectedCause(testThatThrowable), thatResult.cause());
         assertEquals(expectedDeadLettered, thatResult.deadLettered());
         assertEquals(expectedUpdatedExpireAt, thatResult.expiresAt());
         assertEquals(0, thatResult.numberOfRetries());
@@ -686,16 +686,16 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         I testThisId = generateQueueId();
         M testThisLetter = generateMessage();
-        Throwable testThisCause = generateCause();
-        testSubject.enqueue(testThisId, testThisLetter, testThisCause);
+        Throwable testThisThrowable = generateThrowable();
+        testSubject.enqueue(testThisId, testThisLetter, testThisThrowable);
         testSubject.onAvailable(testThisId.group(), () -> thisExpectedCallbackInvoked.set(true));
 
         AtomicBoolean thatExpectedCallbackInvoked = new AtomicBoolean(false);
 
         I testThatId = generateQueueId();
         M testThatLetter = generateMessage();
-        Throwable testThatCause = generateCause();
-        testSubject.enqueue(testThatId, testThatLetter, testThatCause);
+        Throwable testThatThrowable = generateThrowable();
+        testSubject.enqueue(testThatId, testThatLetter, testThatThrowable);
         testSubject.onAvailable(testThatId.group(), () -> thatExpectedCallbackInvoked.set(true));
 
         // Release letters matching testThisId.
@@ -715,9 +715,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(testSubject.contains(queueIdTwo));
         assertFalse(testSubject.contains(queueIdThree));
 
-        testSubject.enqueue(queueIdOne, generateMessage(), generateCause());
-        testSubject.enqueue(queueIdTwo, generateMessage(), generateCause());
-        testSubject.enqueue(queueIdThree, generateMessage(), generateCause());
+        testSubject.enqueue(queueIdOne, generateMessage(), generateThrowable());
+        testSubject.enqueue(queueIdTwo, generateMessage(), generateThrowable());
+        testSubject.enqueue(queueIdThree, generateMessage(), generateThrowable());
 
         assertTrue(testSubject.contains(queueIdOne));
         assertTrue(testSubject.contains(queueIdTwo));
@@ -738,10 +738,10 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(testSubject.contains(thisId));
         assertFalse(testSubject.contains(thatId));
 
-        testSubject.enqueue(thisId, generateMessage(), generateCause());
-        testSubject.enqueue(thisId, generateMessage(), generateCause());
-        testSubject.enqueue(thatId, generateMessage(), generateCause());
-        testSubject.enqueue(thatId, generateMessage(), generateCause());
+        testSubject.enqueue(thisId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thisId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thatId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thatId, generateMessage(), generateThrowable());
 
         assertTrue(testSubject.contains(thisId));
         assertTrue(testSubject.contains(thatId));
@@ -762,12 +762,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(testSubject.contains(thatId));
         assertFalse(testSubject.contains(thirdId));
 
-        testSubject.enqueue(thisId, generateMessage(), generateCause());
-        testSubject.enqueue(thisId, generateMessage(), generateCause());
-        testSubject.enqueue(thatId, generateMessage(), generateCause());
-        testSubject.enqueue(thatId, generateMessage(), generateCause());
-        testSubject.enqueue(thirdId, generateMessage(), generateCause());
-        testSubject.enqueue(thirdId, generateMessage(), generateCause());
+        testSubject.enqueue(thisId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thisId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thatId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thatId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thirdId, generateMessage(), generateThrowable());
+        testSubject.enqueue(thirdId, generateMessage(), generateThrowable());
 
         assertTrue(testSubject.contains(thisId));
         assertTrue(testSubject.contains(thatId));
@@ -792,9 +792,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     /**
      * Generate a unique {@link Throwable} by using {@link #generateId()} in the cause description.
      *
-     * @return A unique {@link Throwable} by using {@link #generateId()} in the cause description..
+     * @return A unique {@link Throwable} by using {@link #generateId()} in the cause description.
      */
-    protected static Throwable generateCause() {
+    protected static Throwable generateThrowable() {
         return new RuntimeException("Because..." + generateId());
     }
 
@@ -816,5 +816,15 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     protected Instant setAndGetTime(Instant time) {
         setClock(Clock.fixed(time, ZoneId.systemDefault()));
         return time;
+    }
+
+    /**
+     * Constructs the expected {@link Cause} based on the given {@code throwable}.
+     *
+     * @param throwable A {@link Throwable} to base the {@link Cause} on.
+     * @return The expected {@link Cause} based on the given {@code throwable}.
+     */
+    protected Cause expectedCause(Throwable throwable) {
+        return new GenericCause(throwable);
     }
 }

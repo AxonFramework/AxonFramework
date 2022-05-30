@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 
 /**
  * Generic implementation of the {@link DeadLetter} allowing any type of {@link Message} to be dead lettered.
@@ -34,7 +35,7 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
     private final String identifier;
     private final QueueIdentifier queueIdentifier;
     private final T message;
-    private final Throwable cause;
+    private final Cause cause;
     private Instant expiresAt;
     private final int numberOfRetries;
     private final Instant deadLettered;
@@ -63,12 +64,19 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
                       Instant expiresAt,
                       Consumer<DeadLetter<T>> acknowledgeOperation,
                       Consumer<DeadLetter<T>> requeueOperation) {
-        this(queueIdentifier, message, cause, deadLettered, expiresAt, 0, acknowledgeOperation, requeueOperation);
+        this(queueIdentifier,
+             message,
+             cause != null ? new GenericCause(cause) : null,
+             deadLettered,
+             expiresAt,
+             0,
+             acknowledgeOperation,
+             requeueOperation);
     }
 
     GenericDeadLetter(QueueIdentifier queueIdentifier,
                       T message,
-                      Throwable cause,
+                      Cause cause,
                       Instant deadLettered,
                       Instant expiresAt,
                       int numberOfRetries,
@@ -81,7 +89,7 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
     GenericDeadLetter(String identifier,
                       QueueIdentifier queueIdentifier,
                       T message,
-                      Throwable cause,
+                      Cause cause,
                       Instant deadLettered,
                       Instant expiresAt,
                       int numberOfRetries,
@@ -114,7 +122,8 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
     }
 
     @Override
-    public Throwable cause() {
+    @Nullable
+    public Cause cause() {
         return cause;
     }
 
@@ -174,7 +183,7 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
 
     @Override
     public String toString() {
-        return "GenericDeadLetter" +
+        return "DeadLetter" +
                 "identifier=" + queueIdentifier +
                 ", queueIdentifier=" + queueIdentifier +
                 ", message=" + message +
