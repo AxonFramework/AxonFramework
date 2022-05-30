@@ -99,14 +99,6 @@ public interface DeadLetterQueue<T extends Message<?>> {
     boolean contains(@Nonnull QueueIdentifier identifier);
 
     /**
-     * Validates whether this queue is empty.
-     *
-     * @return {@code true} if this queue does not contain any {@link DeadLetter dead-letters}, {@code false}
-     * otherwise.
-     */
-    boolean isEmpty();
-
-    /**
      * Validates whether this queue is full for the given {@link QueueIdentifier}.
      * <p>
      * This method returns {@code true} either when {@link #maxQueues()} is reached or when the {@link #maxQueueSize()}

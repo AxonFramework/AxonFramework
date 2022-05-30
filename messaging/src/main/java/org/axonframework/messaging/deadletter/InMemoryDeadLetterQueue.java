@@ -207,12 +207,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> implements DeadLetter
         logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
         return deadLetters.containsKey(identifier);
     }
-
-    @Override
-    public boolean isEmpty() {
-        return deadLetters.isEmpty();
-    }
-
+    
     @Override
     public boolean isFull(@Nonnull QueueIdentifier queueIdentifier) {
         return maximumNumberOfQueuesReached(queueIdentifier) || maximumQueueSizeReached(queueIdentifier);

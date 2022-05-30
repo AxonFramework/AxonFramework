@@ -104,8 +104,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> result = testSubject.enqueue(testId, testDeadLetter, testCause);
 
         assertTrue(testSubject.contains(testId));
-        assertFalse(testSubject.isEmpty());
-
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testDeadLetter, result.message());
         assertEquals(testCause, result.cause());
@@ -163,7 +161,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> result = testSubject.enqueue(testId, testLetter, testCause);
 
         assertTrue(testSubject.contains(testId));
-        assertFalse(testSubject.isEmpty());
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
         assertEquals(testCause, result.cause());
@@ -186,7 +183,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
         assertFalse(result.isPresent());
         assertFalse(testSubject.contains(testQueueId));
-        assertTrue(testSubject.isEmpty());
     }
 
     @Test
@@ -203,7 +199,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertFalse(result.isPresent());
         assertTrue(testSubject.contains(testFirstId));
         assertFalse(testSubject.contains(testSecondId));
-        assertFalse(testSubject.isEmpty());
     }
 
     @Test
@@ -222,8 +217,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueueIfPresent(testId, testSecondLetter);
 
         assertTrue(testSubject.contains(testId));
-        assertFalse(testSubject.isEmpty());
-
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
         assertEquals(testCause, enqueueResult.cause());
@@ -257,8 +250,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         DeadLetter<M> enqueueResult = testSubject.enqueue(testId, testFirstLetter, testCause);
 
         assertTrue(testSubject.contains(testId));
-        assertFalse(testSubject.isEmpty());
-
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
         assertEquals(testCause, enqueueResult.cause());
@@ -302,30 +293,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     }
 
     @Test
-    void testIsEmpty() {
-        Instant deadLetteredTime = setAndGetTime();
-
-        I testId = generateQueueId();
-
-        assertTrue(testSubject.isEmpty());
-
-        testSubject.enqueue(testId, generateMessage(), generateCause());
-
-        assertFalse(testSubject.isEmpty());
-
-        // Let the letters expire in the queue by move the clock to after the expected expiry time.
-        setAndGetTime(deadLetteredTime.plus(expireThreshold()).plusMillis(1));
-
-        // The queue should be empty again after releasing the only letter present
-        testSubject.take(testId.group()).ifPresent(DeadLetter::acknowledge);
-
-        assertTrue(testSubject.isEmpty());
-    }
-
-    @Test
     void testIsFullReturnsTrueAfterMaximumAmountOfQueuesIsReached() {
         assertFalse(testSubject.isFull(generateQueueId()));
-        assertTrue(testSubject.isEmpty());
 
         long maxQueues = testSubject.maxQueues();
         assertTrue(maxQueues > 0);
@@ -342,7 +311,6 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         I testId = generateQueueId();
 
         assertFalse(testSubject.isFull(testId));
-        assertTrue(testSubject.isEmpty());
 
         long maxQueueSize = testSubject.maxQueueSize();
         assertTrue(maxQueueSize > 0);
@@ -390,16 +358,14 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedDeadLettered, secondResult.deadLettered());
         assertEquals(expectedExpireAt, secondResult.expiresAt());
         assertEquals(0, secondResult.numberOfRetries());
-
         // Only one letter was acknowledged, so the second still remains.
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testId));
     }
 
     @Test
     void testTakeOnEmptyQueueReturnsEmptyOptional() {
         String testGroup = "some-group";
 
-        assertTrue(testSubject.isEmpty());
         assertFalse(testSubject.take(testGroup).isPresent());
     }
 
@@ -409,14 +375,13 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         String testGroup = "some-group";
         assertNotEquals(testGroup, testId.group());
 
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(testId));
 
         testSubject.enqueue(testId, generateMessage(), generateCause());
         testSubject.enqueue(testId, generateMessage(), generateCause());
         testSubject.enqueue(testId, generateMessage(), generateCause());
 
-        assertFalse(testSubject.isEmpty());
-
+        assertTrue(testSubject.contains(testId));
         assertFalse(testSubject.take(testGroup).isPresent());
     }
 
@@ -477,9 +442,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, thatFirstResult.expiresAt());
         assertEquals(0, thatFirstResult.numberOfRetries());
         thatFirstResult.acknowledge();
-
         // The second 'that' letter is still in the queue.
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testThatId));
     }
 
     /**
@@ -514,9 +478,8 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         assertEquals(0, firstResult.numberOfRetries());
         // No DeadLetter#acknowledge or DeadLetter#requeue invocation here, as that releases the sequence.
-
         assertFalse(testSubject.take(testId.group()).isPresent());
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testId));
     }
 
     @Test
@@ -549,8 +512,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
         result.acknowledge();
-
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(testId));
     }
 
     @Test
@@ -563,8 +525,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Throwable testCause = generateCause();
 
         testSubject.enqueue(testId, testLetter, testCause);
-
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testId));
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
         setAndGetTime(expectedExpireAt.plusMillis(1));
@@ -582,7 +543,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         // Evaluation of the dead-letter was successful, so its acknowledged and thus removed from the queue.
         result.acknowledge();
 
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(testId));
         assertFalse(testSubject.take(testId.group()).isPresent());
     }
 
@@ -596,8 +557,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         Throwable testCause = generateCause();
 
         testSubject.enqueue(testId, testLetter, testCause);
-
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testId));
 
         // Let the letters expire in the queue by move the clock to after the expected expiry time.
         setAndGetTime(expectedExpireAt.plusMillis(1));
@@ -619,7 +579,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         // Move time again, as requeue changed the expiry time.
         setAndGetTime(expectedUpdatedExpireAt.plusMillis(1));
 
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(testId));
         Optional<DeadLetter<M>> optionalSecondTry = testSubject.take(testId.group());
         assertTrue(optionalSecondTry.isPresent());
         DeadLetter<M> secondTryResult = optionalSecondTry.get();
@@ -747,17 +707,27 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
 
     @Test
     void testClearRemovesAllEntries() {
-        assertTrue(testSubject.isEmpty());
+        I queueIdOne = generateQueueId();
+        I queueIdTwo = generateQueueId();
+        I queueIdThree = generateQueueId();
 
-        testSubject.enqueue(generateQueueId(), generateMessage(), generateCause());
-        testSubject.enqueue(generateQueueId(), generateMessage(), generateCause());
-        testSubject.enqueue(generateQueueId(), generateMessage(), generateCause());
+        assertFalse(testSubject.contains(queueIdOne));
+        assertFalse(testSubject.contains(queueIdTwo));
+        assertFalse(testSubject.contains(queueIdThree));
 
-        assertFalse(testSubject.isEmpty());
+        testSubject.enqueue(queueIdOne, generateMessage(), generateCause());
+        testSubject.enqueue(queueIdTwo, generateMessage(), generateCause());
+        testSubject.enqueue(queueIdThree, generateMessage(), generateCause());
+
+        assertTrue(testSubject.contains(queueIdOne));
+        assertTrue(testSubject.contains(queueIdTwo));
+        assertTrue(testSubject.contains(queueIdThree));
 
         testSubject.clear();
 
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(queueIdOne));
+        assertFalse(testSubject.contains(queueIdTwo));
+        assertFalse(testSubject.contains(queueIdThree));
     }
 
     @Test
@@ -765,18 +735,19 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         I thisId = generateQueueId();
         I thatId = generateQueueId();
 
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(thisId));
+        assertFalse(testSubject.contains(thatId));
 
         testSubject.enqueue(thisId, generateMessage(), generateCause());
         testSubject.enqueue(thisId, generateMessage(), generateCause());
         testSubject.enqueue(thatId, generateMessage(), generateCause());
         testSubject.enqueue(thatId, generateMessage(), generateCause());
 
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(thisId));
+        assertTrue(testSubject.contains(thatId));
 
         testSubject.clear(thisId.group());
 
-        assertFalse(testSubject.isEmpty());
         assertFalse(testSubject.contains(thisId));
         assertTrue(testSubject.contains(thatId));
     }
@@ -787,7 +758,9 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         I thatId = generateQueueId();
         I thirdId = generateQueueId();
 
-        assertTrue(testSubject.isEmpty());
+        assertFalse(testSubject.contains(thisId));
+        assertFalse(testSubject.contains(thatId));
+        assertFalse(testSubject.contains(thirdId));
 
         testSubject.enqueue(thisId, generateMessage(), generateCause());
         testSubject.enqueue(thisId, generateMessage(), generateCause());
@@ -796,11 +769,12 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.enqueue(thirdId, generateMessage(), generateCause());
         testSubject.enqueue(thirdId, generateMessage(), generateCause());
 
-        assertFalse(testSubject.isEmpty());
+        assertTrue(testSubject.contains(thisId));
+        assertTrue(testSubject.contains(thatId));
+        assertTrue(testSubject.contains(thirdId));
 
         testSubject.clear(id -> id.equals(thisId) || id.equals(thirdId));
 
-        assertFalse(testSubject.isEmpty());
         assertFalse(testSubject.contains(thisId));
         assertTrue(testSubject.contains(thatId));
         assertFalse(testSubject.contains(thirdId));

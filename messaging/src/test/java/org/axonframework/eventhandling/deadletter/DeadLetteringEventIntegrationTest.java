@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.QueueIdentifier;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
@@ -145,7 +146,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.successfullyHandled("success"));
         assertTrue(eventHandlingComponent.unsuccessfullyHandled("failure"));
 
-        assertFalse(deadLetterQueue.isEmpty());
         assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier("failure", PROCESSING_GROUP)));
         assertFalse(deadLetterQueue.contains(new EventHandlingQueueIdentifier("success", PROCESSING_GROUP)));
     }
@@ -154,6 +154,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     void testEventsInTheSameSequenceAreAllEnqueuedIfOneOfThemFails() {
         int expectedSuccessfulHandlingCount = 3;
         String aggregateId = UUID.randomUUID().toString();
+        QueueIdentifier queueId = new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP);
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -180,8 +181,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.unsuccessfullyHandled(aggregateId));
         assertEquals(1, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId));
 
-        assertFalse(deadLetterQueue.isEmpty());
-        assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)));
+        assertTrue(deadLetterQueue.contains(queueId));
 
         // Release all entries so that they may be taken.
         deadLetterQueue.release();
@@ -199,7 +199,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(third.isPresent());
         assertEquals(thirdDeadLetter, third.get().message().getPayload());
         third.get().acknowledge();
-        assertTrue(deadLetterQueue.isEmpty());
+        assertFalse(deadLetterQueue.contains(queueId));
     }
 
     @Test
@@ -207,6 +207,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedSuccessfulHandlingCount = 3;
         int expectedSuccessfulHandlingCountAfterEvaluation = 6;
         String aggregateId = UUID.randomUUID().toString();
+        QueueIdentifier queueId = new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP);
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
         eventSource.publishMessage(GenericEventMessage.asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -233,8 +234,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.unsuccessfullyHandled(aggregateId));
         assertEquals(1, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId));
 
-        assertFalse(deadLetterQueue.isEmpty());
-        assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)));
+        assertTrue(deadLetterQueue.contains(queueId));
 
         startDeadLetterEvaluation();
 
@@ -242,7 +242,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 expectedSuccessfulHandlingCountAfterEvaluation,
                 eventHandlingComponent.successfulHandlingCount(aggregateId)
         ));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(deadLetterQueue.isEmpty()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(deadLetterQueue.contains(queueId)));
     }
 
     @Test
@@ -277,7 +277,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.unsuccessfullyHandled(aggregateId));
         assertEquals(1, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId));
 
-        assertFalse(deadLetterQueue.isEmpty());
         assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)));
 
         startDeadLetterEvaluation();
@@ -288,7 +287,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         ));
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertEquals(2, eventHandlingComponent.unsuccessfulHandlingCount(aggregateId)));
-        assertFalse(deadLetterQueue.isEmpty());
         assertWithin(1, TimeUnit.SECONDS, () -> {
             Optional<DeadLetter<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
             assertTrue(requeuedLetter.isPresent());
