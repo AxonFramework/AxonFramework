@@ -440,28 +440,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            AtomicReference<Object> response = new AtomicReference<>();
-            AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
-            VersionedAggregateIdentifier commandMessageVersionedId = resolveNullableVersionedAggregateIdentifier(
-                    command);
-            Object commandMessageAggregateId = Optional.ofNullable(commandMessageVersionedId)
-                                                       .map(VersionedAggregateIdentifier::getIdentifierValue)
-                                                       .orElse(null);
-
-            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId),
-                                                            agg -> {
-                                                                try {
-                                                                    response.set(agg.handle(command));
-                                                                } catch (Exception e) {
-                                                                    exceptionDuringInit.set(e);
-                                                                }
-                                                            });
-
-            if (exceptionDuringInit.get() != null) {
-                throw exceptionDuringInit.get();
-            }
-
-            return handlerHasVoidReturnType(handler) ? resolveReturnValue(command, aggregate) : response.get();
+            return handleNewInstanceCreation(command, factoryMethod, handler);
         }
 
         @Override
@@ -508,34 +487,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                                                                 () -> factoryMethod.create(versionedAggregateIdentifier.getIdentifierValue()));
                 result = instance.handle(command);
             } else {
-                result = handleNewInstanceCreation(command);
+                result = handleNewInstanceCreation(command, factoryMethod, handler);
             }
             return result;
-        }
-
-        private Object handleNewInstanceCreation(CommandMessage<?> command) throws Exception {
-            AtomicReference<Object> response = new AtomicReference<>();
-            AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
-            VersionedAggregateIdentifier commandMessageVersionedId = resolveNullableVersionedAggregateIdentifier(
-                    command);
-            Object commandMessageAggregateId = Optional.ofNullable(commandMessageVersionedId)
-                                                       .map(VersionedAggregateIdentifier::getIdentifierValue)
-                                                       .orElse(null);
-
-            Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId),
-                                                            agg -> {
-                                                                try {
-                                                                    response.set(agg.handle(command));
-                                                                } catch (Exception e) {
-                                                                    exceptionDuringInit.set(e);
-                                                                }
-                                                            });
-
-            if (exceptionDuringInit.get() != null) {
-                throw exceptionDuringInit.get();
-            }
-
-            return handlerHasVoidReturnType(handler) ? resolveReturnValue(command, aggregate) : response.get();
         }
 
         @Override
@@ -544,6 +498,32 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         }
     }
 
+    private Object handleNewInstanceCreation(CommandMessage<?> command,
+                                                    CreationPolicyAggregateFactory<T> factoryMethod,
+                                                    MessageHandlingMember<? super T> handler) throws Exception {
+        AtomicReference<Object> response = new AtomicReference<>();
+        AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
+        VersionedAggregateIdentifier commandMessageVersionedId = resolveNullableVersionedAggregateIdentifier(
+                command);
+        Object commandMessageAggregateId = Optional.ofNullable(commandMessageVersionedId)
+                                                   .map(VersionedAggregateIdentifier::getIdentifierValue)
+                                                   .orElse(null);
+
+        Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId),
+                                                         agg -> {
+                                                            try {
+                                                                response.set(agg.handle(command));
+                                                            } catch (Exception e) {
+                                                                exceptionDuringInit.set(e);
+                                                            }
+                                                        });
+
+        if (exceptionDuringInit.get() != null) {
+            throw exceptionDuringInit.get();
+        }
+
+        return handlerHasVoidReturnType(handler) ? resolveReturnValue(command, aggregate) : response.get();
+    }
     private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
