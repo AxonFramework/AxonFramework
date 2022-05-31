@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
+import reactor.util.context.Context;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -55,6 +56,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -219,11 +221,41 @@ public class SimpleQueryBus implements QueryBus {
                                                    .skipWhile(ResultMessage::isExceptional)
                                                    .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
                                                    .next()
-                                                   .doOnEach(this::monitorCallback)
+                                                   .doOnEach(new SuccessReporter())
                                                    .flatMapMany(Message::getPayload)
-                   )
-                   .contextWrite(ctx -> ctx.put(MessageMonitor.MonitorCallback.class,
-                                                messageMonitor.onMessageIngested(query)));
+                   ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
+    }
+
+    private static class SuccessReporter implements Consumer<Signal<?>> {
+
+        @Override
+        public void accept(Signal signal) {
+            MessageMonitor.MonitorCallback m = signal.getContextView()
+                                                     .get(MessageMonitor.MonitorCallback.class);
+            if (signal.isOnNext()) {
+                m.reportSuccess();
+            } else if (signal.isOnError()) {
+                m.reportFailure(signal.getThrowable());
+            }
+        }
+    }
+
+    private static class MonitorCallbackContextWriter implements Function<Context, Context> {
+
+        private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+        private final StreamingQueryMessage<?, ?> query;
+
+        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
+                                             StreamingQueryMessage<?, ?> query) {
+            this.messageMonitor = messageMonitor;
+            this.query = query;
+        }
+
+        @Override
+        public Context apply(Context ctx) {
+            return ctx.put(MessageMonitor.MonitorCallback.class,
+                           messageMonitor.onMessageIngested(query));
+        }
     }
 
     private NoHandlerForQueryException noHandlerException(QueryMessage<?, ?> intercepted) {
@@ -236,16 +268,6 @@ public class SimpleQueryBus implements QueryBus {
         return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
                                                      intercepted.getQueryName(),
                                                      intercepted.getResponseType()));
-    }
-
-    private void monitorCallback(Signal<?> signal) {
-        MessageMonitor.MonitorCallback m = signal.getContextView()
-                                                 .get(MessageMonitor.MonitorCallback.class);
-        if (signal.isOnNext()) {
-            m.reportSuccess();
-        } else if (signal.isOnError()) {
-            m.reportFailure(signal.getThrowable());
-        }
     }
 
     @Override
@@ -341,10 +363,10 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <I, U> DefaultSubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> getSubscriptionQueryResult(
-            Mono<QueryResponseMessage<I>> initialResult,
+            Publisher<QueryResponseMessage<I>> initialResult,
             UpdateHandlerRegistration<U> updateHandlerRegistration
     ) {
-        return new DefaultSubscriptionQueryResult<>(initialResult,
+        return new DefaultSubscriptionQueryResult<>(Mono.from(initialResult),
                                                     updateHandlerRegistration.getUpdates(),
                                                     () -> {
                                                         updateHandlerRegistration.complete();

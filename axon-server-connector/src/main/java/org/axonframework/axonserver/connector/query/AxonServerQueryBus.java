@@ -79,6 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 
 import java.lang.invoke.MethodHandles;
@@ -249,8 +250,22 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                 .flatMapMany(intercepted -> Mono.just(serializeStreaming(intercepted))
                                                                                 .flatMapMany(queryRequest -> sendRequest(intercepted, queryRequest))
                                                                                 .flatMap(queryResponse -> deserialize(intercepted, queryResponse)))
-                                                .doFinally(s -> activity.end()))
+                                                .doFinally(new ActivityFinisher(activity)))
                    .subscribeOn(Schedulers.fromExecutorService(queryExecutor));
+    }
+
+    private static class ActivityFinisher implements Consumer<SignalType> {
+
+        private final ShutdownLatch.ActivityHandle activity;
+
+        private ActivityFinisher(ShutdownLatch.ActivityHandle activity) {
+            this.activity = activity;
+        }
+
+        @Override
+        public void accept(SignalType signalType) {
+            activity.end();
+        }
     }
 
     private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
