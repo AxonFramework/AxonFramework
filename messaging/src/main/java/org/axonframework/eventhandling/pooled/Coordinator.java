@@ -847,10 +847,14 @@ class Coordinator {
             logger.info("Releasing claims and scheduling a new coordination task in {}ms", errorWaitBackOff);
 
             errorWaitBackOff = Math.min(errorWaitBackOff * 2, 60000);
-            abortWorkPackages(cause).thenRun(
-                    () -> {
-                        logger.debug("Work packages have aborted. Scheduling new coordination task to run in {}ms",
-                                     errorWaitBackOff);
+            abortWorkPackages(cause).whenComplete(
+                    (unused, throwable) -> {
+                        if (throwable != null) {
+                            logger.warn("An exception occurred during work packages abort on [{}] processor.", name, throwable);
+                        } else {
+                            logger.debug("Work packages have aborted successfully.");
+                        }
+                        logger.debug("Scheduling new coordination task to run in {}ms", errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
                         executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
@@ -869,7 +873,12 @@ class Coordinator {
                        })
                        .thenRun(() -> transactionManager.executeInTransaction(
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
-                       ));
+                       ))
+                       .exceptionally(throwable -> {
+                           logger.info("An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
+                                       work.segment().getSegmentId(), name, throwable);
+                           return null;
+                       });
         }
     }
 }

@@ -144,12 +144,12 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(Duration duration, Object applicationEvent) {
-        return expectScheduledEventMatching(duration, messageWithPayload(equalTo(applicationEvent, fieldFilter)));
+        return expectScheduledEventMatching(duration, messageWithPayload(deepEquals(applicationEvent, fieldFilter)));
     }
 
     @Override
     public FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline) {
-        return expectScheduledDeadlineMatching(duration, messageWithPayload(equalTo(deadline, fieldFilter)));
+        return expectScheduledDeadlineMatching(duration, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override
@@ -186,12 +186,13 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object applicationEvent) {
-        return expectScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(applicationEvent, fieldFilter)));
+        return expectScheduledEventMatching(scheduledTime,
+                                            messageWithPayload(deepEquals(applicationEvent, fieldFilter)));
     }
 
     @Override
     public FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline) {
-        return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(equalTo(deadline, fieldFilter)));
+        return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override
@@ -246,7 +247,8 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event) {
-        return expectNoScheduledEventMatching(durationToScheduledTime, messageWithPayload(equalTo(event, fieldFilter)));
+        return expectNoScheduledEventMatching(durationToScheduledTime,
+                                              messageWithPayload(deepEquals(event, fieldFilter)));
     }
 
     @Override
@@ -263,7 +265,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event) {
-        return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(event, fieldFilter)));
+        return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(deepEquals(event, fieldFilter)));
     }
 
     @Override
@@ -292,9 +294,8 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
-        return expectNoScheduledDeadlineMatching(
-                durationToScheduledTime, messageWithPayload(equalTo(deadline, fieldFilter))
-        );
+        return expectNoScheduledDeadlineMatching(durationToScheduledTime,
+                                                 messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override
@@ -323,10 +324,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
-        return expectNoScheduledDeadlineMatching(
-                scheduledTime,
-                messageWithPayload(equalTo(deadline, fieldFilter))
-        );
+        return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override

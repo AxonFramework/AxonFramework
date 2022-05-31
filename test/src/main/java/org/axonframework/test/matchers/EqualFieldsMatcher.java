@@ -22,8 +22,6 @@ import org.hamcrest.Description;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
-import static org.axonframework.common.ReflectionUtils.isPrimitive;
-
 /**
  * Matcher that will match an Object if all the fields on that Object contain values equal to the same field in the
  * expected instance.
@@ -39,7 +37,6 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     private Field failedField;
     private Object failedFieldExpectedValue;
     private Object failedFieldActualValue;
-    private boolean failedPrimitive;
 
     /**
      * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given {@code expected}
@@ -69,16 +66,6 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
     }
 
     private boolean matchesSafely(Object actual) {
-        if ((isPrimitive(expected) || isPrimitive(actual))) {
-            if (expected.equals(actual)) {
-                return true;
-            } else {
-                failedPrimitive = true;
-                failedFieldExpectedValue = expected;
-                failedFieldActualValue = actual;
-                return false;
-            }
-        }
         return expected.getClass().equals(actual.getClass())
                 && fieldsMatch(expected.getClass(), expected, actual);
     }
@@ -136,17 +123,6 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
      */
     public Object getFailedFieldActualValue() {
         return failedFieldActualValue;
-    }
-
-    /**
-     * Returns whether this matcher failed matching primitive types.
-     * <p>
-     * Note that this may include an expected or actual of type {@link String}.
-     *
-     * @return {@code true} if this matcher failed matching primitive types, {@code false} otherwise.
-     */
-    public boolean isFailedPrimitive() {
-        return failedPrimitive;
     }
 
     @Override

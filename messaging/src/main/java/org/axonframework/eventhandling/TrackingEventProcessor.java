@@ -1137,7 +1137,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             workerThreads.remove(name());
             logger.info("Worker for segment {} stopped.", segment);
 
-            if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
+            if (!workLauncherRunning.get() && availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
                 logger.info("No Worker Launcher active. Using current thread to assign segments.");
                 new WorkerLauncher().run();
             }

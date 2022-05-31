@@ -110,10 +110,10 @@ class FixtureExecutionResultImplTest {
         errorHandler.onError(secondException, endEventMessage, eventMessageHandler);
 
         testSubject.expectPublishedEvents(endEventMessage.getPayload());
-        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEventMessage.getPayload()), andNoMore())));
+        testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(deepEquals(endEventMessage.getPayload()), andNoMore())));
 
         testSubject.expectDispatchedCommands("Second");
-        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
+        testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(deepEquals("Second"), andNoMore())));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectSuccessfulHandlerExecution());
         assertTrue(errorHandler.getException().isPresent());
@@ -213,7 +213,7 @@ class FixtureExecutionResultImplTest {
                 AxonAssertionError.class,
                 () -> testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Third"))
         );
-        assertTrue(e.getMessage().contains("expected <Second>"), "Wrong message: " + e.getMessage());
+        assertTrue(e.getMessage().contains("Expected <SimpleCommand{content='Second'"), "Wrong message: " + e.getMessage());
     }
 
     @Test
@@ -406,7 +406,7 @@ class FixtureExecutionResultImplTest {
         testSubject.registerStartRecordingCallback(startRecordingCallbackInvocations::incrementAndGet);
         testSubject.startRecording();
 
-        assertThat(startRecordingCallbackInvocations.get(), equalTo(1));
+        assertThat(startRecordingCallbackInvocations.get(), deepEquals(1));
     }
 
     @Test
@@ -590,6 +590,13 @@ class FixtureExecutionResultImplTest {
 
         public SimpleCommand(String content) {
             this.content = content;
+        }
+
+        @Override
+        public String toString() {
+            return "SimpleCommand{" +
+                    "content='" + content + '\'' +
+                    '}';
         }
     }
 
