@@ -16,8 +16,12 @@
 
 package org.axonframework.reactorlesstest;
 
+import org.axonframework.queryhandling.QueryBus;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests starting a spring boot app without Project Reactor on classpath.
@@ -25,7 +29,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class ReactorlessStartupTest {
 
+    @Autowired
+    private QueryBus queryBus;
+
     @Test
-    void contextLoads() {
+    void contextLoadsWithQueryBus() {
+        assertNotNull(queryBus);
     }
 }

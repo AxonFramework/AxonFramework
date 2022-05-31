@@ -58,6 +58,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -240,7 +241,7 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    private static class MonitorCallbackContextWriter implements Function<Context, Context> {
+    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
 
         private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
         private final StreamingQueryMessage<?, ?> query;
