@@ -219,6 +219,24 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    void testCommandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        // make sure the identifier was invoked in the callback
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+        verify(creationPolicyFactory).create(eq(null));
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq(null));
+    }
+
+    @Test
     public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
@@ -240,6 +258,27 @@ class AggregateAnnotationCommandHandlerTest {
         verifyNoInteractions(creationPolicyFactory);
         factoryCaptor.getValue().call();
         verify(creationPolicyFactory).create(eq("id"));
+    }
+    @Test
+    public void testCommandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
+
+        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> loadOrCreateFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.loadOrCreate(anyString(), loadOrCreateFactoryCaptor.capture()))
+                .thenThrow(new IllegalArgumentException("This is not supposed to be invoked"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+
+        verify(creationPolicyFactory).create(eq(null));
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq(null));
     }
 
     @Test
