@@ -35,6 +35,7 @@
         <module>spring-boot-starter</module>
         <module>integrationtests</module>
         <module>legacy</module>
+        <module>reactorless-test</module>
     </modules>
     <packaging>pom</packaging>
 
