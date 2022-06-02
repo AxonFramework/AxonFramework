@@ -229,7 +229,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.start();
 
         verify(queue).onAvailable(eq(TEST_PROCESSING_GROUP), any());
-        verify(queue).release(any());
+        verify(queue).release(eq(TEST_PROCESSING_GROUP));
     }
 
     @Test

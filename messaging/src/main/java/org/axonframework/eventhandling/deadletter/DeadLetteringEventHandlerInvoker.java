@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
@@ -149,7 +148,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
      * Registers a dead-letter evaluation task with the {@link DeadLetterQueue queue's}
      * {@link DeadLetterQueue#onAvailable(String, Runnable)} operation. After registration the letters within the queue
      * are {@link DeadLetterQueue#release(Predicate) released} for this invoker's processing group right away to
-     * evaluate remaining entries. This lifecycle handler is registered right after the
+     * evaluate remaining dead-letters. This lifecycle handler is registered right after the
      * {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
      */
     public void start() {
@@ -159,7 +158,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
                                                            transactionManager,
                                                            listenerInvocationErrorHandler);
         queue.onAvailable(processingGroup, evaluationTask);
-        queue.release(letter -> Objects.equals(letter.queueIdentifier().group(), processingGroup));
+        queue.release(processingGroup);
     }
 
     /**

@@ -654,7 +654,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         // Set the time to the expected expireAt.
         setAndGetTime(expectedUpdatedExpireAt);
         // Release letters matching testThatId.
-        testSubject.release(letter -> letter.queueIdentifier().equals(testThatId));
+        testSubject.release(queueIdentifier -> queueIdentifier.equals(testThatId));
 
         Optional<DeadLetter<M>> thisOptionalResult = testSubject.take(testThisId.group());
         assertTrue(thisOptionalResult.isPresent());
@@ -699,7 +699,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         testSubject.onAvailable(testThatId.group(), () -> thatExpectedCallbackInvoked.set(true));
 
         // Release letters matching testThisId.
-        testSubject.release(letter -> letter.queueIdentifier().equals(testThisId));
+        testSubject.release(queueIdentifier -> queueIdentifier.equals(testThisId));
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(thisExpectedCallbackInvoked.get()));
         assertFalse(thatExpectedCallbackInvoked.get());

@@ -29,12 +29,12 @@ import javax.annotation.Nonnull;
  * several FIFO-ordered queues.
  * <p>
  * The contained queues are uniquely identifiable through the {@link QueueIdentifier}. Dead-letters are kept in the form
- * of a {@link DeadLetter DeadLetterEntries}. When retrieving letters through {@link #take(String)} for evaluation,
- * they can be removed with {@link DeadLetter#acknowledge()} after successful evaluation. Upon failure, the letter
- * may be reentered in the queue through {@link DeadLetter#requeue()}.
+ * of a {@link DeadLetter}. When retrieving letters through {@link #take(String)} for evaluation, they
+ * can be removed with {@link DeadLetter#acknowledge()} after successful evaluation. Upon failure, the letter may be
+ * reentered in the queue through {@link DeadLetter#requeue()}.
  * <p>
  * A callback can be configured through {@link #onAvailable(String, Runnable)} that is automatically invoked when
- * dead-letters are released and thus ready to be taken. Entries may be released earlier by invoking
+ * dead-letters are released and thus ready to be taken. Letter sequences may be released earlier by invoking
  * {@link #release(Predicate)}.
  *
  * @param <T> An implementation of {@link Message} that represent the dead-letter.
@@ -61,8 +61,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
                           Throwable cause) throws DeadLetterQueueOverflowException;
 
     /**
-     * Enqueue the given {@code message} only if there already are other {@link DeadLetter dead-letters} with the
-     * same {@code identifier} present in this queue.
+     * Enqueue the given {@code message} only if there already are other {@link DeadLetter dead-letters} with the same
+     * {@code identifier} present in this queue.
      *
      * @param identifier The identifier of the queue to store the {@code deadLetter} in.
      * @param message    The {@link Message} validated if it should be enqueued.
@@ -89,8 +89,7 @@ public interface DeadLetterQueue<T extends Message<?>> {
     }
 
     /**
-     * Check whether there's a FIFO ordered queue of {@link DeadLetter dead-letters} for the given
-     * {@code identifier}.
+     * Check whether there's a FIFO ordered queue of {@link DeadLetter dead-letters} for the given {@code identifier}.
      *
      * @param identifier The identifier used to validate for contained {@link DeadLetter dead-letters} instances.
      * @return {@code true} if there are {@link DeadLetter dead-letters} present for the given {@code identifier},
@@ -123,25 +122,25 @@ public interface DeadLetterQueue<T extends Message<?>> {
     long maxQueues();
 
     /**
-     * The maximum number of entries a single queue can contain. A single queue is referenced based on it's
+     * The maximum number of letters a single queue can contain. A single queue is referenced based on it's
      * {@link QueueIdentifier}.
      * <p>
      * Note that there's a window of opportunity where the queue might exceed the {@code maxQueueSize} value to
      * accompany concurrent usage.
      *
-     * @return The maximum number of entries a single queue can contain.
+     * @return The maximum number of letters a single queue can contain.
      */
     long maxQueueSize();
 
     /**
-     * Take the oldest {@link DeadLetter} from this dead-letter queue for the given {@code group} that is ready to
-     * be released. Entries can be made available earlier through {@link #release(Predicate)} when necessary.
+     * Take the oldest {@link DeadLetter} from this dead-letter queue for the given {@code group} that is ready to be
+     * released. Letter sequences can be made available earlier through {@link #release(Predicate)} when necessary.
      * <p>
      * Upon taking, the returned {@link DeadLetter dead-letter} is kept in the queue with an updated
-     * {@link DeadLetter#expiresAt()} and {@link DeadLetter#numberOfRetries()}. Doing so guards the queue
-     * against concurrent take operations accidentally retrieving (and thus handling) the same letter.
+     * {@link DeadLetter#expiresAt()} and {@link DeadLetter#numberOfRetries()}. Doing so guards the queue against
+     * concurrent take operations accidentally retrieving (and thus handling) the same letter.
      * <p>
-     * Will return an {@link Optional#empty()} if there are no entries ready to be released (i.e., they have not
+     * Will return an {@link Optional#empty()} if there are no letters ready to be released (i.e., they have not
      * {@link DeadLetter#expiresAt() expired} yet) or present for the given {@code group}.
      *
      * @param group The group descriptor of a {@link QueueIdentifier} to take a letter for.
@@ -151,14 +150,27 @@ public interface DeadLetterQueue<T extends Message<?>> {
     Optional<DeadLetter<T>> take(@Nonnull String group);
 
     /**
-     * Release all {@link DeadLetter dead-letters} within this queue that match the given {@code letterFilter}.
+     * Release all {@link DeadLetter dead-letters} within this queue that match the given {@code queueFilter}.
      * <p>
      * This makes the matching letters ready to be {@link #take(String) taken}. Furthermore, it signals any matching
      * (based on the {@code group} name) callbacks registered through {@link #onAvailable(String, Runnable)}.
      *
-     * @param letterFilter A lambda selecting the letters within this queue to be released.
+     * @param queueFilter A lambda selecting the letters within this queue to be released.
      */
-    void release(@Nonnull Predicate<DeadLetter<T>> letterFilter);
+    void release(@Nonnull Predicate<QueueIdentifier> queueFilter);
+
+    /**
+     * Release all {@link DeadLetter dead-letters} within this queue that match the given {@code group}.
+     * <p>
+     * This makes the matching letters ready to be {@link #take(String) taken}. Furthermore, it signals any matching
+     * (based on the {@code group} name) callbacks registered through {@link #onAvailable(String, Runnable)}.
+     *
+     * @param group The group descriptor of a {@link QueueIdentifier} to release all {@link DeadLetter dead-letters}
+     *              for.
+     */
+    default void release(@Nonnull String group) {
+        release(queueIdentifier -> Objects.equals(queueIdentifier.group(), group));
+    }
 
     /**
      * Release all {@link DeadLetter dead-letters} within this queue.
@@ -171,10 +183,9 @@ public interface DeadLetterQueue<T extends Message<?>> {
     }
 
     /**
-     * Set the given {@code callback} for the given {@code group} to be invoked when
-     * {@link DeadLetter dead-letters} are ready to be {@link #take(String) taken} from the queue. Dead-letters may
-     * be released earlier through {@link #release(Predicate)} to automatically trigger the {@code callback} if the
-     * {@code group} matches.
+     * Set the given {@code callback} for the given {@code group} to be invoked when {@link DeadLetter dead-letters} are
+     * ready to be {@link #take(String) taken} from the queue. Dead-letters may be released earlier through
+     * {@link #release(Predicate)} to automatically trigger the {@code callback} if the {@code group} matches.
      *
      * @param group    The group descriptor of a {@link QueueIdentifier} to register a {@code callback} for.
      * @param callback The operation to run whenever {@link DeadLetter dead-letters} are released and ready to be
@@ -193,8 +204,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
     /**
      * Clears out all {@link DeadLetter dead-letters} belonging to the given {@code group}.
      *
-     * @param group The group descriptor of a {@link QueueIdentifier} to clear out all
-     *              {@link DeadLetter dead-letters} for.
+     * @param group The group descriptor of a {@link QueueIdentifier} to clear out all {@link DeadLetter dead-letters}
+     *              for.
      */
     default void clear(@Nonnull String group) {
         clear(identifier -> Objects.equals(identifier.group(), group));

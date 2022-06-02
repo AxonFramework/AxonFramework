@@ -259,7 +259,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
     }
 
     @Override
-    public void release(@Nonnull Predicate<DeadLetter<T>> letterFilter) {
+    public void release(@Nonnull Predicate<QueueIdentifier> queueFilter) {
         Instant expiresAt = clock.instant();
         Set<String> releasedGroups = new HashSet<>();
         logger.debug("Received a request to release matching dead-letters for evaluation.");
@@ -267,7 +267,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
         deadLetters.values()
                    .stream()
                    .flatMap(Collection::stream)
-                   .filter(letterFilter)
+                   .filter(letter -> queueFilter.test(letter.queueIdentifier()))
                    .map(letter -> (GenericDeadLetter<T>) letter)
                    .forEach(letter -> {
                        letter.setExpiresAt(expiresAt);
@@ -290,7 +290,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
         queuesToClear.forEach(queueId -> {
             deadLetters.get(queueId).clear();
             deadLetters.remove(queueId);
-            logger.info("Cleared out all entries for queue [{}].", queueId);
+            logger.info("Cleared out all letters for queue [{}].", queueId);
         });
     }
 
@@ -339,7 +339,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
         public Builder<T> maxQueueSize(int maxQueueSize) {
             assertThat(maxQueueSize,
                        value -> value >= 128,
-                       "The maximum number of entries in a queue should be larger or equal to 128");
+                       "The maximum number of letters in a queue should be larger or equal to 128");
             this.maxQueueSize = maxQueueSize;
             return this;
         }
