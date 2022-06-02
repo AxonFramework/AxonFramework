@@ -20,7 +20,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Dummy spring boot app just wire up Axon beans without Project Reactor on classpath.
+ * Dummy spring boot app just to wire up Axon beans without Project Reactor on the classpath.
  */
 @SpringBootApplication
 public class ReactorlessStartup {
