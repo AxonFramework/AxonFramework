@@ -19,7 +19,6 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
@@ -28,7 +27,7 @@ import java.util.Map;
  * response type to {@link PublisherResponseType}.
  *
  * @param <Q> the type of streaming query payload
- * @param <R> the type of the result streamed via {@link Flux}
+ * @param <R> the type of the result streamed via {@link Publisher}
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0

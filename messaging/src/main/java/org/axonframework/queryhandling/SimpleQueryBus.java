@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
+import reactor.util.context.Context;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -55,7 +56,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -219,11 +222,74 @@ public class SimpleQueryBus implements QueryBus {
                                                    .skipWhile(ResultMessage::isExceptional)
                                                    .switchIfEmpty(Flux.error(noSuitableHandlerException(interceptedQuery)))
                                                    .next()
-                                                   .doOnEach(this::monitorCallback)
+                                                   .doOnEach(new SuccessReporter())
                                                    .flatMapMany(Message::getPayload)
-                   )
-                   .contextWrite(ctx -> ctx.put(MessageMonitor.MonitorCallback.class,
-                                                messageMonitor.onMessageIngested(query)));
+                   ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
+    }
+
+    /**
+     * Reports result of streaming query execution to the
+     * {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} (assuming that a monitor callback is attached
+     * to the context).
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     *
+     * @author Milan Savic
+     */
+    private static class SuccessReporter implements Consumer<Signal<?>> {
+
+        @Override
+        public void accept(Signal signal) {
+            MessageMonitor.MonitorCallback m = signal.getContextView()
+                                                     .get(MessageMonitor.MonitorCallback.class);
+            if (signal.isOnNext()) {
+                m.reportSuccess();
+            } else if (signal.isOnError()) {
+                m.reportFailure(signal.getThrowable());
+            }
+        }
+    }
+
+    /**
+     * Attaches {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} to the Project Reactor's
+     * {@link Context}.
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     *
+     * @author Milan Savic
+     */
+    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
+
+        private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+        private final StreamingQueryMessage<?, ?> query;
+
+        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
+                                             StreamingQueryMessage<?, ?> query) {
+            this.messageMonitor = messageMonitor;
+            this.query = query;
+        }
+
+        @Override
+        public Context apply(Context ctx) {
+            return ctx.put(MessageMonitor.MonitorCallback.class,
+                           messageMonitor.onMessageIngested(query));
+        }
     }
 
     private NoHandlerForQueryException noHandlerException(QueryMessage<?, ?> intercepted) {
@@ -236,16 +302,6 @@ public class SimpleQueryBus implements QueryBus {
         return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
                                                      intercepted.getQueryName(),
                                                      intercepted.getResponseType()));
-    }
-
-    private void monitorCallback(Signal<?> signal) {
-        MessageMonitor.MonitorCallback m = signal.getContextView()
-                                                 .get(MessageMonitor.MonitorCallback.class);
-        if (signal.isOnNext()) {
-            m.reportSuccess();
-        } else if (signal.isOnError()) {
-            m.reportFailure(signal.getThrowable());
-        }
     }
 
     @Override
@@ -341,10 +397,10 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <I, U> DefaultSubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> getSubscriptionQueryResult(
-            Mono<QueryResponseMessage<I>> initialResult,
+            Publisher<QueryResponseMessage<I>> initialResult,
             UpdateHandlerRegistration<U> updateHandlerRegistration
     ) {
-        return new DefaultSubscriptionQueryResult<>(initialResult,
+        return new DefaultSubscriptionQueryResult<>(Mono.from(initialResult),
                                                     updateHandlerRegistration.getUpdates(),
                                                     () -> {
                                                         updateHandlerRegistration.complete();

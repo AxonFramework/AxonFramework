@@ -16,6 +16,8 @@
 
 package org.axonframework.test.aggregate;
 
+import java.util.Arrays;
+
 /**
  * @author Allard Buijze
  */
@@ -45,5 +47,14 @@ public class MyEvent {
 
     public Object getAggregateIdentifier() {
         return aggregateIdentifier;
+    }
+
+    @Override
+    public String toString() {
+        return "MyEvent{" +
+                "someValue=" + someValue +
+                ", someBytes=" + Arrays.toString(someBytes) +
+                ", aggregateIdentifier=" + aggregateIdentifier +
+                '}';
     }
 }

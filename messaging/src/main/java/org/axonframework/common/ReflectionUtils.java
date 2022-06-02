@@ -496,27 +496,6 @@ public abstract class ReflectionUtils {
         );
     }
 
-    /**
-     * Check whether the given Object is a primitive type. Validates both boxed and unboxed instances.
-     * <p>
-     * Note that this check includes {@link String} as well.
-     *
-     * @param o The Object to check whether it's a primitive type.
-     * @return {@code true} if the given Object is a primitive, {@code false} otherwise.
-     */
-    public static boolean isPrimitive(Object o) {
-        return o.getClass().isPrimitive()
-                || o.getClass().isAssignableFrom(Boolean.class)
-                || o.getClass().isAssignableFrom(Byte.class)
-                || o.getClass().isAssignableFrom(Character.class)
-                || o.getClass().isAssignableFrom(Short.class)
-                || o.getClass().isAssignableFrom(Integer.class)
-                || o.getClass().isAssignableFrom(Float.class)
-                || o.getClass().isAssignableFrom(Double.class)
-                || o.getClass().isAssignableFrom(Long.class)
-                || o.getClass().isAssignableFrom(String.class);
-    }
-
     private ReflectionUtils() {
         // utility class
     }
