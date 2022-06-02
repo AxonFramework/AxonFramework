@@ -24,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests starting a spring boot app without Project Reactor on classpath.
+ * Tests starting a Spring Boot application without Project Reactor on the classpath.
  */
 @SpringBootTest
 class ReactorlessStartupTest {
