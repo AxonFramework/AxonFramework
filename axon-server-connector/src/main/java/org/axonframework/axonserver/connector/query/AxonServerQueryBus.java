@@ -67,6 +67,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
@@ -81,6 +82,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.context.Context;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -254,6 +256,21 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                    .subscribeOn(Schedulers.fromExecutorService(queryExecutor));
     }
 
+    /**
+     * Ends a streaming query activity.
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link AxonServerQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     *
+     * @author Milan Savic
+     */
     private static class ActivityFinisher implements Consumer<SignalType> {
 
         private final ShutdownLatch.ActivityHandle activity;

@@ -227,6 +227,23 @@ public class SimpleQueryBus implements QueryBus {
                    ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
     }
 
+    /**
+     * Reports result of streaming query execution to the
+     * {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} (assuming that a monitor callback is attached
+     * to the context).
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     *
+     * @author Milan Savic
+     */
     private static class SuccessReporter implements Consumer<Signal<?>> {
 
         @Override
@@ -241,6 +258,22 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
+    /**
+     * Attaches {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} to the Project Reactor's
+     * {@link Context}.
+     * <p>
+     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
+     * without Project Reactor on the classpath.
+     * </p>
+     * <p>
+     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
+     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
+     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
+     * instantiation would fail.
+     * </p>
+     *
+     * @author Milan Savic
+     */
     private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
 
         private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;

@@ -26,6 +26,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-reactorless-test</artifactId>
+    <name>Axon Reactor-less tests</name>
+    <description>
+        Module containing Axon Framework tests without Project Reactor present on the classpath. Does not contain any
+        production code.
+    </description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
