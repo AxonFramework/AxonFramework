@@ -80,11 +80,11 @@ class EvaluationTask implements Runnable {
                     letter.acknowledge();
                     logger.info(
                             "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
-                            uow.getMessage().getIdentifier(), processingGroup
+                            letter.identifier(), processingGroup
                     );
                 } catch (Exception e) {
                     throw new DeadLetterEvaluationException(
-                            "Failed while acknowledging dead-letter [" + uow.getMessage().getIdentifier()
+                            "Failed while acknowledging dead-letter [" + letter.identifier()
                                     + "] after successfully evaluation.", e
                     );
                 }
@@ -94,13 +94,11 @@ class EvaluationTask implements Runnable {
                     letter.requeue();
                     logger.warn(
                             "Reentered dead-letter [{}] for processing group [{}] in the queue since evaluation failed.",
-                            uow.getMessage().getIdentifier(),
-                            processingGroup,
-                            uow.getExecutionResult().getExceptionResult()
+                            letter.identifier(), processingGroup, uow.getExecutionResult().getExceptionResult()
                     );
                 } catch (Exception e) {
                     throw new DeadLetterEvaluationException(
-                            "Failed while enqueueing dead-letter [" + uow.getMessage().getIdentifier()
+                            "Failed while enqueueing dead-letter [" + letter.identifier()
                                     + "] again after a failed evaluation.", e
                     );
                 }
