@@ -16,14 +16,12 @@
 
 package org.axonframework.test.matchers;
 
-import com.sun.tools.javac.util.List;
 import org.axonframework.common.AxonConfigurationException;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
