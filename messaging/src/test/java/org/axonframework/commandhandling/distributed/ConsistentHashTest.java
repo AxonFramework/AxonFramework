@@ -112,12 +112,9 @@ class ConsistentHashTest {
     }
 
     @Test
-    void testEquals1() throws Exception {
-        ConsistentHash consistentHash = new ConsistentHash((s) -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
-        ConsistentHash consistentHashModified = consistentHash
-                                                            .with(member2, 1, AcceptAll.INSTANCE)
-                                                            .without(member2);
-        Assertions.assertFalse(consistentHashModified.equals(new ConsistentHash()));
+    void testNotEqualsForModifiedInstanceWithDefaultInstance() throws Exception {
+        ConsistentHash consistentHash = new ConsistentHash(s -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
+        assertNotEquals(consistentHash, new ConsistentHash());
     }
 
 }
