@@ -83,7 +83,7 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
         if (Objects.equals(expected, actual)) {
             return true;
         }
-        if (hasEqualsMethod(actual.getClass())) {
+        if (hasEqualsMethod(actual.getClass()) && (!(filter instanceof IgnoreField))) {
             // Expected does not equal actual, and equals is implemented. Hence, we should not perform field equality.
             noneMatchingEquals = true;
             return false;

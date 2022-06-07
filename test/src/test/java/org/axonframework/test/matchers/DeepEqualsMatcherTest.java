@@ -81,12 +81,27 @@ class DeepEqualsMatcherTest {
         assertThrows(AxonConfigurationException.class, () -> new DeepEqualsMatcher<>(null).matches("foo"));
     }
 
+    @Test
+    void testIgnoredFieldOnEvent(){
+        DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(new SomeEvent("someField"), new IgnoreField(SomeEvent.class, "someField"));
+        boolean result = testSubject.matches(new SomeEvent("otherField"));
+        assertTrue(result);
+    }
+
     private static class ObjectNotOverridingEquals {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
         private final String someField;
 
         private ObjectNotOverridingEquals(String someField) {
+            this.someField = someField;
+        }
+    }
+    private static class SomeEvent {
+        @SuppressWarnings({"unused"})
+        private final String someField;
+
+        private SomeEvent(String someField) {
             this.someField = someField;
         }
     }
