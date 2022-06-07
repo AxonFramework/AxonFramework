@@ -52,4 +52,8 @@ public class MatchAllFieldFilter implements FieldFilter {
         }
         return true;
     }
+
+    public boolean containsIgnoreFieldFilter(){
+        return filters.stream().anyMatch(fieldFilter -> fieldFilter instanceof IgnoreField);
+    }
 }

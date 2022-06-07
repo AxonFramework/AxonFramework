@@ -16,10 +16,13 @@
 
 package org.axonframework.test.matchers;
 
+import com.sun.tools.javac.util.List;
 import org.axonframework.common.AxonConfigurationException;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 import org.junit.jupiter.api.*;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -83,7 +86,8 @@ class DeepEqualsMatcherTest {
 
     @Test
     void testIgnoredFieldOnEvent(){
-        DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(new SomeEvent("someField"), new IgnoreField(SomeEvent.class, "someField"));
+        DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(new SomeEvent("someField"), new MatchAllFieldFilter(
+                List.of(new IgnoreField(SomeEvent.class, "someField"))));
         boolean result = testSubject.matches(new SomeEvent("otherField"));
         assertTrue(result);
     }
@@ -103,6 +107,18 @@ class DeepEqualsMatcherTest {
 
         private SomeEvent(String someField) {
             this.someField = someField;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SomeEvent someEvent = (SomeEvent) o;
+            return Objects.equals(someField, someEvent.someField);
         }
     }
 }
