@@ -34,6 +34,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -123,29 +124,41 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                 .entrySet()
                 .stream()
                 .flatMap(entry ->
-                    entry.getValue().stream().map(messageHandler ->
-                        commandBus.subscribe(entry.getKey(), messageHandler)
-                    )
+                                 entry.getValue().stream().map(messageHandler ->
+                                                                       commandBus.subscribe(entry.getKey(),
+                                                                                            messageHandler)
+                                 )
                 )
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
+    /**
+     * Initializes all the handlers. First deduplicates them based on the executable provided. In the case of methods
+     * contains in a parent class (with or without being overridden in subclasses), the method will only be registered
+     * once by deduplication of the Executable
+     */
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
-        aggregateModel.allCommandHandlers()
-                      .values()
-                      .stream()
-                      .flatMap(List::stream)
-                      .forEach(handler -> initializeHandler(aggregateModel, handler, handlersFound));
+
+        aggregateModel
+                .allCommandHandlers()
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.groupingBy(handler -> handler.unwrap(Executable.class)
+                                                                 .orElseThrow(() -> new IllegalStateException(
+                                                                         "A handler is missing an Executable. Please provide an Executable in your MessageHandlingMembers"))))
+                .forEach((signature, commandHandlers) -> initializeHandler(aggregateModel,
+                                                                           commandHandlers.get(0),
+                                                                           handlersFound));
         return handlersFound;
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
                                    List<MessageHandler<CommandMessage<?>>> handlersFound) {
-
 
         handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
