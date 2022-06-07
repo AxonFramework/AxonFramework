@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -393,6 +394,103 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertEquals(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY), result.message().getPayload());
             assertEquals(1, result.numberOfRetries());
         });
+    }
+
+    // TODO: 07-06-22 correctly implement bulk test
+    @Test
+    void testPublishAndEvaluateEventsConcurrentlyInBulk() throws InterruptedException {
+        int immediateSuccessesPerAggregate = 5;
+        int failFirstAndThenSucceedPerAggregate = 4;
+        int persistentFailingPerAggregate = 1;
+        int publishingRuns = 1;
+
+        int expectedSuccessfulHandlingCountAfterEvaluation =
+                immediateSuccessesPerAggregate + failFirstAndThenSucceedPerAggregate;
+
+        ConcurrentSkipListSet<String> aggregateIds = new ConcurrentSkipListSet<>();
+        Set<String> successfullyValidated = new HashSet<>();
+
+        // Starting both is sufficient since both Processor and DeadLettering Invoker have their own thread pool.
+        startProcessingEvent();
+        startDeadLetterEvaluation();
+
+//        Thread eventPublisher = new Thread(() -> {
+        for (int i = 0; i < publishingRuns; i++) {
+            String aggregateId = UUID.randomUUID().toString();
+            publishEventsFor(aggregateId,
+                             immediateSuccessesPerAggregate,
+                             failFirstAndThenSucceedPerAggregate,
+                             persistentFailingPerAggregate);
+            aggregateIds.add(aggregateId);
+        }
+//        });
+
+        Thread.sleep(1000);
+
+//        Thread handlingValidator = new Thread(() -> {
+//            while (successfullyValidated.size() < publishingRuns) {
+        for (String aggregateId : aggregateIds) {
+            if (successfullyValidated.contains(aggregateId) || !eventHandlingComponent.handled(aggregateId)) {
+                break;
+            }
+            assertTrue(eventHandlingComponent.successfullyHandledOnFirstTry(aggregateId));
+            assertEquals(immediateSuccessesPerAggregate,
+                         eventHandlingComponent.successfulHandlingCountOnFirstTry(aggregateId));
+            assertTrue(eventHandlingComponent.unsuccessfullyHandledOnFirstTry(aggregateId));
+            assertEquals(1, eventHandlingComponent.unsuccessfulHandlingCountOnFirstTry(aggregateId));
+
+            assertTrue(deadLetterQueue.contains(
+                    new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)
+            ));
+
+            assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(
+                    expectedSuccessfulHandlingCountAfterEvaluation,
+                    eventHandlingComponent.successfulHandlingCountOnFirstTry(aggregateId)
+            ));
+            assertWithin(1, TimeUnit.SECONDS,
+                         () -> assertEquals(2,
+                                            eventHandlingComponent.unsuccessfulHandlingCountOnFirstTry(aggregateId)));
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                Optional<DeadLetter<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
+                assertTrue(requeuedLetter.isPresent());
+                DeadLetter<EventMessage<?>> result = requeuedLetter.get();
+                assertEquals(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY),
+                             result.message().getPayload());
+                assertEquals(1, result.numberOfRetries());
+            });
+            successfullyValidated.add(aggregateId);
+        }
+//            }
+//        });
+
+//        eventPublisher.start();
+        // Validate the processor thread started.
+//        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
+
+//        handlingValidator.start();
+        assertWithin(10, TimeUnit.SECONDS, () -> assertTrue(successfullyValidated.containsAll(aggregateIds)));
+
+//        eventPublisher.join();
+//        handlingValidator.join();
+    }
+
+    private void publishEventsFor(String aggregateId, int immediateSuccessesPerAggregate,
+                                  int failFirstAndThenSucceedPerAggregate,
+                                  int persistentFailingPerAggregate) {
+        for (int i = 0; i < immediateSuccessesPerAggregate; i++) {
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        }
+        for (int i = 0; i < failFirstAndThenSucceedPerAggregate; i++) {
+            if (i == 0) {
+                eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+            } else if (failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate == i) {
+                eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY)));
+            } else {
+                eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId,
+                                                                                  SUCCEED,
+                                                                                  SUCCEED_RETRY)));
+            }
+        }
     }
 
     private static class ProblematicEventHandlingComponent {
