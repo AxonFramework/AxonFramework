@@ -638,6 +638,31 @@ class AggregateAnnotationCommandHandlerTest {
         );
     }
 
+    @Test
+    void testDuplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(rejectDuplicates())
+                                     .build();
+
+        Repository<RootAggregate> repository = mock(Repository.class);
+
+        Set<Class<? extends RootAggregate>> subtypes = new HashSet<>();
+        subtypes.add(ChildOneAggregate.class);
+        subtypes.add(ChildTwoAggregate.class);
+        AggregateModel<RootAggregate> polymorphicAggregateModel =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(RootAggregate.class, subtypes);
+
+        AggregateAnnotationCommandHandler<RootAggregate> polymorphicAggregateTestSubject =
+                AggregateAnnotationCommandHandler.<RootAggregate>builder()
+                                                 .aggregateType(RootAggregate.class)
+                                                 .repository(repository)
+                                                 .aggregateModel(polymorphicAggregateModel)
+                                                 .build();
+
+        //noinspection resource
+        assertDoesNotThrow(() -> polymorphicAggregateTestSubject.subscribe(commandBus));
+    }
+
     @SuppressWarnings("unused")
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
@@ -1190,5 +1215,22 @@ class AggregateAnnotationCommandHandlerTest {
         public String getAbstractId() {
             return abstractId;
         }
+    }
+
+    @SuppressWarnings("unused")
+    private abstract static class RootAggregate {
+
+        @CommandHandler
+        public void handle(String command) {
+
+        }
+    }
+
+    private static class ChildOneAggregate extends RootAggregate {
+
+    }
+
+    private static class ChildTwoAggregate extends RootAggregate {
+
     }
 }
