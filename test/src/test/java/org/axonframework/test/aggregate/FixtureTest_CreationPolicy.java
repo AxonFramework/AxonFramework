@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class FixtureTest_CreationPolicy {
     @Test
     void testAlwaysCreatePolicyWithoutResultReturnsAggregateId() {
         fixture.givenNoPriorActivity()
-               .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID))
+               .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                .expectResultMessagePayload(AGGREGATE_ID)
                .expectSuccessfulHandlerExecution();
@@ -126,7 +126,7 @@ class FixtureTest_CreationPolicy {
     @Test
     void testAlwaysCreateExceptionsArePropagates() {
         fixture.givenNoPriorActivity()
-               .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID, false))
+               .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))
                .expectNoEvents()
                .expectException(RuntimeException.class);
         assertTrue(intercepted.get());
@@ -178,13 +178,19 @@ class FixtureTest_CreationPolicy {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
+        private final boolean shouldPublishEvent;
 
-        private AlwaysCreateWithoutResultCommand(ComplexAggregateId id) {
+        private AlwaysCreateWithoutResultCommand(ComplexAggregateId id, boolean shouldPublishEvent) {
             this.id = id;
+            this.shouldPublishEvent = shouldPublishEvent;
         }
 
         public ComplexAggregateId getId() {
             return id;
+        }
+
+        public boolean shouldPublishEvent() {
+            return shouldPublishEvent;
         }
     }
 
@@ -217,9 +223,10 @@ class FixtureTest_CreationPolicy {
         private AlwaysCreateWithEventSourcedResultCommand(ComplexAggregateId id) {
             this(id, true);
         }
+
         private AlwaysCreateWithEventSourcedResultCommand(ComplexAggregateId id, boolean success) {
             this.id = id;
-            this.success= success;
+            this.success = success;
         }
 
         public ComplexAggregateId getId() {
@@ -391,7 +398,9 @@ class FixtureTest_CreationPolicy {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(AlwaysCreateWithoutResultCommand command) {
-            apply(new AlwaysCreatedEvent(command.getId()));
+            if (command.shouldPublishEvent()) {
+                apply(new AlwaysCreatedEvent(command.getId()));
+            }
         }
 
         @CommandHandler
