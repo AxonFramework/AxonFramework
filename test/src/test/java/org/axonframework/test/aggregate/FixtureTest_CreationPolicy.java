@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class FixtureTest_CreationPolicy {
 
     private static final ComplexAggregateId AGGREGATE_ID = new ComplexAggregateId(UUID.randomUUID(), 42);
+    private static final boolean PUBLISH_EVENTS = true;
+    private static final boolean PUBLISH_NO_EVENTS = false;
 
     private FixtureConfiguration<TestAggregate> fixture;
 
@@ -56,7 +58,7 @@ class FixtureTest_CreationPolicy {
     @Test
     void testCreateOrUpdatePolicyForNewInstance() {
         fixture.givenNoPriorActivity()
-               .when(new CreateOrUpdateCommand(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
         assertTrue(intercepted.get());
@@ -65,7 +67,7 @@ class FixtureTest_CreationPolicy {
     @Test
     void testCreateOrUpdatePolicyForExistingInstance() {
         fixture.given(new CreatedEvent(AGGREGATE_ID))
-               .when(new CreateOrUpdateCommand(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .expectSuccessfulHandlerExecution();
         assertTrue(intercepted.get());
@@ -130,6 +132,14 @@ class FixtureTest_CreationPolicy {
         assertTrue(intercepted.get());
     }
 
+    @Test
+    void testCreateOrUpdatePolicyDoesNotPublishAnyEvents() {
+        fixture.givenNoPriorActivity()
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))
+               .expectNoEvents()
+               .expectSuccessfulHandlerExecution();
+    }
+
     private static class CreateCommand {
 
         @TargetAggregateIdentifier
@@ -148,13 +158,19 @@ class FixtureTest_CreationPolicy {
 
         @TargetAggregateIdentifier
         private final ComplexAggregateId id;
+        private final boolean shouldPublishEvent;
 
-        private CreateOrUpdateCommand(ComplexAggregateId id) {
+        private CreateOrUpdateCommand(ComplexAggregateId id, boolean shouldPublishEvent) {
             this.id = id;
+            this.shouldPublishEvent = shouldPublishEvent;
         }
 
         public ComplexAggregateId getId() {
             return id;
+        }
+
+        public boolean shouldPublishEvent() {
+            return shouldPublishEvent;
         }
     }
 
@@ -367,7 +383,9 @@ class FixtureTest_CreationPolicy {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
-            apply(new CreatedOrUpdatedEvent(command.getId()));
+            if (command.shouldPublishEvent()) {
+                apply(new CreatedOrUpdatedEvent(command.getId()));
+            }
         }
 
         @CommandHandler
