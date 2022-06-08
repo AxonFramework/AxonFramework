@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -25,11 +24,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating the {@link PessimisticLockFactory}.
+ *
  * @author Allard Buijze
  */
 class PessimisticLockFactoryTest {
@@ -215,11 +214,11 @@ class PessimisticLockFactoryTest {
     }
 
     @Test
-    void testShouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
+    void testShouldThrowNullLockIdentifierExceptionWhenIdentifierIsNull() {
         this.identifier = null;
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
 
-        assertThrows(IllegalArgumentException.class, () -> manager.obtainLock(identifier));
+        assertThrows(NullLockIdentifierException.class, () -> manager.obtainLock(identifier));
     }
 
     private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
