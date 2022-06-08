@@ -21,7 +21,7 @@ import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 import org.junit.jupiter.api.*;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,9 +85,11 @@ class DeepEqualsMatcherTest {
     }
 
     @Test
-    void testIgnoredFieldOnEvent(){
-        DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(new SomeEvent("someField"), new MatchAllFieldFilter(
-                Arrays.asList((new IgnoreField(SomeEvent.class, "someField")))));
+    void testIgnoredFieldOnEvent() {
+        DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(
+                new SomeEvent("someField"),
+                new MatchAllFieldFilter(Collections.singletonList((new IgnoreField(SomeEvent.class, "someField"))))
+        );
         boolean result = testSubject.matches(new SomeEvent("otherField"));
         assertTrue(result);
     }
@@ -101,7 +103,9 @@ class DeepEqualsMatcherTest {
             this.someField = someField;
         }
     }
+
     private static class SomeEvent {
+
         @SuppressWarnings({"unused"})
         private final String someField;
 

@@ -83,7 +83,8 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
         if (Objects.equals(expected, actual)) {
             return true;
         }
-        if (hasEqualsMethod(actual.getClass()) && (!containsIgnoreFieldFilter())) {
+        // If the default filter is used, we may deduce no reflective equals is desired by the user.
+        if (hasEqualsMethod(actual.getClass()) && defaultFilterUsed()) {
             // Expected does not equal actual, and equals is implemented. Hence, we should not perform field equality.
             noneMatchingEquals = true;
             return false;
@@ -95,9 +96,10 @@ public class DeepEqualsMatcher<T> extends BaseMatcher<T> {
         return expected.getClass().isInstance(actual) && expected.getClass().equals(actual.getClass());
     }
 
-    private boolean containsIgnoreFieldFilter(){
-        return filter instanceof MatchAllFieldFilter && ((MatchAllFieldFilter) filter).containsIgnoreFieldFilter();
+    private boolean defaultFilterUsed() {
+        return filter == AllFieldsFilter.instance();
     }
+
     private boolean matchingFields(Class<?> aClass, Object expectedValue, Object actual) {
         boolean match = true;
         for (Field field : aClass.getDeclaredFields()) {
