@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.DuplicateCommandHandlerResolution;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
@@ -59,6 +58,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import static org.axonframework.commandhandling.DuplicateCommandHandlerResolution.rejectDuplicates;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -579,7 +579,7 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     void testUsesDuplicateCommandHandlerResolver() throws Exception {
         commandBus = SimpleCommandBus.builder()
-                                     .duplicateCommandHandlerResolver(DuplicateCommandHandlerResolution.rejectDuplicates())
+                                     .duplicateCommandHandlerResolver(rejectDuplicates())
                                      .build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
@@ -597,6 +597,31 @@ class AggregateAnnotationCommandHandlerTest {
         assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> {
             testSubject.subscribe(commandBus);
         });
+    }
+
+    @Test
+    void testDuplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(rejectDuplicates())
+                                     .build();
+
+        Repository<RootAggregate> repository = mock(Repository.class);
+
+        Set<Class<? extends RootAggregate>> subtypes = new HashSet<>();
+        subtypes.add(ChildOneAggregate.class);
+        subtypes.add(ChildTwoAggregate.class);
+        AggregateModel<RootAggregate> polymorphicAggregateModel =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(RootAggregate.class, subtypes);
+
+        AggregateAnnotationCommandHandler<RootAggregate> polymorphicAggregateTestSubject =
+                AggregateAnnotationCommandHandler.<RootAggregate>builder()
+                                                 .aggregateType(RootAggregate.class)
+                                                 .repository(repository)
+                                                 .aggregateModel(polymorphicAggregateModel)
+                                                 .build();
+
+        //noinspection resource
+        assertDoesNotThrow(() -> polymorphicAggregateTestSubject.subscribe(commandBus));
     }
 
     @SuppressWarnings("unused")
@@ -1068,5 +1093,45 @@ class AggregateAnnotationCommandHandlerTest {
         public String getEntityId() {
             return entityId;
         }
+    }
+
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
+    private static class UpdateAbstractEntityFromCollectionStateCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private final String abstractId;
+
+        UpdateAbstractEntityFromCollectionStateCommand(String aggregateId,
+                                                       String abstractId) {
+            this.aggregateId = aggregateId;
+            this.abstractId = abstractId;
+        }
+
+        public String getAggregateId() {
+            return aggregateId;
+        }
+
+        public String getAbstractId() {
+            return abstractId;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private abstract static class RootAggregate {
+
+        @CommandHandler
+        public void handle(String command) {
+
+        }
+    }
+
+    private static class ChildOneAggregate extends RootAggregate {
+
+    }
+
+    private static class ChildTwoAggregate extends RootAggregate {
+
     }
 }

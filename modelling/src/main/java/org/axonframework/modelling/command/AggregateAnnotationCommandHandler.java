@@ -76,7 +76,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
+     * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}.
      * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
      * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
      * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -123,12 +123,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         List<Registration> subscriptions = supportedCommandsByName
                 .entrySet()
                 .stream()
-                .flatMap(entry ->
-                                 entry.getValue().stream().map(messageHandler ->
-                                                                       commandBus.subscribe(entry.getKey(),
-                                                                                            messageHandler)
-                                 )
-                )
+                .flatMap(entry -> entry.getValue().stream().map(
+                        messageHandler -> commandBus.subscribe(entry.getKey(), messageHandler)
+                ))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
@@ -142,17 +139,21 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
 
-        aggregateModel
-                .allCommandHandlers()
-                .values()
-                .stream()
-                .flatMap(List::stream)
-                .collect(Collectors.groupingBy(handler -> handler.unwrap(Executable.class)
-                                                                 .orElseThrow(() -> new IllegalStateException(
-                                                                         "A handler is missing an Executable. Please provide an Executable in your MessageHandlingMembers"))))
-                .forEach((signature, commandHandlers) -> initializeHandler(aggregateModel,
-                                                                           commandHandlers.get(0),
-                                                                           handlersFound));
+        aggregateModel.allCommandHandlers()
+                      .values()
+                      .stream()
+                      .flatMap(List::stream)
+                      .collect(Collectors.groupingBy(
+                              handler -> handler.unwrap(Executable.class)
+                                                .orElseThrow(() -> new IllegalStateException(
+                                                        "A handler is missing an Executable. Please provide an "
+                                                                + "Executable in your MessageHandlingMembers"
+                                                ))
+                      ))
+                      .forEach((signature, commandHandlers) -> initializeHandler(
+                              aggregateModel, commandHandlers.get(0), handlersFound
+                      ));
+
         return handlersFound;
     }
 
