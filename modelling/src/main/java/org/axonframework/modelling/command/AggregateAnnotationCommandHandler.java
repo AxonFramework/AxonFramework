@@ -25,7 +25,6 @@ import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.common.lock.NullLockIdentifierException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -419,11 +418,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             Aggregate<T> aggregate = repository.newInstance(factoryMethod, agg -> {
                 try {
                     response.set(agg.handle(command));
-                } catch (NullLockIdentifierException e) {
-                    // The constructed aggregate didn't set the aggregate identifier.
-                    // This indicates a scenario where the command handler decided not to create the aggregate.
-                    // Setting the response to null indicates the aggregate identifier isn't set for the dispatcher.
-                    response.set(null);
                 } catch (Exception e) {
                     exceptionDuringInit.set(e);
                 }

@@ -16,22 +16,28 @@
 
 package org.axonframework.common.lock;
 
-import org.axonframework.common.AxonNonTransientException;
-
 /**
- * Exception thrown when something tries to acquire a {@link Lock} based on a {@code null} identifier.
+ * No-op implementation of a {@link Lock}. Does nothing on {@link #release()} and returns {@code true} for
+ * {@link #isHeld()}.
  *
  * @author Steven van Beelen
  * @since 4.5.11
  */
-public class NullLockIdentifierException extends AxonNonTransientException {
+public class NoOpLock implements Lock {
 
-    /**
-     * Initializes the exception using the given {@code message}.
-     *
-     * @param message The message describing the exception.
-     */
-    public NullLockIdentifierException(String message) {
-        super(message);
+    public static final Lock INSTANCE = new NoOpLock();
+
+    private NoOpLock() {
+        // Retrieve version through static INSTANCE.
+    }
+
+    @Override
+    public void release() {
+        // Not implemented for this no-op version.
+    }
+
+    @Override
+    public boolean isHeld() {
+        return true;
     }
 }

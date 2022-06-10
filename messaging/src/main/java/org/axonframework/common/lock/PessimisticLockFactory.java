@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedSet;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.Assert.nonNull;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
@@ -118,13 +117,11 @@ public class PessimisticLockFactory implements LockFactory {
      * @param identifier the identifier of the lock to obtain.
      * @return A handle to release the lock. If the thread that releases the lock does not hold the lock a
      * {@link IllegalMonitorStateException} is thrown.
-     * @throws NullLockIdentifierException Thrown when the given {@code identifier} is {@code null}.
+     * @throws IllegalArgumentException Thrown when the given {@code identifier} is {@code null}.
      */
     @Override
     public Lock obtainLock(String identifier) {
-        assertThat(identifier, Objects::nonNull, () -> new NullLockIdentifierException(
-                "The aggregate identifier to obtain a lock for may not be null."
-        ));
+        nonNull(identifier, () -> "The aggregate identifier to obtain a lock for may not be null.");
         boolean lockObtained = false;
         DisposableLock lock = null;
         while (!lockObtained) {
