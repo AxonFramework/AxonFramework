@@ -1730,7 +1730,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    @Timeout(value = 10)
+    @Timeout(value = 25)
     void testSplitAndMergeInfluenceOnChangeListenerInvocations() throws InterruptedException {
         int firstSegment = 0;
         int secondSegment = 1;

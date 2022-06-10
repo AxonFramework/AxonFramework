@@ -34,6 +34,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.CreationPolicyMember;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,12 +76,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver} The {@link
-     * Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal is to
-     * provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
-     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
-     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
-     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}.
+     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
+     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
+     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
      * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
@@ -122,30 +123,43 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         List<Registration> subscriptions = supportedCommandsByName
                 .entrySet()
                 .stream()
-                .flatMap(entry ->
-                    entry.getValue().stream().map(messageHandler ->
-                        commandBus.subscribe(entry.getKey(), messageHandler)
-                    )
-                )
+                .flatMap(entry -> entry.getValue().stream().map(
+                        messageHandler -> commandBus.subscribe(entry.getKey(), messageHandler)
+                ))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
+    /**
+     * Initializes all the handlers. First deduplicates them based on the executable provided. In the case of methods
+     * contains in a parent class (with or without being overridden in subclasses), the method will only be registered
+     * once by deduplication of the Executable
+     */
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
+
         aggregateModel.allCommandHandlers()
                       .values()
                       .stream()
                       .flatMap(List::stream)
-                      .forEach(handler -> initializeHandler(aggregateModel, handler, handlersFound));
+                      .collect(Collectors.groupingBy(
+                              handler -> handler.unwrap(Executable.class)
+                                                .orElseThrow(() -> new IllegalStateException(
+                                                        "A handler is missing an Executable. Please provide an "
+                                                                + "Executable in your MessageHandlingMembers"
+                                                ))
+                      ))
+                      .forEach((signature, commandHandlers) -> initializeHandler(
+                              aggregateModel, commandHandlers.get(0), handlersFound
+                      ));
+
         return handlersFound;
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
                                    List<MessageHandler<CommandMessage<?>>> handlersFound) {
-
 
         handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
