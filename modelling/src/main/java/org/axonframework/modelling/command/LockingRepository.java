@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -262,6 +263,18 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         @Override
         public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            super.subtypes(subtypes);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            super.subtype(subtype);
             return this;
         }
 

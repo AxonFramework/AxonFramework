@@ -31,8 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -368,6 +370,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public static abstract class Builder<T> {
 
         protected final Class<T> aggregateType;
+        protected Set<Class<? extends T>> subtypes = new HashSet<>();
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
@@ -425,6 +428,39 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
+         * Sets the subtypes of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
+         * Defining subtypes indicates this {@code Repository} supports polymorphic aggregate structure.
+         * <p>
+         * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set. Defaults to
+         * an empty {@link Set}.
+         *
+         * @param subtypes The subtypes of the {@link #getAggregateType() aggregate type} represented by this
+         *                 {@link Repository}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            assertNonNull(subtypes, "Subtypes of the aggregate may not be null");
+            this.subtypes = new HashSet<>(subtypes);
+            return this;
+        }
+
+        /**
+         * Sets a subtype of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
+         * Defining a subtype indicates this {@code Repository} supports a polymorphic aggregate structure.
+         * <p>
+         * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set.
+         *
+         * @param subtype A subtypes of the {@link #getAggregateType() aggregate type} represented by this
+         *                {@link Repository}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            assertNonNull(subtype, "A subtype of the aggregate may not be null");
+            this.subtypes.add(subtype);
+            return this;
+        }
+
+        /**
          * Instantiate the {@link AggregateModel} of generic type {@code T} describing the structure of the Aggregate
          * this {@link Repository} will store.
          *
@@ -441,12 +477,12 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         private AggregateModel<T> inspectAggregateModel() {
             if (parameterResolverFactory == null && handlerDefinition == null) {
-                return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+                return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, subtypes);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {
                 handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
             }
             return AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                    aggregateType, parameterResolverFactory, handlerDefinition
+                    aggregateType, parameterResolverFactory, handlerDefinition, subtypes
             );
         }
 
