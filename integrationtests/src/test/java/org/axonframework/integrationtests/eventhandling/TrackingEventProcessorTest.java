@@ -1740,26 +1740,30 @@ class TrackingEventProcessorTest {
             }
         };
 
+        // Provide some spare threads so that assertions don't block the processor.
+        // Added, lower the event availability timeout to have the TEP threads pick up the segments faster.
         TrackingEventProcessorConfiguration tepConfiguration =
-                TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                TrackingEventProcessorConfiguration.forParallelProcessing(4)
+                                                   .andInitialSegmentsCount(2)
+                                                   .andEventAvailabilityTimeout(50, TimeUnit.MILLISECONDS)
                                                    .andEventTrackerStatusChangeListener(statusChangeListener);
         initProcessor(tepConfiguration);
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
 
         publishEvents(2);
         testSubject.start();
-        waitForSegmentStart(firstSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(firstSegment)));
 
         assertTrue(testSubject.splitSegment(firstSegment).join(), "Expected split to succeed");
         assertArrayEquals(new int[]{firstSegment, secondSegment}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(secondSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(secondSegment)));
 
         assertWithin(
-                50, TimeUnit.MILLISECONDS,
+                500, TimeUnit.MILLISECONDS,
                 () -> assertTrue(testSubject.mergeSegment(firstSegment).join(), "Expected merge to succeed")
         );
         assertArrayEquals(new int[]{firstSegment}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(firstSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(firstSegment)));
 
         assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
