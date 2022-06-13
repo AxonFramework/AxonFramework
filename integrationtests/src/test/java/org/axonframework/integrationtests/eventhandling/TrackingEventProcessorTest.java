@@ -1770,14 +1770,17 @@ class TrackingEventProcessorTest {
     void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() {
         AtomicBoolean hasNextInvoked = new AtomicBoolean(false);
         AtomicBoolean hasNextAvailableTimedOut = new AtomicBoolean(true);
+        // Set up two threads and one segment, to provide more "space" for assertions.
         TrackingEventProcessorConfiguration tepConfiguration =
-                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                   .andInitialSegmentsCount(1)
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
         EventStore enhancedEventStore = new EmbeddedEventStore(
                 EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
         ) {
             @Override
             public TrackingEventStream openStream(TrackingToken trackingToken) {
+                //noinspection resource
                 TrackingEventStream trackingEventStream = super.openStream(trackingToken);
                 return new TrackingEventStream() {
                     @Override
@@ -1819,7 +1822,7 @@ class TrackingEventProcessorTest {
             assertFalse(trackerOneStatus.isCaughtUp());
         });
 
-        assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
     @Test
