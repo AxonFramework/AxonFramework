@@ -303,9 +303,9 @@ class AggregateStereotypeAutoConfigurationTest {
 
         @Bean
         public Repository<CustomRepoTestAggregate> testRepository(EventStore eventStore) {
-            EventSourcingRepository<CustomRepoTestAggregate> testRepository = EventSourcingRepository.builder(
-                    CustomRepoTestAggregate.class).eventStore(eventStore).build();
-            return spy(testRepository);
+            return spy(EventSourcingRepository.builder(CustomRepoTestAggregate.class)
+                                              .eventStore(eventStore)
+                                              .build());
         }
     }
 
