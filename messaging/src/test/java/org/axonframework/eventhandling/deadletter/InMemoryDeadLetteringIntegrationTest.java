@@ -21,7 +21,6 @@ import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.deadletter.InMemoryDeadLetterQueue;
 
 import java.time.Duration;
-import java.util.concurrent.Executors;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link InMemoryDeadLetterQueue}
@@ -34,8 +33,7 @@ class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegration
     @Override
     DeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
         return InMemoryDeadLetterQueue.<EventMessage<?>>builder()
-                                      .expireThreshold(Duration.ofMillis(250))
-                                      .scheduledExecutorService(Executors.newSingleThreadScheduledExecutor())
+                                      .expireThreshold(Duration.ofMillis(50))
                                       .build();
     }
 }

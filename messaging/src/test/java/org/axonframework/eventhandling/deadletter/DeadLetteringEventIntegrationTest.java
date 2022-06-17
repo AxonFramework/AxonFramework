@@ -292,11 +292,11 @@ public abstract class DeadLetteringEventIntegrationTest {
         startProcessingEvent();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        //noinspection OptionalGetWithoutIsPresent
-        assertWithin(
-                1, TimeUnit.SECONDS,
-                () -> assertTrue(streamingProcessor.processingStatus().get(0).getCurrentPosition().getAsLong() >= 6)
-        );
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
+            assertTrue(optionalPosition.isPresent());
+            assertTrue(optionalPosition.getAsLong() >= 6);
+        });
 
         assertTrue(eventHandlingComponent.successfullyHandledOnFirstTry(aggregateId));
         assertEquals(expectedSuccessfulHandlingCountOnFirstTry,
@@ -322,13 +322,8 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandlingComponent.unsuccessfulHandlingCountOnEvaluation(aggregateId)
         ));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            Optional<DeadLetter<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
-            assertTrue(requeuedLetter.isPresent());
-            DeadLetter<EventMessage<?>> result = requeuedLetter.get();
-            assertEquals(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY), result.message().getPayload());
-            assertEquals(1, result.numberOfRetries());
-        });
+        // As evaluation fails, the queueId should still exist
+        assertTrue(deadLetterQueue.contains(queueId));
     }
 
     @Test
@@ -362,11 +357,11 @@ public abstract class DeadLetteringEventIntegrationTest {
 
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        //noinspection OptionalGetWithoutIsPresent
-        assertWithin(
-                1, TimeUnit.SECONDS,
-                () -> assertTrue(streamingProcessor.processingStatus().get(0).getCurrentPosition().getAsLong() >= 6)
-        );
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
+            assertTrue(optionalPosition.isPresent());
+            assertTrue(optionalPosition.getAsLong() >= 6);
+        });
 
         assertTrue(eventHandlingComponent.successfullyHandledOnFirstTry(aggregateId));
         assertEquals(expectedSuccessfulHandlingCountOnFirstTry,
@@ -377,26 +372,24 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         assertTrue(deadLetterQueue.contains(queueId));
 
-        assertWithin(1, TimeUnit.SECONDS,
+        // Release to be certain evaluation starts
+        deadLetterQueue.release(PROCESSING_GROUP);
+
+        assertWithin(2, TimeUnit.SECONDS,
                      () -> assertTrue(eventHandlingComponent.successfullyHandledOnEvaluation(aggregateId)));
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(
                 expectedSuccessfulHandlingCountOnEvaluation,
                 eventHandlingComponent.successfulHandlingCountOnEvaluation(aggregateId)
         ));
-        assertWithin(1, TimeUnit.SECONDS,
+        assertWithin(500, TimeUnit.MILLISECONDS,
                      () -> assertTrue(eventHandlingComponent.unsuccessfullyHandledOnEvaluation(aggregateId)));
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(
                 expectedUnsuccessfulHandlingCountOnEvaluation,
                 eventHandlingComponent.unsuccessfulHandlingCountOnEvaluation(aggregateId)
         ));
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            Optional<DeadLetter<EventMessage<?>>> requeuedLetter = deadLetterQueue.take(PROCESSING_GROUP);
-            assertTrue(requeuedLetter.isPresent());
-            DeadLetter<EventMessage<?>> result = requeuedLetter.get();
-            assertEquals(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY), result.message().getPayload());
-            assertEquals(1, result.numberOfRetries());
-        });
+        // As evaluation fails, the queueId should still exist
+        assertTrue(deadLetterQueue.contains(queueId));
     }
 
     @Test
@@ -438,6 +431,8 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());
         });
 
+        // Release to be certain evaluation starts
+        deadLetterQueue.release(PROCESSING_GROUP);
         for (String aggregateId : aggregateIds) {
             // Validate first try event handling...
             // Successful...
@@ -453,9 +448,12 @@ public abstract class DeadLetteringEventIntegrationTest {
             ));
             assertEquals(1, eventHandlingComponent.unsuccessfulHandlingCountOnFirstTry(aggregateId));
 
+            // Validate existence of Dead Letter...
+            assertTrue(deadLetterQueue.contains(new EventHandlingQueueIdentifier(aggregateId, PROCESSING_GROUP)));
+
             // Validate evaluation event handling...
             // Successful...
-            assertWithin(4, TimeUnit.SECONDS, () -> assertTrue(
+            assertWithin(3, TimeUnit.SECONDS, () -> assertTrue(
                     eventHandlingComponent.successfullyHandledOnEvaluation(aggregateId)
             ));
             assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(
