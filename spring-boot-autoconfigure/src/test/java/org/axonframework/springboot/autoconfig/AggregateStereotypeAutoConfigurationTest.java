@@ -131,7 +131,7 @@ class AggregateStereotypeAutoConfigurationTest {
             // Publish the second command to trigger the SnapshotFilter and CommandTargetResolver
             commandGateway.sendAndWait(new UpdateCustomRepoTestAggregate(aggregateId));
 
-            verify(testRepository).load(eq(aggregateId), eq(null));
+            verify(testRepository).load(aggregateId, null);
             assertTrue(commandTargetResolverInvoked.get());
 
             verifyNoInteractions(snapshotTriggerDefinition);
