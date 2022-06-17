@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/add-to-project@main
         with:
-          project_url: https://github.com/orgs/AxonFramework/projects/2
-          github_token: ${{ secrets.DEVBOT_WRITING_GITHUB_TOKEN }}
+          project-url: https://github.com/orgs/AxonFramework/projects/2
+          github-token: ${{ secrets.DEVBOT_WRITING_GITHUB_TOKEN }}
           labeled: 'Type: Dependency Upgrade'
