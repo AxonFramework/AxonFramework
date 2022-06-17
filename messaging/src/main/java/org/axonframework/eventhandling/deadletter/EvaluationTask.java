@@ -67,8 +67,9 @@ class EvaluationTask implements Runnable {
     public void run() {
         AtomicBoolean evaluationFailed = new AtomicBoolean(false);
         Optional<DeadLetter<EventMessage<?>>> optionalLetter;
-        while ((optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
-                && !evaluationFailed.get()) {
+        while (!evaluationFailed.get() &&
+                (optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
+        ) {
             DeadLetter<EventMessage<?>> letter = optionalLetter.get();
             logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
                          letter.identifier(), letter.queueIdentifier().combinedIdentifier());
