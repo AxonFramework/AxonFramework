@@ -34,7 +34,7 @@ class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegration
     @Override
     DeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
         return InMemoryDeadLetterQueue.<EventMessage<?>>builder()
-                                      .expireThreshold(Duration.ofMillis(50))
+                                      .expireThreshold(Duration.ofMillis(250))
                                       .scheduledExecutorService(Executors.newSingleThreadScheduledExecutor())
                                       .build();
     }
