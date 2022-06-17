@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.QueueIdentifier;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ class EvaluationTaskTest {
     void testRunEvaluatesDeadLetterSuccessfully() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
+        when(testDeadLetter.queueIdentifier()).thenReturn(mock(QueueIdentifier.class));
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
         when(queue.take(TEST_PROCESSING_GROUP)).thenReturn(Optional.of(testDeadLetter))
@@ -110,6 +112,7 @@ class EvaluationTaskTest {
     void testRunEvaluatesDeadLetterSuccessfullyAndFailsOnAcknowledge() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
+        when(testDeadLetter.queueIdentifier()).thenReturn(mock(QueueIdentifier.class));
         //noinspection unchecked
         when(testDeadLetter.message()).thenReturn(TEST_EVENT);
         doThrow(new RuntimeException()).when(testDeadLetter).acknowledge();
@@ -131,6 +134,7 @@ class EvaluationTaskTest {
     void testRunEvaluatesDeadLetterUnsuccessfully() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
+        when(testDeadLetter.queueIdentifier()).thenReturn(mock(QueueIdentifier.class));
         Exception testException = new RuntimeException();
 
         //noinspection unchecked
@@ -154,6 +158,7 @@ class EvaluationTaskTest {
     void testRunEvaluatesDeadLetterUnsuccessfullyAndFailsOnRequeue() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testDeadLetter = mock(DeadLetter.class);
+        when(testDeadLetter.queueIdentifier()).thenReturn(mock(QueueIdentifier.class));
         Exception testException = new RuntimeException();
 
         //noinspection unchecked

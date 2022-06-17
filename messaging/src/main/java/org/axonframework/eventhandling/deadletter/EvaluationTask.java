@@ -34,9 +34,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A {@link Runnable} implementation used to evaluate a {@link DeadLetter} taken from the {@link DeadLetterQueue}.
- * This task is added through {@link DeadLetterQueue#onAvailable(String, Runnable)}, so we can typically assume there
- * are entries ready for evaluation.
+ * A {@link Runnable} implementation used to evaluate a {@link DeadLetter} taken from the {@link DeadLetterQueue}. This
+ * task is added through {@link DeadLetterQueue#onAvailable(String, Runnable)}, so we can typically assume there are
+ * entries ready for evaluation.
  *
  * @author Steven van Beelen
  * @since 4.6.0
@@ -70,8 +70,8 @@ class EvaluationTask implements Runnable {
         while ((optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
                 && !evaluationFailed.get()) {
             DeadLetter<EventMessage<?>> letter = optionalLetter.get();
-            logger.debug("Start evaluation of dead-letter [{}] for processing group [{}].",
-                         letter.message().getIdentifier(), processingGroup);
+            logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
+                         letter.identifier(), letter.queueIdentifier().combinedIdentifier());
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
             unitOfWork.attachTransaction(transactionManager);
@@ -79,12 +79,13 @@ class EvaluationTask implements Runnable {
                 try {
                     letter.acknowledge();
                     logger.info(
-                            "Dead-letter [{}] is acknowledged as it is successfully handled for processing group [{}].",
-                            letter.identifier(), processingGroup
+                            "Dead-letter [{}] is acknowledged as it is successfully handled for queue identifier [{}].",
+                            letter.identifier(), letter.queueIdentifier().combinedIdentifier()
                     );
                 } catch (Exception e) {
                     throw new DeadLetterEvaluationException(
                             "Failed while acknowledging dead-letter [" + letter.identifier()
+                                    + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
                                     + "] after successfully evaluation.", e
                     );
                 }
@@ -93,12 +94,14 @@ class EvaluationTask implements Runnable {
                 try {
                     letter.requeue();
                     logger.warn(
-                            "Reentered dead-letter [{}] for processing group [{}] in the queue since evaluation failed.",
-                            letter.identifier(), processingGroup, uow.getExecutionResult().getExceptionResult()
+                            "Reentered dead-letter [{}] for queue identifier [{}] in the queue since evaluation failed.",
+                            letter.identifier(), letter.queueIdentifier().combinedIdentifier(),
+                            uow.getExecutionResult().getExceptionResult()
                     );
                 } catch (Exception e) {
                     throw new DeadLetterEvaluationException(
                             "Failed while enqueueing dead-letter [" + letter.identifier()
+                                    + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
                                     + "] again after a failed evaluation.", e
                     );
                 }
