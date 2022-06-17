@@ -244,14 +244,14 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
                            .collect(Collectors.toSet());
 
         Instant current = clock.instant();
-        Instant earliestExpiredSequence = Instant.MAX;
+        long earliestExpiredSequence = Long.MAX_VALUE;
         DeadLetter<T> earliestExpiredLetter = null;
         for (Map.Entry<QueueIdentifier, Deque<DeadLetter<T>>> sequence : availableSequences) {
             DeadLetter<T> letter = sequence.getValue().peekFirst();
             if (letter != null
-                    && letter.expiresAt().isBefore(current)
-                    && letter.expiresAt().isBefore(earliestExpiredSequence)) {
-                earliestExpiredSequence = letter.expiresAt();
+                    && letter.expiresAt().toEpochMilli() <= current.toEpochMilli()
+                    && letter.expiresAt().toEpochMilli() < earliestExpiredSequence) {
+                earliestExpiredSequence = letter.expiresAt().toEpochMilli();
                 earliestExpiredLetter = letter;
             }
         }
