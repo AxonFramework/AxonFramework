@@ -109,12 +109,16 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         Optional<DeadLetter<EventMessage<?>>> optionalLetter =
                 transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(identifier, message));
         if (optionalLetter.isPresent()) {
-            logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
-                        message, identifier.combinedIdentifier());
+            if (logger.isInfoEnabled()) {
+                logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
+                            message, identifier.combinedIdentifier());
+            }
         } else {
-            logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue present."
-                                 + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
-                         message, identifier.combinedIdentifier());
+            if (logger.isTraceEnabled()) {
+                logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue present."
+                                     + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
+                             message, identifier.combinedIdentifier());
+            }
             try {
                 super.invokeHandlers(message);
             } catch (Exception e) {
@@ -261,6 +265,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          *
          * @return A {@link DeadLetteringEventHandlerInvoker} as specified through this Builder.
          */
+        @Override
         public DeadLetteringEventHandlerInvoker build() {
             return new DeadLetteringEventHandlerInvoker(this);
         }
@@ -271,6 +276,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
          * @throws AxonConfigurationException When one field asserts to be incorrect according to the Builder's
          *                                    specifications.
          */
+        @Override
         protected void validate() {
             assertNonNull(queue, "The DeadLetterQueue is a hard requirement and should be provided");
             assertNonEmpty(processingGroup, "The processing group is a hard requirement and should be provided");

@@ -181,7 +181,9 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
 
     @Override
     public boolean contains(@Nonnull QueueIdentifier identifier) {
-        logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
+        }
         return deadLetters.containsKey(identifier);
     }
 
@@ -354,6 +356,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
          *                        {@link #onAvailable(String, Runnable) availability checks} and for enqueued
          *                        {@link DeadLetter letters} to be considered ready to be {@link #take(String) taken}.
          */
+        @Override
         public Builder<T> expireThreshold(Duration expireThreshold) {
             return super.expireThreshold(expireThreshold);
         }

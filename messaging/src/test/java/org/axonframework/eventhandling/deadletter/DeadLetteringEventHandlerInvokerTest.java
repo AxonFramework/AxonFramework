@@ -102,7 +102,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
-        verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), eq(TEST_EVENT));
+        verify(queue).enqueueIfPresent(TEST_QUEUE_ID, TEST_EVENT);
         verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
         verify(transactionManager).fetchInTransaction(any());
         verify(transactionManager, never()).executeInTransaction(any());
@@ -229,7 +229,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.start();
 
         verify(queue).onAvailable(eq(TEST_PROCESSING_GROUP), any());
-        verify(queue).release(eq(TEST_PROCESSING_GROUP));
+        verify(queue).release(TEST_PROCESSING_GROUP);
     }
 
     @Test

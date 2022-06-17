@@ -71,8 +71,10 @@ class EvaluationTask implements Runnable {
                 (optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
         ) {
             DeadLetter<EventMessage<?>> letter = optionalLetter.get();
-            logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
-                         letter.identifier(), letter.queueIdentifier().combinedIdentifier());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
+                             letter.identifier(), letter.queueIdentifier().combinedIdentifier());
+            }
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
             unitOfWork.attachTransaction(transactionManager);
