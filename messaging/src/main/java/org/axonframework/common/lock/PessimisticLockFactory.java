@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedSet;
+import static org.axonframework.common.Assert.nonNull;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
@@ -108,19 +109,19 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     /**
-     * Obtain a lock for a resource identified by the given {@code identifier}. This method will block until a
-     * lock was successfully obtained.
+     * Obtain a lock for a resource identified by the given {@code identifier}. This method will block until a lock was
+     * successfully obtained.
      * <p/>
      * Note: when an exception occurs during the locking process, the lock may or may not have been allocated.
      *
      * @param identifier the identifier of the lock to obtain.
-     * @return a handle to release the lock. If the thread that releases the lock does not hold the lock
-     * {@link IllegalMonitorStateException} is thrown
-     * {@link IllegalArgumentException} is thrown when identifier is null
+     * @return A handle to release the lock. If the thread that releases the lock does not hold the lock a
+     * {@link IllegalMonitorStateException} is thrown.
+     * @throws IllegalArgumentException Thrown when the given {@code identifier} is {@code null}.
      */
     @Override
     public Lock obtainLock(String identifier) {
-        Assert.nonNull(identifier, () -> "Aggregate identifier may not be null");
+        nonNull(identifier, () -> "The identifier to obtain a lock for may not be null.");
         boolean lockObtained = false;
         DisposableLock lock = null;
         while (!lockObtained) {

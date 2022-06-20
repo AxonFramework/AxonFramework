@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,11 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
         assertNotNull(resource, "resource should not be null");
         assertNotNull(eventBus, "Expected EventBus to be injected as resource");
 
-        apply(new MyEvent(
-                command.getAggregateIdentifier() == null ? UUID.randomUUID() : command.getAggregateIdentifier(), 0
-        ));
+        if (command.shouldPublishEvents()) {
+            apply(new MyEvent(
+                    command.getAggregateIdentifier() == null ? UUID.randomUUID() : command.getAggregateIdentifier(), 0
+            ));
+        }
     }
 
     @CommandHandler

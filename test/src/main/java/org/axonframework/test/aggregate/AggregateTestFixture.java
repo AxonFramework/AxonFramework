@@ -556,7 +556,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 }
                 assertValidWorkingAggregateState(aggregate2, fieldFilter, workingAggregate);
             } catch (AggregateNotFoundException notFound) {
-                if (!workingAggregate.isDeleted()) {
+                // The identifier == null if an aggregate creating command handler decided not to create the aggregate.
+                if (!workingAggregate.isDeleted() && workingAggregate.identifier() != null) {
                     throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
                                                          + "but the Repository cannot recover the state of the " +
                                                          "aggregate, as it is considered deleted there.");
