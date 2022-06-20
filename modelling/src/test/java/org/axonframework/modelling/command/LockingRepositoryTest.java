@@ -113,7 +113,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadOrCreateAggregate() {
+    void testLoadOrCreateAggregate() {
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
         //noinspection resource
