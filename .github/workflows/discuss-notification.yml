@@ -30,8 +30,7 @@ jobs:
           --data-binary @- << EOF
           {
             "title": "Axon Framework - Release ${{ github.event.release.name }}",
-            "raw": "I’m glad to announce that we’ve released Axon Framework \n\n${{ github.event.release.name }}\n\n on \n\n${{ github.event.release.createdAt }}\n\n.<br\>
-          This release contains: <br/> ${{ github.event.release.description}}",
+            "raw": "I’m glad to announce that we’ve released ${{ github.event.release.name }} on ${{ github.event.release.createdAt }}\n\n. This release contains: \n\n ${{ github.event.release.description}}",
             "category": $CATEGORY,
             "tags": ["release"]
           }
