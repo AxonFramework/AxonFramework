@@ -121,7 +121,7 @@ public class PessimisticLockFactory implements LockFactory {
      */
     @Override
     public Lock obtainLock(String identifier) {
-        nonNull(identifier, () -> "The aggregate identifier to obtain a lock for may not be null.");
+        nonNull(identifier, () -> "The identifier to obtain a lock for may not be null.");
         boolean lockObtained = false;
         DisposableLock lock = null;
         while (!lockObtained) {
