@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,8 @@ import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
- * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the meta
- * model of the aggregate.
+ * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the
+ * meta-model of the aggregate.
  *
  * @author Allard Buijze
  * @since 3.1
@@ -645,7 +645,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         /**
-         * Returns this instance when it it safe to read from. This is either if the current thread is already
+         * Returns this instance when it is safe to read from. This is either if the current thread is already
          * initializing this instance, or when the instance is fully initialized.
          *
          * @return this instance, as soon as it is safe for reading

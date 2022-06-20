@@ -16,28 +16,21 @@
 
 package org.axonframework.common.lock;
 
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * LockFactory implementation that does nothing. Can be useful in cases where a Locking Repository implementation needs
- * to be configured to ignore locks, for example in scenario's where an underlying storage mechanism already performs
- * the necessary locking.
+ * Test class validating the {@link NullLockFactory}.
  *
- * @author Allard Buijze
- * @since 0.6
+ * @author Steven van Beelen
  */
-public enum NullLockFactory implements LockFactory {
+class NullLockFactoryTest {
 
-    /**
-     * Singleton instance of a {@link NullLockFactory}.
-     */
-    INSTANCE;
+    @Test
+    void testObtainLockReturnsNoOpLockInstance() {
+        LockFactory testSubject = NullLockFactory.INSTANCE;
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public Lock obtainLock(String identifier) {
-        return NoOpLock.INSTANCE;
+        assertEquals(NoOpLock.INSTANCE, testSubject.obtainLock(null));
     }
 }
