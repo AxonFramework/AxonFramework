@@ -17,27 +17,27 @@
 package org.axonframework.common.lock;
 
 /**
- * LockFactory implementation that does nothing. Can be useful in cases where a Locking Repository implementation needs
- * to be configured to ignore locks, for example in scenario's where an underlying storage mechanism already performs
- * the necessary locking.
+ * No-op implementation of a {@link Lock}. Does nothing on {@link #release()} and returns {@code true} for
+ * {@link #isHeld()}.
  *
- * @author Allard Buijze
- * @since 0.6
+ * @author Steven van Beelen
+ * @since 4.5.11
  */
-public enum NullLockFactory implements LockFactory {
+public class NoOpLock implements Lock {
 
-    /**
-     * Singleton instance of a {@link NullLockFactory}.
-     */
-    INSTANCE;
+    public static final Lock INSTANCE = new NoOpLock();
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
+    private NoOpLock() {
+        // Retrieve version through static INSTANCE.
+    }
+
     @Override
-    public Lock obtainLock(String identifier) {
-        return NoOpLock.INSTANCE;
+    public void release() {
+        // Not implemented for this no-op version.
+    }
+
+    @Override
+    public boolean isHeld() {
+        return true;
     }
 }

@@ -21,6 +21,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -38,24 +39,33 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link LockingRepository}.
+ *
  * @author Allard Buijze
  */
 class LockingRepositoryTest {
 
-    private Repository<StubAggregate> testSubject;
-    private EventBus mockEventBus;
+    private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
+
+    private EventBus eventBus;
     private LockFactory lockFactory;
     private Lock lock;
-    private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
+
+    private InMemoryLockingRepository testSubject;
 
     @BeforeEach
     void setUp() {
-        mockEventBus = mock(EventBus.class);
+        eventBus = spy(SimpleEventBus.builder().build());
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         when(lockFactory.obtainLock(anyString()))
                 .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
-        testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventStore(mockEventBus).build();
+
+        testSubject = InMemoryLockingRepository.builder()
+                                               .lockFactory(lockFactory)
+                                               .eventBus(eventBus)
+                                               .build();
         testSubject = spy(testSubject);
+
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -75,14 +85,38 @@ class LockingRepositoryTest {
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
-        verify(mockEventBus).publish(isA(EventMessage.class));
+        verify(eventBus).publish(isA(EventMessage.class));
+    }
+
+    /**
+     * The aggregate identifier could not be set because command and event handling decided not to store the event. In
+     * that case, there's no way a lock could be acquired for the aggregate identifier, as this isn't there.
+     * <p>
+     * Note that this ensures the aggregate state is not saved too, as there's no aggregate identifier to save the
+     * aggregate with.
+     */
+    @Test
+    void testStoringAggregateWithoutSettingAggregateIdentifierDoesNotInvokeLockFactory() throws Exception {
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        Aggregate<StubAggregate> result = testSubject.newInstance(
+                () -> new StubAggregate(null),
+                aggregate -> aggregate.execute(StubAggregate::doSomething)
+        );
+        uow.commit();
+
+        verifyNoInteractions(lockFactory);
+        verify(eventBus).publish(isA(EventMessage.class));
+        assertNull(result.identifier());
+        assertEquals(0, testSubject.getSaveCount());
     }
 
     @Test
-    public void testLoadOrCreateAggregate() throws Exception {
+    void testLoadOrCreateAggregate() {
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
+        //noinspection resource
         verify(lockFactory).obtainLock("newAggregate");
 
         Aggregate<StubAggregate> loadedAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
@@ -96,6 +130,7 @@ class LockingRepositoryTest {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
         verify(lock).release();
@@ -103,12 +138,13 @@ class LockingRepositoryTest {
 
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
         loadedAggregate.execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        verify(mockEventBus, times(2)).publish(any(EventMessage.class));
+        verify(eventBus, times(2)).publish(any(EventMessage.class));
         verify(lock).release();
     }
 
@@ -118,6 +154,7 @@ class LockingRepositoryTest {
         StubAggregate aggregate = new StubAggregate();
 
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
         verify(lock).release();
@@ -125,6 +162,7 @@ class LockingRepositoryTest {
 
         startAndGetUnitOfWork();
         testSubject.load(aggregate.getIdentifier(), 0L);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
         CurrentUnitOfWork.get().onPrepareCommit(u -> {
@@ -144,7 +182,7 @@ class LockingRepositoryTest {
     @Test
     void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
-        testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventStore(mockEventBus).build();
+        testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventBus(eventBus).build();
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
@@ -153,6 +191,7 @@ class LockingRepositoryTest {
         when(lockFactory.obtainLock(aggregate.getIdentifier()))
                 .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
         verify(lock).release();
@@ -160,6 +199,7 @@ class LockingRepositoryTest {
 
         startAndGetUnitOfWork();
         testSubject.load(aggregate.getIdentifier(), 0L);
+        //noinspection resource
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
         CurrentUnitOfWork.get().onPrepareCommit(u -> {
@@ -178,21 +218,24 @@ class LockingRepositoryTest {
     }
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(MESSAGE);
-        return uow;
+        return DefaultUnitOfWork.startAndGet(MESSAGE);
     }
 
     private static class InMemoryLockingRepository extends LockingRepository<StubAggregate, Aggregate<StubAggregate>> {
 
         private final EventBus eventBus;
         private final AggregateModel<StubAggregate> aggregateModel;
-        private Map<Object, Aggregate<StubAggregate>> store = new HashMap<>();
+
+        private final Map<Object, Aggregate<StubAggregate>> store;
         private int saveCount;
 
         private InMemoryLockingRepository(Builder builder) {
             super(builder);
-            this.eventBus = builder.eventStore;
+            this.eventBus = builder.eventBus;
             this.aggregateModel = builder.buildAggregateModel();
+
+            store = new HashMap<>();
+            this.saveCount = 0;
         }
 
         public static Builder builder() {
@@ -229,13 +272,9 @@ class LockingRepositoryTest {
             return saveCount;
         }
 
-        public void resetSaveCount() {
-            saveCount = 0;
-        }
-
         private static class Builder extends LockingRepository.Builder<StubAggregate> {
 
-            private EventBus eventStore;
+            private EventBus eventBus;
 
             private Builder() {
                 super(StubAggregate.class);
@@ -247,8 +286,8 @@ class LockingRepositoryTest {
                 return this;
             }
 
-            public Builder eventStore(EventBus eventStore) {
-                this.eventStore = eventStore;
+            public Builder eventBus(EventBus eventBus) {
+                this.eventBus = eventBus;
                 return this;
             }
 
