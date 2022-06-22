@@ -152,6 +152,36 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
     }
 
+    /**
+     * Returns a batch of event data as object entries in the event storage with a
+     * greater than the given {@code token}.
+     *
+     * @param token     Object describing the global index of the last processed event.
+     * @param batchSize The maximum number of events that should be returned
+     * @return A batch of event messages as object stored since the given tracking token
+     */
+    protected List<Object[]> fetchEvents(GapAwareTrackingToken token, int batchSize) {
+        TypedQuery<Object[]> query;
+        if (token == null || token.getGaps().isEmpty()) {
+            query = entityManager().createQuery(
+                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                            "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
+        } else {
+            query = entityManager().createQuery(
+                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                            "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
+                    Object[].class
+            ).setParameter("gaps", token.getGaps());
+        }
+        return query.setParameter("token", token == null ? -1L : token.getIndex())
+                .setMaxResults(batchSize)
+                .getResultList();
+    }
+
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(
@@ -162,28 +192,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
 
-        List<Object[]> entries = transactionManager.fetchInTransaction(() -> {
-            // if there are many gaps, it's worth checking if it is possible to clean them up
-            TypedQuery<Object[]> query;
-            if (previousToken == null || previousToken.getGaps().isEmpty()) {
-                query = entityManager().createQuery(
-                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                                + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                                "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
-            } else {
-                query = entityManager().createQuery(
-                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                                + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                                "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
-                        Object[].class
-                ).setParameter("gaps", previousToken.getGaps());
-            }
-            return query.setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
-                        .setMaxResults(batchSize)
-                        .getResultList();
-        });
+        List<Object[]> entries = transactionManager.fetchInTransaction(() -> fetchEvents(previousToken, batchSize));
         List<TrackedEventData<?>> result = new ArrayList<>();
         GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
