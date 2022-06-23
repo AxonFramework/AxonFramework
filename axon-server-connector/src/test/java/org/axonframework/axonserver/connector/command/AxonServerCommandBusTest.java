@@ -16,8 +16,13 @@
 
 package org.axonframework.axonserver.connector.command;
 
+import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.command.CommandChannel;
+import io.axoniq.axonserver.grpc.MetaDataValue;
+import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -33,6 +38,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.AfterEach;
@@ -40,14 +46,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
@@ -57,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -150,6 +162,71 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
+    }
+
+    @Test
+    void equalPriorityMessagesProcessedInOrder() throws InterruptedException {
+        int commandCount = 1000;
+
+        testSubject = AxonServerCommandBus.builder()
+                                          .axonServerConnectionManager(axonServerConnectionManager)
+                                          .configuration(configuration)
+                                          .localSegment(localSegment)
+                                          .serializer(serializer)
+                                          .routingStrategy(command -> "RoutingKey")
+                                          .targetContextResolver(targetContextResolver)
+                                          .loadFactorProvider(command -> 36)
+                                          .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, q))
+                                          .build();
+
+        CountDownLatch startProcessingGate = new CountDownLatch(1);
+        CountDownLatch finishProcessingGate = new CountDownLatch(commandCount);
+
+        List<Long> actual = new CopyOnWriteArrayList<>();
+
+        AtomicReference<Function<Command, CompletableFuture<CommandResponse>>> commandHandlerRef = new AtomicReference<>();
+        when(axonServerConnectionManager.getConnection()).thenReturn(mockConnection);
+
+        doAnswer(i -> {
+            commandHandlerRef.set(i.getArgument(0));
+            return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
+        }).when(mockCommandChannel).registerCommandHandler(any(), anyInt(), eq("testCommand"));
+        //noinspection resource
+        testSubject.subscribe("testCommand", new MessageHandler<CommandMessage<?>>() {
+            @Override
+            public Object handle(CommandMessage<?> message) throws Exception {
+                startProcessingGate.await();
+                actual.add((long) message.getMetaData().get("index"));
+                finishProcessingGate.countDown();
+                return "ok";
+            }
+        });
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(commandHandlerRef.get()));
+
+        Function<Command, CompletableFuture<CommandResponse>> commandHandler = commandHandlerRef.get();
+        for (int i = 0; i < commandCount; i++) {
+            commandHandler.apply(Command.newBuilder()
+                                        .setName("testCommand")
+                                        .setMessageIdentifier(UUID.randomUUID().toString())
+                                        .setPayload(SerializedObject.newBuilder()
+                                                                    .setType("java.lang.String")
+                                                                    .setData(ByteString.copyFromUtf8("<string>Hello</string>")))
+                                        .putMetaData("index", MetaDataValue.newBuilder().setNumberValue(i).build())
+                                        .build());
+        }
+        startProcessingGate.countDown();
+        finishProcessingGate.await(30, TimeUnit.SECONDS);
+
+        assertEquals(commandCount, actual.size());
+        List<Long> expected = new ArrayList<>();
+
+        for (long i = 0; i < commandCount; i++) {
+            expected.add(i);
+        }
+
+        assertEquals(expected, actual);
+
     }
 
     @Test
