@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,15 +38,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -59,24 +55,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -166,8 +153,6 @@ class AxonServerCommandBusTest {
 
     @Test
     void equalPriorityMessagesProcessedInOrder() throws InterruptedException {
-        int commandCount = 1000;
-
         testSubject = AxonServerCommandBus.builder()
                                           .axonServerConnectionManager(axonServerConnectionManager)
                                           .configuration(configuration)
@@ -176,30 +161,35 @@ class AxonServerCommandBusTest {
                                           .routingStrategy(command -> "RoutingKey")
                                           .targetContextResolver(targetContextResolver)
                                           .loadFactorProvider(command -> 36)
-                                          .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, q))
+                                          .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                                  1, 1, 5, TimeUnit.SECONDS, q
+                                          ))
                                           .build();
+
+        int commandCount = 1000;
 
         CountDownLatch startProcessingGate = new CountDownLatch(1);
         CountDownLatch finishProcessingGate = new CountDownLatch(commandCount);
 
+        List<Long> expected = LongStream.range(0, commandCount)
+                                        .boxed()
+                                        .collect(Collectors.toList());
         List<Long> actual = new CopyOnWriteArrayList<>();
 
         AtomicReference<Function<Command, CompletableFuture<CommandResponse>>> commandHandlerRef = new AtomicReference<>();
         when(axonServerConnectionManager.getConnection()).thenReturn(mockConnection);
-
         doAnswer(i -> {
             commandHandlerRef.set(i.getArgument(0));
             return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
-        }).when(mockCommandChannel).registerCommandHandler(any(), anyInt(), eq("testCommand"));
+        }).when(mockCommandChannel)
+          .registerCommandHandler(any(), anyInt(), eq("testCommand"));
+
         //noinspection resource
-        testSubject.subscribe("testCommand", new MessageHandler<CommandMessage<?>>() {
-            @Override
-            public Object handle(CommandMessage<?> message) throws Exception {
-                startProcessingGate.await();
-                actual.add((long) message.getMetaData().get("index"));
-                finishProcessingGate.countDown();
-                return "ok";
-            }
+        testSubject.subscribe("testCommand", message -> {
+            startProcessingGate.await();
+            actual.add((long) message.getMetaData().get("index"));
+            finishProcessingGate.countDown();
+            return "ok";
         });
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(commandHandlerRef.get()));
@@ -211,22 +201,19 @@ class AxonServerCommandBusTest {
                                         .setMessageIdentifier(UUID.randomUUID().toString())
                                         .setPayload(SerializedObject.newBuilder()
                                                                     .setType("java.lang.String")
-                                                                    .setData(ByteString.copyFromUtf8("<string>Hello</string>")))
+                                                                    .setData(ByteString.copyFromUtf8(
+                                                                            "<string>Hello</string>"
+                                                                    ))
+                                        )
                                         .putMetaData("index", MetaDataValue.newBuilder().setNumberValue(i).build())
                                         .build());
         }
         startProcessingGate.countDown();
+        //noinspection ResultOfMethodCallIgnored
         finishProcessingGate.await(30, TimeUnit.SECONDS);
 
         assertEquals(commandCount, actual.size());
-        List<Long> expected = new ArrayList<>();
-
-        for (long i = 0; i < commandCount; i++) {
-            expected.add(i);
-        }
-
         assertEquals(expected, actual);
-
     }
 
     @Test

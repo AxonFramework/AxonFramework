@@ -337,14 +337,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return shutdownLatch.initiateShutdown();
     }
 
-    private static class PriorityTask implements Comparable<PriorityTask> {
+    /**
+     * An abstract {@link Runnable} and {@link Comparable} implementation. Uses a combination of {@code priority} and
+     * {@code index} to compare between {@code this} and other priority task instances. The priority is typically
+     * defined through a {@link QueryPriorityCalculator}, which defines the priority for a query. This task uses the
+     * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+     * those scenarios.
+     */
+    private abstract static class PriorityTask implements Runnable, Comparable<PriorityTask> {
+
         private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
+
         private final long priority;
         private final long index;
 
         public PriorityTask(long priority) {
             this.priority = priority;
             this.index = COUNTER.incrementAndGet();
+        }
+
+        public long getPriority() {
+            return priority;
         }
 
         @Override
@@ -372,11 +385,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         public int hashCode() {
             return Objects.hash(priority, index);
         }
-
-        public long getPriority() {
-            return priority;
-        }
-
     }
 
     /**
@@ -422,11 +430,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     /**
-     * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the query
-     * {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest} and
-     * used to priorities this {@link QueryProcessingTask} among others of it's kind.
+     * A {@link PriorityTask} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
+     * query {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest}
+     * and used to priorities this {@link QueryProcessingTask} among others of its kind.
      */
-    private static class QueryProcessingTask extends PriorityTask implements Runnable {
+    private static class QueryProcessingTask extends PriorityTask {
 
         private final QueryBus localSegment;
         private final QueryRequest queryRequest;
@@ -726,7 +734,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
-    private static class ResponseProcessingTask<R> extends PriorityTask implements Runnable {
+    private static class ResponseProcessingTask<R> extends PriorityTask {
 
         private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,6 +241,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         return shutdownLatch.initiateShutdown();
     }
 
+    /**
+     * An abstract {@link Runnable} and {@link Comparable} implementation. Uses a combination of {@code priority} and
+     * {@code index} to compare between {@code this} and other command processing tasks. The priority is typically
+     * defined through a {@link CommandPriorityCalculator}, which defines the priority for a command. This task uses the
+     * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+     * those scenarios.
+     */
     private static class CommandProcessingTask implements Runnable, Comparable<CommandProcessingTask> {
 
         private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
