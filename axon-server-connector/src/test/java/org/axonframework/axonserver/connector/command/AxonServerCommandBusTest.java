@@ -184,7 +184,6 @@ class AxonServerCommandBusTest {
         }).when(mockCommandChannel)
           .registerCommandHandler(any(), anyInt(), eq("testCommand"));
 
-        //noinspection resource
         testSubject.subscribe("testCommand", message -> {
             startProcessingGate.await();
             actual.add((long) message.getMetaData().get("index"));

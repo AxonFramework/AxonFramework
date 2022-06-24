@@ -117,10 +117,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         String context = configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
 
-        this.executorService = builder.executorServiceBuilder.apply(
-                builder.configuration,
-                new PriorityBlockingQueue<>(1000)
-        );
+        this.executorService =
+                builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }

@@ -105,7 +105,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
-    private static final int DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
