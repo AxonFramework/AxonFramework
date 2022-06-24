@@ -71,7 +71,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
-import java.util.Comparator;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -80,6 +80,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -104,7 +105,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
-    private static final int DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
@@ -156,24 +156,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
-                QUERY_QUEUE_CAPACITY,
-                Comparator.comparingLong(this::queryProcessingTaskPriority).reversed()
-        );
+        PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
-    }
-
-    private long queryProcessingTaskPriority(Object r) {
-        return r instanceof QueryProcessingTask
-                ? ((QueryProcessingTask) r).getPriority() :
-                responseProcessingTaskPriority(r);
-    }
-
-    private int responseProcessingTaskPriority(Object r) {
-        return r instanceof ResponseProcessingTask
-                ? ((ResponseProcessingTask<?>) r).getPriority()
-                : DEFAULT_PRIORITY;
     }
 
     /**
@@ -221,7 +206,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
                     result, serializer, queryTransaction, priority, queryMessage.getResponseType()
             );
-            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
+            result.onAvailable(() -> queryExecutor.execute(responseProcessingTask));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -352,6 +337,56 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     /**
+     * An abstract {@link Runnable} and {@link Comparable} implementation. Uses a combination of {@code priority} and
+     * {@code index} to compare between {@code this} and other priority task instances. The priority is typically
+     * defined through a {@link QueryPriorityCalculator}, which defines the priority for a query. This task uses the
+     * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+     * those scenarios.
+     */
+    private abstract static class PriorityTask implements Runnable, Comparable<PriorityTask> {
+
+        private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
+
+        private final long priority;
+        private final long index;
+
+        public PriorityTask(long priority) {
+            this.priority = priority;
+            this.index = COUNTER.incrementAndGet();
+        }
+
+        public long getPriority() {
+            return priority;
+        }
+
+        @Override
+        public int compareTo(PriorityTask o) {
+            int c = Long.compare(this.priority, o.priority);
+            if (c != 0) {
+                return -c;
+            }
+            return Long.compare(this.index, o.index);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PriorityTask that = (PriorityTask) o;
+            return priority == that.priority && index == that.index;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(priority, index);
+        }
+    }
+
+    /**
      * A {@link QueryHandler} implementation serving as a wrapper around the local {@link QueryBus} to push through the
      * message handling and subscription query registration.
      */
@@ -362,7 +397,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             QueryProcessingTask processingTask = new QueryProcessingTask(
                     localSegment, query, responseHandler, serializer, configuration.getClientId()
             );
-            queryExecutor.submit(processingTask);
+            queryExecutor.execute(processingTask);
         }
 
         @Override
@@ -394,14 +429,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     /**
-     * A {@link Runnable} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the query
-     * {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest} and
-     * used to priorities this {@link QueryProcessingTask} among others of it's kind.
+     * A {@link PriorityTask} implementation which is given to a {@link PriorityBlockingQueue} to be consumed by the
+     * query {@link ExecutorService}, in order. The {@code priority} is retrieved from the provided {@link QueryRequest}
+     * and used to priorities this {@link QueryProcessingTask} among others of its kind.
      */
-    private static class QueryProcessingTask implements Runnable {
+    private static class QueryProcessingTask extends PriorityTask {
 
         private final QueryBus localSegment;
-        private final long priority;
         private final QueryRequest queryRequest;
         private final ReplyChannel<QueryResponse> responseHandler;
         private final QuerySerializer serializer;
@@ -411,16 +445,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                     QueryRequest queryRequest,
                                     ReplyChannel<QueryResponse> responseHandler,
                                     QuerySerializer serializer, String clientId) {
+            super(priority(queryRequest.getProcessingInstructionsList()));
             this.localSegment = localSegment;
-            this.priority = priority(queryRequest.getProcessingInstructionsList());
             this.queryRequest = queryRequest;
             this.responseHandler = responseHandler;
             this.serializer = serializer;
             this.clientId = clientId;
-        }
-
-        public long getPriority() {
-            return priority;
         }
 
         @Override
@@ -703,13 +733,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
-    private static class ResponseProcessingTask<R> implements Runnable {
+    private static class ResponseProcessingTask<R> extends PriorityTask {
 
         private final AtomicBoolean singleExecutionCheck = new AtomicBoolean();
         private final ResultStream<QueryResponse> result;
         private final QuerySerializer serializer;
         private final CompletableFuture<QueryResponseMessage<R>> queryTransaction;
-        private final int priority;
         private final ResponseType<R> expectedResponseType;
 
         public ResponseProcessingTask(ResultStream<QueryResponse> result,
@@ -717,10 +746,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                       CompletableFuture<QueryResponseMessage<R>> queryTransaction,
                                       int priority,
                                       ResponseType<R> expectedResponseType) {
+            super(priority);
             this.result = result;
             this.serializer = serializer;
             this.queryTransaction = queryTransaction;
-            this.priority = priority;
             this.expectedResponseType = expectedResponseType;
         }
 
@@ -740,10 +769,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     queryTransaction.completeExceptionally(exception);
                 }
             }
-        }
-
-        public int getPriority() {
-            return priority;
         }
     }
 
