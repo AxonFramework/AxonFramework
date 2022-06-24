@@ -206,7 +206,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             ResponseProcessingTask<R> responseProcessingTask = new ResponseProcessingTask<>(
                     result, serializer, queryTransaction, priority, queryMessage.getResponseType()
             );
-            result.onAvailable(() -> queryExecutor.submit(responseProcessingTask));
+            result.onAvailable(() -> queryExecutor.execute(responseProcessingTask));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
