@@ -37,13 +37,14 @@ import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.InstructionAckSource;
-import org.axonframework.axonserver.connector.PrioritizedRunnable;
+import org.axonframework.axonserver.connector.PriorityTask;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -220,10 +221,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             Publisher<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            Runnable responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
-                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
+            BlockingQueryResponseProcessingTask<R> responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
+                    result, serializer, queryTransaction, queryMessage.getResponseType()
             );
-            queryExecutor.execute(responseProcessingTask);
+            Runnable priorityTask = new PriorityTask(responseProcessingTask, priority);
+            queryExecutor.execute(priorityTask);
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -801,22 +803,27 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
             CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
-            QueryProcessingTask processingTask = new QueryProcessingTask(localSegment,
-                                                                         query,
-                                                                         closeAwareReplyChannel,
-                                                                         serializer,
-                                                                         configuration.getClientId());
+
+            long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
+            QueryProcessingTask processingTask = new QueryProcessingTask(
+                    localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId()
+            );
+            PriorityTask priorityTask = new PriorityTask(processingTask, priority);
+
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
-            queryExecutor.execute(processingTask);
+            queryExecutor.execute(priorityTask);
+
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    queryExecutor.execute(() -> processingTask.request(requested));
+                    queryExecutor.execute(
+                            new PriorityTask(() -> processingTask.request(requested), priorityTask.priority())
+                    );
                 }
 
                 @Override
                 public void cancel() {
-                    queryExecutor.execute(processingTask::cancel);
+                    queryExecutor.execute(new PriorityTask(processingTask::cancel, priorityTask.priority()));
                 }
             };
         }
