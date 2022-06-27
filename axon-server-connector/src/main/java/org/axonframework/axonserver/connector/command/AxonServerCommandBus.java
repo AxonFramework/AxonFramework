@@ -48,12 +48,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Comparator;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -70,8 +71,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    private static final long DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final CommandBus localSegment;
@@ -122,14 +121,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.context = c;
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> c);
 
-        this.executorService = builder.executorServiceBuilder.apply(
-                builder.configuration,
-                new PriorityBlockingQueue<>(1000, Comparator.comparingLong(
-                        r -> r instanceof CommandProcessingTask
-                                ? ((CommandProcessingTask) r).getPriority()
-                                : DEFAULT_PRIORITY).reversed()
-                )
-        );
+        this.executorService =
+                builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -163,6 +156,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
+        //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
             Command command = serializer.serialize(commandMessage,
@@ -203,7 +197,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                    c -> {
                                                        CompletableFuture<CommandResponse> result =
                                                                new CompletableFuture<>();
-                                                       executorService.submit(new CommandProcessingTask(
+                                                       executorService.execute(new CommandProcessingTask(
                                                                c, serializer, result, localSegment
                                                        ));
                                                        return result;
@@ -254,13 +248,23 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         return shutdownLatch.initiateShutdown();
     }
 
-    private static class CommandProcessingTask implements Runnable {
+    /**
+     * An abstract {@link Runnable} and {@link Comparable} implementation. Uses a combination of {@code priority} and
+     * {@code index} to compare between {@code this} and other command processing tasks. The priority is typically
+     * defined through a {@link CommandPriorityCalculator}, which defines the priority for a command. This task uses the
+     * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+     * those scenarios.
+     */
+    private static class CommandProcessingTask implements Runnable, Comparable<CommandProcessingTask> {
+
+        private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
 
         private final long priority;
         private final CompletableFuture<CommandResponse> result;
         private final CommandBus localSegment;
         private final Command command;
         private final CommandSerializer serializer;
+        private final long index;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
@@ -271,6 +275,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             this.priority = ProcessingInstructionHelper.priority(command.getProcessingInstructionsList());
             this.result = result;
             this.localSegment = localSegment;
+            this.index = COUNTER.incrementAndGet();
         }
 
         public long getPriority() {
@@ -289,6 +294,32 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
+        }
+
+        @Override
+        public int compareTo(CommandProcessingTask o) {
+            int c = Long.compare(this.priority, o.priority);
+            if (c != 0) {
+                return -c;
+            }
+            return Long.compare(this.index, o.index);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            CommandProcessingTask that = (CommandProcessingTask) o;
+            return priority == that.priority && index == that.index;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(priority, index);
         }
     }
 

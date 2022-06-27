@@ -18,12 +18,16 @@ package org.axonframework.axonserver.connector.query;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.ErrorCategory;
+import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.query.QueryChannel;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
@@ -36,10 +40,12 @@ import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
@@ -64,8 +70,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -85,6 +97,7 @@ class AxonServerQueryBusTest {
 
     private static final String TEST_QUERY = "testQuery";
     private static final String CONTEXT = "default-test";
+    public static final String INSTANCE_RESPONSE_TYPE_XML = "<org.axonframework.messaging.responsetypes.InstanceResponseType><expectedResponseType>java.lang.String</expectedResponseType></org.axonframework.messaging.responsetypes.InstanceResponseType>";
 
     private final QueryBus localSegment = mock(QueryBus.class);
     private final Serializer serializer = TestSerializer.xStreamSerializer();
@@ -94,11 +107,13 @@ class AxonServerQueryBusTest {
     private QueryChannel mockQueryChannel;
 
     private AxonServerQueryBus testSubject;
+    private AxonServerConfiguration configuration;
 
     @BeforeEach
     void setup() {
-        AxonServerConfiguration configuration = new AxonServerConfiguration();
+        configuration = new AxonServerConfiguration();
         configuration.setContext(CONTEXT);
+
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
 
         testSubject = AxonServerQueryBus.builder()
@@ -453,6 +468,81 @@ class AxonServerQueryBusTest {
                      () -> testSubject.subscriptionQuery(testSubscriptionQuery));
     }
 
+    @Test
+    void equalPriorityMessagesProcessedInOrder() throws InterruptedException {
+        testSubject = AxonServerQueryBus.builder()
+                                        .axonServerConnectionManager(axonServerConnectionManager)
+                                        .configuration(configuration)
+                                        .localSegment(localSegment)
+                                        .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                        .messageSerializer(serializer)
+                                        .genericSerializer(serializer)
+                                        .targetContextResolver(targetContextResolver)
+                                        .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                                1, 1, 5, TimeUnit.SECONDS, q
+                                        ))
+                                        .build();
+
+        int queryCount = 1000;
+
+        CountDownLatch startProcessingGate = new CountDownLatch(1);
+        CountDownLatch finishProcessingGate = new CountDownLatch(queryCount);
+
+        List<Long> expected = LongStream.range(0, queryCount)
+                                        .boxed()
+                                        .collect(Collectors.toList());
+        List<Long> actual = new CopyOnWriteArrayList<>();
+
+        AtomicReference<QueryHandler> queryHandlerRef = new AtomicReference<>();
+        doAnswer(i -> {
+            queryHandlerRef.set(i.getArgument(0));
+            return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
+        }).when(mockQueryChannel)
+          .registerQueryHandler(any(), any());
+
+        when(localSegment.query(any())).thenAnswer(i -> {
+            startProcessingGate.await();
+            QueryMessage<?, ?> message = i.getArgument(0);
+            actual.add((long) message.getMetaData().get("index"));
+            finishProcessingGate.countDown();
+            return CompletableFuture.completedFuture(new GenericQueryResponseMessage<>("ok"));
+        });
+
+        // We create a subscription to force a registration for this type of query.
+        // It doesn't get invoked because the localSegment is mocked
+        //noinspection resource
+        testSubject.subscribe("testQuery", String.class, (MessageHandler<QueryMessage<?, String>>) message -> "ok");
+        assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(queryHandlerRef.get()));
+
+        QueryHandler queryHandler = queryHandlerRef.get();
+        for (int i = 0; i < queryCount; i++) {
+            QueryRequest queryRequest =
+                    QueryRequest.newBuilder()
+                                .setQuery("testQuery")
+                                .setMessageIdentifier(UUID.randomUUID().toString())
+                                .setPayload(SerializedObject.newBuilder()
+                                                            .setType("java.lang.String")
+                                                            .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                                )
+                                .setResponseType(SerializedObject.newBuilder()
+                                                                 .setData(ByteString.copyFromUtf8(
+                                                                         INSTANCE_RESPONSE_TYPE_XML
+                                                                 ))
+                                                                 .setType(InstanceResponseType.class.getName())
+                                                                 .build())
+                                .putMetaData("index", MetaDataValue.newBuilder().setNumberValue(i).build())
+                                .build();
+
+            queryHandler.handle(queryRequest, new NoOpReplyChannel());
+        }
+        startProcessingGate.countDown();
+        //noinspection ResultOfMethodCallIgnored
+        finishProcessingGate.await(30, TimeUnit.SECONDS);
+
+        assertEquals(queryCount, actual.size());
+        assertEquals(expected, actual);
+    }
+
     private QueryResponse stubResponse(String payload) {
         return QueryResponse.newBuilder()
                             .setRequestIdentifier("request")
@@ -589,6 +679,39 @@ class AxonServerQueryBusTest {
         @Override
         public ResultStream<QueryUpdate> updates() {
             return updateStubResultStream;
+        }
+    }
+
+    private static class NoOpReplyChannel implements ReplyChannel<QueryResponse> {
+
+        @Override
+        public void send(QueryResponse outboundMessage) {
+            // Do nothing - no-op implementation
+        }
+
+        @Override
+        public void sendAck() {
+            // Do nothing - no-op implementation
+        }
+
+        @Override
+        public void sendNack(ErrorMessage errorMessage) {
+            // Do nothing - no-op implementation
+        }
+
+        @Override
+        public void complete() {
+            // Do nothing - no-op implementation
+        }
+
+        @Override
+        public void completeWithError(ErrorMessage errorMessage) {
+            // Do nothing - no-op implementation
+        }
+
+        @Override
+        public void completeWithError(ErrorCategory errorCategory, String message) {
+            // Do nothing - no-op implementation
         }
     }
 }

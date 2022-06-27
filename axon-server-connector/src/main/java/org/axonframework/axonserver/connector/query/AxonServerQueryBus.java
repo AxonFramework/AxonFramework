@@ -86,7 +86,7 @@ import reactor.util.context.Context;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
-import java.util.Comparator;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -97,6 +97,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -123,7 +125,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private static final int SCATTER_GATHER_NUMBER_OF_RESULTS = -1;
 
     private static final int QUERY_QUEUE_CAPACITY = 1000;
-    private static final int DEFAULT_PRIORITY = 0;
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
@@ -159,13 +160,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
-        PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(
-                QUERY_QUEUE_CAPACITY,
-                Comparator.comparingLong(
-                        r -> r instanceof PrioritizedRunnable ? ((PrioritizedRunnable) r).priority()
-                                        : DEFAULT_PRIORITY
-                ).reversed()
-        );
+        PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
         queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
     }
@@ -230,12 +225,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             Publisher<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            Runnable task = new BlockingQueryResponseProcessingTask<>(result,
-                                                                      serializer,
-                                                                      queryTransaction,
-                                                                      priority,
-                                                                      queryMessage.getResponseType());
-            queryExecutor.submit(task);
+            Runnable responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
+                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
+            );
+            queryExecutor.execute(responseProcessingTask);
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -823,16 +816,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                          serializer,
                                                                          configuration.getClientId());
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
-            queryExecutor.submit(processingTask);
+            queryExecutor.execute(processingTask);
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    queryExecutor.submit(() -> processingTask.request(requested));
+                    queryExecutor.execute(() -> processingTask.request(requested));
                 }
 
                 @Override
                 public void cancel() {
-                    queryExecutor.submit(processingTask::cancel);
+                    queryExecutor.execute(processingTask::cancel);
                 }
             };
         }
