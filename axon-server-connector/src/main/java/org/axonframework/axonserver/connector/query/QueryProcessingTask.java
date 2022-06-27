@@ -23,7 +23,6 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
@@ -52,8 +51,8 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
 /**
  * The task that processes a single incoming query message from Axon Server. It decides which query type should be
  * invoked based on the incoming query message. It is aware of flow control, hence it will only send response messages
- * when {@link FlowControl#request(long) requested}. Furthermore, sending can be {@link FlowControl#cancel()
- * cancelled}.
+ * when {@link FlowControl#request(long) requested}. Furthermore, sending can be
+ * {@link FlowControl#cancel() cancelled}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -61,13 +60,13 @@ import static org.axonframework.axonserver.connector.util.ProcessingInstructionH
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
+class QueryProcessingTask implements Runnable, FlowControl {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
+
     private final QueryBus localSegment;
-    private final long priority;
     private final QueryRequest queryRequest;
     private final ReplyChannel<QueryResponse> responseHandler;
     private final QuerySerializer serializer;
@@ -82,12 +81,12 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     /**
      * Instantiates a query processing task.
      *
-     * @param localSegment    local instance of {@link QueryBus} used to actually execute the query withing this
-     *                        application instance
-     * @param queryRequest    the request received from Axon Server
-     * @param responseHandler the {@link ReplyChannel} used for sending items to the Axon Server
-     * @param serializer      the serializer used to serialize items
-     * @param clientId        the identifier of the client
+     * @param localSegment    Local instance of {@link QueryBus} used to actually execute the query withing this
+     *                        application instance.
+     * @param queryRequest    The request received from Axon Server.
+     * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
+     * @param serializer      The serializer used to serialize items.
+     * @param clientId        The identifier of the client.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
@@ -105,13 +104,13 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
     /**
      * Instantiates a query processing task.
      *
-     * @param localSegment       local instance of {@link QueryBus} used to actually execute the query withing this
-     *                           application instance
-     * @param queryRequest       the request received from Axon SErver
-     * @param responseHandler    the {@link ReplyChannel} used for sending items to the Axon Server
-     * @param serializer         the serializer used to serialize items
-     * @param clientId           the identifier of the client
-     * @param reactorOnClassPath indicates whether Project Reactor is on the classpath
+     * @param localSegment       Local instance of {@link QueryBus} used to actually execute the query withing this
+     *                           application instance.
+     * @param queryRequest       The request received from Axon Server.
+     * @param responseHandler    The {@link ReplyChannel} used for sending items to the Axon Server.
+     * @param serializer         The serializer used to serialize items.
+     * @param clientId           The identifier of the client.
+     * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
@@ -120,18 +119,12 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
                         String clientId,
                         Supplier<Boolean> reactorOnClassPath) {
         this.localSegment = localSegment;
-        this.priority = ProcessingInstructionHelper.priority(queryRequest.getProcessingInstructionsList());
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.clientId = clientId;
         this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
-    }
-
-    @Override
-    public long priority() {
-        return priority;
     }
 
     @Override
@@ -202,10 +195,10 @@ class QueryProcessingTask implements PrioritizedRunnable, FlowControl {
                                 if (supportsStreaming
                                         && queryMessage.getResponseType() instanceof MultipleInstancesResponseType) {
                                     //noinspection unchecked
-                                    streamableResponse =
-                                            streamableMultiInstanceResult((QueryResponseMessage<List<T>>) result,
-                                                                          (Class<T>) queryMessage.getResponseType()
-                                                                                                 .getExpectedResponseType());
+                                    streamableResponse = streamableMultiInstanceResult(
+                                            (QueryResponseMessage<List<T>>) result,
+                                            (Class<T>) queryMessage.getResponseType().getExpectedResponseType()
+                                    );
                                 } else {
                                     streamableResponse = streamableInstanceResult(result);
                                 }

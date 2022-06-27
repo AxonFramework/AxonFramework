@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PrioritizedRunnable;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -38,29 +37,32 @@ import java.util.concurrent.CompletableFuture;
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-class BlockingQueryResponseProcessingTask<R> implements PrioritizedRunnable {
+class BlockingQueryResponseProcessingTask<R> implements Runnable {
 
     private final Publisher<QueryResponse> result;
     private final QuerySerializer serializer;
     private final CompletableFuture<QueryResponseMessage<R>> queryTransaction;
-    private final long priority;
     private final ResponseType<R> expectedResponseType;
 
+    /**
+     * Construct a blocking query response processing task.
+     *
+     * @param result               The publisher of the {@link QueryResponse}, containing the result of this task.
+     * @param serializer           The serializer used to deserialize the {@link QueryResponse} into a
+     *                             {@link QueryResponseMessage}.
+     * @param queryTransaction     An asynchronous handle to invoke once the result is available or when the task
+     *                             failed.
+     * @param expectedResponseType The expected response type contained in the {@link QueryResponse}. Required to
+     *                             correctly deserialize the result.
+     */
     public BlockingQueryResponseProcessingTask(Publisher<QueryResponse> result,
                                                QuerySerializer serializer,
                                                CompletableFuture<QueryResponseMessage<R>> queryTransaction,
-                                               long priority,
                                                ResponseType<R> expectedResponseType) {
         this.result = result;
         this.serializer = serializer;
         this.queryTransaction = queryTransaction;
-        this.priority = priority;
         this.expectedResponseType = expectedResponseType;
-    }
-
-    @Override
-    public long priority() {
-        return priority;
     }
 
     @Override
