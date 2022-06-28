@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * entries ready for evaluation.
  *
  * @author Steven van Beelen
+ * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 class EvaluationTask implements Runnable {
@@ -65,11 +66,17 @@ class EvaluationTask implements Runnable {
 
     @Override
     public void run() {
+        try {
+            evaluateLetters();
+        } catch (Exception e) {
+            logger.warn("Unexpected exception occurred during evaluation of dead letters.", e);
+        }
+    }
+
+    private void evaluateLetters() {
         AtomicBoolean evaluationFailed = new AtomicBoolean(false);
         Optional<DeadLetter<EventMessage<?>>> optionalLetter;
-        while (!evaluationFailed.get() &&
-                (optionalLetter = transactionManager.fetchInTransaction(() -> queue.take(processingGroup))).isPresent()
-        ) {
+        while ((optionalLetter = takeInTransaction()).isPresent()) {
             DeadLetter<EventMessage<?>> letter = optionalLetter.get();
             if (logger.isDebugEnabled()) {
                 logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
@@ -78,55 +85,67 @@ class EvaluationTask implements Runnable {
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
             unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.onPrepareCommit(uow -> {
-                try {
-                    letter.acknowledge();
-                    logger.info(
-                            "Dead-letter [{}] is acknowledged as it is successfully handled for queue identifier [{}].",
-                            letter.identifier(), letter.queueIdentifier().combinedIdentifier()
-                    );
-                } catch (Exception e) {
-                    throw new DeadLetterEvaluationException(
-                            "Failed while acknowledging dead-letter [" + letter.identifier()
-                                    + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
-                                    + "] after successfully evaluation.", e
-                    );
-                }
-            });
-            unitOfWork.onRollback(uow -> {
-                try {
-                    letter.requeue();
-                    logger.warn(
-                            "Reentered dead-letter [{}] for queue identifier [{}] in the queue since evaluation failed.",
-                            letter.identifier(), letter.queueIdentifier().combinedIdentifier(),
-                            uow.getExecutionResult().getExceptionResult()
-                    );
-                } catch (Exception e) {
-                    throw new DeadLetterEvaluationException(
-                            "Failed while enqueueing dead-letter [" + letter.identifier()
-                                    + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
-                                    + "] again after a failed evaluation.", e
-                    );
-                }
-            });
-            unitOfWork.executeWithResult(() -> {
-                for (EventMessageHandler handler : eventHandlingComponents) {
-                    try {
-                        handler.handle(letter.message());
-                    } catch (Exception e) {
-                        evaluationFailed.set(true);
-                        listenerInvocationErrorHandler.onError(e, letter.message(), handler);
-                    }
-                }
-                return null;
-            });
+            unitOfWork.onPrepareCommit(uow -> acknowledge(letter));
+            unitOfWork.onRollback(uow -> requeue(letter, uow));
+            unitOfWork.executeWithResult(() -> evaluate(letter, evaluationFailed));
+
+            if (evaluationFailed.get()) {
+                logger.debug("Ending the evaluation task since evaluation failed.");
+                return;
+            }
         }
 
-        if (evaluationFailed.get()) {
-            logger.debug("Ending the evaluation task since evaluation failed.");
-        } else {
-            logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
-                         processingGroup);
+
+        logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
+                     processingGroup);
+    }
+
+    private Optional<DeadLetter<EventMessage<?>>> takeInTransaction() {
+        return transactionManager.fetchInTransaction(() -> queue.take(processingGroup));
+    }
+
+    private void acknowledge(DeadLetter<EventMessage<?>> letter) {
+        try {
+            letter.acknowledge();
+            logger.info(
+                    "Dead-letter [{}] is acknowledged as it is successfully handled for queue identifier [{}].",
+                    letter.identifier(), letter.queueIdentifier().combinedIdentifier()
+            );
+        } catch (Exception e) {
+            throw new DeadLetterEvaluationException(
+                    "Failed while acknowledging dead-letter [" + letter.identifier()
+                            + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
+                            + "] after successfully evaluation.", e
+            );
         }
+    }
+
+    private void requeue(DeadLetter<EventMessage<?>> letter, UnitOfWork<? extends EventMessage<?>> uow) {
+        try {
+            letter.requeue();
+            logger.warn(
+                    "Reentered dead-letter [{}] for queue identifier [{}] in the queue since evaluation failed.",
+                    letter.identifier(), letter.queueIdentifier().combinedIdentifier(),
+                    uow.getExecutionResult().getExceptionResult()
+            );
+        } catch (Exception e) {
+            throw new DeadLetterEvaluationException(
+                    "Failed while enqueueing dead-letter [" + letter.identifier()
+                            + "] for queue identifier [" + letter.queueIdentifier().combinedIdentifier()
+                            + "] again after a failed evaluation.", e
+            );
+        }
+    }
+
+    private Object evaluate(DeadLetter<EventMessage<?>> letter, AtomicBoolean evaluationFailed) throws Exception {
+        for (EventMessageHandler handler : eventHandlingComponents) {
+            try {
+                handler.handle(letter.message());
+            } catch (Exception e) {
+                evaluationFailed.set(true);
+                listenerInvocationErrorHandler.onError(e, letter.message(), handler);
+            }
+        }
+        return null;
     }
 }
