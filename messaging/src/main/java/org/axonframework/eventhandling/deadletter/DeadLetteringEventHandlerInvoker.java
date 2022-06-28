@@ -45,14 +45,14 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Implementation of the {@link SimpleEventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue
+ * Implementation of an {@link EventHandlerInvoker} utilizing a {@link DeadLetterQueue} to enqueue
  * {@link EventMessage events} for which handling failed.
  * <p>
  * This dead-lettering {@link EventHandlerInvoker} takes into account that events part of the same sequence (as
- * according to the {@link org.axonframework.eventhandling.async.SequencingPolicy}) should be enqueued in order.
+ * according to the {@link org.axonframework.eventhandling.async.SequencingPolicy}) are enqueued in order.
  * <p>
  * Upon starting this invoker, it registers a dead-letter evaluation task with the queue's
- * {@link DeadLetterQueue#onAvailable(String, Runnable)}. Doing so ensures that whenever letters are ready to be
+ * {@link DeadLetterQueue#onAvailable(String, Runnable)}. Doing so ensures that whenever entries are ready to be
  * retried, they are provided to the {@link EventMessageHandler event handlers} this invoker is in charge of.
  *
  * @author Steven van Beelen
@@ -100,7 +100,7 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     @Override
     public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
-            logger.trace("Ignoring event [{}] as it is not meant for segment [{}].", message, segment);
+            logger.trace("Ignoring event [{}] as it is not assigned to segment [{}].", message, segment);
             return;
         }
 
