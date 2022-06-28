@@ -16,12 +16,7 @@
 
 package org.axonframework.integrationtests.axonserverconnector;
 
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.MethodDescriptor;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
@@ -55,9 +50,6 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,7 +78,6 @@ class MessagePriorityIntegrationTest {
                     .withExposedPorts(HTTP_PORT, GRPC_PORT)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
                     .withEnv("AXONIQ_AXONSERVER_HOSTNAME", HOSTNAME)
-                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
                     .withEnv("AXONIQ_AXONSERVER_INSTRUCTION-CACHE-TIMEOUT", "1000")
                     .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)))
                     .withNetworkAliases("axonserver")
@@ -98,15 +89,11 @@ class MessagePriorityIntegrationTest {
     private AxonServerCommandBus commandBus;
     private AxonServerQueryBus queryBus;
 
-    private AtomicBoolean dispatchLatch = new AtomicBoolean(false);
-    private Lock dispatchLock;
-
     @BeforeEach
     void setUp() {
         Serializer serializer = JacksonSerializer.defaultSerializer();
-        dispatchLock = new ReentrantLock();
 
-        String server = axonServer.getContainerIpAddress() + ":" + axonServer.getMappedPort(GRPC_PORT);
+        String server = axonServer.getHost() + ":" + axonServer.getMappedPort(GRPC_PORT);
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
                                                                        .componentName("messagePriority")
                                                                        .context("test")
@@ -117,15 +104,6 @@ class MessagePriorityIntegrationTest {
         connectionManager = AxonServerConnectionManager.builder()
                                                        .axonServerConfiguration(configuration)
                                                        .channelCustomizer(ManagedChannelBuilder::directExecutor)
-                .channelCustomizer(builder -> builder.intercept(new ClientInterceptor() {
-                    @Override
-                    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
-                                                                               CallOptions callOptions, Channel channel) {
-                        ClientCall<ReqT, RespT> call = channel.newCall(method, callOptions);
-                        dispatchLock.unlock();
-                        return call;
-                    }
-                }))
                                                        .build();
         connectionManager.start();
 
@@ -168,8 +146,7 @@ class MessagePriorityIntegrationTest {
         connectionManager.shutdown();
     }
 
-//    @Test
-//    @RepeatedTest(5)
+    @Test
     void testCommandPriorityAndOrderingIsRespected() throws InterruptedException {
         int numberOfCommands = 250;
 
@@ -204,13 +181,14 @@ class MessagePriorityIntegrationTest {
         });
 
         commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage("start"), "processGate"));
+        Thread.sleep(25);
         for (int i = 0; i < numberOfCommands; i++) {
-            dispatchLock.lock();
             if (i % 5 == 0) {
                 commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage(new PriorityCommand(i)), "priority"));
             } else {
                 commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage(new RegularCommand(i)), "regular"));
             }
+            Thread.sleep(25);
         }
 
         processingGate.countDown();
@@ -218,16 +196,10 @@ class MessagePriorityIntegrationTest {
         finishedGate.await(5, TimeUnit.SECONDS);
 
         assertEquals(numberOfCommands, expectedOrdering.size());
-//        for (int i = 0; i < expectedOrdering.size(); i++) {
-//            Handled expected = expectedOrdering.get(i);
-//            Handled actual = actualOrdering.get(i);
-//            assertEquals(expected.priority, actual.priority, "Expected [" + expected + "] & Actual [" + actual + "]");
-//        }
         assertEquals(expectedOrdering, actualOrdering);
     }
 
-//    @Test
-//    @RepeatedTest(5)
+    @Test
     void testQueryPriorityAndOrderingIsRespected() throws InterruptedException {
         int numberOfQueries = 250;
 
@@ -265,6 +237,7 @@ class MessagePriorityIntegrationTest {
         });
 
         queryBus.query(new GenericQueryMessage<>("start", "processGate", ResponseTypes.instanceOf(String.class)));
+        Thread.sleep(25);
         for (int i = 0; i < numberOfQueries; i++) {
             if (i % 5 == 0) {
                 queryBus.query(new GenericQueryMessage<>(new PriorityQuery(i),
@@ -275,6 +248,7 @@ class MessagePriorityIntegrationTest {
                                                          "regular",
                                                          ResponseTypes.instanceOf(String.class)));
             }
+            Thread.sleep(25);
         }
 
         processingGate.countDown();
@@ -282,12 +256,7 @@ class MessagePriorityIntegrationTest {
         finishedGate.await(5, TimeUnit.SECONDS);
 
         assertEquals(numberOfQueries, expectedOrdering.size());
-        for (int i = 0; i < expectedOrdering.size(); i++) {
-            Handled expected = expectedOrdering.get(i);
-            Handled actual = actualOrdering.get(i);
-            assertEquals(expected.priority, actual.priority, "Expected [" + expected + "] & Actual [" + actual + "]");
-        }
-//        assertEquals(expectedOrdering, actualOrdering);
+        assertEquals(expectedOrdering, actualOrdering);
     }
 
     private static class Handled {
