@@ -499,8 +499,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     private Object handleNewInstanceCreation(CommandMessage<?> command,
-                                                    CreationPolicyAggregateFactory<T> factoryMethod,
-                                                    MessageHandlingMember<? super T> handler) throws Exception {
+                                             CreationPolicyAggregateFactory<T> factoryMethod,
+                                             MessageHandlingMember<? super T> handler) throws Exception {
         AtomicReference<Object> response = new AtomicReference<>();
         AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
         VersionedAggregateIdentifier commandMessageVersionedId = resolveNullableVersionedAggregateIdentifier(
