@@ -37,13 +37,14 @@ import org.axonframework.axonserver.connector.DefaultInstructionAckSource;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.InstructionAckSource;
-import org.axonframework.axonserver.connector.PrioritizedRunnable;
+import org.axonframework.axonserver.connector.PriorityTask;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerRegistration;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
+import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -94,6 +95,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -114,6 +116,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
@@ -220,10 +224,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             Publisher<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            Runnable responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
-                    result, serializer, queryTransaction, priority, queryMessage.getResponseType()
+            BlockingQueryResponseProcessingTask<R> responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
+                    result, serializer, queryTransaction, queryMessage.getResponseType()
             );
-            queryExecutor.execute(responseProcessingTask);
+            queryExecutor.execute(new PriorityTask(responseProcessingTask, priority, TASK_SEQUENCE.incrementAndGet()));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -801,22 +805,30 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             Runnable onClose = () -> queriesInProgress.remove(query.getMessageIdentifier());
             CloseAwareReplyChannel<QueryResponse> closeAwareReplyChannel =
                     new CloseAwareReplyChannel<>(responseHandler, onClose);
-            QueryProcessingTask processingTask = new QueryProcessingTask(localSegment,
-                                                                         query,
-                                                                         closeAwareReplyChannel,
-                                                                         serializer,
-                                                                         configuration.getClientId());
+
+            long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
+            QueryProcessingTask processingTask = new QueryProcessingTask(
+                    localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId()
+            );
+            PriorityTask priorityTask = new PriorityTask(processingTask, priority, TASK_SEQUENCE.incrementAndGet());
+
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
-            queryExecutor.execute(processingTask);
+            queryExecutor.execute(priorityTask);
+
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    queryExecutor.execute(() -> processingTask.request(requested));
+                    queryExecutor.execute(new PriorityTask(() -> processingTask.request(requested),
+                                                           priorityTask.priority(),
+                                                           TASK_SEQUENCE.incrementAndGet())
+                    );
                 }
 
                 @Override
                 public void cancel() {
-                    queryExecutor.execute(processingTask::cancel);
+                    queryExecutor.execute(new PriorityTask(processingTask::cancel,
+                                                           priorityTask.priority(),
+                                                           TASK_SEQUENCE.incrementAndGet()));
                 }
             };
         }
