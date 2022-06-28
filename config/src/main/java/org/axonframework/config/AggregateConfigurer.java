@@ -248,10 +248,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     }
                     return builder.build();
                 });
-        creationPolicyAggregateFactory = new Component<CreationPolicyAggregateFactory<A>>(
+        creationPolicyAggregateFactory = new Component<>(
                 () -> parent, name("creationPolicyAggregateFactory"),
-                c -> c.getComponent(CreationPolicyAggregateFactory.class,
-                                    () -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType())));
+                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
         commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
                                                                                .repository(repository.get())
