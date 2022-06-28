@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A wrapper class of {@link Runnable Runnables} that adheres to a priority by implementing {@link Comparable}. Uses a
@@ -36,22 +35,22 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class PriorityTask implements Runnable, Comparable<PriorityTask> {
 
-    private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
-
     private final Runnable task;
     private final long priority;
-    private final long index;
+    private final long sequence;
 
     /**
      * Construct a priority task.
      *
      * @param task     The {@link Runnable} that should be executed with a {@code priority}.
-     * @param priority The priority of the {@code task} to execute.
+     * @param priority The priority of the {@code task} to execute, dedicating the order among tasks.
+     * @param sequence The sequence of the {@code task} to execute, dedicating the order among equal {@code priority}
+     *                 tasks.
      */
-    public PriorityTask(Runnable task, long priority) {
+    public PriorityTask(Runnable task, long priority, long sequence) {
         this.task = task;
         this.priority = priority;
-        this.index = COUNTER.incrementAndGet();
+        this.sequence = sequence;
     }
 
     @Override
@@ -69,12 +68,12 @@ public class PriorityTask implements Runnable, Comparable<PriorityTask> {
     }
 
     /**
-     * Returns the index of th is task.
+     * Returns the sequence of this task.
      *
-     * @return The index of th is task.
+     * @return The sequence of this task.
      */
-    public long index() {
-        return index;
+    public long sequence() {
+        return sequence;
     }
 
     @Override
@@ -83,7 +82,7 @@ public class PriorityTask implements Runnable, Comparable<PriorityTask> {
         if (c != 0) {
             return -c;
         }
-        return Long.compare(this.index, that.index);
+        return Long.compare(this.sequence, that.sequence);
     }
 
     @Override
@@ -95,12 +94,12 @@ public class PriorityTask implements Runnable, Comparable<PriorityTask> {
             return false;
         }
         PriorityTask that = (PriorityTask) o;
-        return priority == that.priority && index == that.index && Objects.equals(task, that.task);
+        return priority == that.priority && sequence == that.sequence && Objects.equals(task, that.task);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(task, priority, index);
+        return Objects.hash(task, priority, sequence);
     }
 
     @Override
@@ -108,7 +107,7 @@ public class PriorityTask implements Runnable, Comparable<PriorityTask> {
         return "PriorityTask{" +
                 "task=" + task +
                 ", priority=" + priority +
-                ", index=" + index +
+                ", sequence=" + sequence +
                 '}';
     }
 }

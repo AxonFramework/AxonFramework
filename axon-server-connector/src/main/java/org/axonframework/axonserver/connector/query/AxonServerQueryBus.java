@@ -95,6 +95,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -115,6 +116,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;
     private static final long DIRECT_QUERY_TIMEOUT_MS = TimeUnit.HOURS.toMillis(1);
@@ -224,8 +227,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             BlockingQueryResponseProcessingTask<R> responseProcessingTask = new BlockingQueryResponseProcessingTask<>(
                     result, serializer, queryTransaction, queryMessage.getResponseType()
             );
-            Runnable priorityTask = new PriorityTask(responseProcessingTask, priority);
-            queryExecutor.execute(priorityTask);
+            queryExecutor.execute(new PriorityTask(responseProcessingTask, priority, TASK_SEQUENCE.incrementAndGet()));
         } catch (Exception e) {
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
@@ -808,7 +810,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryProcessingTask processingTask = new QueryProcessingTask(
                     localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId()
             );
-            PriorityTask priorityTask = new PriorityTask(processingTask, priority);
+            PriorityTask priorityTask = new PriorityTask(processingTask, priority, TASK_SEQUENCE.incrementAndGet());
 
             queriesInProgress.put(query.getMessageIdentifier(), processingTask);
             queryExecutor.execute(priorityTask);
@@ -816,14 +818,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return new FlowControl() {
                 @Override
                 public void request(long requested) {
-                    queryExecutor.execute(
-                            new PriorityTask(() -> processingTask.request(requested), priorityTask.priority())
+                    queryExecutor.execute(new PriorityTask(() -> processingTask.request(requested),
+                                                           priorityTask.priority(),
+                                                           TASK_SEQUENCE.incrementAndGet())
                     );
                 }
 
                 @Override
                 public void cancel() {
-                    queryExecutor.execute(new PriorityTask(processingTask::cancel, priorityTask.priority()));
+                    queryExecutor.execute(new PriorityTask(processingTask::cancel,
+                                                           priorityTask.priority(),
+                                                           TASK_SEQUENCE.incrementAndGet()));
                 }
             };
         }

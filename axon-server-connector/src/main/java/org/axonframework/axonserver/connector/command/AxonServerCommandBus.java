@@ -53,6 +53,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -70,6 +71,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final CommandBus localSegment;
@@ -200,9 +203,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                                c, serializer, result, localSegment
                                                        );
                                                        long priority = priority(c.getProcessingInstructionsList());
-                                                       executorService.execute(new PriorityTask(
-                                                               processingTask, priority
-                                                       ));
+                                                       long sequence = TASK_SEQUENCE.incrementAndGet();
+                                                       executorService.execute(
+                                                               new PriorityTask(processingTask, priority, sequence)
+                                                       );
                                                        return result;
                                                    },
                                                    loadFactorProvider.getFor(commandName),
