@@ -440,7 +440,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            return handleNewInstanceCreation(command, factoryMethod, handler);
+            return handleNewInstanceCreation(command, factoryMethod, handler,
+                                             resolveNullableVersionedAggregateIdentifier(command));
         }
 
         @Override
@@ -487,7 +488,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                                                                 () -> factoryMethod.create(versionedAggregateIdentifier.getIdentifierValue()));
                 result = instance.handle(command);
             } else {
-                result = handleNewInstanceCreation(command, factoryMethod, handler);
+                result = handleNewInstanceCreation(command, factoryMethod, handler,
+                                                   resolveNullableVersionedAggregateIdentifier(command));
             }
             return result;
         }
@@ -500,11 +502,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
     private Object handleNewInstanceCreation(CommandMessage<?> command,
                                              CreationPolicyAggregateFactory<T> factoryMethod,
-                                             MessageHandlingMember<? super T> handler) throws Exception {
+                                             MessageHandlingMember<? super T> handler,
+                                             VersionedAggregateIdentifier commandMessageVersionedId) throws Exception {
         AtomicReference<Object> response = new AtomicReference<>();
         AtomicReference<Exception> exceptionDuringInit = new AtomicReference<>();
-        VersionedAggregateIdentifier commandMessageVersionedId = resolveNullableVersionedAggregateIdentifier(
-                command);
         Object commandMessageAggregateId = Optional.ofNullable(commandMessageVersionedId)
                                                    .map(VersionedAggregateIdentifier::getIdentifierValue)
                                                    .orElse(null);
