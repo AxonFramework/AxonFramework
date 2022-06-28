@@ -80,8 +80,8 @@ public interface DeadLetterQueue<T extends Message<?>> {
 
         if (isFull(identifier)) {
             throw new DeadLetterQueueOverflowException(
-                    "No room left to enqueue message [" + message + "] for identifier ["
-                            + identifier.combinedIdentifier() + "] since the queue is full."
+                    "Unable to enqueue message [" + message + "]. "
+                            + "The maximum capacity of dead lettered messages has been reached."
             );
         }
 

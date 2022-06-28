@@ -212,8 +212,8 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
 
     @Override
     public synchronized Optional<DeadLetter<T>> take(@Nonnull String group) {
+        logger.trace("Attempting to take a dead letter from the queue for [{}].", group);
         if (deadLetters.isEmpty()) {
-            logger.debug("Queue is empty while taking. Returning an empty optional.");
             return Optional.empty();
         }
 
@@ -262,7 +262,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
 
     @Override
     public void release(@Nonnull Predicate<QueueIdentifier> queueFilter) {
-        Instant expiresAt = clock.instant();
+        Instant now = clock.instant();
         Set<String> releasedGroups = new HashSet<>();
         logger.debug("Received a request to release matching dead-letters for evaluation.");
 
@@ -272,7 +272,7 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
                    .filter(letter -> queueFilter.test(letter.queueIdentifier()))
                    .map(letter -> (GenericDeadLetter<T>) letter)
                    .forEach(letter -> {
-                       letter.setExpiresAt(expiresAt);
+                       letter.setExpiresAt(now);
                        releasedGroups.add(letter.queueIdentifier().group());
                    });
 
