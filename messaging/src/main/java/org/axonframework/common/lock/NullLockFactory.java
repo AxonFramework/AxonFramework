@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.common.lock;
 
 /**
- * LockFactory implementation that does nothing. Can be useful in cases where a Locking Repository implementation  needs
+ * LockFactory implementation that does nothing. Can be useful in cases where a Locking Repository implementation needs
  * to be configured to ignore locks, for example in scenario's where an underlying storage mechanism already performs
  * the necessary locking.
  *
@@ -38,18 +38,6 @@ public enum NullLockFactory implements LockFactory {
      */
     @Override
     public Lock obtainLock(String identifier) {
-        return NO_LOCK;
+        return NoOpLock.INSTANCE;
     }
-
-    private static final Lock NO_LOCK = new Lock() {
-        @Override
-        public void release() {
-        }
-
-        @Override
-        public boolean isHeld() {
-            return true;
-        }
-    };
-
 }

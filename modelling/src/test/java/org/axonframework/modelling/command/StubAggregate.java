@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import org.axonframework.modelling.utils.StubDomainEvent;
 import java.util.UUID;
 
 /**
+ * Sample aggregate used by, for example, the {@link LockingRepositoryTest}.
+ *
  * @author Allard Buijze
  */
 public class StubAggregate {
 
+    @SuppressWarnings("FieldMayBeFinal")
     @AggregateIdentifier
     private String identifier;
 
@@ -33,7 +36,7 @@ public class StubAggregate {
     }
 
     public StubAggregate(Object identifier) {
-        this.identifier = identifier.toString();
+        this.identifier = identifier != null ? identifier.toString() : null;
     }
 
     public void doSomething() {

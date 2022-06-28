@@ -652,17 +652,12 @@ class AggregateAnnotationCommandHandlerTest {
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
 
-        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
-                new CustomParameterResolverFactory()
-        );
-        aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
-                                                                             parameterResolverFactory);
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
                                                        .repository(mockRepository)
                                                        .build();
 
+        //noinspection resource
         assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> testSubject.subscribe(commandBus));
     }
 
@@ -704,6 +699,31 @@ class AggregateAnnotationCommandHandlerTest {
                     }
                 }
         );
+    }
+
+    @Test
+    void testDuplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
+        commandBus = SimpleCommandBus.builder()
+                                     .duplicateCommandHandlerResolver(rejectDuplicates())
+                                     .build();
+
+        Repository<RootAggregate> repository = mock(Repository.class);
+
+        Set<Class<? extends RootAggregate>> subtypes = new HashSet<>();
+        subtypes.add(ChildOneAggregate.class);
+        subtypes.add(ChildTwoAggregate.class);
+        AggregateModel<RootAggregate> polymorphicAggregateModel =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(RootAggregate.class, subtypes);
+
+        AggregateAnnotationCommandHandler<RootAggregate> polymorphicAggregateTestSubject =
+                AggregateAnnotationCommandHandler.<RootAggregate>builder()
+                                                 .aggregateType(RootAggregate.class)
+                                                 .repository(repository)
+                                                 .aggregateModel(polymorphicAggregateModel)
+                                                 .build();
+
+        //noinspection resource
+        assertDoesNotThrow(() -> polymorphicAggregateTestSubject.subscribe(commandBus));
     }
 
     @SuppressWarnings("unused")
@@ -1258,5 +1278,22 @@ class AggregateAnnotationCommandHandlerTest {
         public String getAbstractId() {
             return abstractId;
         }
+    }
+
+    @SuppressWarnings("unused")
+    private abstract static class RootAggregate {
+
+        @CommandHandler
+        public void handle(String command) {
+
+        }
+    }
+
+    private static class ChildOneAggregate extends RootAggregate {
+
+    }
+
+    private static class ChildTwoAggregate extends RootAggregate {
+
     }
 }
