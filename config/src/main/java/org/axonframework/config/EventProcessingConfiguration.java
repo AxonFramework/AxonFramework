@@ -216,14 +216,15 @@ public interface EventProcessingConfiguration {
     TransactionManager transactionManager(String processorName);
 
     /**
-     * Returns the {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return {@code null} when
-     * there's no {@code DeadLetterQueue} present for the given {@code processingGroup}.
+     * Returns the {@link DeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}. May return
+     * an {@link Optional#empty() empty optional} when there's no {@code DeadLetterQueue} present for the given
+     * {@code processingGroup}.
      *
      * @param processingGroup The processing group for which to return a {@link DeadLetterQueue}.
-     * @return The {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return {@code null} if no
-     * queue is present.
+     * @return The {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return an
+     * {@link Optional#empty() empty optional} if no queue is present.
      */
-    default DeadLetterQueue<EventMessage<?>> deadLetterQueue(@Nonnull String processingGroup) {
-        return null;
+    default Optional<DeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
+        return Optional.empty();
     }
 }

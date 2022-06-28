@@ -259,19 +259,21 @@ public class EventProcessingModule
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> {
                         if (deadLetterQueues.containsKey(processingGroup)) {
+                            DeadLetterQueue<EventMessage<?>> deadLetterQueue =
+                                    deadLetterQueue(processingGroup)
+                                            .orElseThrow(() -> new IllegalStateException(
+                                                    "Cannot find a Dead Letter Queue for processing group ["
+                                                            + processingGroup + "]"
+                                            ));
                             return DeadLetteringEventHandlerInvoker.builder()
                                                                    .eventHandlers(handlers)
                                                                    .handlerDefinition(retrieveHandlerDefinition(handlers))
                                                                    .parameterResolverFactory(configuration.parameterResolverFactory())
                                                                    .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                                   .queue(deadLetterQueue(processingGroup))
+                                                                   .queue(deadLetterQueue)
                                                                    .processingGroup(processingGroup)
                                                                    .transactionManager(transactionManager(processorName))
-                                                                   .listenerInvocationErrorHandler(
-                                                                           listenerInvocationErrorHandler(
-                                                                                   processingGroup
-                                                                           )
-                                                                   )
+                                                                   .listenerInvocationErrorHandler(listenerInvocationErrorHandler(processingGroup))
                                                                    .build();
                         }
                         return SimpleEventHandlerInvoker.builder()
@@ -459,9 +461,10 @@ public class EventProcessingModule
     }
 
     @Override
-    public DeadLetterQueue<EventMessage<?>> deadLetterQueue(@Nonnull String processingGroup) {
+    public Optional<DeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
-        return deadLetterQueues.containsKey(processingGroup) ? deadLetterQueues.get(processingGroup).get() : null;
+        return deadLetterQueues.containsKey(processingGroup)
+                ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
     }
 
     private void validateConfigInitialization() {
