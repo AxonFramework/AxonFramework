@@ -51,11 +51,13 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAggregateLookup.class);
 
+    private static final String REPOSITORY = "repository";
+    private static final String REPOSITORY_BEAN = "Repository";
     private static final String SNAPSHOT_FILTER = "snapshotFilter";
     private static final String SNAPSHOT_TRIGGER_DEFINITION = "snapshotTriggerDefinition";
     private static final String COMMAND_TARGET_RESOLVER = "commandTargetResolver";
-    private static final String REPOSITORY = "repository";
-    private static final String REPOSITORY_BEAN = "Repository";
+    private static final String CACHE = "cache";
+    private static final String LOCK_FACTORY = "lockFactory";
 
     /**
      * Builds a hierarchy model from the given {@code aggregatePrototypes} found in the given {@code beanFactory}.
@@ -175,6 +177,12 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         }
         if (nonEmptyOrNull((String) props.get(COMMAND_TARGET_RESOLVER))) {
             beanDefinitionBuilder.addPropertyValue(COMMAND_TARGET_RESOLVER, props.get(COMMAND_TARGET_RESOLVER));
+        }
+        if (nonEmptyOrNull((String) props.get(CACHE))) {
+            beanDefinitionBuilder.addPropertyValue(CACHE, props.get(CACHE));
+        }
+        if (nonEmptyOrNull((String) props.get(LOCK_FACTORY))) {
+            beanDefinitionBuilder.addPropertyValue(LOCK_FACTORY, props.get(LOCK_FACTORY));
         }
         if (nonEmptyOrNull((String) props.get(REPOSITORY))) {
             beanDefinitionBuilder.addPropertyValue(REPOSITORY, props.get(REPOSITORY));

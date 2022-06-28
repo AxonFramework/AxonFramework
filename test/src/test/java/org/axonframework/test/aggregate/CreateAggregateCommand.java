@@ -17,21 +17,36 @@
 package org.axonframework.test.aggregate;
 
 /**
+ * Sample command message to construct the {@link AnnotatedAggregate}.
+ *
  * @author Allard Buijze
  */
 class CreateAggregateCommand {
 
+    public static final boolean SHOULD_NOT_PUBLISH = false;
+    public static final boolean SHOULD_PUBLISH = true;
+
     private final Object aggregateIdentifier;
+    private final boolean shouldPublishEvents;
 
     public CreateAggregateCommand() {
         this(null);
     }
 
     public CreateAggregateCommand(Object aggregateIdentifier) {
+        this(aggregateIdentifier, SHOULD_PUBLISH);
+    }
+
+    public CreateAggregateCommand(Object aggregateIdentifier, boolean shouldPublishEvents) {
         this.aggregateIdentifier = aggregateIdentifier;
+        this.shouldPublishEvents = shouldPublishEvents;
     }
 
     public Object getAggregateIdentifier() {
         return aggregateIdentifier;
+    }
+
+    public boolean shouldPublishEvents() {
+        return shouldPublishEvents;
     }
 }
