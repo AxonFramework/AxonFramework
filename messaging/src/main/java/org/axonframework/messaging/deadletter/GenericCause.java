@@ -54,12 +54,12 @@ class GenericCause implements Cause {
 
     @Override
     public String type() {
-        return null;
+        return type;
     }
 
     @Override
     public String message() {
-        return null;
+        return message;
     }
 
     @Override
