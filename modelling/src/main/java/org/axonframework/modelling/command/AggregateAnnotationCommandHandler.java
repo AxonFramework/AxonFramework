@@ -453,7 +453,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             CommandMessage<?> command) {
         try {
             return commandTargetResolver.resolveTarget(command);
-        } catch (IllegalArgumentException exception) {
+        } catch (IdentifierMissingException exception) {
             return null;
         }
     }

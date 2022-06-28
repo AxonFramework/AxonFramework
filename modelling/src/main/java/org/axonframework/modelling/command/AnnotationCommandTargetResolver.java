@@ -102,7 +102,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
             throw new IllegalArgumentException("The value provided for the version is not a number.", e);
         }
         if (aggregateIdentifier == null) {
-            throw new IllegalArgumentException(
+            throw new IdentifierMissingException(
                     format("Invalid command. It does not identify the target aggregate. "
                                    + "Make sure at least one of the fields or methods in the [%s] class contains the "
                                    + "@TargetAggregateIdentifier annotation and that it returns a non-null value.",

@@ -68,7 +68,9 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     @Override
     public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
         Object identifier = command.getMetaData().get(identifierKey);
-        Assert.notNull(identifier, () -> "The MetaData for the command does not exist or contains a null value");
+        if (identifier == null) {
+            throw new IdentifierMissingException("The MetaData for the command does not exist or contains a null value");
+        }
         Long version = (Long) (versionKey == null ? null : command.getMetaData().get(versionKey));
         return new VersionedAggregateIdentifier(identifier, version);
     }
