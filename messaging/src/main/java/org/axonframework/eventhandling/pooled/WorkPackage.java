@@ -152,24 +152,17 @@ class WorkPackage {
     }
 
     /**
-     * The given {@code event} should not be scheduled if:
-     * <ol>
-     *     <li>The {@link TrackedEventMessage#trackingToken()} {@link TrackingToken#covers(TrackingToken)} the last delivered token, and</li>
-     *     <li>if the last delivered token does not equal the given {@code event's} token.</li>
-     * </ol>
+     * The given {@code event} should not be scheduled if the {@link TrackedEventMessage#trackingToken()}
+     * {@link TrackingToken#covers(TrackingToken)} the last delivered token.
      * <p>
-     * The first validation ensures events that this work package already covered are ignored. The second validation
-     * ensures that subsequent events with the exact same token <b>are</b> included. The last step is necessary to
-     * include events that are the result of a one-to-many upcaster.
+     * This validation ensures events that this work package already covered are ignored.
      *
      * @param event The event to validate whether it should be scheduled yes or no.
      * @return {@code true} if the given {@code event} should not be scheduled, {@code false} otherwise.
      */
     private boolean shouldNotSchedule(TrackedEventMessage<?> event) {
         // Null check is done to solve potential NullPointerException.
-        return lastDeliveredToken != null
-                && lastDeliveredToken.covers(event.trackingToken())
-                && !lastDeliveredToken.equals(event.trackingToken());
+        return lastDeliveredToken != null && lastDeliveredToken.covers(event.trackingToken());
     }
 
     private boolean canHandle(TrackedEventMessage<?> event) {
