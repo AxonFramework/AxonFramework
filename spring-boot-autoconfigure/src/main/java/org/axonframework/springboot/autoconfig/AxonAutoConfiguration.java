@@ -168,10 +168,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public ConfigurerModule serializerConfigurer(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                  @Qualifier("messageSerializer") Serializer messageSerializer,
                                                  Serializer generalSerializer) {
-        return configuer -> {
-            configuer.configureEventSerializer(c -> eventSerializer);
-            configuer.configureMessageSerializer(c -> messageSerializer);
-            configuer.configureSerializer(c -> generalSerializer);
+        return configurer -> {
+            configurer.configureEventSerializer(c -> eventSerializer);
+            configurer.configureMessageSerializer(c -> messageSerializer);
+            configurer.configureSerializer(c -> generalSerializer);
         };
     }
 

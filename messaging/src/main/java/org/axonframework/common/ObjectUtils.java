@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public abstract class ObjectUtils {
     /**
      * Wraps the given {@code supplier} to ensure that the same instance is returned on multiple consecutive
      * invocations. While it guarantees that the same instance is returned, concurrent access may cause given
-     * {@code supplier} to be invoked more than one.
+     * {@code supplier} to be invoked more than once.
      *
      * @param supplier The supplier to provide the instance to return
      * @param <T>      The type of object supplied

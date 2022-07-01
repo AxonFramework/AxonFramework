@@ -200,7 +200,7 @@ public class AxonServerEEContainer<SELF extends AxonServerEEContainer<SELF>> ext
      */
     public String getAxonServerAddress() {
         return String.format(AXON_SERVER_ADDRESS_TEMPLATE,
-                             this.getContainerIpAddress(),
+                             this.getHost(),
                              this.getMappedPort(AXON_SERVER_GRPC_PORT));
     }
 

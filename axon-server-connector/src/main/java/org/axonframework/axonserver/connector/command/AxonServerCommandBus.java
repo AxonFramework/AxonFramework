@@ -22,9 +22,9 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.PriorityTask;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -48,14 +48,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -71,7 +72,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final long DEFAULT_PRIORITY = 0;
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final CommandBus localSegment;
@@ -122,14 +123,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.context = c;
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> c);
 
-        this.executorService = builder.executorServiceBuilder.apply(
-                builder.configuration,
-                new PriorityBlockingQueue<>(1000, Comparator.comparingLong(
-                        r -> r instanceof CommandProcessingTask
-                                ? ((CommandProcessingTask) r).getPriority()
-                                : DEFAULT_PRIORITY).reversed()
-                )
-        );
+        this.executorService =
+                builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -163,6 +158,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
+        //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
             Command command = serializer.serialize(commandMessage,
@@ -203,9 +199,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                    c -> {
                                                        CompletableFuture<CommandResponse> result =
                                                                new CompletableFuture<>();
-                                                       executorService.submit(new CommandProcessingTask(
+                                                       CommandProcessingTask processingTask = new CommandProcessingTask(
                                                                c, serializer, result, localSegment
-                                                       ));
+                                                       );
+                                                       long priority = priority(c.getProcessingInstructionsList());
+                                                       long sequence = TASK_SEQUENCE.incrementAndGet();
+                                                       executorService.execute(
+                                                               new PriorityTask(processingTask, priority, sequence)
+                                                       );
                                                        return result;
                                                    },
                                                    loadFactorProvider.getFor(commandName),
@@ -254,9 +255,15 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         return shutdownLatch.initiateShutdown();
     }
 
+    /**
+     * An abstract {@link Runnable} and {@link Comparable} implementation. Uses a combination of {@code priority} and
+     * {@code index} to compare between {@code this} and other command processing tasks. The priority is typically
+     * defined through a {@link CommandPriorityCalculator}, which defines the priority for a command. This task uses the
+     * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
+     * those scenarios.
+     */
     private static class CommandProcessingTask implements Runnable {
 
-        private final long priority;
         private final CompletableFuture<CommandResponse> result;
         private final CommandBus localSegment;
         private final Command command;
@@ -268,13 +275,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                      CommandBus localSegment) {
             this.command = command;
             this.serializer = serializer;
-            this.priority = ProcessingInstructionHelper.priority(command.getProcessingInstructionsList());
             this.result = result;
             this.localSegment = localSegment;
-        }
-
-        public long getPriority() {
-            return priority;
         }
 
         @Override
