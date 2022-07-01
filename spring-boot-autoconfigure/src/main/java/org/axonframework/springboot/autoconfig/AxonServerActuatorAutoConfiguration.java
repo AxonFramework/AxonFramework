@@ -33,11 +33,13 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureAfter(AxonServerAutoConfiguration.class)
-@ConditionalOnClass(name = {"org.springframework.boot.actuate.health.AbstractHealthIndicator"})
+@ConditionalOnClass(name = {
+        "org.springframework.boot.actuate.health.AbstractHealthIndicator",
+        "org.axonframework.axonserver.connector.AxonServerConnectionManager"
+})
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
 public class AxonServerActuatorAutoConfiguration {
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public AxonServerHealthIndicator axonServerHealthIndicator(AxonServerConnectionManager connectionManager) {
         return new AxonServerHealthIndicator(connectionManager);
