@@ -98,8 +98,4 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
             this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
         }
     }
-
-    public Component<EventProcessorControlService> getEventProcessorControlService() {
-        return eventProcessorControlService;
-    }
 }
