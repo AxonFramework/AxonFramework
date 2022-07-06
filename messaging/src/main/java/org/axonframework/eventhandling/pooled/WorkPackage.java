@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -36,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -122,14 +125,76 @@ class WorkPackage {
     }
 
     /**
+     * Schedule a collection of {@link TrackedEventMessage TrackedEventMessages} for processing by this work package.
+     * <p>
+     * Only use this method if the {@link TrackingToken TrackingTokens} of every event are equal, as those events should
+     * be handled within a single transaction. This scenario presents itself whenever an event is upcasted into
+     * <em>several instances</em>. When tokens differ between events please use
+     * {@link #scheduleEvent(TrackedEventMessage)}.
+     * <p>
+     * Will disregard the given {@code events} if their {@code TrackingTokens} are covered by the previously scheduled
+     * event.
+     * <p>
+     * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
+     * PooledStreamingEventProcessor}.
+     *
+     * @param events The events to schedule for work in this work package.
+     * @return {@code True} if this {@link WorkPackage} scheduled one of the events for execution, otherwise
+     * {@code false}.
+     */
+    public boolean scheduleEvents(List<TrackedEventMessage<?>> events) {
+        if (events.isEmpty()) {
+            // cannot schedule an empty events list
+            return false;
+        }
+
+        Assert.isTrue(allTokensMatch(events), () -> "All tokens should match when invoking this method.");
+
+        if (events.stream().allMatch(this::shouldNotSchedule)) {
+            if (logger.isTraceEnabled()) {
+                events.forEach(event -> logger.trace(
+                        "Ignoring event [{}] with position [{}] for work package [{}]. "
+                                + "The last token [{}] covers event's token [{}].",
+                        event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId(),
+                        lastDeliveredToken, event.trackingToken()
+                ));
+            }
+            return false;
+        }
+
+        boolean canHandleAny = events.stream()
+                                     .map(event -> {
+                                         boolean canHandle = canHandle(event);
+                                         processingQueue.add(new ProcessingEntry(event, canHandle));
+                                         return canHandle;
+                                     })
+                                     .reduce((canHandleAccumulation, canHandle) -> canHandleAccumulation || canHandle)
+                                     .orElse(false);
+
+        // we can pick the first entry's token, as all are certain to be identical
+        lastDeliveredToken = events.get(0).trackingToken();
+        // the worker must always be scheduled to ensure claims are extended
+        scheduleWorker();
+
+        return canHandleAny;
+    }
+
+    private boolean allTokensMatch(List<TrackedEventMessage<?>> events) {
+        TrackingToken expectedToken = events.get(0).trackingToken();
+        return events.stream()
+                     .map(TrackedEventMessage::trackingToken)
+                     .allMatch(token -> Objects.equals(expectedToken, token));
+    }
+
+    /**
      * Schedule a {@link TrackedEventMessage} for processing by this work package. Will immediately disregard the given
      * {@code event} if its {@link TrackingToken} is covered by the previously scheduled event.
      * <p>
      * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
-     * PooledStreamingEventProcessor}
+     * PooledStreamingEventProcessor}.
      *
-     * @param event the event to schedule for work in this work package
-     * @return {@code true} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}
+     * @param event The event to schedule for work in this work package.
+     * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
     public boolean scheduleEvent(TrackedEventMessage<?> event) {
         if (shouldNotSchedule(event)) {
@@ -218,14 +283,13 @@ class WorkPackage {
     private void processEvents() throws Exception {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
-            ProcessingEntry entry = processingQueue.poll();
-            lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.eventMessage().trackingToken());
-            if (entry.canHandle()) {
-                eventBatch.add(
-                        entry.eventMessage()
-                             .withTrackingToken(lastConsumedToken)
-                );
-            }
+            consumeEntry(eventBatch);
+        }
+
+        // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
+        // These are the result of upcasting and should always be processed in the same batch.
+        while (eventsEqualingLastConsumedTokenRemain()) {
+            consumeEntry(eventBatch);
         }
 
         if (!eventBatch.isEmpty()) {
@@ -248,6 +312,24 @@ class WorkPackage {
                 }
             }
         }
+    }
+
+    private void consumeEntry(List<TrackedEventMessage<?>> eventBatch) {
+        ProcessingEntry entry = processingQueue.poll();
+        assert entry != null;
+        lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.eventMessage().trackingToken());
+        if (entry.canHandle()) {
+            eventBatch.add(
+                    entry.eventMessage()
+                         .withTrackingToken(lastConsumedToken)
+            );
+        }
+    }
+
+    private boolean eventsEqualingLastConsumedTokenRemain() {
+        return Optional.ofNullable(processingQueue.peek())
+                       .filter(entry -> entry.eventMessage().trackingToken().equals(lastConsumedToken))
+                       .isPresent();
     }
 
     private void extendClaim() {

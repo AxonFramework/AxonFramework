@@ -34,8 +34,11 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -781,15 +784,19 @@ class Coordinator {
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && eventStream.hasNextAvailable();
                  fetched++) {
                 TrackedEventMessage<?> event = eventStream.nextAvailable();
-                offerEventToWorkPackages(event);
                 lastScheduledToken = event.trackingToken();
 
                 // Make sure all subsequent events with the same token as the last are added as well.
-                // These are the result of upcasting and should always be processed in the same batch.
-                while (eventStream.peek()
-                                  .filter(e -> lastScheduledToken.equals(e.trackingToken()))
-                                  .isPresent()) {
-                    offerEventToWorkPackages(eventStream.nextAvailable());
+                // These are the result of upcasting and should always be scheduled in one go.
+                if (eventsEqualingLastScheduledToken()) {
+                    List<TrackedEventMessage<?>> events = new ArrayList<>();
+                    events.add(event);
+                    while (eventsEqualingLastScheduledToken()) {
+                        events.add(eventStream.nextAvailable());
+                    }
+                    offerEventsToWorkPackages(events);
+                } else {
+                    offerEventToWorkPackages(event);
                 }
             }
 
@@ -803,6 +810,12 @@ class Coordinator {
                         .forEach(WorkPackage::scheduleWorker);
         }
 
+        private boolean eventsEqualingLastScheduledToken() {
+            return eventStream.peek()
+                              .filter(e -> lastScheduledToken.equals(e.trackingToken()))
+                              .isPresent();
+        }
+
         private void offerEventToWorkPackages(TrackedEventMessage<?> event) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
@@ -814,6 +827,22 @@ class Coordinator {
                 if (!eventFilter.canHandleTypeOf(event)) {
                     eventStream.skipMessagesWithPayloadTypeOf(event);
                 }
+            }
+        }
+
+        private void offerEventsToWorkPackages(List<TrackedEventMessage<?>> events) {
+            boolean anyScheduled = false;
+            for (WorkPackage workPackage : workPackages.values()) {
+                boolean scheduled = workPackage.scheduleEvents(Collections.unmodifiableList(events));
+                anyScheduled = anyScheduled || scheduled;
+            }
+            if (!anyScheduled) {
+                events.forEach(event -> {
+                    ignoredMessageHandler.accept(event);
+                    if (!eventFilter.canHandleTypeOf(event)) {
+                        eventStream.skipMessagesWithPayloadTypeOf(event);
+                    }
+                });
             }
         }
 
