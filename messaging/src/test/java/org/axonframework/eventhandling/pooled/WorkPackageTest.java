@@ -503,7 +503,7 @@ class WorkPackageTest {
         verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
         assertEquals(expectedToken, tokenCaptor.getValue());
 
-        assertEquals(1, trackerStatusUpdates.size());
+        assertTrue(trackerStatusUpdates.size() >= 1);
         OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());
