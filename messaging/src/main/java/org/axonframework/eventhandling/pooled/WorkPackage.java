@@ -146,8 +146,7 @@ class WorkPackage {
             // cannot schedule an empty events list
             return false;
         }
-
-        Assert.isTrue(allTokensMatch(events), () -> "All tokens should match when invoking this method.");
+        assertEqualTokens(events);
 
         if (events.stream().allMatch(this::shouldNotSchedule)) {
             if (logger.isTraceEnabled()) {
@@ -179,11 +178,14 @@ class WorkPackage {
         return canHandleAny;
     }
 
-    private boolean allTokensMatch(List<TrackedEventMessage<?>> events) {
+    private void assertEqualTokens(List<TrackedEventMessage<?>> events) {
         TrackingToken expectedToken = events.get(0).trackingToken();
-        return events.stream()
-                     .map(TrackedEventMessage::trackingToken)
-                     .allMatch(token -> Objects.equals(expectedToken, token));
+        Assert.isTrue(
+                events.stream()
+                      .map(TrackedEventMessage::trackingToken)
+                      .allMatch(token -> Objects.equals(expectedToken, token)),
+                () -> "All tokens should match when scheduling multiple events in one go."
+        );
     }
 
     /**
