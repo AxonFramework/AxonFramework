@@ -680,20 +680,18 @@ class WorkPackage {
     }
 
     /**
-     * Container of a batch of {@link DefaultProcessingEntry DefaultProcessingEntries}, each with their own
-     * {@link TrackedEventMessage} and {@code boolean} whether the given {@code eventMessage} can be handled in this
-     * package. These entries are grouped together since they should be handled within a single batch by the work
-     * package.
+     * Container of a batch of {@link ProcessingEntry ProcessingEntries}. These entries are grouped together since they
+     * should be handled within a single batch by the work package.
      */
     private static class BatchProcessingEntry implements ProcessingEntry {
 
-        private final List<DefaultProcessingEntry> processingEntries;
+        private final List<ProcessingEntry> processingEntries;
 
         public BatchProcessingEntry() {
             this.processingEntries = new ArrayList<>();
         }
 
-        public void add(DefaultProcessingEntry processingEntry) {
+        public void add(ProcessingEntry processingEntry) {
             processingEntries.add(processingEntry);
         }
 
