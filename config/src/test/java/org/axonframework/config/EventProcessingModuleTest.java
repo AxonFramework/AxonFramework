@@ -916,6 +916,40 @@ class EventProcessingModuleTest {
     }
 
     @Test
+    void testUsingPooledStreamingEventProcessorWithConfigurationIsUsedDuringAllPsepConstructions(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        Object testHandler = new Object();
+
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors((config, builder) -> builder.maxClaimedSegments(testCapacity))
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> testHandler);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+
+        optionalResult = config.eventProcessingConfiguration()
+                               .eventProcessor("default", PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
     void testRegisterPooledStreamingEventProcessorConfigurationForNameIsUsedDuringSpecificPsepConstruction(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
