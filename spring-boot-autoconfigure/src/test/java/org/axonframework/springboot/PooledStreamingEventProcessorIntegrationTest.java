@@ -122,7 +122,10 @@ class PooledStreamingEventProcessorIntegrationTest {
                 eventGateway.publish(new OriginalEvent("Event[" + i + "]"));
             }
             processor.start();
-            assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(16, processor.processingStatus().size()));
+
+            // Validating for 15 or more status', as the failing segment might already have failed at this point,
+            //  resulting in 15 instead of 16 entries.
+            assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(processor.processingStatus().size() >= 15));
             assertWithin(500, TimeUnit.MILLISECONDS,
                          () -> assertTrue(processor.processingStatus()
                                                    .values()
