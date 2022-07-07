@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -259,6 +259,25 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingPooledStreamingEventProcessors();
+
+    /**
+     * Defaults Event Processors builders to construct a {@link PooledStreamingEventProcessor} using the
+     * {@code configuration} to configure them.
+     * <p>
+     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the
+     * {@code EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be
+     * used to force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
+     *
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing every
+     *                                              {@link PooledStreamingEventProcessor}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer usingPooledStreamingEventProcessors(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        return usingPooledStreamingEventProcessors()
+                .registerPooledStreamingEventProcessorConfiguration(pooledStreamingProcessorConfiguration);
+    }
 
     /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this

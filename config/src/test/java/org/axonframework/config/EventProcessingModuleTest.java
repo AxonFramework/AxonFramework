@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -868,6 +868,40 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors()
                   .registerPooledStreamingEventProcessorConfiguration((config, builder) -> builder.maxClaimedSegments(testCapacity))
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> testHandler);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+
+        optionalResult = config.eventProcessingConfiguration()
+                               .eventProcessor("default", PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testUsingPooledStreamingEventProcessorWithConfigurationIsUsedDuringAllPsepConstructions(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        Object testHandler = new Object();
+
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors((config, builder) -> builder.maxClaimedSegments(testCapacity))
                   .configureDefaultStreamableMessageSource(config -> mockedSource)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
