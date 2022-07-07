@@ -54,6 +54,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -63,6 +64,7 @@ import java.util.stream.IntStream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 
 /**
  * A {@link StreamingEventProcessor} implementation which pools it's resources to enhance processing speed. It utilizes
@@ -190,11 +192,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     @Override
     public void start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
-        initializeTokenStore();
+        executeUntilTrue(this::initializeTokenStore, 100L);
         coordinator.start();
     }
 
-    private void initializeTokenStore() {
+    private boolean initializeTokenStore() {
+        AtomicBoolean result = new AtomicBoolean(true);
         transactionManager.executeInTransaction(() -> {
             int[] segments = tokenStore.fetchSegments(name);
             try {
@@ -205,8 +208,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             } catch (Exception e) {
                 logger.info("Error while initializing the Token Store. " +
                                     "This may simply indicate concurrent attempts to initialize.", e);
+                result.set(false);
             }
         });
+        return result.get();
     }
 
     @Override

@@ -128,7 +128,7 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
-    void testStartContinuesWhenTokenInitializationFails() {
+    void testRetriesWhenTokenInitializationInitiallyFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)));
 
@@ -136,9 +136,25 @@ class PooledStreamingEventProcessorTest {
                                                           .when(spy)
                                                           .initializeTokenSegments(any(), anyInt(), any());
 
+        List<EventMessage<Integer>> events = IntStream.range(0, 100)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+        mockEventHandlerInvoker();
+
         testSubject.start();
 
         assertTrue(testSubject.isRunning());
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            long nonNullTokens = IntStream.range(0, 8)
+                                          .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
+                                          .filter(Objects::nonNull)
+                                          .count();
+            assertEquals(8, nonNullTokens);
+        });
+        assertEquals(8, testSubject.processingStatus().size());
     }
 
     @Test

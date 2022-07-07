@@ -59,4 +59,11 @@ class ProcessUtilsTest {
             assertEquals(1, retryCounter.get());
         }
     }
+
+    @Test
+    void executeUntilTrueRetries(){
+        AtomicLong retryCounter = new AtomicLong();
+        ProcessUtils.executeUntilTrue(() -> retryCounter.getAndIncrement() >= 1, 10L);
+        assertEquals(2, retryCounter.get());
+    }
 }

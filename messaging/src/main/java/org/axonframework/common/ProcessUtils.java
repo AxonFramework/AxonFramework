@@ -1,6 +1,7 @@
 package org.axonframework.common;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -48,5 +49,24 @@ public abstract class ProcessUtils {
         }
 
         throw lastException;
+    }
+
+    /**
+     * Executes an action, with potential retry in case the result is false. Exception handling should be taken care of
+     * within the action if needed.
+     *
+     * @param runnable      action to execute
+     * @param retryInterval time to wait between retries of the action
+     */
+    public static void executeUntilTrue(BooleanSupplier runnable, long retryInterval) {
+        boolean result = runnable.getAsBoolean();
+        while (!result) {
+            try {
+                Thread.sleep(retryInterval);
+                result = runnable.getAsBoolean();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
