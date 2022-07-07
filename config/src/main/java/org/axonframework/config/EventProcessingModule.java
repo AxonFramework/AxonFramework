@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -814,13 +814,13 @@ public class EventProcessingModule
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {
                                                  ScheduledExecutorService coordinatorExecutor =
-                                                         defaultExecutor("Coordinator[" + processorName + "]");
+                                                         defaultExecutor(1, "Coordinator[" + processorName + "]");
                                                  config.onShutdown(coordinatorExecutor::shutdown);
                                                  return coordinatorExecutor;
                                              })
                                              .workerExecutor(processorName -> {
                                                  ScheduledExecutorService workerExecutor =
-                                                         defaultExecutor("WorkPackage[" + processorName + "]");
+                                                         defaultExecutor(4, "WorkPackage[" + processorName + "]");
                                                  config.onShutdown(workerExecutor::shutdown);
                                                  return workerExecutor;
                                              });
@@ -830,8 +830,8 @@ public class EventProcessingModule
                                                            .build();
     }
 
-    private ScheduledExecutorService defaultExecutor(String factoryName) {
-        return Executors.newScheduledThreadPool(1, new AxonThreadFactory(factoryName));
+    private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
+        return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 
     /**
