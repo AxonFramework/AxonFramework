@@ -200,7 +200,6 @@ class PooledStreamingEventProcessorIntegrationTest {
         @Bean
         public ListenerInvocationErrorHandler latchedErrorHandler(CountDownLatch errorCountLatch) {
             return (exception, event, eventHandler) -> {
-                System.out.println("REACHEDREACHEDREACHEDREACHEDREACHEDREACHEDREACHED");
                 errorCountLatch.countDown();
                 throw exception;
             };

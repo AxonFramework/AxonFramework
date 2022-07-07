@@ -38,7 +38,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -162,17 +161,18 @@ class WorkPackage {
             return false;
         }
 
+        BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = events.stream()
                                      .map(event -> {
                                          boolean canHandle = canHandle(event);
-                                         processingQueue.add(new ProcessingEntry(event, canHandle));
+                                         batchProcessingEntry.add(new DefaultProcessingEntry(event, canHandle));
                                          return canHandle;
                                      })
-                                     .reduce((canHandleAccumulation, canHandle) -> canHandleAccumulation || canHandle)
+                                     .reduce(Boolean::logicalOr)
                                      .orElse(false);
 
-        // we can pick the first entry's token, as all are certain to be identical
-        lastDeliveredToken = events.get(0).trackingToken();
+        processingQueue.add(batchProcessingEntry);
+        lastDeliveredToken = batchProcessingEntry.trackingToken();
         // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
 
@@ -208,7 +208,7 @@ class WorkPackage {
                      event.getIdentifier(), event.trackingToken().position().orElse(-1), segment.getSegmentId());
 
         boolean canHandle = canHandle(event);
-        processingQueue.add(new ProcessingEntry(event, canHandle));
+        processingQueue.add(new DefaultProcessingEntry(event, canHandle));
         lastDeliveredToken = event.trackingToken();
         // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
@@ -283,14 +283,19 @@ class WorkPackage {
     private void processEvents() throws Exception {
         List<TrackedEventMessage<?>> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
-            consumeEntry(eventBatch);
+            ProcessingEntry entry = processingQueue.poll();
+            lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.trackingToken());
+
+            if (entry instanceof DefaultProcessingEntry) {
+                consumeEntry(eventBatch, (DefaultProcessingEntry) entry);
+            } else if (entry instanceof BatchProcessingEntry) {
+                ((BatchProcessingEntry) entry).entries()
+                                              .forEach(defaultEntry -> consumeEntry(eventBatch, defaultEntry));
+            }
         }
 
         // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
         // These are the result of upcasting and should always be processed in the same batch.
-        while (eventsEqualingLastConsumedTokenRemain()) {
-            consumeEntry(eventBatch);
-        }
 
         if (!eventBatch.isEmpty()) {
             logger.debug("Work Package [{}]-[{}] is processing a batch of {} events.",
@@ -314,22 +319,11 @@ class WorkPackage {
         }
     }
 
-    private void consumeEntry(List<TrackedEventMessage<?>> eventBatch) {
-        ProcessingEntry entry = processingQueue.poll();
-        assert entry != null;
-        lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.eventMessage().trackingToken());
+    private void consumeEntry(List<TrackedEventMessage<?>> eventBatch, DefaultProcessingEntry entry) {
         if (entry.canHandle()) {
-            eventBatch.add(
-                    entry.eventMessage()
-                         .withTrackingToken(lastConsumedToken)
-            );
+            eventBatch.add(entry.eventMessage()
+                                .withTrackingToken(lastConsumedToken));
         }
-    }
-
-    private boolean eventsEqualingLastConsumedTokenRemain() {
-        return Optional.ofNullable(processingQueue.peek())
-                       .filter(entry -> entry.eventMessage().trackingToken().equals(lastConsumedToken))
-                       .isPresent();
     }
 
     private void extendClaim() {
@@ -646,16 +640,25 @@ class WorkPackage {
     }
 
     /**
+     * Marker interface defining a unit of work containing one or more event messages to be processed by this work
+     * package.
+     */
+    private interface ProcessingEntry {
+
+        TrackingToken trackingToken();
+    }
+
+    /**
      * Container of a {@link TrackedEventMessage} and {@code boolean} whether the given {@code eventMessage} can be
      * handled in this package. The combination constitutes to a processing entry the {@link WorkPackage} should
      * ingest.
      */
-    private static class ProcessingEntry {
+    private static class DefaultProcessingEntry implements ProcessingEntry {
 
         private final TrackedEventMessage<?> eventMessage;
         private final boolean canHandle;
 
-        public ProcessingEntry(TrackedEventMessage<?> eventMessage, boolean canHandle) {
+        public DefaultProcessingEntry(TrackedEventMessage<?> eventMessage, boolean canHandle) {
             this.eventMessage = eventMessage;
             this.canHandle = canHandle;
         }
@@ -666,6 +669,39 @@ class WorkPackage {
 
         public boolean canHandle() {
             return canHandle;
+        }
+
+        @Override
+        public TrackingToken trackingToken() {
+            return eventMessage.trackingToken();
+        }
+    }
+
+    /**
+     * Container of a batch of {@link DefaultProcessingEntry DefaultProcessingEntries}, each with their own
+     * {@link TrackedEventMessage} and {@code boolean} whether the given {@code eventMessage} can be handled in this
+     * package. These entries are grouped together since they should be handled within a single batch by the work
+     * package.
+     */
+    private static class BatchProcessingEntry implements ProcessingEntry {
+
+        private final List<DefaultProcessingEntry> processingEntries;
+
+        public BatchProcessingEntry() {
+            this.processingEntries = new ArrayList<>();
+        }
+
+        public void add(DefaultProcessingEntry processingEntry) {
+            processingEntries.add(processingEntry);
+        }
+
+        public List<DefaultProcessingEntry> entries() {
+            return processingEntries;
+        }
+
+        @Override
+        public TrackingToken trackingToken() {
+            return processingEntries.get(0).trackingToken();
         }
     }
 }

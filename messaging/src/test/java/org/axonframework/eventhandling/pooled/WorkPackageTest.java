@@ -342,7 +342,7 @@ class WorkPackageTest {
         testSubject.scheduleWorker();
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertNull(trackerStatus));
-        assertTrue(result.isDone());
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
         assertNull(result.get());
     }
 
