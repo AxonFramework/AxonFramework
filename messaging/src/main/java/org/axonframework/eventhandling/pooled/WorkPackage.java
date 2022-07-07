@@ -287,13 +287,7 @@ class WorkPackage {
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.trackingToken());
-
-            if (entry instanceof DefaultProcessingEntry) {
-                consumeEntry(eventBatch, (DefaultProcessingEntry) entry);
-            } else if (entry instanceof BatchProcessingEntry) {
-                ((BatchProcessingEntry) entry).entries()
-                                              .forEach(defaultEntry -> consumeEntry(eventBatch, defaultEntry));
-            }
+            entry.addToBatch(eventBatch, lastConsumedToken);
         }
 
         // Make sure all subsequent events with the same token (if non-null) as the last are added as well.
@@ -318,13 +312,6 @@ class WorkPackage {
                     transactionManager.executeInTransaction(this::extendClaim);
                 }
             }
-        }
-    }
-
-    private void consumeEntry(List<TrackedEventMessage<?>> eventBatch, DefaultProcessingEntry entry) {
-        if (entry.canHandle()) {
-            eventBatch.add(entry.eventMessage()
-                                .withTrackingToken(lastConsumedToken));
         }
     }
 
@@ -647,7 +634,21 @@ class WorkPackage {
      */
     private interface ProcessingEntry {
 
+        /**
+         * Return the position of this processing entry.
+         *
+         * @return The position of this processing entry.
+         */
         TrackingToken trackingToken();
+
+        /**
+         * Add this entry's events to the {@code eventBatch}. The events should reference the {@code wrappedToken} for
+         * correctly handling token progression.
+         *
+         * @param eventBatch   The list of events to add this entry's events to.
+         * @param wrappedToken The wrapped token to attach to all events of this entry.
+         */
+        void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken);
     }
 
     /**
@@ -665,17 +666,16 @@ class WorkPackage {
             this.canHandle = canHandle;
         }
 
-        public TrackedEventMessage<?> eventMessage() {
-            return eventMessage;
-        }
-
-        public boolean canHandle() {
-            return canHandle;
-        }
-
         @Override
         public TrackingToken trackingToken() {
             return eventMessage.trackingToken();
+        }
+
+        @Override
+        public void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken) {
+            if (canHandle) {
+                eventBatch.add(eventMessage.withTrackingToken(wrappedToken));
+            }
         }
     }
 
@@ -697,13 +697,14 @@ class WorkPackage {
             processingEntries.add(processingEntry);
         }
 
-        public List<DefaultProcessingEntry> entries() {
-            return processingEntries;
-        }
-
         @Override
         public TrackingToken trackingToken() {
             return processingEntries.get(0).trackingToken();
+        }
+
+        @Override
+        public void addToBatch(List<TrackedEventMessage<?>> eventBatch, TrackingToken wrappedToken) {
+            processingEntries.forEach(entry -> entry.addToBatch(eventBatch, wrappedToken));
         }
     }
 }
