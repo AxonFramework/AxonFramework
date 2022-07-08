@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +42,9 @@ public abstract class CurrentUnitOfWork {
      * @return whether a UnitOfWork has already been started.
      */
     public static boolean isStarted() {
-        return CURRENT.get() != null && !CURRENT.get().isEmpty();
+        Deque<UnitOfWork<?>> current = CURRENT.get();
+        purgeClosed(current);
+        return current != null && !current.isEmpty();
     }
 
     /**
@@ -92,7 +94,21 @@ public abstract class CurrentUnitOfWork {
 
     private static boolean isEmpty() {
         Deque<UnitOfWork<?>> unitsOfWork = CURRENT.get();
+        purgeClosed(unitsOfWork);
         return unitsOfWork == null || unitsOfWork.isEmpty();
+    }
+
+    /**
+     * Purges any closed {@link UnitOfWork} instances left on the stack. Invoking this method prior validating whether
+     * there's a started or empty set of units of work ensures we do not accidentally try to register callbacks while
+     * the top unit of work is already closed.
+     *
+     * @param current The current stack of {@link UnitOfWork Units of Work}.
+     */
+    private static void purgeClosed(Deque<UnitOfWork<?>> current) {
+        while (current != null && !current.isEmpty() && current.peek().phase() == UnitOfWork.Phase.CLOSED) {
+            current.pop();
+        }
     }
 
     /**
@@ -127,10 +143,7 @@ public abstract class CurrentUnitOfWork {
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
     public static void clear(UnitOfWork<?> unitOfWork) {
-        if (!isStarted()) {
-            throw new IllegalStateException("Could not clear this UnitOfWork. There is no UnitOfWork active.");
-        }
-        if (CURRENT.get().peek() == unitOfWork) {
+        if (CURRENT.get() != null && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
             if (CURRENT.get().isEmpty()) {
                 CURRENT.remove();
