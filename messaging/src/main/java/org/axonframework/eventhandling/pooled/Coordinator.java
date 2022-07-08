@@ -52,8 +52,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -89,6 +91,8 @@ class Coordinator {
     private final long claimExtensionThreshold;
     private final Clock clock;
     private final int maxClaimedSegments;
+    private final int initialSegmentCount;
+    private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
     private final AtomicReference<RunState> runState;
@@ -121,6 +125,8 @@ class Coordinator {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.clock = builder.clock;
         this.maxClaimedSegments = builder.maxClaimedSegments;
+        this.initialSegmentCount = builder.initialSegmentCount;
+        this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
     }
 
@@ -133,6 +139,7 @@ class Coordinator {
         if (newState.wasStarted()) {
             logger.debug("Starting Coordinator for Processor [{}].", name);
             try {
+                executeUntilTrue(Coordinator.this::initializeTokenStore, 100L, 30L);
                 CoordinationTask task = new CoordinationTask();
                 executorService.submit(task);
                 this.coordinationTask.set(task);
@@ -253,6 +260,24 @@ class Coordinator {
         return result;
     }
 
+    private boolean initializeTokenStore() {
+        AtomicBoolean tokenStoreInitialized = new AtomicBoolean(false);
+        transactionManager.executeInTransaction(() -> {
+            int[] segments = tokenStore.fetchSegments(name);
+            try {
+                if (segments == null || segments.length == 0) {
+                    logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
+                    tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
+                }
+                tokenStoreInitialized.set(true);
+            } catch (Exception e) {
+                logger.info("Error while initializing the Token Store. " +
+                                    "This may simply indicate concurrent attempts to initialize.", e);
+            }
+        });
+        return tokenStoreInitialized.get();
+    }
+
     /**
      * Status holder for this service. Defines whether it is running, has been started (to ensure double {@link
      * #start()} invocations do not restart this coordinator) and maintains a shutdown handler to complete
@@ -353,6 +378,9 @@ class Coordinator {
         private long claimExtensionThreshold = 5000;
         private Clock clock = GenericEventMessage.clock;
         private int maxClaimedSegments;
+        private int initialSegmentCount = 16;
+        private Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken =
+                StreamableMessageSource::createTailToken;
         private Runnable shutdownAction = () -> {
         };
 
@@ -507,6 +535,33 @@ class Coordinator {
          */
         Builder maxClaimedSegments(int maxClaimedSegments) {
             this.maxClaimedSegments = maxClaimedSegments;
+            return this;
+        }
+
+        /**
+         * Sets the initial segment count used to create segments on start up. Defaults to 16.
+         *
+         * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
+         *                            start up
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder initialSegmentCount(int initialSegmentCount) {
+            this.initialSegmentCount = initialSegmentCount;
+            return this;
+        }
+
+        /**
+         * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to
+         * {@link StreamableMessageSource::createTailToken}
+         *
+         * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
+         *                     {@link StreamableMessageSource}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder initialToken(
+                Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
+        ) {
+            this.initialToken = initialToken;
             return this;
         }
 

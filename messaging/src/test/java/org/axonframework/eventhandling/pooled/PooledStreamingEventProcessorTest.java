@@ -141,7 +141,6 @@ class PooledStreamingEventProcessorTest {
                                                       .collect(Collectors.toList());
         events.forEach(stubMessageSource::publishMessage);
         mockEventHandlerInvoker();
-
         testSubject.start();
 
         assertTrue(testSubject.isRunning());
@@ -730,6 +729,7 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens();
@@ -737,7 +737,6 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(null);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        assertEquals(expectedSegmentCount, segments.length);
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
@@ -755,6 +754,7 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -762,7 +762,6 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(expectedContext);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        assertEquals(expectedSegmentCount, segments.length);
         // The token stays the same, as the original and token after reset are identical.
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
@@ -781,6 +780,7 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
@@ -788,7 +788,6 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(null);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        assertEquals(expectedSegmentCount, segments.length);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }
@@ -807,6 +806,7 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
@@ -814,7 +814,6 @@ class PooledStreamingEventProcessorTest {
         verify(stubEventHandler).performReset(expectedContext);
 
         int[] segments = tokenStore.fetchSegments(PROCESSOR_NAME);
-        assertEquals(expectedSegmentCount, segments.length);
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[0]));
         assertEquals(expectedToken, tokenStore.fetchToken(PROCESSOR_NAME, segments[1]));
     }

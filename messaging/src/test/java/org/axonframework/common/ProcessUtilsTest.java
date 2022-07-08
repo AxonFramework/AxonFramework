@@ -63,7 +63,16 @@ class ProcessUtilsTest {
     @Test
     void executeUntilTrueRetries(){
         AtomicLong retryCounter = new AtomicLong();
-        ProcessUtils.executeUntilTrue(() -> retryCounter.getAndIncrement() >= 1, 10L);
+        ProcessUtils.executeUntilTrue(() -> retryCounter.getAndIncrement() >= 1, 10L, 10L);
         assertEquals(2, retryCounter.get());
+    }
+
+    @Test
+    void executeUntilTrueThrowsWhenMaxRetriesReached(){
+        AtomicLong retryCounter = new AtomicLong();
+        assertThrows(ProcessRetriesExhaustedException.class, () ->
+                ProcessUtils.executeUntilTrue(() -> retryCounter.getAndIncrement() >= 100, 1L, 10L)
+        );
+        assertEquals(10, retryCounter.get());
     }
 }

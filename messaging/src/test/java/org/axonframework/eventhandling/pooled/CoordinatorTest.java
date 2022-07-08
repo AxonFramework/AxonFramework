@@ -61,6 +61,7 @@ class CoordinatorTest {
     private final Segment SEGMENT_ZERO = computeSegment(0);
     private final int SEGMENT_ID = 0;
     private final int[] SEGMENT_IDS = {SEGMENT_ID};
+    private final int[] EMPTY_SEGMENT_IDS = {};
 
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
@@ -103,6 +104,26 @@ class CoordinatorTest {
 
         //asserts
         verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        // should be zero since we mock there already is a segment
+        verify(tokenStore, times(0)).initializeTokenSegments(anyString(), anyInt(), any(TrackingToken.class));
+    }
+
+    @Test
+    void testIfCoordinationTaskInitializesTokenStoreWhenNeeded() {
+        //arrange
+        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+
+        doReturn(EMPTY_SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
+        doReturn(SEGMENT_ZERO).when(workPackage).segment();
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+
+        //act
+        testSubject.start();
+
+        //asserts
+        verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull());
     }
 
     @SuppressWarnings("rawtypes") // Mockito cannot deal with the wildcard generics of the TrackedEventMessage
