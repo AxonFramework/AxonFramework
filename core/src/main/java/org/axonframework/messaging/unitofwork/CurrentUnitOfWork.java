@@ -94,7 +94,7 @@ public abstract class CurrentUnitOfWork {
 
     private static boolean isEmpty() {
         Deque<UnitOfWork<?>> unitsOfWork = CURRENT.get();
-//        purgeClosed(unitsOfWork);
+        purgeClosed(unitsOfWork);
         return unitsOfWork == null || unitsOfWork.isEmpty();
     }
 
@@ -143,10 +143,7 @@ public abstract class CurrentUnitOfWork {
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
     public static void clear(UnitOfWork<?> unitOfWork) {
-        if (!isStarted()) {
-            throw new IllegalStateException("Could not clear this UnitOfWork. There is no UnitOfWork active.");
-        }
-        if (CURRENT.get().peek() == unitOfWork) {
+        if (CURRENT.get() != null && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
             if (CURRENT.get().isEmpty()) {
                 CURRENT.remove();

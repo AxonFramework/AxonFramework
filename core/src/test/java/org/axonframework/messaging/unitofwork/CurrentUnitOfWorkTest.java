@@ -73,26 +73,18 @@ public class CurrentUnitOfWorkTest {
 
     @Test
     public void testIsStartedPurgesClosedUnitsOfWork() {
-        UnitOfWork<GenericMessage<String>> thisUoW = new DefaultUnitOfWork<>(new GenericMessage<>("this"));
-        thisUoW.commit(); // Committing the unit of work will close it.
-        CurrentUnitOfWork.set(thisUoW);
-
-        UnitOfWork<GenericMessage<String>> thatUoW = new DefaultUnitOfWork<>(new GenericMessage<>("that"));
-        thatUoW.commit(); // Committing the unit of work will close it.
-        CurrentUnitOfWork.set(thatUoW);
+        UnitOfWork<GenericMessage<String>> uow = DefaultUnitOfWork.startAndGet(new GenericMessage<>("this"));
+        uow.commit();
+        CurrentUnitOfWork.set(uow);
 
         assertFalse(CurrentUnitOfWork.isStarted());
     }
 
     @Test
     public void testGetPurgesClosedUnitsOfWorkAndThrowsIllegalStateException() {
-        UnitOfWork<GenericMessage<String>> thisUoW = new DefaultUnitOfWork<>(new GenericMessage<>("this"));
-        thisUoW.commit(); // Committing the unit of work will close it.
-        CurrentUnitOfWork.set(thisUoW);
-
-        UnitOfWork<GenericMessage<String>> thatUoW = new DefaultUnitOfWork<>(new GenericMessage<>("that"));
-        thatUoW.commit(); // Committing the unit of work will close it.
-        CurrentUnitOfWork.set(thatUoW);
+        UnitOfWork<GenericMessage<String>> uow = DefaultUnitOfWork.startAndGet(new GenericMessage<>("this"));
+        uow.commit();
+        CurrentUnitOfWork.set(uow);
 
         IllegalStateException result = null;
         try {
