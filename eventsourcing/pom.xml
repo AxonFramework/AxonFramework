@@ -184,6 +184,8 @@
                                 <include>**/BatchingEventStorageEngineTest.*</include>
                                 <include>**/EventStorageEngineTest.*</include>
                                 <include>**/EventStoreTestUtils.*</include>
+                                <include>**/TestSerializer.*</include>
+                                <include>**/EventStoreTestUtils.*</include>
                             </includes>
                         </configuration>
                     </execution>

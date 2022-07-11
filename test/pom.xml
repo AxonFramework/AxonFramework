@@ -100,6 +100,30 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/StubGateway.*</include>
+                                <include>**/NonTransientResource.*</include>
+                                <include>**/TriggerSagaStartEvent.*</include>
+                                <include>**/ForceTriggerSagaStartEvent.*</include>
+                                <include>**/TimerTriggeredEvent.*</include>
+                                <include>**/SagaWasTriggeredEvent.*</include>
+                                <include>**/ParameterResolvedEvent.*</include>
+                                <include>**/ResolveParameterCommand.*</include>
+                                <include>**/TriggerSagaEndEvent.*</include>
+                                <include>**/TriggerExceptionWhileHandlingEvent.*</include>
+                                <include>**/TimerTriggeredEvent.*</include>
+                                <include>**/TriggerExistingSagaEvent.*</include>
+                                <include>**/ResetTriggerEvent.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
