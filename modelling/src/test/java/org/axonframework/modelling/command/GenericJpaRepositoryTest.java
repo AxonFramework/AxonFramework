@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.DomainEventSequenceAware;
@@ -47,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link GenericJpaRepository}.
+ *
  * @author Allard Buijze
  */
 class GenericJpaRepositoryTest {
@@ -228,6 +231,26 @@ class GenericJpaRepositoryTest {
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
+    }
+
+    @Test
+    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
+    }
+
+    @Test
+    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }
 
     private class StubJpaAggregate {

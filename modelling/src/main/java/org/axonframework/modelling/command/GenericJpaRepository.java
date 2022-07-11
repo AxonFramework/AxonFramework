@@ -27,6 +27,7 @@ import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
@@ -225,6 +226,18 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         @Override
         public Builder<T> lockFactory(LockFactory lockFactory) {
             super.lockFactory(lockFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            super.subtypes(subtypes);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            super.subtype(subtype);
             return this;
         }
 

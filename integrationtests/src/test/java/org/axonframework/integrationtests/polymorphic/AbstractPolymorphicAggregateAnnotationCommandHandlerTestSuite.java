@@ -33,9 +33,11 @@ import org.axonframework.modelling.command.inspection.AggregateModellingExceptio
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -75,22 +77,35 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
                                               .commandBus(commandBus)
                                               .build();
 
-        AggregateModel<ParentAggregate> model = new AnnotatedAggregateMetaModelFactory()
-                .createModel(ParentAggregate.class,
-                             new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class)));
+        Set<Class<? extends ParentAggregate>> subtypes =
+                new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class));
+        AggregateModel<ParentAggregate> model =
+                new AnnotatedAggregateMetaModelFactory().createModel(ParentAggregate.class, subtypes);
 
-        repository = repository(ParentAggregate.class, model, entityManager);
+        repository = repository(ParentAggregate.class, subtypes, entityManager);
 
-        AggregateAnnotationCommandHandler<ParentAggregate> ch = AggregateAnnotationCommandHandler.<ParentAggregate>builder()
-                .aggregateType(ParentAggregate.class)
-                .aggregateModel(model)
-                .repository(repository)
-                .build();
+        AggregateAnnotationCommandHandler<ParentAggregate> ch =
+                AggregateAnnotationCommandHandler.<ParentAggregate>builder()
+                                                 .aggregateType(ParentAggregate.class)
+                                                 .aggregateModel(model)
+                                                 .repository(repository)
+                                                 .build();
+        //noinspection resource
         ch.subscribe(commandBus);
     }
 
+    /**
+     * Constructs a polymorphic {@link Repository} for the given root {@code aggregateType}.
+     *
+     * @param aggregateType The root aggregate type for the polymorphic {@link Repository}.
+     * @param subTypes      The subtypes of the given {@code aggregateType}, making the model supported by the
+     *                      {@link Repository} polymorphic/
+     * @param entityManager The entity manager required for state-stored polymorphic aggregates.
+     * @param <T>           The root type of the polymorphic aggregate.
+     * @return A polymorphic {@link Repository} for the given root {@code aggregateType}.
+     */
     public abstract <T> Repository<T> repository(Class<T> aggregateType,
-                                                 AggregateModel<T> model,
+                                                 Set<Class<? extends T>> subTypes,
                                                  EntityManager entityManager);
 
     @AfterEach
@@ -198,13 +213,16 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         AggregateModel<SimpleAggregate> model = new AnnotatedAggregateMetaModelFactory()
                 .createModel(SimpleAggregate.class);
 
-        Repository<SimpleAggregate> repository = repository(SimpleAggregate.class, model, entityManager);
+        Repository<SimpleAggregate> repository =
+                repository(SimpleAggregate.class, Collections.emptySet(), entityManager);
 
-        AggregateAnnotationCommandHandler<SimpleAggregate> ch = AggregateAnnotationCommandHandler.<SimpleAggregate>builder()
-                .aggregateType(SimpleAggregate.class)
-                .aggregateModel(model)
-                .repository(repository)
-                .build();
+        AggregateAnnotationCommandHandler<SimpleAggregate> ch =
+                AggregateAnnotationCommandHandler.<SimpleAggregate>builder()
+                                                 .aggregateType(SimpleAggregate.class)
+                                                 .aggregateModel(model)
+                                                 .repository(repository)
+                                                 .build();
+        //noinspection resource
         ch.subscribe(commandBus);
 
         String simpleAggregateId = "id";

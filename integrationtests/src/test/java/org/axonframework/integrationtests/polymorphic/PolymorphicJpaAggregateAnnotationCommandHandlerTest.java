@@ -20,10 +20,10 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 
@@ -41,19 +41,20 @@ public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
 
     @Override
     public <T> Repository<T> repository(Class<T> aggregateType,
-                                        AggregateModel<T> model,
+                                        Set<Class<? extends T>> subTypes,
                                         EntityManager entityManager) {
         GenericJpaRepository<T> repository = GenericJpaRepository
                 .builder(aggregateType)
+                .subtypes(subTypes)
                 .entityManagerProvider(() -> entityManager)
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
                     public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+                        //noinspection unchecked
                         return (Repository<R>) repositories.get(aggregateType);
                     }
                 })
                 .eventBus(mock(EventBus.class))
-                .aggregateModel(model)
                 .build();
         repositories.put(aggregateType, repository);
         return repository;
