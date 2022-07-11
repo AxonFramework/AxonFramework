@@ -69,12 +69,12 @@
 
         <!-- dependency versions -->
         <slf4j.version>1.7.36</slf4j.version>
-        <log4j.version>2.17.2</log4j.version>
-        <spring.version>5.3.20</spring.version>
+        <log4j.version>2.18.0</log4j.version>
+        <spring.version>5.3.21</spring.version>
         <spring-security.version>5.7.0</spring-security.version>
         <spring.boot.version>2.7.0</spring.boot.version>
         <mockito.version>4.6.0</mockito.version>
-        <projectreactor.version>3.4.18</projectreactor.version>
+        <projectreactor.version>3.4.19</projectreactor.version>
         <micrometer.version>1.9.0</micrometer.version>
         <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
         <jackson.version>2.13.2.20220324</jackson.version>
@@ -417,7 +417,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                 </plugin>
 
                 <plugin>
@@ -465,7 +465,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.0</version>
                 <configuration>
                     <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
                     <archiverConfig>

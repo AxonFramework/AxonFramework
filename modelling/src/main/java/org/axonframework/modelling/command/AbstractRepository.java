@@ -91,8 +91,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
         uow.onPrepareCommit(x -> {
             A aggregate = aggregateReference.get();
-            // aggregate construction may have failed with an exception. In that case, no action is required on commit
-            if (aggregate != null) {
+            // Aggregate construction may have failed with an exception (aggregate == null)
+            //  or the handler decided not to create the aggregate (identifier == null).
+            // In that case, no action is required on commit.
+            if (aggregate != null && aggregate.identifier() != null) {
                 prepareForCommit(aggregate);
             }
         });

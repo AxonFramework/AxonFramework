@@ -1,0 +1,37 @@
+name: Announce release on Discuss
+
+env:
+  CA_FILE: /tmp/ca.pem
+  URL: https://discuss.axoniq.io/posts.json
+
+  # id of `Announcements` category in Discuss
+  CATEGORY: 6
+
+on:
+  # Triggers the workflow on new release
+  release:
+    types: [ published ]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Get authorities certificates
+        run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
+
+      - name: Create Discuss topic
+        run: |
+          
+          echo $json | curl --cacert $CA_FILE -X POST "$URL" \
+          -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
+          -H "Api-Username: axonbot" \
+          -H 'Content-Type: application/json' \
+          --data-binary @- << EOF
+          {
+            "title": "Axon Framework - Release ${{ github.event.release.name }}",
+            "raw": "I’m glad to announce that we’ve released ${{ github.event.release.name }} on ${{ github.event.release.createdAt }}\n\n. This release contains: \n\n ${{ github.event.release.description}}",
+            "category": $CATEGORY,
+            "tags": ["release"]
+          }
+          EOF

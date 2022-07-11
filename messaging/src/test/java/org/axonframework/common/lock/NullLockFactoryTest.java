@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.common.lock;
+
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A {@link Runable} with a priority.
+ * Test class validating the {@link NullLockFactory}.
  *
- * @author Stefan Dragisic
- * @author Milan Savic
- * @since 4.6.0
+ * @author Steven van Beelen
  */
-public interface PrioritizedRunnable extends Runnable {
+class NullLockFactoryTest {
 
-    /**
-     * The priority of this runnable.
-      *
-     * @return the priority of this runnable.
-     */
-    long priority();
+    @Test
+    void testObtainLockReturnsNoOpLockInstance() {
+        LockFactory testSubject = NullLockFactory.INSTANCE;
+
+        assertEquals(NoOpLock.INSTANCE, testSubject.obtainLock(null));
+    }
 }

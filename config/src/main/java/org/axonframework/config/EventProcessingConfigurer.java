@@ -261,6 +261,25 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer usingPooledStreamingEventProcessors();
 
     /**
+     * Defaults Event Processors builders to construct a {@link PooledStreamingEventProcessor} using the
+     * {@code configuration} to configure them.
+     * <p>
+     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the
+     * {@code EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be
+     * used to force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
+     *
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing every
+     *                                              {@link PooledStreamingEventProcessor}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer usingPooledStreamingEventProcessors(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        return usingPooledStreamingEventProcessors()
+                .registerPooledStreamingEventProcessorConfiguration(pooledStreamingProcessorConfiguration);
+    }
+
+    /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
      * Configurer.
      *

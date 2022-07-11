@@ -19,6 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NoOpLock;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -96,7 +97,9 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         } else {
             // The aggregate identifier hasn't been set yet, so the lock should be created in the supplier.
             lockSupplier = sameInstanceSupplier(() -> {
-                Lock lock = lockFactory.obtainLock(aggregate.identifierAsString());
+                Lock lock = Objects.isNull(aggregate.identifierAsString())
+                        ? NoOpLock.INSTANCE
+                        : lockFactory.obtainLock(aggregate.identifierAsString());
                 unitOfWork.onCleanup(u -> lock.release());
                 return lock;
             });
