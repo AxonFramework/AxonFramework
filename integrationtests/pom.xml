@@ -212,9 +212,11 @@
                                 <include>**/InterceptedByParentCommand.*</include>
                                 <include>**/AbstractCommandHandlerCommand.*</include>
                                 <include>**/StubDomainEvent.*</include>
-                                <include>**/ParentEvent.*</include>
-                                <include>**/FireChildEventCommand.*</include>
-                                <include>**/InterceptedByParentCommand.*</include>
+                                <include>**/FireParentEventCommand.*</include>
+                                <include>**/Child1OnlyCommand.*</include>
+                                <include>**/InterceptedByChildCommand.*</include>
+                                <include>**/ChildEvent.*</include>
+                                <include>**/CreatedEvent.*</include>
                             </includes>
                         </configuration>
                     </execution>
