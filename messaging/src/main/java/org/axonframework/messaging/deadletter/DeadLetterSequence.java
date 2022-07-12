@@ -10,6 +10,7 @@ import org.axonframework.messaging.Message;
  * @author Mitchell Herrijgers
  * @author Milan Savic
  * @author Sara Pelligrini
+ * @since 4.6.0
  */
 public interface DeadLetterSequence<T extends Message<?>> {
 

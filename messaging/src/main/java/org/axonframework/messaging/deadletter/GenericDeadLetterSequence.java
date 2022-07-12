@@ -12,6 +12,7 @@ import javax.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @author Milan Savic
  * @author Sara Pelligrini
+ * @since 4.6.0
  */
 public class GenericDeadLetterSequence<T extends Message<?>> implements DeadLetterSequence<T> {
 
