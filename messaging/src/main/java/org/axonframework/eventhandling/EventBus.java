@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.SubscribableMessageSource;
 
@@ -62,18 +60,5 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
      * @param events The collection of events to publish
      */
     void publish(@Nonnull List<? extends EventMessage<?>> events);
-
-    /**
-     * Register the given {@code interceptor} with this bus. When subscribed it will intercept any event messages
-     * published on this bus.
-     * <p>
-     * If the given {@code interceptor} is already registered, nothing happens.
-     *
-     * @param dispatchInterceptor The event message dispatch interceptor to register
-     * @return a handle to unregister the {@code dispatchInterceptor}. When unregistered it will no longer be given
-     * event messages published on this bus.
-     */
-    Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor);
 
 }

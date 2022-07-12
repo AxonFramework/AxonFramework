@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -43,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link EventSourcingRepository}.
+ *
  * @author Allard Buijze
  */
 class EventSourcingRepositoryTest {
@@ -188,6 +191,24 @@ class EventSourcingRepositoryTest {
         inOrder.verify(snapshotTrigger, times(3)).eventHandled(any());
         inOrder.verify(snapshotTrigger).initializationFinished();
         inOrder.verify(snapshotTrigger, times(2)).eventHandled(any());
+    }
+
+    @Test
+    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                EventSourcingRepository.builder(TestAggregate.class)
+                                       .eventStore(mockEventStore);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
+    }
+
+    @Test
+    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                EventSourcingRepository.builder(TestAggregate.class)
+                                       .eventStore(mockEventStore);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<TestAggregate> {

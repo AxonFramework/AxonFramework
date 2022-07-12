@@ -153,18 +153,19 @@ class AxonServerCommandBusTest {
 
     @Test
     void equalPriorityMessagesProcessedInOrder() throws InterruptedException {
-        testSubject = AxonServerCommandBus.builder()
-                                          .axonServerConnectionManager(axonServerConnectionManager)
-                                          .configuration(configuration)
-                                          .localSegment(localSegment)
-                                          .serializer(serializer)
-                                          .routingStrategy(command -> "RoutingKey")
-                                          .targetContextResolver(targetContextResolver)
-                                          .loadFactorProvider(command -> 36)
-                                          .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
-                                                  1, 1, 5, TimeUnit.SECONDS, q
-                                          ))
-                                          .build();
+        AxonServerCommandBus singleThreadedTestSubject =
+                AxonServerCommandBus.builder()
+                                    .axonServerConnectionManager(axonServerConnectionManager)
+                                    .configuration(configuration)
+                                    .localSegment(localSegment)
+                                    .serializer(serializer)
+                                    .routingStrategy(command -> "RoutingKey")
+                                    .targetContextResolver(targetContextResolver)
+                                    .loadFactorProvider(command -> 36)
+                                    .executorServiceBuilder((c, q) -> new ThreadPoolExecutor(
+                                            1, 1, 5, TimeUnit.SECONDS, q
+                                    ))
+                                    .build();
 
         int commandCount = 1000;
 
@@ -177,14 +178,14 @@ class AxonServerCommandBusTest {
         List<Long> actual = new CopyOnWriteArrayList<>();
 
         AtomicReference<Function<Command, CompletableFuture<CommandResponse>>> commandHandlerRef = new AtomicReference<>();
-        when(axonServerConnectionManager.getConnection()).thenReturn(mockConnection);
+        when(axonServerConnectionManager.getConnection(anyString())).thenReturn(mockConnection);
         doAnswer(i -> {
             commandHandlerRef.set(i.getArgument(0));
             return (io.axoniq.axonserver.connector.Registration) () -> CompletableFuture.completedFuture(null);
         }).when(mockCommandChannel)
           .registerCommandHandler(any(), anyInt(), eq("testCommand"));
 
-        testSubject.subscribe("testCommand", message -> {
+        singleThreadedTestSubject.subscribe("testCommand", message -> {
             startProcessingGate.await();
             actual.add((long) message.getMetaData().get("index"));
             finishProcessingGate.countDown();
@@ -433,5 +434,4 @@ class AxonServerCommandBusTest {
         assertTrue(commandHandled.get());
         assertTrue(dispatchingHasShutdown.isDone());
     }
-
 }
