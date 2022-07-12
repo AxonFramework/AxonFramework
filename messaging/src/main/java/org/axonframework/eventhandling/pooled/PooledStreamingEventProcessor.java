@@ -94,7 +94,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     private final TransactionManager transactionManager;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
-    private final int initialSegmentCount;
     private final Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken;
     private final long tokenClaimInterval;
     private final int maxClaimedSegments;
@@ -161,7 +160,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         this.tokenStore = builder.tokenStore;
         this.transactionManager = builder.transactionManager;
         this.workerExecutor = builder.workerExecutorBuilder.apply(name);
-        this.initialSegmentCount = builder.initialSegmentCount;
         this.initialToken = builder.initialToken;
         this.tokenClaimInterval = builder.tokenClaimInterval;
         this.maxClaimedSegments = builder.maxClaimedSegments;
@@ -183,6 +181,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .claimExtensionThreshold(claimExtensionThreshold)
                                       .clock(clock)
                                       .maxClaimedSegments(maxClaimedSegments)
+                                      .initialSegmentCount(builder.initialSegmentCount)
+                                      .initialToken(initialToken)
                                       .build();
     }
 
@@ -190,23 +190,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     @Override
     public void start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
-        initializeTokenStore();
         coordinator.start();
-    }
-
-    private void initializeTokenStore() {
-        transactionManager.executeInTransaction(() -> {
-            int[] segments = tokenStore.fetchSegments(name);
-            try {
-                if (segments == null || segments.length == 0) {
-                    logger.info("Initializing segments for processor [{}] ({} segments)", name, initialSegmentCount);
-                    tokenStore.initializeTokenSegments(name, initialSegmentCount, initialToken.apply(messageSource));
-                }
-            } catch (Exception e) {
-                logger.info("Error while initializing the Token Store. " +
-                                    "This may simply indicate concurrent attempts to initialize.", e);
-            }
-        });
     }
 
     @Override

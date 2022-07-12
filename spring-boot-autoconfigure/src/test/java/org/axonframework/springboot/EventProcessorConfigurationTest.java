@@ -149,11 +149,6 @@ class EventProcessorConfigurationTest {
                     assertNotNull(pooledProcessor);
                     assertEquals(PooledStreamingEventProcessor.class, pooledProcessor.getClass());
 
-                    int resultInitialSegmentCount = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("initialSegmentCount"), pooledProcessor
-                    );
-                    assertEquals(12, resultInitialSegmentCount);
-
                     long resultTokenClaimInterval = ReflectionUtils.getFieldValue(
                             PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), pooledProcessor
                     );
