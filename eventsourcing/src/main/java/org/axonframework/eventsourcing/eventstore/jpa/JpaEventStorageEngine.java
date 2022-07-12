@@ -154,13 +154,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Returns a batch of event data as object entries in the event storage with a
-     * greater than the given {@code token}.
+     * greater than the given {@code token}.Size of event is decided by batchSize()
      *
      * @param token     Object describing the global index of the last processed event.
-     * @param batchSize The maximum number of events that should be returned
-     * @return A batch of event messages as object stored since the given tracking token
+     * @return A batch of event messages as object stored since the given tracking token.It
      */
-    protected List<Object[]> fetchEvents(GapAwareTrackingToken token, int batchSize) {
+    protected List<Object[]> fetchEvents(GapAwareTrackingToken token) {
         TypedQuery<Object[]> query;
         if (token == null || token.getGaps().isEmpty()) {
             query = entityManager().createQuery(
@@ -178,7 +177,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             ).setParameter("gaps", token.getGaps());
         }
         return query.setParameter("token", token == null ? -1L : token.getIndex())
-                .setMaxResults(batchSize)
+                .setMaxResults(batchSize())
                 .getResultList();
     }
 
@@ -192,7 +191,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
 
-        List<Object[]> entries = transactionManager.fetchInTransaction(() -> fetchEvents(previousToken, batchSize));
+        List<Object[]> entries = transactionManager.fetchInTransaction(() -> fetchEvents(previousToken));
         List<TrackedEventData<?>> result = new ArrayList<>();
         GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
