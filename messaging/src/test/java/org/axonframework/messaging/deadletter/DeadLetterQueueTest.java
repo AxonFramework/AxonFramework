@@ -23,6 +23,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -290,6 +292,62 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertTrue(testSubject.contains(testId));
         assertFalse(testSubject.contains(otherTestId));
         assertFalse(testSubject.contains(otherTestIdWithSameGroup));
+    }
+
+    @Test
+    void testDeadLetters() {
+        I testId = generateQueueId();
+
+        Iterator<DeadLetter<M>> resultIterator = testSubject.deadLetters(testId).iterator();
+        assertFalse(resultIterator.hasNext());
+
+        DeadLetter<M> expected = testSubject.enqueue(testId, generateMessage(), generateThrowable());
+
+        resultIterator = testSubject.deadLetters(testId).iterator();
+        assertTrue(resultIterator.hasNext());
+        assertEquals(expected, resultIterator.next());
+        assertFalse(resultIterator.hasNext());
+    }
+
+    @Test
+    void testDeadLetterSequences() {
+        I thisTestId = generateQueueId("first");
+        I thatTestId = generateQueueId("second");
+        int numberOfSequences = 2;
+
+        Iterator<DeadLetterSequence<M>> sequenceIterator = testSubject.deadLetterSequences().iterator();
+        assertFalse(sequenceIterator.hasNext());
+
+        DeadLetter<M> thisFirstExpected = testSubject.enqueue(thisTestId, generateMessage(), generateThrowable());
+        DeadLetter<M> thatFirstExpected = testSubject.enqueue(thatTestId, generateMessage(), generateThrowable());
+        DeadLetter<M> thisSecondExpected = testSubject.enqueue(thisTestId, generateMessage(), generateThrowable());
+        DeadLetter<M> thatSecondExpected = testSubject.enqueue(thatTestId, generateMessage(), generateThrowable());
+
+        sequenceIterator = testSubject.deadLetterSequences().iterator();
+
+        for (int i = 0; i < numberOfSequences; i++) {
+            assertTrue(sequenceIterator.hasNext());
+            DeadLetterSequence<M> resultSequence = sequenceIterator.next();
+            QueueIdentifier resultQueueId = resultSequence.queueIdentifier();
+            if (Objects.equals(thisTestId, resultQueueId)) {
+                Iterator<DeadLetter<M>> thisSequenceIterator = resultSequence.sequence().iterator();
+                assertTrue(thisSequenceIterator.hasNext());
+                assertEquals(thisFirstExpected, thisSequenceIterator.next());
+                assertTrue(thisSequenceIterator.hasNext());
+                assertEquals(thisSecondExpected, thisSequenceIterator.next());
+                assertFalse(thisSequenceIterator.hasNext());
+            } else if (Objects.equals(thatTestId, resultQueueId)) {
+                Iterator<DeadLetter<M>> thatSequenceIterator = resultSequence.sequence().iterator();
+                assertTrue(thatSequenceIterator.hasNext());
+                assertEquals(thatFirstExpected, thatSequenceIterator.next());
+                assertTrue(thatSequenceIterator.hasNext());
+                assertEquals(thatSecondExpected, thatSequenceIterator.next());
+                assertFalse(thatSequenceIterator.hasNext());
+            } else {
+                fail("The sequences contained an unexpected queue identifier [" + resultQueueId + "]");
+            }
+        }
+        assertFalse(sequenceIterator.hasNext());
     }
 
     @Test

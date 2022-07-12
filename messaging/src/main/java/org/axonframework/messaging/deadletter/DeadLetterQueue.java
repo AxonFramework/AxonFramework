@@ -98,6 +98,21 @@ public interface DeadLetterQueue<T extends Message<?>> {
     boolean contains(@Nonnull QueueIdentifier identifier);
 
     /**
+     * Return all the {@link DeadLetter dead letters} for the given {@code identifier} in insert order.
+     *
+     * @return All the {@link DeadLetter dead letters} for the given {@code identifier} in insert order.
+     */
+    Iterable<DeadLetter<T>> deadLetters(@Nonnull QueueIdentifier identifier);
+
+    /**
+     * Return all {@link DeadLetterSequence dead letter sequences} held by this queue. The sequences are not necessarily
+     * returned in insert order.
+     *
+     * @return All {@link DeadLetterSequence dead letter sequences} held by this queue.
+     */
+    Iterable<DeadLetterSequence<T>> deadLetterSequences();
+
+    /**
      * Validates whether this queue is full for the given {@link QueueIdentifier}.
      * <p>
      * This method returns {@code true} either when {@link #maxQueues()} is reached or when the {@link #maxQueueSize()}

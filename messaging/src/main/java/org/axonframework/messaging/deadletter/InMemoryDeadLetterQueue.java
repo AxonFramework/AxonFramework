@@ -25,7 +25,9 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -185,6 +187,21 @@ public class InMemoryDeadLetterQueue<T extends Message<?>> extends SchedulingDea
             logger.debug("Validating existence of sequence identifier [{}].", identifier.combinedIdentifier());
         }
         return deadLetters.containsKey(identifier);
+    }
+
+    @Override
+    public Iterable<DeadLetter<T>> deadLetters(@Nonnull QueueIdentifier identifier) {
+        return contains(identifier) ? new ArrayList<>(deadLetters.get(identifier)) : Collections.emptyList();
+    }
+
+    @Override
+    public Iterable<DeadLetterSequence<T>> deadLetterSequences() {
+        return deadLetters.entrySet()
+                          .stream()
+                          .map(entry -> new GenericDeadLetterSequence<>(
+                                  entry.getKey(), new ArrayList<>(entry.getValue())
+                          ))
+                          .collect(Collectors.toList());
     }
 
     @Override
