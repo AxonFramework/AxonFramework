@@ -93,8 +93,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
- * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and {@code
- * eventsourcing} modules.
+ * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and
+ * {@code eventsourcing} modules.
  *
  * @author Rene de Waele
  */
@@ -236,7 +236,9 @@ class TrackingEventProcessorTest {
         InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
         SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
 
-        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
+        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder()
+                                                                .storageEngine(sequenceEventStorageEngine)
+                                                                .build();
 
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                          .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
@@ -711,8 +713,10 @@ class TrackingEventProcessorTest {
         eventBus.publish(createEvents(5));
         AtomicBoolean fail = new AtomicBoolean(true);
         when(eventBus.openStream(any())).then(invocationOnMock -> {
-           if (fail.get()) throw new MockException();
-           return invocationOnMock.callRealMethod();
+            if (fail.get()) {
+                throw new MockException();
+            }
+            return invocationOnMock.callRealMethod();
         });
 
         List<EventMessage<?>> acknowledgedEvents = new ArrayList<>();
@@ -739,7 +743,11 @@ class TrackingEventProcessorTest {
         fail.set(false);
         assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
         assertEquals(5, acknowledgedEvents.size());
-        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(EventTrackerStatus::isErrorState).findFirst();
+        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus()
+                                                               .values()
+                                                               .stream()
+                                                               .filter(EventTrackerStatus::isErrorState)
+                                                               .findFirst();
         assertThat("no processor in error state when open stream succeeds again", !inErrorState.isPresent());
     }
 
@@ -1928,7 +1936,8 @@ class TrackingEventProcessorTest {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+        when(tokenStore.fetchAvailableSegments(testSubject.getName()))
+                .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
         testSubject.start();
 
@@ -1936,13 +1945,12 @@ class TrackingEventProcessorTest {
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
-        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+        verify(tokenStore, never())
+                .fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
     @Test
     void testShutdownTerminatesWorkersAfterConfiguredWorkerTerminationTimeout() throws Exception {
-        int numberOfEvents = 5;
-        List<String> handled = new CopyOnWriteArrayList<>();
         int testWorkerTerminationTimeout = 50;
         List<Thread> createdThreads = new CopyOnWriteArrayList<>();
         // A higher event availability timeout will block a worker thread that should shut down
