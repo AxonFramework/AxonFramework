@@ -154,10 +154,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Returns a batch of event data as object entries in the event storage with a
-     * greater than the given {@code token}.Size of event is decided by batchSize()
+     * greater than the given {@code token}. Size of event is decided by {@link #batchSize()}.
      *
-     * @param token     Object describing the global index of the last processed event.
-     * @return A batch of event messages as object stored since the given tracking token.It
+     * @param token Object describing the global index of the last processed event.
+     * @return A batch of event messages as object stored since the given tracking token.
      */
     protected List<Object[]> fetchEvents(GapAwareTrackingToken token) {
         TypedQuery<Object[]> query;
@@ -177,8 +177,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             ).setParameter("gaps", token.getGaps());
         }
         return query.setParameter("token", token == null ? -1L : token.getIndex())
-                .setMaxResults(batchSize())
-                .getResultList();
+                    .setMaxResults(batchSize())
+                    .getResultList();
     }
 
     @Override
