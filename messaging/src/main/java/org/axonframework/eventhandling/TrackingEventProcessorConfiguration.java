@@ -218,6 +218,18 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the shutdown timeout to terminate active workers. Defaults to 5000ms.
+     *
+     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeout) {
+        assertStrictPositive(workerTerminationTimeout, "The worker termination timeout should be strictly positive");
+        this.workerTerminationTimeout = workerTerminationTimeout;
+        return this;
+    }
+
+    /**
      * @return the maximum number of events to process in a single batch.
      */
     public int getBatchSize() {

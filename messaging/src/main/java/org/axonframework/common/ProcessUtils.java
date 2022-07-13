@@ -1,6 +1,8 @@
 package org.axonframework.common;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -48,5 +50,31 @@ public abstract class ProcessUtils {
         }
 
         throw lastException;
+    }
+
+    /**
+     * Executes an action, with potential retry in case the result is false. Exception handling should be taken care of
+     * within the action if needed.
+     *
+     * @param runnable      action to execute, will be executed till the result is true, or max tries is reached
+     * @param retryInterval time to wait between retries of the action
+     * @param maxTries      maximum number of times the action is invoked
+     */
+    public static void executeUntilTrue(BooleanSupplier runnable, long retryInterval, long maxTries) {
+        AtomicLong totalTriesCounter = new AtomicLong();
+        boolean result = runnable.getAsBoolean();
+        while (!result) {
+            if (totalTriesCounter.incrementAndGet() >= maxTries){
+                throw new ProcessRetriesExhaustedException(String.format(
+                        "Tried invoking the action for %d times, without the result being true",
+                        maxTries));
+            }
+            try {
+                Thread.sleep(retryInterval);
+                result = runnable.getAsBoolean();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

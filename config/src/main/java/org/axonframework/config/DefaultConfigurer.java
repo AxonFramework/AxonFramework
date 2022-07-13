@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -126,8 +127,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final Runnable NOTHING = () -> {
-    };
+
+    private static final Runnable NOTHING = () -> {};
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -718,6 +719,15 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerHandlerDefinition(
             @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
+        return this;
+    }
+
+    @Override
+    public Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
+        assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
+        assertNonNull(timeUnit, "The lifecycle phase time unit should not be null");
+        this.lifecyclePhaseTimeout = timeout;
+        this.lifecyclePhaseTimeunit = timeUnit;
         return this;
     }
 
