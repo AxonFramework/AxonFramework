@@ -35,6 +35,7 @@ import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
@@ -117,7 +118,7 @@ class WorkPackageTest {
      * The "last delivered token" is configured as the initialToken for a fresh WorkPackage.
      */
     @Test
-    void testScheduleEventDoesNotScheduleIfTheLastDeliveredTokenCoversAndDoesNotEqualTheEventsToken() {
+    void testScheduleEventDoesNotScheduleIfTheLastDeliveredTokenCoversTheEventsToken() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
                 new GlobalSequenceTrackingToken(1L), GenericEventMessage.asEventMessage("some-event")
         );
@@ -262,35 +263,6 @@ class WorkPackageTest {
         assertEquals(expectedAdvancedToken, ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
     }
 
-    /**
-     * The "last delivered token" is configured as the initialToken for a fresh WorkPackage.
-     */
-    @Test
-    void testScheduleEventIsScheduledIfTheLastDeliveredTokenEqualsTheEventsToken() {
-        TrackedEventMessage<String> expectedEvent = new GenericTrackedEventMessage<>(
-                initialTrackingToken, GenericEventMessage.asEventMessage("some-event")
-        );
-
-        testSubject.scheduleEvent(expectedEvent);
-
-        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
-        assertEquals(expectedEvent, validatedEvents.get(0));
-
-        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
-        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
-
-        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
-        assertEquals(initialTrackingToken, tokenCaptor.getValue());
-
-        assertEquals(1, trackerStatusUpdates.size());
-        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
-        assertTrue(resultPosition.isPresent());
-        assertEquals(0L, resultPosition.getAsLong());
-    }
-
     @Test
     void testScheduleEventExtendsTokenClaimAfterClaimThresholdExtension() {
         // The short threshold ensures the packages assume the token should be reclaimed.
@@ -370,7 +342,7 @@ class WorkPackageTest {
         testSubject.scheduleWorker();
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertNull(trackerStatus));
-        assertTrue(result.isDone());
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
         assertNull(result.get());
     }
 
@@ -420,6 +392,121 @@ class WorkPackageTest {
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
         assertEquals(originalAbortReason, result.get());
+    }
+
+    @Test
+    void testScheduleEventsReturnsFalseForEmptyList() {
+        assertFalse(testSubject.scheduleEvents(Collections.emptyList()));
+    }
+
+    @Test
+    void testScheduleEventsThrowsIllegalArgumentExceptionForNoneMatchingTokens() {
+        TrackingToken testTokenOne = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> testEventOne =
+                new GenericTrackedEventMessage<>(testTokenOne, GenericEventMessage.asEventMessage("this-event"));
+        TrackingToken testTokenTwo = new GlobalSequenceTrackingToken(2L);
+        TrackedEventMessage<String> testEventTwo =
+                new GenericTrackedEventMessage<>(testTokenTwo, GenericEventMessage.asEventMessage("that-event"));
+        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        testEvents.add(testEventOne);
+        testEvents.add(testEventTwo);
+
+        assertThrows(IllegalArgumentException.class, () -> testSubject.scheduleEvents(testEvents));
+    }
+
+    /**
+     * The "last delivered token" is configured as the initialToken for a fresh WorkPackage.
+     */
+    @Test
+    void testScheduleEventsDoesNotScheduleIfTheLastDeliveredTokensCoversTheEventsToken() {
+        TrackingToken testToken = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> testEventOne =
+                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("this-event"));
+        TrackedEventMessage<String> testEventTwo =
+                new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("that-event"));
+        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        testEvents.add(testEventOne);
+        testEvents.add(testEventTwo);
+
+        WorkPackage testSubjectWithCustomInitialToken =
+                testSubjectBuilder.initialToken(new GlobalSequenceTrackingToken(2L))
+                                  .build();
+
+        boolean result = testSubjectWithCustomInitialToken.scheduleEvents(testEvents);
+
+        assertFalse(result);
+        verifyNoInteractions(executorService);
+    }
+
+    @Test
+    void testScheduleEventsReturnsTrueIfOnlyOneEventIsAcceptedByTheEventValidator() {
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> filteredEvent =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("this-event"));
+        TrackedEventMessage<String> expectedEvent =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("that-event"));
+        List<TrackedEventMessage<?>> testEvents = new ArrayList<>();
+        testEvents.add(filteredEvent);
+        testEvents.add(expectedEvent);
+
+        eventFilterPredicate = event -> !event.equals(filteredEvent);
+
+        boolean result = testSubject.scheduleEvents(testEvents);
+
+        assertTrue(result);
+
+        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
+        assertTrue(validatedEvents.containsAll(testEvents));
+
+        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        assertEquals(expectedEvent.trackingToken(), ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+
+        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        assertEquals(expectedToken, tokenCaptor.getValue());
+
+        assertEquals(1, trackerStatusUpdates.size());
+        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+        assertTrue(resultPosition.isPresent());
+        assertEquals(1L, resultPosition.getAsLong());
+    }
+
+    @Test
+    void testScheduleEventsHandlesAllEventsInOneTransactionWhenAllEventsCanBeHandled() {
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        TrackedEventMessage<String> expectedEventOne =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("this-event"));
+        TrackedEventMessage<String> expectedEventTwo =
+                new GenericTrackedEventMessage<>(expectedToken, GenericEventMessage.asEventMessage("that-event"));
+        List<TrackedEventMessage<?>> expectedEvents = new ArrayList<>();
+        expectedEvents.add(expectedEventOne);
+        expectedEvents.add(expectedEventTwo);
+
+        boolean result = testSubject.scheduleEvents(expectedEvents);
+
+        assertTrue(result);
+
+        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
+        assertTrue(validatedEvents.containsAll(expectedEvents));
+
+        List<EventMessage<?>> processedEvents = batchProcessor.getProcessedEvents();
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, processedEvents.size()));
+        assertEquals(expectedEventOne.trackingToken(),
+                     ((TrackedEventMessage<?>) processedEvents.get(0)).trackingToken());
+        assertEquals(expectedEventTwo.trackingToken(),
+                     ((TrackedEventMessage<?>) processedEvents.get(1)).trackingToken());
+
+        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        assertEquals(expectedToken, tokenCaptor.getValue());
+
+        assertTrue(trackerStatusUpdates.size() >= 1);
+        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+        assertTrue(resultPosition.isPresent());
+        assertEquals(1L, resultPosition.getAsLong());
     }
 
     private class TestEventFilter implements WorkPackage.EventFilter {

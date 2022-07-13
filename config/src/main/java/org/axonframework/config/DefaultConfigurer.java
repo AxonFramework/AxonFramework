@@ -126,8 +126,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final Runnable NOTHING = () -> {
-    };
+
+    private static final Runnable NOTHING = () -> {};
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -207,13 +207,12 @@ public class DefaultConfigurer implements Configurer {
      * {@link SimpleEventBus}, indicating whether to {@code autoLocateConfigurerModules}.
      * <p>
      * When {@code autoLocateConfigurerModules} is {@code true}, a ServiceLoader will be used to locate all declared
-     * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to
-     * set default values for the configuration.
+     * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to set
+     * default values for the configuration.
      *
      * @param autoLocateConfigurerModules flag indicating whether ConfigurerModules on the classpath should be
      *                                    automatically retrieved. Should be set to {@code false} when using an
      *                                    application container, such as Spring or CDI.
-     *
      * @return Configurer instance for further configuration.
      */
     public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
@@ -237,7 +236,6 @@ public class DefaultConfigurer implements Configurer {
      *
      * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
      * @param transactionManager    TransactionManager to be used for accessing the entity manager.
-     *
      * @return A Configurer instance for further configuration.
      */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider,
@@ -279,7 +277,6 @@ public class DefaultConfigurer implements Configurer {
      * {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
      *
      * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
-     *
      * @return A Configurer instance for further configuration.
      */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
@@ -293,7 +290,6 @@ public class DefaultConfigurer implements Configurer {
      * @param type          The type of component to find a default for.
      * @param configuration The configuration the component is configured in.
      * @param <T>           The type of component.
-     *
      * @return An Optional containing a default component, or empty if none can be provided.
      */
     protected <T> Optional<T> defaultComponent(Class<T> type, Configuration configuration) {
@@ -305,7 +301,6 @@ public class DefaultConfigurer implements Configurer {
      * commands.
      *
      * @param config The configuration that supplies the command bus.
-     *
      * @return The default command gateway.
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
@@ -317,7 +312,6 @@ public class DefaultConfigurer implements Configurer {
      * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch queries.
      *
      * @param config The configuration that supplies the query bus.
-     *
      * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
@@ -329,7 +323,6 @@ public class DefaultConfigurer implements Configurer {
      * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
@@ -356,7 +349,6 @@ public class DefaultConfigurer implements Configurer {
      * default.
      *
      * @param config The configuration based on which the component is initialized
-     *
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
@@ -374,7 +366,6 @@ public class DefaultConfigurer implements Configurer {
      * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default ParameterResolverFactory to use.
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
@@ -387,7 +378,6 @@ public class DefaultConfigurer implements Configurer {
      * Provides the default HandlerDefinition. Subclasses may override this method to provide their own default.
      *
      * @param inspectedClass The class being inspected for handlers
-     *
      * @return The default HandlerDefinition to use
      */
     protected HandlerDefinition defaultHandlerDefinition(Class<?> inspectedClass) {
@@ -396,10 +386,10 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own default.
+     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own
+     * default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
@@ -422,11 +412,10 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given {@code config
-     * Configuration}.
+     * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given
+     * {@code config Configuration}.
      *
      * @param config The configuration that supplies registered components.
-     *
      * @return A resource injector that supplies components registered with the configuration.
      */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
@@ -436,11 +425,10 @@ public class DefaultConfigurer implements Configurer {
 
     /**
      * Returns a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
-     * used by a {@link DeadlineManager}. Uses the given {@code config} to construct the default {@link
-     * ConfigurationScopeAwareProvider}.
+     * used by a {@link DeadlineManager}. Uses the given {@code config} to construct the default
+     * {@link ConfigurationScopeAwareProvider}.
      *
      * @param config the configuration used to construct the default {@link ConfigurationScopeAwareProvider}
-     *
      * @return a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
      * used by a {@link DeadlineManager}
      */
@@ -454,7 +442,6 @@ public class DefaultConfigurer implements Configurer {
      * own default.
      *
      * @param config The configuration that supplies registered components.
-     *
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
@@ -467,7 +454,6 @@ public class DefaultConfigurer implements Configurer {
      * Provides the default EventBus implementation. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default EventBus to use.
      */
     protected EventBus defaultEventBus(Configuration config) {
@@ -478,11 +464,9 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Returns a {@link DefaultEventGateway} that will use the configuration's {@link EventBus} to publish
-     * events.
+     * Returns a {@link DefaultEventGateway} that will use the configuration's {@link EventBus} to publish events.
      *
      * @param config The configuration that supplies the event bus.
-     *
      * @return The default event gateway.
      */
     protected EventGateway defaultEventGateway(Configuration config) {
@@ -491,10 +475,10 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default Serializer implementation. Subclasses may override this method to provide their own default.
+     * Provides the default Serializer implementation. Subclasses may override this method to provide their own
+     * default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
@@ -510,7 +494,6 @@ public class DefaultConfigurer implements Configurer {
      * default.
      *
      * @param config The configuration based on which the component is initialized.
-     *
      * @return The default EventUpcasterChain to use.
      */
     protected EventUpcasterChain defaultUpcasterChain(Configuration config) {
@@ -523,7 +506,6 @@ public class DefaultConfigurer implements Configurer {
      * may override this method to provide their own default.
      *
      * @param config the configuration based on which the {@link Snapshotter} will be initialized
-     *
      * @return the default {@link Snapshotter}
      */
     protected Snapshotter defaultSnapshotter(Configuration config) {
@@ -550,11 +532,11 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
-     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per aggregate class, as potentially
-     * users would be able to define different {@link ClassLoader} instances per aggregate. For now we have deduced the
-     * latter to be to much of an edge case. Hence we assume users will use the same ClassLoader for differing
-     * aggregates within a single configuration.
+     * The class is required to be provided in case the
+     * {@code ClasspathHandlerDefinition is used to retrieve the {@link HandlerDefinition}. Ideally, a {@code
+     * HandlerDefinition} would be retrieved per aggregate class, as potentially users would be able to define different
+     * {@link ClassLoader} instances per aggregate. For now we have deduced the latter to be to much of an edge case.
+     * Hence we assume users will use the same ClassLoader for differing aggregates within a single configuration.
      */
     private HandlerDefinition retrieveHandlerDefinition(Configuration configuration,
                                                         List<AggregateConfiguration<?>> aggregateConfigurations) {
@@ -836,7 +818,6 @@ public class DefaultConfigurer implements Configurer {
 
             List<LifecycleHandler> handlers = phasedHandlers.getValue();
             try {
-                //noinspection Convert2MethodRef
                 handlers.stream()
                         .map(LifecycleHandler::run)
                         .map(c -> c.thenRun(NOTHING))
