@@ -157,7 +157,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier) {
-        if (Objects.equals(storageEngine().eventSerializer, storageEngine().snapshotSerializer)) {
+        if (!storageEngine().snapshotFilterSet && Objects.equals(storageEngine().eventSerializer, storageEngine().snapshotSerializer)) {
             return storageEngine().readEventsWithAutoSnapshot(aggregateIdentifier, storageEngine().eventSerializer);
         }
         return super.readEvents(aggregateIdentifier);
