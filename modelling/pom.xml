@@ -196,6 +196,9 @@
                         <configuration>
                             <includes>
                                 <include>**/MockException.*</include>
+                                <include>**/TestSerializer.*</include>
+                                <include>**/StubSaga.*</include>
+                                <include>**/CustomSerializedSaga.*</include>
                             </includes>
                         </configuration>
                     </execution>
