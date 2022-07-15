@@ -188,6 +188,8 @@
                                 <include>**/TestSerializer.*</include>
                                 <include>**/EventStoreTestUtils.*</include>
                                 <!-- End of test classes exported for Jakarta extension reuse -->
+                                <include>**/TestSerializer.*</include>
+                                <include>**/EventStoreTestUtils.*</include>
                             </includes>
                         </configuration>
                     </execution>
