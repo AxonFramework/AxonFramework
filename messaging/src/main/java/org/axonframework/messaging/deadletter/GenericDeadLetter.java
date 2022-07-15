@@ -1,26 +1,10 @@
-/*
- * Copyright (c) 2010-2022. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
@@ -30,80 +14,50 @@ import javax.annotation.Nullable;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
+class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
 
     private final String identifier;
     private final QueueIdentifier queueIdentifier;
-    private final T message;
+    private final M message;
     private final Cause cause;
-    private Instant expiresAt;
-    private final int numberOfRetries;
-    private final Instant deadLettered;
-    private final Consumer<DeadLetter<T>> acknowledgeOperation;
-    private final Consumer<DeadLetter<T>> requeueOperation;
+    private final Instant enqueueAt;
+    private final Consumer<GenericDeadLetter<M>> evict;
+    private final Consumer<GenericDeadLetter<M>> release;
 
-    GenericDeadLetter(DeadLetter<T> letter,
-                      Instant expiresAt,
-                      Consumer<DeadLetter<T>> acknowledgeOperation,
-                      Consumer<DeadLetter<T>> requeueOperation) {
-        this(letter.identifier(),
-             letter.queueIdentifier(),
-             letter.message(),
-             letter.cause(),
-             letter.deadLettered(),
-             expiresAt,
-             letter.numberOfRetries() + 1,
-             acknowledgeOperation,
-             requeueOperation);
+    public GenericDeadLetter(QueueIdentifier queueIdentifier,
+                             M message,
+                             Throwable cause,
+                             Instant enqueueAt,
+                             Consumer<GenericDeadLetter<M>> evict,
+                             Consumer<GenericDeadLetter<M>> release) {
+        this(IdentifierFactory.getInstance().generateIdentifier(),
+             queueIdentifier, message, cause != null ? new GenericCause(cause) : null, enqueueAt, evict, release);
     }
 
-    GenericDeadLetter(QueueIdentifier queueIdentifier,
-                      T message,
-                      Throwable cause,
-                      Instant deadLettered,
-                      Instant expiresAt,
-                      Consumer<DeadLetter<T>> acknowledgeOperation,
-                      Consumer<DeadLetter<T>> requeueOperation) {
-        this(queueIdentifier,
-             message,
-             cause != null ? new GenericCause(cause) : null,
-             deadLettered,
-             expiresAt,
-             0,
-             acknowledgeOperation,
-             requeueOperation);
+    public GenericDeadLetter(String identifier,
+                             QueueIdentifier queueIdentifier,
+                             M message,
+                             Throwable cause,
+                             Instant enqueueAt,
+                             Consumer<GenericDeadLetter<M>> evict,
+                             Consumer<GenericDeadLetter<M>> release) {
+        this(identifier, queueIdentifier, message, new GenericCause(cause), enqueueAt, evict, release);
     }
 
-    GenericDeadLetter(QueueIdentifier queueIdentifier,
-                      T message,
-                      Cause cause,
-                      Instant deadLettered,
-                      Instant expiresAt,
-                      int numberOfRetries,
-                      Consumer<DeadLetter<T>> acknowledgeOperation,
-                      Consumer<DeadLetter<T>> requeueOperation) {
-        this(UUID.randomUUID().toString(), queueIdentifier, message, cause, deadLettered, expiresAt, numberOfRetries,
-             acknowledgeOperation, requeueOperation);
-    }
-
-    GenericDeadLetter(String identifier,
-                      QueueIdentifier queueIdentifier,
-                      T message,
-                      Cause cause,
-                      Instant deadLettered,
-                      Instant expiresAt,
-                      int numberOfRetries,
-                      Consumer<DeadLetter<T>> acknowledgeOperation,
-                      Consumer<DeadLetter<T>> requeueOperation) {
+    public GenericDeadLetter(String identifier,
+                             QueueIdentifier queueIdentifier,
+                             M message,
+                             Cause cause,
+                             Instant enqueueAt,
+                             Consumer<GenericDeadLetter<M>> evict,
+                             Consumer<GenericDeadLetter<M>> release) {
         this.identifier = identifier;
         this.queueIdentifier = queueIdentifier;
         this.message = message;
         this.cause = cause;
-        this.deadLettered = deadLettered;
-        this.expiresAt = expiresAt;
-        this.numberOfRetries = numberOfRetries;
-        this.acknowledgeOperation = acknowledgeOperation;
-        this.requeueOperation = requeueOperation;
+        this.enqueueAt = enqueueAt;
+        this.evict = evict;
+        this.release = release;
     }
 
     @Override
@@ -117,43 +71,29 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
     }
 
     @Override
-    public T message() {
+    public M message() {
         return message;
     }
 
-    @Override
     @Nullable
+    @Override
     public Cause cause() {
         return cause;
     }
 
     @Override
-    public Instant deadLettered() {
-        return deadLettered;
+    public Instant enqueuedAt() {
+        return enqueueAt;
     }
 
     @Override
-    public Instant expiresAt() {
-        return expiresAt;
-    }
-
-    public void setExpiresAt(Instant expiresAt) {
-        this.expiresAt = expiresAt;
+    public void evict() {
+        evict.accept(this);
     }
 
     @Override
-    public int numberOfRetries() {
-        return numberOfRetries;
-    }
-
-    @Override
-    public void acknowledge() {
-        acknowledgeOperation.accept(this);
-    }
-
-    @Override
-    public void requeue() {
-        requeueOperation.accept(this);
+    public void release() {
+        release.accept(this);
     }
 
     @Override
@@ -165,32 +105,28 @@ class GenericDeadLetter<T extends Message<?>> implements DeadLetter<T> {
             return false;
         }
 
-        // Check does not include the expiresAt, numberOfRetries, acknowledge,
-        //  and requeue operations to allow easy letter removal in the DeadLetterQueue.
-        //noinspection unchecked
-        GenericDeadLetter<T> that = (GenericDeadLetter<T>) o;
+        // Check does not include evict and release operations to allow easy letter removal in the DeadLetterQueue.
+        GenericDeadLetter<?> that = (GenericDeadLetter<?>) o;
         return Objects.equals(identifier, that.identifier)
                 && Objects.equals(queueIdentifier, that.queueIdentifier)
                 && Objects.equals(message, that.message)
                 && Objects.equals(cause, that.cause)
-                && Objects.equals(deadLettered, that.deadLettered);
+                && Objects.equals(enqueueAt, that.enqueueAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(identifier, queueIdentifier, message, cause, expiresAt, deadLettered, acknowledgeOperation);
+        return Objects.hash(identifier, queueIdentifier, message, cause, enqueueAt);
     }
 
     @Override
     public String toString() {
-        return "DeadLetter" +
-                "identifier=" + queueIdentifier +
+        return "GenericDeadLetter{" +
+                "identifier='" + identifier + '\'' +
                 ", queueIdentifier=" + queueIdentifier +
                 ", message=" + message +
                 ", cause=" + cause +
-                ", expiresAt=" + expiresAt +
-                ", numberOfRetries=" + numberOfRetries +
-                ", deadLettered=" + deadLettered +
+                ", enqueueAt=" + enqueueAt +
                 '}';
     }
 }

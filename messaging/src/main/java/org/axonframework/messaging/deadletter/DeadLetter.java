@@ -24,16 +24,16 @@ import javax.annotation.Nullable;
 /**
  * Interface describing a dead-lettered {@link Message} implementation of generic type {@code T}.
  * <p>
- * The time of storing the {@link #message()} is kept through {@link #deadLettered()}. This letter can be regarded for
- * evaluation once the {@link #expiresAt()} time is reached. Upon successful evaluation the letter can be cleared
- * through {@link #acknowledge()}. The {@link #requeue()} method should be used to signal evaluation failed, reentering
+ * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. This letter can be regarded for
+ * evaluation once the {@code #expiresAt()} time is reached. Upon successful evaluation the letter can be cleared
+ * through {@code #acknowledge()}. The {@code #requeue()} method should be used to signal evaluation failed, reentering
  * the letter into its queue.
  *
- * @param <T> The type of {@link Message} represented by this interface.
+ * @param <M> The type of {@link Message} represented by this interface.
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public interface DeadLetter<T extends Message<?>> {
+public interface DeadLetter<M extends Message<?>> {
 
     /**
      * The identifier of this dead-letter.
@@ -54,7 +54,7 @@ public interface DeadLetter<T extends Message<?>> {
      *
      * @return The {@link Message} of type {@code T} contained in this letter.
      */
-    T message();
+    M message();
 
     /**
      * The {@link Cause cause} for the {@link #message()} to be dead-lettered. May be {@code null} in case this letter
@@ -66,41 +66,19 @@ public interface DeadLetter<T extends Message<?>> {
     Cause cause();
 
     /**
-     * The moment in time when the {@link #message()} was dead-lettered.
+     * The moment in time when the {@link #message()} was entered in a dead-letter queue.
      *
-     * @return The moment in time when the {@link #message()} was dead-lettered.
+     * @return The moment in time when the {@link #message()} was entered in a dead-letter queue.
      */
-    Instant deadLettered();
+    Instant enqueuedAt();
 
     /**
-     * The moment in time when this letter will expire. Should be used to deduce whether the letter is ready to be
-     * evaluated. Will equal the {@link #deadLettered()} value if this letter is enqueued as part of a sequence to
-     * ensure it is available right after a previous letter within the same sequence.
-     *
-     * @return The moment in time when this letter will expire.
+     * Remove from the queue
      */
-    Instant expiresAt();
+    void evict();
 
     /**
-     * The number of retries this {@link DeadLetter dead-letter} has gone through.
-     *
-     * @return The number of retries this {@link DeadLetter dead-letter} has gone through.
+     * Release claim on this letter
      */
-    int numberOfRetries();
-
-    /**
-     * Acknowledges this {@link DeadLetter dead-letter} as successfully evaluated. This operation will remove this
-     * letter from its queue.
-     */
-    void acknowledge();
-
-    /**
-     * Reenters this {@link DeadLetter dead-letter} in the queue it originates from. This method should be used to
-     * signal the evaluation failed.
-     * <p>
-     * The operation will adjust the {@link #expiresAt()} to the current time and increment the
-     * {@link #numberOfRetries()}. This operation might remove this letter from the {@link DeadLetterQueue queue} it
-     * originated from.
-     */
-    void requeue();
+    void release();
 }

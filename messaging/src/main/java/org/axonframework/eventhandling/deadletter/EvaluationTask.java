@@ -95,7 +95,6 @@ class EvaluationTask implements Runnable {
             }
         }
 
-
         logger.debug("Ending the evaluation task as there are no dead-letters for queue [{}] present or left.",
                      processingGroup);
     }

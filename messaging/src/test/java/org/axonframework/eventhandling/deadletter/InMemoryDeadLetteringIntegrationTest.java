@@ -19,8 +19,10 @@ package org.axonframework.eventhandling.deadletter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.DeadLetterQueue;
 import org.axonframework.messaging.deadletter.InMemoryDeadLetterQueue;
+import org.axonframework.messaging.deadletter.IntervalRetryPolicy;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link InMemoryDeadLetterQueue}
@@ -34,6 +36,7 @@ class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegration
     DeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
         return InMemoryDeadLetterQueue.<EventMessage<?>>builder()
                                       .expireThreshold(Duration.ofMillis(50))
+                                      .retryPolicy(new IntervalRetryPolicy<>(50, TimeUnit.MILLISECONDS))
                                       .build();
     }
 }

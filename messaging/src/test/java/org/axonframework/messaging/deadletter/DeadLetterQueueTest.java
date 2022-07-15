@@ -79,7 +79,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
     abstract M generateMessage();
 
     /**
-     * Set the {@link Clock} used by this test. Use this to influence the {@link DeadLetter#deadLettered()} and
+     * Set the {@link Clock} used by this test. Use this to influence the {@link DeadLetter#enqueuedAt()} and
      * {@link DeadLetter#expiresAt()} times.
      *
      * @param clock The clock to use during testing.
@@ -109,7 +109,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testDeadLetter, result.message());
         assertEquals(expectedCause(testThrowable), result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedDeadLettered, result.enqueuedAt());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
     }
@@ -166,7 +166,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
         assertEquals(expectedCause(testThrowable), result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedDeadLettered, result.enqueuedAt());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
 
@@ -222,7 +222,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
         assertEquals(expectedCause(testThrowable), enqueueResult.cause());
-        assertEquals(expectedDeadLettered, enqueueResult.deadLettered());
+        assertEquals(expectedDeadLettered, enqueueResult.enqueuedAt());
         assertEquals(expectedExpireAt, enqueueResult.expiresAt());
         assertEquals(0, enqueueResult.numberOfRetries());
 
@@ -255,7 +255,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, enqueueResult.queueIdentifier());
         assertEquals(testFirstLetter, enqueueResult.message());
         assertEquals(expectedCause(testThrowable), enqueueResult.cause());
-        assertEquals(expectedFirstDeadLettered, enqueueResult.deadLettered());
+        assertEquals(expectedFirstDeadLettered, enqueueResult.enqueuedAt());
         assertEquals(expectedFirstExpireAt, enqueueResult.expiresAt());
         assertEquals(0, enqueueResult.numberOfRetries());
 
@@ -267,7 +267,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, enqueueIfPresentResult.queueIdentifier());
         assertEquals(testSecondLetter, enqueueIfPresentResult.message());
         assertNull(enqueueIfPresentResult.cause());
-        assertEquals(expectedSecondDeadLettered, enqueueIfPresentResult.deadLettered());
+        assertEquals(expectedSecondDeadLettered, enqueueIfPresentResult.enqueuedAt());
         // The expiresAt equals the deadLettered time whenever the message is enqueue due to a contained earlier letter.
         assertEquals(expectedSecondDeadLettered, enqueueIfPresentResult.expiresAt());
         assertEquals(0, enqueueIfPresentResult.numberOfRetries());
@@ -402,7 +402,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, firstResult.queueIdentifier());
         assertEquals(testFirstLetter, firstResult.message());
         assertEquals(expectedCause(testThrowable), firstResult.cause());
-        assertEquals(expectedDeadLettered, firstResult.deadLettered());
+        assertEquals(expectedDeadLettered, firstResult.enqueuedAt());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         assertEquals(0, firstResult.numberOfRetries());
         firstResult.acknowledge();
@@ -413,7 +413,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, secondResult.queueIdentifier());
         assertEquals(testSecondLetter, secondResult.message());
         assertEquals(expectedCause(testThrowable), secondResult.cause());
-        assertEquals(expectedDeadLettered, secondResult.deadLettered());
+        assertEquals(expectedDeadLettered, secondResult.enqueuedAt());
         assertEquals(expectedExpireAt, secondResult.expiresAt());
         assertEquals(0, secondResult.numberOfRetries());
         // Only one letter was acknowledged, so the second still remains.
@@ -473,7 +473,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisId, thisFirstResult.queueIdentifier());
         assertEquals(testThisFirstLetter, thisFirstResult.message());
         assertEquals(expectedCause(testThisThrowable), thisFirstResult.cause());
-        assertEquals(expectedDeadLettered, thisFirstResult.deadLettered());
+        assertEquals(expectedDeadLettered, thisFirstResult.enqueuedAt());
         assertEquals(expectedExpireAt, thisFirstResult.expiresAt());
         assertEquals(0, thisFirstResult.numberOfRetries());
         thisFirstResult.acknowledge();
@@ -484,7 +484,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisId, thisSecondResult.queueIdentifier());
         assertEquals(testThisSecondLetter, thisSecondResult.message());
         assertNull(thisSecondResult.cause());
-        assertEquals(expectedDeadLettered, thisSecondResult.deadLettered());
+        assertEquals(expectedDeadLettered, thisSecondResult.enqueuedAt());
         // The expiresAt equals the deadLettered time whenever the message is enqueue due to a contained earlier letter.
         assertEquals(expectedDeadLettered, thisSecondResult.expiresAt());
         assertEquals(0, thisSecondResult.numberOfRetries());
@@ -496,7 +496,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThatId, thatFirstResult.queueIdentifier());
         assertEquals(testThatFirstLetter, thatFirstResult.message());
         assertEquals(expectedCause(testThatThrowable), thatFirstResult.cause());
-        assertEquals(expectedDeadLettered, thatFirstResult.deadLettered());
+        assertEquals(expectedDeadLettered, thatFirstResult.enqueuedAt());
         assertEquals(expectedExpireAt, thatFirstResult.expiresAt());
         assertEquals(0, thatFirstResult.numberOfRetries());
         thatFirstResult.acknowledge();
@@ -532,7 +532,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, firstResult.queueIdentifier());
         assertEquals(testFirstLetter, firstResult.message());
         assertEquals(expectedCause(testThisThrowable), firstResult.cause());
-        assertEquals(expectedDeadLettered, firstResult.deadLettered());
+        assertEquals(expectedDeadLettered, firstResult.enqueuedAt());
         assertEquals(expectedExpireAt, firstResult.expiresAt());
         assertEquals(0, firstResult.numberOfRetries());
         // No DeadLetter#acknowledge or DeadLetter#requeue invocation here, as that releases the sequence.
@@ -566,7 +566,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
         assertEquals(expectedCause(testThrowable), result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedDeadLettered, result.enqueuedAt());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
         result.acknowledge();
@@ -594,7 +594,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, result.queueIdentifier());
         assertEquals(testLetter, result.message());
         assertEquals(expectedCause(testThrowable), result.cause());
-        assertEquals(expectedDeadLettered, result.deadLettered());
+        assertEquals(expectedDeadLettered, result.enqueuedAt());
         assertEquals(expectedExpireAt, result.expiresAt());
         assertEquals(0, result.numberOfRetries());
 
@@ -626,7 +626,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testId, firstTryResult.queueIdentifier());
         assertEquals(testLetter, firstTryResult.message());
         assertEquals(expectedCause(testThrowable), firstTryResult.cause());
-        assertEquals(expectedDeadLettered, firstTryResult.deadLettered());
+        assertEquals(expectedDeadLettered, firstTryResult.enqueuedAt());
         assertEquals(expectedExpireAt, firstTryResult.expiresAt());
         assertEquals(0, firstTryResult.numberOfRetries());
 
@@ -644,7 +644,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(firstTryResult.queueIdentifier(), secondTryResult.queueIdentifier());
         assertEquals(firstTryResult.message(), secondTryResult.message());
         assertEquals(firstTryResult.cause(), secondTryResult.cause());
-        assertEquals(firstTryResult.deadLettered(), secondTryResult.deadLettered());
+        assertEquals(firstTryResult.enqueuedAt(), secondTryResult.enqueuedAt());
         assertEquals(expectedUpdatedExpireAt, secondTryResult.expiresAt());
         assertEquals(1, secondTryResult.numberOfRetries());
     }
@@ -678,7 +678,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisId, thisResult.queueIdentifier());
         assertEquals(testThisLetter, thisResult.message());
         assertEquals(expectedCause(testThisThrowable), thisResult.cause());
-        assertEquals(expectedDeadLettered, thisResult.deadLettered());
+        assertEquals(expectedDeadLettered, thisResult.enqueuedAt());
         assertEquals(expectedExpireAt, thisResult.expiresAt());
         assertEquals(0, thisResult.numberOfRetries());
 
@@ -688,7 +688,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThatId, thatResult.queueIdentifier());
         assertEquals(testThatLetter, thatResult.message());
         assertEquals(expectedCause(testThatThrowable), thatResult.cause());
-        assertEquals(expectedDeadLettered, thatResult.deadLettered());
+        assertEquals(expectedDeadLettered, thatResult.enqueuedAt());
         assertEquals(expectedExpireAt, thatResult.expiresAt());
         assertEquals(0, thatResult.numberOfRetries());
     }
@@ -720,7 +720,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThisId, thisResult.queueIdentifier());
         assertEquals(testThisLetter, thisResult.message());
         assertEquals(expectedCause(testThisThrowable), thisResult.cause());
-        assertEquals(expectedDeadLettered, thisResult.deadLettered());
+        assertEquals(expectedDeadLettered, thisResult.enqueuedAt());
         assertEquals(expectedOriginalExpireAt, thisResult.expiresAt());
         assertEquals(0, thisResult.numberOfRetries());
 
@@ -733,7 +733,7 @@ public abstract class DeadLetterQueueTest<I extends QueueIdentifier, M extends M
         assertEquals(testThatId, thatResult.queueIdentifier());
         assertEquals(testThatLetter, thatResult.message());
         assertEquals(expectedCause(testThatThrowable), thatResult.cause());
-        assertEquals(expectedDeadLettered, thatResult.deadLettered());
+        assertEquals(expectedDeadLettered, thatResult.enqueuedAt());
         assertEquals(expectedUpdatedExpireAt, thatResult.expiresAt());
         assertEquals(0, thatResult.numberOfRetries());
     }
