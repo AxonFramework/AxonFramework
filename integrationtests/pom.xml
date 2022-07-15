@@ -198,6 +198,28 @@
                             <goal>test-jar</goal>
                         </goals>
                         <phase>package</phase>
+                        <!-- Test classes exported for Jakarta extension reuse -->
+                        <configuration>
+                            <includes>
+                                <include>**/TestSerializer.*</include>
+                                <include>**/CreateSimpleAggregateCommand.*</include>
+                                <include>**/SimpleAggregateCreatedEvent.*</include>
+                                <include>**/CommonCommand.*</include>
+                                <include>**/CreateChildFactoryCommand.*</include>
+                                <include>**/CreateChild1Command.*</include>
+                                <include>**/CreateChild2Command.*</include>
+                                <include>**/ParentEvent.*</include>
+                                <include>**/FireChildEventCommand.*</include>
+                                <include>**/InterceptedByParentCommand.*</include>
+                                <include>**/AbstractCommandHandlerCommand.*</include>
+                                <include>**/StubDomainEvent.*</include>
+                                <include>**/FireParentEventCommand.*</include>
+                                <include>**/Child1OnlyCommand.*</include>
+                                <include>**/InterceptedByChildCommand.*</include>
+                                <include>**/ChildEvent.*</include>
+                                <include>**/CreatedEvent.*</include>
+                            </includes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

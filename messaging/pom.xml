@@ -231,6 +231,19 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+                <!-- Test classes exported for Jakarta extension reuse -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestSerializer.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>

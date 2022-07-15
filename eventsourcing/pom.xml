@@ -184,6 +184,10 @@
                                 <include>**/BatchingEventStorageEngineTest.*</include>
                                 <include>**/EventStorageEngineTest.*</include>
                                 <include>**/EventStoreTestUtils.*</include>
+                                <!-- Test classes exported for Jakarta extension reuse -->
+                                <include>**/TestSerializer.*</include>
+                                <include>**/EventStoreTestUtils.*</include>
+                                <!-- End of test classes exported for Jakarta extension reuse -->
                             </includes>
                         </configuration>
                     </execution>

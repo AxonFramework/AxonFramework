@@ -115,6 +115,21 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/ConfigAssertions.*</include>
+                                <include>**/AssertUtils.*</include>
+                                <include>**/TestSerializer.*</include>
+                                <include>**/MessageCollectingMonitor.*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
