@@ -41,7 +41,7 @@ public interface AxonSpanFactory {
             }
         }
 
-        return create(String.format("%s %s", operationName, messageName));
+        return create(String.format("%s %s", operationName, messageName)).withMessageAttributes(message);
     }
 
     void registerTagProvider(TagProvider supplier);

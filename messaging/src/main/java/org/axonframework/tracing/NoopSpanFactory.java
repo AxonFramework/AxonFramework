@@ -58,6 +58,11 @@ public class NoopSpanFactory implements AxonSpanFactory {
         }
 
         @Override
+        public AxonSpan withMessageAttributes(Message<?> message) {
+            return this;
+        }
+
+        @Override
         public AxonSpan start() {
             return this;
         }

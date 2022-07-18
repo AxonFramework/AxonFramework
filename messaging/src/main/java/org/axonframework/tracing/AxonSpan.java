@@ -27,6 +27,8 @@ public interface AxonSpan {
 
     AxonSpan withSpanKind(AxonSpanKind spanKind);
 
+    AxonSpan withMessageAttributes(Message<?> message);
+
     AxonSpan start();
 
     void end();

@@ -43,6 +43,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -89,11 +90,11 @@ public class OpenTelemetryAxonSpanFactory implements AxonSpanFactory {
 
     public class OpenTelemetryAxonSpan implements AxonSpan {
 
-        private final SpanBuilder span;
+        private final SpanBuilder spanBuilder;
         private Span startedSpan;
 
         protected OpenTelemetryAxonSpan(String operationName) {
-            this.span = tracer.spanBuilder(operationName);
+            this.spanBuilder = tracer.spanBuilder(operationName);
         }
 
         @Override
@@ -113,18 +114,29 @@ public class OpenTelemetryAxonSpanFactory implements AxonSpanFactory {
         @Override
         public AxonSpan withSpanKind(AxonSpanKind spanKind) {
             if (spanKind == AxonSpanKind.PRODUCER) {
-                span.setSpanKind(SpanKind.PRODUCER);
+                spanBuilder.setSpanKind(SpanKind.PRODUCER);
             } else if (spanKind == AxonSpanKind.HANDLER) {
-                span.setSpanKind(SpanKind.CONSUMER);
+                spanBuilder.setSpanKind(SpanKind.CONSUMER);
             } else if (spanKind == AxonSpanKind.INTERNAL) {
-                span.setSpanKind(SpanKind.INTERNAL);
+                spanBuilder.setSpanKind(SpanKind.INTERNAL);
             }
+            return this;
+        }
+
+        @Override
+        public AxonSpan withMessageAttributes(Message<?> message) {
+            tagProviders.forEach(supplier -> {
+                Map<String, String> attributes = supplier.provideForMessage(message);
+                if (attributes != null) {
+                    attributes.forEach(spanBuilder::setAttribute);
+                }
+            });
             return this;
         }
 
         public AxonSpan start() {
             if (startedSpan == null) {
-                startedSpan = span.startSpan();
+                startedSpan = spanBuilder.startSpan();
                 startedSpan.makeCurrent();
             }
             return this;
