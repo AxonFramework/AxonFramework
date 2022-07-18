@@ -41,6 +41,7 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +127,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                            () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                   .axonSpanFactory(c.getComponent(AxonSpanFactory.class))
                                    .build();
     }
 

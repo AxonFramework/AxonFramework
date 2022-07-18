@@ -26,6 +26,9 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +58,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
+    private final AxonSpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
@@ -69,6 +73,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         this.eventStore = builder.eventStore;
         this.executor = builder.executor;
         this.transactionManager = builder.transactionManager;
+        this.spanFactory = builder.builderAxonSpanFactory;
     }
 
     @Override
@@ -92,10 +97,15 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             }
         }
         if (snapshotsInProgress.add(typeAndId)) {
+            AxonSpan span = spanFactory.create(String.format("snapshot %s %s",
+                                                             aggregateType.getSimpleName(),
+                                                             aggregateIdentifier));
             try {
                 executor.execute(
-                        silently(() -> transactionManager.executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier)))
-                                .andFinally(() -> snapshotsInProgress.remove(typeAndId)));
+                        silently(span.wrap(() ->
+                            transactionManager.executeInTransaction(createSnapshotterTask(aggregateType,
+                                                                                          aggregateIdentifier))
+                        )).andFinally(() -> snapshotsInProgress.remove(typeAndId)));
             } catch (Exception e) {
                 snapshotsInProgress.remove(typeAndId);
                 throw e;
@@ -189,6 +199,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         private EventStore eventStore;
         private Executor executor = DirectExecutor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private AxonSpanFactory builderAxonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
@@ -214,6 +225,11 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public Builder executor(Executor executor) {
             assertNonNull(executor, "Executor may not be null");
             this.executor = executor;
+            return this;
+        }
+
+        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            this.builderAxonSpanFactory = axonSpanFactory;
             return this;
         }
 

@@ -71,6 +71,7 @@ import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -258,13 +259,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                            HandlerDefinition handlerDefinition,
                                                            ParameterResolverFactory parameterResolverFactory,
                                                            EventStore eventStore,
-                                                           TransactionManager transactionManager) {
+                                                           TransactionManager transactionManager,
+                                                           AxonSpanFactory axonSpanFactory) {
         return SpringAggregateSnapshotter.builder()
                                          .repositoryProvider(configuration::repository)
                                          .transactionManager(transactionManager)
                                          .eventStore(eventStore)
                                          .parameterResolverFactory(parameterResolverFactory)
                                          .handlerDefinition(handlerDefinition)
+                                         .axonSpanFactory(axonSpanFactory)
                                          .build();
     }
 
@@ -364,11 +367,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration,
-                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver,
+                                       AxonSpanFactory axonSpanFactory) {
         SimpleCommandBus commandBus =
                 SimpleCommandBus.builder()
                                 .transactionManager(txManager)
                                 .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
+                                .axonSpanFactory(axonSpanFactory)
                                 .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(

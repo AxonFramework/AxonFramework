@@ -13,4 +13,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration,\
   org.axonframework.springboot.autoconfig.XStreamAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration,\
-  org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration
+  org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration, \
+  org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration

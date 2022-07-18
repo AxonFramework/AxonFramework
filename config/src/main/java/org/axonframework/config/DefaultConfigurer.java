@@ -75,6 +75,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,6 +192,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
+        components.put(AxonSpanFactory.class, new Component<>(config, "axonSpanFactory", this::defaultAxonSpanFactory));
     }
 
     /**
@@ -404,6 +407,7 @@ public class DefaultConfigurer implements Configurer {
                                                     DuplicateCommandHandlerResolver.class,
                                                     LoggingDuplicateCommandHandlerResolver::instance
                                             ))
+                                            .axonSpanFactory(config.getComponent(AxonSpanFactory.class))
                                             .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                             .build();
                     commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
@@ -474,6 +478,11 @@ public class DefaultConfigurer implements Configurer {
                 .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
     }
 
+    protected AxonSpanFactory defaultAxonSpanFactory(Configuration config) {
+        return defaultComponent(AxonSpanFactory.class, config)
+                .orElseGet(OpenTelemetryAxonSpanFactory::new);
+    }
+
     /**
      * Provides the default Serializer implementation. Subclasses may override this method to provide their own
      * default.
@@ -526,6 +535,7 @@ public class DefaultConfigurer implements Configurer {
                                                .aggregateFactories(aggregateFactories)
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
+                                               .axonSpanFactory(config.getComponent(AxonSpanFactory.class))
                                                .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
                                                .build();
                 });

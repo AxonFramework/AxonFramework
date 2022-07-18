@@ -16,10 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.ApplyMore;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -32,6 +28,11 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.tracing.AxonSpanFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -186,6 +187,12 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         @Override
         public Builder transactionManager(TransactionManager transactionManager) {
             super.transactionManager(transactionManager);
+            return this;
+        }
+
+        @Override
+        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
             return this;
         }
 

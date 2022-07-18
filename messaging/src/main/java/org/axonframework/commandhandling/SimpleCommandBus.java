@@ -33,6 +33,10 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.AxonSpanKind;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +76,7 @@ public class SimpleCommandBus implements CommandBus {
             new CopyOnWriteArrayList<>();
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private RollbackConfiguration rollbackConfiguration;
+    private final AxonSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
@@ -104,6 +109,7 @@ public class SimpleCommandBus implements CommandBus {
         this.rollbackConfiguration = builder.rollbackConfiguration;
         this.duplicateCommandHandlerResolver = builder.duplicateCommandHandlerResolver;
         this.defaultCommandCallback = builder.defaultCommandCallback;
+        this.spanFactory = builder.builderSpanFactory;
     }
 
     @Override
@@ -142,17 +148,28 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
+        AxonSpan span = spanFactory.create("SimpleCommandBus.doDispatch", command).withMessageAsParent(command).start();
+        CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
 
-        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(command);
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandWithContext);
+
+        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(commandWithContext);
+        CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                span.recordException(commandResultMessage.exceptionResult());
+            }
+            span.end();
+        });
         if (optionalHandler.isPresent()) {
-            handle(command, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
+            handle(commandWithContext,
+                   optionalHandler.get(),
+                   new MonitorAwareCallback<>(spanAwareCallback, monitorCallback));
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
-                    "No handler was subscribed for command [%s].", command.getCommandName()
-            ));
+                    "No handler was subscribed for command [%s].",
+                    commandWithContext.getCommandName()));
             monitorCallback.reportFailure(exception);
-            callback.onResult(command, asCommandResultMessage(exception));
+            spanAwareCallback.onResult(commandWithContext, asCommandResultMessage(exception));
         }
     }
 
@@ -172,17 +189,21 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Handling command [{}]", command.getCommandName());
-        }
+        spanFactory.create("SimpleCommandBus.handle", command)
+                   .withMessageAsParent(command)
+                   .withSpanKind(AxonSpanKind.HANDLER).run(() -> {
+                       if (logger.isDebugEnabled()) {
+                           logger.debug("Handling command [{}]", command.getCommandName());
+                       }
 
-        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-        unitOfWork.attachTransaction(transactionManager);
-        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+                       UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+                       unitOfWork.attachTransaction(transactionManager);
+                       InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-        CommandResultMessage<R> resultMessage =
-                asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
-        callback.onResult(command, resultMessage);
+                       CommandResultMessage<R> resultMessage = asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
+                                                                                                                   rollbackConfiguration));
+                       callback.onResult(command, resultMessage);
+                   });
     }
 
     /**
@@ -265,6 +286,7 @@ public class SimpleCommandBus implements CommandBus {
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.logAndOverride();
         private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
+        private AxonSpanFactory builderSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -331,6 +353,11 @@ public class SimpleCommandBus implements CommandBus {
          */
         public Builder defaultCommandCallback(@Nonnull CommandCallback<Object, Object> defaultCommandCallback) {
             this.defaultCommandCallback = getOrDefault(defaultCommandCallback, NoOpCallback.INSTANCE);
+            return this;
+        }
+
+        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            this.builderSpanFactory = axonSpanFactory;
             return this;
         }
 

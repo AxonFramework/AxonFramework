@@ -30,6 +30,7 @@ import java.util.Map;
 public class MessageOriginProvider implements CorrelationDataProvider {
     private static final String DEFAULT_CORRELATION_KEY = "correlationId";
     private static final String DEFAULT_TRACE_KEY = "traceId";
+    private static final String DEFAULT_TRACE_PARENT_KEY = "traceparent";
 
     /**
      * Returns the default metadata key for the correlation id of a message.
@@ -77,6 +78,7 @@ public class MessageOriginProvider implements CorrelationDataProvider {
         Map<String, Object> result = new HashMap<>();
         result.put(correlationKey, message.getIdentifier());
         result.put(traceKey, message.getMetaData().getOrDefault(traceKey, message.getIdentifier()));
+        result.put(DEFAULT_TRACE_PARENT_KEY, message.getMetaData().getOrDefault(DEFAULT_TRACE_PARENT_KEY, message.getIdentifier()));
         return result;
     }
 

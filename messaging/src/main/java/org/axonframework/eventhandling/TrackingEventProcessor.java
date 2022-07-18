@@ -34,6 +34,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,6 +152,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
+
+        OpenTelemetryAxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
+        // TODO: 7/18/22 Make configurable like CommandBus
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
+                .create(
+                        "TrackingEventProcessor[" + builder.name + "] ", unitOfWork.getMessage())
+                .withMessageAsParent(unitOfWork.getMessage())
+                .wrapCallable(interceptorChain::proceed));
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {

@@ -44,6 +44,10 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.AxonSpanKind;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,6 +90,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService executorService;
+    private final AxonSpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
@@ -125,6 +130,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         this.executorService =
                 builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
+        this.spanFactory = builder.axonSpanFactory;
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -157,31 +163,42 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
+        CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
+        AxonSpan span = spanFactory.create("AxonServerCommandBus.dispatch", commandMessageWithContext)
+                                   .withSpanKind(AxonSpanKind.PRODUCER)
+                                   .start();
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
-            Command command = serializer.serialize(commandMessage,
-                                                   routingStrategy.getRoutingKey(commandMessage),
-                                                   priorityCalculator.determinePriority(commandMessage));
+            Command command = serializer.serialize(commandMessageWithContext,
+                                                   routingStrategy.getRoutingKey(commandMessageWithContext),
+                                                   priorityCalculator.determinePriority(commandMessageWithContext));
 
             CompletableFuture<CommandResponse> result =
-                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessage))
+                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessageWithContext))
                                                .commandChannel()
                                                .sendCommand(command);
             //noinspection unchecked
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
-                  .thenAccept(r -> commandCallback.onResult(commandMessage, r))
-                  .whenComplete((r, e) -> commandInTransit.end());
+                  .thenAccept(r -> commandCallback.onResult(commandMessageWithContext, r))
+                  .whenComplete((r, e) -> {
+                      commandInTransit.end();
+                      if (e != null) {
+                          span.recordException(e);
+                      }
+                      span.end();
+                  });
         } catch (Exception e) {
+            span.recordException(e).end();
             commandInTransit.end();
             AxonServerCommandDispatchException dispatchException = new AxonServerCommandDispatchException(
                     ErrorCode.COMMAND_DISPATCH_ERROR.errorCode(),
                     "Exception while dispatching a command to AxonServer", e
             );
             commandCallback.onResult(
-                    commandMessage, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
+                    commandMessageWithContext, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
             );
         }
     }
@@ -200,8 +217,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                        CompletableFuture<CommandResponse> result =
                                                                new CompletableFuture<>();
                                                        CommandProcessingTask processingTask = new CommandProcessingTask(
-                                                               c, serializer, result, localSegment
-                                                       );
+                                                               c, serializer, result, localSegment,
+                                                               spanFactory);
                                                        long priority = priority(c.getProcessingInstructionsList());
                                                        long sequence = TASK_SEQUENCE.incrementAndGet();
                                                        executorService.execute(
@@ -268,27 +285,42 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final CommandBus localSegment;
         private final Command command;
         private final CommandSerializer serializer;
+        private final AxonSpanFactory axonSpanFactory;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
                                      CompletableFuture<CommandResponse> result,
-                                     CommandBus localSegment) {
+                                     CommandBus localSegment, AxonSpanFactory axonSpanFactory) {
             this.command = command;
             this.serializer = serializer;
             this.result = result;
             this.localSegment = localSegment;
+            this.axonSpanFactory = axonSpanFactory;
         }
 
         @Override
         public void run() {
+            CommandMessage<?> deserialize = serializer.deserialize(command);
+            AxonSpan span = axonSpanFactory.create("AxonServerCommandBus.handle", deserialize)
+                                           .withMessageAsParent(deserialize)
+                                           .withSpanKind(AxonSpanKind.HANDLER)
+                                           .start();
             try {
                 localSegment.dispatch(
-                        serializer.deserialize(command),
-                        (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> result.complete(
-                                serializer.serialize(commandResultMessage, command.getMessageIdentifier())
-                        )
+                        axonSpanFactory.propagateContext(deserialize),
+                        (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
+                            if(commandResultMessage.isExceptional()) {
+                                span.recordException(commandResultMessage.exceptionResult());
+                            }
+                            span.end();
+                            result.complete(
+                                    serializer.serialize(commandResultMessage,
+                                                         command.getMessageIdentifier())
+                            );
+                        }
                 );
             } catch (Exception e) {
+                span.recordException(e).end();
                 result.completeExceptionally(e);
             }
         }
@@ -320,6 +352,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private String defaultContext;
         private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
                 c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
+        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -478,6 +511,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             this.defaultContext = defaultContext;
             return this;
         }
+
+        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            this.axonSpanFactory = axonSpanFactory;
+            return this;
+        }
+
 
         /**
          * Initializes a {@link AxonServerCommandBus} as specified through this Builder.

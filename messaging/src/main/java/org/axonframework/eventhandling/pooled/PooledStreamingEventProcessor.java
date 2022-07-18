@@ -41,6 +41,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,6 +153,15 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .build();
+
+        OpenTelemetryAxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
+        // TODO: 7/18/22 Make configurable like CommandBus
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
+                .create(
+                        "PooledStreamingEventProcessor[" + builder.name() + "] ",
+                        unitOfWork.getMessage())
+                .withMessageAsParent(unitOfWork.getMessage())
+                .wrapCallable(interceptorChain::proceed));
     }
 
     /**

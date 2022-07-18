@@ -39,6 +39,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -73,7 +74,8 @@ public class AxonServerBusAutoConfiguration {
                                                      RoutingStrategy routingStrategy,
                                                      CommandPriorityCalculator priorityCalculator,
                                                      CommandLoadFactorProvider loadFactorProvider,
-                                                     TargetContextResolver<? super CommandMessage<?>> targetContextResolver) {
+                                                     TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
+                                                     AxonSpanFactory axonSpanFactory) {
         return AxonServerCommandBus.builder()
                                    .axonServerConnectionManager(axonServerConnectionManager)
                                    .configuration(axonServerConfiguration)
@@ -83,6 +85,7 @@ public class AxonServerBusAutoConfiguration {
                                    .priorityCalculator(priorityCalculator)
                                    .loadFactorProvider(loadFactorProvider)
                                    .targetContextResolver(targetContextResolver)
+                                   .axonSpanFactory(axonSpanFactory)
                                    .build();
     }
 
