@@ -24,6 +24,10 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.AxonSpanKind;
+import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +64,7 @@ public abstract class AbstractEventBus implements EventBus {
     private final String eventsKey = this + "_EVENTS";
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+    private final AxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
 
     /**
      * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
@@ -110,7 +115,12 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(@Nonnull List<? extends EventMessage<?>> events) {
-        List<MessageMonitor.MonitorCallback> ingested = events.stream()
+        AxonSpan span = axonSpanFactory.create("EventBus.publish", events.get(0))
+                                       .withMessageAttributes(events.get(0))
+                                       .withSpanKind(AxonSpanKind.INTERNAL).start();
+        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(axonSpanFactory::propagateContext).collect(
+                Collectors.toList());
+        List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
                                                               .map(messageMonitor::onMessageIngested)
                                                               .collect(Collectors.toList());
 
@@ -123,20 +133,26 @@ public abstract class AbstractEventBus implements EventBus {
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
                                  "committed.");
 
-            unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
-            unitOfWork.onRollback(uow -> ingested.forEach(
-                    message -> message.reportFailure(uow.getExecutionResult().getExceptionResult())
-            ));
+            unitOfWork.afterCommit(u -> {
+                ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
+                span.end();
+            });
+            unitOfWork.onRollback(uow -> {
+                ingested.forEach(message -> message.reportFailure(uow.getExecutionResult().getExceptionResult()));
+                span.recordException(uow.getExecutionResult().getExceptionResult()).end();
+            });
 
-            eventsQueue(unitOfWork).addAll(events);
+            eventsQueue(unitOfWork).addAll(eventsWithContext);
         } else {
             try {
-                prepareCommit(intercept(events));
-                commit(events);
-                afterCommit(events);
+                prepareCommit(intercept(eventsWithContext));
+                commit(eventsWithContext);
+                afterCommit(eventsWithContext);
                 ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
+                span.end();
             } catch (Exception e) {
                 ingested.forEach(m -> m.reportFailure(e));
+                span.recordException(e).end();
                 throw e;
             }
         }

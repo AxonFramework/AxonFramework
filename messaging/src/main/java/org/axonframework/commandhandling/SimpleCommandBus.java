@@ -120,7 +120,14 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        doDispatch(intercept(command), callback);
+        AxonSpan span = spanFactory.create("SimpleCommandBus.dispatch", command).start();
+        CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
+            if (commandResultMessage.isExceptional()) {
+                span.recordException(commandResultMessage.exceptionResult());
+            }
+            span.end();
+        });
+        doDispatch(intercept(command), spanAwareCallback);
     }
 
     /**
@@ -148,28 +155,21 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
-        AxonSpan span = spanFactory.create("SimpleCommandBus.doDispatch", command).withMessageAsParent(command).start();
         CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
 
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandWithContext);
 
         Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(commandWithContext);
-        CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
-            if (commandResultMessage.isExceptional()) {
-                span.recordException(commandResultMessage.exceptionResult());
-            }
-            span.end();
-        });
         if (optionalHandler.isPresent()) {
             handle(commandWithContext,
                    optionalHandler.get(),
-                   new MonitorAwareCallback<>(spanAwareCallback, monitorCallback));
+                   new MonitorAwareCallback<>(callback, monitorCallback));
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
                     "No handler was subscribed for command [%s].",
                     commandWithContext.getCommandName()));
             monitorCallback.reportFailure(exception);
-            spanAwareCallback.onResult(commandWithContext, asCommandResultMessage(exception));
+            callback.onResult(commandWithContext, asCommandResultMessage(exception));
         }
     }
 
@@ -190,7 +190,6 @@ public class SimpleCommandBus implements CommandBus {
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
         spanFactory.create("SimpleCommandBus.handle", command)
-                   .withMessageAsParent(command)
                    .withSpanKind(AxonSpanKind.HANDLER).run(() -> {
                        if (logger.isDebugEnabled()) {
                            logger.debug("Handling command [{}]", command.getCommandName());

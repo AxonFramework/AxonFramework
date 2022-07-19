@@ -163,10 +163,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
-        AxonSpan span = spanFactory.create("AxonServerCommandBus.dispatch", commandMessageWithContext)
+        AxonSpan span = spanFactory.create("AxonServerCommandBus.dispatch", commandMessage)
                                    .withSpanKind(AxonSpanKind.PRODUCER)
                                    .start();
+        CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
