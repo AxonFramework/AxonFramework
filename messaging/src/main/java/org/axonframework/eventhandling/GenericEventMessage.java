@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -33,6 +36,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> The type of payload contained in this Message
  */
+@JsonIgnoreProperties("payloadType")
 public class GenericEventMessage<T> extends MessageDecorator<T> implements EventMessage<T> {
     private static final long serialVersionUID = -8296350547944518544L;
     private final Supplier<Instant> timestampSupplier;
@@ -93,8 +97,11 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
      * @param payload    The payload of the message
      * @param metaData   The metadata of the message
      */
-    public GenericEventMessage(@Nonnull String identifier, T payload, @Nonnull Map<String, ?> metaData,
-                               @Nonnull Instant timestamp) {
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public GenericEventMessage(@Nonnull @JsonProperty("identifier") String identifier,
+                               @JsonProperty("payload") T payload,
+                               @JsonProperty("metaData") @Nonnull Map<String, ?> metaData,
+                               @Nonnull @JsonProperty("timestamp") Instant timestamp) {
         this(new GenericMessage<>(identifier, payload, metaData), timestamp);
     }
 

@@ -16,6 +16,9 @@
 
 package org.axonframework.commandhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -31,6 +34,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 2.0
  */
+@JsonIgnoreProperties("payloadType")
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
 
     private static final long serialVersionUID = 3282528436414939876L;
@@ -77,6 +81,11 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
      */
     public GenericCommandMessage(@Nonnull T payload, @Nonnull Map<String, ?> metaData) {
         this(new GenericMessage<>(payload, metaData), payload.getClass().getName());
+    }
+
+    @JsonCreator
+    public GenericCommandMessage(@JsonProperty("payload") @Nonnull T payload, @JsonProperty("metaData") @Nonnull Map<String, ?> metaData, @JsonProperty("identifier") String identifier) {
+        this(new GenericMessage<>(identifier, payload, metaData), payload.getClass().getName());
     }
 
     /**

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be {@link
  * EventProcessor event processors} to keep track of which events it has processed.
@@ -30,6 +32,7 @@ public interface TrackedEventMessage<T> extends EventMessage<T> {
      *
      * @return the tracking token of the event
      */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
     TrackingToken trackingToken();
 
     /**

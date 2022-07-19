@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -61,6 +62,7 @@ public interface Message<T> extends Serializable {
      *
      * @return the payload of this message
      */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
     T getPayload();
 
     /**

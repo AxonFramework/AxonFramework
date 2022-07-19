@@ -15,6 +15,10 @@
  */
 package org.axonframework.queryhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -33,11 +37,13 @@ import javax.annotation.Nonnull;
  * @author Marc Gathier
  * @since 3.1
  */
+@JsonIgnoreProperties("payloadType")
 public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements QueryMessage<T, R> {
 
     private static final long serialVersionUID = -3908412412867063631L;
 
     private final String queryName;
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
     private final ResponseType<R> responseType;
 
     /**
@@ -60,6 +66,11 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      */
     public GenericQueryMessage(T payload, String queryName, ResponseType<R> responseType) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
+    }
+
+    @JsonCreator
+    public GenericQueryMessage(@JsonProperty("payload") T payload, @JsonProperty("queryName") String queryName, @JsonProperty("responseType") ResponseType<R> responseType, @JsonProperty("identifier") String identifier) {
+        this(new GenericMessage<>(identifier, payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
     /**

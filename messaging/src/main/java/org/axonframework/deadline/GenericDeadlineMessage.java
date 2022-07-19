@@ -16,6 +16,8 @@
 
 package org.axonframework.deadline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -127,11 +129,12 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
      * @param metaData     The {@link MetaData} of the Message
      * @param timestamp    An {@link Instant} timestamp of the Message creation
      */
-    public GenericDeadlineMessage(@Nonnull String deadlineName,
-                                  @Nonnull String identifier,
-                                  @Nullable T payload,
-                                  Map<String, ?> metaData,
-                                  Instant timestamp) {
+    @JsonCreator
+    public GenericDeadlineMessage(@JsonProperty("deadlineName")  @Nonnull String deadlineName,
+                                  @JsonProperty("identifier") @Nonnull String identifier,
+                                  @JsonProperty("payload") @Nullable T payload,
+                                  @JsonProperty("metaData")  Map<String, ?> metaData,
+                                  @JsonProperty("timestamp")  Instant timestamp) {
         super(identifier, payload, metaData, timestamp);
         this.deadlineName = deadlineName;
     }

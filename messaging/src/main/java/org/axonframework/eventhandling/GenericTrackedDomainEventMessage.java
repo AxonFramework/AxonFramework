@@ -16,7 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.Map;
@@ -28,6 +32,14 @@ import javax.annotation.Nonnull;
  *
  * @param <T> The type of payload contained in this Message
  */
+@JsonIncludeProperties({"trackingToken",
+        "type",
+        "aggregateIdentifier",
+        "sequenceNumber",
+        "payload",
+        "metaData",
+        "timestamp",
+        "identifier"})
 public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements
                                                                                       TrackedEventMessage<T> {
     private static final long serialVersionUID = 6211645167637822558L;
@@ -74,6 +86,19 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
     protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
                                                long sequenceNumber, Message<T> delegate, Instant timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
+        this.trackingToken = trackingToken;
+    }
+
+    @JsonCreator
+    protected GenericTrackedDomainEventMessage(@JsonProperty("trackingToken") TrackingToken trackingToken,
+                                               @JsonProperty("type") String type,
+                                               @JsonProperty("aggregateIdentifier") String aggregateIdentifier,
+                                               @JsonProperty("sequenceNumber") long sequenceNumber,
+                                               @JsonProperty("payload") T payload,
+                                               @JsonProperty("metaData") MetaData metaData,
+                                               @JsonProperty("timestamp") Instant timestamp,
+                                               @JsonProperty("identifier") String identifier) {
+        super(type, aggregateIdentifier, sequenceNumber, payload, metaData, identifier, timestamp);
         this.trackingToken = trackingToken;
     }
 

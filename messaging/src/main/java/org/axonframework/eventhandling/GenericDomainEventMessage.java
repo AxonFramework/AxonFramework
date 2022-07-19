@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
@@ -76,8 +78,14 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param messageIdentifier   The message identifier
      * @param timestamp           The event's timestamp
      */
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
-                                     Map<String, ?> metaData, String messageIdentifier, Instant timestamp) {
+    @JsonCreator
+    public GenericDomainEventMessage(@JsonProperty("type") String type,
+                                     @JsonProperty("aggregateIdentifier") String aggregateIdentifier,
+                                     @JsonProperty("sequenceNumber") long sequenceNumber,
+                                     @JsonProperty("payload") T payload,
+                                     @JsonProperty("metaData") Map<String, ?> metaData,
+                                     @JsonProperty("identifier") String messageIdentifier,
+                                     @JsonProperty("timestamp") Instant timestamp) {
         this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(messageIdentifier, payload, metaData),
              timestamp);
     }
