@@ -702,7 +702,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                         workerThread.join(workerTerminationTimeout);
                                         if (workerThread.isAlive( )) {
                                         	logger.warn(
-                                        			"Forced shutdown of TrackingProcessor Worker '{}' was not successful. Consider increasing workerTerminationTimeout.",
+                                        			"Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. Consider increasing workerTerminationTimeout.",
                                         			worker.getKey()
                                         	);
                                         }
