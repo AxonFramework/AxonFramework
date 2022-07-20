@@ -351,11 +351,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
             logger.info("Released claim");
         } catch (Exception e) {  
-        	if (logger.isDebugEnabled()) {
-        		logger.debug("Release claim failed", e);
-        	} else if (logger.isInfoEnabled()) {
-        		logger.info("Release claim failed");
-        	}
+            // Ignore exception
+            if (logger.isDebugEnabled()) {
+                logger.debug("Release claim failed", e);
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Release claim failed");
+            }
             // Ignore exception
         }
     }
