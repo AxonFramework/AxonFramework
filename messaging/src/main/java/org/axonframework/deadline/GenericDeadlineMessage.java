@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
+import java.beans.ConstructorProperties;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -130,6 +131,7 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
      * @param timestamp    An {@link Instant} timestamp of the Message creation
      */
     @JsonCreator
+    @ConstructorProperties({"deadlineName", "identifier", "payload", "metaData", "timestamp"})
     public GenericDeadlineMessage(@JsonProperty("deadlineName")  @Nonnull String deadlineName,
                                   @JsonProperty("identifier") @Nonnull String identifier,
                                   @JsonProperty("payload") @Nullable T payload,

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
+import java.beans.ConstructorProperties;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -89,7 +90,27 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
         this.trackingToken = trackingToken;
     }
 
+    /**
+     * Initialize a DomainEventMessage originating from existing data.,
+     *
+     * @param trackingToken       Tracking token of the event
+     * @param type                The domain type
+     * @param aggregateIdentifier The identifier of the aggregate generating this message
+     * @param sequenceNumber      The message's sequence number
+     * @param payload             The application-specific payload of the message
+     * @param metaData            The MetaData to attach to the message
+     * @param timestamp           The event's timestamp
+     * @param identifier          The message identifier
+     */
     @JsonCreator
+    @ConstructorProperties({"trackingToken",
+            "type",
+            "aggregateIdentifier",
+            "sequenceNumber",
+            "payload",
+            "metaData",
+            "timestamp",
+            "identifier"})
     protected GenericTrackedDomainEventMessage(@JsonProperty("trackingToken") TrackingToken trackingToken,
                                                @JsonProperty("type") String type,
                                                @JsonProperty("aggregateIdentifier") String aggregateIdentifier,

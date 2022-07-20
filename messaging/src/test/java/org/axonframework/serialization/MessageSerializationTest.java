@@ -16,7 +16,6 @@
 
 package org.axonframework.serialization;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
@@ -27,13 +26,13 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.params.*;
@@ -53,35 +52,35 @@ class MessageSerializationTest {
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_GenericEventMessage(Serializer serializer) {
+    void shouldSerialize_GenericEventMessage(TestSerializer serializer) {
         EventMessage<Object> message = GenericEventMessage
                 .asEventMessage(new MessageSerializationPayload("one", "Two"))
                 .andMetaData(createAdditionalMetadata());
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        EventMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        EventMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_GenericDomainEventMessage(Serializer serializer) {
+    void shouldSerialize_GenericDomainEventMessage(TestSerializer serializer) {
         EventMessage<Object> message = new GenericDomainEventMessage<>("Room",
                                                                        UUID.randomUUID().toString(),
                                                                        5L,
                                                                        new MessageSerializationPayload("one", "Two"),
                                                                        createAdditionalMetadata());
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        EventMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        EventMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_GenericTrackedDomainEventMessage(Serializer serializer) {
+    void shouldSerialize_GenericTrackedDomainEventMessage(TestSerializer serializer) {
         GapAwareTrackingToken gapAwareTrackingToken = new GapAwareTrackingToken(231972091,
                                                                                 Arrays.asList(5L, 6L, 7L, 8L));
         EventMessage<Object> message = new GenericTrackedDomainEventMessage(
@@ -96,15 +95,32 @@ class MessageSerializationTest {
                 () -> Instant.now())
                 .andMetaData(createAdditionalMetadata());
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        EventMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        EventMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(deserialize, message);
     }
 
+    @ParameterizedTest
+    @ArgumentsSource(ArgumentsProvider.class)
+    void shouldSerialize_GenericTrackedEventMessage(TestSerializer serializer) {
+        GapAwareTrackingToken gapAwareTrackingToken = new GapAwareTrackingToken(231972091,
+                                                                                Arrays.asList(5L, 6L, 7L, 8L));
+        EventMessage<Object> message = new GenericTrackedEventMessage(
+                gapAwareTrackingToken,
+                GenericTrackedDomainEventMessage.asEventMessage(
+                        new MessageSerializationPayload(
+                                "one",
+                                "Two")),
+                () -> Instant.now());
+
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        EventMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
+        assertEquals(deserialize, message);
+    }
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_DeadlineMessage_Full(Serializer serializer) {
+    void shouldSerialize_DeadlineMessage_Full(TestSerializer serializer) {
         DeadlineMessage<Object> message = new GenericDeadlineMessage<>(
                 "myDeadline",
                 "identifier",
@@ -112,42 +128,53 @@ class MessageSerializationTest {
                 createAdditionalMetadata(),
                 Instant.now());
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        DeadlineMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        DeadlineMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_DeadlineMessage_Small(Serializer serializer) {
+    void shouldSerialize_DeadlineMessage_Small(TestSerializer serializer) {
         DeadlineMessage<Object> message = new GenericDeadlineMessage<>("myDeadline");
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        EventMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        EventMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_CommandMessage(Serializer serializer) {
+    void shouldSerialize_CommandMessage(TestSerializer serializer) {
         CommandMessage<Object> message = new GenericCommandMessage<>(new MessageSerializationPayload("one", "Two"),
                                                                      createAdditionalMetadata());
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        CommandMessage<Object> deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        CommandMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
     @ParameterizedTest
     @ArgumentsSource(ArgumentsProvider.class)
-    void shouldSerialize_QueryMessage(Serializer serializer) {
+    void shouldSerialize_QueryMessage(TestSerializer serializer) {
         GenericQueryMessage message = new GenericQueryMessage<>(
                 new MessageSerializationPayload("one", "Two"),
                 ResponseTypes.multipleInstancesOf(
                         String.class));
 
-        SerializedObject<String> serialize = serializer.serialize(message, String.class);
-        QueryMessage deserialize = serializer.deserialize(serialize);
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        QueryMessage deserialize = serializer.getSerializer().deserialize(serialize);
+        assertEquals(message, deserialize);
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(ArgumentsProvider.class)
+    void shouldSerialize_GenericMessage(TestSerializer serializer) {
+        GenericMessage<Object> message = new GenericMessage<>(new MessageSerializationPayload("one", "Two"),
+                                                              createAdditionalMetadata());
+
+        SerializedObject<String> serialize = serializer.getSerializer().serialize(message, String.class);
+        GenericMessage<Object> deserialize = serializer.getSerializer().deserialize(serialize);
         assertEquals(message, deserialize);
     }
 
@@ -197,16 +224,23 @@ class MessageSerializationTest {
         Assertions.assertEquals(original.getClass(), deserialized.getClass());
     }
 
+    private void assertEquals(GenericMessage deserialized, GenericMessage original) {
+        Assertions.assertEquals(original.getIdentifier(), deserialized.getIdentifier());
+        Assertions.assertEquals(original.getMetaData(), deserialized.getMetaData());
+        Assertions.assertEquals(original.getPayload(), deserialized.getPayload());
+        Assertions.assertEquals(original.getPayloadType(), deserialized.getPayloadType());
+        Assertions.assertEquals(original.getClass(), deserialized.getClass());
+    }
+
     private static class ArgumentsProvider implements org.junit.jupiter.params.provider.ArgumentsProvider {
 
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-            Serializer jackson = JacksonSerializer.defaultSerializer();
-            Serializer xStream = XStreamSerializer.builder().xStream(new XStream()).build();
 
             return Stream.of(
-                    Arguments.of(jackson),
-                    Arguments.of(xStream)
+                    Arguments.of(TestSerializer.JACKSON),
+                    Arguments.of(TestSerializer.JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS),
+                    Arguments.of(TestSerializer.XSTREAM)
             );
         }
     }

@@ -22,6 +22,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
+import java.beans.ConstructorProperties;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -79,6 +80,13 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param timestamp           The event's timestamp
      */
     @JsonCreator
+    @ConstructorProperties({"type",
+            "aggregateIdentifier",
+            "sequenceNumber",
+            "payload",
+            "metaData",
+            "identifier",
+            "timestamp"})
     public GenericDomainEventMessage(@JsonProperty("type") String type,
                                      @JsonProperty("aggregateIdentifier") String aggregateIdentifier,
                                      @JsonProperty("sequenceNumber") long sequenceNumber,

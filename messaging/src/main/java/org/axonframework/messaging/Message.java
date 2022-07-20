@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.SerializedObject;
@@ -73,6 +74,8 @@ public interface Message<T> extends Serializable {
      *
      * @return the type of payload.
      */
+    @JsonIgnore
+    // Type information is included in the payload property in a way Jackson understands
     Class<T> getPayloadType();
 
     /**

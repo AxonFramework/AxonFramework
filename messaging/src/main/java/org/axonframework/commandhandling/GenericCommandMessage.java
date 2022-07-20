@@ -17,13 +17,13 @@
 package org.axonframework.commandhandling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 
+import java.beans.ConstructorProperties;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -34,7 +34,6 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 2.0
  */
-@JsonIgnoreProperties("payloadType")
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
 
     private static final long serialVersionUID = 3282528436414939876L;
@@ -83,8 +82,18 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
         this(new GenericMessage<>(payload, metaData), payload.getClass().getName());
     }
 
+    /**
+     * Create a CommandMessage from existing data.
+     *
+     * @param payload    the payload for the Message
+     * @param metaData   The metadata for this message
+     * @param identifier The message identifier
+     */
     @JsonCreator
-    public GenericCommandMessage(@JsonProperty("payload") @Nonnull T payload, @JsonProperty("metaData") @Nonnull Map<String, ?> metaData, @JsonProperty("identifier") String identifier) {
+    @ConstructorProperties({"payload", "metaData", "identifier"})
+    public GenericCommandMessage(@JsonProperty("payload") @Nonnull T payload,
+                                 @JsonProperty("metaData") @Nonnull Map<String, ?> metaData,
+                                 @JsonProperty("identifier") String identifier) {
         this(new GenericMessage<>(identifier, payload, metaData), payload.getClass().getName());
     }
 

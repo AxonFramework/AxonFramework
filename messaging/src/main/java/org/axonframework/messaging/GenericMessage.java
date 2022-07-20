@@ -16,12 +16,15 @@
 
 package org.axonframework.messaging;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
+import java.beans.ConstructorProperties;
 import java.util.Map;
 
 /**
@@ -94,15 +97,18 @@ public class GenericMessage<T> extends AbstractMessage<T> {
 
     /**
      * Constructor to reconstruct a Message using existing data. Note that no correlation data from a UnitOfWork is
-     * attached when using this constructor. If you're constructing a new Message, use {@link #GenericMessage(Object,
-     * Map)} instead.
+     * attached when using this constructor. If you're constructing a new Message, use
+     * {@link #GenericMessage(Object, Map)} instead.
      *
      * @param identifier The identifier of the Message
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      * @throws NullPointerException when the given {@code payload} is {@code null}.
      */
-    public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
+    @JsonCreator
+    @ConstructorProperties({"identifier", "payload", "metaData"})
+    public GenericMessage(@JsonProperty("identifier") String identifier, @JsonProperty("payload") T payload,
+                          @JsonProperty("metaData") Map<String, ?> metaData) {
         this(identifier, getDeclaredPayloadType(payload), payload, metaData);
     }
 

@@ -16,7 +16,6 @@
 package org.axonframework.queryhandling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.messaging.GenericMessage;
@@ -25,6 +24,7 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
+import java.beans.ConstructorProperties;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -37,7 +37,6 @@ import javax.annotation.Nonnull;
  * @author Marc Gathier
  * @since 3.1
  */
-@JsonIgnoreProperties("payloadType")
 public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements QueryMessage<T, R> {
 
     private static final long serialVersionUID = -3908412412867063631L;
@@ -68,9 +67,23 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
+
+    /**
+     * Creates a GenericQueryMessage with all properties that would be present in the serialized form of it.
+     *
+     * @param payload      The payload of the message
+     * @param identifier   The identifier of the Message
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type of type {@link ResponseType}
+     * @param metaData     The metadata of the message
+     */
     @JsonCreator
-    public GenericQueryMessage(@JsonProperty("payload") T payload, @JsonProperty("queryName") String queryName, @JsonProperty("responseType") ResponseType<R> responseType, @JsonProperty("identifier") String identifier) {
-        this(new GenericMessage<>(identifier, payload, MetaData.emptyInstance()), queryName, responseType);
+    @ConstructorProperties({"payload", "queryName", "responseType", "identifier", "metaData"})
+    public GenericQueryMessage(@JsonProperty("payload") T payload, @JsonProperty("queryName") String queryName,
+                               @JsonProperty("responseType") ResponseType<R> responseType,
+                               @JsonProperty("identifier") String identifier,
+                               @JsonProperty("metaData") MetaData metaData) {
+        this(new GenericMessage<>(identifier, payload, metaData), queryName, responseType);
     }
 
     /**

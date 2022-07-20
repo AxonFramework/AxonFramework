@@ -16,11 +16,13 @@
 
 package org.axonframework.serialization;
 
-public class MessageSerializationPayload {
+class MessageSerializationPayload {
+
     private String myProperty1;
     private String getMyProperty2;
 
-    public MessageSerializationPayload() {}
+    public MessageSerializationPayload() {
+    }
 
     public MessageSerializationPayload(String myProperty1, String getMyProperty2) {
         this.myProperty1 = myProperty1;

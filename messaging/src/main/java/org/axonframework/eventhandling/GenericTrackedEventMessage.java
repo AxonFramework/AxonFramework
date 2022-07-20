@@ -16,8 +16,12 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
+import java.beans.ConstructorProperties;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -67,6 +71,26 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
         super(delegate, timestamp);
         this.trackingToken = trackingToken;
     }
+
+    /**
+     * Creates a GenericTrackedEventMessage with all properties that would be present in the serialized form of it.
+     *
+     * @param trackingToken the tracking token of the resulting message
+     * @param payload       The payload of the message
+     * @param identifier    The identifier of the Message
+     * @param metaData      The metadata of the message
+     * @param timestamp     The timestamp of the Message creation
+     */
+    @JsonCreator
+    @ConstructorProperties({"trackingToken", "payload", "identifier", "metaData", "timestamp"})
+    public GenericTrackedEventMessage(@JsonProperty("trackingToken") TrackingToken trackingToken,
+                                      @JsonProperty("payload") T payload, @JsonProperty("identifier") String identifier,
+                                      @JsonProperty("metaData") MetaData metaData,
+                                      @JsonProperty("timestamp") Instant timestamp) {
+        super(identifier, payload, metaData, timestamp);
+        this.trackingToken = trackingToken;
+    }
+
 
     @Override
     public TrackingToken trackingToken() {
