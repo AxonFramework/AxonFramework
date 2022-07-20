@@ -350,8 +350,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         try {
             transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
             logger.info("Released claim");
-        } catch (Exception e) {
-            logger.info("Release claim failed", e);
+        } catch (Exception e) {  
+            // Ignore exception
+            if (logger.isDebugEnabled()) {
+                logger.debug("Release claim failed", e);
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Release claim failed");
+            }
             // Ignore exception
         }
     }
@@ -696,6 +701,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                     if (workerThread.isAlive()) {
                                         workerThread.interrupt();
                                         workerThread.join(workerTerminationTimeout);
+                                        if (workerThread.isAlive()) {
+                                            logger.warn(
+                                                    "Forced shutdown of Tracking Processor Worker '{}' was unsuccessful. " 
+                                                            + "Consider increasing workerTerminationTimeout.",
+                                                    worker.getKey()
+                                            );
+                                        }
                                     }
                                 } catch (InterruptedException e) {
                                     logger.info(
