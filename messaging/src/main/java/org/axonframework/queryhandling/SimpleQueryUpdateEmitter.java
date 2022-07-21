@@ -133,7 +133,14 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         Flux<SubscriptionQueryUpdateMessage<U>> updateMessageFlux = sink.asFlux()
                                                                         .doOnCancel(removeHandler)
                                                                         .doOnTerminate(removeHandler);
-        return new UpdateHandlerRegistration<>(registration, updateMessageFlux, sinksManyWrapper::complete);
+        Runnable completeHandler = () -> {
+            sinksManyWrapper.complete();
+            // In case a user didn't subscribe to the flux, the remove handler is never invoked.
+            // Hence, invoke removeHandler potentially twice to ensure the registration is removed from the emitter.
+            removeHandler.run();
+        };
+
+        return new UpdateHandlerRegistration<>(registration, updateMessageFlux, completeHandler);
     }
 
     @Override
