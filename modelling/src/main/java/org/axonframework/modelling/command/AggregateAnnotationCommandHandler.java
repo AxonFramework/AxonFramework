@@ -152,11 +152,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     private String getHandlerSignature(MessageHandlingMember<? super T> handler) {
-        Executable executable = handler.unwrap(Executable.class).orElseThrow(() -> new IllegalStateException(
-                "A handler is missing an Executable. Please provide an "
-                        + "Executable in your MessageHandlingMembers"
-        ));
-        return toDiscernibleSignature(executable);
+        return = handler.unwrap(Executable.class)
+                        .map(ReflectionUtils::toDiscernibleSignature)
+                        .orElseThrow(() -> new IllegalStateException(
+                            "A handler is missing an Executable. Please provide an "
+                                + "Executable in your MessageHandlingMembers"
+                        ));
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,

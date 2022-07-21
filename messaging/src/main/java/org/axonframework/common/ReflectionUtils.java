@@ -500,10 +500,10 @@ public abstract class ReflectionUtils {
 
     /**
      * Returns a discernible signature without including the classname. This will contain the method name and the parameter
-     * types, such as: thisIfMyMethod(java.lang.String myString, com.acme.MyGreatObject)
+     * types, such as: {@code thisIfMyMethod(java.lang.String myString, com.acme.MyGreatObject)}.
      *
-     * @param executable The executable to make a signature of
-     * @return The discernible signature
+     * @param executable The executable to make a signature of.
+     * @return The discernible signature.
      */
     public static String toDiscernibleSignature(Executable executable) {
         return String.format("%s(%s)",
