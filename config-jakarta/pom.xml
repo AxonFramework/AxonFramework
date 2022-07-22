@@ -20,6 +20,89 @@
 
     <packaging>jar</packaging>
 
+    <!--
+        Copies of the dependencies from the original module
+    -->
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+<!--            <artifactId>axon-eventsourcing</artifactId>-->
+            <artifactId>axon-eventsourcing-jakarta</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-disruptor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Test Dependencies -->
+<!--        <dependency>-->
+<!--            <groupId>javax.inject</groupId>-->
+<!--            <artifactId>javax.inject</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+        <dependency>
+<!--            <groupId>javax.persistence</groupId>-->
+<!--            <artifactId>javax.persistence-api</artifactId>-->
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.0.0</version>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+<!--            <artifactId>hibernate-core</artifactId>-->
+            <artifactId>hibernate-core-jakarta</artifactId>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- explicitly define transitive dependencies to increase version priority -->
+        <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+<!--            <artifactId>axon-modelling</artifactId>-->
+            <artifactId>axon-modelling-jakarta</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+<!--            <artifactId>axon-messaging</artifactId>-->
+            <artifactId>axon-messaging-jakarta</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
