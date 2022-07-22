@@ -26,6 +26,7 @@
         <module>modelling</module>
         <module>modelling-jakarta</module>
         <module>eventsourcing</module>
+        <module>eventsourcing-jakarta</module>
         <module>config</module>
         <module>test</module>
         <module>axon-server-connector</module>
