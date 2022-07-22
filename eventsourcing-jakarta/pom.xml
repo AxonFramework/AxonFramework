@@ -20,6 +20,9 @@
 
     <packaging>jar</packaging>
 
+    <!--
+        Copies of the dependencies from the original module
+    -->
 
     <dependencies>
         <dependency>
