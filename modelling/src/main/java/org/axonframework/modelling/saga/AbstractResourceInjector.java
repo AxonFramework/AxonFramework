@@ -42,6 +42,7 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
 
     private static final String[] DEFAULT_INJECT_ANNOTATIONS = {
             "javax.inject.Inject",
+            "jakarta.inject.Inject",
             "org.springframework.beans.factory.annotation.Autowired"
     };
 
