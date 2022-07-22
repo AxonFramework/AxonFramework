@@ -22,6 +22,7 @@
     <version>4.6.0-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
+        <module>messaging-jakarta</module>
         <module>modelling</module>
         <module>eventsourcing</module>
         <module>config</module>
