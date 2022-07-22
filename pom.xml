@@ -24,6 +24,7 @@
         <module>messaging</module>
         <module>messaging-jakarta</module>
         <module>modelling</module>
+        <module>modelling-jakarta</module>
         <module>eventsourcing</module>
         <module>config</module>
         <module>test</module>
