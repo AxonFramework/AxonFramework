@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.otel;
+package org.axonframework.tracing.tags;
 
-import io.opentelemetry.context.propagation.TextMapSetter;
+import org.axonframework.messaging.Message;
+import org.axonframework.tracing.SpanAttributesProvider;
 
+import java.util.Collections;
 import java.util.Map;
 
-public class MetadataContextSetter implements TextMapSetter<Map<String, String>> {
-
+public class MessageTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public void set(Map<String, String> metadata, String key, String value) {
-        if (metadata == null) {
-            return;
-        }
-        metadata.put(key, value);
+    public Map<String, String> provideForMessage(Message<?> message) {
+        return Collections.singletonMap("axon_message_type", message.getClass().getSimpleName());
     }
 }

@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.tracing.TagProvider;
 
-import java.util.Collections;
 import java.util.Map;
 
-public class MessageTypeTagProvider implements TagProvider {
+public interface SpanAttributesProvider {
 
-    @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
-        return Collections.singletonMap("axon_message_type", message.getClass().getSimpleName());
-    }
+    Map<String, String> provideForMessage(Message<?> message);
 }

@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.tracing.AxonSpanFactory;
 
 import java.util.Optional;
 import java.util.Set;
@@ -241,8 +242,15 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
             return this;
         }
 
+        @Override
+        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
+            return this;
+        }
+
         /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this repository.
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this
+         * repository.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager}
          *                              instance for this repository

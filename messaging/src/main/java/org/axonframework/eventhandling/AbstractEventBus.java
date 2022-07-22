@@ -26,8 +26,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.AxonSpan;
 import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.AxonSpanKind;
-import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +63,7 @@ public abstract class AbstractEventBus implements EventBus {
     private final String eventsKey = this + "_EVENTS";
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
-    private final AxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
+    private final AxonSpanFactory axonSpanFactory;
 
     /**
      * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
@@ -74,6 +73,7 @@ public abstract class AbstractEventBus implements EventBus {
     protected AbstractEventBus(Builder builder) {
         builder.validate();
         this.messageMonitor = builder.messageMonitor;
+        this.axonSpanFactory = builder.axonSpanFactory;
     }
 
     @Override
@@ -115,14 +115,14 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(@Nonnull List<? extends EventMessage<?>> events) {
-        AxonSpan span = axonSpanFactory.create("EventBus.publish", events.get(0))
-                                       .withMessageAttributes(events.get(0))
-                                       .withSpanKind(AxonSpanKind.INTERNAL).start();
-        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(axonSpanFactory::propagateContext).collect(
-                Collectors.toList());
+        AxonSpan span = axonSpanFactory.createInternalSpan("EventBus.publish", events.get(0))
+                                       .start();
+        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(axonSpanFactory::propagateContext)
+                                                                  .collect(
+                                                                          Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
-                                                              .map(messageMonitor::onMessageIngested)
-                                                              .collect(Collectors.toList());
+                                                                         .map(messageMonitor::onMessageIngested)
+                                                                         .collect(Collectors.toList());
 
         if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
@@ -160,10 +160,11 @@ public abstract class AbstractEventBus implements EventBus {
 
     private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-
+            AxonSpan span = axonSpanFactory.createInternalSpan("AbstractEventBus.commit");
             List<EventMessage<?>> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
+                span.start();
                 if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
                     eventsQueue(u.parent().get()).addAll(eventQueue);
                 } else {
@@ -191,8 +192,12 @@ public abstract class AbstractEventBus implements EventBus {
                 } else {
                     doWithEvents(this::afterCommit, eventQueue);
                 }
+                span.end();
             });
-            unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
+            unitOfWork.onCleanup(u -> {
+                u.resources().remove(eventsKey);
+                span.end();
+            });
             return eventQueue;
         });
     }
@@ -285,6 +290,7 @@ public abstract class AbstractEventBus implements EventBus {
     public abstract static class Builder {
 
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a {@link
@@ -296,6 +302,12 @@ public abstract class AbstractEventBus implements EventBus {
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            assertNonNull(messageMonitor, "AxonSpanFactory may not be null");
+            this.axonSpanFactory = axonSpanFactory;
             return this;
         }
 

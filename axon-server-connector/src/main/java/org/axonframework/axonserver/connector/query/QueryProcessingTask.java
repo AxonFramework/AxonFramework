@@ -31,6 +31,8 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -77,6 +79,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
+    private final AxonSpanFactory axonSpanFactory;
 
     /**
      * Instantiates a query processing task.
@@ -87,18 +90,21 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
      * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
+     * @param axonSpanFactory
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
-                        String clientId) {
+                        String clientId,
+                        AxonSpanFactory axonSpanFactory) {
         this(localSegment,
              queryRequest,
              responseHandler,
              serializer,
              clientId,
-             ClasspathResolver::projectReactorOnClasspath);
+             ClasspathResolver::projectReactorOnClasspath,
+             axonSpanFactory);
     }
 
     /**
@@ -111,13 +117,14 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param serializer         The serializer used to serialize items.
      * @param clientId           The identifier of the client.
      * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
+     * @param axonSpanFactory
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        Supplier<Boolean> reactorOnClassPath) {
+                        Supplier<Boolean> reactorOnClassPath, AxonSpanFactory axonSpanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
@@ -125,6 +132,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         this.clientId = clientId;
         this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
+        this.axonSpanFactory = axonSpanFactory;
     }
 
     @Override
@@ -185,9 +193,12 @@ class QueryProcessingTask implements Runnable, FlowControl {
     }
 
     private <Q, R, T> void directQuery(QueryMessage<Q, R> queryMessage) {
+        AxonSpan span = axonSpanFactory.createHandlerSpan("QueryProcessingTask.directQuery", queryMessage, true)
+                                       .start();
         localSegment.query(queryMessage)
                     .whenComplete((result, e) -> {
                         if (e != null) {
+                            span.recordException(e);
                             sendError(e);
                         } else {
                             try {
@@ -207,6 +218,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                 sendError(t);
                             }
                         }
+                        span.end();
                     });
     }
 

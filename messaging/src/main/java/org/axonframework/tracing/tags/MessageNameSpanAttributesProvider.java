@@ -16,17 +16,33 @@
 
 package org.axonframework.tracing.tags;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.tracing.TagProvider;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 
-public class MessageIdTagProvider implements TagProvider {
+public class MessageNameSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
     public Map<String, String> provideForMessage(Message<?> message) {
-        return singletonMap("axon_message_id", message.getIdentifier());
+        String name = determineName(message);
+        if (name != null) {
+            return singletonMap("axon.message-name", message.getIdentifier());
+        }
+        return null;
+    }
+
+    private String determineName(Message<?> message) {
+        if (message instanceof CommandMessage) {
+            return ((CommandMessage<?>) message).getCommandName();
+        }
+        if (message instanceof QueryMessage) {
+            return ((QueryMessage<?, ?>) message).getQueryName();
+        }
+        return null;
     }
 }

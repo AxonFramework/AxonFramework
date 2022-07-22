@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing;
+package org.axonframework.tracing.tags;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
 
-public interface TagProvider {
-    Map<String, String> provideForMessage(Message<?> message);
+import static java.util.Collections.singletonMap;
+
+public class AggregateIdentifierSpanAttributesProvider implements SpanAttributesProvider {
+
+    @Override
+    public Map<String, String> provideForMessage(Message<?> message) {
+        if (message instanceof DomainEventMessage) {
+            DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) message;
+            return singletonMap("axon_aggregate_identifier", domainEventMessage.getAggregateIdentifier());
+        }
+        return null;
+    }
 }

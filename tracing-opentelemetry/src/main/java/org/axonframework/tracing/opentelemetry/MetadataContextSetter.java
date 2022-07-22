@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.otel;
+package org.axonframework.tracing.opentelemetry;
 
-import io.opentelemetry.context.propagation.TextMapGetter;
-import org.axonframework.messaging.Message;
+import io.opentelemetry.context.propagation.TextMapSetter;
 
-public class MetadataContextGetter implements TextMapGetter<Message<?>> {
+import java.util.Map;
+import javax.annotation.Nonnull;
+
+public class MetadataContextSetter implements TextMapSetter<Map<String, String>> {
+
+    public static final MetadataContextSetter INSTANCE = new MetadataContextSetter();
+
 
     @Override
-    public Iterable<String> keys(Message<?> message) {
-        return message.getMetaData().keySet();
-    }
-
-    @Override
-    public String get(Message<?> message, String key) {
-        if (message == null) {
-            return null;
+    public void set(Map<String, String> metadata, @Nonnull String key, @Nonnull String value) {
+        if (metadata == null) {
+            return;
         }
-        return (String) message.getMetaData().get(key);
+        metadata.put(key, value);
     }
 }

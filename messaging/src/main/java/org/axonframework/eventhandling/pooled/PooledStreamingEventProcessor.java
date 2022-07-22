@@ -41,7 +41,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,14 +154,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialToken(initialToken)
                                       .build();
 
-        OpenTelemetryAxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
-        // TODO: 7/18/22 Make configurable like CommandBus
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
-                .create(
+                .createHandlerSpan(
                         "PooledStreamingEventProcessor[" + builder.name() + "] ",
                         unitOfWork.getMessage())
-                .withMessageAsParent(unitOfWork.getMessage())
-                .wrapCallable(interceptorChain::proceed));
+                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -474,12 +471,18 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             return this;
         }
 
+        @Override
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
          *
-         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link
-         *                      EventProcessor} will track
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this
+         *                      {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(@Nonnull StreamableMessageSource<TrackedEventMessage<?>> messageSource) {

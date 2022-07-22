@@ -34,6 +34,9 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
+import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +96,7 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final AxonSpanFactory axonSpanFactory;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -110,6 +114,7 @@ public class SimpleQueryBus implements QueryBus {
         }
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
+        this.axonSpanFactory = builder.axonSpanFactory;
     }
 
     /**
@@ -168,6 +173,7 @@ public class SimpleQueryBus implements QueryBus {
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
+        axonSpanFactory.createInternalSpan("SimpleQueryBus.query", query).startForFuture(result);
         try {
             ResponseType<R> responseType = interceptedQuery.getResponseType();
             if (handlers.isEmpty()) {
@@ -417,7 +423,8 @@ public class SimpleQueryBus implements QueryBus {
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler
     ) {
-        return uow.executeWithResult(() -> {
+        AxonSpan span = axonSpanFactory.createInternalSpan("SimpleQueryBus.invokeQuery", uow.getMessage());
+        return uow.executeWithResult(() -> span.runCallable(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
             if (queryResponse instanceof CompletableFuture) {
@@ -435,7 +442,7 @@ public class SimpleQueryBus implements QueryBus {
                 });
             }
             return buildCompletableFuture(responseType, queryResponse);
-        });
+        }));
     }
 
     private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
@@ -547,6 +554,7 @@ public class SimpleQueryBus implements QueryBus {
                                                                                              .build();
         private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
+        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -616,6 +624,12 @@ public class SimpleQueryBus implements QueryBus {
         public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
             assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
             this.queryUpdateEmitter = queryUpdateEmitter;
+            return this;
+        }
+
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            assertNonNull(axonSpanFactory, "AxonSpanFactory may not be null");
+            this.axonSpanFactory = axonSpanFactory;
             return this;
         }
 

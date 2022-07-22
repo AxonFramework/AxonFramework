@@ -16,22 +16,17 @@
 
 package org.axonframework.tracing.tags;
 
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.tracing.TagProvider;
+import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 
-public class AggregateIdentifierTagProvider implements TagProvider {
+public class MessageIdSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
     public Map<String, String> provideForMessage(Message<?> message) {
-        if (message instanceof DomainEventMessage) {
-            DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) message;
-            return singletonMap("axon_aggregate_identifier", domainEventMessage.getAggregateIdentifier());
-        }
-        return null;
+        return singletonMap("axon_message_id", message.getIdentifier());
     }
 }

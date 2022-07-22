@@ -25,6 +25,8 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    protected final AxonSpanFactory axonSpanFactory;
 
     /**
      * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
@@ -79,6 +82,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.rollbackConfiguration = builder.rollbackConfiguration;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
+        this.axonSpanFactory = builder.axonSpanFactory;
     }
 
     @Override
@@ -223,6 +227,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -290,6 +295,13 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             this.messageMonitor = messageMonitor;
             return this;
         }
+
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            assertNonNull(axonSpanFactory, "AxonSpanFactory may not be null");
+            this.axonSpanFactory = axonSpanFactory;
+            return this;
+        }
+
 
         /**
          * Validates whether the fields contained in this Builder are set accordingly.

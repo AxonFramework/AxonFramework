@@ -59,6 +59,7 @@ class AxonServerAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
+                    AxonTracingAutoConfiguration.class,
                     AxonAutoConfiguration.class,
                     EventProcessingAutoConfiguration.class,
                     InfraConfiguration.class,

@@ -35,7 +35,6 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.AxonSpan;
 import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.AxonSpanKind;
 import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +119,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        AxonSpan span = spanFactory.create("SimpleCommandBus.dispatch", command).start();
+        AxonSpan span = spanFactory.createInternalSpan("SimpleCommandBus.dispatch", command).start();
         CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
                 span.recordException(commandResultMessage.exceptionResult());
@@ -189,20 +188,19 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        spanFactory.create("SimpleCommandBus.handle", command)
-                   .withSpanKind(AxonSpanKind.HANDLER).run(() -> {
-                       if (logger.isDebugEnabled()) {
-                           logger.debug("Handling command [{}]", command.getCommandName());
-                       }
+        spanFactory.createInternalSpan("SimpleCommandBus.handle", command).run(() -> {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Handling command [{}]", command.getCommandName());
+            }
 
-                       UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-                       unitOfWork.attachTransaction(transactionManager);
-                       InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+            unitOfWork.attachTransaction(transactionManager);
+            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-                       CommandResultMessage<R> resultMessage = asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
-                                                                                                                   rollbackConfiguration));
-                       callback.onResult(command, resultMessage);
-                   });
+            CommandResultMessage<R> resultMessage = asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed,
+                                                                                                        rollbackConfiguration));
+            callback.onResult(command, resultMessage);
+        });
     }
 
     /**

@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing;
+package org.axonframework.tracing.tags;
 
-public enum AxonSpanKind {
-    INTERNAL,
-    PRODUCER,
-    HANDLER,
+import org.axonframework.messaging.Message;
+import org.axonframework.tracing.SpanAttributesProvider;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
+
+    @Override
+    public Map<String, String> provideForMessage(Message<?> message) {
+        Map<String, String> map = new HashMap<>();
+        message.getMetaData().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
+        return map;
+    }
 }

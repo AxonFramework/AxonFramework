@@ -17,17 +17,17 @@
 package org.axonframework.tracing.tags;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.tracing.TagProvider;
+import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class MetadataTagProvider implements TagProvider {
+public class MessagingSpanAttributesSupplier implements SpanAttributesProvider {
 
     @Override
     public Map<String, String> provideForMessage(Message<?> message) {
-        Map<String, String> map = new HashMap<>();
-        message.getMetaData().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
+        HashMap<String, String> map = new HashMap<>();
+        map.put("messaging.system", "axonserver");
         return map;
     }
 }

@@ -76,7 +76,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -332,7 +332,8 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
                     QueryBus queryBus = SimpleQueryBus.builder()
-                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
+                                                                                            "queryBus"))
                                                       .transactionManager(config.getComponent(
                                                               TransactionManager.class, NoTransactionManager::instance
                                                       ))
@@ -341,6 +342,7 @@ public class DefaultConfigurer implements Configurer {
                                                               () -> LoggingQueryInvocationErrorHandler.builder().build()
                                                       ))
                                                       .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                                      .axonSpanFactory(config.getComponent(AxonSpanFactory.class))
                                                       .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
@@ -480,7 +482,7 @@ public class DefaultConfigurer implements Configurer {
 
     protected AxonSpanFactory defaultAxonSpanFactory(Configuration config) {
         return defaultComponent(AxonSpanFactory.class, config)
-                .orElseGet(OpenTelemetryAxonSpanFactory::new);
+                .orElseGet(NoopSpanFactory::new);
     }
 
     /**

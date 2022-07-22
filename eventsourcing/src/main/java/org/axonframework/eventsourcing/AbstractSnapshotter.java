@@ -97,15 +97,23 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             }
         }
         if (snapshotsInProgress.add(typeAndId)) {
-            AxonSpan span = spanFactory.create(String.format("snapshot %s %s",
-                                                             aggregateType.getSimpleName(),
-                                                             aggregateIdentifier));
+            String rootTraceName = String.format("createSnapshot %s",
+                                                 aggregateType.getSimpleName());
+            AxonSpan span = spanFactory.createRootTrace(rootTraceName);
             try {
-                executor.execute(
-                        silently(span.wrap(() ->
-                            transactionManager.executeInTransaction(createSnapshotterTask(aggregateType,
-                                                                                          aggregateIdentifier))
-                        )).andFinally(() -> snapshotsInProgress.remove(typeAndId)));
+                // The traces here are separated for two reasons: A) measuring the delay between scheduling and making
+                // B) To have a more generic name for trace grouping and a more specific name for the span with aggId
+                String innerTraceName = String.format("createSnapshot %s %s",
+                                                      aggregateType.getSimpleName(),
+                                                      aggregateIdentifier);
+                executor.execute(span.wrapRunnable(silently(() -> spanFactory.createInternalSpan(innerTraceName)
+                                                                             .run(() ->
+                                                                                          transactionManager.executeInTransaction(
+
+                                                                                                  createSnapshotterTask(
+                                                                                                          aggregateType,
+                                                                                                          aggregateIdentifier)))
+                ).andFinally(() -> snapshotsInProgress.remove(typeAndId))));
             } catch (Exception e) {
                 snapshotsInProgress.remove(typeAndId);
                 throw e;

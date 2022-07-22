@@ -33,6 +33,7 @@ import org.axonframework.modelling.command.LockingRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.tracing.AxonSpanFactory;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -123,18 +124,23 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
-        DomainEventStream eventStream = readEvents(aggregateIdentifier);
-        if (!eventStream.hasNext()) {
-            throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
-        }
-        EventSourcedAggregate<T> aggregate = EventSourcedAggregate
-                .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
-                            aggregateModel(), eventStore, repositoryProvider, trigger);
-        aggregate.initializeState(eventStream);
-        if (aggregate.isDeleted()) {
-            throw new AggregateDeletedException(aggregateIdentifier);
-        }
-        return aggregate;
+        return axonSpanFactory.createInternalSpan("EventSourcedAggregate.doLoadWithLock " + aggregateIdentifier)
+                              .runSupplier(() -> {
+                                  DomainEventStream eventStream = readEvents(aggregateIdentifier);
+                                  if (!eventStream.hasNext()) {
+                                      throw new AggregateNotFoundException(aggregateIdentifier,
+                                                                           "The aggregate was not found in the event store");
+                                  }
+                                  EventSourcedAggregate<T> aggregate = EventSourcedAggregate
+                                          .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier,
+                                                                                           eventStream.peek()),
+                                                      aggregateModel(), eventStore, repositoryProvider, trigger);
+                                  aggregate.initializeState(eventStream);
+                                  if (aggregate.isDeleted()) {
+                                      throw new AggregateDeletedException(aggregateIdentifier);
+                                  }
+                                  return aggregate;
+                              });
     }
 
     /**
@@ -272,11 +278,17 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
             return this;
         }
 
+        @Override
+        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.
          *
-         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source
-         *                   an Aggregate
+         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source an
+         *                   Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> eventStore(EventStore eventStore) {

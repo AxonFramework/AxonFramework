@@ -57,6 +57,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,6 +201,12 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
             return this;
         }
 

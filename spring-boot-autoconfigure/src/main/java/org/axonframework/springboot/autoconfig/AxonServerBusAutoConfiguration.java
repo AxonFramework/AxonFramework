@@ -99,13 +99,15 @@ public class AxonServerBusAutoConfiguration {
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator,
                                        QueryInvocationErrorHandler queryInvocationErrorHandler,
-                                       TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver) {
+                                       TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver,
+                                       AxonSpanFactory axonSpanFactory) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
                               .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
+                              .axonSpanFactory(axonSpanFactory)
                               .build();
         simpleQueryBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
@@ -120,6 +122,7 @@ public class AxonServerBusAutoConfiguration {
                                  .genericSerializer(genericSerializer)
                                  .priorityCalculator(priorityCalculator)
                                  .targetContextResolver(targetContextResolver)
+                                 .axonSpanFactory(axonSpanFactory)
                                  .build();
     }
 
@@ -139,6 +142,7 @@ public class AxonServerBusAutoConfiguration {
                                    .eventSerializer(eventSerializer)
                                    .snapshotFilter(configuration.snapshotFilter())
                                    .upcasterChain(configuration.upcasterChain())
+                                   .axonSpanFactory(configuration.axonSpanFactory())
                                    .build();
     }
 }

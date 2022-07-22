@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing.opentelemetry;
 
+import io.opentelemetry.context.propagation.TextMapGetter;
 import org.axonframework.messaging.Message;
-import org.axonframework.tracing.TagProvider;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.annotation.Nonnull;
 
-public class MessagingTagSupplier implements TagProvider {
+public class MetadataContextGetter implements TextMapGetter<Message<?>> {
+
+    public static final MetadataContextGetter INSTANCE = new MetadataContextGetter();
 
     @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("messaging.system", "axonserver");
-        return map;
+    public Iterable<String> keys(Message<?> message) {
+        return message.getMetaData().keySet();
+    }
+
+    @Override
+    public String get(Message<?> message, @Nonnull String key) {
+        if (message == null) {
+            return null;
+        }
+        return (String) message.getMetaData().get(key);
     }
 }

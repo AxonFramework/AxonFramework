@@ -68,6 +68,7 @@ class AsynchronousCommandBusTest {
     void testDispatchWithCallback() throws Exception {
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        when(mockCallback.wrap(any())).thenCallRealMethod();
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
 
@@ -113,6 +114,7 @@ class AsynchronousCommandBusTest {
     @Test
     void testExceptionIsThrownWhenNoHandlerIsRegistered() {
         CommandCallback<Object, Object> callback = mock(CommandCallback.class);
+        when(callback.wrap(any())).thenCallRealMethod();
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
         //noinspection rawtypes

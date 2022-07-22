@@ -34,7 +34,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.otel.OpenTelemetryAxonSpanFactory;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,13 +153,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
 
-        OpenTelemetryAxonSpanFactory axonSpanFactory = new OpenTelemetryAxonSpanFactory();
-        // TODO: 7/18/22 Make configurable like CommandBus
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
-                .create(
-                        "TrackingEventProcessor[" + builder.name + "] ", unitOfWork.getMessage())
-                .withMessageAsParent(unitOfWork.getMessage())
-                .wrapCallable(interceptorChain::proceed));
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
@@ -184,6 +177,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             return interceptorChain.proceed();
         });
+
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
+                .createHandlerSpan("TrackingEventProcessor[" + builder.name + "] ",
+                                   unitOfWork.getMessage())
+                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -908,13 +906,19 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return this;
         }
 
+
+        @Override
+        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
          * track.
          *
-         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link
-         *                      EventProcessor} will track
-         *
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this
+         *                      {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {

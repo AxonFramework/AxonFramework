@@ -96,7 +96,7 @@ class SimpleCommandBusTest {
 
     @Test
     void testFireAndForgetUsesDefaultCallback() {
-        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> mockCallback = createCallbackMock();
         testSubject = SimpleCommandBus.builder()
                                       .defaultCommandCallback(mockCallback).build();
 
@@ -155,7 +155,7 @@ class SimpleCommandBusTest {
     @Test
     void testDispatchCommandNoHandlerSubscribed() {
         CommandMessage<Object> command = asCommandMessage("test");
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback callback = createCallbackMock();
         testSubject.dispatch(command, callback);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -165,6 +165,12 @@ class SimpleCommandBusTest {
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
+    private CommandCallback createCallbackMock() {
+        CommandCallback mock = mock(CommandCallback.class);
+        when(mock.wrap(any())).thenCallRealMethod();
+        return mock;
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void testDispatchCommandHandlerUnsubscribed() {
@@ -172,7 +178,7 @@ class SimpleCommandBusTest {
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();
         CommandMessage<Object> command = asCommandMessage("Say hi!");
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback callback = createCallbackMock();
         testSubject.dispatch(command, callback);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -206,7 +212,7 @@ class SimpleCommandBusTest {
         testSubject = SimpleCommandBus.builder().messageMonitor(messageMonitor).build();
 
         try {
-            testSubject.dispatch(asCommandMessage("test"), mock(CommandCallback.class));
+            testSubject.dispatch(asCommandMessage("test"), createCallbackMock());
         } catch (NoHandlerForCommandException expected) {
             // ignore
         }

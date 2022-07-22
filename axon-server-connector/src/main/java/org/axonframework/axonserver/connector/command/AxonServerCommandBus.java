@@ -46,7 +46,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.AxonSpan;
 import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.AxonSpanKind;
 import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,8 +162,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        AxonSpan span = spanFactory.create("AxonServerCommandBus.dispatch", commandMessage)
-                                   .withSpanKind(AxonSpanKind.PRODUCER)
+        AxonSpan span = spanFactory.createDispatchSpan("AxonServerCommandBus.dispatch", commandMessage)
                                    .start();
         CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
@@ -300,16 +298,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         @Override
         public void run() {
-            CommandMessage<?> deserialize = serializer.deserialize(command);
-            AxonSpan span = axonSpanFactory.create("AxonServerCommandBus.handle", deserialize)
-                                           .withMessageAsParent(deserialize)
-                                           .withSpanKind(AxonSpanKind.HANDLER)
+            CommandMessage<?> deserializedCommand = serializer.deserialize(command);
+            AxonSpan span = axonSpanFactory.createHandlerSpan("AxonServerCommandBus.handle", deserializedCommand)
                                            .start();
             try {
                 localSegment.dispatch(
-                        axonSpanFactory.propagateContext(deserialize),
+                        deserializedCommand,
                         (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
-                            if(commandResultMessage.isExceptional()) {
+                            if (commandResultMessage.isExceptional()) {
                                 span.recordException(commandResultMessage.exceptionResult());
                             }
                             span.end();
@@ -419,6 +415,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             this.routingStrategy = routingStrategy;
             return this;
         }
+
 
         /**
          * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link

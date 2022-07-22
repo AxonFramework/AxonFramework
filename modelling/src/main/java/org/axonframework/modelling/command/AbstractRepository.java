@@ -27,6 +27,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.NoopSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +62,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
+    protected final AxonSpanFactory axonSpanFactory;
 
     /**
      * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
@@ -76,6 +79,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected AbstractRepository(Builder<T> builder) {
         builder.validate();
         this.aggregateModel = builder.buildAggregateModel();
+        this.axonSpanFactory = builder.axonSpanFactory;
     }
 
     @Override
@@ -129,15 +133,18 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
-        Map<String, A> aggregates = managedAggregates(uow);
-        A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                 s -> doLoad(aggregateIdentifier, expectedVersion));
-        uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-        validateOnLoad(aggregate, expectedVersion);
-        prepareForCommit(aggregate);
+        String spanName = String.format("AbstractRepository.load %s", aggregateIdentifier);
+        return axonSpanFactory.createInternalSpan(spanName).runSupplier(() -> {
+            UnitOfWork<?> uow = CurrentUnitOfWork.get();
+            Map<String, A> aggregates = managedAggregates(uow);
+            A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
+                                                     s -> doLoad(aggregateIdentifier, expectedVersion));
+            uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
+            validateOnLoad(aggregate, expectedVersion);
+            prepareForCommit(aggregate);
 
-        return aggregate;
+            return aggregate;
+        });
     }
 
 
@@ -376,6 +383,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
+        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -459,6 +467,12 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
             assertNonNull(subtype, "A subtype of the aggregate may not be null");
             this.subtypes.add(subtype);
+            return this;
+        }
+
+        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            assertNonNull(axonSpanFactory, "AxonSpanFactory may not be null");
+            this.axonSpanFactory = axonSpanFactory;
             return this;
         }
 

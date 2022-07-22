@@ -26,41 +26,41 @@ public class NoopSpanFactory implements AxonSpanFactory {
     public static final NoopSpanFactory INSTANCE = new NoopSpanFactory();
 
     @Override
-    public AxonSpan create(String operationName) {
+    public AxonSpan createRootTrace(String operationName) {
         return new NoopAxonSpan();
     }
 
     @Override
-    public AxonSpan create(String operationName, Message<?> messageForOperationName) {
+    public AxonSpan createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceParent) {
         return new NoopAxonSpan();
     }
 
     @Override
-    public void registerTagProvider(TagProvider supplier) {
+    public AxonSpan createDispatchSpan(String operationName, Message<?> parentMessage) {
+        return new NoopAxonSpan();
+    }
+
+    @Override
+    public AxonSpan createInternalSpan(String operationName) {
+        return new NoopAxonSpan();
+    }
+
+    @Override
+    public AxonSpan createInternalSpan(String operationName, Message<?> message) {
+        return new NoopAxonSpan();
+    }
+
+    @Override
+    public void registerTagProvider(SpanAttributesProvider supplier) {
         // Do nothing
     }
 
     @Override
     public <M extends Message<?>> M propagateContext(M message) {
-        return null;
+        return message;
     }
 
     static class NoopAxonSpan implements AxonSpan {
-
-        @Override
-        public AxonSpan withMessageAsParent(Message<?> message) {
-            return this;
-        }
-
-        @Override
-        public AxonSpan withSpanKind(AxonSpanKind spanKind) {
-            return this;
-        }
-
-        @Override
-        public AxonSpan withMessageAttributes(Message<?> message) {
-            return this;
-        }
 
         @Override
         public AxonSpan start() {
@@ -69,7 +69,6 @@ public class NoopSpanFactory implements AxonSpanFactory {
 
         @Override
         public void end() {
-            // Do nothing
         }
 
         @Override
@@ -78,23 +77,23 @@ public class NoopSpanFactory implements AxonSpanFactory {
         }
 
         @Override
-        public <T> T wrap(Supplier<T> supplier) {
-            return supplier.get();
-        }
-
-        @Override
         public void run(Runnable runnable) {
             runnable.run();
         }
 
         @Override
-        public Runnable wrap(Runnable runnable) {
+        public Runnable wrapRunnable(Runnable runnable) {
             return runnable;
         }
 
         @Override
-        public <T> T wrapCallable(Callable<T> callable) throws Exception {
+        public <T> T runCallable(Callable<T> callable) throws Exception {
             return callable.call();
+        }
+
+        @Override
+        public <T> T runSupplier(Supplier<T> supplier) {
+            return supplier.get();
         }
     }
 }

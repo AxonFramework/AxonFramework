@@ -26,6 +26,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.tracing.AxonSpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,16 +129,18 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier, Long expectedVersion) {
-        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
-        try {
-            final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
-            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
-            return new LockAwareAggregate<>(aggregate, lock);
-        } catch (Throwable ex) {
-            logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
-            lock.release();
-            throw ex;
-        }
+        return axonSpanFactory.createInternalSpan("LockingRepository.doLoad").runSupplier(() -> {
+            Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+            try {
+                final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
+                CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+                return new LockAwareAggregate<>(aggregate, lock);
+            } catch (Throwable ex) {
+                logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
+                lock.release();
+                throw ex;
+            }
+        });
     }
 
     @Override
@@ -173,14 +176,17 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected void doSave(LockAwareAggregate<T, A> aggregate) {
-        if (aggregate.version() != null && !aggregate.isLockHeld()) {
-            throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be " +
-                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
-                            "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
-        }
-        doSaveWithLock(aggregate.getWrappedAggregate());
+        axonSpanFactory.createInternalSpan("LockingRepository.doSave").run(() -> {
+            if (aggregate.version() != null && !aggregate.isLockHeld()) {
+                throw new ConcurrencyException(String.format(
+                        "The aggregate of type [%s] with identifier [%s] could not be " +
+                                "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                                +
+                                "the current thread had released its lock earlier on.",
+                        aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
+            }
+            doSaveWithLock(aggregate.getWrappedAggregate());
+        });
     }
 
     /**
@@ -191,14 +197,17 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected final void doDelete(LockAwareAggregate<T, A> aggregate) {
-        if (aggregate.version() != null && !aggregate.isLockHeld()) {
-            throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be " +
-                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
-                            "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
-        }
-        doDeleteWithLock(aggregate.getWrappedAggregate());
+        axonSpanFactory.createInternalSpan("LockingRepository.doDelete").run(() -> {
+            if (aggregate.version() != null && !aggregate.isLockHeld()) {
+                throw new ConcurrencyException(String.format(
+                        "The aggregate of type [%s] with identifier [%s] could not be " +
+                                "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
+                                +
+                                "the current thread had released its lock earlier on.",
+                        aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
+            }
+            doDeleteWithLock(aggregate.getWrappedAggregate());
+        });
     }
 
     /**
@@ -278,6 +287,12 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         @Override
         public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
             super.subtype(subtype);
+            return this;
+        }
+
+        @Override
+        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
+            super.axonSpanFactory(axonSpanFactory);
             return this;
         }
 

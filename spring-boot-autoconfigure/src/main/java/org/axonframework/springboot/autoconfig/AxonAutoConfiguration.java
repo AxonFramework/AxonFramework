@@ -367,13 +367,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration,
-                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver,
-                                       AxonSpanFactory axonSpanFactory) {
+                                       DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
         SimpleCommandBus commandBus =
                 SimpleCommandBus.builder()
                                 .transactionManager(txManager)
                                 .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
-                                .axonSpanFactory(axonSpanFactory)
+                                .axonSpanFactory(axonConfiguration.axonSpanFactory())
                                 .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(
@@ -394,6 +393,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
                              ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .axonSpanFactory(axonConfiguration.getComponent(AxonSpanFactory.class))
                              .build();
     }
 

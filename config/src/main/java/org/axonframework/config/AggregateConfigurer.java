@@ -102,70 +102,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
-     * using an EntityManager obtained from the main configuration. The given {@code aggregateType} is expected to be a
-     * proper JPA Entity.
-     * <p>
-     * The EntityManagerProvider is expected to have been registered with the Configurer (which would be the case when
-     * using {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
-     * {@link #jpaMappedConfiguration(Class, EntityManagerProvider)} instead.
-     *
-     * @param aggregateType The type of Aggregate to configure
-     * @param <A>           The type of Aggregate to configure
-     * @return An AggregateConfigurer instance for further configuration of the Aggregate
-     */
-    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType) {
-        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
-                .configureLockFactory(config -> NullLockFactory.INSTANCE);
-        return configurer.configureRepository(
-                c -> {
-                    EntityManagerProvider entityManagerProvider = c.getComponent(
-                            EntityManagerProvider.class,
-                            () -> {
-                                throw new AxonConfigurationException(format(
-                                        "JPA has not been correctly configured for aggregate [%s]. Either provide "
-                                                + "an EntityManagerProvider, or use "
-                                                + "DefaultConfigurer.jpaConfiguration(...) to define one for the "
-                                                + "entire configuration.",
-                                        aggregateType.getSimpleName()
-                                ));
-                            });
-                    return GenericJpaRepository.builder(aggregateType)
-                                               .aggregateModel(configurer.metaModel.get())
-                                               .lockFactory(configurer.lockFactory.get())
-                                               .entityManagerProvider(entityManagerProvider)
-                                               .eventBus(c.eventBus())
-                                               .repositoryProvider(c::repository)
-                                               .build();
-                });
-    }
-
-    /**
-     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
-     * using an EntityManager provided by given {@code entityManagerProvider}. The given {@code aggregateType} is
-     * expected to be a proper JPA Entity.
-     *
-     * @param aggregateType         The type of Aggregate to configure
-     * @param entityManagerProvider The provider for Axon to retrieve the EntityManager from
-     * @param <A>                   The type of Aggregate to configure
-     * @return An AggregateConfigurer instance for further configuration of the Aggregate
-     */
-    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
-                                                                    EntityManagerProvider entityManagerProvider) {
-        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
-                .configureLockFactory(config -> NullLockFactory.INSTANCE);
-        return configurer.configureRepository(
-                c -> GenericJpaRepository.builder(aggregateType)
-                                         .aggregateModel(configurer.metaModel.get())
-                                         .lockFactory(configurer.lockFactory.get())
-                                         .entityManagerProvider(entityManagerProvider)
-                                         .eventBus(c.eventBus())
-                                         .repositoryProvider(c::repository)
-                                         .build()
-        );
-    }
-
-    /**
      * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
      * available for subclasses that provide additional configuration possibilities.
      *
@@ -237,6 +173,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                    .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
                                                    .aggregateFactory(aggregateFactory.get())
                                                    .repositoryProvider(c::repository)
+                                                   .axonSpanFactory(c.axonSpanFactory())
                                                    .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());
@@ -247,10 +184,77 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                 });
         commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                 .repository(repository.get())
-                                                 .commandTargetResolver(commandTargetResolver.get())
-                                                 .aggregateModel(metaModel.get())
-                                                 .build());
+                                                                               .repository(repository.get())
+                                                                               .commandTargetResolver(
+                                                                                       commandTargetResolver.get())
+                                                                               .aggregateModel(metaModel.get())
+                                                                               .build());
+    }
+
+    /**
+     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
+     * using an EntityManager obtained from the main configuration. The given {@code aggregateType} is expected to be a
+     * proper JPA Entity.
+     * <p>
+     * The EntityManagerProvider is expected to have been registered with the Configurer (which would be the case when
+     * using {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
+     * {@link #jpaMappedConfiguration(Class, EntityManagerProvider)} instead.
+     *
+     * @param aggregateType The type of Aggregate to configure
+     * @param <A>           The type of Aggregate to configure
+     * @return An AggregateConfigurer instance for further configuration of the Aggregate
+     */
+    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType) {
+        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
+                .configureLockFactory(config -> NullLockFactory.INSTANCE);
+        return configurer.configureRepository(
+                c -> {
+                    EntityManagerProvider entityManagerProvider = c.getComponent(
+                            EntityManagerProvider.class,
+                            () -> {
+                                throw new AxonConfigurationException(format(
+                                        "JPA has not been correctly configured for aggregate [%s]. Either provide "
+                                                + "an EntityManagerProvider, or use "
+                                                + "DefaultConfigurer.jpaConfiguration(...) to define one for the "
+                                                + "entire configuration.",
+                                        aggregateType.getSimpleName()
+                                ));
+                            });
+                    return GenericJpaRepository.builder(aggregateType)
+                                               .aggregateModel(configurer.metaModel.get())
+                                               .lockFactory(configurer.lockFactory.get())
+                                               .entityManagerProvider(entityManagerProvider)
+                                               .eventBus(c.eventBus())
+                                               .repositoryProvider(c::repository)
+                                               .axonSpanFactory(c.axonSpanFactory())
+                                               .build();
+                });
+    }
+
+    /**
+     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational database
+     * using an EntityManager provided by given {@code entityManagerProvider}. The given {@code aggregateType} is
+     * expected to be a proper JPA Entity.
+     *
+     * @param aggregateType         The type of Aggregate to configure
+     * @param entityManagerProvider The provider for Axon to retrieve the EntityManager from
+     * @param <A>                   The type of Aggregate to configure
+     * @return An AggregateConfigurer instance for further configuration of the Aggregate
+     */
+    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
+                                                                    EntityManagerProvider entityManagerProvider) {
+        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
+                .configureLockFactory(config -> NullLockFactory.INSTANCE);
+        return configurer.configureRepository(
+                c -> GenericJpaRepository.builder(aggregateType)
+                                         .aggregateModel(configurer.metaModel.get())
+                                         .lockFactory(configurer.lockFactory.get())
+                                         .entityManagerProvider(entityManagerProvider)
+                                         .eventBus(c.eventBus())
+                                         .repositoryProvider(c::repository)
+                                         .axonSpanFactory(c.axonSpanFactory())
+                                         .build()
+        );
     }
 
     private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {

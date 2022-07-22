@@ -50,27 +50,54 @@ public class MessageOriginProvider implements CorrelationDataProvider {
         return DEFAULT_TRACE_KEY;
     }
 
+
+    private final String traceParentKey;
+
     private final String correlationKey;
     private final String traceKey;
 
     /**
-     * Initializes a {@link MessageOriginProvider} that uses the default correlation id key: {@link
-     * #getDefaultCorrelationKey()} and trace id key: {@link #getDefaultTraceKey()}.
+     * Initializes a {@link MessageOriginProvider} that uses the default correlation id key:
+     * {@link #getDefaultCorrelationKey()}, trace id key: {@link #getDefaultTraceKey()}, and trace parent key:
+     * {@link #getDefaultTraceParentKey()}.
      */
     public MessageOriginProvider() {
-        this(DEFAULT_CORRELATION_KEY, DEFAULT_TRACE_KEY);
+        this(DEFAULT_CORRELATION_KEY, DEFAULT_TRACE_KEY, DEFAULT_TRACE_PARENT_KEY);
     }
 
     /**
-     * Initializes a {@link MessageOriginProvider} that uses the given {@code correlationKey}.
+     * Initializes a {@link MessageOriginProvider} that uses the given {@code correlationKey} and {@code traceKey}.
      *
      * @param correlationKey the key used to store the identifier of a message in the metadata of a resulting message
      * @param traceKey       the key used to store the identifier of the original message giving rise to the current
      *                       message
      */
     public MessageOriginProvider(String correlationKey, String traceKey) {
+        this(correlationKey, traceKey, DEFAULT_TRACE_PARENT_KEY);
+    }
+
+    /**
+     * Initializes a {@link MessageOriginProvider} that uses the given {@code correlationKey} and {@code traceKey}.
+     *
+     * @param correlationKey the key used to store the identifier of a message in the metadata of a resulting message
+     * @param traceKey       the key used to store the identifier of the original message giving rise to the current
+     *                       message
+     * @param traceParentKey the key used to store the identifier of the trace parent to the current message
+     */
+    public MessageOriginProvider(String correlationKey, String traceKey, String traceParentKey) {
         this.correlationKey = correlationKey;
         this.traceKey = traceKey;
+        this.traceParentKey = traceParentKey;
+    }
+
+    /**
+     * Returns the default metadata key for the trace parent id of a message. This is based on the W3C standard for
+     * tracing. See <a href="https://www.w3.org/TR/trace-context-1/">W3C Trace Context</a>.
+     *
+     * @return the default metadata key for the trace parent id
+     */
+    public static String getDefaultTraceParentKey() {
+        return DEFAULT_TRACE_PARENT_KEY;
     }
 
     @Override
@@ -78,8 +105,9 @@ public class MessageOriginProvider implements CorrelationDataProvider {
         Map<String, Object> result = new HashMap<>();
         result.put(correlationKey, message.getIdentifier());
         result.put(traceKey, message.getMetaData().getOrDefault(traceKey, message.getIdentifier()));
-        result.put(DEFAULT_TRACE_PARENT_KEY, message.getMetaData().getOrDefault(DEFAULT_TRACE_PARENT_KEY, message.getIdentifier()));
+        if (message.getMetaData().containsKey(traceParentKey)) {
+            result.put(traceParentKey, message.getMetaData().get(traceParentKey));
+        }
         return result;
     }
-
 }
