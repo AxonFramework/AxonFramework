@@ -67,9 +67,12 @@ public class UpdateHandlerRegistration<U> {
 
     /**
      * Completes the {@link #getUpdates()} {@link Flux}. The consumer can use this method to indicate it is no longer
-     * interested in updates.
+     * interested in updates. This operation automatically closes the {@link #getRegistration() registration} too.
      */
     public void complete() {
         completeHandler.run();
+        // In case a user didn't subscribe to the flux, the remove handler is never invoked.
+        // Hence, invoke removeHandler potentially twice to ensure the registration is removed from the emitter.
+        getRegistration().close();
     }
 }
