@@ -28,6 +28,7 @@
         <module>eventsourcing</module>
         <module>eventsourcing-jakarta</module>
         <module>config</module>
+        <module>config-jakarta</module>
         <module>test</module>
         <module>axon-server-connector</module>
         <module>disruptor</module>
