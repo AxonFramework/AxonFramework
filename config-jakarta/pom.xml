@@ -169,6 +169,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <trimStackTrace>false</trimStackTrace>
+                            <useFile>false</useFile>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/ConfigurationResourceInjectorTest.java</exclude>
+                        <exclude>**/AggregateConfigurerTest.java</exclude>
+                        <exclude>**/DefaultConfigurerTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
