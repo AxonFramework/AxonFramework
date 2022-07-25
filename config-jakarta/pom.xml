@@ -36,6 +36,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>axon-disruptor</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>axon-eventsourcing</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -183,8 +189,6 @@
                 <configuration>
                     <excludes>
                         <exclude>**/ConfigurationResourceInjectorTest.java</exclude>
-                        <exclude>**/AggregateConfigurerTest.java</exclude>
-                        <exclude>**/DefaultConfigurerTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
