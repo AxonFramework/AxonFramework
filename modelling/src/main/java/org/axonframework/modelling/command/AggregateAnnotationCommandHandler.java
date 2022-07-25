@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -50,7 +51,6 @@ import java.util.stream.Collectors;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
-import static org.axonframework.common.ReflectionUtils.toDiscernibleSignature;
 import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
 
 /**
@@ -152,12 +152,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     private String getHandlerSignature(MessageHandlingMember<? super T> handler) {
-        return = handler.unwrap(Executable.class)
-                        .map(ReflectionUtils::toDiscernibleSignature)
-                        .orElseThrow(() -> new IllegalStateException(
-                            "A handler is missing an Executable. Please provide an "
-                                + "Executable in your MessageHandlingMembers"
-                        ));
+        return handler.unwrap(Executable.class)
+                      .map(ReflectionUtils::toDiscernibleSignature)
+                      .orElseThrow(() -> new IllegalStateException(
+                              "A handler is missing an Executable. Please provide an "
+                                      + "Executable in your MessageHandlingMembers"
+                      ));
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
