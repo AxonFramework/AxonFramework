@@ -273,7 +273,6 @@
                 <configuration>
                     <excludes>
                         <exclude>**/JpaSagaStoreTest.java</exclude>
-                        <exclude>**/SimpleResourceInjectorTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
