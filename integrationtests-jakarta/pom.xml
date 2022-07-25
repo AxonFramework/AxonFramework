@@ -22,7 +22,6 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-<!--            <artifactId>axon-eventsourcing</artifactId>-->
             <artifactId>axon-eventsourcing-jakarta</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -30,7 +29,6 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-<!--            <artifactId>axon-configuration</artifactId>-->
             <artifactId>axon-configuration-jakarta</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -45,7 +43,6 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-<!--            <artifactId>axon-eventsourcing</artifactId>-->
             <artifactId>axon-eventsourcing-jakarta</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -127,17 +124,13 @@
         </dependency>
 
         <dependency>
-            <!--            <groupId>javax.inject</groupId>-->
-            <!--            <artifactId>javax.inject</artifactId>-->
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <version>2.0.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.hibernate</groupId>
-<!--            <artifactId>hibernate-core</artifactId>-->
             <artifactId>hibernate-core-jakarta</artifactId>
             <scope>test</scope>
         </dependency>
@@ -153,7 +146,6 @@
             <artifactId>ojdbc7</artifactId>
             <version>12.1.0.2</version>
             <scope>system</scope>
-<!--            <systemPath>${project.basedir}/src/test/binary/ojdbc7.jar</systemPath>-->
             <systemPath>${project.basedir}/../integrationtests/src/test/binary/ojdbc7.jar</systemPath>
             <optional>true</optional>
         </dependency>

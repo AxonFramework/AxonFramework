@@ -27,7 +27,6 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-<!--            <artifactId>axon-eventsourcing</artifactId>-->
             <artifactId>axon-eventsourcing-jakarta</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -46,20 +45,14 @@
 
         <!-- Test Dependencies -->
         <dependency>
-            <!--            <groupId>javax.inject</groupId>-->
-            <!--            <artifactId>javax.inject</artifactId>-->
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <version>2.0.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-<!--            <groupId>javax.persistence</groupId>-->
-<!--            <artifactId>javax.persistence-api</artifactId>-->
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.0.0</version>
             <optional>true</optional>
             <scope>test</scope>
         </dependency>
@@ -73,7 +66,6 @@
 
         <dependency>
             <groupId>org.hibernate</groupId>
-<!--            <artifactId>hibernate-core</artifactId>-->
             <artifactId>hibernate-core-jakarta</artifactId>
             <optional>true</optional>
             <scope>test</scope>
@@ -95,13 +87,11 @@
         <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
-<!--            <artifactId>axon-modelling</artifactId>-->
             <artifactId>axon-modelling-jakarta</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-<!--            <artifactId>axon-messaging</artifactId>-->
             <artifactId>axon-messaging-jakarta</artifactId>
             <version>${project.version}</version>
         </dependency>

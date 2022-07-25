@@ -34,19 +34,13 @@
 
         <!-- Validation -->
         <dependency>
-<!--            <groupId>javax.validation</groupId>-->
-<!--            <artifactId>validation-api</artifactId>-->
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-<!--            <groupId>javax.el</groupId>-->
-<!--            <artifactId>javax.el-api</artifactId>-->
             <groupId>jakarta.el</groupId>
             <artifactId>jakarta.el-api</artifactId>
-            <version>4.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -91,16 +85,12 @@
 
         <!-- Persistence -->
         <dependency>
-<!--            <groupId>javax.persistence</groupId>-->
-<!--            <artifactId>javax.persistence-api</artifactId>-->
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.0.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
-<!--            <artifactId>hibernate-core</artifactId>-->
             <artifactId>hibernate-core-jakarta</artifactId>
             <optional>true</optional>
         </dependency>
@@ -208,11 +198,8 @@
         </dependency>
 
         <dependency>
-<!--            <groupId>javax.inject</groupId>-->
-<!--            <artifactId>javax.inject</artifactId>-->
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <version>2.0.1</version>
             <scope>test</scope>
         </dependency>
 
