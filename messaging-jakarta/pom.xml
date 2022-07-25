@@ -300,7 +300,6 @@
                     <useFile>false</useFile>
                     <excludes>
                         <exclude>**/JpaTokenStoreTest.java</exclude>
-                        <exclude>**/JdbcTokenStoreTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
