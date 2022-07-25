@@ -25,7 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -181,8 +181,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         }
 
         @Override
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            super.axonSpanFactory(axonSpanFactory);
+        public Builder spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

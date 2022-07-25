@@ -16,11 +16,18 @@
 
 package org.axonframework.tracing.opentelemetry;
 
+import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import org.axonframework.messaging.Message;
 
 import java.util.Map;
 import javax.annotation.Nonnull;
 
+/**
+ * This {@link TextMapGetter} implementation is able to insert the current span context into a {@link Message}.
+ * <p>
+ * The trace becomes the message's parent span in its{@link org.axonframework.messaging.MetaData}.
+ */
 public class MetadataContextSetter implements TextMapSetter<Map<String, String>> {
 
     public static final MetadataContextSetter INSTANCE = new MetadataContextSetter();

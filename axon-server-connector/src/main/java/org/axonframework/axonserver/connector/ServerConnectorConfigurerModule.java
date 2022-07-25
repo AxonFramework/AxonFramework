@@ -41,7 +41,7 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .eventSerializer(c.eventSerializer())
                                    .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
-                                   .axonSpanFactory(c.axonSpanFactory())
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -128,7 +128,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                            () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                                   .axonSpanFactory(c.axonSpanFactory())
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -143,7 +143,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                       () -> LoggingQueryInvocationErrorHandler.builder().build()
                               ))
                               .queryUpdateEmitter(c.queryUpdateEmitter())
-                              .axonSpanFactory(c.axonSpanFactory())
+                              .spanFactory(c.spanFactory())
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
@@ -159,7 +159,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                          QueryPriorityCalculator::defaultQueryPriorityCalculator
                                  ))
                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
-                                 .axonSpanFactory(c.getComponent(AxonSpanFactory.class))
+                                 .spanFactory(c.getComponent(SpanFactory.class))
                                  .build();
     }
 

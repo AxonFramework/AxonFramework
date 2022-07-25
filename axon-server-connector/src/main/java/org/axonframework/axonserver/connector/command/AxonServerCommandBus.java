@@ -44,9 +44,9 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService executorService;
-    private final AxonSpanFactory spanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerCommandBus}.
@@ -129,7 +129,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         this.executorService =
                 builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
-        this.spanFactory = builder.axonSpanFactory;
+        this.spanFactory = builder.spanFactory;
 
         dispatchInterceptors = new DispatchInterceptors<>();
     }
@@ -162,8 +162,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        AxonSpan span = spanFactory.createDispatchSpan("AxonServerCommandBus.dispatch", commandMessage)
-                                   .start();
+        Span span = spanFactory.createDispatchSpan("AxonServerCommandBus.dispatch", commandMessage)
+                               .start();
         CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
@@ -283,24 +283,24 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private final CommandBus localSegment;
         private final Command command;
         private final CommandSerializer serializer;
-        private final AxonSpanFactory axonSpanFactory;
+        private final SpanFactory spanFactory;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
                                      CompletableFuture<CommandResponse> result,
-                                     CommandBus localSegment, AxonSpanFactory axonSpanFactory) {
+                                     CommandBus localSegment, SpanFactory spanFactory) {
             this.command = command;
             this.serializer = serializer;
             this.result = result;
             this.localSegment = localSegment;
-            this.axonSpanFactory = axonSpanFactory;
+            this.spanFactory = spanFactory;
         }
 
         @Override
         public void run() {
             CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            AxonSpan span = axonSpanFactory.createHandlerSpan("AxonServerCommandBus.handle", deserializedCommand)
-                                           .start();
+            Span span = spanFactory.createHandlerSpan("AxonServerCommandBus.handle", deserializedCommand)
+                                   .start();
             try {
                 localSegment.dispatch(
                         deserializedCommand,
@@ -348,7 +348,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private String defaultContext;
         private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
                 c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
-        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -509,8 +509,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             return this;
         }
 
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            this.axonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(SpanFactory spanFactory) {
+            this.spanFactory = spanFactory;
             return this;
         }
 

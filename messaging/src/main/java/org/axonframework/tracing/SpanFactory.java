@@ -19,16 +19,16 @@ package org.axonframework.tracing;
 import org.axonframework.messaging.Message;
 
 /**
- * The {@code AxonSpanFactory} is responsible for making {@link AxonSpan AxonSpans} in a way the chosen tracing provider
- * is compatible with.
+ * The {@link SpanFactory} is responsible for making {@link Span spans} in a way the chosen tracing provider is
+ * compatible with.
  * <p>
  * Each span has an operation name and span kind. From the operation name it should be clear what is happening in the
  * application. For example, use {@code "ClassName.method MessageName"} to indicate a message payload being handled.
  *
  * <p>
- * Spans can have tags, which are provided by {@link SpanAttributesProvider TagProviders}. By default, any time a
- * message is used while creating a span should invoke all configured {@link SpanAttributesProvider TagProviders} and
- * set those tags on the created span.
+ * Spans can have tags, which are provided by {@link SpanAttributesProvider SpanAttributesProviders}. By default, any
+ * time a message is used while creating a span should invoke all configured
+ * {@link SpanAttributesProvider SpanAttributesProviders} and set those tags on the created span.
  *
  * <p>
  * The factory should support these types of spans:
@@ -41,58 +41,58 @@ import org.axonframework.messaging.Message;
  * <p>
  * Check the individual method's javadoc more information on each type.
  */
-public interface AxonSpanFactory {
+public interface SpanFactory {
 
     /**
-     * Creates a new {@link AxonSpan} without any parent trace. This should be used for logical start point of
+     * Creates a new {@link Span} without any parent trace. This should be used for logical start point of
      * asynchronous calls that are not related to a message. For example snapshotting an aggregate.
      * <p>
      * In monitoring systems, this Span will be the root of the trace.
      *
      * @param operationName The operation name
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    AxonSpan createRootTrace(String operationName);
+    Span createRootTrace(String operationName);
 
     /**
-     * Creates a new {@link AxonSpan} linked to asynchronously handling a {@link Message}, for example when handling a
+     * Creates a new {@link Span} linked to asynchronously handling a {@link Message}, for example when handling a
      * command from Axon Server. The message attributes will be added to the span, based on the provided
      * {@link SpanAttributesProvider SpanAttributesProviders} for additional debug information.
      * <p>
      * In monitoring systems, this Span will be the root of the trace.
      * <p>
      * The message's name will be concatenated with the {@code operationName}, see
-     * {@link AxonSpanUtils#determineMessageName(Message)}.
+     * {@link SpanUtils#determineMessageName(Message)}.
      *
      * @param operationName The operation name
      * @param parentMessage The message that is being handled.
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    default AxonSpan createHandlerSpan(String operationName, Message<?> parentMessage) {
+    default Span createHandlerSpan(String operationName, Message<?> parentMessage) {
         return createHandlerSpan(operationName, parentMessage, false);
     }
 
     /**
-     * Creates a new {@link AxonSpan} linked to asynchronously handling a {@link Message}, for example when handling a
+     * Creates a new {@link Span} linked to asynchronously handling a {@link Message}, for example when handling a
      * command from Axon Server. The message attributes will be added to the span, based on the provided
      * {@link SpanAttributesProvider SpanAttributesProviders} for additional debug information.
      * <p>
      * In monitoring systems, this Span will be the root of the trace.
      * <p>
      * The message's name will be concatenated with the {@code operationName}, see
-     * {@link AxonSpanUtils#determineMessageName(Message)}.
+     * {@link SpanUtils#determineMessageName(Message)}.
      *
      * @param operationName  The operation name
      * @param parentMessage  The message that is being handled.
      * @param forceSameTrace Whether to force the span being part of the current trace. This means not linking, but
      *                       setting a parent.
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    AxonSpan createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace);
+    Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace);
 
     /**
-     * Creates a new {@link AxonSpan} linked to dispatching a {@link Message}, for example when sending a command to
-     * Axon Server. The message attributes will be added to the span, based on the provided
+     * Creates a new {@link Span} linked to dispatching a {@link Message}, for example when sending a command to Axon
+     * Server. The message attributes will be added to the span, based on the provided
      * {@link SpanAttributesProvider SpanAttributesProviders} for additional debug information.
      * <p>
      * In monitoring systems, this Span will be part of another trace.
@@ -101,38 +101,38 @@ public interface AxonSpanFactory {
      * {@link #propagateContext(Message)} to the message's metadata.
      * <p>
      * The message's name will be concatenated with the {@code operationName}, see
-     * {@link AxonSpanUtils#determineMessageName(Message)}.
+     * {@link SpanUtils#determineMessageName(Message)}.
      *
      * @param operationName The operation name
      * @param parentMessage The message that is being handled.
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    AxonSpan createDispatchSpan(String operationName, Message<?> parentMessage);
+    Span createDispatchSpan(String operationName, Message<?> parentMessage);
 
     /**
-     * Creates a new {@link AxonSpan} linked to the currently active span. This is useful for tracing different parts of
+     * Creates a new {@link Span} linked to the currently active span. This is useful for tracing different parts of
      * framework logic, so we can time what has the most impact.
      * <p>
      * In monitoring systems, this Span will be part of another trace.
      *
      * @param operationName The operation name
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    AxonSpan createInternalSpan(String operationName);
+    Span createInternalSpan(String operationName);
 
     /**
-     * Creates a new {@link AxonSpan} linked to the currently active span. This is useful for tracing different parts of
+     * Creates a new {@link Span} linked to the currently active span. This is useful for tracing different parts of
      * framework logic, so we can time what has the most impact.
      * <p>
-     * The message supplied is used to provide a clearer name, based on
-     * {@link AxonSpanUtils#determineMessageName(Message)}, and to add the message's attributes to the span.
+     * The message supplied is used to provide a clearer name, based on {@link SpanUtils#determineMessageName(Message)},
+     * and to add the message's attributes to the span.
      * <p>
      * In monitoring systems, this Span will be part of another trace.
      *
      * @param operationName The operation name
-     * @return The created {@link AxonSpan}
+     * @return The created {@link Span}
      */
-    AxonSpan createInternalSpan(String operationName, Message<?> message);
+    Span createInternalSpan(String operationName, Message<?> message);
 
 
     /**

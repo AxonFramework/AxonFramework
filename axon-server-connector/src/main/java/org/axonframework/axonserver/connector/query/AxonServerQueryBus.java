@@ -77,9 +77,9 @@ import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +146,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final ExecutorService queryExecutor;
     private final LocalSegmentAdapter localSegmentAdapter;
     private final String context;
-    private final AxonSpanFactory axonSpanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AxonServerQueryBus} based on the fields contained in the {@link Builder}.
@@ -164,7 +164,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         this.priorityCalculator = builder.priorityCalculator;
         this.context = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
         this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
-        this.axonSpanFactory = builder.axonSpanFactory;
+        this.spanFactory = builder.spanFactory;
 
         dispatchInterceptors = new DispatchInterceptors<>();
 
@@ -245,8 +245,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
-        AxonSpan span = axonSpanFactory.createDispatchSpan("AxonServerQueryBus.query", queryMessage).start();
-        QueryMessage<Q, R> messageWithContext = axonSpanFactory.propagateContext(queryMessage);
+        Span span = spanFactory.createDispatchSpan("AxonServerQueryBus.query", queryMessage).start();
+        QueryMessage<Q, R> messageWithContext = spanFactory.propagateContext(queryMessage);
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The direct query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
@@ -523,7 +523,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
         private String defaultContext;
-        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -699,9 +699,15 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             return this;
         }
 
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            assertNonNull(axonSpanFactory, "The AxonSpanFactory may not be null or empty");
-            this.axonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "The SpanFactory may not be null or empty");
+            this.spanFactory = spanFactory;
             return this;
         }
 

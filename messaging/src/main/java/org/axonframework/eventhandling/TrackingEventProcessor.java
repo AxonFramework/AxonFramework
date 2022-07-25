@@ -34,7 +34,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +178,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return interceptorChain.proceed();
         });
 
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
                 .createHandlerSpan("TrackingEventProcessor[" + builder.name + "] ",
                                    unitOfWork.getMessage())
                 .runCallable(interceptorChain::proceed));
@@ -908,8 +908,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
 
         @Override
-        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
-            super.axonSpanFactory(axonSpanFactory);
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

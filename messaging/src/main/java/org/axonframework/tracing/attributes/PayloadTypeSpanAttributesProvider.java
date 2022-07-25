@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing.attributes;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Collections;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
-public class MessageTypeSpanAttributesProvider implements SpanAttributesProvider {
+/**
+ * Adds the payload type as attribute to the span.
+ */
+public class PayloadTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
-        return Collections.singletonMap("axon_message_type", message.getClass().getSimpleName());
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+        return Collections.singletonMap("axon_payload_type", message.getPayloadType().getName());
     }
 }

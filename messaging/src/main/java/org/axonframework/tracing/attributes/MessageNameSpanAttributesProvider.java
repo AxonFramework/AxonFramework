@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing.attributes;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
@@ -22,18 +22,23 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
+/**
+ * Adds the message to the Span
+ */
 public class MessageNameSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
         String name = determineName(message);
         if (name != null) {
             return singletonMap("axon.message-name", message.getIdentifier());
         }
-        return null;
+        return emptyMap();
     }
 
     private String determineName(Message<?> message) {

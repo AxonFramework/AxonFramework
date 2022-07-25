@@ -21,33 +21,37 @@ import org.axonframework.messaging.Message;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-public class NoopSpanFactory implements AxonSpanFactory {
+/**
+ * {@link SpanFactory} implementation that creates a {@link NoOpSpan}. This span does not do any tracing at all. It's
+ * used as a fallback when there is no tracing implementation available, so framework code does not have to check.
+ */
+public class NoOpSpanFactory implements SpanFactory {
 
-    public static final NoopSpanFactory INSTANCE = new NoopSpanFactory();
+    public static final NoOpSpanFactory INSTANCE = new NoOpSpanFactory();
 
     @Override
-    public AxonSpan createRootTrace(String operationName) {
-        return new NoopAxonSpan();
+    public Span createRootTrace(String operationName) {
+        return new NoOpSpan();
     }
 
     @Override
-    public AxonSpan createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceParent) {
-        return new NoopAxonSpan();
+    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceParent) {
+        return new NoOpSpan();
     }
 
     @Override
-    public AxonSpan createDispatchSpan(String operationName, Message<?> parentMessage) {
-        return new NoopAxonSpan();
+    public Span createDispatchSpan(String operationName, Message<?> parentMessage) {
+        return new NoOpSpan();
     }
 
     @Override
-    public AxonSpan createInternalSpan(String operationName) {
-        return new NoopAxonSpan();
+    public Span createInternalSpan(String operationName) {
+        return new NoOpSpan();
     }
 
     @Override
-    public AxonSpan createInternalSpan(String operationName, Message<?> message) {
-        return new NoopAxonSpan();
+    public Span createInternalSpan(String operationName, Message<?> message) {
+        return new NoOpSpan();
     }
 
     @Override
@@ -60,19 +64,20 @@ public class NoopSpanFactory implements AxonSpanFactory {
         return message;
     }
 
-    static class NoopAxonSpan implements AxonSpan {
+    static class NoOpSpan implements Span {
 
         @Override
-        public AxonSpan start() {
+        public Span start() {
             return this;
         }
 
         @Override
         public void end() {
+            // Do nothing
         }
 
         @Override
-        public AxonSpan recordException(Throwable t) {
+        public Span recordException(Throwable t) {
             return this;
         }
 

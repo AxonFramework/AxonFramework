@@ -32,7 +32,7 @@ import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -191,8 +191,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            super.axonSpanFactory(axonSpanFactory);
+        public Builder spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

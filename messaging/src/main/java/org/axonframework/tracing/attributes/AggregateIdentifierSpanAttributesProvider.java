@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing.attributes;
 
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
-public class MessageIdSpanAttributesProvider implements SpanAttributesProvider {
+/**
+ * Adds the aggregate identifier to the Span if the current message being handled is a {@link DomainEventMessage}.
+ */
+public class AggregateIdentifierSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
-        return singletonMap("axon_message_id", message.getIdentifier());
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+        if (message instanceof DomainEventMessage) {
+            DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) message;
+            return singletonMap("axon_aggregate_identifier", domainEventMessage.getAggregateIdentifier());
+        }
+        return emptyMap();
     }
 }

@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.tracing.tags;
+package org.axonframework.tracing.attributes;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
-public class MessagingSpanAttributesSupplier implements SpanAttributesProvider {
+/**
+ * Adds the metadata of the message to the span as attributes.
+ */
+public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public Map<String, String> provideForMessage(Message<?> message) {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("messaging.system", "axonserver");
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+        Map<String, String> map = new HashMap<>();
+        message.getMetaData().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
         return map;
     }
 }

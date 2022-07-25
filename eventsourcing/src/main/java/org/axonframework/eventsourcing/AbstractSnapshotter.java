@@ -26,9 +26,9 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
-    private final AxonSpanFactory spanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
@@ -73,7 +73,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         this.eventStore = builder.eventStore;
         this.executor = builder.executor;
         this.transactionManager = builder.transactionManager;
-        this.spanFactory = builder.builderAxonSpanFactory;
+        this.spanFactory = builder.builderSpanFactory;
     }
 
     @Override
@@ -99,7 +99,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         if (snapshotsInProgress.add(typeAndId)) {
             String rootTraceName = String.format("createSnapshot %s",
                                                  aggregateType.getSimpleName());
-            AxonSpan span = spanFactory.createRootTrace(rootTraceName);
+            Span span = spanFactory.createRootTrace(rootTraceName);
             try {
                 // The traces here are separated for two reasons: A) measuring the delay between scheduling and making
                 // B) To have a more generic name for trace grouping and a more specific name for the span with aggId
@@ -207,7 +207,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         private EventStore eventStore;
         private Executor executor = DirectExecutor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private AxonSpanFactory builderAxonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory builderSpanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
@@ -236,8 +236,14 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             return this;
         }
 
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            this.builderAxonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(SpanFactory spanFactory) {
+            this.builderSpanFactory = spanFactory;
             return this;
         }
 

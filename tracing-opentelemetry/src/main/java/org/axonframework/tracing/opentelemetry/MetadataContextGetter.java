@@ -21,6 +21,13 @@ import org.axonframework.messaging.Message;
 
 import javax.annotation.Nonnull;
 
+/**
+ * This {@link TextMapGetter} implementation is able to extract the parent span context from a {@link Message}.
+ * <p>
+ * The trace parent is part of the message's {@link org.axonframework.messaging.MetaData}, if it was set when
+ * dispatching by the {@link MetadataContextSetter}. This is done using the
+ * {@link org.axonframework.tracing.SpanFactory#propagateContext(Message)} method for the message.
+ */
 public class MetadataContextGetter implements TextMapGetter<Message<?>> {
 
     public static final MetadataContextGetter INSTANCE = new MetadataContextGetter();

@@ -31,8 +31,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -79,7 +78,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
-    private final AxonSpanFactory axonSpanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiates a query processing task.
@@ -90,21 +89,21 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
      * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
-     * @param axonSpanFactory
+     * @param spanFactory
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        AxonSpanFactory axonSpanFactory) {
+                        SpanFactory spanFactory) {
         this(localSegment,
              queryRequest,
              responseHandler,
              serializer,
              clientId,
              ClasspathResolver::projectReactorOnClasspath,
-             axonSpanFactory);
+             spanFactory);
     }
 
     /**
@@ -117,14 +116,14 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param serializer         The serializer used to serialize items.
      * @param clientId           The identifier of the client.
      * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
-     * @param axonSpanFactory
+     * @param spanFactory        The {@link SpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        Supplier<Boolean> reactorOnClassPath, AxonSpanFactory axonSpanFactory) {
+                        Supplier<Boolean> reactorOnClassPath, SpanFactory spanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
@@ -132,7 +131,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         this.clientId = clientId;
         this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
-        this.axonSpanFactory = axonSpanFactory;
+        this.spanFactory = spanFactory;
     }
 
     @Override
@@ -193,12 +192,9 @@ class QueryProcessingTask implements Runnable, FlowControl {
     }
 
     private <Q, R, T> void directQuery(QueryMessage<Q, R> queryMessage) {
-        AxonSpan span = axonSpanFactory.createHandlerSpan("QueryProcessingTask.directQuery", queryMessage, true)
-                                       .start();
         localSegment.query(queryMessage)
                     .whenComplete((result, e) -> {
                         if (e != null) {
-                            span.recordException(e);
                             sendError(e);
                         } else {
                             try {
@@ -218,7 +214,6 @@ class QueryProcessingTask implements Runnable, FlowControl {
                                 sendError(t);
                             }
                         }
-                        span.end();
                     });
     }
 

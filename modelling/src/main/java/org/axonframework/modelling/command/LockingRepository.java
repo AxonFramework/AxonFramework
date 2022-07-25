@@ -26,7 +26,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,7 +129,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier, Long expectedVersion) {
-        return axonSpanFactory.createInternalSpan("LockingRepository.doLoad").runSupplier(() -> {
+        return spanFactory.createInternalSpan("LockingRepository.doLoad").runSupplier(() -> {
             Lock lock = lockFactory.obtainLock(aggregateIdentifier);
             try {
                 final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
@@ -176,7 +176,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected void doSave(LockAwareAggregate<T, A> aggregate) {
-        axonSpanFactory.createInternalSpan("LockingRepository.doSave").run(() -> {
+        spanFactory.createInternalSpan("LockingRepository.doSave").run(() -> {
             if (aggregate.version() != null && !aggregate.isLockHeld()) {
                 throw new ConcurrencyException(String.format(
                         "The aggregate of type [%s] with identifier [%s] could not be " +
@@ -197,7 +197,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected final void doDelete(LockAwareAggregate<T, A> aggregate) {
-        axonSpanFactory.createInternalSpan("LockingRepository.doDelete").run(() -> {
+        spanFactory.createInternalSpan("LockingRepository.doDelete").run(() -> {
             if (aggregate.version() != null && !aggregate.isLockHeld()) {
                 throw new ConcurrencyException(String.format(
                         "The aggregate of type [%s] with identifier [%s] could not be " +
@@ -291,8 +291,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
-        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            super.axonSpanFactory(axonSpanFactory);
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

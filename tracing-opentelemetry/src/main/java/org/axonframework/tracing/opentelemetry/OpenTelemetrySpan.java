@@ -16,27 +16,39 @@
 
 package org.axonframework.tracing.opentelemetry;
 
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import org.axonframework.tracing.AxonSpan;
+import org.axonframework.tracing.Span;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-public class OpenTelemetryAxonSpan implements AxonSpan {
+/**
+ * {@link Span} implementation that uses OpenTelemetry's {@link io.opentelemetry.api.trace.Span} to provide tracing
+ * capabilities to an application.
+ * <p>
+ * These traces should always be created using the {@link OpenTelemetrySpanFactory} since this will make sure the proper
+ * parent context is extracted before creating the {@link Span}.
+ */
+public class OpenTelemetrySpan implements Span {
 
     private final SpanBuilder spanBuilder;
-    private Span span;
+    private io.opentelemetry.api.trace.Span span;
     private Scope activeScope;
 
-    protected OpenTelemetryAxonSpan(SpanBuilder spanBuilder) {
+    /**
+     * Creates the span, based on the {@link SpanBuilder} provided. This {@link SpanBuilder} will supply the
+     * {@link io.opentelemetry.api.trace.Span} when the {@link #start()} method is invoked.
+     *
+     * @param spanBuilder The provider of the {@link io.opentelemetry.api.trace.Span}.
+     */
+    OpenTelemetrySpan(SpanBuilder spanBuilder) {
         this.spanBuilder = spanBuilder;
     }
 
-    public AxonSpan start() {
+    public Span start() {
         if (activeScope == null) {
             span = spanBuilder.startSpan();
             activeScope = span.makeCurrent();
@@ -52,7 +64,7 @@ public class OpenTelemetryAxonSpan implements AxonSpan {
 
 
     @Override
-    public AxonSpan recordException(Throwable t) {
+    public Span recordException(Throwable t) {
         Objects.requireNonNull(activeScope, "Span is not started!");
         span.recordException(t);
         span.setStatus(StatusCode.ERROR, t.getMessage());

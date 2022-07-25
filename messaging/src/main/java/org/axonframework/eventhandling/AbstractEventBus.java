@@ -24,9 +24,9 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public abstract class AbstractEventBus implements EventBus {
     private final String eventsKey = this + "_EVENTS";
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
-    private final AxonSpanFactory axonSpanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
@@ -73,7 +73,7 @@ public abstract class AbstractEventBus implements EventBus {
     protected AbstractEventBus(Builder builder) {
         builder.validate();
         this.messageMonitor = builder.messageMonitor;
-        this.axonSpanFactory = builder.axonSpanFactory;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -115,9 +115,9 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(@Nonnull List<? extends EventMessage<?>> events) {
-        AxonSpan span = axonSpanFactory.createInternalSpan("EventBus.publish", events.get(0))
-                                       .start();
-        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(axonSpanFactory::propagateContext)
+        Span span = spanFactory.createInternalSpan("EventBus.publish", events.get(0))
+                               .start();
+        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(spanFactory::propagateContext)
                                                                   .collect(
                                                                           Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
@@ -160,7 +160,7 @@ public abstract class AbstractEventBus implements EventBus {
 
     private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            AxonSpan span = axonSpanFactory.createInternalSpan("AbstractEventBus.commit");
+            Span span = spanFactory.createInternalSpan("AbstractEventBus.commit");
             List<EventMessage<?>> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
@@ -290,7 +290,7 @@ public abstract class AbstractEventBus implements EventBus {
     public abstract static class Builder {
 
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a {@link
@@ -305,9 +305,15 @@ public abstract class AbstractEventBus implements EventBus {
             return this;
         }
 
-        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
-            assertNonNull(messageMonitor, "AxonSpanFactory may not be null");
-            this.axonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(messageMonitor, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 

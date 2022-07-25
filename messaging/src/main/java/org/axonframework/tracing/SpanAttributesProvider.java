@@ -19,8 +19,20 @@ package org.axonframework.tracing;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
+/**
+ * Represents a provider of attributes to a {@link Span}, based on a {@link Message}. It's the responsibility of the
+ * {@link SpanFactory} to invoke these and add the attributes to the {@link Span}.
+ */
 public interface SpanAttributesProvider {
 
-    Map<String, String> provideForMessage(Message<?> message);
+    /**
+     * Provides a map of attributes to add to the {@link Span} based on the {@link Message} provided.
+     *
+     * @param message The message
+     * @return The attributes
+     */
+    @Nonnull
+    Map<String, String> provideForMessage(@Nonnull Message<?> message);
 }

@@ -24,15 +24,15 @@ import java.util.function.Supplier;
  * Represents a part of the application logic that will be traced. One or multiple spans together form a trace and are
  * often used to debug and monitor (distributed) applications.
  * <p>
- * The {@link AxonSpan} is an abstraction for Axon Framework to have tracing capabilities without knowing the specific
+ * The {@link Span} is an abstraction for Axon Framework to have tracing capabilities without knowing the specific
  * tracing provider.
  * <p>
- * Creating {@link AxonSpan AxonSpans} is the responsibility of the {@link AxonSpanFactory} which should be implemented
- * by the tracing provider of choice.
+ * Creating {@link Span spans} is the responsibility of the {@link SpanFactory} which should be implemented by the
+ * tracing provider of choice.
  *
- * @see AxonSpanFactory For more information about creating different kinds of traces.
+ * @see SpanFactory For more information about creating different kinds of traces.
  */
-public interface AxonSpan {
+public interface Span {
 
     /**
      * Starts the Span. This means setting this span to the current, taking over from any active span currently present
@@ -40,7 +40,7 @@ public interface AxonSpan {
      *
      * @return The span for fluent interfacing.
      */
-    AxonSpan start();
+    Span start();
 
     /**
      * Ends the span. It restores the original context, often the parent trace, as the current context. No operation on
@@ -55,7 +55,7 @@ public interface AxonSpan {
      * @param t The exception to record
      * @return The span for fluent interfacing.
      */
-    AxonSpan recordException(Throwable t);
+    Span recordException(Throwable t);
 
     /**
      * Runs a piece of code which will be traced. Exceptions will be caught automatically and added to the span, then

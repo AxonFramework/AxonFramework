@@ -16,33 +16,49 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
-import org.axonframework.tracing.opentelemetry.OpenTelemetryAxonSpanFactory;
-import org.axonframework.tracing.tags.AggregateIdentifierSpanAttributesProvider;
-import org.axonframework.tracing.tags.MessageIdSpanAttributesProvider;
-import org.axonframework.tracing.tags.MessageNameSpanAttributesProvider;
-import org.axonframework.tracing.tags.MessageTypeSpanAttributesProvider;
-import org.axonframework.tracing.tags.MetadataSpanAttributesProvider;
-import org.axonframework.tracing.tags.PayloadTypeSpanAttributesProvider;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider;
+import org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider;
+import org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider;
+import org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider;
+import org.axonframework.tracing.attributes.MetadataSpanAttributesProvider;
+import org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider;
+import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Configures tracing for Axon Framework. Defaults to the {@link NoOpSpanFactory}. If the
+ * {@link OpenTelemetrySpanFactory} is on the classpath, uses Open Telemetry instead.
+ * <p>
+ * For Open tracing, take a look at the <a href="https://github.com/AxonFramework/extension-tracing">Open Tracing
+ * extension</a>
+ */
 @Configuration
 @AutoConfigureBefore({AxonServerAutoConfiguration.class, AxonAutoConfiguration.class})
 public class AxonTracingAutoConfiguration {
 
     @Bean
-    @ConditionalOnClass(name = "org.axonframework.tracing.opentelemetry.OpenTelemetryAxonSpanFactory")
-    @ConditionalOnMissingBean(AxonSpanFactory.class)
-    public AxonSpanFactory configureSpanFactory(List<SpanAttributesProvider> attributesProviders) {
-        return new OpenTelemetryAxonSpanFactory(attributesProviders, false);
+    @ConditionalOnMissingClass("org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory")
+    @ConditionalOnMissingBean(SpanFactory.class)
+    public SpanFactory noOpSpanFactory() {
+        return NoOpSpanFactory.INSTANCE;
+    }
+
+    @Bean
+    @ConditionalOnClass(name = "org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory")
+    @ConditionalOnMissingBean(SpanFactory.class)
+    public SpanFactory openTelemetrySpanFactory(List<SpanAttributesProvider> attributesProviders) {
+        return new OpenTelemetrySpanFactory(attributesProviders, false);
     }
 
     @Bean

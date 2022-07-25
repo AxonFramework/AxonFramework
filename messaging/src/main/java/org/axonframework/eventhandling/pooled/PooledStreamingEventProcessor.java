@@ -41,7 +41,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,7 +154,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialToken(initialToken)
                                       .build();
 
-        registerHandlerInterceptor((unitOfWork, interceptorChain) -> axonSpanFactory
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
                 .createHandlerSpan(
                         "PooledStreamingEventProcessor[" + builder.name() + "] ",
                         unitOfWork.getMessage())
@@ -472,8 +472,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         @Override
-        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
-            super.axonSpanFactory(axonSpanFactory);
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

@@ -25,9 +25,9 @@ import java.util.Objects;
 /**
  * Utilities for creating spans which are relevant for all implementations of tracing.
  */
-public class AxonSpanUtils {
+public class SpanUtils {
 
-    private AxonSpanUtils() {
+    private SpanUtils() {
         // For sonar
     }
 

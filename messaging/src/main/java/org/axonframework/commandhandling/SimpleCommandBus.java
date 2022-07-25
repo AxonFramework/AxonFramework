@@ -33,9 +33,9 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ public class SimpleCommandBus implements CommandBus {
             new CopyOnWriteArrayList<>();
     private final CommandCallback<Object, Object> defaultCommandCallback;
     private RollbackConfiguration rollbackConfiguration;
-    private final AxonSpanFactory spanFactory;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
@@ -119,7 +119,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        AxonSpan span = spanFactory.createInternalSpan("SimpleCommandBus.dispatch", command).start();
+        Span span = spanFactory.createInternalSpan("SimpleCommandBus.dispatch", command).start();
         CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
                 span.recordException(commandResultMessage.exceptionResult());
@@ -283,7 +283,7 @@ public class SimpleCommandBus implements CommandBus {
         private DuplicateCommandHandlerResolver duplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.logAndOverride();
         private CommandCallback<Object, Object> defaultCommandCallback = LoggingCallback.INSTANCE;
-        private AxonSpanFactory builderSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory builderSpanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
@@ -353,8 +353,14 @@ public class SimpleCommandBus implements CommandBus {
             return this;
         }
 
-        public Builder axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            this.builderSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(SpanFactory spanFactory) {
+            this.builderSpanFactory = spanFactory;
             return this;
         }
 

@@ -34,9 +34,9 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
-import org.axonframework.tracing.AxonSpan;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +96,7 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-    private final AxonSpanFactory axonSpanFactory;
+    private final SpanFactory spanFactory;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -114,7 +114,7 @@ public class SimpleQueryBus implements QueryBus {
         }
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
-        this.axonSpanFactory = builder.axonSpanFactory;
+        this.spanFactory = builder.spanFactory;
     }
 
     /**
@@ -173,7 +173,7 @@ public class SimpleQueryBus implements QueryBus {
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
-        axonSpanFactory.createInternalSpan("SimpleQueryBus.query", query).startForFuture(result);
+        spanFactory.createInternalSpan("SimpleQueryBus.query", query).startForFuture(result);
         try {
             ResponseType<R> responseType = interceptedQuery.getResponseType();
             if (handlers.isEmpty()) {
@@ -423,7 +423,7 @@ public class SimpleQueryBus implements QueryBus {
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler
     ) {
-        AxonSpan span = axonSpanFactory.createInternalSpan("SimpleQueryBus.invokeQuery", uow.getMessage());
+        Span span = spanFactory.createInternalSpan("SimpleQueryBus.invokeQuery", uow.getMessage());
         return uow.executeWithResult(() -> span.runCallable(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
@@ -554,7 +554,7 @@ public class SimpleQueryBus implements QueryBus {
                                                                                              .build();
         private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
-        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -627,9 +627,15 @@ public class SimpleQueryBus implements QueryBus {
             return this;
         }
 
-        public Builder axonSpanFactory(@Nonnull AxonSpanFactory axonSpanFactory) {
-            assertNonNull(axonSpanFactory, "AxonSpanFactory may not be null");
-            this.axonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 

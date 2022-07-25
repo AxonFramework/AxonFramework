@@ -39,7 +39,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.axonframework.tracing.AxonSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -75,7 +75,7 @@ public class AxonServerBusAutoConfiguration {
                                                      CommandPriorityCalculator priorityCalculator,
                                                      CommandLoadFactorProvider loadFactorProvider,
                                                      TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
-                                                     AxonSpanFactory axonSpanFactory) {
+                                                     SpanFactory spanFactory) {
         return AxonServerCommandBus.builder()
                                    .axonServerConnectionManager(axonServerConnectionManager)
                                    .configuration(axonServerConfiguration)
@@ -85,7 +85,7 @@ public class AxonServerBusAutoConfiguration {
                                    .priorityCalculator(priorityCalculator)
                                    .loadFactorProvider(loadFactorProvider)
                                    .targetContextResolver(targetContextResolver)
-                                   .axonSpanFactory(axonSpanFactory)
+                                   .spanFactory(spanFactory)
                                    .build();
     }
 
@@ -100,14 +100,14 @@ public class AxonServerBusAutoConfiguration {
                                        QueryPriorityCalculator priorityCalculator,
                                        QueryInvocationErrorHandler queryInvocationErrorHandler,
                                        TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver,
-                                       AxonSpanFactory axonSpanFactory) {
+                                       SpanFactory spanFactory) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
                               .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
-                              .axonSpanFactory(axonSpanFactory)
+                              .spanFactory(spanFactory)
                               .build();
         simpleQueryBus.registerHandlerInterceptor(
                 new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
@@ -122,7 +122,7 @@ public class AxonServerBusAutoConfiguration {
                                  .genericSerializer(genericSerializer)
                                  .priorityCalculator(priorityCalculator)
                                  .targetContextResolver(targetContextResolver)
-                                 .axonSpanFactory(axonSpanFactory)
+                                 .spanFactory(spanFactory)
                                  .build();
     }
 
@@ -142,7 +142,7 @@ public class AxonServerBusAutoConfiguration {
                                    .eventSerializer(eventSerializer)
                                    .snapshotFilter(configuration.snapshotFilter())
                                    .upcasterChain(configuration.upcasterChain())
-                                   .axonSpanFactory(configuration.axonSpanFactory())
+                                   .spanFactory(configuration.spanFactory())
                                    .build();
     }
 }

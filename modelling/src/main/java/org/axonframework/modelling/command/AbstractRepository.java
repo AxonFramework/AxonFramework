@@ -27,8 +27,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.tracing.AxonSpanFactory;
-import org.axonframework.tracing.NoopSpanFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +62,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
-    protected final AxonSpanFactory axonSpanFactory;
+    protected final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
@@ -79,7 +79,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected AbstractRepository(Builder<T> builder) {
         builder.validate();
         this.aggregateModel = builder.buildAggregateModel();
-        this.axonSpanFactory = builder.axonSpanFactory;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -134,7 +134,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
         String spanName = String.format("AbstractRepository.load %s", aggregateIdentifier);
-        return axonSpanFactory.createInternalSpan(spanName).runSupplier(() -> {
+        return spanFactory.createInternalSpan(spanName).runSupplier(() -> {
             UnitOfWork<?> uow = CurrentUnitOfWork.get();
             Map<String, A> aggregates = managedAggregates(uow);
             A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
@@ -383,7 +383,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
-        private AxonSpanFactory axonSpanFactory = NoopSpanFactory.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -470,9 +470,15 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             return this;
         }
 
-        public Builder<T> axonSpanFactory(AxonSpanFactory axonSpanFactory) {
-            assertNonNull(axonSpanFactory, "AxonSpanFactory may not be null");
-            this.axonSpanFactory = axonSpanFactory;
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
