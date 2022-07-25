@@ -207,11 +207,14 @@
             <scope>test</scope>
         </dependency>
 
-<!--        <dependency>-->
+        <dependency>
 <!--            <groupId>javax.inject</groupId>-->
 <!--            <artifactId>javax.inject</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
