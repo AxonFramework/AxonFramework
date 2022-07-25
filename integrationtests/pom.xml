@@ -185,6 +185,15 @@
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Enforce older version of jakarta.validation (one with `javax` namespace)
+        to be compatible with Hibernate -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>
