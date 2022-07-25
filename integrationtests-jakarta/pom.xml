@@ -9,58 +9,77 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-eventsourcing-jakarta</artifactId>
+    <artifactId>axon-integrationtests-jakarta</artifactId>
 
-    <name>Axon Event Sourcing (Jakarta)</name>
+    <name>Axon Integration tests</name>
     <description>
-        Module containing all necessary infrastructure components to support Event Sourcing Command and Query models.
+        Module containing integration tests to run during the build of Axon Framework. Does not contain any production
+        code.
 
         This is an automatic clone of the original module transformed to use `jakarta` packages instead of `javax` ones.
     </description>
 
-    <packaging>jar</packaging>
-
-    <!--
-        Copies of the dependencies from the original module
-    -->
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-<!--            <artifactId>axon-modelling</artifactId>-->
-            <artifactId>axon-modelling-jakarta</artifactId>
+<!--            <artifactId>axon-eventsourcing</artifactId>-->
+            <artifactId>axon-eventsourcing-jakarta</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-<!--            <groupId>javax.annotation</groupId>-->
-<!--            <artifactId>javax.annotation-api</artifactId>-->
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <version>2.1.1</version>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Persistence -->
-        <dependency>
-<!--            <groupId>javax.persistence</groupId>-->
-<!--            <artifactId>javax.persistence-api</artifactId>-->
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.0.0</version>
-            <optional>true</optional>
+            <groupId>${project.groupId}</groupId>
+<!--            <artifactId>axon-configuration</artifactId>-->
+            <artifactId>axon-configuration-jakarta</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.hibernate</groupId>
-<!--            <artifactId>hibernate-core</artifactId>-->
-            <artifactId>hibernate-core-jakarta</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+<!--            <artifactId>axon-eventsourcing</artifactId>-->
+            <artifactId>axon-eventsourcing-jakarta</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-spring</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -87,54 +106,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
+            <artifactId>oracle-xe</artifactId>
             <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Validation -->
-        <dependency>
-<!--            <groupId>javax.el</groupId>-->
-<!--            <artifactId>javax.el-api</artifactId>-->
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.el</artifactId>
-            <version>4.0.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.validator</groupId>
-            <artifactId>hibernate-validator</artifactId>
-            <version>7.0.4.Final</version> <!-- newer version supports jakarta -->
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Caching -->
-        <dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Spring - For testing only! -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -145,18 +121,59 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- explicitly define transitive dependencies to increase version priority -->
-        <!-- see https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Transitive_Dependencies -->
         <dependency>
-            <groupId>org.axonframework</groupId>
-<!--            <artifactId>axon-messaging</artifactId>-->
-            <artifactId>axon-messaging-jakarta</artifactId>
-            <version>${project.version}</version>
+            <!--            <groupId>javax.inject</groupId>-->
+            <!--            <artifactId>javax.inject</artifactId>-->
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+<!--            <artifactId>hibernate-core</artifactId>-->
+            <artifactId>hibernate-core-jakarta</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc7</artifactId>
+            <version>12.1.0.2</version>
+            <scope>system</scope>
+<!--            <systemPath>${project.basedir}/src/test/binary/ojdbc7.jar</systemPath>-->
+            <systemPath>${project.basedir}/../integrationtests/src/test/binary/ojdbc7.jar</systemPath>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -164,8 +181,8 @@
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
+
 
     <build>
         <plugins>
@@ -183,7 +200,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.axonframework</groupId>
-                                    <artifactId>axon-eventsourcing</artifactId>
+                                    <artifactId>axon-integrationtests</artifactId>
                                     <version>${project.version}</version>
                                     <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                                 </artifactItem>
@@ -200,7 +217,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.axonframework</groupId>
-                                    <artifactId>axon-eventsourcing</artifactId>
+                                    <artifactId>axon-integrationtests</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>tests</classifier>
                                     <type>test-jar</type>
@@ -246,19 +263,10 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <exclude>**/JpaEventStorageEngineTest.java</exclude>
+                        <exclude>**/JpaStorageEngineInsertionReadOrderTest.java</exclude>
+                        <exclude>**/GenericJpaRepositoryIntegrationTest.java</exclude>
                     </excludes>
                 </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
