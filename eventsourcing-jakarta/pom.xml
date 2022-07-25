@@ -250,6 +250,13 @@
                                         <exclude>javax.el:*</exclude>
                                         <exclude>javax.persistence:*</exclude>
                                         <exclude>javax.inject:*</exclude>
+
+                                        <exclude>jakarta.annotation:*:(,2.0.0)</exclude>
+                                        <exclude>jakarta.validation:*:(,3.0.0)</exclude>
+                                        <exclude>jakarta.el:*:(,4.0.0)</exclude>
+                                        <exclude>jakarta.persistence:*:(,3.0.0)</exclude>
+                                        <exclude>jakarta.inject:*:(,2.0.0)</exclude>
+
                                         <exclude>org.springframework</exclude>
                                     </excludes>
                                     <includes>
