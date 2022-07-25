@@ -11,7 +11,7 @@
 
     <artifactId>axon-integrationtests-jakarta</artifactId>
 
-    <name>Axon Integration tests</name>
+    <name>Axon Integration tests (Jakarta)</name>
     <description>
         Module containing integration tests to run during the build of Axon Framework. Does not contain any production
         code.
