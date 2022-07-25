@@ -234,6 +234,13 @@
             <plugin>
                 <groupId>org.eclipse.transformer</groupId>
                 <artifactId>transformer-maven-plugin</artifactId>
+                <configuration>
+                    <rules>
+                        <perClassConstants>
+                            <perClassConstant>${basedir}/src/main/resources/perClassConstants.properties</perClassConstant>
+                        </perClassConstants>
+                    </rules>
+                </configuration>
                 <executions>
                     <execution>
                         <id>transform</id>
