@@ -154,12 +154,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc7</artifactId>
-            <version>12.1.0.2</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/src/test/binary/ojdbc7.jar</systemPath>
-            <optional>true</optional>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>21.6.0.0.1</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
