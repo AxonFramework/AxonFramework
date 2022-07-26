@@ -85,11 +85,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <!--            <groupId>org.glassfish.web</groupId>-->
-            <!--            <artifactId>el-impl</artifactId>-->
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.el</artifactId>
-            <version>4.0.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -130,6 +130,9 @@
 
         <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
         <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
+
+        <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
+
     </properties>
 
     <dependencies>
@@ -375,6 +378,11 @@
                 <groupId>org.glassfish.web</groupId>
                 <artifactId>el-impl</artifactId>
                 <version>${el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>${jakarta.el.implementation.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
