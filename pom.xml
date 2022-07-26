@@ -20,8 +20,28 @@
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
     <version>4.6.0-SNAPSHOT</version>
-
-
+    <modules>
+        <module>messaging</module>
+        <module>messaging-jakarta</module>
+        <module>modelling</module>
+        <module>modelling-jakarta</module>
+        <module>eventsourcing</module>
+        <module>eventsourcing-jakarta</module>
+        <module>config</module>
+        <module>config-jakarta</module>
+        <module>test</module>
+        <module>axon-server-connector</module>
+        <module>disruptor</module>
+        <module>metrics</module>
+        <module>metrics-micrometer</module>
+        <module>spring</module>
+        <module>spring-boot-autoconfigure</module>
+        <module>spring-boot-starter</module>
+        <module>integrationtests</module>
+        <module>integrationtests-jakarta</module>
+        <module>legacy</module>
+        <module>reactorless-test</module>
+    </modules>
     <packaging>pom</packaging>
 
     <modelVersion>4.0.0</modelVersion>
@@ -630,54 +650,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>all-modules</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <modules>
-                <module>messaging</module>
-                <module>messaging-jakarta</module>
-                <module>modelling</module>
-                <module>modelling-jakarta</module>
-                <module>eventsourcing</module>
-                <module>eventsourcing-jakarta</module>
-                <module>config</module>
-                <module>config-jakarta</module>
-                <module>test</module>
-                <module>axon-server-connector</module>
-                <module>disruptor</module>
-                <module>metrics</module>
-                <module>metrics-micrometer</module>
-                <module>spring</module>
-                <module>spring-boot-autoconfigure</module>
-                <module>spring-boot-starter</module>
-                <module>integrationtests</module>
-                <module>integrationtests-jakarta</module>
-                <module>legacy</module>
-                <module>reactorless-test</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>javax-only</id>
-            <modules>
-                <module>messaging</module>
-                <module>modelling</module>
-                <module>eventsourcing</module>
-                <module>config</module>
-                <module>test</module>
-                <module>axon-server-connector</module>
-                <module>disruptor</module>
-                <module>metrics</module>
-                <module>metrics-micrometer</module>
-                <module>spring</module>
-                <module>spring-boot-autoconfigure</module>
-                <module>spring-boot-starter</module>
-                <module>integrationtests</module>
-                <module>legacy</module>
-                <module>reactorless-test</module>
-            </modules>
-        </profile>
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
