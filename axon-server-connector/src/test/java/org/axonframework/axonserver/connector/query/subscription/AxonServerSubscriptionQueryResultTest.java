@@ -26,6 +26,7 @@ import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -69,7 +70,7 @@ class AxonServerSubscriptionQueryResultTest {
         };
         mockUpstream = mock(ClientCallStreamObserver.class);
         subscriptionQueryUpdateBuffer.beforeStart(mockUpstream);
-        testSubject = new AxonServerSubscriptionQueryResult<>(result, stubSerializer);
+        testSubject = new AxonServerSubscriptionQueryResult<>(result, stubSerializer, NoOpSpanFactory.INSTANCE);
     }
 
     @AfterEach

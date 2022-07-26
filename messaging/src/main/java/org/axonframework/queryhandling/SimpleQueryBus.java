@@ -173,46 +173,47 @@ public class SimpleQueryBus implements QueryBus {
         QueryMessage<Q, R> interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
-        spanFactory.createInternalSpan("SimpleQueryBus.query", query).startForFuture(result);
-        try {
-            ResponseType<R> responseType = interceptedQuery.getResponseType();
-            if (handlers.isEmpty()) {
-                throw noHandlerException(interceptedQuery);
-            }
-            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
-            boolean invocationSuccess = false;
-            while (!invocationSuccess && handlerIterator.hasNext()) {
-                DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
-                        interceptAndInvoke(uow, handlerIterator.next());
-                if (resultMessage.isExceptional()) {
-                    if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
-                        GenericQueryResponseMessage<R> queryResponseMessage =
-                                responseType.convertExceptional(resultMessage.exceptionResult())
-                                            .map(GenericQueryResponseMessage::new)
-                                            .orElse(new GenericQueryResponseMessage<>(
-                                                    responseType.responseMessagePayloadType(),
-                                                    resultMessage.exceptionResult()));
-
-
-                        result.complete(queryResponseMessage);
-                        monitorCallback.reportFailure(resultMessage.exceptionResult());
-                        return result;
-                    }
-                } else {
-                    result = resultMessage.getPayload();
-                    invocationSuccess = true;
+        return spanFactory.createInternalSpan("SimpleQueryBus.query", query).runSupplier(() -> {
+            try {
+                ResponseType<R> responseType = interceptedQuery.getResponseType();
+                if (handlers.isEmpty()) {
+                    throw noHandlerException(interceptedQuery);
                 }
+                Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
+                boolean invocationSuccess = false;
+                while (!invocationSuccess && handlerIterator.hasNext()) {
+                    DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+                    ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
+                            interceptAndInvoke(uow, handlerIterator.next());
+                    if (resultMessage.isExceptional()) {
+                        if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
+                            GenericQueryResponseMessage<R> queryResponseMessage =
+                                    responseType.convertExceptional(resultMessage.exceptionResult())
+                                                .map(GenericQueryResponseMessage::new)
+                                                .orElse(new GenericQueryResponseMessage<>(
+                                                        responseType.responseMessagePayloadType(),
+                                                        resultMessage.exceptionResult()));
+
+
+                            result.complete(queryResponseMessage);
+                            monitorCallback.reportFailure(resultMessage.exceptionResult());
+                            return result;
+                        }
+                    } else {
+                        result.complete(resultMessage.getPayload().get());
+                        invocationSuccess = true;
+                    }
+                }
+                if (!invocationSuccess) {
+                    throw noSuitableHandlerException(interceptedQuery);
+                }
+                monitorCallback.reportSuccess();
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+                monitorCallback.reportFailure(e);
             }
-            if (!invocationSuccess) {
-                throw noSuitableHandlerException(interceptedQuery);
-            }
-            monitorCallback.reportSuccess();
-        } catch (Exception e) {
-            result.completeExceptionally(e);
-            monitorCallback.reportFailure(e);
-        }
-        return result;
+            return result;
+        });
     }
 
     @Override

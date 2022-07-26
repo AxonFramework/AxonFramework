@@ -182,9 +182,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             case JACKSON:
                 Map<String, ObjectMapper> objectMapperBeans = applicationContext.getBeansOfType(ObjectMapper.class);
                 ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
-                                            ? objectMapperBeans.get("defaultAxonObjectMapper")
-                                            : objectMapperBeans.values().stream().findFirst()
-                                                               .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
+                        ? objectMapperBeans.get("defaultAxonObjectMapper")
+                        : objectMapperBeans.values().stream().findFirst()
+                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
@@ -403,6 +403,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        .updateMessageMonitor(configuration.messageMonitor(
                                                QueryUpdateEmitter.class, "queryUpdateEmitter"
                                        ))
+                                       .spanFactory(configuration.spanFactory())
                                        .build();
     }
 

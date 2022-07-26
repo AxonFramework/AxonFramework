@@ -299,7 +299,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         @Override
         public void run() {
             CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            Span span = spanFactory.createHandlerSpan("AxonServerCommandBus.handle", deserializedCommand)
+            Span span = spanFactory.createHandlerSpan("AxonServerCommandBus.handle", deserializedCommand, true)
                                    .start();
             try {
                 localSegment.dispatch(

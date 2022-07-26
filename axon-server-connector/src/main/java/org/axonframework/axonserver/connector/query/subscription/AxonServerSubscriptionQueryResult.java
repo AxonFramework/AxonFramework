@@ -21,6 +21,8 @@ import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -50,44 +52,48 @@ public class AxonServerSubscriptionQueryResult<I, U>
      * the subscription query.
      */
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
-                                             SubscriptionMessageSerializer subscriptionSerializer) {
+                                             SubscriptionMessageSerializer subscriptionSerializer,
+                                             SpanFactory spanFactory) {
         updates = Flux.<QueryUpdate>create(fluxSink -> {
-            fluxSink.onRequest(count -> {
-                for (int i = 0; i < count; i++) {
-                    QueryUpdate next = result.updates().nextIfAvailable();
-                    if (next != null) {
-                        fluxSink.next(next);
-                    } else {
-                        if (result.updates().isClosed()) {
-                            completeFlux(fluxSink, result.updates().getError().orElse(null));
-                        }
-                        break;
-                    }
-                }
-            });
+                          fluxSink.onRequest(count -> {
+                              for (int i = 0; i < count; i++) {
+                                  QueryUpdate next = result.updates().nextIfAvailable();
+                                  if (next != null) {
+                                      fluxSink.next(next);
+                                  } else {
+                                      if (result.updates().isClosed()) {
+                                          completeFlux(fluxSink, result.updates().getError().orElse(null));
+                                      }
+                                      break;
+                                  }
+                              }
+                          });
 
-            fluxSink.onDispose(() -> {
-                logger.debug("Flux was disposed. Will close subscription query");
-                result.updates().close();
-            });
+                          fluxSink.onDispose(() -> {
+                              logger.debug("Flux was disposed. Will close subscription query");
+                              result.updates().close();
+                          });
 
-            result.updates().onAvailable(() -> {
-                if (fluxSink.requestedFromDownstream() > 0) {
-                    QueryUpdate next = result.updates().nextIfAvailable();
-                    if (next != null) {
-                        fluxSink.next(next);
-                    }
-                } else {
-                    logger.trace("Not sending update to Flux Sink. Not enough info requested");
-                }
-                if (result.updates().isClosed()) {
-                    completeFlux(fluxSink, result.updates().getError().orElse(null));
-                }
-            });
-        }).doOnError(e -> result.updates().close())
-          .map(subscriptionSerializer::deserialize);
+                          result.updates().onAvailable(() -> {
+                              if (fluxSink.requestedFromDownstream() > 0) {
+                                  QueryUpdate next = result.updates().nextIfAvailable();
+                                  if (next != null) {
+                                      SubscriptionQueryUpdateMessage<Object> nextMessage = subscriptionSerializer.deserialize(next);
+                                      spanFactory.createHandlerSpan("SubscriptionQuery update", nextMessage, true)
+                                                 .run(() -> fluxSink.next(next));
+                                  }
+                              } else {
+                                  logger.trace("Not sending update to Flux Sink. Not enough info requested");
+                              }
+                              if (result.updates().isClosed()) {
+                                  completeFlux(fluxSink, result.updates().getError().orElse(null));
+                              }
+                          });
+                      }).doOnError(e -> result.updates().close())
+                      .map(subscriptionSerializer::deserialize);
 
-        this.initialResult = Mono.fromCompletionStage(result::initialResult)
+        Span initialResultSpan = spanFactory.createInternalSpan("SubscriptionQuery initialResult");
+        this.initialResult = Mono.fromCompletionStage(() -> initialResultSpan.startForFuture(result.initialResult()))
                                  .onErrorMap(GrpcExceptionParser::parse)
                                  .map(subscriptionSerializer::deserialize);
         this.result = result;

@@ -116,6 +116,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public Span createDispatchSpan(String operationName, Message<?> parentMessage) {
         SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
                                         .setSpanKind(SpanKind.PRODUCER);
+        addMessageAttributes(spanBuilder, parentMessage);
         return new OpenTelemetrySpan(spanBuilder);
     }
 

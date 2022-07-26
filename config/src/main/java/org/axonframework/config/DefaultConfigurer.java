@@ -129,7 +129,8 @@ public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final Runnable NOTHING = () -> {};
+    private static final Runnable NOTHING = () -> {
+    };
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -363,6 +364,7 @@ public class DefaultConfigurer implements Configurer {
                             config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
                     return SimpleQueryUpdateEmitter.builder()
                                                    .updateMessageMonitor(updateMessageMonitor)
+                                                   .spanFactory(config.spanFactory())
                                                    .build();
                 });
     }
@@ -375,7 +377,8 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return defaultComponent(ParameterResolverFactory.class, config)
-                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
+                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(
+                                                                               getClass()),
                                                                        new ConfigurationParameterResolverFactory(config)));
     }
 
@@ -538,7 +541,8 @@ public class DefaultConfigurer implements Configurer {
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
                                                .spanFactory(config.getComponent(SpanFactory.class))
-                                               .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
+                                               .handlerDefinition(retrieveHandlerDefinition(config,
+                                                                                            aggregateConfigurations))
                                                .build();
                 });
     }

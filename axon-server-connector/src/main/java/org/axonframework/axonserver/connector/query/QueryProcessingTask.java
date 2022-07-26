@@ -139,15 +139,17 @@ class QueryProcessingTask implements Runnable, FlowControl {
         try {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
             QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
-            if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
-                if (supportsStreaming && reactorOnClassPath.get()) {
-                    streamingQuery(queryMessage);
+            spanFactory.createHandlerSpan("QueryProcessingTask ", queryMessage, true).run(() -> {
+                if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
+                    if (supportsStreaming && reactorOnClassPath.get()) {
+                        streamingQuery(queryMessage);
+                    } else {
+                        directQuery(queryMessage);
+                    }
                 } else {
-                    directQuery(queryMessage);
+                    scatterGather(queryMessage);
                 }
-            } else {
-                scatterGather(queryMessage);
-            }
+            });
         } catch (RuntimeException | OutOfDirectMemoryError e) {
             sendError(e);
             logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);

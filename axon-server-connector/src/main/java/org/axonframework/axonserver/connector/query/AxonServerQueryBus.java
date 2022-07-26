@@ -435,7 +435,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
 
-        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(query);
+        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(
+                query));
         String subscriptionId = interceptedQuery.getIdentifier();
         String targetContext = targetContextResolver.resolveContext(interceptedQuery);
 
@@ -450,7 +451,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                    configuration.getQueryFlowControl().getInitialNrOfPermits(),
                                                    configuration.getQueryFlowControl().getNrOfNewPermits()
                                            );
-        return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer);
+        return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer, spanFactory);
     }
 
     @Override

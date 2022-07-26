@@ -23,6 +23,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.EmitterProcessor;
@@ -58,6 +60,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
+    private final SpanFactory spanFactory;
 
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
@@ -72,6 +75,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     protected SimpleQueryUpdateEmitter(Builder builder) {
         builder.validate();
         this.updateMessageMonitor = builder.updateMessageMonitor;
+        this.spanFactory = builder.spanFactory;
     }
 
     /**
@@ -140,7 +144,10 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
-        runOnAfterCommitOrNow(() -> doEmit(filter, intercept(update)));
+        spanFactory.createInternalSpan("SimpleQueryUpdateEmitter.emit", update).run(() -> {
+            SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
+            runOnAfterCommitOrNow(() -> doEmit(filter, intercept(message)));
+        });
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
@@ -184,18 +191,21 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
-        try {
-            ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
-            monitorCallback.reportSuccess();
-        } catch (Exception e) {
-            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString());
-            monitorCallback.reportFailure(e);
-            updateHandlers.remove(query);
-            emitError(query, e, updateHandler);
-        }
+        spanFactory.createHandlerSpan("QueryUpdateEmitter", query).run(() -> {
+            SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
+            MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
+            try {
+                ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(message);
+                monitorCallback.reportSuccess();
+            } catch (Exception e) {
+                logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                    "The subscription will be cancelled. Exception summary: {}",
+                            query.getQueryName(), e.toString());
+                monitorCallback.reportFailure(e);
+                updateHandlers.remove(query);
+                emitError(query, e, updateHandler);
+            }
+        });
     }
 
     private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
@@ -233,16 +243,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}. This is
-     * done to ensure any emitter calls made from a message handling function are executed in the {@link
-     * UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * done to ensure any emitter calls made from a message handling function are executed in the
+     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
      * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done to
      * allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do this
      * by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a different
      * phase.
      *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
-     *                        SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
+     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
+     *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
      */
     private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
         if (inStartedPhaseOfUnitOfWork()) {
@@ -285,19 +295,26 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
         private MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
                 NoOpMessageMonitor.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
          * Defaults to a {@link NoOpMessageMonitor}.
          *
-         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s
-         *                             being processed
+         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor
+         *                             {@link SubscriptionQueryUpdateMessage}s being processed
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateMessageMonitor(
                 @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
             assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
             this.updateMessageMonitor = updateMessageMonitor;
+            return this;
+        }
+
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
