@@ -96,11 +96,8 @@
 
         <!-- Validation -->
         <dependency>
-<!--            <groupId>javax.el</groupId>-->
-<!--            <artifactId>javax.el-api</artifactId>-->
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.el</artifactId>
-            <version>4.0.2</version>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
