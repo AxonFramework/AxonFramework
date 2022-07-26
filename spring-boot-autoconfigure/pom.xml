@@ -159,7 +159,7 @@
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>2.2.3</version>
+            <version>${jakarta.persistence.legacy.version}</version>
         </dependency>
 
         <!-- Enforce older version of jakarta.validation (one with `javax` namespace)
@@ -167,7 +167,7 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>2.0.2</version>
+            <version>${jakarta.validation.legacy.version}</version>
         </dependency>
 
 

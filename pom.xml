@@ -127,6 +127,9 @@
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
+
+        <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
+        <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
     </properties>
 
     <dependencies>
