@@ -107,8 +107,10 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      */
     @JsonCreator
     @ConstructorProperties({"identifier", "payload", "metaData"})
-    public GenericMessage(@JsonProperty("identifier") String identifier, @JsonProperty("payload") T payload,
-                          @JsonProperty("metaData") Map<String, ?> metaData) {
+    public GenericMessage(@JsonProperty("identifier") String identifier,
+                          @JsonProperty("payload") T payload,
+                          @JsonProperty("metaData") Map<String, ?> metaData
+    ) {
         this(identifier, getDeclaredPayloadType(payload), payload, metaData);
     }
 

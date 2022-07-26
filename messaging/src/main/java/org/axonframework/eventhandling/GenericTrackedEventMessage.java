@@ -84,9 +84,11 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
     @JsonCreator
     @ConstructorProperties({"trackingToken", "payload", "identifier", "metaData", "timestamp"})
     public GenericTrackedEventMessage(@JsonProperty("trackingToken") TrackingToken trackingToken,
-                                      @JsonProperty("payload") T payload, @JsonProperty("identifier") String identifier,
+                                      @JsonProperty("payload") T payload,
+                                      @JsonProperty("identifier") String identifier,
                                       @JsonProperty("metaData") MetaData metaData,
-                                      @JsonProperty("timestamp") Instant timestamp) {
+                                      @JsonProperty("timestamp") Instant timestamp
+    ) {
         super(identifier, payload, metaData, timestamp);
         this.trackingToken = trackingToken;
     }

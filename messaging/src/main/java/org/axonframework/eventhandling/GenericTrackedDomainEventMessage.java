@@ -75,7 +75,7 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
     }
 
     /**
-     * Initialize a DomainEventMessage originating from an aggregate.
+     * Initialize a {@link GenericTrackedDomainEventMessage} originating from an aggregate.
      *
      * @param trackingToken       Tracking token of the event
      * @param type                The domain type
@@ -91,7 +91,7 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
     }
 
     /**
-     * Initialize a DomainEventMessage originating from existing data.,
+     * Initialize a {@link GenericTrackedDomainEventMessage} originating from existing data.
      *
      * @param trackingToken       Tracking token of the event
      * @param type                The domain type

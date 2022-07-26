@@ -79,10 +79,12 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      */
     @JsonCreator
     @ConstructorProperties({"payload", "queryName", "responseType", "identifier", "metaData"})
-    public GenericQueryMessage(@JsonProperty("payload") T payload, @JsonProperty("queryName") String queryName,
+    public GenericQueryMessage(@JsonProperty("payload") T payload,
+                               @JsonProperty("queryName") String queryName,
                                @JsonProperty("responseType") ResponseType<R> responseType,
                                @JsonProperty("identifier") String identifier,
-                               @JsonProperty("metaData") MetaData metaData) {
+                               @JsonProperty("metaData") MetaData metaData
+    ) {
         this(new GenericMessage<>(identifier, payload, metaData), queryName, responseType);
     }
 
