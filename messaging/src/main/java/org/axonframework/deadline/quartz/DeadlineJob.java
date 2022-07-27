@@ -32,6 +32,8 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -79,6 +81,11 @@ public class DeadlineJob implements Job {
     public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
     /**
+     * The key under which the {@link SpanFactory} is stored within the {@link SchedulerContext}.
+     */
+    public static final String SPAN_FACTORY = SpanFactory.class.getName();
+
+    /**
      * The key under which the {@link MessageHandlerInterceptor}s are stored within the {@link SchedulerContext}.
      */
     public static final String HANDLER_INTERCEPTORS = MessageHandlerInterceptor.class.getName();
@@ -111,6 +118,7 @@ public class DeadlineJob implements Job {
         Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
         TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
         ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
+        SpanFactory spanFactory = (SpanFactory) schedulerContext.get(SPAN_FACTORY);
         @SuppressWarnings("unchecked")
         List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
                 (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
@@ -119,35 +127,42 @@ public class DeadlineJob implements Job {
         DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
-        DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
-        unitOfWork.attachTransaction(transactionManager);
-        InterceptorChain chain =
-                new DefaultInterceptorChain<>(unitOfWork,
-                                              handlerInterceptors,
-                                              interceptedDeadlineMessage -> {
-                                                  executeScheduledDeadline(scopeAwareComponents,
-                                                                           interceptedDeadlineMessage,
-                                                                           deadlineScope);
-                                                  return null;
-                                              });
+        Span span = spanFactory.createHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
+        try {
+            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
+            unitOfWork.attachTransaction(transactionManager);
+            InterceptorChain chain =
+                    new DefaultInterceptorChain<>(unitOfWork,
+                                                  handlerInterceptors,
+                                                  interceptedDeadlineMessage -> {
+                                                      executeScheduledDeadline(scopeAwareComponents,
+                                                                               interceptedDeadlineMessage,
+                                                                               deadlineScope);
+                                                      return null;
+                                                  });
 
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
-        if (resultMessage.isExceptional()) {
-            Throwable exceptionResult = resultMessage.exceptionResult();
+            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+            if (resultMessage.isExceptional()) {
+                Throwable exceptionResult = resultMessage.exceptionResult();
+                span.recordException(exceptionResult);
 
-            @SuppressWarnings("unchecked")
-            Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(REFIRE_IMMEDIATELY_POLICY);
-            if (refirePolicy.test(exceptionResult)) {
-                logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
+                @SuppressWarnings("unchecked")
+                Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(
+                        REFIRE_IMMEDIATELY_POLICY);
+                if (refirePolicy.test(exceptionResult)) {
+                    logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
+                                 jobDetail.getDescription(), exceptionResult);
+                    throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
+                }
+                logger.error("Exception occurred during processing a deadline job [{}]",
                              jobDetail.getDescription(), exceptionResult);
-                throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
+                throw new JobExecutionException(exceptionResult);
+            } else if (logger.isInfoEnabled()) {
+                logger.info("Job successfully executed. Deadline message [{}] processed.",
+                            deadlineMessage.getPayloadType().getSimpleName());
             }
-            logger.error("Exception occurred during processing a deadline job [{}]",
-                         jobDetail.getDescription(), exceptionResult);
-            throw new JobExecutionException(exceptionResult);
-        } else if (logger.isInfoEnabled()) {
-            logger.info("Job successfully executed. Deadline message [{}] processed.",
-                        deadlineMessage.getPayloadType().getSimpleName());
+        } finally {
+            span.end();
         }
     }
 

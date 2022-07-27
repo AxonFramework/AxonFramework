@@ -456,7 +456,8 @@ public class DefaultConfigurer implements Configurer {
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
         return defaultComponent(DeadlineManager.class, config)
                 .orElseGet(() -> SimpleDeadlineManager.builder()
-                                                      .scopeAwareProvider(config.scopeAwareProvider()).build());
+                                                      .scopeAwareProvider(config.scopeAwareProvider())
+                                                      .spanFactory(config.spanFactory()).build());
     }
 
     /**
