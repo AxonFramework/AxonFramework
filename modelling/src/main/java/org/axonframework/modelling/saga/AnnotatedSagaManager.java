@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.Objects;
 import java.util.Set;
@@ -162,6 +163,12 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         public Builder<T> listenerInvocationErrorHandler(
                 ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
             super.listenerInvocationErrorHandler(listenerInvocationErrorHandler);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

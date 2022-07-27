@@ -224,13 +224,14 @@ public class SagaConfigurer<T> {
                 managerBuilder = c -> {
                     EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
                     return AnnotatedSagaManager.<S>builder()
-                            .sagaType(configurer.type)
-                            .sagaRepository(repository.get())
-                            .parameterResolverFactory(c.parameterResolverFactory())
-                            .handlerDefinition(c.handlerDefinition(configurer.type))
-                            .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
-                                    processingGroup()))
-                            .build();
+                                               .sagaType(configurer.type)
+                                               .sagaRepository(repository.get())
+                                               .parameterResolverFactory(c.parameterResolverFactory())
+                                               .handlerDefinition(c.handlerDefinition(configurer.type))
+                                               .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
+                                                       processingGroup()))
+                                               .spanFactory(configuration.spanFactory())
+                                               .build();
                 };
             }
             manager = new Component<>(configuration, managerName, managerBuilder);

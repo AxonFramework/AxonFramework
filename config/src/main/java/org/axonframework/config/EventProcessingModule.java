@@ -792,6 +792,7 @@ public class EventProcessingModule
                                         .messageSource(messageSource)
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
                                         .transactionManager(transactionManager(name))
+                                        .spanFactory(configuration.spanFactory())
                                         .build();
     }
 

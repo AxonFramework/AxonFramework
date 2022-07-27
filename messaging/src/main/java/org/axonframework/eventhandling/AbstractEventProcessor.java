@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,6 +167,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             MessageMonitor.MonitorCallback monitorCallback =
                     messageMonitor.onMessageIngested(unitOfWork.getMessage());
             return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
+                Span span = spanFactory.createInternalSpan(String.format("%s[%s].process",
+                                                                         getClass().getSimpleName(),
+                                                                         getName()), m);
+                span.start();
                 try {
                     for (Segment processingSegment : processingSegments) {
                         eventHandlerInvoker.handle(m, processingSegment);
@@ -174,7 +179,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     return null;
                 } catch (Exception exception) {
                     monitorCallback.reportFailure(exception);
+                    span.recordException(exception);
                     throw exception;
+                } finally {
+                    span.end();
                 }
             }).proceed();
         }, rollbackConfiguration);

@@ -27,6 +27,9 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +57,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
+    private final SpanFactory spanFactory;
     private volatile ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
@@ -71,6 +75,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         this.sagaType = builder.sagaType;
         this.sagaFactory = builder.sagaFactory;
         this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -96,7 +101,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
         if (shouldCreateSaga(segment, sagaOfTypeInvoked || sagaMatchesOtherSegment, initializationPolicy)) {
-            startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
+            spanFactory.createInternalSpan("SagaManager[" + sagaType.getSimpleName() + "].startNewSaga")
+                       .runCallable(() -> {
+                           startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
+                           return null;
+                       });
         }
     }
 
@@ -167,10 +176,17 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
+            String spanName = String.format("SagaManager[%s].invokeSaga %s",
+                                            sagaType.getSimpleName(),
+                                            saga.getSagaIdentifier());
+            Span span = spanFactory.createInternalSpan(spanName).start();
             try {
                 saga.handle(event);
             } catch (Exception e) {
+                span.recordException(e);
                 listenerInvocationErrorHandler.onError(e, event, saga);
+            } finally {
+                span.end();
             }
             return true;
         }
@@ -246,6 +262,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         protected Class<T> sagaType;
         private Supplier<T> sagaFactory = () -> newInstance(sagaType);
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         private static <T> T newInstance(Class<T> type) {
             try {
@@ -303,6 +320,19 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
                 ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
             assertNonNull(listenerInvocationErrorHandler, "ListenerInvocationErrorHandler may not be null");
             this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+            return this;
+        }
+
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
