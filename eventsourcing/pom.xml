@@ -185,14 +185,6 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
-<!--                        <configuration>-->
-<!--                            <includes>-->
-<!--                                <include>**/AbstractEventStorageEngineTest.*</include>-->
-<!--                                <include>**/BatchingEventStorageEngineTest.*</include>-->
-<!--                                <include>**/EventStorageEngineTest.*</include>-->
-<!--                                <include>**/EventStoreTestUtils.*</include>-->
-<!--                            </includes>-->
-<!--                        </configuration>-->
                     </execution>
                 </executions>
             </plugin>
