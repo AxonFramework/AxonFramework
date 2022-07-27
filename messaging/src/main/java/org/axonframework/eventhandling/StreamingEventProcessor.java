@@ -22,6 +22,7 @@ import org.axonframework.messaging.StreamableMessageSource;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -216,7 +217,28 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param resetContext  a {@code R} used to support the reset operation
      * @param <R>           the type of the provided {@code resetContext}
      */
-    <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext);
+    default <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext) {
+        resetTokens(startPosition, resetContext, ReplayToken::createReplayToken);
+    }
+
+    /**
+     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that position.
+     * The given {@code resetContext} will be used to support the (optional) reset operation in an Event Handling
+     * Component.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the same
+     * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
+     * processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param startPosition the token representing the position to reset the processor to
+     * @param resetContext  a {@code R} used to support the reset operation
+     * @param factoryMethod The method used to create the {@link ReplayToken}
+     * @param <R>           the type of the provided {@code resetContext}
+     */
+    <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext,
+                         @Nonnull BinaryOperator<TrackingToken> factoryMethod);
 
     /**
      * Specifies the maximum amount of segments this {@link EventProcessor} can process at the same time.

@@ -57,8 +57,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -625,7 +627,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     @Override
-    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
+    public <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext) {
+        resetTokens(startPosition, resetContext, ReplayToken::createReplayToken);
+    }
+
+    @Override
+    public <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext,
+                                @Nonnull BinaryOperator<TrackingToken> factoryMethod) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0 && !workLauncherRunning.get(),
                      () -> "TrackingProcessor must be shut down before triggering a reset");
@@ -639,7 +647,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             eventHandlerInvoker().performReset(resetContext);
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]);
+                tokenStore.storeToken(factoryMethod.apply(tokens[i], startPosition), getName(), segments[i]);
             }
         });
     }

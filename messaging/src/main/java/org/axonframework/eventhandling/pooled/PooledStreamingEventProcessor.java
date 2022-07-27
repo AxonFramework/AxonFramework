@@ -54,11 +54,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -304,7 +306,13 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
     }
 
     @Override
-    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
+    public <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext) {
+        resetTokens(startPosition, resetContext, ReplayToken::createReplayToken);
+    }
+
+    @Override
+    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext,
+                                @Nonnull BinaryOperator<TrackingToken> factoryMethod) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
@@ -319,7 +327,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
-                             ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]
+                             factoryMethod.apply(tokens[i], startPosition), getName(), segments[i]
                      ));
         });
     }
