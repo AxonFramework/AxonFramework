@@ -77,7 +77,7 @@ class StreamingQueryEndToEndTest {
 
     @Container
     private static final GenericContainer<?> axonServerContainer =
-            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver:4.6.1-dev"))
+            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver"))
                     .withExposedPorts(8024, 8124)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
                     .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
