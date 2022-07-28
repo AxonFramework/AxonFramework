@@ -173,7 +173,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         Scheduler scheduler = PriorityTaskSchedulers.forPriority(queryExecutor, priority, TASK_SEQUENCE);
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
                    .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
-                                                .publishOn(scheduler)
                                                 .flatMapMany(
                                                         intercepted -> Mono.just(serializeStreaming(intercepted,
                                                                                                     priority))
@@ -185,6 +184,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                    intercepted, queryResponse
                                                                            ))
                                                 )
+                                                .publishOn(scheduler)
                                                 .doFinally(new ActivityFinisher(activity)))
                    .subscribeOn(scheduler);
     }
