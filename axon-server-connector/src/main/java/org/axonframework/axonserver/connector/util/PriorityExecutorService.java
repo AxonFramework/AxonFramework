@@ -17,6 +17,8 @@
 package org.axonframework.axonserver.connector.util;
 
 
+import org.axonframework.axonserver.connector.PriorityCallable;
+import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.PriorityTask;
 
 import java.util.Collection;
@@ -26,38 +28,39 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-public class PriorityTaskExecutorService implements ExecutorService {
+/**
+ * This {@link ExecutorService} wraps an existing one, creating a {@link PriorityTask} for every {@link Runnable} that
+ * is submitted that's an instance of one. The created {@link PriorityTask} will have the priority provided in the
+ * constructor, as well as the taskSequence provided there.
+ * <p>
+ * This implementation also diverts all invocations of {@link ExecutorService#submit(Runnable)} to
+ * {@link ExecutorService#execute(Runnable)} instead. This is because the {@code submit} method implementations wrap the
+ * tasks in another {@link FutureTask}, which makes the task uncomparable again.
+ */
+public class PriorityExecutorService implements ExecutorService {
 
     private final ExecutorService delegate;
     private final AtomicLong taskSequence;
     private final long priority;
 
-    public PriorityTaskExecutorService(ExecutorService delegate, long priority, AtomicLong taskSequence) {
+    /**
+     * Creates a new {@link PriorityExecutorService} with the provided priority and sequence.
+     *
+     * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks
+     * @param priority     The priority that any tasks submitted to the delegate will have
+     * @param taskSequence The task sequence, used for ordering items within the same priority
+     */
+    PriorityExecutorService(ExecutorService delegate, long priority, AtomicLong taskSequence) {
         this.priority = priority;
         this.delegate = delegate;
         this.taskSequence = taskSequence;
-    }
-
-    @Nonnull
-    @Override
-    public <T> Future<T> submit(@Nonnull Callable<T> task) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        PriorityTask priorityTask = createPriorityTask(() -> {
-            try {
-                T call = task.call();
-                future.complete(call);
-            } catch (Exception e) {
-                future.completeExceptionally(e);
-            }
-        });
-        delegate.execute(priorityTask);
-        return future;
     }
 
     @Override
@@ -87,8 +90,34 @@ public class PriorityTaskExecutorService implements ExecutorService {
         return delegate.awaitTermination(timeout, unit);
     }
 
-    private PriorityTask createPriorityTask(Runnable task) {
-        return new PriorityTask(task, priority, taskSequence.incrementAndGet());
+    private PriorityRunnable createPriorityRunnable(Runnable task) {
+        if (task instanceof PriorityRunnable) {
+            return (PriorityRunnable) task;
+        }
+        return new PriorityRunnable(task, priority, taskSequence.incrementAndGet());
+    }
+
+    private <T> PriorityCallable<T> createPriorityCallable(Callable<T> task) {
+        if (task instanceof PriorityCallable) {
+            return (PriorityCallable<T>) task;
+        }
+        return new PriorityCallable<>(task, priority, taskSequence.incrementAndGet());
+    }
+
+    @Nonnull
+    @Override
+    public <T> Future<T> submit(@Nonnull Callable<T> task) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        PriorityRunnable priorityTask = createPriorityRunnable(() -> {
+            try {
+                T call = task.call();
+                future.complete(call);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        delegate.execute(priorityTask);
+        return future;
     }
 
 
@@ -96,7 +125,7 @@ public class PriorityTaskExecutorService implements ExecutorService {
     @Override
     public <T> Future<T> submit(@Nonnull Runnable task, T result) {
         CompletableFuture<T> future = new CompletableFuture<>();
-        delegate.execute(createPriorityTask(() -> {
+        delegate.execute(createPriorityRunnable(() -> {
             task.run();
             future.complete(result);
         }));
@@ -107,7 +136,7 @@ public class PriorityTaskExecutorService implements ExecutorService {
     @Override
     public Future<?> submit(@Nonnull Runnable task) {
         CompletableFuture<?> future = new CompletableFuture<>();
-        delegate.execute(createPriorityTask(() -> {
+        delegate.execute(createPriorityRunnable(() -> {
             task.run();
             future.complete(null);
         }));
@@ -116,9 +145,8 @@ public class PriorityTaskExecutorService implements ExecutorService {
 
     @Nonnull
     @Override
-    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks)
-            throws InterruptedException {
-        return tasks.stream().map(this::submit).collect(Collectors.toList());
+    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) throws InterruptedException {
+        return delegate.invokeAll(tasks.stream().map(this::createPriorityCallable).collect(Collectors.toList()));
     }
 
     @Nonnull
@@ -126,25 +154,35 @@ public class PriorityTaskExecutorService implements ExecutorService {
     public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks,
                                          long timeout, @Nonnull TimeUnit unit)
             throws InterruptedException {
-        return delegate.invokeAll(tasks, timeout, unit);
+        return delegate.invokeAll(
+                tasks.stream().map(this::createPriorityCallable).collect(Collectors.toList()),
+                timeout,
+                unit
+        );
     }
 
     @Nonnull
     @Override
     public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks)
             throws InterruptedException, ExecutionException {
-        return delegate.invokeAny(tasks);
+        return delegate.invokeAny(
+                tasks.stream().map(this::createPriorityCallable).collect(Collectors.toList())
+        );
     }
 
     @Override
     public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
                            @Nonnull TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        return delegate.invokeAny(tasks, timeout, unit);
+        return delegate.invokeAny(
+                tasks.stream().map(this::createPriorityCallable).collect(Collectors.toList()),
+                timeout,
+                unit
+        );
     }
 
     @Override
     public void execute(@Nonnull Runnable command) {
-        delegate.execute(createPriorityTask(command));
+        delegate.execute(createPriorityRunnable(command));
     }
 }

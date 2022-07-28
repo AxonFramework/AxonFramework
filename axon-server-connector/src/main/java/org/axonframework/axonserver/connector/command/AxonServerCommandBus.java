@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PriorityTask;
+import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.commandhandling.CommandBus;
@@ -205,7 +205,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                                        long priority = priority(c.getProcessingInstructionsList());
                                                        long sequence = TASK_SEQUENCE.incrementAndGet();
                                                        executorService.execute(
-                                                               new PriorityTask(processingTask, priority, sequence)
+                                                               new PriorityRunnable(processingTask, priority, sequence)
                                                        );
                                                        return result;
                                                    },
