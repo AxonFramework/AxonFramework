@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.ExceptionUtils;
+import org.axonframework.common.ProcessUtils;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -692,6 +693,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
 
         logger.info("Processor '{}' awaiting termination...", getName());
+        ProcessUtils.executeUntilTrue(() -> !workLauncherRunning.get(), 10L, 100L);
         return workerThreads.entrySet()
                             .stream()
                             .map(worker -> CompletableFuture.runAsync(() -> {
@@ -1084,7 +1086,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             workerThreads.remove(name());
             logger.info("Worker for segment {} stopped.", segment);
 
-            if (!workLauncherRunning.get() && availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
+            final int currentAvailableThreads = availableThreads.getAndIncrement();
+
+            if (!workLauncherRunning.get() && currentAvailableThreads == 0 && getState().isRunning()) {
                 logger.info("No Worker Launcher active. Using current thread to assign segments.");
                 new WorkerLauncher().run();
             }
@@ -1092,6 +1096,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     }
 
     private class WorkerLauncher implements Worker {
+
+        private boolean asSegmentWorker = false;
 
         @Override
         public void run() {
@@ -1208,6 +1214,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                     // We're not able to spawn new threads, so this thread should also start processing.
                     if (nonNull(workingInCurrentThread)) {
                         logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
+                        workerThreads.remove(name());
+                        workerThreads.put(workingInCurrentThread.name(), Thread.currentThread());
+                        asSegmentWorker = true;
                         workLauncherRunning.set(false);
                         workingInCurrentThread.run();
                         return;
@@ -1227,7 +1236,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
         @Override
         public void cleanUp() {
-            workerThreads.remove(name());
+            if (! asSegmentWorker){
+                workerThreads.remove(name());
+            }
         }
     }
 
