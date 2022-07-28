@@ -181,10 +181,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                    () -> sendRequest(intercepted,
                                                                                                      queryRequest)
                                                                            ))
-                                                                           .flatMap(queryResponse -> deserialize(
+                                                                           .concatMap(queryResponse -> deserialize(
                                                                                    intercepted, queryResponse
                                                                            ))
-                                                                           .publishOn(scheduler)
                                                 )
                                                 .doFinally(new ActivityFinisher(activity)))
                    .subscribeOn(scheduler);
