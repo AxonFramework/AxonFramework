@@ -49,11 +49,9 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.axonserver.connector.util.ExecutorServiceBuilder.THREAD_KEEP_ALIVE_TIME;
@@ -182,22 +180,15 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testConcurrentStreamingQueries(boolean supportsStreaming) throws InterruptedException, ExecutionException {
+    void testConcurrentStreamingQueries(boolean supportsStreaming) {
         StreamingQueryMessage<FluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
 
-        AtomicReference<Throwable> error = new AtomicReference<>(null);
-        CountDownLatch countDownLatch = new CountDownLatch(100);
         for (int i = 0; i < 100; i++) {
-            streamingQueryPayloads(query, supportsStreaming)
-                    .take(1000)
-                    .collectList()
-                    .doOnError(error::set)
-                    .doOnTerminate(countDownLatch::countDown)
-                    .subscribe();
+            StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
+                        .expectNextCount(1000)
+                        .verifyComplete();
         }
-        countDownLatch.await(2, TimeUnit.SECONDS);
-        assertNull(error.get());
     }
 
     @ParameterizedTest
