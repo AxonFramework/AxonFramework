@@ -99,6 +99,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -170,7 +171,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
         int priority = priorityCalculator.determinePriority(query);
-        Scheduler scheduler = PriorityTaskSchedulers.forPriority(queryExecutor, priority, TASK_SEQUENCE);
+        AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(queryExecutor,
+                                                                                                        priority,
+                                                                                                        TASK_SEQUENCE));
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
                    .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
                                                 .flatMapMany(
@@ -184,10 +187,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                    intercepted, queryResponse
                                                                            ))
                                                 )
-                                                .publishOn(scheduler)
+                                                .publishOn(scheduler.get())
                                                 .doFinally(new ActivityFinisher(activity)))
-                   .subscribeOn(scheduler);
+                   .subscribeOn(scheduler.get());
     }
+
 
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
