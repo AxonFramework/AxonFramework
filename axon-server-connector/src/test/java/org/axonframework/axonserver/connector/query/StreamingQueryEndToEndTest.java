@@ -63,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
-//@Disabled("Disabled until Axon Server 4.6 is released.")
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
@@ -190,15 +189,6 @@ class StreamingQueryEndToEndTest {
         AtomicReference<Throwable> error = new AtomicReference<>(null);
         CountDownLatch countDownLatch = new CountDownLatch(100);
         for (int i = 0; i < 100; i++) {
-//            senderQueryBus.query(new GenericQueryMessage<>(new ListQuery(), ResponseTypes.multipleInstancesOf(String.class)))
-//                                  .toCompletableFuture()
-//                                          .whenComplete((listQueryResponseMessage, throwable) -> {
-//                                              if(throwable != null) {
-//                                                  error.set(throwable);
-//                                              }
-//                                              countDownLatch.countDown();
-//                                          });
-
             streamingQueryPayloads(query, supportsStreaming)
                     .take(1000)
                     .collectList()
