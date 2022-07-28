@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.query;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -48,16 +49,21 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.axonserver.connector.util.ExecutorServiceBuilder.THREAD_KEEP_ALIVE_TIME;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
-@Disabled("Disabled until Axon Server 4.6 is released.")
+//@Disabled("Disabled until Axon Server 4.6 is released.")
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
@@ -72,7 +78,7 @@ class StreamingQueryEndToEndTest {
 
     @Container
     private static final GenericContainer<?> axonServerContainer =
-            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver"))
+            new GenericContainer<>(System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver:4.6.1-dev"))
                     .withExposedPorts(8024, 8124)
                     .withEnv("AXONIQ_AXONSERVER_NAME", "axonserver")
                     .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
@@ -141,6 +147,14 @@ class StreamingQueryEndToEndTest {
                                  .updateEmitter(emitter)
                                  .genericSerializer(serializer)
                                  .messageSerializer(serializer)
+                                 .executorServiceBuilder((axonServerConfiguration, runnables) ->
+                                                                 new ThreadPoolExecutor(
+                                                                         1, 1,
+                                                                         THREAD_KEEP_ALIVE_TIME,
+                                                                         TimeUnit.MILLISECONDS,
+                                                                         runnables,
+                                                                         new AxonThreadFactory("QueryProcessor")
+                                                                 ))
                                  .build();
     }
 
@@ -165,6 +179,35 @@ class StreamingQueryEndToEndTest {
         StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
                     .expectNextCount(1000)
                     .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testConcurrentStreamingQueries(boolean supportsStreaming) throws InterruptedException, ExecutionException {
+        StreamingQueryMessage<FluxQuery, String> query =
+                new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
+
+        AtomicReference<Throwable> error = new AtomicReference<>(null);
+        CountDownLatch countDownLatch = new CountDownLatch(100);
+        for (int i = 0; i < 100; i++) {
+//            senderQueryBus.query(new GenericQueryMessage<>(new ListQuery(), ResponseTypes.multipleInstancesOf(String.class)))
+//                                  .toCompletableFuture()
+//                                          .whenComplete((listQueryResponseMessage, throwable) -> {
+//                                              if(throwable != null) {
+//                                                  error.set(throwable);
+//                                              }
+//                                              countDownLatch.countDown();
+//                                          });
+
+            streamingQueryPayloads(query, supportsStreaming)
+                    .take(1000)
+                    .collectList()
+                    .doOnError(error::set)
+                    .doOnTerminate(countDownLatch::countDown)
+                    .subscribe();
+        }
+        countDownLatch.await(2, TimeUnit.SECONDS);
+        assertNull(error.get());
     }
 
     @ParameterizedTest

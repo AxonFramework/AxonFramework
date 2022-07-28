@@ -44,6 +44,7 @@ import org.axonframework.axonserver.connector.query.subscription.AxonServerSubsc
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
+import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.util.UpstreamAwareStreamObserver;
 import org.axonframework.common.Assert;
@@ -81,10 +82,11 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
-import reactor.core.scheduler.Schedulers;
+import reactor.core.scheduler.Scheduler;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -164,6 +166,28 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         localSegmentAdapter = new LocalSegmentAdapter();
     }
 
+    @Override
+    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+        int priority = priorityCalculator.determinePriority(query);
+        Scheduler scheduler = PriorityTaskSchedulers.forPriority(queryExecutor, priority, TASK_SEQUENCE);
+        return Mono.fromSupplier(this::registerStreamingQueryActivity)
+                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
+                                                .flatMapMany(
+                                                        intercepted -> Mono.just(serializeStreaming(intercepted,
+                                                                                                    priority))
+                                                                           .flatMapMany(queryRequest -> sendRequest(
+                                                                                   intercepted, queryRequest
+                                                                           ))
+                                                                           .flatMap(queryResponse -> deserialize(
+                                                                                   intercepted, queryResponse
+                                                                           ))
+                                                                           .publishOn(scheduler)
+                                                )
+                                                .publishOn(scheduler)
+                                                .doFinally(new ActivityFinisher(activity)))
+                   .subscribeOn(scheduler);
+    }
+
     /**
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
      * <p>
@@ -237,21 +261,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return queryTransaction.whenComplete((r, e) -> queryInTransit.end());
     }
 
-    @Override
-    public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
-                                                .flatMapMany(
-                                                        intercepted -> Mono.just(serializeStreaming(intercepted))
-                                                                           .flatMapMany(queryRequest -> sendRequest(
-                                                                                   intercepted, queryRequest
-                                                                           ))
-                                                                           .flatMap(queryResponse -> deserialize(
-                                                                                   intercepted, queryResponse
-                                                                           ))
-                                                )
-                                                .doFinally(new ActivityFinisher(activity)))
-                   .subscribeOn(Schedulers.fromExecutorService(queryExecutor));
+    private QueryRequest serializeStreaming(QueryMessage<?, ?> query, int priority) {
+        return serialize(query, true, priority);
     }
 
     /**
@@ -288,8 +299,25 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         return shutdownLatch.registerActivity();
     }
 
-    private QueryRequest serializeStreaming(QueryMessage<?, ?> query) {
-        return serialize(query, true, priorityCalculator.determinePriority(query));
+    private class RunnableComparator implements Comparator<Runnable> {
+
+        @Override
+        public int compare(Runnable o1, Runnable o2) {
+            if (o1 instanceof PriorityTask && o2 instanceof PriorityTask) {
+                return ((PriorityTask) o1).compareTo((PriorityTask) o2);
+            } else if (o1 instanceof PriorityTask) {
+                return 1;
+            } else if (o2 instanceof PriorityTask) {
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return false;
+        }
     }
 
     private QueryRequest serialize(QueryMessage<?, ?> query, boolean stream, int priority) {
