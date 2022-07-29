@@ -63,6 +63,7 @@ import java.util.function.Function;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -216,6 +217,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         }
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
+            workLauncherRunning.set(true);
             startSegmentWorkers();
         }
     }
@@ -494,6 +496,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             eventStream.skipMessagesWithPayloadTypeOf(trackedEventMessage);
         }
         reportIgnored(trackedEventMessage);
+    }
+
+    /**
+     * Will remove a thread and log at warn in case the named thread wasn't actually removed.
+     *
+     * @param name the expected name of the thread
+     */
+    private void removeThread(String name) {
+        Thread removed = workerThreads.remove(name);
+        if (isNull(removed)) {
+            logger.warn(
+                    "Expected to remove thread with name: '{}' from workerThreads, but it was not part of the map.",
+                    name
+            );
+        }
     }
 
     /**
@@ -1075,29 +1092,38 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return TrackingSegmentWorker.class.getSimpleName() + segment.getSegmentId();
         }
 
-        @Override
-        public void cleanUp() {
+        private void freeSegment() {
             TrackerStatus removedStatus = activeSegments.remove(segment.getSegmentId());
             if (removedStatus != null) {
                 trackerStatusChangeListener.onEventTrackerStatusChange(
                         singletonMap(segment.getSegmentId(), new RemovedTrackerStatus(removedStatus))
                 );
             }
-            workerThreads.remove(name());
+        }
+
+        @Override
+        public void cleanUp() {
+            freeSegment();
+            removeThread(name());
             logger.info("Worker for segment {} stopped.", segment);
 
             final int currentAvailableThreads = availableThreads.getAndIncrement();
 
             if (!workLauncherRunning.get() && currentAvailableThreads == 0 && getState().isRunning()) {
-                logger.info("No Worker Launcher active. Using current thread to assign segments.");
-                new WorkerLauncher().run();
+                boolean launchedSinceGetCalled = workLauncherRunning.getAndSet(true);
+                if (!launchedSinceGetCalled) {
+                    logger.info("No Worker Launcher active. Using current thread to assign segments.");
+                    Worker workerLauncher = new WorkerLauncher();
+                    workerThreads.put(workerLauncher.name(), Thread.currentThread());
+                    workerLauncher.run();
+                }
             }
         }
     }
 
     private class WorkerLauncher implements Worker {
 
-        private boolean asSegmentWorker = false;
+        private TrackingSegmentWorker workingInCurrentThread = null;
 
         @Override
         public void run() {
@@ -1105,7 +1131,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 int waitTime = 1;
                 String processorName = TrackingEventProcessor.this.getName();
                 while (getState().isRunning()) {
-                    workLauncherRunning.set(true);
                     int[] tokenStoreCurrentSegments;
 
                     try {
@@ -1142,7 +1167,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
 
                     // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                     // Keep track of the last processed segments...
-                    TrackingSegmentWorker workingInCurrentThread = null;
                     for (int i = 0; i < tokenStoreCurrentSegments.length && availableThreads.get() > 0; i++) {
                         int segmentId = tokenStoreCurrentSegments[i];
 
@@ -1206,24 +1230,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                                 spawnWorkerThread(trackingSegmentWorker).start();
                             } else {
                                 workingInCurrentThread = trackingSegmentWorker;
-                                break;
+                                return;
                             }
                         }
                     }
-
-                    // We're not able to spawn new threads, so this thread should also start processing.
-                    if (nonNull(workingInCurrentThread)) {
-                        logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
-                        workerThreads.remove(name());
-                        workerThreads.put(workingInCurrentThread.name(), Thread.currentThread());
-                        asSegmentWorker = true;
-                        workLauncherRunning.set(false);
-                        workingInCurrentThread.run();
-                        return;
-                    }
                     doSleepFor(tokenClaimInterval);
                 }
-                workLauncherRunning.set(false);
             } finally {
                 cleanUp();
             }
@@ -1234,10 +1246,29 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return WorkerLauncher.class.getSimpleName();
         }
 
+        /**
+         * Cleans up once the worker is done. To make sure a shutdown run at almost the same time the cleanup is
+         * triggered this has some complexity. We need to make sure when it's still running, and becoming a worker, the
+         * thread is added before switching the {@code workLauncherRunning} as a shutdown might be called in between,
+         * and might leave the thread running.
+         */
         @Override
         public void cleanUp() {
-            if (! asSegmentWorker){
-                workerThreads.remove(name());
+            removeThread(name());
+            if (nonNull(workingInCurrentThread)) {
+                if (getState().isRunning()) {
+                    logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
+                    workerThreads.put(workingInCurrentThread.name(), Thread.currentThread());
+                    workLauncherRunning.set(false);
+                    workingInCurrentThread.run();
+                } else {
+                    logger.info("freeing segment since segment worker will not be started for worker: {}",
+                                workingInCurrentThread);
+                    workingInCurrentThread.freeSegment();
+                    workLauncherRunning.set(false);
+                }
+            } else {
+                workLauncherRunning.set(false);
             }
         }
     }
