@@ -19,7 +19,6 @@ package org.axonframework.axonserver.connector.query;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -50,11 +49,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.axonserver.connector.util.ExecutorServiceBuilder.THREAD_KEEP_ALIVE_TIME;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -144,14 +140,6 @@ class StreamingQueryEndToEndTest {
                                  .updateEmitter(emitter)
                                  .genericSerializer(serializer)
                                  .messageSerializer(serializer)
-                                 .executorServiceBuilder((axonServerConfiguration, runnables) ->
-                                                                 new ThreadPoolExecutor(
-                                                                         1, 1,
-                                                                         THREAD_KEEP_ALIVE_TIME,
-                                                                         TimeUnit.MILLISECONDS,
-                                                                         runnables,
-                                                                         new AxonThreadFactory("QueryProcessor")
-                                                                 ))
                                  .build();
     }
 
