@@ -24,18 +24,22 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Responsible for creating {@link Scheduler} implementations relevant to the Axon Server connector.
+ *
+ * @author Mitchell Herrijgers
+ * @author Milan Savic
+ * @since 4.6.0
  */
 public interface PriorityTaskSchedulers {
 
     /**
      * Creates a {@link Scheduler} that is compatible with an {@link ExecutorService} that needs tasks that are
-     * submitted to be a {@link org.axonframework.axonserver.connector.PriorityTask} so that they can be prioritized
+     * submitted to be a {@link org.axonframework.axonserver.connector.PriorityTask} so that they can be prioritized.
      *
-     * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks
-     * @param priority     The priority that any tasks submitted to the delegate will have
-     * @param taskSequence The task sequence, used for ordering items within the same priority
+     * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks.
+     * @param priority     The priority that any tasks submitted to the delegate will have.
+     * @param taskSequence The task sequence used for ordering items with the same priority.
      * @return The {@link Scheduler} object that is compatible with
-     * {@link org.axonframework.axonserver.connector.PriorityTask}
+     * {@link org.axonframework.axonserver.connector.PriorityTask}.
      * @see PriorityExecutorService
      */
     static Scheduler forPriority(ExecutorService delegate, long priority, AtomicLong taskSequence) {

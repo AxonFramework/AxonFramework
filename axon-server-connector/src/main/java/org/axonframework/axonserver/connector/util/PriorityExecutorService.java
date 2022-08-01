@@ -37,12 +37,16 @@ import javax.annotation.Nonnull;
 
 /**
  * This {@link ExecutorService} wraps an existing one, creating a {@link PriorityTask} for every {@link Runnable} that
- * is submitted that's an instance of one. The created {@link PriorityTask} will have the priority provided in the
- * constructor, as well as the taskSequence provided there.
+ * is submitted that's an instance of one. The created {@code PriorityTask} will have the priority provided in the
+ * constructor, as well as the {@code taskSequence} provided there.
  * <p>
  * This implementation also diverts all invocations of {@link ExecutorService#submit(Runnable)} to
  * {@link ExecutorService#execute(Runnable)} instead. This is because the {@code submit} method implementations wrap the
  * tasks in another {@link FutureTask}, which makes the task uncomparable again.
+ *
+ * @author Mitchell Herrijgers
+ * @author Milan Savic
+ * @since 4.6.0
  */
 public class PriorityExecutorService implements ExecutorService {
 
@@ -52,10 +56,12 @@ public class PriorityExecutorService implements ExecutorService {
 
     /**
      * Creates a new {@link PriorityExecutorService} with the provided priority and sequence.
+     * <p>
+     * Use {@link PriorityTaskSchedulers#forPriority(ExecutorService, long, AtomicLong)} to create an instance.
      *
-     * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks
-     * @param priority     The priority that any tasks submitted to the delegate will have
-     * @param taskSequence The task sequence, used for ordering items within the same priority
+     * @param delegate     The delegate {@link ExecutorService} to use when submitting tasks.
+     * @param priority     The priority that any tasks submitted to the delegate will have.
+     * @param taskSequence The task sequence, used for ordering items with the same priority.
      */
     PriorityExecutorService(ExecutorService delegate, long priority, AtomicLong taskSequence) {
         this.priority = priority;

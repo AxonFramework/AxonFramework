@@ -76,7 +76,7 @@ public class PriorityCallable<T> implements Callable<T>, PriorityTask {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PriorityCallable that = (PriorityCallable) o;
+        PriorityCallable<?> that = (PriorityCallable<?>) o;
         return priority == that.priority && sequence == that.sequence && Objects.equals(task, that.task);
     }
 
