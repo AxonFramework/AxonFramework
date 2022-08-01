@@ -27,17 +27,21 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
-import org.axonframework.messaging.deadletter.QueueIdentifier;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
+import org.axonframework.messaging.deadletter.SequenceIdentifier;
 import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -51,12 +55,15 @@ class DeadLetteringEventHandlerInvokerTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
     private static final DomainEventMessage<String> TEST_EVENT = EventTestUtils.createEvent();
-    private static final QueueIdentifier TEST_QUEUE_ID =
-            new EventHandlingQueueIdentifier(TEST_EVENT.getAggregateIdentifier(), TEST_PROCESSING_GROUP);
+    private static final SequenceIdentifier TEST_QUEUE_ID =
+            new EventSequencedIdentifier(TEST_EVENT.getAggregateIdentifier(), TEST_PROCESSING_GROUP);
+    private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
+            new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT);
 
     private EventMessageHandler handler;
     private SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
-    private DeadLetterQueue<EventMessage<?>> queue;
+    private SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> queue;
+    private EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy;
     private TransactionManager transactionManager;
 
     private DeadLetteringEventHandlerInvoker testSubject;
@@ -66,7 +73,10 @@ class DeadLetteringEventHandlerInvokerTest {
         handler = mock(EventMessageHandler.class);
         sequencingPolicy = spy(SequentialPerAggregatePolicy.instance());
         //noinspection unchecked
-        queue = mock(DeadLetterQueue.class);
+        queue = mock(SequencedDeadLetterQueue.class);
+        //noinspection unchecked
+        enqueuePolicy = mock(EnqueuePolicy.class);
+        when(enqueuePolicy.decide(any(), any())).thenReturn(Decisions.ignore());
         transactionManager = spy(new StubTransactionManager());
 
         setTestSubject(createTestSubject());
@@ -89,6 +99,7 @@ class DeadLetteringEventHandlerInvokerTest {
                                                 .sequencingPolicy(sequencingPolicy)
                                                 .listenerInvocationErrorHandler(PropagatingErrorHandler.instance())
                                                 .queue(queue)
+                                                .enqueuePolicy(enqueuePolicy)
                                                 .processingGroup(TEST_PROCESSING_GROUP)
                                                 .transactionManager(transactionManager);
         return customization.apply(invokerBuilder).build();
@@ -96,15 +107,25 @@ class DeadLetteringEventHandlerInvokerTest {
 
     @Test
     void testHandleHandlesEventJustFine() throws Exception {
-        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        DeadLetter<EventMessage<?>> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT);
+
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
-        verify(queue).enqueueIfPresent(TEST_QUEUE_ID, TEST_EVENT);
-        verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
+
         verify(transactionManager).fetchInTransaction(any());
+        //noinspection unchecked
+        ArgumentCaptor<Function<SequenceIdentifier, DeadLetter<EventMessage<?>>>> enqueueIfPresentCaptor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), enqueueIfPresentCaptor.capture());
+        assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().apply(TEST_QUEUE_ID));
+
+        verify(queue, never()).enqueue(any());
         verify(transactionManager, never()).executeInTransaction(any());
     }
 
@@ -122,32 +143,86 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleEnqueuesWhenDelegateThrowsAnException() throws Exception {
+    void testHandleEnqueuesOnShouldEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
         RuntimeException testCause = new RuntimeException("some-cause");
+        DeadLetter<EventMessage<?>> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT);
+        DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
+                new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT, testCause);
 
         doThrow(testCause).when(handler).handle(TEST_EVENT);
-        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.empty());
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
-        verify(queue).enqueueIfPresent(TEST_QUEUE_ID, TEST_EVENT);
-        verify(queue).enqueue(TEST_QUEUE_ID, TEST_EVENT, testCause);
+
         verify(transactionManager).fetchInTransaction(any());
+        //noinspection unchecked
+        ArgumentCaptor<Function<SequenceIdentifier, DeadLetter<EventMessage<?>>>> enqueueIfPresentCaptor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), enqueueIfPresentCaptor.capture());
+        assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().apply(TEST_QUEUE_ID));
+
+        //noinspection unchecked
+        ArgumentCaptor<DeadLetter<EventMessage<?>>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        verify(enqueuePolicy).decide(policyCaptor.capture(), eq(testCause));
+        assertLetter(expectedEnqueuedLetter, policyCaptor.getValue());
+
+        //noinspection unchecked
+        ArgumentCaptor<DeadLetter<EventMessage<?>>> enqueueCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        verify(queue).enqueue(enqueueCaptor.capture());
+        assertLetter(expectedEnqueuedLetter, enqueueCaptor.getValue());
         verify(transactionManager).executeInTransaction(any());
     }
 
     @Test
-    void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
+    void testHandleDoesNotEnqueueForShouldNotEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
+        when(enqueuePolicy.decide(any(), any())).thenReturn(Decisions.doNotEnqueue());
+
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+        RuntimeException testCause = new RuntimeException("some-cause");
+        DeadLetter<EventMessage<?>> expectedIfPresentLetter =
+                new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT);
+        DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
+                new GenericDeadLetter<>(TEST_QUEUE_ID, TEST_EVENT, testCause);
+
+        doThrow(testCause).when(handler).handle(TEST_EVENT);
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
+
+        testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
+
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
+        verify(handler).handle(TEST_EVENT);
+
+        verify(transactionManager).fetchInTransaction(any());
         //noinspection unchecked
-        when(queue.enqueueIfPresent(any(), any())).thenReturn(Optional.of(mock(DeadLetter.class)));
+        ArgumentCaptor<Function<SequenceIdentifier, DeadLetter<EventMessage<?>>>> enqueueIfPresentCaptor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(queue).enqueueIfPresent(eq(TEST_QUEUE_ID), enqueueIfPresentCaptor.capture());
+        assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().apply(TEST_QUEUE_ID));
+
+        //noinspection unchecked
+        ArgumentCaptor<DeadLetter<EventMessage<?>>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        verify(enqueuePolicy).decide(policyCaptor.capture(), eq(testCause));
+        assertLetter(expectedEnqueuedLetter, policyCaptor.getValue());
+
+        verify(queue, never()).enqueue(any());
+        verify(transactionManager, never()).executeInTransaction(any());
+    }
+
+    @Test
+    void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
+        when(queue.enqueueIfPresent(any(), any())).thenReturn(true);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
 
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler, never()).handle(TEST_EVENT);
-        verify(queue, never()).enqueue(any(), eq(TEST_EVENT), any());
+        verify(queue, never()).enqueue(TEST_DEAD_LETTER);
         verify(transactionManager).fetchInTransaction(any());
         verify(transactionManager, never()).executeInTransaction(any());
     }
@@ -201,36 +276,115 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testRegisterLifecycleHandlersRegistersInvokersStart() {
-        DeadLetteringEventHandlerInvoker spiedTestSubject = spy(createTestSubject());
-        AtomicInteger onStartInvoked = new AtomicInteger(0);
-        AtomicInteger onShutdownInvoked = new AtomicInteger(0);
+    void testRetry() {
+        when(queue.process(eq(TEST_PROCESSING_GROUP), any())).thenReturn(true);
 
-        spiedTestSubject.registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
-            @Override
-            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                onStartInvoked.incrementAndGet();
-                action.run();
-            }
+        boolean result = testSubject.retry();
 
-            @Override
-            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                onShutdownInvoked.incrementAndGet();
-            }
-        });
+        assertTrue(result);
 
-        assertEquals(1, onStartInvoked.get());
-        assertEquals(0, onShutdownInvoked.get());
-        verify(spiedTestSubject).start();
+        verify(transactionManager).startTransaction();
+        verify(queue).process(eq(TEST_PROCESSING_GROUP), any());
+    }
+
+    /*
+        @Test
+    void testReleaseReturnsTrueAndEvictsTheLetter() {
+        AtomicReference<D> resultLetter = new AtomicReference<>();
+        Function<D, EnqueueDecision<D>> testTask = letter -> {
+            resultLetter.set(letter);
+            return Decisions.evict();
+        };
+
+        I testId = generateQueueId();
+        D testLetter = generateInitialLetter(testId);
+        testSubject.enqueue(testLetter);
+
+        boolean releaseResult = testSubject.release(testTask);
+        assertTrue(releaseResult);
+        assertLetter(testLetter, resultLetter.get());
+
+        Iterator<D> resultLetters = testSubject.deadLetters(testId).iterator();
+        assertFalse(resultLetters.hasNext());
     }
 
     @Test
-    void testStartRegistersOnAvailableRunnableAndReleasesDeadLetters() {
-        testSubject.start();
+    void testReleaseReturnsTrueAndRequeuesTheLetter() {
+        AtomicReference<D> resultLetter = new AtomicReference<>();
+        Throwable testThrowable = generateThrowable();
+        MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
+        Function<D, EnqueueDecision<D>> testTask = letter -> {
+            resultLetter.set(letter);
+            return Decisions.requeue(testThrowable, l -> testDiagnostics);
+        };
 
-        verify(queue).onAvailable(eq(TEST_PROCESSING_GROUP), any());
-        verify(queue).release(TEST_PROCESSING_GROUP);
+        I testId = generateQueueId();
+        D testLetter = generateInitialLetter(testId);
+        testSubject.enqueue(testLetter);
+
+        Instant expectedLastTouched = setAndGetTime();
+        D expectedRequeuedLetter =
+                generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
+
+        boolean releaseResult = testSubject.release(testTask);
+        assertTrue(releaseResult);
+        assertLetter(testLetter, resultLetter.get());
+
+        Iterator<D> resultLetters = testSubject.deadLetters(testId).iterator();
+        assertTrue(resultLetters.hasNext());
+        assertLetter(expectedRequeuedLetter, resultLetters.next());
+        assertFalse(resultLetters.hasNext());
     }
+
+     * A "claimed sequence" in this case means that a letter with {@link QueueIdentifier} {@code x} is not
+     * {@link SequencedDeadLetterQueue#evict(DeadLetter)  evicted} or
+     * {@link SequencedDeadLetterQueue#requeue(DeadLetter, Throwable) requeued} yet. Furthermore, if it's the sole letter,
+     * nothing should be returned. This approach ensure the events for a given {@link QueueIdentifier} are handled in
+     * the order they've been dead-lettered (a.k.a., in sequence).
+     * <p>
+     * TODO: 27-07-22 sadly enough, this is flaky...sometimes the second release is still faster regardless of the latches
+    @Test
+    void testPeekReturnsEmptyOptionalIfAllLetterSequencesAreClaimed() throws InterruptedException {
+        CountDownLatch isBlocking = new CountDownLatch(1);
+        CountDownLatch hasReleased = new CountDownLatch(1);
+        AtomicReference<D> resultLetter = new AtomicReference<>();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        Function<D, EnqueueDecision<D>> blockingTask = letter -> {
+            try {
+                isBlocking.countDown();
+                //noinspection ResultOfMethodCallIgnored
+                hasReleased.await(50, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            resultLetter.set(letter);
+            return Decisions.evict();
+        };
+        Function<D, EnqueueDecision<D>> nonBlockingTask = letter -> {
+            invoked.set(true);
+            return Decisions.evict();
+        };
+
+        I testId = generateQueueId();
+        D testLetter = generateInitialLetter(testId);
+        testSubject.enqueue(testLetter);
+
+        Thread blockingRelease = new Thread(() -> testSubject.release(blockingTask));
+        blockingRelease.start();
+        assertTrue(isBlocking.await(10, TimeUnit.MILLISECONDS));
+
+        boolean result = testSubject.release(nonBlockingTask);
+        assertFalse(result);
+        assertFalse(invoked.get());
+
+        hasReleased.countDown();
+        blockingRelease.join();
+        assertLetter(testLetter, resultLetter.get());
+    }
+
+    */
+
 
     @Test
     void testBuildWithNullDeadLetterQueueThrowsAxonConfigurationException() {
@@ -248,6 +402,13 @@ class DeadLetteringEventHandlerInvokerTest {
                                                 .transactionManager(NoTransactionManager.instance());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    }
+
+    @Test
+    void testBuildWithNullEnqueuePolicyThrowsAxonConfigurationException() {
+        DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.enqueuePolicy(null));
     }
 
     @Test
@@ -310,5 +471,14 @@ class DeadLetteringEventHandlerInvokerTest {
         public Transaction startTransaction() {
             return NoTransactionManager.INSTANCE.startTransaction();
         }
+    }
+
+    private static void assertLetter(DeadLetter<EventMessage<?>> expected, DeadLetter<EventMessage<?>> result) {
+        assertEquals(expected.sequenceIdentifier(), result.sequenceIdentifier());
+        assertEquals(expected.message(), result.message());
+        assertEquals(expected.cause(), result.cause());
+        assertEquals(expected.enqueuedAt(), result.enqueuedAt());
+        assertEquals(expected.lastTouched(), result.lastTouched());
+        assertEquals(expected.diagnostic(), result.diagnostic());
     }
 }
