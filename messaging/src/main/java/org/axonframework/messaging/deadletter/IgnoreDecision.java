@@ -1,0 +1,36 @@
+package org.axonframework.messaging.deadletter;
+
+import org.axonframework.messaging.Message;
+
+import java.util.Optional;
+
+/**
+ * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should be ignored. This typically means that a
+ * dead-letter remains in the queue.
+ *
+ * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+ * @author Steven van Beelen
+ * @since 4.6.0
+ */
+public class IgnoreDecision<D extends DeadLetter<? extends Message<?>>> implements EnqueueDecision<D> {
+
+    @Override
+    public boolean shouldEvict() {
+        return false;
+    }
+
+    @Override
+    public boolean shouldEnqueue() {
+        return true;
+    }
+
+    @Override
+    public Optional<Throwable> enqueueCause() {
+        return Optional.empty();
+    }
+
+    @Override
+    public String toString() {
+        return "IgnoreDecision{}";
+    }
+}
