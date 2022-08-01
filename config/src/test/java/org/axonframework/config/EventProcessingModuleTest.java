@@ -54,8 +54,10 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -1124,6 +1126,11 @@ class EventProcessingModuleTest {
                   .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
         Configuration config = configurer.start();
 
+        Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> optionalPolicy = config.eventProcessingConfiguration()
+                                                                                    .enqueuePolicy(processingGroup);
+        assertTrue(optionalPolicy.isPresent());
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> expectedPolicy = optionalPolicy.get();
+
         Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
@@ -1145,11 +1152,161 @@ class EventProcessingModuleTest {
         DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
                 ((DeadLetteringEventHandlerInvoker) delegates.get(0));
 
-        assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
         assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
+        assertEquals(deadLetterQueue, getField("queue", resultDeadLetteringInvoker));
+        assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", resultDeadLetteringInvoker));
         assertEquals(listenerInvocationErrorHandler,
                      getField("listenerInvocationErrorHandler", resultDeadLetteringInvoker));
+    }
+
+    @Test
+    void testRegisterDefaultEnqueuePolicy(
+            @Mock SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> expectedPolicy = (letter, cause) -> Decisions.ignore();
+
+        ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerDefaultEnqueuePolicy(c -> expectedPolicy)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
+        Configuration config = configurer.start();
+
+        Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> optionalPolicy = config.eventProcessingConfiguration()
+                                                                                    .enqueuePolicy(processingGroup);
+        assertTrue(optionalPolicy.isPresent());
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> resultPolicy = optionalPolicy.get();
+        assertEquals(expectedPolicy, resultPolicy);
+
+        Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+        PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
+
+        EventHandlerInvoker resultInvoker =
+                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
+
+        MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
+        List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
+        assertFalse(delegates.isEmpty());
+        DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
+                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+
+        assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
+        assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
+    }
+
+    @Test
+    void testRegisterEnqueuePolicy(
+            @Mock SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> expectedPolicy = (letter, cause) -> Decisions.ignore();
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> unexpectedPolicy = (letter, cause) -> Decisions.evict();
+
+        ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerEnqueuePolicy(processingGroup, c -> expectedPolicy)
+                  .registerEnqueuePolicy("unused-processing-group", c -> unexpectedPolicy)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
+        Configuration config = configurer.start();
+
+        Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> optionalPolicy = config.eventProcessingConfiguration()
+                                                                                    .enqueuePolicy(processingGroup);
+        assertTrue(optionalPolicy.isPresent());
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> resultPolicy = optionalPolicy.get();
+        assertEquals(expectedPolicy, resultPolicy);
+        assertNotEquals(unexpectedPolicy, resultPolicy);
+
+        Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+        PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
+
+        EventHandlerInvoker resultInvoker =
+                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
+
+        MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
+        List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
+        assertFalse(delegates.isEmpty());
+        DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
+                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+
+        assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
+        assertEquals(expectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
+        assertNotEquals(unexpectedPolicy, getField("enqueuePolicy", resultDeadLetteringInvoker));
+    }
+
+    @Test
+    void testRegisterDeadLetteringEventHandlerInvokerConfiguration(
+            @Mock SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String processingGroup = "pooled-streaming";
+
+        ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerDeadLetteringEventHandlerInvokerConfiguration(
+                          processingGroup, (config, builder) -> builder.allowReset(true)
+                  )
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
+        Configuration config = configurer.start();
+
+        Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+        PooledStreamingEventProcessor resultProcessor = optionalProcessor.get();
+
+        EventHandlerInvoker resultInvoker =
+                getField(AbstractEventProcessor.class, "eventHandlerInvoker", resultProcessor);
+        assertEquals(MultiEventHandlerInvoker.class, resultInvoker.getClass());
+
+        MultiEventHandlerInvoker resultMultiInvoker = ((MultiEventHandlerInvoker) resultInvoker);
+        List<EventHandlerInvoker> delegates = getField("delegates", resultMultiInvoker);
+        assertFalse(delegates.isEmpty());
+        DeadLetteringEventHandlerInvoker resultDeadLetteringInvoker =
+                ((DeadLetteringEventHandlerInvoker) delegates.get(0));
+
+        assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
+        assertTrue((Boolean) getField("allowReset", resultDeadLetteringInvoker));
     }
 
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {

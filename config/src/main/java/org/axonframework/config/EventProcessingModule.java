@@ -46,6 +46,8 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -118,9 +120,11 @@ public class EventProcessingModule
     protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     protected final Map<String, Component<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>>> deadLetterQueues = new HashMap<>();
+    protected final Map<String, Component<EnqueuePolicy<DeadLetter<EventMessage<?>>>>> enqueuePolicies = new HashMap<>();
 
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
+    protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
 
     private Configuration configuration;
 
@@ -157,6 +161,12 @@ public class EventProcessingModule
             () -> configuration,
             "transactionManager",
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
+    );
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private final Component<EnqueuePolicy<DeadLetter<EventMessage<?>>>> defaultEnqueuePolicy = new Component<>(
+            () -> configuration,
+            "enqueuePolicy",
+            c -> c.getComponent(EnqueuePolicy.class, () -> (letter, cause) -> Decisions.enqueue(cause))
     );
     @SuppressWarnings("unchecked")
     private final Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
@@ -200,7 +210,7 @@ public class EventProcessingModule
             instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
 
             Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
-            registerSimpleEventHandlerInvokers(handlerInvokers);
+            registerEventHandlerInvokers(handlerInvokers);
             registerSagaManagers(handlerInvokers);
 
             handlerInvokers.forEach((processorName, invokers) -> {
@@ -229,8 +239,9 @@ public class EventProcessingModule
                         ));
     }
 
-    private void registerSimpleEventHandlerInvokers(
-            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
+    private void registerEventHandlerInvokers(
+            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers
+    ) {
         Map<String, List<Object>> assignments = new HashMap<>();
 
         // we combine the selectors in the order of precedence (instances, then types, then default instance, default types and fallbacks)
@@ -258,37 +269,50 @@ public class EventProcessingModule
         assignments.forEach((processingGroup, handlers) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
-                    c -> {
-                        if (deadLetterQueues.containsKey(processingGroup)) {
-                            SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue =
-                                    deadLetterQueue(processingGroup)
-                                            .orElseThrow(() -> new IllegalStateException(
-                                                    "Cannot find a Dead Letter Queue for processing group ["
-                                                            + processingGroup + "]"
-                                            ));
-                            return DeadLetteringEventHandlerInvoker.builder()
-                                                                   .eventHandlers(handlers)
-                                                                   .handlerDefinition(retrieveHandlerDefinition(handlers))
-                                                                   .parameterResolverFactory(configuration.parameterResolverFactory())
-                                                                   .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                                   .queue(deadLetterQueue)
-                                                                   .processingGroup(processingGroup)
-                                                                   .transactionManager(transactionManager(processorName))
-                                                                   .listenerInvocationErrorHandler(listenerInvocationErrorHandler(processingGroup))
-                                                                   .build();
-                        }
-                        return SimpleEventHandlerInvoker.builder()
-                                                        .eventHandlers(handlers)
-                                                        .handlerDefinition(retrieveHandlerDefinition(handlers))
-                                                        .parameterResolverFactory(configuration.parameterResolverFactory())
-                                                        .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
-                                                                processingGroup
-                                                        ))
-                                                        .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                        .build();
-                    }
+                    c -> !deadLetterQueues.containsKey(processingGroup)
+                            ? simpleInvoker(processingGroup, handlers)
+                            : deadLetteringInvoker(processorName, processingGroup, handlers)
             );
         });
+    }
+
+    private SimpleEventHandlerInvoker simpleInvoker(String processingGroup, List<Object> handlers) {
+        return SimpleEventHandlerInvoker.builder()
+                                        .eventHandlers(handlers)
+                                        .handlerDefinition(retrieveHandlerDefinition(handlers))
+                                        .parameterResolverFactory(configuration.parameterResolverFactory())
+                                        .listenerInvocationErrorHandler(listenerInvocationErrorHandler(processingGroup))
+                                        .sequencingPolicy(sequencingPolicy(processingGroup))
+                                        .build();
+    }
+
+    private DeadLetteringEventHandlerInvoker deadLetteringInvoker(String processorName,
+                                                                  String processingGroup,
+                                                                  List<Object> handlers) {
+        SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue =
+                deadLetterQueue(processingGroup).orElseThrow(() -> new IllegalStateException(
+                        "Cannot find a Dead Letter Queue for processing group [" + processingGroup + "]."
+                ));
+        EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy =
+                enqueuePolicy(processingGroup).orElseThrow(() -> new IllegalStateException(
+                        "Cannot find a Enqueue Policy for processing group [" + processingGroup + "]."
+                ));
+        DeadLetteringEventHandlerInvoker.Builder builder =
+                DeadLetteringEventHandlerInvoker.builder()
+                                                .eventHandlers(handlers)
+                                                .handlerDefinition(retrieveHandlerDefinition(handlers))
+                                                .parameterResolverFactory(configuration.parameterResolverFactory())
+                                                .sequencingPolicy(sequencingPolicy(processingGroup))
+                                                .processingGroup(processingGroup)
+                                                .queue(deadLetterQueue)
+                                                .enqueuePolicy(enqueuePolicy)
+                                                .transactionManager(transactionManager(processorName))
+                                                .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
+                                                        processingGroup
+                                                ));
+        return deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
+                                          .apply(configuration, builder)
+                                          .build();
     }
 
     /**
@@ -466,6 +490,14 @@ public class EventProcessingModule
         validateConfigInitialization();
         return deadLetterQueues.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
+    }
+
+    @Override
+    public Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> enqueuePolicy(@Nonnull String processingGroup) {
+        validateConfigInitialization();
+        return enqueuePolicies.containsKey(processingGroup)
+                ? Optional.ofNullable(enqueuePolicies.get(processingGroup).get())
+                : Optional.ofNullable(defaultEnqueuePolicy.get());
     }
 
     private void validateConfigInitialization() {
@@ -785,6 +817,32 @@ public class EventProcessingModule
         this.deadLetterQueues.put(
                 processingGroup, new Component<>(() -> configuration, "deadLetterQueue", queueBuilder)
         );
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDefaultEnqueuePolicy(
+            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+    ) {
+        this.defaultEnqueuePolicy.update(policyBuilder);
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerEnqueuePolicy(
+            @Nonnull String processingGroup,
+            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+    ) {
+        enqueuePolicies.put(processingGroup, new Component<>(() -> configuration, "enqueuePolicy", policyBuilder));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDeadLetteringEventHandlerInvokerConfiguration(
+            @Nonnull String processingGroup,
+            @Nonnull DeadLetteringInvokerConfiguration configuration
+    ) {
+        this.deadLetteringInvokerConfigs.put(processingGroup, configuration);
         return this;
     }
 

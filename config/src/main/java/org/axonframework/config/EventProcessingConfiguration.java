@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -34,6 +35,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
@@ -221,11 +223,25 @@ public interface EventProcessingConfiguration {
      * an {@link Optional#empty() empty optional} when there's no {@code DeadLetterQueue} present for the given
      * {@code processingGroup}.
      *
-     * @param processingGroup The processing group for which to return a {@link SequencedDeadLetterQueue}.
+     * @param processingGroup The name of the processing group for which to return a {@link SequencedDeadLetterQueue}.
      * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}. May return an
      * {@link Optional#empty() empty optional} if no queue is present.
      */
     default Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(@Nonnull String processingGroup) {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the {@link EnqueuePolicy} tied to the given {@code processingGroup} in an {@link Optional}. May return an
+     * {@link Optional} containing the
+     * {@link EventProcessingConfigurer#registerDefaultEnqueuePolicy(Function) default policy} if present.
+     *
+     * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
+     * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}. May return an {@link Optional}
+     * containing the {@link EventProcessingConfigurer#registerDefaultEnqueuePolicy(Function) default policy} if
+     * present.
+     */
+    default Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> enqueuePolicy(@Nonnull String processingGroup) {
         return Optional.empty();
     }
 }
