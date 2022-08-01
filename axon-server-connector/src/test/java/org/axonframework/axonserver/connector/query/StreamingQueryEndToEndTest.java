@@ -33,9 +33,12 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -52,12 +55,11 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
-@Disabled("Disabled until Axon Server 4.6 is released.")
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
@@ -106,14 +108,13 @@ class StreamingQueryEndToEndTest {
 
     @BeforeEach
     void setUp() {
-        SimpleQueryBus handlerLocalSegment = SimpleQueryBus.builder().build();
         SimpleQueryBus senderLocalSegment = SimpleQueryBus.builder().build();
 
-        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(handlerLocalSegment, axonServerAddress);
+        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(SimpleQueryBus.builder().build(), axonServerAddress);
         senderQueryBus = axonServerQueryBus(senderLocalSegment, axonServerAddress);
 
         AxonServerQueryBus nonStreamingHandlerQueryBus =
-                axonServerQueryBus(handlerLocalSegment, nonStreamingAxonServerAddress);
+                axonServerQueryBus(SimpleQueryBus.builder().build(), nonStreamingAxonServerAddress);
         nonStreamingSenderQueryBus =
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
@@ -164,6 +165,17 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
                     .expectNextCount(1000)
+                    .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testConcurrentStreamingQueries(boolean supportsStreaming) {
+        int count = 100;
+
+        StepVerifier.create(Flux.range(0, count)
+                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(), String.class), supportsStreaming)))
+                    .expectNextCount(count * 1000)
                     .verifyComplete();
     }
 
