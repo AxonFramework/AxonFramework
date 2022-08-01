@@ -43,6 +43,7 @@ import org.testcontainers.images.PullPolicy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -169,14 +170,12 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testConcurrentStreamingQueries(boolean supportsStreaming) {
-        StreamingQueryMessage<FluxQuery, String> query =
-                new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
+        int count = 100;
 
-        for (int i = 0; i < 100; i++) {
-            StepVerifier.create(streamingQueryPayloads(query, supportsStreaming))
-                        .expectNextCount(1000)
-                        .verifyComplete();
-        }
+        StepVerifier.create(Flux.range(0, count)
+                                .flatMap(i -> streamingQueryPayloads(new GenericStreamingQueryMessage<>(new FluxQuery(), String.class), supportsStreaming)))
+                    .expectNextCount(count * 1000)
+                    .verifyComplete();
     }
 
     @ParameterizedTest
