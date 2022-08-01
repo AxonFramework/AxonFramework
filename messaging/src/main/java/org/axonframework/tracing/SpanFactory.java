@@ -44,8 +44,8 @@ import org.axonframework.messaging.Message;
 public interface SpanFactory {
 
     /**
-     * Creates a new {@link Span} without any parent trace. This should be used for logical start point of
-     * asynchronous calls that are not related to a message. For example snapshotting an aggregate.
+     * Creates a new {@link Span} without any parent trace. This should be used for logical start point of asynchronous
+     * calls that are not related to a message. For example snapshotting an aggregate.
      * <p>
      * In monitoring systems, this Span will be the root of the trace.
      *
@@ -86,9 +86,13 @@ public interface SpanFactory {
      * @param parentMessage  The message that is being handled.
      * @param forceSameTrace Whether to force the span being part of the current trace. This means not linking, but
      *                       setting a parent.
+     * @param linkedParents  Optional parameter, providing this will link the provided message to the current, in
+     *                       addition to the original. The difference is that {@code forceSameTrace} has no effect on
+     *                       this since there can only be one true parent.
      * @return The created {@link Span}
      */
-    Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace);
+    Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace,
+                           Message<?>... linkedParents);
 
     /**
      * Creates a new {@link Span} linked to dispatching a {@link Message}, for example when sending a command to Axon

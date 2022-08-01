@@ -35,7 +35,8 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceParent) {
+    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceParent,
+                                  Message<?>... linkedParents) {
         return new NoOpSpan();
     }
 

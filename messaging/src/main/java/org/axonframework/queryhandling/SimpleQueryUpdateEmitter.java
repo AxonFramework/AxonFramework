@@ -24,6 +24,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,10 +145,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory.createInternalSpan("SimpleQueryUpdateEmitter.emit", update).run(() -> {
-            SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
-            runOnAfterCommitOrNow(() -> doEmit(filter, intercept(message)));
-        });
+        SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
+        Span span = spanFactory.createHandlerSpan("SimpleQueryUpdateEmitter.emit", message, true);
+        runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(message))));
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
@@ -191,7 +191,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory.createHandlerSpan("QueryUpdateEmitter", query).run(() -> {
+        spanFactory.createHandlerSpan("QueryUpdateEmitter " + query.getQueryName(), update, true, query).run(() -> {
             SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
             MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
             try {

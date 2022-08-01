@@ -96,7 +96,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace) {
+    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace,
+                                  Message<?>... linkedParents) {
         Context parentContext = textMapPropagator.extract(Context.current(),
                                                           parentMessage,
                                                           MetadataContextGetter.INSTANCE);
@@ -107,6 +108,12 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         } else {
             spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(parentContext).getSpanContext())
                        .setNoParent();
+        }
+        for (Message<?> linkedParent : linkedParents) {
+            Context linkedContext = textMapPropagator.extract(Context.current(),
+                                                              linkedParent,
+                                                              MetadataContextGetter.INSTANCE);
+            spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
         }
         addMessageAttributes(spanBuilder, parentMessage);
         return new OpenTelemetrySpan(spanBuilder);

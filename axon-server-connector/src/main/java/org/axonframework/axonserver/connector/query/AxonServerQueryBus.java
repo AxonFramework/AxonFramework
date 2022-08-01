@@ -175,12 +175,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        int priority = priorityCalculator.determinePriority(query);
+        StreamingQueryMessage<Q, R> messageWithContext = spanFactory.propagateContext(query);
+        int priority = priorityCalculator.determinePriority(messageWithContext);
         AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(queryExecutor,
                                                                                                         priority,
                                                                                                         TASK_SEQUENCE));
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(query))
+                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(messageWithContext))
                                                 .flatMapMany(
                                                         intercepted -> Mono.just(serializeStreaming(intercepted,
                                                                                                     priority))
@@ -249,7 +250,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         QueryMessage<Q, R> messageWithContext = spanFactory.propagateContext(queryMessage);
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The direct query does not support Flux as a return type.");
-        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(messageWithContext);
         //noinspection resource
@@ -260,7 +261,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            AxonSpan responseTaskSpan = axonSpanFactory.createInternalSpan("AxonServerQueryBus.ResponseProcessingTask");
+            Span responseTaskSpan = spanFactory.createInternalSpan("AxonServerQueryBus.ResponseProcessingTask");
             Runnable responseProcessingTask = responseTaskSpan.wrapRunnable(new ResponseProcessingTask<>(
                     result, serializer, queryTransaction, queryMessage.getResponseType()
             ));
@@ -315,7 +316,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     }
 
     private ShutdownLatch.ActivityHandle registerStreamingQueryActivity() {
-        shutdownLatch.ifShuttingDown(format("Cannot dispatch new %s as this bus is being shut down", "queries"));
+        shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
         return shutdownLatch.registerActivity();
     }
 
@@ -884,7 +885,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
             long priority = ProcessingInstructionHelper.priority(query.getProcessingInstructionsList());
             QueryProcessingTask processingTask = new QueryProcessingTask(
-                    localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId()
+                    localSegment, query, closeAwareReplyChannel, serializer, configuration.getClientId(), spanFactory
             );
             PriorityRunnable priorityTask = new PriorityRunnable(processingTask,
                                                                  priority,
