@@ -17,13 +17,13 @@
 package org.axonframework.eventhandling.deadletter;
 
 
-import org.axonframework.messaging.deadletter.QueueIdentifier;
+import org.axonframework.messaging.deadletter.SequenceIdentifier;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
 /**
- * Implementation of the {@link QueueIdentifier} dedicated for dead-lettering in event handling components.
+ * Implementation of the {@link SequenceIdentifier} dedicated for dead-lettering in event handling components.
  * <p>
  * This identifier is used to uniquely identify a sequence of events for a specific {@code processingGroup}. The
  * sequence identifier is typically the result of a
@@ -33,18 +33,18 @@ import javax.annotation.Nonnull;
  * @see DeadLetteringEventHandlerInvoker
  * @since 4.6.0
  */
-public class EventHandlingQueueIdentifier implements QueueIdentifier {
+public class EventSequencedIdentifier implements SequenceIdentifier {
 
     private final Object sequenceIdentifier;
     private final String processingGroup;
 
     /**
-     * Constructs an event handling specific {@link QueueIdentifier}.
+     * Constructs an event handling specific {@link SequenceIdentifier}.
      *
      * @param sequenceIdentifier The identifier of a sequence of events to enqueue.
      * @param processingGroup    The processing group that is required to enqueue events.
      */
-    public EventHandlingQueueIdentifier(@Nonnull Object sequenceIdentifier, @Nonnull String processingGroup) {
+    public EventSequencedIdentifier(@Nonnull Object sequenceIdentifier, @Nonnull String processingGroup) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.processingGroup = processingGroup;
     }
@@ -67,7 +67,7 @@ public class EventHandlingQueueIdentifier implements QueueIdentifier {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        EventHandlingQueueIdentifier that = (EventHandlingQueueIdentifier) o;
+        EventSequencedIdentifier that = (EventSequencedIdentifier) o;
         return Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
                 && Objects.equals(processingGroup, that.processingGroup);
     }
@@ -79,7 +79,7 @@ public class EventHandlingQueueIdentifier implements QueueIdentifier {
 
     @Override
     public String toString() {
-        return "EventHandlingQueueIdentifier{" +
+        return "EventSequencedIdentifier{" +
                 "sequenceIdentifier=" + sequenceIdentifier +
                 ", processingGroup='" + processingGroup + '\'' +
                 '}';

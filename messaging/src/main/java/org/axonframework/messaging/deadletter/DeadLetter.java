@@ -17,20 +17,23 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
-import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
- * Interface describing a dead-lettered {@link Message} implementation of generic type {@code T}.
+ * Interface describing a dead-lettered {@link Message} implementation of generic type {@code M}.
  * <p>
- * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. This letter can be regarded for
- * evaluation once the {@code #expiresAt()} time is reached. Upon successful evaluation the letter can be cleared
- * through {@code #acknowledge()}. The {@code #requeue()} method should be used to signal evaluation failed, reentering
- * the letter into its queue.
+ * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
+ * accessed on either {@link SequencedDeadLetterQueue#enqueue(DeadLetter) insertion} or
+ * {@link SequencedDeadLetterQueue#process(Function) processing}, is kept in {@link #lastTouched()}. Additional
+ * information on why the letter is enqueued can be found in the {@link #diagnostic() diagnostics}.
  *
  * @param <M> The type of {@link Message} represented by this interface.
  * @author Steven van Beelen
+ * @author Allard Buijze
  * @since 4.6.0
  */
 public interface DeadLetter<M extends Message<?>> {
@@ -43,11 +46,11 @@ public interface DeadLetter<M extends Message<?>> {
     String identifier();
 
     /**
-     * The {@link QueueIdentifier} this dead-letter belongs to.
+     * The {@link SequenceIdentifier} this dead-letter belongs to.
      *
-     * @return The {@link QueueIdentifier} this dead-letter belongs to
+     * @return The {@link SequenceIdentifier} this dead-letter belongs to
      */
-    QueueIdentifier queueIdentifier();
+    SequenceIdentifier sequenceIdentifier();
 
     /**
      * The {@link Message} of type {@code T} contained in this letter.
@@ -57,13 +60,12 @@ public interface DeadLetter<M extends Message<?>> {
     M message();
 
     /**
-     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. May be {@code null} in case this letter
-     * is enqueued as a consequence of earlier letters with the same {@link QueueIdentifier}.
+     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. Is an {@link Optional#empty()} in case
+     * this letter is enqueued as part of a sequence (based on the {@link SequenceIdentifier}).
      *
-     * @return The {@link Cause cause} for the {@link #message()} to be dead-lettered
+     * @return The {@link Cause cause} for the {@link #message()} to be dead-lettered.
      */
-    @Nullable
-    Cause cause();
+    Optional<Cause> cause();
 
     /**
      * The moment in time when the {@link #message()} was entered in a dead-letter queue.
@@ -73,12 +75,35 @@ public interface DeadLetter<M extends Message<?>> {
     Instant enqueuedAt();
 
     /**
-     * Remove from the queue
+     * The moment in time when this letter was last touched. Will equal the {@link #enqueuedAt()} value if this letter
+     * is enqueued for the first time.
+     *
+     * @return The moment in time when this letter was last touched.
      */
-    void evict();
+    Instant lastTouched();
 
     /**
-     * Release claim on this letter
+     * The diagnostic {@link MetaData} concerning this letter.
+     *
+     * @return The diagnostic {@link MetaData} concerning this letter.
      */
-    void release();
+    MetaData diagnostic();
+
+    /**
+     * Construct a copy of this {@link DeadLetter}, replacing the {@link #cause()} with the given {@code requeueCause}.
+     *
+     * @param requeueCause The new cause of the {@link DeadLetter} under construction.
+     * @return A copy of this {@link DeadLetter}, replacing the {@link #cause()} with the given {@code requeueCause}.
+     */
+    DeadLetter<M> withCause(Throwable requeueCause);
+
+    /**
+     * Construct a copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
+     * {@link #diagnostic() diagnostics}.
+     *
+     * @param diagnostics The diagnostic {@link MetaData} to append to the {@link DeadLetter} under construction.
+     * @return A copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
+     * {@link #diagnostic() diagnostics}.
+     */
+    DeadLetter<M> andDiagnostics(MetaData diagnostics);
 }

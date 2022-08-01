@@ -17,29 +17,29 @@
 package org.axonframework.messaging.deadletter;
 
 /**
- * Interface describing an identifier for queues maintained by a {@link DeadLetterQueue}.
+ * Interface describing an identifier for sequences maintained by a {@link SequencedDeadLetterQueue}.
  * <p>
- * Describes a {@link #identifier()} of the queue, as well as a {@link #group()} the queue belongs to. The
- * {@code identifier} may, for example, refer to a sequence of messages, whereas the {@code group} can describe a
- * specific message processing component.
+ * Describes a {@link #identifier()} of the sequence, as well as a {@link #group()} the sequence belongs to. The
+ * {@code identifier} may, for example, refer to a message ordering, whereas the {@code group} can describe a specific
+ * message processing component.
  *
  * @author Steven van Beelen
- * @see DeadLetterQueue
+ * @see SequencedDeadLetterQueue
  * @since 4.6.0
  */
-public interface QueueIdentifier extends Comparable<QueueIdentifier> {
+public interface SequenceIdentifier extends Comparable<SequenceIdentifier> {
 
     /**
-     * The identifier of this queue. May refer to a sequence of messages.
+     * The identifier of this sequence. May refer to a message ordering.
      *
-     * @return The identifier of this queue.
+     * @return The identifier of this sequence.
      */
     Object identifier();
 
     /**
-     * The group this queue belongs to. May refer to a specific message processing component.
+     * The group this sequence belongs to. May refer to a specific message processing component.
      *
-     * @return The group this queue belongs to.
+     * @return The group this sequence belongs to.
      */
     String group();
 
@@ -53,7 +53,7 @@ public interface QueueIdentifier extends Comparable<QueueIdentifier> {
     }
 
     @Override
-    default int compareTo(QueueIdentifier other) {
+    default int compareTo(SequenceIdentifier other) {
         return this.combinedIdentifier().compareTo(other.combinedIdentifier());
     }
 }
