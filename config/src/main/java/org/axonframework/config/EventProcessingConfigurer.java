@@ -35,7 +35,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -667,19 +668,19 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Register a {@link DeadLetterQueue} for the given {@code processingGroup}. The {@code DeadLetterQueue} will
+     * Register a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}. The {@code SequencedDeadLetterQueue} will
      * automatically enqueue failed events and evaluate them per the queue's configuration.
      *
      * @param processingGroup A {@link String} specifying the name of the processing group to register the given {@link
-     *                        DeadLetterQueue} for.
-     * @param queueBuilder    A builder method returning a {@link DeadLetterQueue} based on a {@link Configuration}. The
+     *                        SequencedDeadLetterQueue} for.
+     * @param queueBuilder    A builder method returning a {@link SequencedDeadLetterQueue} based on a {@link Configuration}. The
      *                        outcome is used by the given {@code processingGroup} to enqueue and evaluate failed
      *                        events in.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
     default EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, DeadLetterQueue<EventMessage<?>>> queueBuilder
+            @Nonnull Function<Configuration, SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> queueBuilder
     ) {
         return this;
     }

@@ -19,7 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.common.AxonException;
 
 /**
- * Exception signaling a {@link DeadLetterQueue} is overflowing.
+ * Exception signaling a {@link SequencedDeadLetterQueue} is overflowing.
  *
  * @author Steven van Beelen
  * @since 4.6.0

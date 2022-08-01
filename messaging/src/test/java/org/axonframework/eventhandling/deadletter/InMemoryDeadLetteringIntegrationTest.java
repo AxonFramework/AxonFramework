@@ -17,15 +17,12 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
-import org.axonframework.messaging.deadletter.InMemoryDeadLetterQueue;
-import org.axonframework.messaging.deadletter.IntervalRetryPolicy;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link InMemoryDeadLetterQueue}
+ * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link InMemorySequencedDeadLetterQueue}
  * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Steven van Beelen
@@ -33,10 +30,7 @@ import java.util.concurrent.TimeUnit;
 class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
-    DeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
-        return InMemoryDeadLetterQueue.<EventMessage<?>>builder()
-                                      .expireThreshold(Duration.ofMillis(50))
-                                      .retryPolicy(new IntervalRetryPolicy<>(50, TimeUnit.MILLISECONDS))
-                                      .build();
+    SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> buildDeadLetterQueue() {
+        return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 }

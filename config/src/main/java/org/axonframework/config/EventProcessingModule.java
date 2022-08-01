@@ -45,7 +45,8 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -116,7 +117,7 @@ public class EventProcessingModule
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    protected final Map<String, Component<DeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
+    protected final Map<String, Component<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>>> deadLetterQueues = new HashMap<>();
 
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
@@ -259,7 +260,7 @@ public class EventProcessingModule
             handlerInvokers.computeIfAbsent(processorName, k -> new ArrayList<>()).add(
                     c -> {
                         if (deadLetterQueues.containsKey(processingGroup)) {
-                            DeadLetterQueue<EventMessage<?>> deadLetterQueue =
+                            SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue =
                                     deadLetterQueue(processingGroup)
                                             .orElseThrow(() -> new IllegalStateException(
                                                     "Cannot find a Dead Letter Queue for processing group ["
@@ -461,7 +462,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<DeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
+    public Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
         return deadLetterQueues.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
@@ -779,10 +780,10 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, DeadLetterQueue<EventMessage<?>>> queueBuilder
+            @Nonnull Function<Configuration, SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> queueBuilder
     ) {
         this.deadLetterQueues.put(
-                processingGroup, new Component<>(()-> configuration, "deadLetterQueue", queueBuilder)
+                processingGroup, new Component<>(() -> configuration, "deadLetterQueue", queueBuilder)
         );
         return this;
     }

@@ -54,7 +54,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -1108,7 +1109,7 @@ class EventProcessingModuleTest {
 
     @Test
     void testRegisterDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
-            @Mock DeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
 
@@ -1123,7 +1124,10 @@ class EventProcessingModuleTest {
                   .registerListenerInvocationErrorHandler(processingGroup, c -> listenerInvocationErrorHandler);
         Configuration config = configurer.start();
 
-        assertEquals(deadLetterQueue, config.eventProcessingConfiguration().deadLetterQueue(processingGroup));
+        Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
+                config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
 
         Optional<PooledStreamingEventProcessor> optionalProcessor =
                 config.eventProcessingConfiguration()

@@ -25,7 +25,8 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.deadletter.DeadLetterQueue;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -216,15 +217,15 @@ public interface EventProcessingConfiguration {
     TransactionManager transactionManager(String processorName);
 
     /**
-     * Returns the {@link DeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}. May return
+     * Returns the {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}. May return
      * an {@link Optional#empty() empty optional} when there's no {@code DeadLetterQueue} present for the given
      * {@code processingGroup}.
      *
-     * @param processingGroup The processing group for which to return a {@link DeadLetterQueue}.
-     * @return The {@link DeadLetterQueue} tied to the given {@code processingGroup}. May return an
+     * @param processingGroup The processing group for which to return a {@link SequencedDeadLetterQueue}.
+     * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}. May return an
      * {@link Optional#empty() empty optional} if no queue is present.
      */
-    default Optional<DeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
+    default Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(@Nonnull String processingGroup) {
         return Optional.empty();
     }
 }
