@@ -27,6 +27,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -219,15 +220,17 @@ public interface EventProcessingConfiguration {
     TransactionManager transactionManager(String processorName);
 
     /**
-     * Returns the {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}. May return
-     * an {@link Optional#empty() empty optional} when there's no {@code DeadLetterQueue} present for the given
-     * {@code processingGroup}.
+     * Returns the {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}.
+     * May return an {@link Optional#empty() empty optional} when there's no {@code SequencedDeadLetterQueue} present
+     * for the given {@code processingGroup}.
      *
      * @param processingGroup The name of the processing group for which to return a {@link SequencedDeadLetterQueue}.
-     * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}. May return an
-     * {@link Optional#empty() empty optional} if no queue is present.
+     * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}, {@link Optional#empty()}
+     * if there is none.
      */
-    default Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(@Nonnull String processingGroup) {
+    default Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(
+            @Nonnull String processingGroup
+    ) {
         return Optional.empty();
     }
 
@@ -237,11 +240,24 @@ public interface EventProcessingConfiguration {
      * {@link EventProcessingConfigurer#registerDefaultEnqueuePolicy(Function) default policy} if present.
      *
      * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
-     * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}. May return an {@link Optional}
-     * containing the {@link EventProcessingConfigurer#registerDefaultEnqueuePolicy(Function) default policy} if
-     * present.
+     * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.
      */
     default Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> enqueuePolicy(@Nonnull String processingGroup) {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the {@link SequencedDeadLetterProcessor} tied to the given {@code processingGroup} in an
+     * {@link Optional}. Returns an {@link Optional#empty() empty optional} when the {@code processingGroup} does not
+     * have a {@link SequencedDeadLetterQueue} attached to it.
+     *
+     * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
+     * @return The {@link SequencedDeadLetterProcessor} tied to the given {@code processingGroup} in an
+     * {@link Optional}, {@link Optional#empty()} if there is none.
+     */
+    default Optional<SequencedDeadLetterProcessor<EventMessage<?>>> sequencedDeadLetterProcessor(
+            @Nonnull String processingGroup
+    ) {
         return Optional.empty();
     }
 }

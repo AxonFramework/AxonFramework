@@ -57,6 +57,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -1307,6 +1308,40 @@ class EventProcessingModuleTest {
 
         assertEquals(processingGroup, getField("processingGroup", resultDeadLetteringInvoker));
         assertTrue((Boolean) getField("allowReset", resultDeadLetteringInvoker));
+    }
+
+    @Test
+    void testSequencedDeadLetterProcessor(@Mock SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue) {
+        String processingGroup = "pooled-streaming";
+        String otherProcessingGroup = "tracking";
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(processingGroup)
+                  .registerPooledStreamingEventProcessor(otherProcessingGroup)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerEventHandler(config -> new TrackingEventHandler())
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
+                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
+                  .registerListenerInvocationErrorHandler(processingGroup, c -> new LoggingErrorHandler());
+
+        Configuration config = configurer.start();
+        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
+
+        Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> configuredDlq =
+                eventProcessingConfig.deadLetterQueue(processingGroup);
+        assertTrue(configuredDlq.isPresent());
+        assertEquals(deadLetterQueue, configuredDlq.get());
+
+        Optional<PooledStreamingEventProcessor> optionalProcessor =
+                eventProcessingConfig.eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
+        assertTrue(optionalProcessor.isPresent());
+
+        Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
+                eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
+        assertTrue(optionalDeadLetterProcessor.isPresent());
+        assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor(otherProcessingGroup).isPresent());
+        assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor("non-existing-group").isPresent());
     }
 
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {

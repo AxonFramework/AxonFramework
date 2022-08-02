@@ -48,6 +48,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -109,6 +110,7 @@ public class EventProcessingModule
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
 
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+    protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
     protected final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
     protected final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
@@ -310,9 +312,12 @@ public class EventProcessingModule
                                                 .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
                                                         processingGroup
                                                 ));
-        return deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
-                                          .apply(configuration, builder)
-                                          .build();
+        DeadLetteringEventHandlerInvoker deadLetteringInvoker =
+                deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
+                                           .apply(configuration, builder)
+                                           .build();
+        deadLetteringEventHandlerInvokers.put(processingGroup, deadLetteringInvoker);
+        return deadLetteringInvoker;
     }
 
     /**
@@ -498,6 +503,14 @@ public class EventProcessingModule
         return enqueuePolicies.containsKey(processingGroup)
                 ? Optional.ofNullable(enqueuePolicies.get(processingGroup).get())
                 : Optional.ofNullable(defaultEnqueuePolicy.get());
+    }
+
+    @Override
+    public Optional<SequencedDeadLetterProcessor<EventMessage<?>>> sequencedDeadLetterProcessor(
+            @Nonnull String processingGroup
+    ) {
+        validateConfigInitialization();
+        return Optional.ofNullable(deadLetteringEventHandlerInvokers.get(processingGroup));
     }
 
     private void validateConfigInitialization() {
