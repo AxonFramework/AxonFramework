@@ -835,7 +835,7 @@ class TrackingEventProcessorTest {
             EventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
-                contextInRedelivery.add(ReplayToken.replayContext(message, MyResetContext.class));
+                contextInRedelivery.add(ReplayToken.replayContext(message, MyResetContext.class).orElse(null));
             }
             handled.add(message.getIdentifier());
             return null;

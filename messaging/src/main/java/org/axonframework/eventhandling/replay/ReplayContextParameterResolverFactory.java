@@ -56,7 +56,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
         @Override
         public Object resolveParameterValue(Message message) {
-            return ReplayToken.replayContext(message, this.type);
+            return ReplayToken.replayContext(message, this.type).orElse(null);
         }
 
         @Override
