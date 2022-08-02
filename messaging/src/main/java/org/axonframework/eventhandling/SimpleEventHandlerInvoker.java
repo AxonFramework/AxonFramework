@@ -85,13 +85,14 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the {@link
-     * SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a <b>hard
-     * requirement</b> and as such should be provided.
+     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link LoggingErrorHandler} and the
+     * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}. Providing at least one Event Handler is a
+     * <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link SimpleEventHandlerInvoker}
+     * @param <B> An implementation of {@link Builder}.
+     * @return A Builder to be able to create a {@link SimpleEventHandlerInvoker}.
      */
-    public static Builder<?> builder() {
+    public static <B extends Builder<?>> Builder<B> builder() {
         return new Builder<>();
     }
 

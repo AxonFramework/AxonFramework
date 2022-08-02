@@ -111,15 +111,19 @@ class DeadLetteredEventProcessingTask
     }
 
     private EnqueueDecision<DeadLetter<EventMessage<?>>> onCommit(DeadLetter<EventMessage<?>> letter) {
-        logger.info("Processing dead-letter [{}] for sequence identifier [{}] was successfully.",
-                    letter.identifier(), letter.sequenceIdentifier().combinedIdentifier());
+        if (logger.isInfoEnabled()) {
+            logger.info("Processing dead-letter [{}] for sequence identifier [{}] was successfully.",
+                        letter.identifier(), letter.sequenceIdentifier().combinedIdentifier());
+        }
         return Decisions.evict();
     }
 
     private EnqueueDecision<DeadLetter<EventMessage<?>>> onRollback(DeadLetter<EventMessage<?>> letter,
                                                                     Throwable cause) {
-        logger.warn("Processing dead-letter [{}] for sequence identifier [{}] failed.",
-                    letter.identifier(), letter.sequenceIdentifier().combinedIdentifier(), cause);
+        if (logger.isWarnEnabled()) {
+            logger.warn("Processing dead-letter [{}] for sequence identifier [{}] failed.",
+                        letter.identifier(), letter.sequenceIdentifier().combinedIdentifier(), cause);
+        }
         return enqueuePolicy.decide(letter, cause);
     }
 }

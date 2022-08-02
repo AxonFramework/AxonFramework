@@ -113,8 +113,9 @@ public class InMemorySequencedDeadLetterQueue<D extends DeadLetter<? extends Mes
         }
 
         if (logger.isDebugEnabled()) {
-            if (letter.cause().isPresent()) {
-                logger.debug("Adding dead letter [{}] because [{}].", letter.message(), letter.cause().get());
+            Optional<Cause> optionalCause = letter.cause();
+            if (optionalCause.isPresent()) {
+                logger.debug("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
             } else {
                 logger.debug("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
                              letter.message(), sequenceId);
@@ -145,9 +146,12 @@ public class InMemorySequencedDeadLetterQueue<D extends DeadLetter<? extends Mes
             }
             return;
         }
-        sequence.remove(containedLetter.get());
 
-        logger.trace("Evicted letter [{}].", letter.identifier());
+        sequence.remove(containedLetter.get());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Evicted letter [{}].", letter.identifier());
+        }
+
         if (sequence.isEmpty()) {
             logger.trace("Sequence [{}] is empty and will be removed.", sequenceId);
             deadLetters.remove(sequenceId);
@@ -171,6 +175,9 @@ public class InMemorySequencedDeadLetterQueue<D extends DeadLetter<? extends Mes
 
         //noinspection unchecked
         sequence.addFirst((D) letter.withCause(requeueCause));
+        if (logger.isTraceEnabled()) {
+            logger.trace("Requeued letter [{}].", letter.identifier());
+        }
 
         takenSequences.remove(sequenceId);
     }

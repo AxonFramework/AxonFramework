@@ -107,8 +107,9 @@ class SimpleEventHandlerInvokerTest {
     @Test
     void testBuildWithEmptyEventHandlersListThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
+        List<Object> testEventHandlers = Collections.emptyList();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventHandlers(Collections.emptyList()));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventHandlers(testEventHandlers));
     }
 
     @Test

@@ -81,7 +81,8 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
             testSubject.enqueue(generateInitialLetter());
         }
 
-        assertThrows(DeadLetterQueueOverflowException.class, () -> testSubject.enqueue(generateInitialLetter()));
+        D oneSequenceToMany = generateInitialLetter();
+        assertThrows(DeadLetterQueueOverflowException.class, () -> testSubject.enqueue(oneSequenceToMany));
     }
 
     @Test
@@ -95,7 +96,8 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
             testSubject.enqueue(generateInitialLetter(testId));
         }
 
-        assertThrows(DeadLetterQueueOverflowException.class, () -> testSubject.enqueue(generateInitialLetter(testId)));
+        D oneLetterToMany = generateInitialLetter(testId);
+        assertThrows(DeadLetterQueueOverflowException.class, () -> testSubject.enqueue(oneLetterToMany));
     }
 
     @Test
@@ -234,17 +236,22 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
 
     @Test
     void testRequeueThrowsNoSuchDeadLetterExceptionForNonExistentSequenceIdentifier() {
-        assertThrows(NoSuchDeadLetterException.class,
-                     () -> testSubject.requeue(generateInitialLetter(), generateThrowable()));
+        D testLetter = generateInitialLetter();
+        Throwable testRequeueCause = generateThrowable();
+
+        assertThrows(NoSuchDeadLetterException.class, () -> testSubject.requeue(testLetter, testRequeueCause));
     }
 
     @Test
     void testRequeueThrowsNoSuchDeadLetterExceptionForNonExistentLetterIdentifier() {
         I testId = generateSequenceId();
-        testSubject.enqueue(generateInitialLetter(testId));
+        D testLetter = generateInitialLetter(testId);
+        D otherTestLetter = generateInitialLetter(testId);
+        Throwable testRequeueCause = generateThrowable();
 
-        assertThrows(NoSuchDeadLetterException.class,
-                     () -> testSubject.requeue(generateInitialLetter(testId), generateThrowable()));
+        testSubject.enqueue(testLetter);
+
+        assertThrows(NoSuchDeadLetterException.class, () -> testSubject.requeue(otherTestLetter, testRequeueCause));
     }
 
     @Test
