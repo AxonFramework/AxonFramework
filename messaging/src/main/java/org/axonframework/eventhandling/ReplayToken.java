@@ -335,12 +335,13 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
         ReplayToken that = (ReplayToken) o;
         return Objects.equals(tokenAtReset, that.tokenAtReset) &&
-                Objects.equals(currentToken, that.currentToken);
+                Objects.equals(currentToken, that.currentToken) &&
+                Objects.equals(context, that.context);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tokenAtReset, currentToken);
+        return Objects.hash(tokenAtReset, currentToken, context);
     }
 
     @Override
@@ -348,6 +349,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return "ReplayToken{" +
                 "currentToken=" + currentToken +
                 ", tokenAtReset=" + tokenAtReset +
+                ", context=" + (context != null ? context.toString() : null) +
                 '}';
     }
 
