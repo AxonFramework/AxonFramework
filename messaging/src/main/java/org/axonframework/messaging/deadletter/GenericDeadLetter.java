@@ -60,7 +60,7 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
     public GenericDeadLetter(SequenceIdentifier sequenceIdentifier, M message, Throwable cause) {
         this(sequenceIdentifier,
              message,
-             cause != null ? new GenericCause(cause) : null,
+             cause != null ? new ThrowableCause(cause) : null,
              () -> clock.instant());
     }
 
@@ -91,7 +91,7 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
         this(delegate.identifier(),
              delegate.sequenceIdentifier(),
              delegate.message(),
-             requeueCause != null ? new GenericCause(requeueCause) : delegate.cause,
+             requeueCause != null ? new ThrowableCause(requeueCause) : delegate.cause,
              delegate.enqueuedAt(),
              clock.instant(),
              delegate.diagnostic());

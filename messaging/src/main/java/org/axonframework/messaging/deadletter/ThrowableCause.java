@@ -19,13 +19,13 @@ package org.axonframework.messaging.deadletter;
 import java.util.Objects;
 
 /**
- * Generic implementation of a {@link Cause}.
+ * An implementation of {@link Cause} taking in a {@link Throwable}.
  *
  * @author Steven van Beelen
  * @author Mitchel Herrijgers
  * @since 4.6.0
  */
-class GenericCause implements Cause {
+class ThrowableCause implements Cause {
 
     private final String type;
     private final String message;
@@ -36,7 +36,7 @@ class GenericCause implements Cause {
      *
      * @param throwable The throwable to base this cause on.
      */
-    public GenericCause(Throwable throwable) {
+    public ThrowableCause(Throwable throwable) {
         this.type = throwable.getClass().getName();
         this.message = throwable.getMessage();
     }
@@ -47,7 +47,7 @@ class GenericCause implements Cause {
      * @param type    The type of this cause.
      * @param message The message of this cause.
      */
-    public GenericCause(String type, String message) {
+    public ThrowableCause(String type, String message) {
         this.type = type;
         this.message = message;
     }
@@ -70,7 +70,7 @@ class GenericCause implements Cause {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        GenericCause that = (GenericCause) o;
+        ThrowableCause that = (ThrowableCause) o;
         return Objects.equals(type, that.type) && Objects.equals(message, that.message);
     }
 
