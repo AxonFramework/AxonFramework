@@ -82,10 +82,7 @@ public interface SequencedDeadLetterQueue<D extends DeadLetter<? extends Message
         }
 
         if (isFull(identifier)) {
-            throw new DeadLetterQueueOverflowException(
-                    "Unable to enqueue letter in sequence [" + identifier + "]. "
-                            + "The maximum capacity of dead letters has been reached."
-            );
+            throw new DeadLetterQueueOverflowException(identifier);
         }
 
         D letter = letterBuilder.apply(identifier);

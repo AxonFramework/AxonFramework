@@ -1,7 +1,9 @@
 package org.axonframework.messaging.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
@@ -21,6 +23,8 @@ import javax.annotation.Nonnull;
  * @since 4.6.0
  */
 public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
+
+    private static final long serialVersionUID = 8392088448720827776L;
 
     /**
      * {@link Clock} instance used to set the {@link DeadLetter#enqueuedAt()} and {@link DeadLetter#lastTouched()} times
@@ -65,9 +69,9 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
     }
 
     private GenericDeadLetter(SequenceIdentifier sequenceIdentifier,
-                             M message,
-                             Cause cause,
-                             Supplier<Instant> timeSupplier) {
+                              M message,
+                              Cause cause,
+                              Supplier<Instant> timeSupplier) {
         this(IdentifierFactory.getInstance().generateIdentifier(),
              sequenceIdentifier,
              message,
@@ -128,36 +132,45 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
         this.diagnostics = diagnostics;
     }
 
+    @JsonGetter
     @Override
     public String identifier() {
         return identifier;
     }
 
+    @JsonGetter
+    @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
     @Override
     public SequenceIdentifier sequenceIdentifier() {
         return sequenceIdentifier;
     }
 
+    @JsonGetter
+    @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
     @Override
     public M message() {
         return message;
     }
 
+    @JsonGetter
     @Override
     public Optional<Cause> cause() {
         return Optional.ofNullable(cause);
     }
 
+    @JsonGetter
     @Override
     public Instant enqueuedAt() {
         return enqueuedAt;
     }
 
+    @JsonGetter
     @Override
     public Instant lastTouched() {
         return lastTouched;
     }
 
+    @JsonGetter
     @Override
     public MetaData diagnostic() {
         return diagnostics;

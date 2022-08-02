@@ -16,6 +16,11 @@
 
 package org.axonframework.messaging.deadletter;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 
 /**
@@ -26,6 +31,8 @@ import java.util.Objects;
  * @since 4.6.0
  */
 class ThrowableCause implements Cause {
+
+    private static final long serialVersionUID = 7437910726604152725L;
 
     private final String type;
     private final String message;
@@ -47,16 +54,20 @@ class ThrowableCause implements Cause {
      * @param type    The type of this cause.
      * @param message The message of this cause.
      */
-    public ThrowableCause(String type, String message) {
+    @JsonCreator
+    @ConstructorProperties({"type", "message"})
+    public ThrowableCause(@JsonProperty("type") String type, @JsonProperty("message") String message) {
         this.type = type;
         this.message = message;
     }
 
+    @JsonGetter
     @Override
     public String type() {
         return type;
     }
 
+    @JsonGetter
     @Override
     public String message() {
         return message;

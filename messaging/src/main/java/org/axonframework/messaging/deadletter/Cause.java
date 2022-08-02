@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
+import java.io.Serializable;
+
 /**
  * Contract describing the cause for {@link DeadLetter dead-lettering} a {@link org.axonframework.messaging.Message}.
  * These objects typically reflects a {@link Throwable}.
@@ -24,7 +26,7 @@ package org.axonframework.messaging.deadletter;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public interface Cause {
+public interface Cause extends Serializable {
 
     /**
      * Returns the type of a dead-lettering cause. The {@code type} can, for example, reflect the fully qualified class

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
+import java.io.Serializable;
+
 /**
  * Interface describing an identifier for sequences maintained by a {@link SequencedDeadLetterQueue}.
  * <p>
@@ -27,7 +29,7 @@ package org.axonframework.messaging.deadletter;
  * @see SequencedDeadLetterQueue
  * @since 4.6.0
  */
-public interface SequenceIdentifier extends Comparable<SequenceIdentifier> {
+public interface SequenceIdentifier extends Serializable, Comparable<SequenceIdentifier> {
 
     /**
      * The identifier of this sequence. May refer to a message ordering.

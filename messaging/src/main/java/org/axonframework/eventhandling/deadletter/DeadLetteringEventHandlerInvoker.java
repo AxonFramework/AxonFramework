@@ -120,7 +120,7 @@ public class DeadLetteringEventHandlerInvoker
             return;
         }
 
-        EventSequencedIdentifier id = new EventSequencedIdentifier(super.sequenceIdentifier(message), processingGroup);
+        EventSequenceIdentifier id = new EventSequenceIdentifier(super.sequenceIdentifier(message), processingGroup);
         boolean enqueued = transactionManager.fetchInTransaction(
                 () -> queue.enqueueIfPresent(id, queueId -> new GenericDeadLetter<>(queueId, message))
         );

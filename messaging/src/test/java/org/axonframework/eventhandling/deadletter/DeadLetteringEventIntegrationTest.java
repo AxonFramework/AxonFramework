@@ -223,9 +223,9 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(eventHandlingComponent.initialHandlingWasSuccessful("success"));
         assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful("failure"));
 
-        SequenceIdentifier expectedId = new EventSequencedIdentifier("failure", PROCESSING_GROUP);
+        SequenceIdentifier expectedId = new EventSequenceIdentifier("failure", PROCESSING_GROUP);
         assertTrue(deadLetterQueue.contains(expectedId));
-        assertFalse(deadLetterQueue.contains(new EventSequencedIdentifier("success", PROCESSING_GROUP)));
+        assertFalse(deadLetterQueue.contains(new EventSequenceIdentifier("success", PROCESSING_GROUP)));
 
         Iterator<DeadLetter<EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence(expectedId).iterator();
         assertTrue(sequence.hasNext());
@@ -237,7 +237,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     void testEventsInTheSameSequenceAreAllEnqueuedIfOneOfThemFails() {
         int expectedSuccessfulHandlingCount = 3;
         String aggregateId = UUID.randomUUID().toString();
-        SequenceIdentifier sequenceId = new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP);
+        SequenceIdentifier sequenceId = new EventSequenceIdentifier(aggregateId, PROCESSING_GROUP);
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -286,7 +286,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedUnsuccessfulEvaluationCount = 0;
 
         String aggregateId = UUID.randomUUID().toString();
-        SequenceIdentifier sequenceId = new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP);
+        SequenceIdentifier sequenceId = new EventSequenceIdentifier(aggregateId, PROCESSING_GROUP);
 
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -343,7 +343,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedUnsuccessfulEvaluationCount = 1;
 
         String aggregateId = UUID.randomUUID().toString();
-        SequenceIdentifier sequenceId = new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP);
+        SequenceIdentifier sequenceId = new EventSequenceIdentifier(aggregateId, PROCESSING_GROUP);
 
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -402,7 +402,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedUnsuccessfulEvaluationCount = 1;
 
         String aggregateId = UUID.randomUUID().toString();
-        SequenceIdentifier sequenceId = new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP);
+        SequenceIdentifier sequenceId = new EventSequenceIdentifier(aggregateId, PROCESSING_GROUP);
 
         // Starting both is sufficient since both Processor and DeadLettering Invoker have their own thread pool.
         startProcessingEvent();

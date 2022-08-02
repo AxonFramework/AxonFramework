@@ -46,8 +46,8 @@ import static org.mockito.Mockito.*;
 class DeadLetteredEventProcessingTaskTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
-    private static final EventSequencedIdentifier TEST_ID =
-            new EventSequencedIdentifier("sequenceId", TEST_PROCESSING_GROUP);
+    private static final EventSequenceIdentifier TEST_ID =
+            new EventSequenceIdentifier("sequenceId", TEST_PROCESSING_GROUP);
     @SuppressWarnings("rawtypes") // The DeadLetter mocks don't like the generic, at all...
     private static final EventMessage TEST_EVENT =
             GenericEventMessage.asEventMessage("Then this happened..." + UUID.randomUUID());

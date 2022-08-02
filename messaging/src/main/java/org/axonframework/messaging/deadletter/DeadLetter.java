@@ -19,6 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,7 +37,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public interface DeadLetter<M extends Message<?>> {
+public interface DeadLetter<M extends Message<?>> extends Serializable {
 
     /**
      * The identifier of this dead-letter.

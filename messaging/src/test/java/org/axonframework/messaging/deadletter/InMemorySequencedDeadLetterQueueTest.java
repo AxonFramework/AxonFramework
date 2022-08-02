@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.deadletter.EventSequencedIdentifier;
+import org.axonframework.eventhandling.deadletter.EventSequenceIdentifier;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 class InMemorySequencedDeadLetterQueueTest
-        extends SequencedDeadLetterQueueTest<EventSequencedIdentifier, DeadLetter<?>> {
+        extends SequencedDeadLetterQueueTest<EventSequenceIdentifier, DeadLetter<?>> {
 
     @Override
     SequencedDeadLetterQueue<DeadLetter<?>> buildTestSubject() {
@@ -41,22 +41,22 @@ class InMemorySequencedDeadLetterQueueTest
     }
 
     @Override
-    EventSequencedIdentifier generateSequenceId() {
+    EventSequenceIdentifier generateSequenceId() {
         return generateSequenceId(generateId());
     }
 
     @Override
-    EventSequencedIdentifier generateSequenceId(String group) {
-        return new EventSequencedIdentifier(generateId(), group);
+    EventSequenceIdentifier generateSequenceId(String group) {
+        return new EventSequenceIdentifier(generateId(), group);
     }
 
     @Override
-    DeadLetter<?> generateInitialLetter(EventSequencedIdentifier sequenceIdentifier) {
+    DeadLetter<?> generateInitialLetter(EventSequenceIdentifier sequenceIdentifier) {
         return new GenericDeadLetter<>(sequenceIdentifier, generateEvent(), generateThrowable());
     }
 
     @Override
-    DeadLetter<?> generateFollowUpLetter(EventSequencedIdentifier sequenceIdentifier) {
+    DeadLetter<?> generateFollowUpLetter(EventSequenceIdentifier sequenceIdentifier) {
         return new GenericDeadLetter<>(sequenceIdentifier, generateEvent());
     }
 

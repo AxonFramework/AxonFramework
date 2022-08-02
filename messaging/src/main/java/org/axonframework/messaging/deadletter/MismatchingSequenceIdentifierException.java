@@ -40,14 +40,4 @@ public class MismatchingSequenceIdentifierException extends AxonException {
     public MismatchingSequenceIdentifierException(String message) {
         super(message);
     }
-
-    /**
-     * Constructs an exception based on the given {@code message} and {@code cause}.
-     *
-     * @param message The description of this {@link MismatchingSequenceIdentifierException}.
-     * @param cause   The reason for this exception to be constructed.
-     */
-    public MismatchingSequenceIdentifierException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

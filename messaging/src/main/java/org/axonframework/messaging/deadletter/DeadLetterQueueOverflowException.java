@@ -38,12 +38,12 @@ public class DeadLetterQueueOverflowException extends AxonException {
     }
 
     /**
-     * Constructs an exception based on the given {@code message} and {@code cause}.
+     * Constructs an exception based on the given {@code identifier}.
      *
-     * @param message The description of this {@link DeadLetterQueueOverflowException}.
-     * @param cause   The reason for this exception to be constructed.
+     * @param identifier The {@link SequenceIdentifier} referencing the sequence that has reached its limit.
      */
-    public DeadLetterQueueOverflowException(String message, Throwable cause) {
-        super(message, cause);
+    public DeadLetterQueueOverflowException(SequenceIdentifier identifier) {
+        super("Unable to enqueue letter in sequence [" + identifier + "]. "
+                      + "The maximum capacity of dead-letters has been reached.");
     }
 }

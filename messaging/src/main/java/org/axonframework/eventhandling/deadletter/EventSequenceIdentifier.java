@@ -17,8 +17,12 @@
 package org.axonframework.eventhandling.deadletter;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.deadletter.SequenceIdentifier;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
@@ -33,7 +37,9 @@ import javax.annotation.Nonnull;
  * @see DeadLetteringEventHandlerInvoker
  * @since 4.6.0
  */
-public class EventSequencedIdentifier implements SequenceIdentifier {
+public class EventSequenceIdentifier implements SequenceIdentifier {
+
+    private static final long serialVersionUID = 5879495420316225726L;
 
     private final Object sequenceIdentifier;
     private final String processingGroup;
@@ -44,16 +50,21 @@ public class EventSequencedIdentifier implements SequenceIdentifier {
      * @param sequenceIdentifier The identifier of a sequence of events to enqueue.
      * @param processingGroup    The processing group that is required to enqueue events.
      */
-    public EventSequencedIdentifier(@Nonnull Object sequenceIdentifier, @Nonnull String processingGroup) {
+    @JsonCreator
+    @ConstructorProperties({"identifier", "group"})
+    public EventSequenceIdentifier(@JsonProperty("identifier") @Nonnull Object sequenceIdentifier,
+                                   @JsonProperty("group") @Nonnull String processingGroup) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.processingGroup = processingGroup;
     }
 
+    @JsonGetter
     @Override
     public Object identifier() {
         return this.sequenceIdentifier;
     }
 
+    @JsonGetter
     @Override
     public String group() {
         return this.processingGroup;
@@ -67,7 +78,7 @@ public class EventSequencedIdentifier implements SequenceIdentifier {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        EventSequencedIdentifier that = (EventSequencedIdentifier) o;
+        EventSequenceIdentifier that = (EventSequenceIdentifier) o;
         return Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
                 && Objects.equals(processingGroup, that.processingGroup);
     }

@@ -61,7 +61,7 @@ public class ShouldEnqueue<D extends DeadLetter<? extends Message<?>>> implement
 
     @Override
     public Optional<Throwable> enqueueCause() {
-        return Optional.of(enqueueCause);
+        return Optional.ofNullable(enqueueCause);
     }
 
     @Override
