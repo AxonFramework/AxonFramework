@@ -23,16 +23,18 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequenceIdentifier;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.utils.EventTestUtils;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -40,7 +42,10 @@ import org.mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -276,115 +281,299 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testRetry() {
-        when(queue.process(eq(TEST_PROCESSING_GROUP), any())).thenReturn(true);
+    void testGroup() {
+        assertEquals(TEST_PROCESSING_GROUP, testSubject.group());
+    }
 
-        boolean result = testSubject.retry();
+    @Test
+    void testProcessAnyReturnsFalseWhenFirstInvocationReturnsFalse() {
+        when(queue.process(any(), any(), any())).thenReturn(false);
+
+        boolean result = testSubject.processAny();
+
+        assertFalse(result);
+        verify(transactionManager).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        verify(queue).process(sequenceFilterCaptor.capture(), letterFilterCaptor.capture(), any());
+
+        Predicate<SequenceIdentifier> sequenceFilter = sequenceFilterCaptor.getValue();
+        assertTrue(sequenceFilter.test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+
+        Predicate<DeadLetter<EventMessage<?>>> letterFilter = letterFilterCaptor.getValue();
+        assertTrue(letterFilter.test(null));
+    }
+
+    @Test
+    void testProcessAnyReturnsTrueWhenFirstInvocationReturnsTrue() {
+        EventSequencedIdentifier expectedIdentifier = new EventSequencedIdentifier("test-id", testSubject.group());
+        DeadLetter<EventMessage<?>> testDeadLetter =
+                new GenericDeadLetter<>(expectedIdentifier, GenericEventMessage.asEventMessage("payload"));
+
+        when(queue.process(any(), any(), any())).thenReturn(true)
+                                                .thenReturn(false);
+
+        boolean result = testSubject.processAny();
 
         assertTrue(result);
+        verify(transactionManager, times(2)).startTransaction();
 
-        verify(transactionManager).startTransaction();
-        verify(queue).process(eq(TEST_PROCESSING_GROUP), any());
-    }
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>>> taskFilterCaptor =
+                ArgumentCaptor.forClass(Function.class);
 
-    /*
-        @Test
-    void testReleaseReturnsTrueAndEvictsTheLetter() {
-        AtomicReference<D> resultLetter = new AtomicReference<>();
-        Function<D, EnqueueDecision<D>> testTask = letter -> {
-            resultLetter.set(letter);
-            return Decisions.evict();
-        };
+        verify(queue, times(2)).process(sequenceFilterCaptor.capture(),
+                                        letterFilterCaptor.capture(),
+                                        taskFilterCaptor.capture());
 
-        I testId = generateQueueId();
-        D testLetter = generateInitialLetter(testId);
-        testSubject.enqueue(testLetter);
+        // Invoking the first processing task will set the sequenceIdentifier for subsequent invocations.
+        // This allows thorough validation of the second sequenceIdentifierFilter.
+        taskFilterCaptor.getAllValues().get(0).apply(testDeadLetter);
 
-        boolean releaseResult = testSubject.release(testTask);
-        assertTrue(releaseResult);
-        assertLetter(testLetter, resultLetter.get());
+        List<Predicate<SequenceIdentifier>> sequenceFilters = sequenceFilterCaptor.getAllValues();
+        assertTrue(sequenceFilters.get(0).test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(sequenceFilters.get(1).test(expectedIdentifier));
 
-        Iterator<D> resultLetters = testSubject.deadLetters(testId).iterator();
-        assertFalse(resultLetters.hasNext());
+        letterFilterCaptor.getAllValues().forEach(letterFilter -> assertTrue(letterFilter.test(null)));
     }
 
     @Test
-    void testReleaseReturnsTrueAndRequeuesTheLetter() {
-        AtomicReference<D> resultLetter = new AtomicReference<>();
-        Throwable testThrowable = generateThrowable();
-        MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
-        Function<D, EnqueueDecision<D>> testTask = letter -> {
-            resultLetter.set(letter);
-            return Decisions.requeue(testThrowable, l -> testDiagnostics);
+    void testProcessIdentifierMatchingSequenceReturnsFalseWhenFirstInvocationReturnsFalse() {
+        AtomicBoolean invokedFilter = new AtomicBoolean(false);
+        Predicate<SequenceIdentifier> testFilter = id -> {
+            invokedFilter.set(true);
+            return true;
         };
+        when(queue.process(any(), any(), any())).thenReturn(false);
 
-        I testId = generateQueueId();
-        D testLetter = generateInitialLetter(testId);
-        testSubject.enqueue(testLetter);
+        boolean result = testSubject.processIdentifierMatchingSequence(testFilter);
 
-        Instant expectedLastTouched = setAndGetTime();
-        D expectedRequeuedLetter =
-                generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
-
-        boolean releaseResult = testSubject.release(testTask);
-        assertTrue(releaseResult);
-        assertLetter(testLetter, resultLetter.get());
-
-        Iterator<D> resultLetters = testSubject.deadLetters(testId).iterator();
-        assertTrue(resultLetters.hasNext());
-        assertLetter(expectedRequeuedLetter, resultLetters.next());
-        assertFalse(resultLetters.hasNext());
-    }
-
-     * A "claimed sequence" in this case means that a letter with {@link QueueIdentifier} {@code x} is not
-     * {@link SequencedDeadLetterQueue#evict(DeadLetter)  evicted} or
-     * {@link SequencedDeadLetterQueue#requeue(DeadLetter, Throwable) requeued} yet. Furthermore, if it's the sole letter,
-     * nothing should be returned. This approach ensure the events for a given {@link QueueIdentifier} are handled in
-     * the order they've been dead-lettered (a.k.a., in sequence).
-     * <p>
-     * TODO: 27-07-22 sadly enough, this is flaky...sometimes the second release is still faster regardless of the latches
-    @Test
-    void testPeekReturnsEmptyOptionalIfAllLetterSequencesAreClaimed() throws InterruptedException {
-        CountDownLatch isBlocking = new CountDownLatch(1);
-        CountDownLatch hasReleased = new CountDownLatch(1);
-        AtomicReference<D> resultLetter = new AtomicReference<>();
-        AtomicBoolean invoked = new AtomicBoolean(false);
-
-        Function<D, EnqueueDecision<D>> blockingTask = letter -> {
-            try {
-                isBlocking.countDown();
-                //noinspection ResultOfMethodCallIgnored
-                hasReleased.await(50, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            resultLetter.set(letter);
-            return Decisions.evict();
-        };
-        Function<D, EnqueueDecision<D>> nonBlockingTask = letter -> {
-            invoked.set(true);
-            return Decisions.evict();
-        };
-
-        I testId = generateQueueId();
-        D testLetter = generateInitialLetter(testId);
-        testSubject.enqueue(testLetter);
-
-        Thread blockingRelease = new Thread(() -> testSubject.release(blockingTask));
-        blockingRelease.start();
-        assertTrue(isBlocking.await(10, TimeUnit.MILLISECONDS));
-
-        boolean result = testSubject.release(nonBlockingTask);
         assertFalse(result);
-        assertFalse(invoked.get());
+        verify(transactionManager).startTransaction();
 
-        hasReleased.countDown();
-        blockingRelease.join();
-        assertLetter(testLetter, resultLetter.get());
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        verify(queue).process(sequenceFilterCaptor.capture(), letterFilterCaptor.capture(), any());
+
+        Predicate<SequenceIdentifier> sequenceFilter = sequenceFilterCaptor.getValue();
+        assertTrue(sequenceFilter.test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(invokedFilter.get());
+
+        Predicate<DeadLetter<EventMessage<?>>> letterFilter = letterFilterCaptor.getValue();
+        assertTrue(letterFilter.test(null));
     }
 
-    */
+    @Test
+    void testProcessIdentifierMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
+        EventSequencedIdentifier expectedIdentifier = new EventSequencedIdentifier("test-id", testSubject.group());
+        DeadLetter<EventMessage<?>> testDeadLetter =
+                new GenericDeadLetter<>(expectedIdentifier, GenericEventMessage.asEventMessage("payload"));
 
+        AtomicBoolean invokedFilter = new AtomicBoolean(false);
+        Predicate<SequenceIdentifier> testFilter = id -> {
+            invokedFilter.set(true);
+            return true;
+        };
+        when(queue.process(any(), any(), any())).thenReturn(true)
+                                                .thenReturn(false);
+
+        boolean result = testSubject.processIdentifierMatchingSequence(testFilter);
+
+        assertTrue(result);
+        verify(transactionManager, times(2)).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>>> taskFilterCaptor =
+                ArgumentCaptor.forClass(Function.class);
+
+        verify(queue, times(2)).process(sequenceFilterCaptor.capture(),
+                                        letterFilterCaptor.capture(),
+                                        taskFilterCaptor.capture());
+
+        // Invoking the first processing task will set the sequenceIdentifier for subsequent invocations.
+        // This allows thorough validation of the second sequenceIdentifierFilter.
+        taskFilterCaptor.getAllValues().get(0).apply(testDeadLetter);
+
+        List<Predicate<SequenceIdentifier>> sequenceFilters = sequenceFilterCaptor.getAllValues();
+        assertTrue(sequenceFilters.get(0).test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(sequenceFilters.get(1).test(expectedIdentifier));
+        assertTrue(invokedFilter.get());
+
+        letterFilterCaptor.getAllValues().forEach(letterFilter -> assertTrue(letterFilter.test(null)));
+    }
+
+    @Test
+    void testProcessLetterMatchingSequenceReturnsFalseWhenFirstInvocationReturnsFalse() {
+        AtomicBoolean filterInvoked = new AtomicBoolean();
+        Predicate<DeadLetter<EventMessage<?>>> testFilter = letter -> {
+            filterInvoked.set(true);
+            return true;
+        };
+        when(queue.process(any(), any(), any())).thenReturn(false);
+
+        boolean result = testSubject.processLetterMatchingSequence(testFilter);
+
+        assertFalse(result);
+        verify(transactionManager).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        verify(queue).process(sequenceFilterCaptor.capture(), letterFilterCaptor.capture(), any());
+
+        Predicate<SequenceIdentifier> sequenceFilter = sequenceFilterCaptor.getValue();
+        assertTrue(sequenceFilter.test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+
+        Predicate<DeadLetter<EventMessage<?>>> letterFilter = letterFilterCaptor.getValue();
+        assertTrue(letterFilter.test(null));
+        assertTrue(filterInvoked.get());
+    }
+
+    @Test
+    void testProcessLetterMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
+        EventSequencedIdentifier expectedIdentifier = new EventSequencedIdentifier("test-id", testSubject.group());
+        DeadLetter<EventMessage<?>> testDeadLetter =
+                new GenericDeadLetter<>(expectedIdentifier, GenericEventMessage.asEventMessage("payload"));
+
+        AtomicBoolean filterInvoked = new AtomicBoolean();
+        Predicate<DeadLetter<EventMessage<?>>> testFilter = letter -> {
+            filterInvoked.set(true);
+            return true;
+        };
+        when(queue.process(any(), any(), any())).thenReturn(true)
+                                                .thenReturn(false);
+
+        boolean result = testSubject.processLetterMatchingSequence(testFilter);
+
+        assertTrue(result);
+        verify(transactionManager, times(2)).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>>> taskFilterCaptor =
+                ArgumentCaptor.forClass(Function.class);
+
+        verify(queue, times(2)).process(sequenceFilterCaptor.capture(),
+                                        letterFilterCaptor.capture(),
+                                        taskFilterCaptor.capture());
+
+        // Invoking the first processing task will set the sequenceIdentifier for subsequent invocations.
+        // This allows thorough validation of the second sequenceIdentifierFilter.
+        taskFilterCaptor.getAllValues().get(0).apply(testDeadLetter);
+
+        List<Predicate<SequenceIdentifier>> sequenceFilters = sequenceFilterCaptor.getAllValues();
+        assertTrue(sequenceFilters.get(0).test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(sequenceFilters.get(1).test(expectedIdentifier));
+
+        letterFilterCaptor.getAllValues().forEach(letterFilter -> assertTrue(letterFilter.test(null)));
+        assertTrue(filterInvoked.get());
+    }
+
+    @Test
+    void testProcessReturnsFalseWhenFirstInvocationReturnsFalse() {
+        AtomicBoolean idFilterInvoked = new AtomicBoolean();
+        Predicate<SequenceIdentifier> testIdFilter = id -> {
+            idFilterInvoked.set(true);
+            return true;
+        };
+        AtomicBoolean letterFilterInvoked = new AtomicBoolean();
+        Predicate<DeadLetter<EventMessage<?>>> testLetterFilter = letter -> {
+            letterFilterInvoked.set(true);
+            return true;
+        };
+        when(queue.process(any(), any(), any())).thenReturn(false);
+
+        boolean result = testSubject.process(testIdFilter, testLetterFilter);
+
+        assertFalse(result);
+        verify(transactionManager).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        verify(queue).process(sequenceFilterCaptor.capture(), letterFilterCaptor.capture(), any());
+
+        Predicate<SequenceIdentifier> sequenceFilter = sequenceFilterCaptor.getValue();
+        assertTrue(sequenceFilter.test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(idFilterInvoked.get());
+
+        Predicate<DeadLetter<EventMessage<?>>> letterFilter = letterFilterCaptor.getValue();
+        assertTrue(letterFilter.test(null));
+        assertTrue(letterFilterInvoked.get());
+    }
+
+    @Test
+    void testProcessReturnsTrueWhenFirstInvocationReturnsTrue() {
+        EventSequencedIdentifier expectedIdentifier = new EventSequencedIdentifier("test-id", testSubject.group());
+        DeadLetter<EventMessage<?>> testDeadLetter =
+                new GenericDeadLetter<>(expectedIdentifier, GenericEventMessage.asEventMessage("payload"));
+        AtomicBoolean idFilterInvoked = new AtomicBoolean();
+        Predicate<SequenceIdentifier> testIdFilter = id -> {
+            idFilterInvoked.set(true);
+            return true;
+        };
+        AtomicBoolean letterFilterInvoked = new AtomicBoolean();
+        Predicate<DeadLetter<EventMessage<?>>> testLetterFilter = letter -> {
+            letterFilterInvoked.set(true);
+            return true;
+        };
+        when(queue.process(any(), any(), any())).thenReturn(true)
+                                                .thenReturn(false);
+
+        boolean result = testSubject.process(testIdFilter, testLetterFilter);
+
+        assertTrue(result);
+        verify(transactionManager, times(2)).startTransaction();
+
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<SequenceIdentifier>> sequenceFilterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Predicate<DeadLetter<EventMessage<?>>>> letterFilterCaptor =
+                ArgumentCaptor.forClass(Predicate.class);
+        //noinspection unchecked
+        ArgumentCaptor<Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>>> taskFilterCaptor =
+                ArgumentCaptor.forClass(Function.class);
+
+        verify(queue, times(2)).process(sequenceFilterCaptor.capture(),
+                                        letterFilterCaptor.capture(),
+                                        taskFilterCaptor.capture());
+        // Invoking the first processing task will set the sequenceIdentifier for subsequent invocations.
+        // This allows thorough validation of the second sequenceIdentifierFilter.
+        taskFilterCaptor.getAllValues().get(0).apply(testDeadLetter);
+
+        List<Predicate<SequenceIdentifier>> sequenceFilters = sequenceFilterCaptor.getAllValues();
+        assertTrue(sequenceFilters.get(0).test(new EventSequencedIdentifier("dont-care", testSubject.group())));
+        assertTrue(sequenceFilters.get(1).test(expectedIdentifier));
+        assertTrue(idFilterInvoked.get());
+
+        letterFilterCaptor.getAllValues().forEach(letterFilter -> assertTrue(letterFilter.test(null)));
+        assertTrue(letterFilterInvoked.get());
+    }
 
     @Test
     void testBuildWithNullDeadLetterQueueThrowsAxonConfigurationException() {

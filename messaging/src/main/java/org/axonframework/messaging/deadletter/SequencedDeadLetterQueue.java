@@ -197,7 +197,9 @@ public interface SequencedDeadLetterQueue<D extends DeadLetter<? extends Message
      * @param processingTask A function processing a {@link DeadLetter dead-letter} implementation. Returns a
      *                       {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter)} or
      *                       {@link #requeue(DeadLetter, Throwable)} the dead-letter.
-     * @return {@code true} if the given {@code processingTask} was invoked, {@code false} otherwise.
+     * @return {@code true} if the given {@code processingTask} was invoked successfully. This means the task processed
+     * a {@link DeadLetter dead-letter} and the outcome was {@link EnqueueDecision#shouldEvict() to evict} the letter.
+     * Otherwise {@code false} is returned.
      */
     boolean process(@Nonnull Predicate<SequenceIdentifier> sequenceFilter,
                     @Nonnull Predicate<D> letterFilter,

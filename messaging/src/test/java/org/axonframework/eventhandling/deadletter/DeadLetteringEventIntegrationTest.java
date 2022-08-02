@@ -46,8 +46,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.utils.AssertUtils.assertWithin;
@@ -63,9 +65,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *     <li>Handled {@code EventMessage EventMessages} are enqueued in a {@code DeadLetterQueue}
  *     if a previous event in that sequence was enqueued.</li>
  *     <li>Enqueued {@code EventMessage EventMessages} are successfully evaluated and evicted
- *     from a {@code DeadLetterQueue} on {@link DeadLetteringEventHandlerInvoker#retry()}.</li>
+ *     from a {@code DeadLetterQueue} on {@link DeadLetteringEventHandlerInvoker#processIdentifierMatchingSequence(Predicate)} ()}.</li>
  *     <li>Enqueued {@code EventMessage EventMessages} are unsuccessfully evaluated
- *     and requeued in the {@code DeadLetterQueue} on {@link DeadLetteringEventHandlerInvoker#retry()}.</li>
+ *     and requeued in the {@code DeadLetterQueue} on {@link DeadLetteringEventHandlerInvoker#processIdentifierMatchingSequence(Predicate)}.</li>
  *     <li>Concurrently publish events that succeed and/or fail and validate the evaluation
  *     by the {@code DeadLetterQueue}.</li>
  *     <li>Concurrently publish events in bulk that succeed and/or fail and validate the evaluation
@@ -87,6 +89,8 @@ public abstract class DeadLetteringEventIntegrationTest {
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
+
+    private ScheduledExecutorService executor;
 
     /**
      * Constructs the {@link SequencedDeadLetterQueue} implementation used during the integration test.
@@ -138,34 +142,67 @@ public abstract class DeadLetteringEventIntegrationTest {
                                              .initialSegmentCount(1)
                                              .claimExtensionThreshold(1000)
                                              .build();
+
+        executor = Executors.newScheduledThreadPool(2);
     }
 
     @AfterEach
     void tearDown() {
+        boolean executorTerminated = false;
         CompletableFuture<Void> processorShutdown = streamingProcessor.shutdownAsync();
         try {
             processorShutdown.get(15, TimeUnit.SECONDS);
+            executorTerminated = executor.awaitTermination(50, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             Thread.currentThread().interrupt();
             e.printStackTrace();
         }
+        if (!executorTerminated) {
+            executor.shutdownNow();
+        }
     }
 
-    void startProcessingEvent() {
+    /**
+     * Start this test's {@link StreamingEventProcessor}. This will start event handling.
+     */
+    protected void startProcessingEvent() {
         streamingProcessor.start();
     }
 
-    void retryDeadLettersUntilQueueIsEmpty() {
-        boolean retried;
-        do {
-            retried = deadLetteringInvoker.retry();
-        } while (retried);
+    /**
+     * Process {@link DeadLetter dead-letters} matching the given {@code sequenceId}. Uses the
+     * {@link DeadLetteringEventHandlerInvoker#processIdentifierMatchingSequence(Predicate)} operation for this.
+     *
+     * @param sequenceId The {@link SequenceIdentifier} to process matching {@link DeadLetter dead-letters} for.
+     */
+    protected void processDeadLettersFor(SequenceIdentifier sequenceId) {
+        deadLetteringInvoker.processIdentifierMatchingSequence(identifier -> identifier.equals(sequenceId));
     }
 
-    void retryDeadLettersFor(@SuppressWarnings("SameParameterValue") int times) {
-        for (int i = 0; i < times; i++) {
-            deadLetteringInvoker.retry();
-        }
+    /**
+     * Process any sequence of {@link DeadLetter dead-letters}. Uses the
+     * {@link DeadLetteringEventHandlerInvoker#processAny()} operation for this.
+     */
+    protected void processAnyDeadLetter() {
+        deadLetteringInvoker.processAny();
+    }
+
+    /**
+     * Process {@link DeadLetter dead-letters} matching the given {@code sequenceId} at set intervals of 5ms. Uses the
+     * {@link DeadLetteringEventHandlerInvoker#processIdentifierMatchingSequence(Predicate)} operation for this.
+     *
+     * @param sequenceId The {@link SequenceIdentifier} to process matching {@link DeadLetter dead-letters} for.
+     */
+    protected void processDeadLettersPeriodically(SequenceIdentifier sequenceId) {
+        executor.scheduleWithFixedDelay(() -> processDeadLettersFor(sequenceId), 5, 5, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Process any sequence of {@link DeadLetter dead-letters} at set intervals of 5ms. Uses the
+     * {@link DeadLetteringEventHandlerInvoker#processAny()} operation for this.
+     */
+    protected void processAnyDeadLettersPeriodically() {
+        executor.scheduleWithFixedDelay(this::processAnyDeadLetter, 5, 5, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -278,7 +315,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         assertTrue(deadLetterQueue.contains(sequenceId));
 
-        retryDeadLettersUntilQueueIsEmpty();
+        processDeadLettersFor(sequenceId);
 
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertTrue(eventHandlingComponent.evaluationWasSuccessful(aggregateId)));
@@ -336,7 +373,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         assertTrue(deadLetterQueue.contains(sequenceId));
 
-        retryDeadLettersFor(3);
+        processDeadLettersFor(sequenceId);
 
         assertWithin(1, TimeUnit.SECONDS,
                      () -> assertTrue(eventHandlingComponent.evaluationWasSuccessful(aggregateId)));
@@ -355,7 +392,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(deadLetterQueue.contains(sequenceId));
     }
 
-    // TODO: 29-07-2022 fix this test
     @Test
     void testPublishEventsAndProcessDeadLettersConcurrently() {
         int expectedSuccessfulInitialHandlingCount = 3;
@@ -370,8 +406,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // Starting both is sufficient since both Processor and DeadLettering Invoker have their own thread pool.
         startProcessingEvent();
-        // TODO: 29-07-2022 replace for something that periodically invokes retry
-        retryDeadLettersUntilQueueIsEmpty();
+        processDeadLettersPeriodically(sequenceId);
 
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -385,7 +420,6 @@ public abstract class DeadLetteringEventIntegrationTest {
         // ...the last retry fails.
         DeadLetterableEvent thirdDeadLetter = new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY);
         eventSource.publishMessage(asEventMessage(thirdDeadLetter));
-
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
         assertWithin(2, TimeUnit.SECONDS, () -> {
@@ -402,10 +436,6 @@ public abstract class DeadLetteringEventIntegrationTest {
                      eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
         assertTrue(deadLetterQueue.contains(sequenceId));
-
-        // Release to be certain evaluation starts
-        // TODO: 26-07-22 solve
-//        deadLetterQueue.release(PROCESSING_GROUP);
 
         assertWithin(2, TimeUnit.SECONDS,
                      () -> assertTrue(eventHandlingComponent.evaluationWasSuccessful(aggregateId)));
@@ -424,23 +454,21 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(deadLetterQueue.contains(sequenceId));
     }
 
-    // TODO: 29-07-2022 fix this test
     @Test
     @Timeout(10)
     void testPublishEventsAndProcessDeadLettersConcurrentlyInBulk() throws InterruptedException {
         int immediateSuccessesPerAggregate = 5;
         int failFirstAndThenSucceedPerAggregate = 4;
         int persistentFailingPerAggregate = 1;
-        int expectedSuccessfulEvaluationCount =
-                failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate;
-        int expectedOverallSuccessfulHandlingCount =
-                immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
+        int expectedSuccessfulEvaluationCount = failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate;
+        int expectedOverallSuccessfulHandlingCount = immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
 
         int publishingRuns = 100;
         int totalNumberOfEvents =
                 (immediateSuccessesPerAggregate + failFirstAndThenSucceedPerAggregate) * publishingRuns;
 
         Set<String> aggregateIds = new HashSet<>();
+        Set<String> validatedAggregateIds = new HashSet<>();
         Thread publishingThread = new Thread(() -> {
             for (int i = 0; i < publishingRuns; i++) {
                 String aggregateId = Integer.toString(i);
@@ -453,7 +481,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         });
 
         startProcessingEvent();
-        retryDeadLettersUntilQueueIsEmpty();
+        processAnyDeadLettersPeriodically();
 
         publishingThread.start();
 
@@ -464,10 +492,11 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());
         });
 
-        // Release to be certain evaluation starts
-        // TODO: 26-07-22 solve
-//        deadLetterQueue.release(PROCESSING_GROUP);
         for (String aggregateId : aggregateIds) {
+            if (validatedAggregateIds.contains(aggregateId)) {
+                continue;
+            }
+
             // Validate first try event handling...
             // Successful...
             assertWithin(500, TimeUnit.MILLISECONDS,
@@ -481,9 +510,6 @@ public abstract class DeadLetteringEventIntegrationTest {
                     eventHandlingComponent.initialHandlingWasUnsuccessful(aggregateId)
             ));
             assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
-
-            // Validate existence of Dead Letter...
-            assertTrue(deadLetterQueue.contains(new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP)));
 
             // Validate evaluation event handling...
             // Successful...
@@ -505,8 +531,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertEquals(expectedOverallSuccessfulHandlingCount,
                          eventHandlingComponent.overallSuccessfulHandlingCount(aggregateId));
 
-            // Validate existence of Dead Letter...
-            assertTrue(deadLetterQueue.contains(new EventSequencedIdentifier(aggregateId, PROCESSING_GROUP)));
+            validatedAggregateIds.add(aggregateId);
         }
 
         publishingThread.join();

@@ -258,6 +258,7 @@ public class InMemorySequencedDeadLetterQueue<D extends DeadLetter<? extends Mes
             evict(letter);
         } else if (decision.shouldEnqueue()) {
             requeue(decision.addDiagnostics(letter), decision.enqueueCause().orElse(null));
+            return false;
         }
         return true;
     }

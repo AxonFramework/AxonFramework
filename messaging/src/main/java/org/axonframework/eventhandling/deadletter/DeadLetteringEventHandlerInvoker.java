@@ -28,17 +28,23 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
+import org.axonframework.messaging.deadletter.SequenceIdentifier;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -48,15 +54,23 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * Implementation of an {@link EventHandlerInvoker} utilizing a {@link SequencedDeadLetterQueue} to enqueue
  * {@link EventMessage events} for which handling failed.
  * <p>
- * This dead-lettering {@link EventHandlerInvoker} takes into account that events part of the same sequence (as
- * according to the {@link org.axonframework.eventhandling.async.SequencingPolicy}) are enqueued in order.
+ * Will use an {@link EnqueuePolicy} to deduce whether failed event handling should result in an
+ * {@link SequencedDeadLetterQueue#enqueue(DeadLetter) enqueue operation}. Subsequent events belonging to an already
+ * contained {@link SequenceIdentifier}, according to the
+ * {@link org.axonframework.eventhandling.async.SequencingPolicy}, are also enqueued. This ensures event ordering is
+ * maintained in face of failures.
  * <p>
- * TODO: 28-07-22 update javadoc
+ * This dead lettering invoker provides several operations to {@link #processAny()} process}
+ * {@link DeadLetter dead-letters} it has enqueued. It will ensure the same set of Event Handling Components is invoked
+ * as with regular event handling when processing a dead-letter. These methods will try to process an entire sequence of
+ * dead-letters. Furthermore, these are exposed through the {@link SequencedDeadLetterProcessor} contract.
  *
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker {
+public class DeadLetteringEventHandlerInvoker
+        extends SimpleEventHandlerInvoker
+        implements SequencedDeadLetterProcessor<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -86,10 +100,12 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
     /**
      * Instantiate a builder to construct a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
+     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} when invoked, the
+     * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
      * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
-     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, a {@code processingGroup} name,
-     * and a {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, a
+     * {@code processingGroup} name, and a {@link TransactionManager} are <b>hard requirements</b> and as such should be
+     * provided.
      *
      * @return A builder that can construct a {@link DeadLetteringEventHandlerInvoker}.
      */
@@ -105,9 +121,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         }
 
         EventSequencedIdentifier id = new EventSequencedIdentifier(super.sequenceIdentifier(message), processingGroup);
-        boolean enqueued = transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(
-                id, queueId -> new GenericDeadLetter<>(queueId, message)
-        ));
+        boolean enqueued = transactionManager.fetchInTransaction(
+                () -> queue.enqueueIfPresent(id, queueId -> new GenericDeadLetter<>(queueId, message))
+        );
         if (enqueued) {
             if (logger.isInfoEnabled()) {
                 logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
@@ -149,29 +165,51 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         super.performReset(resetContext);
     }
 
-    /**
-     * TODO: 26-07-22 move to interface?
-     * TODO: 28-07-22 add versions that automatically traverse several letters matching the chosen queueId?
-     *
-     * @return
-     */
-    public boolean retry() {
-        DeadLetteredEventProcessingTask deadLetteredEventProcessingTask = new DeadLetteredEventProcessingTask(
+    @Override
+    public String group() {
+        return processingGroup;
+    }
+
+    @Override
+    public boolean process(Predicate<SequenceIdentifier> sequenceFilter,
+                           Predicate<DeadLetter<EventMessage<?>>> letterFilter) {
+        AtomicReference<SequenceIdentifier> processedSequence = new AtomicReference<>();
+        DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 super.eventHandlers(), enqueuePolicy, transactionManager, listenerInvocationErrorHandler
         );
+
+        boolean firstInvocation = process(sequenceFilter, letterFilter, letter -> {
+            processedSequence.set(letter.sequenceIdentifier());
+            return processingTask.process(letter);
+        });
+
+        if (firstInvocation) {
+            boolean sequencedInvocation;
+            Predicate<SequenceIdentifier> sequencePredicate = id -> Objects.equals(id, processedSequence.get());
+            do {
+                sequencedInvocation = process(sequencePredicate, letter -> true, processingTask::process);
+            } while (sequencedInvocation);
+        }
+        return firstInvocation;
+    }
+
+    private boolean process(Predicate<SequenceIdentifier> sequenceFilter,
+                            Predicate<DeadLetter<EventMessage<?>>> letterFilter,
+                            Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>> processingTask) {
         UnitOfWork<?> uow = new DefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult(() -> queue.process(processingGroup, deadLetteredEventProcessingTask::process))
-                  .getPayload();
+        return uow.executeWithResult(() -> queue.process(sequenceFilter, letterFilter, processingTask)).getPayload();
     }
 
     /**
      * Builder class to instantiate a {@link DeadLetteringEventHandlerInvoker}.
      * <p>
-     * The {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
+     * The {@link EnqueuePolicy} defaults to returning {@link Decisions#enqueue(Throwable)} when invoked, the
+     * {@link ListenerInvocationErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the
      * {@link SequencingPolicy} to a {@link SequentialPerAggregatePolicy}, and {@code allowReset} defaults to
-     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, a {@code processingGroup} name,
-     * and a {@link TransactionManager} are <b>hard requirements</b> and as such should be provided.
+     * {@code false}. Providing at least one Event Handler, a {@link SequencedDeadLetterQueue}, a
+     * {@code processingGroup} name, and a {@link TransactionManager} are <b>hard requirements</b> and as such should be
+     * provided.
      */
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
@@ -203,7 +241,8 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         /**
          * Sets the {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
          *
-         * @param queue The {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
+         * @param queue The {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters
+         *              with.
          * @return The current Builder instance for fluent interfacing.
          */
         public Builder queue(@Nonnull SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> queue) {
@@ -213,11 +252,12 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
         }
 
         /**
-         * Sets the {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a dead-letter should
-         * be added to the {@link SequencedDeadLetterQueue}. Defaults to decide to always enqueue a failed dead-letter.
+         * Sets the {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
+         * {@link DeadLetter dead-letter} should be added to the {@link SequencedDeadLetterQueue}. Defaults to returning
+         * {@link Decisions#enqueue(Throwable)} when invoked for any dead-letter.
          *
          * @param enqueuePolicy The {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
-         *                      dead-letter should be added to the {@link SequencedDeadLetterQueue}.
+         *                      {@link DeadLetter dead-letter} should be added to the {@link SequencedDeadLetterQueue}.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder enqueuePolicy(EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy) {
@@ -242,8 +282,9 @@ public class DeadLetteringEventHandlerInvoker extends SimpleEventHandlerInvoker 
 
         /**
          * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided
-         * {@link SequencedDeadLetterQueue}. If set to {@code true}, {@link SequencedDeadLetterQueue#clear(String)} will be invoked upon a
-         * {@link #performReset()}/{@link #performReset(Object)} invocation. Defaults to {@code false}.
+         * {@link SequencedDeadLetterQueue}. If set to {@code true}, {@link SequencedDeadLetterQueue#clear(String)} will
+         * be invoked upon a {@link #performReset()}/{@link #performReset(Object)} invocation. Defaults to
+         * {@code false}.
          *
          * @param allowReset A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports resets of
          *                   the provided {@link SequencedDeadLetterQueue}.

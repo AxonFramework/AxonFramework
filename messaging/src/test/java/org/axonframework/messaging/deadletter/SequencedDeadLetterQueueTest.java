@@ -408,7 +408,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
     }
 
     @Test
-    void testProcessReturnsTrueAndRequeuesTheLetter() {
+    void testProcessReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<D> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -426,7 +426,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
                 generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
 
         boolean result = testSubject.process(testTask);
-        assertTrue(result);
+        assertFalse(result);
         assertLetter(testLetter, resultLetter.get());
 
         Iterator<D> resultLetters = testSubject.deadLetterSequence(testId).iterator();
@@ -577,7 +577,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
     }
 
     @Test
-    void testProcessForGroupReturnsTrueAndRequeuesTheLetter() {
+    void testProcessForGroupReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<D> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -597,7 +597,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
                 generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
 
         boolean result = testSubject.process(testId.group(), testTask);
-        assertTrue(result);
+        assertFalse(result);
         assertLetter(testLetter, resultLetter.get());
 
         Iterator<D> resultLetters = testSubject.deadLetterSequence(testId).iterator();
@@ -725,7 +725,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
     }
 
     @Test
-    void testProcessForIdPredicateReturnsTrueAndRequeuesTheLetter() {
+    void testProcessForIdPredicateReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<D> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -746,7 +746,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
                 generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
 
         boolean result = testSubject.process(sequenceId -> sequenceId.equals(testId), testTask);
-        assertTrue(result);
+        assertFalse(result);
         assertLetter(testLetter, resultLetter.get());
 
         Iterator<D> resultLetters = testSubject.deadLetterSequence(testId).iterator();
@@ -889,7 +889,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
     }
 
     @Test
-    void testProcessForIdAndLetterPredicateReturnsTrueAndRequeuesTheLetter() {
+    void testProcessForIdAndLetterPredicateReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<D> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -913,7 +913,7 @@ public abstract class SequencedDeadLetterQueueTest<I extends SequenceIdentifier,
         boolean result = testSubject.process(sequenceId -> sequenceId.group().equals(testGroup),
                                              letter -> letter.message().equals(testLetter.message()),
                                              testTask);
-        assertTrue(result);
+        assertFalse(result);
         assertLetter(testLetter, resultLetter.get());
 
         Iterator<D> resultLetters = testSubject.deadLetterSequence(testId).iterator();
