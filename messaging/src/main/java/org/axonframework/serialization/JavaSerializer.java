@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -70,7 +71,7 @@ public class JavaSerializer implements Serializer {
 
     @SuppressWarnings({"NonSerializableObjectPassedToObjectStream", "ThrowFromFinallyBlock"})
     @Override
-    public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
+    public <T> SerializedObject<T> serialize(Object instance, @Nonnull Class<T> expectedType) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -97,13 +98,13 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
+    public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
         return converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+    public <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject) {
         if (SerializedType.emptyType().equals(serializedObject.getType())) {
             return null;
         }
@@ -125,7 +126,7 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(SerializedType type) {
+    public Class classForType(@Nonnull SerializedType type) {
         if (SerializedType.emptyType().equals(type)) {
             return Void.class;
         }
@@ -190,7 +191,7 @@ public class JavaSerializer implements Serializer {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

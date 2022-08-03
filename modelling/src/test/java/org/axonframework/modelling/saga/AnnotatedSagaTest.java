@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.jupiter.api.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.annotation.Nonnull;
+import java.util.Set;
 
 import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWith;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,15 +66,22 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga_AssociationPropertyNotExistingInPayload() {
+    void testInvokeSagaAssociationPropertyNotExistingInPayload() {
+        AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
         assertThrows(
                 AxonConfigurationException.class,
-                () -> new AnnotationSagaMetaModelFactory().modelOf(SagaAssociationPropertyNotExistingInPayload.class)
+                () -> testSubject.modelOf(SagaAssociationPropertyNotExistingInPayload.class)
         );
     }
 
     @Test
-    void testInvokeSaga_MetaDataAssociationResolver() {
+    void testInvokeSagaAssociationPropertyEmpty() {
+        AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
+        assertThrows(AxonConfigurationException.class, () -> testSubject.modelOf(SagaAssociationPropertyEmpty.class));
+    }
+
+    @Test
+    void testInvokeSagaMetaDataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
@@ -83,7 +92,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga_ResolverWithoutNoArgConstructor() {
+    void testInvokeSagaResolverWithoutNoArgConstructor() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> new AnnotationSagaMetaModelFactory().modelOf(SagaUsingResolverWithoutNoArgConstructor.class)
@@ -91,7 +100,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_BeanProperty() {
+    void testEndedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -102,7 +111,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_WhenAssociationIsRemoved() {
+    void testEndedAfterInvocationWhenAssociationIsRemoved() {
         StubAnnotatedSaga testSaga = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         AnnotatedSaga<StubAnnotatedSaga> testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
@@ -119,7 +128,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocation_UniformAccessPrinciple() {
+    void testEndedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -141,6 +150,24 @@ class AnnotatedSagaTest {
     @Test
     void testPrepareResetWithResetContextThrowsResetNotSupportedException() {
         assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context"));
+    }
+
+    @Test
+    void testLifecycleAssociationValues() {
+        testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
+        testSubject.execute(() -> {
+            Set<AssociationValue> associationValues = SagaLifecycle.associationValues();
+            assertEquals(1, associationValues.size());
+            assertTrue(associationValues.contains(new AssociationValue("propertyName", "id")));
+        });
+
+        testSubject.doAssociateWith(new AssociationValue("someOtherProperty", "3"));
+        testSubject.execute(() -> {
+            Set<AssociationValue> associationValues = SagaLifecycle.associationValues();
+            assertEquals(2, associationValues.size());
+            assertTrue(associationValues.contains(new AssociationValue("propertyName", "id")));
+            assertTrue(associationValues.contains(new AssociationValue("someOtherProperty", "3")));
+        });
     }
 
     @SuppressWarnings("unused")
@@ -200,6 +227,14 @@ class AnnotatedSagaTest {
         }
     }
 
+    private static class SagaAssociationPropertyEmpty {
+
+        @SuppressWarnings("unused")
+        @SagaEventHandler(associationProperty = "")
+        public void handleStubDomainEvent(EventWithoutProperties event) {
+        }
+    }
+
     private static class RegularEvent {
 
         private final String propertyName;
@@ -247,13 +282,13 @@ class AnnotatedSagaTest {
         }
 
         @Override
-        public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
+        public <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler) {
 
         }
 
         @Override
-        public <T> Object resolve(String associationPropertyName, EventMessage<?> message,
-                                  MessageHandlingMember<T> handler) {
+        public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+                                  @Nonnull MessageHandlingMember<T> handler) {
             return null;
         }
     }

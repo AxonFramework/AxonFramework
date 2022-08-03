@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.axonframework.serialization;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
- * Interface describing a serialization mechanism. Implementations can serialize objects of given type {@code T}
- * to an output stream and read the object back in from an input stream.
+ * Interface describing a serialization mechanism. Implementations can serialize objects of given type {@code T} to an
+ * output stream and read the object back in from an input stream.
  *
  * @author Allard Buijze
  * @since 1.2
@@ -37,7 +40,7 @@ public interface Serializer {
      * @param <T>                    The expected data type representing the serialized object
      * @return the instance representing the serialized object.
      */
-    <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
+    <T> SerializedObject<T> serialize(@Nullable Object object, @Nonnull Class<T> expectedRepresentation);
 
     /**
      * Indicates whether this Serializer is capable of serializing to the given {@code expectedRepresentation}.
@@ -52,7 +55,7 @@ public interface Serializer {
      * @param <T>                    The type of data a Serialized Object should contain
      * @return {@code true} if the {@code expectedRepresentation} is supported, otherwise {@code false}.
      */
-    <T> boolean canSerializeTo(Class<T> expectedRepresentation);
+    <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation);
 
     /**
      * Deserializes the first object read from the given {@code bytes}. The {@code bytes} are not consumed
@@ -65,7 +68,7 @@ public interface Serializer {
      *
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
-    <S, T> T deserialize(SerializedObject<S> serializedObject);
+    <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject);
 
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized
@@ -77,16 +80,16 @@ public interface Serializer {
      * @param type The type identifier of the object
      * @return the Class representing the type of the serialized Object
      */
-    Class classForType(SerializedType type);
+    Class classForType(@Nonnull SerializedType type);
 
     /**
-     * Returns the type identifier for the given class. This is the type identifier of the Serialized object as
-     * returned by {@link #serialize(Object, Class)}.
+     * Returns the type identifier for the given class. This is the type identifier of the Serialized object as returned
+     * by {@link #serialize(Object, Class)}.
      *
      * @param type Class representing the type of the serializable Object.
      * @return The type identifier of the object
      */
-    SerializedType typeForClass(Class type);
+    SerializedType typeForClass(@Nullable Class type);
 
     /**
      * Returns the {@link Converter} used by this Serializer to convert between serialized representations. Generally,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of EventStorageEngine that delegates to another implementation, while filtering
@@ -60,17 +61,17 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void appendEvents(EventMessage<?>... events) {
+    public void appendEvents(@Nonnull EventMessage<?>... events) {
         delegate.appendEvents(Arrays.stream(events).filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void appendEvents(List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
         delegate.appendEvents(events.stream().filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void storeSnapshot(DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         delegate.storeSnapshot(snapshot);
     }
 
@@ -80,22 +81,22 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public DomainEventStream readEvents(String aggregateIdentifier) {
+    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
         return delegate.readEvents(aggregateIdentifier);
     }
 
     @Override
-    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
         return delegate.readEvents(aggregateIdentifier, firstSequenceNumber);
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
+    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
         return delegate.readSnapshot(aggregateIdentifier);
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
         return delegate.lastSequenceNumberFor(aggregateIdentifier);
     }
 
@@ -110,7 +111,7 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         return delegate.createTokenAt(dateTime);
     }
 }

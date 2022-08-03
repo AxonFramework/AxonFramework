@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.DomainEventSequenceAware;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.LockModeType;
@@ -46,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link GenericJpaRepository}.
+ *
  * @author Allard Buijze
  */
 class GenericJpaRepositoryTest {
@@ -229,6 +233,26 @@ class GenericJpaRepositoryTest {
         verify(mockEntityManager, never()).flush();
     }
 
+    @Test
+    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
+    }
+
+    @Test
+    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
+    }
+
     private class StubJpaAggregate {
 
         @Id
@@ -269,7 +293,7 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void publish(List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
             super.publish(events);
         }

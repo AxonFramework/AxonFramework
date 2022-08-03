@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
@@ -28,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
@@ -40,7 +42,7 @@ import java.util.stream.Stream;
  * @since 3.1
  */
 public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<?, ?>>,
-                                  MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
+        MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
 
     /**
      * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
@@ -51,7 +53,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param handler      a handler that implements the query
      * @return a handle to un-subscribe the query handler
      */
-    <R> Registration subscribe(String queryName, Type responseType, MessageHandler<? super QueryMessage<?, R>> handler);
+    <R> Registration subscribe(@Nonnull String queryName, @Nonnull Type responseType,
+                               @Nonnull MessageHandler<? super QueryMessage<?, R>> handler);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
@@ -69,7 +72,25 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <R>   the response type of the query
      * @return a CompletableFuture that resolves when the response is available
      */
-    <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
+    <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query);
+
+    /**
+     * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until
+     * there is a subscription to the result. The query is dispatched to a single query handler. Implementations may opt
+     * for invoking several query handlers and then choosing a response from single one for performance or resilience
+     * reasons.
+     * <p>
+     * When no handlers are available that can answer the given {@code query}, the return Publisher will be completed
+     * with a {@link NoHandlerForQueryException}.
+     *
+     * @param query the streaming query message
+     * @param <Q>   the payload type of the streaming query
+     * @param <R>   the response type of the streaming query
+     * @return a Publisher of responses
+     */
+    default <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
+        throw new UnsupportedOperationException("Streaming query is not supported by this QueryBus.");
+    }
 
     /**
      * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s
@@ -89,7 +110,8 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <R>     the response type of the query
      * @return stream of query results
      */
-    <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit);
+    <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> query, long timeout,
+                                                         @Nonnull TimeUnit unit);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
@@ -113,7 +135,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return query result containing initial result and incremental updates
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query
     ) {
         return subscriptionQuery(query, Queues.SMALL_BUFFER_SIZE);
     }
@@ -143,12 +165,13 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @param <Q>              the payload type of the query
      * @param <I>              the response type of the query
      * @param <U>              the incremental response types of the query
-     * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage,int)}}
      * @return query result containing initial result and incremental updates
+     * @deprecated in favour of using {{@link #subscriptionQuery(SubscriptionQueryMessage, int)}}
      */
     @Deprecated
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure,
+            int updateBufferSize
     ) {
         return subscriptionQuery(query, updateBufferSize);
     }
@@ -175,18 +198,13 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
      * @return query result containing initial result and incremental updates
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
     ) {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
 
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {
-                return MonoWrapper.<QueryResponseMessage<I>>create(monoSinkWrapper -> query(query)
-                        .thenAccept(monoSinkWrapper::success)
-                        .exceptionally(t -> {
-                            monoSinkWrapper.error(t);
-                            return null;
-                        })).getMono();
+                return Mono.fromFuture(() -> query(query));
             }
 
             @Override

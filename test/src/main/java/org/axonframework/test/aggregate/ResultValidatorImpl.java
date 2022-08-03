@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -44,6 +45,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -265,14 +267,61 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                        && matcher.matches(deadlineMessage)
+        ));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
+    }
+
+    @Override
     public ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
-        deadlineManagerValidator.assertDeadlinesMetMatching(matcher);
+        return expectTriggeredDeadlinesMatching(matcher);
+    }
+
+    @Override
+    public ResultValidator<T> expectTriggeredDeadlinesMatching(
+            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+    ) {
+        deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
         return this;
     }
 
     @Override
     public ResultValidator<T> expectDeadlinesMet(Object... expected) {
-        deadlineManagerValidator.assertDeadlinesMet(expected);
+        return expectTriggeredDeadlines(expected);
+    }
+
+    @Override
+    public ResultValidator<T> expectTriggeredDeadlines(Object... expected) {
+        deadlineManagerValidator.assertTriggeredDeadlines(expected);
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
+        deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
+        deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
         return this;
     }
 
@@ -388,6 +437,40 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
+    public ResultValidator<T> expectExceptionDetails(Object exceptionDetails) {
+        return expectExceptionDetails(CoreMatchers.equalTo(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails) {
+        return expectExceptionDetails(instanceOf(exceptionDetails));
+    }
+
+    @Override
+    public ResultValidator<T> expectExceptionDetails(Matcher<?> exceptionDetailsMatcher) {
+        Object actualDetails = HandlerExecutionException.resolveDetails(actualException).orElse(null);
+        if (exceptionDetailsMatcher == null) {
+            StringDescription emptyMatcherDescription = new StringDescription(
+                    new StringBuilder("Given exception details matcher is null!"));
+            reporter.reportWrongExceptionDetails(actualDetails, emptyMatcherDescription);
+            return this;
+        }
+        if (actualException == null) {
+            StringDescription description = new StringDescription(new StringBuilder(
+                    "an exception with details matching "));
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            return this;
+        }
+        if (!exceptionDetailsMatcher.matches(actualDetails)) {
+            StringDescription description = new StringDescription();
+            exceptionDetailsMatcher.describeTo(description);
+            reporter.reportWrongExceptionDetails(actualDetails, description);
+        }
+        return this;
+    }
+
+    @Override
     public ResultValidator<T> expectMarkedDeleted() {
         if (!state.get().isDeleted()) {
             reporter.reportIncorrectDeletedState(true);
@@ -406,7 +489,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                         @Nonnull CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
             actualException = commandResultMessage.exceptionResult();
         } else {

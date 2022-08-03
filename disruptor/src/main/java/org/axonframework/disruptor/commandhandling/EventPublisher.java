@@ -50,8 +50,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes the EventPublisher to publish Events to the given {@code eventStore} and {@code eventBus}
-     * for aggregate of given {@code aggregateType}.
+     * Initializes the EventPublisher to publish Events to the given {@code eventStore} and {@code eventBus} for
+     * aggregate of given {@code aggregateType}.
      *
      * @param executor              The executor which schedules response reporting
      * @param transactionManager    The transaction manager that manages the transaction around event storage and
@@ -59,8 +59,10 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
      * @param segmentId             The ID of the segment this publisher should handle
      */
-    public EventPublisher(Executor executor, TransactionManager transactionManager,
-                          RollbackConfiguration rollbackConfiguration, int segmentId) {
+    public EventPublisher(Executor executor,
+                          TransactionManager transactionManager,
+                          RollbackConfiguration rollbackConfiguration,
+                          int segmentId) {
         this.executor = executor;
         this.transactionManager = transactionManager;
         this.rollbackConfiguration = rollbackConfiguration;
@@ -89,7 +91,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
         executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(), asCommandResultMessage(
                 new AggregateStateCorruptedException(
@@ -103,7 +105,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
              .ifPresent(entry::rollback);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void processPublication(CommandHandlingEntry entry,
                                     DisruptorUnitOfWork<CommandMessage<?>> unitOfWork,
                                     String aggregateIdentifier) {
@@ -184,7 +186,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 aggregateIdentifier,
                 format("Aggregate %s state corrupted. "
                                + "Blacklisting the aggregate until a reset message has been received",
-                       aggregateIdentifier), cause);
+                       aggregateIdentifier),
+                cause
+        );
         if (unitOfWork.isActive()) {
             unitOfWork.rollback(exceptionResult);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
@@ -342,7 +343,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *                              execution fails
      * @return The result of the task wrapped in Result Message
      */
-    <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration);
+    <R> ResultMessage<R> executeWithResult(Callable<R> task, @Nonnull RollbackConfiguration rollbackConfiguration);
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task

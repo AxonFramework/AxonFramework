@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
@@ -44,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -61,7 +62,7 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
  * @author Steven van Beelen
  * @since 3.3
  */
-public class SimpleDeadlineManager extends AbstractDeadlineManager {
+public class SimpleDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
     private static final String THREAD_FACTORY_GROUP_NAME = "deadlineManager";
@@ -103,10 +104,10 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(Instant triggerDateTime,
-                           String deadlineName,
+    public String schedule(@Nonnull Instant triggerDateTime,
+                           @Nonnull String deadlineName,
                            Object messageOrPayload,
-                           ScopeDescriptor deadlineScope) {
+                           @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
@@ -126,7 +127,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelSchedule(String deadlineName, String scheduleId) {
+    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         runOnPrepareCommitOrNow(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -136,7 +137,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAll(String deadlineName) {
+    public void cancelAll(@Nonnull String deadlineName) {
         runOnPrepareCommitOrNow(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
@@ -145,7 +146,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
         runOnPrepareCommitOrNow(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -161,13 +162,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+    @Override
     public void shutdown() {
         scheduledExecutorService.shutdown();
     }
@@ -178,7 +178,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         private final ScopeDescriptor deadlineScope;
         private final String deadlineId;
 
-        private DeadlineId(String deadlineName, ScopeDescriptor deadlineScope, String deadlineId) {
+        private DeadlineId(@Nonnull String deadlineName, @Nonnull ScopeDescriptor deadlineScope,
+                           @Nonnull String deadlineId) {
             this.deadlineScope = deadlineScope;
             this.deadlineId = deadlineId;
             this.deadlineName = deadlineName;
@@ -241,29 +242,29 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         /**
-         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
-         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
-         * right Scope to trigger a deadline in.
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of {@link
+         * org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the right
+         * Scope to trigger a deadline in.
          *
-         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
-         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right {@link
+         *                           org.axonframework.messaging.Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
+        public Builder scopeAwareProvider(@Nonnull ScopeAwareProvider scopeAwareProvider) {
             assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
             this.scopeAwareProvider = scopeAwareProvider;
             return this;
         }
 
         /**
-         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a
-         * {@link Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
+         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a {@link
+         * Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
          *
          * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
          *                                 deadlines
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+        public Builder scheduledExecutorService(@Nonnull ScheduledExecutorService scheduledExecutorService) {
             assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
             this.scheduledExecutorService = scheduledExecutorService;
             return this;
@@ -276,7 +277,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;

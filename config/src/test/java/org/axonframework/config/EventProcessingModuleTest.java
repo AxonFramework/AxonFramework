@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -68,6 +70,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -158,10 +161,16 @@ class EventProcessingModuleTest {
                                                                                 .registerEventHandler(c -> new TrackingEventHandler()))
                                                        .start();
 
-        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("subscribing").isPresent());
-        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("subscribing").map(p -> p instanceof SubscribingEventProcessor).orElse(false));
-        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("tracking").isPresent());
-        assertTrue(configuration.eventProcessingConfiguration().eventProcessor("tracking").map(p -> p instanceof SubscribingEventProcessor).orElse(false));
+        EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
+
+        assertTrue(processingConfig.eventProcessor("subscribing").isPresent());
+        assertTrue(processingConfig.eventProcessor("subscribing")
+                                   .map(p -> p instanceof SubscribingEventProcessor)
+                                   .orElse(false));
+        assertTrue(processingConfig.eventProcessor("tracking").isPresent());
+        assertTrue(processingConfig.eventProcessor("tracking")
+                                   .map(p -> p instanceof SubscribingEventProcessor)
+                                   .orElse(false));
     }
 
     @Test
@@ -235,7 +244,9 @@ class EventProcessingModuleTest {
     void testTypeAssignmentWithCustomDefault() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", String.class::equals)
-                  .byDefaultAssignHandlerTypesTo(t -> Object.class.equals(t) ? "obj" : t.getSimpleName() + "CustomProcessor")
+                  .byDefaultAssignHandlerTypesTo(
+                          t -> Object.class.equals(t) ? "obj" : t.getSimpleName() + "CustomProcessor"
+                  )
                   .registerSaga(Object.class)
                   .registerSaga(ConcurrentMap.class)
                   .registerSaga(String.class)
@@ -290,10 +301,15 @@ class EventProcessingModuleTest {
                   .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
         Configuration config = configurer.start();
 
-        AbstractEventProcessor defaultProcessor =
-                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class).get();
-        AbstractEventProcessor specialProcessor =
-                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class).get();
+        Optional<AbstractEventProcessor> defaultProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class);
+        assertTrue(defaultProcessorOptional.isPresent());
+        AbstractEventProcessor defaultProcessor = defaultProcessorOptional.get();
+
+        Optional<AbstractEventProcessor> specialProcessorOptional =
+                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class);
+        assertTrue(specialProcessorOptional.isPresent());
+        AbstractEventProcessor specialProcessor = specialProcessorOptional.get();
 
         MultiEventHandlerInvoker defaultInvoker =
                 getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
@@ -321,9 +337,10 @@ class EventProcessingModuleTest {
         Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
-        assertEquals(3,
-                     config.eventProcessingConfiguration().eventProcessor("default").get()
-                           .getHandlerInterceptors().size());
+        Optional<EventProcessor> defaultProcessor = config.eventProcessingConfiguration()
+                                                          .eventProcessor("default");
+        assertTrue(defaultProcessor.isPresent());
+        assertEquals(3, defaultProcessor.get().getHandlerInterceptors().size());
     }
 
     @Test
@@ -440,7 +457,8 @@ class EventProcessingModuleTest {
         configurer.registerEventHandler(c -> new TrackingEventHandler());
 
         Configuration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
+                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
         assertEquals(mock, processor.get().getMessageSource());
     }
@@ -455,7 +473,8 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> new TrackingEventHandler());
 
         Configuration config = configurer.start();
-        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
+        Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
+                                                           .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
         assertEquals(mock2, processor.get().getMessageSource());
     }
@@ -468,7 +487,8 @@ class EventProcessingModuleTest {
         configurer.registerEventHandler(c -> new SubscribingEventHandler());
 
         Configuration config = configurer.start();
-        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("subscribing");
+        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
+                                                              .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
         assertEquals(mock, processor.get().getMessageSource());
     }
@@ -483,7 +503,8 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> new SubscribingEventHandler());
 
         Configuration config = configurer.start();
-        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration().eventProcessor("subscribing");
+        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
+                                                              .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
         assertEquals(mock2, processor.get().getMessageSource());
     }
@@ -760,7 +781,7 @@ class EventProcessingModuleTest {
     @Test
     void testConfigurePooledStreamingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
         String testName = "pooled-streaming";
-        // This configurer does no contain an EventStore or other StreamableMessageSource.
+        // This configurer does not contain an EventStore or other StreamableMessageSource.
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
@@ -867,7 +888,43 @@ class EventProcessingModuleTest {
 
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors()
-                  .registerPooledStreamingEventProcessorConfiguration((config, builder) -> builder.maxClaimedSegments(testCapacity))
+                  .registerPooledStreamingEventProcessorConfiguration(
+                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
+                  )
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .byDefaultAssignTo("default")
+                  .registerEventHandler(config -> testHandler);
+        Configuration config = configurer.start();
+
+        Optional<PooledStreamingEventProcessor> optionalResult =
+                config.eventProcessingConfiguration()
+                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        PooledStreamingEventProcessor result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+
+        optionalResult = config.eventProcessingConfiguration()
+                               .eventProcessor("default", PooledStreamingEventProcessor.class);
+
+        assertTrue(optionalResult.isPresent());
+        result = optionalResult.get();
+        assertEquals(testCapacity, result.maxCapacity());
+        assertEquals(mockedSource, getField("messageSource", result));
+    }
+
+    @Test
+    void testUsingPooledStreamingEventProcessorWithConfigurationIsUsedDuringAllPsepConstructions(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
+    ) throws NoSuchFieldException, IllegalAccessException {
+        String testName = "pooled-streaming";
+        int testCapacity = 24;
+        Object testHandler = new Object();
+
+        configurer.eventProcessing()
+                  .usingPooledStreamingEventProcessors((config, builder) -> builder.maxClaimedSegments(testCapacity))
                   .configureDefaultStreamableMessageSource(config -> mockedSource)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
@@ -994,6 +1051,55 @@ class EventProcessingModuleTest {
         assertEquals(100, (int) getField("batchSize", result));
     }
 
+    @Test
+    void testDefaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
+        String testName = "pooled-streaming";
+        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+
+        CountDownLatch transactionCommitted = new CountDownLatch(1);
+        TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDefaultTransactionManager(c -> defaultTransactionManager);
+        Configuration config = configurer.start();
+
+        try {
+            config.eventBus().publish(testEvent);
+            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    void testDefaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
+        String testName = "pooled-streaming";
+        GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
+
+        TransactionManager defaultTransactionManager = spy(TransactionManager.class);
+        CountDownLatch transactionCommitted = new CountDownLatch(1);
+        TransactionManager processorSpecificTransactionManager = new StubTransactionManager(transactionCommitted);
+
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .eventProcessing()
+                  .registerPooledStreamingEventProcessor(testName)
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerDefaultTransactionManager(c -> defaultTransactionManager)
+                  .registerTransactionManager(testName, c -> processorSpecificTransactionManager);
+        Configuration config = configurer.start();
+
+        try {
+            config.eventBus().publish(testEvent);
+            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+        verifyNoInteractions(defaultTransactionManager);
+    }
+
     private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
         return getField(object.getClass(), fieldName, object);
     }
@@ -1013,14 +1119,17 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerSubscribingEventProcessor("subscribing")
                   .registerTrackingEventProcessor("tracking")
-                  .assignHandlerInstancesMatching("subscribing",
-                                                  eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
-                  .assignHandlerInstancesMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
+                  .assignHandlerInstancesMatching(
+                          "subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class)
+                  )
+                  .assignHandlerInstancesMatching(
+                          "tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class)
+                  )
                   .registerEventHandler(c -> new SubscribingEventHandler())
                   .registerEventHandler(c -> new TrackingEventHandler())
                   .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
                       @Override
-                      public int[] fetchSegments(String processorName) {
+                      public int[] fetchSegments(@Nonnull String processorName) {
                           tokenStoreInvocation.countDown();
                           return super.fetchSegments(processorName);
                       }
@@ -1056,7 +1165,8 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+        public Registration registerHandlerInterceptor(
+                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
             interceptors.add(interceptor);
             return () -> interceptors.remove(interceptor);
         }
@@ -1099,9 +1209,9 @@ class EventProcessingModuleTest {
     }
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
-
         @Override
-        public Object handle(UnitOfWork<? extends EventMessage<?>> unitOfWork, InterceptorChain interceptorChain)
+        public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
+                             @Nonnull InterceptorChain interceptorChain)
                 throws Exception {
             return interceptorChain.proceed();
         }
@@ -1162,13 +1272,14 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public void handleError(ErrorContext errorContext) {
+        public void handleError(@Nonnull ErrorContext errorContext) {
             errorCounter.incrementAndGet();
             latch.countDown();
         }
 
         @Override
-        public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
+        public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                            @Nonnull EventMessageHandler eventHandler) {
             errorCounter.incrementAndGet();
             latch.countDown();
         }
@@ -1186,5 +1297,29 @@ class EventProcessingModuleTest {
     @ProcessingGroup("my-saga-processing-group")
     private static class CustomSaga {
 
+    }
+
+    private static class StubTransactionManager implements TransactionManager {
+
+        private final CountDownLatch transactionCommitted;
+
+        private StubTransactionManager(CountDownLatch transactionCommitted) {
+            this.transactionCommitted = transactionCommitted;
+        }
+
+        @Override
+        public Transaction startTransaction() {
+            return new Transaction() {
+                @Override
+                public void commit() {
+                    transactionCommitted.countDown();
+                }
+
+                @Override
+                public void rollback() {
+
+                }
+            };
+        }
     }
 }

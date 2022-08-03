@@ -30,12 +30,9 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.jupiter.api.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Iterator;
 import java.util.List;
@@ -48,25 +45,13 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link EmbeddedEventStore}.
+ *
  * @author Rene de Waele
  */
 class EmbeddedEventStoreTest {
@@ -221,7 +206,7 @@ class EmbeddedEventStoreTest {
         reset(storageEngine);
         assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> firstEvent = stream.nextAvailable();
-        verifyZeroInteractions(storageEngine);
+        verifyNoInteractions(storageEngine);
         testSubject.publish(createEvent(CACHED_EVENTS), createEvent(CACHED_EVENTS + 1));
         Thread.sleep(100); //allow the cleaner thread to evict the consumer
         reset(storageEngine);
@@ -251,11 +236,13 @@ class EmbeddedEventStoreTest {
     @Test
     void testStreamEventsShouldNotReturnDuplicateTokens() throws InterruptedException {
         newTestSubject(0, 1000, 1000, OPTIMIZE_EVENT_CONSUMPTION);
+        //noinspection rawtypes
         Stream mockStream = mock(Stream.class);
-        Iterator mockIterator = mock(Iterator.class);
+        //noinspection unchecked
+        Iterator<GenericTrackedEventMessage<String>> mockIterator = mock(Iterator.class);
         when(mockStream.iterator()).thenReturn(mockIterator);
-        when(storageEngine.readEvents(any(TrackingToken.class), eq(false)))
-                .thenReturn(mockStream);
+        //noinspection unchecked
+        when(storageEngine.readEvents(any(TrackingToken.class), eq(false))).thenReturn(mockStream);
         when(mockIterator.hasNext()).thenAnswer(new SynchronizedBooleanAnswer(false))
                                     .thenAnswer(new SynchronizedBooleanAnswer(true));
         when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1),
@@ -334,9 +321,8 @@ class EmbeddedEventStoreTest {
         DefaultUnitOfWork<Message<?>> innerUoW = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(4, events.size()));
 
-        Consumer<UnitOfWork<Message<?>>> assertCorrectEventCount = uow -> {
-            assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
-        };
+        Consumer<UnitOfWork<Message<?>>> assertCorrectEventCount =
+                uow -> assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
 
         innerUoW.onPrepareCommit(assertCorrectEventCount);
         innerUoW.afterCommit(assertCorrectEventCount);
@@ -401,7 +387,7 @@ class EmbeddedEventStoreTest {
         }
 
         // No tailing-consumer Producer thread has ever been created
-        verifyZeroInteractions(threadFactory);
+        verifyNoInteractions(threadFactory);
     }
 
     @Test

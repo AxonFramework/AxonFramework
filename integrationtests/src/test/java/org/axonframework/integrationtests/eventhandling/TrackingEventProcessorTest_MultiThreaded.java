@@ -422,6 +422,21 @@ class TrackingEventProcessorTest_MultiThreaded {
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 1));
     }
 
+    @Test
+    void testProcessorIncrementAndDecrementCorrectly() throws InterruptedException {
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                              .andInitialSegmentsCount(4));
+        testSubject.start();
+        // It's an edge case, but locally this successfully fails with the previous implementation.
+        // It would before prevent to increase available threads because the launcher was running.
+        testSubject.shutDown();
+        testSubject.start();
+        testSubject.shutDown();
+        testSubject.start();
+        Thread.sleep(200);
+        assertEquals(2, testSubject.activeProcessorThreads());
+    }
+
     // Utility to add up acknowledged messages by Thread (worker) name and assertions facilities.
     class AcknowledgeByThread {
 

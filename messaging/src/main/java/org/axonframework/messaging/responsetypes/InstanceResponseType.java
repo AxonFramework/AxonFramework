@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,9 @@ package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -27,10 +30,9 @@ import java.util.concurrent.Future;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 
 /**
- * A {@link ResponseType} implementation that will match with query
- * handlers which return a single instance of the expected response type. If matching succeeds, the
- * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
- * {@code R}.
+ * A {@link ResponseType} implementation that will match with query handlers which return a single instance of the
+ * expected response type. If matching succeeds, the {@link ResponseType#convert(Object)} function will be called, which
+ * will cast the query handler it's response to {@code R}.
  *
  * @param <R> The response type which will be matched against and converted to
  * @author Steven van Beelen
@@ -39,9 +41,8 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class InstanceResponseType<R> extends AbstractResponseType<R> {
 
     /**
-     * Instantiate a {@link InstanceResponseType} with the given
-     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
-     * converted to.
+     * Instantiate a {@link InstanceResponseType} with the given {@code expectedResponseType} as the type to be matched
+     * against and to which the query response should be converted to.
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
@@ -61,8 +62,30 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
+        Type unwrapped;
+        if (projectReactorOnClassPath()) {
+            unwrapped = unwrapIfType(responseType,
+                                     Future.class,
+                                     Optional.class,
+                                     Flux.class,
+                                     Mono.class,
+                                     Publisher.class);
+        } else {
+            unwrapped = unwrapIfType(responseType, Future.class, Optional.class);
+        }
         return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
+    }
+
+    @Override
+    public R convert(Object response) {
+        if (response != null && projectReactorOnClassPath()) {
+            if (Mono.class.isAssignableFrom(response.getClass())) {
+                return (R) ((Mono) response).block();
+            } else if (Publisher.class.isAssignableFrom(response.getClass())) {
+                return (R) Mono.from((Publisher) response).block();
+            }
+        }
+        return super.convert(response);
     }
 
     @SuppressWarnings("unchecked")

@@ -35,8 +35,8 @@ class MultiEventHandlerInvokerTest {
 
     private MultiEventHandlerInvoker testSubject;
 
-    private EventHandlerInvoker mockedEventHandlerInvokerOne = mock(EventHandlerInvoker.class);
-    private EventHandlerInvoker mockedEventHandlerInvokerTwo = mock(EventHandlerInvoker.class);
+    private final EventHandlerInvoker mockedEventHandlerInvokerOne = mock(EventHandlerInvoker.class);
+    private final EventHandlerInvoker mockedEventHandlerInvokerTwo = mock(EventHandlerInvoker.class);
 
     private EventMessage<String> testEventMessage;
     private EventMessage<String> replayMessage;
@@ -69,7 +69,7 @@ class MultiEventHandlerInvokerTest {
         testSubject.canHandle(testEventMessage, testSegment);
 
         verify(mockedEventHandlerInvokerOne).canHandle(testEventMessage, testSegment);
-        verifyZeroInteractions(mockedEventHandlerInvokerTwo);
+        verifyNoInteractions(mockedEventHandlerInvokerTwo);
     }
 
     @Test

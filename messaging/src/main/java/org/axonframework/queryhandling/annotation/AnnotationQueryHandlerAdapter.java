@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link MessageHandler}
@@ -87,7 +88,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public Registration subscribe(QueryBus queryBus) {
+    public Registration subscribe(@Nonnull QueryBus queryBus) {
         Collection<Registration> registrations = model.getHandlers(target.getClass())
                                                       .map(handler -> handler.unwrap(QueryHandlingMember.class))
                                                       .filter(Optional::isPresent)
@@ -111,9 +112,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message))
                      .findFirst()
-                     .orElseThrow(() -> new NoHandlerForQueryException(
-                             "No suitable handler was found for the query of type " + message.getPayloadType().getName()
-                     ));
+                     .orElseThrow(() -> new NoHandlerForQueryException(message));
 
         return model.chainedInterceptor(target.getClass())
                     .handle(message, target, handler);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.eventhandling.async;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface to a policy definition for concurrent processing, for example event handling.
@@ -46,5 +48,5 @@ public interface SequencingPolicy<T> {
      * @param event the event for which to get the sequencing identifier
      * @return a sequence identifier for the given event
      */
-    Object getSequenceIdentifierFor(T event);
+    Object getSequenceIdentifierFor(@Nonnull T event);
 }

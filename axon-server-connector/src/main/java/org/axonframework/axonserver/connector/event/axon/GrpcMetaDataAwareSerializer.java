@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Wrapper around standard Axon Framework serializer that can deserialize Metadata from AxonServer events.
@@ -47,17 +48,17 @@ public final class GrpcMetaDataAwareSerializer implements Serializer {
     }
 
     @Override
-    public <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation) {
+    public <T> SerializedObject<T> serialize(Object object, @Nonnull Class<T> expectedRepresentation) {
         return delegate.serialize(object, expectedRepresentation);
     }
 
     @Override
-    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
+    public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
         return delegate.canSerializeTo(expectedRepresentation);
     }
 
     @Override
-    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+    public <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject) {
         if (Map.class.equals(serializedObject.getContentType())) {
             // this is the MetaDataMap, deserialize differently
             //noinspection unchecked
@@ -70,7 +71,7 @@ public final class GrpcMetaDataAwareSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(SerializedType type) {
+    public Class classForType(@Nonnull SerializedType type) {
         return delegate.classForType(type);
     }
 

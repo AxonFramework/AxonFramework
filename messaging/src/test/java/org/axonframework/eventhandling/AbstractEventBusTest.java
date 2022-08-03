@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,30 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link AbstractEventBus}.
+ *
  * @author Rene de Waele
  */
 class AbstractEventBusTest {
@@ -81,6 +82,7 @@ class AbstractEventBusTest {
         verify(unitOfWork).onCommit(any());
         // the monitor callback is also registered
         verify(unitOfWork, times(2)).afterCommit(any());
+        //noinspection unchecked
         reset(unitOfWork);
 
         testSubject.publish(event);
@@ -148,6 +150,7 @@ class AbstractEventBusTest {
 
     @Test
     void testMessageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
+        //noinspection unchecked
         MessageMonitor<? super EventMessage<?>> mockMonitor = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
         when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
@@ -160,15 +163,15 @@ class AbstractEventBusTest {
 
         unitOfWork.commit();
         verify(mockMonitorCallback, times(2)).reportSuccess();
-
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testDispatchInterceptor() {
+        //noinspection unchecked
         MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
         String key = "additional", value = "metaData";
         when(dispatchInterceptorMock.handle(anyList())).thenAnswer(invocation -> {
+            //noinspection unchecked
             List<EventMessage<?>> eventMessages = (List<EventMessage<?>>) invocation.getArguments()[0];
             return (BiFunction<Integer, Object, Object>) (index, message) -> {
                 if (eventMessages.get(index).getMetaData().containsKey(key)) {
@@ -179,21 +182,22 @@ class AbstractEventBusTest {
         });
         testSubject.registerDispatchInterceptor(dispatchInterceptorMock);
         testSubject.publish(newEvent(), newEvent());
-        verifyZeroInteractions(dispatchInterceptorMock);
+        verifyNoInteractions(dispatchInterceptorMock);
 
         unitOfWork.commit();
-        ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        //noinspection unchecked
+        ArgumentCaptor<List<EventMessage<?>>> argumentCaptor = ArgumentCaptor.forClass(List.class);
         verify(dispatchInterceptorMock).handle(argumentCaptor.capture()); //prepare commit, commit, and after commit
         assertEquals(1, argumentCaptor.getAllValues().size());
         assertEquals(2, argumentCaptor.getValue().size());
-        assertEquals(value, ((EventMessage<?>) argumentCaptor.getValue().get(0)).getMetaData().get(key));
+        assertEquals(value, argumentCaptor.getValue().get(0).getMetaData().get(key));
     }
 
-    private static EventMessage newEvent() {
+    private static EventMessage<Object> newEvent() {
         return new GenericEventMessage<>(new Object());
     }
 
-    private static EventMessage numberedEvent(final int number) {
+    private static EventMessage<Integer> numberedEvent(final int number) {
         return new StubNumberedEvent(number);
     }
 
@@ -241,7 +245,7 @@ class AbstractEventBusTest {
             if (payload instanceof Integer) {
                 int number = (int) payload;
                 if (number > 0) {
-                    EventMessage nextEvent = numberedEvent(number - 1);
+                    EventMessage<Integer> nextEvent = numberedEvent(number - 1);
                     if (startNewUowBeforePublishing) {
                         UnitOfWork<?> nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
                         try {
@@ -258,7 +262,7 @@ class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 
@@ -267,17 +271,19 @@ class AbstractEventBusTest {
             private UnitOfWork.Phase publicationPhase = UnitOfWork.Phase.PREPARE_COMMIT;
             private boolean startNewUowBeforePublishing = true;
 
+            @SuppressWarnings("SameParameterValue")
             private Builder publicationPhase(UnitOfWork.Phase publicationPhase) {
                 this.publicationPhase = publicationPhase;
                 return this;
             }
 
             @Override
-            public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
                 super.messageMonitor(messageMonitor);
                 return this;
             }
 
+            @SuppressWarnings("SameParameterValue")
             private Builder startNewUowBeforePublishing(boolean startNewUowBeforePublishing) {
                 this.startNewUowBeforePublishing = startNewUowBeforePublishing;
                 return this;

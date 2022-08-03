@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * Configuration object for the {@link TrackingEventProcessor}. The TrackingEventProcessorConfiguration provides access
@@ -42,6 +42,7 @@ public class TrackingEventProcessorConfiguration {
     private static final int DEFAULT_BATCH_SIZE = 1;
     private static final int DEFAULT_THREAD_COUNT = 1;
     private static final int DEFAULT_TOKEN_CLAIM_INTERVAL = 5000;
+    private static final long DEFAULT_WORKER_TERMINATION_TIMEOUT_MS = 5000;
 
     private final int maxThreadCount;
     private int batchSize;
@@ -51,6 +52,8 @@ public class TrackingEventProcessorConfiguration {
     private long tokenClaimInterval;
     private int eventAvailabilityTimeout = 1000;
     private EventTrackerStatusChangeListener eventTrackerStatusChangeListener = EventTrackerStatusChangeListener.noOp();
+    private boolean autoStart;
+    private long workerTerminationTimeout;
 
     /**
      * Initialize a configuration with single threaded processing.
@@ -79,6 +82,8 @@ public class TrackingEventProcessorConfiguration {
         this.maxThreadCount = numberOfSegments;
         this.threadFactory = pn -> new AxonThreadFactory("EventProcessor[" + pn + "]");
         this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
+        this.autoStart = true;
+        this.workerTerminationTimeout = DEFAULT_WORKER_TERMINATION_TIMEOUT_MS;
     }
 
     /**
@@ -107,7 +112,8 @@ public class TrackingEventProcessorConfiguration {
      * @param threadFactory The factory to create threads with
      * @return {@code this} for method chaining
      */
-    public TrackingEventProcessorConfiguration andThreadFactory(Function<String, ThreadFactory> threadFactory) {
+    public TrackingEventProcessorConfiguration andThreadFactory(
+            @Nonnull Function<String, ThreadFactory> threadFactory) {
         this.threadFactory = threadFactory;
         return this;
     }
@@ -149,7 +155,7 @@ public class TrackingEventProcessorConfiguration {
      * @return {@code this} for method chaining
      */
     public TrackingEventProcessorConfiguration andInitialTrackingToken(
-            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder) {
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder) {
         this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
         return this;
     }
@@ -161,8 +167,26 @@ public class TrackingEventProcessorConfiguration {
      * @param timeUnit           The unit of time
      * @return {@code this} for method chaining
      */
-    public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval, TimeUnit timeUnit) {
+    public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval,
+                                                                     @Nonnull TimeUnit timeUnit) {
         this.tokenClaimInterval = timeUnit.toMillis(tokenClaimInterval);
+        return this;
+    }
+
+    /**
+     * Whether to automatically start the processor when event processing is initialized. If set to {@code false}, the
+     * application must explicitly start the processor. This can be useful if the application needs to perform its own
+     * initialization before it begins processing new events.
+     * <p>
+     * The autostart setting does not impact the shutdown process of the processor. It will always be triggered when the
+     * framework receives a signal to shut down.
+     *
+     * @param autoStart {@code true} to automatically start the processor (the default), {@code false} if the
+     *                  application will start the processor itself.
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andAutoStart(boolean autoStart) {
+        this.autoStart = autoStart;
         return this;
     }
 
@@ -174,10 +198,40 @@ public class TrackingEventProcessorConfiguration {
      * @return {@code this} for method chaining
      */
     public TrackingEventProcessorConfiguration andEventTrackerStatusChangeListener(
-            EventTrackerStatusChangeListener eventTrackerStatusChangeListener
+            @Nonnull EventTrackerStatusChangeListener eventTrackerStatusChangeListener
     ) {
         assertNonNull(eventTrackerStatusChangeListener, "EventTrackerStatusChangeListener may not be null");
         this.eventTrackerStatusChangeListener = eventTrackerStatusChangeListener;
+        return this;
+    }
+
+    /**
+     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the 
+     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown 
+     * phase. Defaults to 5000ms.
+     *
+     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown in milliseconds
+     * @return {@code this} for method chaining
+     * 
+     * @deprecated Use {@link #andWorkerTerminationTimeout(long, TimeUnit)} instead.
+     */
+    @Deprecated
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeoutInMilliseconds) {
+    	return andWorkerTerminationTimeout(workerTerminationTimeoutInMilliseconds, TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * Sets the shutdown timeout to terminate active workers. This is used for both the graceful termination and the 
+     * potential forced termination of active workers. It is thus possible that it is used twice during the shutdown 
+     * phase. Defaults to 5000ms.
+     *
+     * @param workerTerminationTimeout the timeout for workers to terminate on a shutdown.
+     * @param timeUnit           The unit of time
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andWorkerTerminationTimeout(long workerTerminationTimeout, TimeUnit timeUnit) {
+        assertStrictPositive(workerTerminationTimeout, "The worker termination timeout should be strictly positive");
+        this.workerTerminationTimeout = timeUnit.toMillis(workerTerminationTimeout);
         return this;
     }
 
@@ -239,6 +293,13 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * @return {@code} true if the processor should be started automatically by the framework.
+     */
+    public boolean isAutoStart() {
+        return autoStart;
+    }
+
+    /**
      * Returns the {@link EventTrackerStatusChangeListener} defined in this configuration, to be called whenever an
      * {@link EventTrackerStatus} change occurs.
      *
@@ -246,5 +307,14 @@ public class TrackingEventProcessorConfiguration {
      */
     public EventTrackerStatusChangeListener getEventTrackerStatusChangeListener() {
         return eventTrackerStatusChangeListener;
+    }
+
+    /**
+     * Returns the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}.
+     *
+     * @return the timeout to terminate workers during a {@link TrackingEventProcessor#shutDown()}
+     */
+    public long getWorkerTerminationTimeout() {
+        return workerTerminationTimeout;
     }
 }

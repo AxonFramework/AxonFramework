@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2020. Axon Framework
+  ~ Copyright (c) 2010-2022. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.5.12-SNAPSHOT</version>
+        <version>4.6.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-disruptor</artifactId>
 
     <name>Axon Disruptor</name>
     <description>
-        Module containing a specific CommandBus and Command Handling solution based on the Disruptor paradigm.
+        Module containing a Command Bus and Command Handling solution based on the Disruptor paradigm.
     </description>
 
     <packaging>bundle</packaging>
@@ -42,6 +42,11 @@
         <dependency>
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -89,5 +94,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

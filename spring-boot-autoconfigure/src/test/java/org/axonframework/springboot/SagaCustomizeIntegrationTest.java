@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -30,7 +28,9 @@ import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.springboot.autoconfig.AxonAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -72,12 +72,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class})
+        AxonServerBusAutoConfiguration.class,
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
+})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class SagaCustomizeIntegrationTest {
 
     @Autowired
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     private EventBus eventBus;
     @Autowired
     private TransactionManager transactionManager;
@@ -90,12 +92,10 @@ public class SagaCustomizeIntegrationTest {
     public void testPublishSomeEvents() throws InterruptedException {
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
         eventProcessingModule.eventProcessors()
-                             .forEach((name, ep) -> assertTrue(((TrackingEventProcessor) ep).isRunning()));
+                             .forEach((name, ep) -> assertTrue(ep.isRunning()));
 
         eventProcessingModule.eventProcessors()
-                             .forEach((name, ep) -> assertFalse(
-                                     ((TrackingEventProcessor) ep).isError(), "Processor ended with error"
-                             ));
+                             .forEach((name, ep) -> assertFalse(ep.isError(), "Processor ended with error"));
 
         Thread.sleep(Duration.ofSeconds(1).toMillis());
         assertEquals(1, eventsReceived.get());
@@ -132,9 +132,7 @@ public class SagaCustomizeIntegrationTest {
         }
 
         @Autowired
-        private void registerEventHandlers(
-                EventProcessingModule eventProcessingConfiguration,
-                EventStore eventStore) throws ClassNotFoundException {
+        private void registerEventHandlers(EventProcessingModule eventProcessingConfiguration) throws ClassNotFoundException {
             Set<String> registeredProcessingGroups = new HashSet<>();
             ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
             scanner.addIncludeFilter(new AnnotationTypeFilter(Saga.class));
@@ -144,7 +142,7 @@ public class SagaCustomizeIntegrationTest {
                 if (!registeredProcessingGroups.contains(processorGroupName)) {
                     eventProcessingConfiguration.registerTrackingEventProcessor(
                             processorGroupName,
-                            c -> eventStore,
+                            org.axonframework.config.Configuration::eventStore,
                             c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                                     .andInitialSegmentsCount(2)
                     );

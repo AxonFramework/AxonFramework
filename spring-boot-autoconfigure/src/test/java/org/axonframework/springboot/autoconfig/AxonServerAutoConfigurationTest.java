@@ -97,20 +97,23 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void testAxonServerDefaultCommandBusConfiguration() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .run(context -> {
-                              assertThat(context).getBeanNames(CommandBus.class)
-                                                 .hasSize(2);
-                              assertThat(context).getBean("axonServerCommandBus")
-                                                 .isExactlyInstanceOf(AxonServerCommandBus.class);
-                              assertThat(context).getBean("commandBus")
-                                                 .isExactlyInstanceOf(SimpleCommandBus.class);
-                          });
+        this.contextRunner
+                .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
+                .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                .run(context -> {
+                    assertThat(context).getBeanNames(CommandBus.class)
+                                       .hasSize(2);
+                    assertThat(context).getBean("axonServerCommandBus")
+                                       .isExactlyInstanceOf(AxonServerCommandBus.class);
+                    assertThat(context).getBean("commandBus")
+                                       .isExactlyInstanceOf(SimpleCommandBus.class);
+                });
     }
 
     @Test
     void testAxonServerDefaultConfiguration_AxonServerDisabled() {
         this.contextRunner.withPropertyValues("axon.axonserver.enabled=false")
+                          .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
                           .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .run(context -> {
                               assertThat(context).getBeanNames(CommandBus.class)
@@ -136,16 +139,18 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void testAxonServerUserDefinedLocalSegmentConfiguration() {
-        this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
-                          .withUserConfiguration(ExplicitUserLocalSegmentConfiguration.class)
-                          .run(context -> {
-                              assertThat(context).getBeanNames(CommandBus.class)
-                                                 .hasSize(2);
-                              assertThat(context).getBean("axonServerCommandBus")
-                                                 .isExactlyInstanceOf(AxonServerCommandBus.class);
-                              assertThat(context).getBean("commandBus")
-                                                 .isExactlyInstanceOf(DisruptorCommandBus.class);
-                          });
+        this.contextRunner
+                .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
+                .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
+                .withUserConfiguration(ExplicitUserLocalSegmentConfiguration.class)
+                .run(context -> {
+                    assertThat(context).getBeanNames(CommandBus.class)
+                                       .hasSize(2);
+                    assertThat(context).getBean("axonServerCommandBus")
+                                       .isExactlyInstanceOf(AxonServerCommandBus.class);
+                    assertThat(context).getBean("commandBus")
+                                       .isExactlyInstanceOf(DisruptorCommandBus.class);
+                });
     }
 
     @Test

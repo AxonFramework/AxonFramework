@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandMessage;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Interface towards a mechanism that decides whether to schedule a command for execution when a previous attempts
@@ -30,14 +31,13 @@ import java.util.List;
 public interface RetryScheduler {
 
     /**
-     * Inspect the given {@code commandMessage} that failed with given {@code lastFailure}. The given
-     * {@code failures} provides a list of previous failures known for this command. The
-     * {@code commandDispatch} task can be used to schedule the command for dispatching.
+     * Inspect the given {@code commandMessage} that failed with given {@code lastFailure}. The given {@code failures}
+     * provides a list of previous failures known for this command. The {@code commandDispatch} task can be used to
+     * schedule the command for dispatching.
      * <p/>
-     * The return value of this method indicates whether the command has been scheduled for a retry. When
-     * {@code true}, the original callbacks should not be invoked, as command execution is subject to a retry.
-     * When {@code false}, the failure is interpreted as terminal and the callback will be invoked with the last
-     * failure recorded.
+     * The return value of this method indicates whether the command has been scheduled for a retry. When {@code true},
+     * the original callbacks should not be invoked, as command execution is subject to a retry. When {@code false}, the
+     * failure is interpreted as terminal and the callback will be invoked with the last failure recorded.
      * <p/>
      * If the implementation throws an Exception, that exception is passed as the failure to the original callback.
      *
@@ -48,6 +48,6 @@ public interface RetryScheduler {
      * @param commandDispatch The task to be executed to retry a command
      * @return {@code true} if the command has been rescheduled, otherwise {@code false}
      */
-    boolean scheduleRetry(CommandMessage commandMessage, RuntimeException lastFailure,
-                          List<Class<? extends Throwable>[]> failures, Runnable commandDispatch);
+    boolean scheduleRetry(@Nonnull CommandMessage commandMessage, @Nonnull RuntimeException lastFailure,
+                          @Nonnull List<Class<? extends Throwable>[]> failures, @Nonnull Runnable commandDispatch);
 }

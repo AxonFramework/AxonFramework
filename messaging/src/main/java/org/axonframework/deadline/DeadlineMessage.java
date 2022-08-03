@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.deadline;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a Message for a Deadline, specified by its deadline name and optionally containing a deadline payload.
@@ -46,7 +47,7 @@ public interface DeadlineMessage<T> extends EventMessage<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    DeadlineMessage<T> withMetaData(Map<String, ?> metaData);
+    DeadlineMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this DeadlineMessage with its MetaData merged with given {@code additionalMetaData}. The
@@ -56,5 +57,5 @@ public interface DeadlineMessage<T> extends EventMessage<T> {
      * @return a copy of this message with added additional MetaData
      */
     @Override
-    DeadlineMessage<T> andMetaData(Map<String, ?> additionalMetaData);
+    DeadlineMessage<T> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
 }

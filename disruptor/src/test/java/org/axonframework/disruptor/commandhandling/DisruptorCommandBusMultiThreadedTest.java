@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,26 +22,26 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.disruptor.commandhandling.utils.MockException;
 import org.axonframework.disruptor.commandhandling.utils.SomethingDoneEvent;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackingEventStream;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -59,12 +60,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class for the {@link DisruptorCommandBus} dedicated for a multi-threading solution.
+ *
  * @author Allard Buijze
  */
-class DisruptorCommandBusTest_MultiThreaded {
+class DisruptorCommandBusMultiThreadedTest {
 
     private static final int COMMAND_COUNT = 100;
     private static final int AGGREGATE_COUNT = 10;
+
     private InMemoryEventStore inMemoryEventStore;
     private DisruptorCommandBus testSubject;
     private Repository<StubAggregate> spiedRepository;
@@ -84,8 +88,9 @@ class DisruptorCommandBusTest_MultiThreaded {
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
-        spiedRepository = spy(testSubject.createRepository(inMemoryEventStore,
-                                                           new GenericAggregateFactory<>(StubAggregate.class)));
+        spiedRepository = spy(testSubject.createRepository(
+                inMemoryEventStore, new GenericAggregateFactory<>(StubAggregate.class)
+        ));
         stubHandler.setRepository(spiedRepository);
     }
 
@@ -94,7 +99,6 @@ class DisruptorCommandBusTest_MultiThreaded {
         testSubject.stop();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
@@ -106,7 +110,8 @@ class DisruptorCommandBusTest_MultiThreaded {
                                                                                      .generateIdentifier())
                                                      .collect(toList());
 
-        CommandCallback mockCallback = mock(CommandCallback.class);
+        //noinspection unchecked
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
 
         Stream<CommandMessage<Object>> commands = generateCommands(aggregateIdentifiers);
         commands.forEach(c -> testSubject.dispatch(c, mockCallback));
@@ -117,7 +122,8 @@ class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
                      inMemoryEventStore.storedEventCounter.get());
-        ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
+        //noinspection unchecked
+        ArgumentCaptor<CommandResultMessage<Object>> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(mockCallback, times(1010)).onResult(any(), commandResultMessageCaptor.capture());
         assertEquals(10, commandResultMessageCaptor.getAllValues()
@@ -128,7 +134,7 @@ class DisruptorCommandBusTest_MultiThreaded {
                                                    .count());
     }
 
-    private Answer trackCreateAndLoad(Map<Object, Object> garbageCollectionPrevention) {
+    private Answer<Object> trackCreateAndLoad(Map<Object, Object> garbageCollectionPrevention) {
         return invocation -> {
             Object realAggregate = invocation.callRealMethod();
             garbageCollectionPrevention.put(realAggregate, new Object());
@@ -184,14 +190,14 @@ class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @EventSourcingHandler
-        protected void handle(EventMessage event) {
-            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
+        protected void handle(EventMessage<?> event) {
+            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
     }
 
     private static class InMemoryEventStore extends AbstractEventBus implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<>();
+        private final Map<String, DomainEventMessage<?>> storedEvents = new ConcurrentHashMap<>();
         private final AtomicInteger storedEventCounter = new AtomicInteger();
         private final AtomicInteger loadCounter = new AtomicInteger();
 
@@ -208,7 +214,7 @@ class DisruptorCommandBusTest_MultiThreaded {
             if (events == null || events.isEmpty()) {
                 return;
             }
-            String key = ((DomainEventMessage) events.get(0)).getAggregateIdentifier();
+            String key = ((DomainEventMessage<?>) events.get(0)).getAggregateIdentifier();
             DomainEventMessage<?> lastEvent = null;
             for (EventMessage<?> event : events) {
                 storedEventCounter.incrementAndGet();
@@ -221,14 +227,14 @@ class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public DomainEventStream readEvents(String identifier) {
+        public DomainEventStream readEvents(@Nonnull String identifier) {
             loadCounter.incrementAndGet();
             DomainEventMessage<?> message = storedEvents.get(identifier);
             return message == null ? DomainEventStream.of() : DomainEventStream.of(message);
         }
 
         @Override
-        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         }
 
         @Override
@@ -247,7 +253,7 @@ class DisruptorCommandBusTest_MultiThreaded {
     private static class StubCommand {
 
         @TargetAggregateIdentifier
-        private Object aggregateIdentifier;
+        private final Object aggregateIdentifier;
 
         private StubCommand(Object aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;

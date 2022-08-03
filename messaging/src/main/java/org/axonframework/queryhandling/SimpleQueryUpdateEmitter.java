@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -85,7 +86,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public boolean queryUpdateHandlerRegistered(SubscriptionQueryMessage<?, ?, ?> query) {
+    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query) {
         return updateHandlers.keySet()
                              .stream()
                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
@@ -118,7 +119,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+    public <U> UpdateHandlerRegistration<U> registerUpdateHandler(@Nonnull SubscriptionQueryMessage<?, ?, ?> query,
                                                                   int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage<U>> sink = Sinks.many().replay().limit(updateBufferSize);
         SinksManyWrapper<SubscriptionQueryUpdateMessage<U>> sinksManyWrapper = new SinksManyWrapper<>(sink);
@@ -137,8 +138,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         SubscriptionQueryUpdateMessage<U> update) {
+    public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
+                         @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         runOnAfterCommitOrNow(() -> doEmit(filter, intercept(update)));
     }
 
@@ -152,18 +153,20 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
+    public void complete(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
         runOnAfterCommitOrNow(() -> doComplete(filter));
     }
 
     @Override
-    public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
+    public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter,
+                                      @Nonnull Throwable cause) {
         runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>> interceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
@@ -292,7 +295,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateMessageMonitor(
-                MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
+                @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
             assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
             this.updateMessageMonitor = updateMessageMonitor;
             return this;
@@ -314,7 +317,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

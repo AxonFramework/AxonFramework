@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.Registration;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface marking components capable of registering Dispatch Interceptors. Generally, these are Messaging components
@@ -38,5 +40,5 @@ public interface MessageDispatchInterceptorSupport<T extends Message<?>> {
      * @param dispatchInterceptor The interceptor to register
      * @return a Registration, which may be used to remove the unregister the interceptor
      */
-    Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super T> dispatchInterceptor);
+    Registration registerDispatchInterceptor(@Nonnull MessageDispatchInterceptor<? super T> dispatchInterceptor);
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,9 +24,7 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.concurrent.Callable;
@@ -35,16 +33,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link AbstractRepository}.
+ *
  * @author Allard Buijze
  */
 class AbstractRepositoryTest {
 
     private static final String AGGREGATE_ID = "some-identifier";
 
-    private AbstractRepository testSubject;
+    private AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
 
     private AnnotatedAggregate<JpaAggregate> spiedAggregate;
-    private Message<?> failureMessage = null;
+    private final Message<?> failureMessage = null;
 
     @BeforeEach
     void setUp() {
@@ -72,9 +72,10 @@ class AbstractRepositoryTest {
                 spiedAggregate = spy(AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null));
 
                 try {
+                    //noinspection ConstantConditions
                     doThrow(new IllegalArgumentException()).when(spiedAggregate).handle(failureMessage);
                 } catch (Exception e) {
-                    // Fail silently for testing's sake
+                    // Fail silently for testings sake
                 }
 
                 if (!AGGREGATE_ID.equals(aggregateIdentifier)) {
@@ -97,22 +98,48 @@ class AbstractRepositoryTest {
 
     @Test
     void testAggregateTypeVerification_CorrectType() throws Exception {
-        //noinspection unchecked
         testSubject.newInstance(() -> new JpaAggregate("hi"));
     }
 
     @Test
     void testAggregateTypeVerification_SubclassesAreAllowed() throws Exception {
-        //noinspection unchecked
         testSubject.newInstance(() -> new JpaAggregate("hi") {
             // anonymous subclass
         });
     }
 
     @Test
-    void testAggregateTypeVerification_WrongType() throws Exception {
+    void testAggregateTypeVerification_WrongType() {
+        //noinspection rawtypes
+        AbstractRepository anonymousTestSubject =
+                new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                        new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+
+                    @Override
+                    protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
+                            throws Exception {
+                        return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), null);
+                    }
+
+                    @Override
+                    protected void doSave(AnnotatedAggregate<JpaAggregate> aggregate) {
+
+                    }
+
+                    @Override
+                    protected void doDelete(AnnotatedAggregate<JpaAggregate> aggregate) {
+
+                    }
+
+                    @Override
+                    protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier,
+                                                                      Long expectedVersion) {
+                        return null;
+                    }
+                };
+
         //noinspection unchecked
-        assertThrows(IllegalArgumentException.class, () -> testSubject.newInstance(() -> "Not allowed"));
+        assertThrows(IllegalArgumentException.class, () -> anonymousTestSubject.newInstance(() -> "Not allowed"));
     }
 
     @Test
@@ -132,10 +159,10 @@ class AbstractRepositoryTest {
         assertFalse(testSubject.canResolve(new AggregateScopeDescriptor("other-non-matching-type", AGGREGATE_ID)));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testSendWorksAsExpected() throws Exception {
-        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
+        DeadlineMessage<String> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
@@ -144,35 +171,34 @@ class AbstractRepositoryTest {
         verify(spiedAggregate).handle(testMsg);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testSendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
+        //noinspection ConstantConditions
         assertThrows(IllegalArgumentException.class, () -> testSubject.send(failureMessage, testDescriptor));
 
+        //noinspection ConstantConditions
         verify(spiedAggregate).handle(failureMessage);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        DeadlineMessage<String> testMsg = GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
+        DeadlineMessage<String> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
 
         testSubject.send(testMsg, testDescriptor);
 
-        verifyZeroInteractions(spiedAggregate);
+        verifyNoInteractions(spiedAggregate);
     }
 
-
-    @SuppressWarnings("unchecked")
     @Test
-    void testCheckedExceptionFromConstructorDoesNotAttemptToStoreAggregate() throws Exception {
+    void testCheckedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
         // committing the unit of work does not throw an exception
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         uow.executeWithResult(() -> testSubject.newInstance(() -> {
             throw new Exception("Throwing checked exception");
         }), RuntimeException.class::isInstance);
@@ -182,5 +208,4 @@ class AbstractRepositoryTest {
         assertTrue(uow.getExecutionResult().isExceptionResult());
         assertEquals("Throwing checked exception", uow.getExecutionResult().getExceptionResult().getMessage());
     }
-
 }

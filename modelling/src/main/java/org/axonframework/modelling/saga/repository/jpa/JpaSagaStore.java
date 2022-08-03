@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
@@ -23,6 +24,7 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -412,7 +414,9 @@ public class JpaSagaStore implements SagaStore<Object> {
                                 "A default XStreamSerializer is used, without specifying the security context"
                         )
                 );
-                serializer = XStreamSerializer::defaultSerializer;
+                serializer = () -> XStreamSerializer.builder()
+                                                    .xStream(new XStream(new CompactDriver()))
+                                                    .build();
             }
         }
     }

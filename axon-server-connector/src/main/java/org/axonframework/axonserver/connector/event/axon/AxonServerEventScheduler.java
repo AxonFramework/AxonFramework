@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
+import com.thoughtworks.xstream.XStream;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.event.Event;
@@ -31,12 +32,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -59,7 +61,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.4
  */
-public class AxonServerEventScheduler implements EventScheduler {
+public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -100,10 +102,15 @@ public class AxonServerEventScheduler implements EventScheduler {
         this.converter = new GrpcMetaDataConverter(serializer);
     }
 
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.OUTBOUND_EVENT_CONNECTORS, this::start);
+        lifecycle.onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS, this::shutdownDispatching);
+    }
+
     /**
      * Start the Axon Server {@link EventScheduler} implementation.
      */
-    @StartHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void start() {
         started.set(true);
     }
@@ -111,7 +118,6 @@ public class AxonServerEventScheduler implements EventScheduler {
     /**
      * Shuts down the Axon Server {@link EventScheduler} implementation.
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_EVENT_CONNECTORS)
     public void shutdownDispatching() {
         started.set(false);
     }
@@ -315,7 +321,9 @@ public class AxonServerEventScheduler implements EventScheduler {
                                 "A default XStreamSerializer is used, without specifying the security context"
                         )
                 );
-                serializer = XStreamSerializer::defaultSerializer;
+                serializer = () -> XStreamSerializer.builder()
+                                                    .xStream(new XStream(new CompactDriver()))
+                                                    .build();
             }
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");

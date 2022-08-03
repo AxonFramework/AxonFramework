@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -85,7 +86,6 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,11 +96,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
-import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.spring.SpringUtils.isQualifierMatch;
+import static org.axonframework.spring.config.SpringAggregateLookup.buildAggregateHierarchy;
 import static org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
@@ -126,7 +127,9 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  *
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated Replaced by the {@link SpringConfigurer} and {@link SpringAxonConfiguration}.
  */
+@Deprecated
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
     /**
@@ -148,7 +151,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
-    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+    public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
+                                        BeanDefinitionRegistry registry) {
         registry.registerBeanDefinition("commandHandlerSubscriber",
                                         genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
@@ -195,8 +199,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 () -> genericBeanDefinition(SpringResourceInjector.class).getBeanDefinition()
         );
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
-        registerComponent(EventScheduler.class, configurer, Configuration::eventScheduler);
+        registerComponent(ScopeAwareProvider.class, configurer);
         registerComponent(DeadlineManager.class, configurer, Configuration::deadlineManager);
+        registerComponent(EventScheduler.class, configurer, Configuration::eventScheduler);
 
         EventProcessingModule eventProcessingModule = new EventProcessingModule();
         Optional<String> eventProcessingConfigurerOptional = findComponent(EventProcessingConfigurer.class);
@@ -321,60 +326,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <A> Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
-            String[] aggregatePrototypes) {
-        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = new HashMap<>();
-        for (String prototype : aggregatePrototypes) {
-            Class<A> aggregateType = (Class<A>) beanFactory.getType(prototype);
-            SpringAggregate<A> springAggregate = new SpringAggregate<>(prototype, aggregateType);
-            Class<? super A> topType = topAnnotatedAggregateType(aggregateType);
-            SpringAggregate<? super A> topSpringAggregate = new SpringAggregate<>(beanName(topType), topType);
-            hierarchy.compute(topSpringAggregate, (type, subtypes) -> {
-                if (subtypes == null) {
-                    subtypes = new HashMap<>();
-                }
-                if (!type.equals(springAggregate)) {
-                    subtypes.put(aggregateType, prototype);
-                }
-                return subtypes;
-            });
-        }
-        return hierarchy;
-    }
-
-    private <A> String beanName(Class<A> type) {
-        String[] beanNamesForType = beanFactory.getBeanNamesForType(type);
-        if (beanNamesForType.length == 0) {
-            throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
-        } else {
-            if (beanNamesForType.length != 1) {
-                logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
-            }
-            return beanNamesForType[0];
-        }
-    }
-
-    private <A> Class<? super A> topAnnotatedAggregateType(Class<A> type) {
-        Class<? super A> top = type;
-        Class<? super A> topAnnotated = top;
-        while(!top.getSuperclass().equals(Object.class)) {
-            top = top.getSuperclass();
-            if (top.isAnnotationPresent(Aggregate.class)) {
-                topAnnotated = top;
-            }
-        }
-        return topAnnotated;
-    }
-
     /**
      * @param <A> generic specifying the Aggregate type being registered
      */
     @SuppressWarnings("unchecked")
     private <A> void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
-        Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(aggregates);
-        for (Map.Entry<SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
+        Map<SpringAggregateLookup.SpringAggregate<? super A>, Map<Class<? extends A>, String>> hierarchy = buildAggregateHierarchy(beanFactory, aggregates);
+        for (Map.Entry<SpringAggregateLookup.SpringAggregate<? super A>, Map<Class<? extends A>, String>> aggregate : hierarchy.entrySet()) {
             Class<A> aggregateType = (Class<A>) aggregate.getKey().getClassType();
             String aggregatePrototype = aggregate.getKey().getBeanName();
             Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
@@ -415,6 +374,13 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     String cacheBeanName = aggregateAnnotation.cache();
                     if (nonEmptyBeanName(cacheBeanName)) {
                         aggregateConfigurer.configureCache(c -> beanFactory.getBean(cacheBeanName, Cache.class));
+                    }
+
+                    String lockFactoryBeanName = aggregateAnnotation.lockFactory();
+                    if (nonEmptyBeanName(lockFactoryBeanName)) {
+                        aggregateConfigurer.configureLockFactory(
+                                c -> beanFactory.getBean(lockFactoryBeanName, LockFactory.class)
+                        );
                     }
 
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
@@ -473,6 +439,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
      * Return the given {@code string}, with its first character lowercase
      *
      * @param string The input string
+     *
      * @return The input string, with first character lowercase
      */
     private String lcFirst(String string) {
@@ -509,7 +476,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
-        return Stream.of(beanNamesForTypeIncludingAncestors( beanFactory, componentType ))
+        return Stream.of(beanNamesForTypeIncludingAncestors(beanFactory, componentType))
                      .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
                      .findFirst();
     }
@@ -607,7 +574,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@Nonnull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
@@ -617,8 +584,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
      */
     public static class ImportSelector implements DeferredImportSelector {
 
+        @Nonnull
         @Override
-        public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+        public String[] selectImports(@Nonnull AnnotationMetadata importingClassMetadata) {
             return new String[]{SpringAxonAutoConfigurer.class.getName()};
         }
     }
@@ -657,40 +625,4 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    private static class SpringAggregate<T> {
-
-        private final String beanName;
-        private final Class<T> classType;
-
-        private SpringAggregate(String beanName, Class<T> classType) {
-            this.beanName = beanName;
-            this.classType = classType;
-        }
-
-        public String getBeanName() {
-            return beanName;
-        }
-
-        public Class<T> getClassType() {
-            return classType;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            SpringAggregate<?> that = (SpringAggregate<?>) o;
-            return Objects.equals(beanName, that.beanName) &&
-                    Objects.equals(classType, that.classType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(beanName, classType);
-        }
-    }
 }

@@ -54,8 +54,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the InterceptorChain for the invocation process registered with this entry, or {@code null} if none
-     * is available.
+     * Returns the InterceptorChain for the invocation process registered with this entry, or {@code null} if none is
+     * available.
      *
      * @return the InterceptorChain for the invocation process registered with this entry
      */
@@ -64,8 +64,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the InterceptorChain for the publication process registered with this entry, or {@code null} if
-     * none is available.
+     * Returns the InterceptorChain for the publication process registered with this entry, or {@code null} if none is
+     * available.
      *
      * @return the InterceptorChain for the publication process registered with this entry
      */
@@ -83,8 +83,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the result of the command's execution, or {@code null} if the command is not yet executed or
-     * resulted in an exception.
+     * Returns the result of the command's execution, or {@code null} if the command is not yet executed or resulted in
+     * an exception.
      *
      * @return the result of the command's execution, if any
      */
@@ -102,8 +102,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Indicates whether this entry is a recovery entry. When {@code true}, this entry does not contain any
-     * command
+     * Indicates whether this entry is a recovery entry. When {@code true}, this entry does not contain any command
      * handling information.
      *
      * @return {@code true} if this entry represents a recovery request, otherwise {@code false}.
@@ -113,8 +112,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the identifier of the aggregate to recover. Returns {@code null} when {@link #isRecoverEntry()}
-     * returns {@code false}.
+     * Returns the identifier of the aggregate to recover. Returns {@code null} when {@link #isRecoverEntry()} returns
+     * {@code false}.
      *
      * @return the identifier of the aggregate to recover
      */
@@ -155,7 +154,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
                       MessageHandler<? super CommandMessage<?>> newCommandHandler,// NOSONAR - Not important
                       int newInvokerSegmentId,
                       int newPublisherSegmentId,
-                      BlacklistDetectingCallback<? , ?> newCallback,
+                      BlacklistDetectingCallback<?, ?> newCallback,
                       List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors,
                       List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors) {
         this.invokerSegmentId = newInvokerSegmentId;
@@ -192,7 +191,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Resets this entry, preparing it to run given {@code callable} from within the {@code invocationInterceptorChain}.
+     * Resets this entry, preparing it to run given {@code callable} from within the {@code
+     * invocationInterceptorChain}.
      *
      * @param callable              a {@link Callable} which performs a task in the {@code invocationInterceptorChain},
      *                              for example publishing a scheduled {@link org.axonframework.deadline.DeadlineMessage}

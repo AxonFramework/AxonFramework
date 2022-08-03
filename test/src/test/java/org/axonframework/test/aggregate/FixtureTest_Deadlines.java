@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,15 @@ import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.test.matchers.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class intended to validate all methods in regards to scheduling and validating deadlines.
@@ -39,6 +42,9 @@ class FixtureTest_Deadlines {
     private static final String AGGREGATE_ID = "id";
     private static final CreateMyAggregateCommand CREATE_COMMAND = new CreateMyAggregateCommand(AGGREGATE_ID);
     private static final int TRIGGER_DURATION_MINUTES = 10;
+    private static final String DEADLINE_NAME = "deadlineName";
+    private static final String DEADLINE_PAYLOAD = "deadlineDetails";
+    private static final String NONE_OCCURRING_DEADLINE_PAYLOAD = "none-occurring-deadline";
 
     private AggregateTestFixture<MyAggregate> fixture;
 
@@ -51,7 +57,7 @@ class FixtureTest_Deadlines {
     void testExpectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
-               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
+               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
     }
 
     @Test
@@ -63,7 +69,7 @@ class FixtureTest_Deadlines {
 
     @Test
     void testExpectScheduledDeadlineWithName() {
-        fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, "deadlineName", "deadlineId"))
+        fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, DEADLINE_NAME, "deadlineId"))
                .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
                .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
     }
@@ -72,7 +78,7 @@ class FixtureTest_Deadlines {
     void testExpectNoScheduledDeadline() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
+               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
     }
 
     @Test
@@ -86,15 +92,153 @@ class FixtureTest_Deadlines {
     void testExpectNoScheduledDeadlineWithName() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineName");
+               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_NAME);
     }
 
     @Test
-    void testDeadlineMet() {
+    void testDeadlineMetMatching() {
+        //noinspection deprecation
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectDeadlinesMet("deadlineDetails");
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectDeadlinesMetMatching(payloadsMatching(exactSequenceOf(equalTo(DEADLINE_PAYLOAD))));
+    }
+
+    @Test
+    void testTriggeredDeadlinesMatching() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(CREATE_COMMAND)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(equalTo(DEADLINE_PAYLOAD))));
+    }
+
+    @Test
+    void testDeadlinesMet() {
+        //noinspection deprecation
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(CREATE_COMMAND)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectDeadlinesMet(DEADLINE_PAYLOAD);
+    }
+
+    @Test
+    void testTriggeredDeadlines() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(CREATE_COMMAND)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
+    }
+
+    @Test
+    void testTriggeredDeadlinesFailsForIncorrectDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlines(NONE_OCCURRING_DEADLINE_PAYLOAD)
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlines(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithName() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(CREATE_COMMAND)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlinesWithName(DEADLINE_NAME);
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlinesWithName(NONE_OCCURRING_DEADLINE_PAYLOAD)
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlinesWithName(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfType() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(CREATE_COMMAND)
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlinesOfType(String.class);
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlinesOfType(Integer.class)
+        );
+
+        assertTrue(
+                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+        );
+    }
+
+    @Test
+    void testTriggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
+        ResultValidator<MyAggregate> given =
+                fixture.givenNoPriorActivity()
+                       .andGivenCommands(CREATE_COMMAND)
+                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+
+        AxonAssertionError result = assertThrows(
+                AxonAssertionError.class,
+                () -> given.expectTriggeredDeadlinesOfType(String.class, String.class)
+        );
+
+        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
     }
 
     @Test
@@ -119,8 +263,8 @@ class FixtureTest_Deadlines {
                 messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectDeadlinesMet("fakeDeadlineDetails");
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlines("fakeDeadlineDetails");
     }
 
     @Test
@@ -133,8 +277,8 @@ class FixtureTest_Deadlines {
         })
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
-               .whenThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectDeadlinesMet("fakeDeadlineDetails");
+               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectTriggeredDeadlines("fakeDeadlineDetails");
     }
 
     private static class CreateMyAggregateCommand {
@@ -209,9 +353,9 @@ class FixtureTest_Deadlines {
 
         @CommandHandler
         public MyAggregate(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
-            String deadlineName = "deadlineName";
+            String deadlineName = DEADLINE_NAME;
             String deadlineId = deadlineManager.schedule(
-                    Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, "deadlineDetails"
+                    Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, DEADLINE_PAYLOAD
             );
             apply(new MyAggregateCreatedEvent(command.aggregateId, deadlineName, deadlineId));
         }

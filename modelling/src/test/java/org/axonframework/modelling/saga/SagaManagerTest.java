@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.modelling.utils.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -24,6 +23,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -32,10 +32,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
 class SagaManagerTest {
@@ -237,7 +238,7 @@ class SagaManagerTest {
         }
 
         @Override
-        public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
             return true;
         }
 

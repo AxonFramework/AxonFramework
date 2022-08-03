@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 /**
@@ -60,7 +61,7 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.execute(new TransactionCallbackWithoutResult() {
             @Override
-            protected void doInTransactionWithoutResult(TransactionStatus status) {
+            protected void doInTransactionWithoutResult(@Nonnull TransactionStatus status) {
                 try {
                     Connection connection = dataSource.getConnection();
                     connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

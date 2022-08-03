@@ -1,0 +1,52 @@
+name: Axon Framework
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: Test and Build on JDK ${{ matrix.java-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - java-version: 8
+            sonar-enabled: false
+          - java-version: 11
+            sonar-enabled: true
+      fail-fast: false # run both to the end
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3.4.1
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          cache: "maven"
+          server-id: sonatype
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Regular Build
+        if: ${{ !matrix.sonar-enabled }}
+        run: |
+          ./mvnw -B -U -Possrh -Pintegration-test clean verify
+
+      - name: Build with Coverage reports
+        if: matrix.sonar-enabled
+        run: |
+          ./mvnw -B -U -Possrh -Dcoverage clean verify
+
+      - name: Sonar Analysis
+        if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          ./mvnw -B sonar:sonar \
+          -Dsonar.projectKey=AxonFramework_AxonFramework \
+          -Dsonar.organization=axonframework \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

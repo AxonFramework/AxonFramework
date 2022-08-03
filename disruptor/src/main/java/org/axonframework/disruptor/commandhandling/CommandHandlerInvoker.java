@@ -48,12 +48,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * Component of the DisruptorCommandBus that invokes the command handler. The execution is done within a Unit Of Work.
- * If an aggregate has been pre-loaded, it is set to the ThreadLocal.
+ * If an aggregate has been preloaded, it is set to the ThreadLocal.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -68,8 +69,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private final int segmentId;
 
     /**
-     * Returns the Repository instance for Aggregate with given {@code typeIdentifier} used by the
-     * CommandHandlerInvoker that is running on the current thread.
+     * Returns the Repository instance for Aggregate with given {@code typeIdentifier} used by the CommandHandlerInvoker
+     * that is running on the current thread.
      * <p>
      * Calling this method from any other thread will return {@code null}.
      *
@@ -77,11 +78,11 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param <T>  The type of aggregate
      * @return the repository instance for aggregate of given type
      */
-    @SuppressWarnings("unchecked")
     public static <T> DisruptorRepository<T> getRepository(Class<?> type) {
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
         Assert.state(invoker != null,
                      () -> "The repositories of a DisruptorCommandBus are only available " + "in the invoker thread");
+        //noinspection unchecked
         return (DisruptorRepository<T>) invoker.repositories.get(type);
     }
 
@@ -124,7 +125,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
      * @return A Repository instance for the given aggregate
      */
-    @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(EventStore eventStore,
                                               AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
@@ -150,13 +150,13 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param handlerDefinition         The handler definition used to create concrete handlers
      * @return A Repository instance for the given aggregate
      */
-    @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(EventStore eventStore,
                                               RepositoryProvider repositoryProvider,
                                               AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
                                               HandlerDefinition handlerDefinition) {
+        //noinspection unchecked
         return (Repository<T>) repositories.computeIfAbsent(
                 aggregateFactory.getAggregateType(),
                 k -> new DisruptorRepository<>(
@@ -167,7 +167,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                         handlerDefinition,
                         snapshotTriggerDefinition,
                         repositoryProvider
-                ));
+                )
+        );
     }
 
     private void removeEntry(String aggregateIdentifier) {
@@ -206,19 +207,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     Cache cache,
                                     EventStore eventStore,
                                     ParameterResolverFactory parameterResolverFactory,
-                                    SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                    RepositoryProvider repositoryProvider) {
-            this.aggregateFactory = aggregateFactory;
-            this.cache = cache;
-            this.eventStore = eventStore;
-            this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
-                                                                             parameterResolverFactory);
-            this.repositoryProvider = repositoryProvider;
-        }
-
-        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
-                                    ParameterResolverFactory parameterResolverFactory,
                                     HandlerDefinition handlerDefinition,
                                     SnapshotTriggerDefinition snapshotTriggerDefinition,
                                     RepositoryProvider repositoryProvider) {
@@ -226,26 +214,27 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.cache = cache;
             this.eventStore = eventStore;
             this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
-                                                                             parameterResolverFactory,
-                                                                             handlerDefinition);
+            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                    aggregateFactory.getAggregateType(), parameterResolverFactory, handlerDefinition
+            );
             this.repositoryProvider = repositoryProvider;
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             Aggregate<T> aggregate = load(aggregateIdentifier);
             if (expectedVersion != null && aggregate.version() > expectedVersion) {
-                throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion,
-                                                               aggregate.version());
+                throw new ConflictingAggregateVersionException(
+                        aggregateIdentifier, expectedVersion, aggregate.version()
+                );
             }
             return aggregate;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             EventSourcedAggregate<T> aggregateRoot = firstLevelCache.get(aggregateIdentifier);
             if (aggregateRoot == null) {
@@ -270,11 +259,13 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
                 SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
                 if (!eventStream.hasNext()) {
-                    throw new AggregateNotFoundException(aggregateIdentifier,
-                                                         "The aggregate was not found in the event store");
+                    throw new AggregateNotFoundException(
+                            aggregateIdentifier, "The aggregate was not found in the event store"
+                    );
                 }
-                aggregateRoot = EventSourcedAggregate.initialize(aggregateFactory.createAggregateRoot(
-                        aggregateIdentifier, eventStream.peek()), model, eventStore, repositoryProvider, trigger
+                aggregateRoot = EventSourcedAggregate.initialize(
+                        aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
+                        model, eventStore, repositoryProvider, trigger
                 );
 
                 aggregateRoot.initializeState(eventStream);
@@ -285,7 +276,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
             EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod,
                                                                                   model,
@@ -304,14 +295,15 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod)
+                throws Exception {
             try {
                 return load(aggregateIdentifier);
             } catch (AggregateNotFoundException ex) {
                 Aggregate<T> newInstance = newInstance(factoryMethod);
                 firstLevelCache.put(aggregateIdentifier, (EventSourcedAggregate<T>) newInstance);
                 cache.put(aggregateIdentifier, new AggregateCacheEntry<>((EventSourcedAggregate<T>) newInstance));
-                
+
                 return newInstance;
             } catch (Exception e) {
                 logger.debug("Exception occurred while trying to load/create an aggregate. ", e);
@@ -322,8 +314,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private void removeFromCache(String aggregateIdentifier) {
             EventSourcedAggregate<T> removed = firstLevelCache.remove(aggregateIdentifier);
             if (removed != null) {
-                logger.debug("Aggregate {} removed from first level cache for recovery purposes.",
-                    aggregateIdentifier);
+                logger.debug("Aggregate {} removed from first level cache for recovery purposes.", aggregateIdentifier);
             }
         }
 

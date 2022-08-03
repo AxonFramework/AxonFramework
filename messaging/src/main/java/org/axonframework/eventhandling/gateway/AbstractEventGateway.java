@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -60,7 +61,7 @@ public abstract class AbstractEventGateway {
      *
      * @param event The event to publish.
      */
-    protected void publish(Object event) {
+    protected void publish(@Nonnull Object event) {
         this.eventBus.publish(processInterceptors(asEventMessage(event)));
     }
 
@@ -71,7 +72,7 @@ public abstract class AbstractEventGateway {
      * @return a registration which can be used to cancel the registration of given interceptor
      */
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super EventMessage<?>> interceptor) {
+            @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
@@ -118,7 +119,7 @@ public abstract class AbstractEventGateway {
          * @param eventBus an {@link EventBus} used to publish events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventBus(EventBus eventBus) {
+        public Builder eventBus(@Nonnull EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
             this.eventBus = eventBus;
             return this;

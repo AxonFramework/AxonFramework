@@ -16,8 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,8 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link ConnectionWrapperFactory}.
+ *
  * @author Allard Buijze
  */
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 class ConnectionWrapperFactoryTest {
 
     private ConnectionWrapperFactory.ConnectionCloseHandler closeHandler;
@@ -49,7 +51,7 @@ class ConnectionWrapperFactoryTest {
         wrapped.getAutoCommit();
         verify(connection).getAutoCommit();
 
-        verifyZeroInteractions(closeHandler);
+        verifyNoMoreInteractions(closeHandler);
 
         wrapped.close();
         verify(connection, never()).close();

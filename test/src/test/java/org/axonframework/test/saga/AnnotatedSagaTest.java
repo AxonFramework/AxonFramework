@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
@@ -349,4 +350,25 @@ class AnnotatedSagaTest {
                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore()))
                );
     }
+
+    @Test
+    void testNoExceptionThrownInHandlerMethod() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenNoPriorActivity().whenAggregate(identifier)
+                                                               .publishes(new TriggerSagaStartEvent(identifier));
+        assertDoesNotThrow(fixtureExecutionResult::expectSuccessfulHandlerExecution);
+    }
+
+    @Test
+    void testExceptionThrownInHandlerMethod() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier)).whenAggregate(identifier)
+                                                               .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
+        assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
+    }
+
 }

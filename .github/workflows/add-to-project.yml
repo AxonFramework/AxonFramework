@@ -1,0 +1,17 @@
+name: Axon Framework
+
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  add-to-project:
+    name: Add Dependency Upgrade PR to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@main
+        with:
+          project-url: https://github.com/orgs/AxonFramework/projects/2
+          github-token: ${{ secrets.DEVBOT_WRITING_GITHUB_TOKEN }}
+          labeled: 'Type: Dependency Upgrade'

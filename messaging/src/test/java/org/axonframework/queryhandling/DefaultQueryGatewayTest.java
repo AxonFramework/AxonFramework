@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -414,6 +416,42 @@ class DefaultQueryGatewayTest {
         assertTrue(actual.isDone());
         assertTrue(actual.isCompletedExceptionally());
         assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
+    }
+
+    @Test
+    void streamingQueryIsLazy() {
+        Publisher<QueryResponseMessage<Object>> response = Flux.just(
+                new GenericQueryResponseMessage("a"),
+                new GenericQueryResponseMessage("b"),
+                new GenericQueryResponseMessage("c")
+        );
+
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(response);
+
+        //first try without subscribing
+        testSubject.streamingQuery("query", String.class);
+
+        //expect query never sent
+        verify(mockBus, never()).streamingQuery(any());
+
+        //second try with subscribing
+        StepVerifier.create(testSubject.streamingQuery("query", String.class))
+                    .expectNext("a", "b", "c")
+                    .verifyComplete();
+
+        //expect query sent
+        verify(mockBus, times(1)).streamingQuery(any(StreamingQueryMessage.class));
+    }
+
+    @Test
+    void streamingQueryPropagateErrors() {
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(Flux.error(new IllegalStateException("test")));
+
+        StepVerifier.create(testSubject.streamingQuery("query", String.class))
+                .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
+                .verify();
     }
 
     @SuppressWarnings({"unused", "SameParameterValue"})

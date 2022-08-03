@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Interface describing a handler for specific messages targeting entities of a specific type.
@@ -61,7 +63,7 @@ public interface MessageHandlingMember<T> {
      * @param message The message that is to be handled
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
      */
-    boolean canHandle(Message<?> message);
+    boolean canHandle(@Nonnull Message<?> message);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
@@ -69,7 +71,7 @@ public interface MessageHandlingMember<T> {
      * @param payloadType The payloadType of a message that is to be handled
      * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise
      */
-    default boolean canHandleType(Class<?> payloadType) {
+    default boolean canHandleType(@Nonnull Class<?> payloadType) {
         return true;
     }
 
@@ -84,7 +86,7 @@ public interface MessageHandlingMember<T> {
      * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise
      */
     @SuppressWarnings("rawtypes")
-    boolean canHandleMessageType(Class<? extends Message> messageType);
+    boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType);
 
     /**
      * Handles the given {@code message} by invoking the appropriate method on given {@code target}. This may result in
@@ -97,7 +99,7 @@ public interface MessageHandlingMember<T> {
      * @throws Exception when there was a problem that prevented invocation of the method or if an exception was thrown
      *                   from the invoked method
      */
-    Object handle(Message<?> message, T target) throws Exception;
+    Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception;
 
     /**
      * Returns the wrapped handler object if its type is an instance of the given {@code handlerType}. For instance, if

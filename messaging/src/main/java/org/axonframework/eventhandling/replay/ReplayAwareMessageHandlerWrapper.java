@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Member;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singletonMap;
 
@@ -41,7 +42,8 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
     private static final Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+    public @Nonnull
+    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         boolean isReplayAllowed = (boolean) original
                 .annotationAttributes(AllowReplay.class)
                 .orElseGet(() -> original.unwrap(Member.class)
@@ -62,7 +64,7 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public Object handle(Message<?> message, T target) throws Exception {
+        public Object handle(@Nonnull Message<?> message, T target) throws Exception {
             if (ReplayToken.isReplay(message)) {
                 return null;
             }

@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventHandler;
@@ -104,6 +105,30 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
+    void testExceptionDetailsCheckWithEquality() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+                .when(new ExceptionWithDetailsTriggeringCommand("1"))
+                .expectException(CommandExecutionException.class)
+                .expectExceptionDetails("Details");
+    }
+
+    @Test
+    void testExceptionDetailsCheckWithType() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ExceptionWithDetailsTriggeringCommand("1"))
+               .expectException(CommandExecutionException.class)
+               .expectExceptionDetails(String.class);
+    }
+
+    @Test
+    void testExceptionDetailsCheckWithMatcher() {
+        fixture.givenCommands(new CreateMyAggregateCommand("1"))
+               .when(new ExceptionWithDetailsTriggeringCommand("1"))
+               .expectException(CommandExecutionException.class)
+               .expectExceptionDetails(containsString("Details"));
+    }
+
+    @Test
     void testWhenCommandWithInvalidIdentifier() {
         assertThrows(FixtureExecutionException.class, () ->
                 fixture.givenCommands(
@@ -143,6 +168,13 @@ class FixtureTest_ExceptionHandling {
     private static class ExceptionTriggeringCommand extends AbstractMyAggregateCommand {
 
         protected ExceptionTriggeringCommand(String id) {
+            super(id);
+        }
+    }
+
+    private static class ExceptionWithDetailsTriggeringCommand extends AbstractMyAggregateCommand {
+
+        protected ExceptionWithDetailsTriggeringCommand(String id) {
             super(id);
         }
     }
@@ -192,6 +224,11 @@ class FixtureTest_ExceptionHandling {
         @CommandHandler
         public void handle(ExceptionTriggeringCommand cmd) {
             throw new RuntimeException("Error");
+        }
+
+        @CommandHandler
+        public void handle(ExceptionWithDetailsTriggeringCommand cmd) {
+            throw new CommandExecutionException("Error", null, "Details");
         }
 
         @EventHandler

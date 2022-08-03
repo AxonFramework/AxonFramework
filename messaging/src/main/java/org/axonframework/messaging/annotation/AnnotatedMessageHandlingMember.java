@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
@@ -30,6 +33,7 @@ import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
@@ -39,6 +43,8 @@ import java.util.Optional;
  * @since 3.0
  */
 public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<T> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Class<?> payloadType;
     private final int parameterCount;
@@ -94,19 +100,20 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
-    public boolean canHandle(Message<?> message) {
-        return typeMatches(message) && payloadType.isAssignableFrom(message.getPayloadType()) &&
-                parametersMatch(message);
+    public boolean canHandle(@Nonnull Message<?> message) {
+        return typeMatches(message)
+                && payloadType.isAssignableFrom(message.getPayloadType())
+                && parametersMatch(message);
     }
 
     @Override
-    public boolean canHandleType(Class<?> payloadType) {
+    public boolean canHandleType(@Nonnull Class<?> payloadType) {
         return this.payloadType.isAssignableFrom(payloadType);
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return this.messageType.isAssignableFrom(messageType);
     }
 
@@ -131,6 +138,8 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     protected boolean parametersMatch(Message<?> message) {
         for (ParameterResolver<?> resolver : parameterResolvers) {
             if (!resolver.matches(message)) {
+                logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
+                             resolver.getClass(), message, message.getPayloadType());
                 return false;
             }
         }
@@ -138,7 +147,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     }
 
     @Override
-    public Object handle(Message<?> message, T target) throws Exception {
+    public Object handle(@Nonnull Message<?> message, T target) throws Exception {
         try {
             if (executable instanceof Method) {
                 return ((Method) executable).invoke(target, resolveParameterValues(message));

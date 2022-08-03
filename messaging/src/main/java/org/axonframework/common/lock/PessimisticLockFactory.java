@@ -167,7 +167,7 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
         /**
-         * Indicates howmany attempts should be done to acquire a lock. In combination with the
+         * Indicates how many attempts should be done to acquire a lock. In combination with the
          * {@link #lockAttemptTimeout(int)}, this defines the total timeout of a lock acquisition.
          * <p>
          * Defaults to 6000.

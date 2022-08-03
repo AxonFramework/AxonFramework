@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import org.axonframework.common.AxonTransientException;
 
 /**
  * Exception indicating that the changes in an aggregate (generated events) are ignored by the DisruptorCommandBus,
- * because it cannot guarantee that these changes have been applied to an aggregate instance with the correct state.
- * The DisruptorCommandBus will automatically recover by clearing cached information of blacklisted aggregates. Because
- * of the asynchronous nature of the DisruptorCommandBus, several commands may fail due to the same corrupt aggregate.
+ * because it cannot guarantee that these changes have been applied to an aggregate instance with the correct state. The
+ * DisruptorCommandBus will automatically recover by clearing cached information of blacklisted aggregates. Because of
+ * the asynchronous nature of the DisruptorCommandBus, several commands may fail due to the same corrupt aggregate.
  * <p/>
  * When a corrupt aggregate has been detected, a {@link AggregateBlacklistedException} is thrown. Each subsequent time
  * state changes are applied to a blacklisted aggregate, an AggregateStateCorruptedException is thrown.
@@ -40,8 +40,7 @@ public class AggregateStateCorruptedException extends AxonTransientException {
     private final String aggregateIdentifier;
 
     /**
-     * Initializes the exception with given {@code aggregateIdentifier} and given explanatory
-     * {@code message}.
+     * Initializes the exception with given {@code aggregateIdentifier} and given explanatory {@code message}.
      *
      * @param aggregateIdentifier The identifier of the blacklisted aggregate
      * @param message             The message explaining why the blacklisting occurred
@@ -52,8 +51,8 @@ public class AggregateStateCorruptedException extends AxonTransientException {
     }
 
     /**
-     * Initializes the exception with given {@code aggregateIdentifier}, given explanatory {@code message}
-     * and {@code cause}.
+     * Initializes the exception with given {@code aggregateIdentifier}, given explanatory {@code message} and {@code
+     * cause}.
      *
      * @param aggregateIdentifier The identifier of the blacklisted aggregate
      * @param message             The message explaining why the blacklisting occurred

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
@@ -460,8 +461,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 return;
             }
             tailingConsumers.stream().filter(EventConsumer::behindGlobalCache).forEach(consumer -> {
-                logger.warn("An event processor fell behind the tail end of the event store cache. " +
-                                    "This usually indicates a badly performing event processor.");
+                logger.debug("An event stream cannot read from the local cache. It either runs behind, or its " +
+                                     "current token cannot be found in the cache. Opening a dedicated stream.");
                 consumer.stopTailingGlobalStream();
             });
         }
@@ -507,7 +508,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         @Override
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }

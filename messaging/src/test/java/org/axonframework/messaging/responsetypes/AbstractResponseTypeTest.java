@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,20 @@ package org.axonframework.messaging.responsetypes;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Helper test implementation of {@link ResponseType} tests.
@@ -32,9 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @param <R> a generic for the expected response type of the {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
-
-    protected static final Boolean MATCHES = Boolean.TRUE;
-    protected static final Boolean DOES_NOT_MATCH = Boolean.FALSE;
+    protected static final Integer MATCHES = ResponseType.MATCH;
+    protected static final Integer DOES_NOT_MATCH = ResponseType.NO_MATCH;
 
     protected final ResponseType<R> testSubject;
 
@@ -43,22 +49,22 @@ public abstract class AbstractResponseTypeTest<R> {
     }
 
     /**
-     * Helper function to make testing of the
-     * {@link ResponseType#matches(Type)} function easier.
-     * Takes a {@code methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract
-     * class. There after it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as
-     * input for the test subject's match function.
+     * Helper function to make testing of the {@link ResponseType#matchRank(Type)} function easier. Takes a {@code
+     * methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract class. There after
+     * it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as input for the test
+     * subject's matchRank and matches functions.
      *
      * @param methodNameToTest a {@link java.lang.String} representing the function you want to extract a return type
      *                         from
-     * @param expectedResult   a {@link java.lang.Boolean} which is the expected result of the matches call
-     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given
-     *                               {@code methodNameToTest}
+     * @param expectedResult   a {@link java.lang.Integer} which is the expected result of the matchRank call
+     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found for the given {@code
+     *                               methodNameToTest}
      */
-    protected void testMatches(String methodNameToTest, Boolean expectedResult) throws NoSuchMethodException {
+    protected void testMatchRanked(String methodNameToTest, Integer expectedResult) throws NoSuchMethodException {
         Method methodToTest = methodOf(getClass(), methodNameToTest);
         Type methodReturnType = methodToTest.getGenericReturnType();
-        assertEquals(expectedResult, testSubject.matches(methodReturnType));
+        assertEquals(expectedResult, testSubject.matchRank(methodReturnType));
+        assertEquals(expectedResult > 0, testSubject.matches(methodReturnType));
     }
 
     @SuppressWarnings("unused")

@@ -25,8 +25,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -41,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -56,7 +57,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @see org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
  * @since 0.7
  */
-public class SimpleEventScheduler implements EventScheduler {
+public class SimpleEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventScheduler.class);
 
@@ -120,13 +121,13 @@ public class SimpleEventScheduler implements EventScheduler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+
+    @Override
     public void shutdown() {
         scheduledExecutorService.shutdown();
     }

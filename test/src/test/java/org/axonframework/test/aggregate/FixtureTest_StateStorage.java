@@ -17,11 +17,13 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -59,6 +61,25 @@ class FixtureTest_StateStorage {
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
                .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
+    }
+
+    @Test
+    void testGivenCommandsForStateStoredAggregate() {
+        fixture.useStateStorage()
+               .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
+               .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
+               .expectEvents(new StubDomainEvent())
+               .expectState(aggregate -> assertEquals("message2", aggregate.getMessage()));
+    }
+
+
+    @Test
+    void testCreateStateStoredAggregateWithCommand() {
+        fixture.useStateStorage()
+               .givenNoPriorActivity()
+               .when(new InitializeCommand(AGGREGATE_ID, "message"))
+               .expectEvents(new StubDomainEvent())
+               .expectState(aggregate -> assertEquals("message", aggregate.getMessage()));
     }
 
     @Test
@@ -103,6 +124,26 @@ class FixtureTest_StateStorage {
                .expectEvents(new StubDomainEvent());
 
         verify(testResource).difficultOperation(expectedMessage);
+    }
+
+    @Test
+    void testGivenWithStateStorageException() {
+        fixture.useStateStorage();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> fixture.given(new StubDomainEvent())
+        );
+    }
+
+    @Test
+    void testGivenWithEventListAndStateStorageExpectException() {
+        fixture.useStateStorage();
+
+        assertThrows(
+                AxonConfigurationException.class,
+                () -> fixture.given(Collections.singletonList(new StubDomainEvent()))
+        );
     }
 
     private static class InitializeCommand {
@@ -202,6 +243,7 @@ class FixtureTest_StateStorage {
         @CommandHandler
         public StateStoredAggregate(InitializeCommand cmd) {
             this.id = cmd.getId();
+            this.message = cmd.getMessage();
             apply(new StubDomainEvent());
         }
 

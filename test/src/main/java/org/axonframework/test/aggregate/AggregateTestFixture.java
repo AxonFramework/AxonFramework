@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -88,7 +89,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -100,6 +100,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -122,6 +123,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final EventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
+    private boolean useStateStorage;
     private RepositoryProvider repositoryProvider;
     private IdentifierValidatingRepository<T> repository;
     private final StubDeadlineManager deadlineManager;
@@ -162,6 +164,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public final FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes) {
         this.subtypes.addAll(Arrays.asList(subtypes));
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> useStateStorage() {
+        this.useStateStorage = true;
         return this;
     }
 
@@ -305,20 +313,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> givenNoPriorActivity() {
-        return given(Collections.emptyList());
+        ensureRepositoryConfiguration();
+        clearGivenWhenState();
+        return this;
     }
 
     @Override
     public TestExecutor<T> givenState(Supplier<T> aggregate) {
+        if (this.repository == null) {
+            this.useStateStorage();
+        }
+
+        ensureRepositoryConfiguration();
         DefaultUnitOfWork.startAndGet(null).execute(() -> {
-            if (repository == null) {
-                registerRepository(new InMemoryRepository<>(aggregateType,
-                                                            subtypes,
-                                                            eventStore,
-                                                            getParameterResolverFactory(),
-                                                            getHandlerDefinition(),
-                                                            getRepositoryProvider()));
-            }
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -340,6 +347,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> andGiven(List<?> domainEvents) {
+        if (this.useStateStorage) {
+            throw new AxonConfigurationException(
+                    "Given events not supported, because the fixture is configured to use state storage");
+        }
+
         for (Object event : domainEvents) {
             Object payload = event;
             MetaData metaData = null;
@@ -421,15 +433,27 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
+    public ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
 
     @Override
-    public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
+    @Deprecated
+    public ResultValidator<T> whenThenTimeElapses(Duration elapsedTime) {
+        return whenTimeElapses(elapsedTime);
+    }
+
+    @Override
+    public ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
         deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
+    }
+
+    @Override
+    @Deprecated
+    public ResultValidator<T> whenThenTimeAdvancesTo(Instant newPointInTime) {
+        return whenTimeAdvancesTo(newPointInTime);
     }
 
     @Override
@@ -505,16 +529,29 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void ensureRepositoryConfiguration() {
-        if (repository == null) {
+        if (repository != null) {
+            return;
+        }
+
+        if (this.useStateStorage) {
+            this.registerRepository(new InMemoryRepository<>(
+                    aggregateType,
+                    subtypes,
+                    eventStore,
+                    getParameterResolverFactory(),
+                    getHandlerDefinition(),
+                    getRepositoryProvider()));
+        } else {
             AggregateModel<T> aggregateModel = aggregateModel();
-            registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                      .aggregateModel(aggregateModel)
-                                                      .aggregateFactory(new GenericAggregateFactory<>(aggregateModel))
-                                                      .eventStore(eventStore)
-                                                      .parameterResolverFactory(getParameterResolverFactory())
-                                                      .handlerDefinition(getHandlerDefinition())
-                                                      .repositoryProvider(getRepositoryProvider())
-                                                      .build());
+            this.registerRepository(EventSourcingRepository.builder(aggregateType)
+                                                           .aggregateModel(aggregateModel)
+                                                           .aggregateFactory(new GenericAggregateFactory<>(
+                                                                   aggregateModel))
+                                                           .eventStore(eventStore)
+                                                           .parameterResolverFactory(getParameterResolverFactory())
+                                                           .handlerDefinition(getHandlerDefinition())
+                                                           .repositoryProvider(getRepositoryProvider())
+                                                           .build());
         }
     }
 
@@ -711,21 +748,22 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
+                                         @Nonnull Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.loadOrCreate(aggregateIdentifier, factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.newInstance(factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.load(aggregateIdentifier, expectedVersion);
             validateIdentifier(aggregateIdentifier, aggregate);
@@ -733,7 +771,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.load(aggregateIdentifier, null);
             validateIdentifier(aggregateIdentifier, aggregate);
@@ -791,7 +829,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             Assert.state(storedAggregate == null,
                          () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
             storedAggregate = AnnotatedAggregate.initialize(factoryMethod,
@@ -803,12 +841,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             return load(aggregateIdentifier, null);
         }
 
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             if (storedAggregate == null) {
                 throw new AggregateNotFoundException(aggregateIdentifier,
                                                      "Aggregate not found. No aggregate has been stored yet.");
@@ -843,7 +881,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
+                                         @Nonnull Callable<T> factoryMethod) throws Exception {
             if (storedAggregate == null) {
                 return newInstance(factoryMethod);
             }
@@ -855,7 +894,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class RecordingEventStore implements EventStore {
 
         @Override
-        public DomainEventStream readEvents(String identifier) {
+        public DomainEventStream readEvents(@Nonnull String identifier) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
                 String exceptionMessage = format(
                         "The aggregate identifier used in the 'when' step does not resemble the aggregate identifier"
@@ -879,7 +918,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void publish(List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
             if (CurrentUnitOfWork.isStarted()) {
                 CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
             } else {
@@ -936,17 +975,20 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+            // A dedicated implementation is not necessary for test fixture.
         }
 
+        @Nonnull
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             return () -> true;
         }
 
         @Override
-        public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+        public @Nonnull
+        Registration registerDispatchInterceptor(
+                @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             return () -> true;
         }
     }
@@ -956,7 +998,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                             @Nonnull CommandResultMessage<?> commandResultMessage) {
             if (commandResultMessage.isExceptional()) {
                 Throwable cause = commandResultMessage.exceptionResult();
                 if (cause instanceof FixtureExecutionException) {
@@ -977,7 +1020,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class DefaultRepositoryProvider implements RepositoryProvider {
 
         @Override
-        public <R> Repository<R> repositoryFor(Class<R> aggregateType) {
+        public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
             return new CreationalRepository<>(aggregateType, this);
         }
     }
@@ -994,19 +1037,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<R> load(String aggregateIdentifier) {
+        public Aggregate<R> load(@Nonnull String aggregateIdentifier) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }
 
         @Override
-        public Aggregate<R> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<R> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }
 
         @Override
-        public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
+        public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }

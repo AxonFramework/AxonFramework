@@ -21,6 +21,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -137,10 +138,11 @@ public class JpaTokenStoreTest {
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
     }
+
     @Transactional
     @Test
     void testIdentifierReadIfAvailable() {
-        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer() ));
+        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer()));
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
         assertTrue(id1.isPresent());
         Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
@@ -262,16 +264,72 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    void testQuerySegments() {
+    void testFetchTokenBySegment() {
+        jpaTokenStore.initializeTokenSegments("test", 2);
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 1);
-        jpaTokenStore.initializeTokenSegments("proc1", 2);
-        jpaTokenStore.initializeTokenSegments("proc2", 1);
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
 
-        assertNull(jpaTokenStore.fetchToken("test", 0));
+        assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
+    }
 
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
-        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMerge() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringMergeSegment0() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplit() {
+        jpaTokenStore.initializeTokenSegments("test", 4);
+        //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testFetchTokenBySegmentFailsDuringSplitSegment0() {
+        jpaTokenStore.initializeTokenSegments("test", 2);
+        Segment segmentToFetch = Segment.computeSegment(0, 0);
+
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.fetchToken("test", segmentToFetch)
+        );
+    }
+
+    @Transactional
+    @Test
+    void testQuerySegments() {
+        prepareTokenStore();
 
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc1");
@@ -281,15 +339,57 @@ public class JpaTokenStoreTest {
             final int[] segments = jpaTokenStore.fetchSegments("proc2");
             assertThat(segments.length, is(1));
         }
-
         {
             final int[] segments = jpaTokenStore.fetchSegments("proc3");
             assertThat(segments.length, is(0));
         }
 
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    @Transactional
+    @Test
+    void testQueryAvailableSegments() {
+        prepareTokenStore();
+
+        {
+            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segments.size(), is(0));
+            jpaTokenStore.releaseClaim("proc1", 0);
+            entityManager.flush();
+            entityManager.clear();
+            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            assertThat(segmentsAfterRelease.size(), is(1));
+        }
+        {
+            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segments.size(), is(0));
+            jpaTokenStore.releaseClaim("proc2", 0);
+            entityManager.flush();
+            entityManager.clear();
+            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            assertThat(segmentsAfterRelease.size(), is(1));
+        }
+        {
+            final List<Segment> segments = jpaTokenStore.fetchAvailableSegments("proc3");
+            assertThat(segments.size(), is(0));
+        }
 
         entityManager.flush();
         entityManager.clear();
+    }
+
+    private void prepareTokenStore() {
+        jpaTokenStore.initializeTokenSegments("test", 1);
+        jpaTokenStore.initializeTokenSegments("proc1", 2);
+        jpaTokenStore.initializeTokenSegments("proc2", 1);
+
+        assertNull(jpaTokenStore.fetchToken("test", 0));
+
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
     }
 
     @Transactional
@@ -495,7 +595,6 @@ public class JpaTokenStoreTest {
             public EntityManagerProvider entityManagerProvider() {
                 return new SimpleEntityManagerProvider(entityManager);
             }
-
         }
     }
 }

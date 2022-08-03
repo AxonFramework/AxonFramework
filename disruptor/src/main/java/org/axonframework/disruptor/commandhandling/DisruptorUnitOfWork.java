@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,18 @@ package org.axonframework.disruptor.commandhandling;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.unitofwork.*;
+import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ExecutionResult;
+import org.axonframework.messaging.unitofwork.MessageProcessingContext;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
@@ -39,8 +45,8 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
     private MessageProcessingContext<T> processingContext;
 
     /**
-     * Resets the state of this Unit of Work, by setting its phase to {@code NOT_STARTED}, replacing the message
-     * of this Unit of Work with given {@code message}, and clearing its collection of registered handlers.
+     * Resets the state of this Unit of Work, by setting its phase to {@code NOT_STARTED}, replacing the message of this
+     * Unit of Work with given {@code message}, and clearing its collection of registered handlers.
      *
      * @param message the new Message that is about to be processed.
      */
@@ -113,7 +119,8 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
      * This feature is not supported by this Unit of Work.
      */
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task,
+                                                  @Nonnull RollbackConfiguration rollbackConfiguration) {
         throw new UnsupportedOperationException();
     }
 

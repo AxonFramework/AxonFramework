@@ -37,8 +37,8 @@ public abstract class ExceptionSerializer {
      *
      * @param clientLocation the name of the client were the {@link ErrorMessage} originates from
      * @param t              the {@link Throwable} to base this {@link ErrorMessage} on
-     * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the {@link
-     * Throwable}
+     * @return the {@link ErrorMessage} originating from the given {@code clientLocation} and based on the
+     * {@link Throwable}
      */
     public static ErrorMessage serialize(String clientLocation, Throwable t) {
         ErrorMessage.Builder builder =
@@ -52,4 +52,5 @@ public abstract class ExceptionSerializer {
         }
         return builder.build();
     }
+
 }

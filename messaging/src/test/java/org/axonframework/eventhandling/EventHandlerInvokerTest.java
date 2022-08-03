@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.junit.jupiter.api.*;
 
+import javax.annotation.Nonnull;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -30,12 +32,12 @@ class EventHandlerInvokerTest {
 
     private final EventHandlerInvoker testSubject = spy(new EventHandlerInvoker() {
         @Override
-        public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
             return true;
         }
 
         @Override
-        public void handle(EventMessage<?> message, Segment segment) throws Exception {
+        public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
             // Do nothing
         }
     });

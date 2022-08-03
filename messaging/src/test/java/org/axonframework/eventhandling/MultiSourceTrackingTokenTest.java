@@ -16,8 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,8 +24,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link MultiSourceTrackingToken}.

@@ -132,7 +132,7 @@ public class SubscriptionMessageSerializer {
         QueryUpdate.Builder updateMessageBuilder = QueryUpdate.newBuilder();
         if (subscriptionQueryUpdateMessage.isExceptional()) {
             Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
-            updateMessageBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            updateMessageBuilder.setErrorCode(ErrorCode.getQueryExecutionErrorCode(exceptionResult).errorCode());
             updateMessageBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -232,7 +232,7 @@ public class SubscriptionMessageSerializer {
                              .setRequestIdentifier(subscriptionId);
         if (initialResult.isExceptional()) {
             Throwable exceptionResult = initialResult.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(ErrorCode.getQueryExecutionErrorCode(exceptionResult).errorCode());
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -279,7 +279,7 @@ public class SubscriptionMessageSerializer {
                                                 .setErrorMessage(ExceptionSerializer.serialize(
                                                         configuration.getClientId(), cause
                                                 ))
-                                                .setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode())
+                                                .setErrorCode(ErrorCode.getQueryExecutionErrorCode(cause).errorCode())
                                                 .setClientId(configuration.getClientId())
                                                 .setComponentName(configuration.getComponentName())
                                                 .build();

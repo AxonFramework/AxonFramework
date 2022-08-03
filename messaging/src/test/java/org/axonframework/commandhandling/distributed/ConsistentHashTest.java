@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.messaging.GenericMessage;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -109,4 +110,11 @@ class ConsistentHashTest {
         assertEquals(member1.name(), consistentHash.getMembers().iterator().next().name());
         assertEquals(consistentHash.getMembers(), consistentHashModified.getMembers());
     }
+
+    @Test
+    void testNotEqualsForModifiedInstanceWithDefaultInstance() throws Exception {
+        ConsistentHash consistentHash = new ConsistentHash(s -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
+        assertNotEquals(consistentHash, new ConsistentHash());
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.distributed.commandfilter.NegateCommand
 import org.axonframework.commandhandling.distributed.commandfilter.OrCommandMessageFilter;
 
 import java.io.Serializable;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing a filter that can be applied to commands to describe the type of commands supported by a node in
@@ -41,7 +42,7 @@ public interface CommandMessageFilter extends Serializable {
      * @param commandMessage the message to match
      * @return {@code true} if the command matches, otherwise {@code false}
      */
-    boolean matches(CommandMessage<?> commandMessage);
+    boolean matches(@Nonnull CommandMessage<?> commandMessage);
 
     /**
      * Returns a filter that matches when both this instance and the given {@code other} match.
@@ -49,7 +50,7 @@ public interface CommandMessageFilter extends Serializable {
      * @param other the other filter to match against
      * @return a filter that matches when both this instance and the other match
      */
-    default CommandMessageFilter and(CommandMessageFilter other) {
+    default CommandMessageFilter and(@Nonnull CommandMessageFilter other) {
         return new AndCommandMessageFilter(this, other);
     }
 
@@ -68,7 +69,7 @@ public interface CommandMessageFilter extends Serializable {
      * @param other the other filter to match against
      * @return a filter that matches when either this instance or the other matches
      */
-    default CommandMessageFilter or(CommandMessageFilter other) {
+    default CommandMessageFilter or(@Nonnull CommandMessageFilter other) {
         return new OrCommandMessageFilter(this, other);
     }
 }
