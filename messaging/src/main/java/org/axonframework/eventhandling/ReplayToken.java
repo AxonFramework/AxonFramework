@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
@@ -65,12 +66,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * Initializes a ReplayToken with {@code tokenAtReset} which represents the position at which a reset was triggered
      * and the {@code newRedeliveryToken} which represents current token.
      * <p>
-     * Using the {@link #createReplayToken(TrackingToken)} is preferred, as it executes sanity checks on the
-     * parameters.
+     * Using the {@link #createReplayToken(TrackingToken, TrackingToken)} is preferred, as it executes sanity checks on
+     * the parameters.
      *
      * @param tokenAtReset       The token representing the position at which the reset was triggered
      * @param newRedeliveryToken The current token
-     * @deprecated Use the {@link #createReplayToken(TrackingToken)} method instead.
+     * @deprecated Use the {@link #createReplayToken(TrackingToken, TrackingToken)} method instead.
      */
     @Deprecated
     public ReplayToken(TrackingToken tokenAtReset,
@@ -126,7 +127,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @param startPosition The position where the token should be reset to and start replaying from
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
-    public static TrackingToken createReplayToken(TrackingToken tokenAtReset, TrackingToken startPosition) {
+    public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
         return createReplayToken(tokenAtReset, startPosition, null);
     }
 
@@ -137,7 +138,7 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      *
      * @param tokenAtReset  The token present when the reset was triggered
      * @param startPosition The position where the token should be reset to and start replaying from
-     * @param resetContext  The context given to the reset
+     * @param resetContext  The context given to the reset, may be null
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(
@@ -169,20 +170,19 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         return createReplayToken(tokenAtReset, null);
     }
 
-
     /**
      * Extracts the context from a {@code message} of the matching {@code contextClass}.
      * <p>
-     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken} or the context an
-     * instance of the provided {@code contextClass}.
+     * Will resolve to an empty {@code Optional} if the provided message is not a {@link TrackedEventMessage}, doesn't
+     * contain a {@link ReplayToken}, or the context isn't an instance of the provided {@code contextClass}, or there is
+     * no context at all.
      *
      * @param message      The message to extract the context from
      * @param contextClass The class the context should match
      * @param <T>          The type of the context
-     * @return The context, if the provided token is a {@link ReplayToken} and the context an instance of the provided
-     * {@code contextClass}.
+     * @return The context, if present in the message
      */
-    public static <T> Optional<T> replayContext(Message<?> message, @Nonnull Class<T> contextClass) {
+    public static <T> Optional<T> replayContext(EventMessage<?> message, @Nonnull Class<T> contextClass) {
         if (message instanceof TrackedEventMessage) {
             return replayContext(((TrackedEventMessage<?>) message).trackingToken(), contextClass);
         }
@@ -202,15 +202,15 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Extracts the context from a {@code trackingToken} of the matching {@code contextClass}.
+     * Extracts the context from a {@code message} of the matching {@code contextClass}.
      * <p>
-     * Will resolve to null if the provided token is not a {@link ReplayToken} or the context does not match the
-     * provided {@code contextClass}.
+     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or the context
+     * isn't an instance of the provided {@code contextClass}, or there is no context at all.
      *
      * @param trackingToken The tracking token to extract the context from
      * @param contextClass  The class the context should match
      * @param <T>           The type of the context
-     * @return The context, if matching
+     * @return The context, if present in the token
      */
     public static <T> Optional<T> replayContext(TrackingToken trackingToken, @Nonnull Class<T> contextClass) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
@@ -319,6 +319,12 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         }
     }
 
+    /**
+     * Returns the context that was provided when the token was reset.
+     *
+     * @return The context, null if none was provided during reset.
+     */
+    @Nullable
     public Object context() {
         return context;
     }

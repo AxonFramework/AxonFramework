@@ -88,7 +88,10 @@ class ReplayContextParameterResolverFactoryTest {
         @EventHandler
         public void handle(Long event, TrackingToken token, @ReplayContext MyResetContext resetContext) {
             receivedLongs.add(event);
-            if (resetContext != null && resetContext.sequences.contains(token.position().orElse(0))) {
+
+            long position = token.position().orElse(0);
+            boolean tokenMatchesFilter = resetContext != null && resetContext.sequences.contains(position);
+            if (tokenMatchesFilter) {
                 receivedInReplay.add(event);
             }
         }

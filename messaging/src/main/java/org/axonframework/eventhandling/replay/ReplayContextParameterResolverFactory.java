@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -41,27 +43,27 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (parameter.isAnnotationPresent(ReplayContext.class)) {
-            return new ReplayParameterResolver(parameter.getType());
+            return new ReplayContextParameterResolver(parameter.getType());
         }
         return null;
     }
 
-    private static class ReplayParameterResolver implements ParameterResolver<Object> {
+    private static class ReplayContextParameterResolver implements ParameterResolver<Object> {
 
         private final Class<?> type;
 
-        public ReplayParameterResolver(Class<?> type) {
+        public ReplayContextParameterResolver(Class<?> type) {
             this.type = type;
         }
 
         @Override
         public Object resolveParameterValue(Message message) {
-            return ReplayToken.replayContext(message, this.type).orElse(null);
+            return ReplayToken.replayContext((EventMessage<?>) message, this.type).orElse(null);
         }
 
         @Override
         public boolean matches(Message message) {
-            return true;
+            return message instanceof TrackedEventMessage;
         }
     }
 }
