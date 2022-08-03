@@ -642,8 +642,7 @@ class AggregateAnnotationCommandHandlerTest {
         Repository<RootAggregate> repository = mock(Repository.class);
 
         Set<Class<? extends RootAggregate>> subtypes = new HashSet<>();
-        subtypes.add(ChildOneAggregate.class);
-        subtypes.add(ChildTwoAggregate.class);
+        subtypes.add(ChildAggregate.class);
         AggregateModel<RootAggregate> polymorphicAggregateModel =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(RootAggregate.class, subtypes);
 
@@ -1213,19 +1212,20 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @SuppressWarnings("unused")
-    private abstract static class RootAggregate {
+    abstract class RootAggregate {
 
         @CommandHandler
-        public void handle(String command) {
-
+        public String handle(String command) {
+            return "ROOT";
         }
     }
 
-    private static class ChildOneAggregate extends RootAggregate {
+    class ChildAggregate extends RootAggregate {
 
-    }
-
-    private static class ChildTwoAggregate extends RootAggregate {
-
+        @CommandHandler
+        @Override
+        public String handle(String command) {
+            return "CHILD";
+        }
     }
 }

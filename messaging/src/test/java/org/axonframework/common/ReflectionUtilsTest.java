@@ -294,6 +294,21 @@ class ReflectionUtilsTest {
         assertEquals(constructor.toGenericString(), memberGenericString);
     }
 
+
+    @Test
+    void testToDiscernableSignatureOfConstructor() throws NoSuchMethodException {
+        Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
+        String memberGenericString = toDiscernibleSignature(constructor);
+        assertEquals("org.axonframework.common.ReflectionUtilsTest$SomeTypeWithMethods()", memberGenericString);
+    }
+
+    @Test
+    void testToDiscernableSignatureOfMethod() throws NoSuchMethodException {
+        Method method = SomeTypeWithMethods.class.getMethod("someMethodWithParameters", String.class, Integer.class, Object.class);
+        String memberGenericString = toDiscernibleSignature(method);
+        assertEquals("someMethodWithParameters(java.lang.String,java.lang.Integer,java.lang.Object)", memberGenericString);
+    }
+
     @SuppressWarnings("FieldCanBeLocal")
     private static class SomeType implements SomeInterface {
 
@@ -346,6 +361,10 @@ class ReflectionUtilsTest {
 
         public void someVoidMethod() {
             voidMethodInvocations.incrementAndGet();
+        }
+
+        public String someMethodWithParameters(String parameterOne, Integer parameterTwo, Object parameter3) {
+            return "someMethodWithParametersResult";
         }
     }
 }
