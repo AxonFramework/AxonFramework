@@ -31,7 +31,7 @@
   </modules>
 
   <properties>
-    <axon.version>4.5.14</axon.version>
+    <axon.version>4.5.15</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.7.10</kotlin.version>
     <jackson-kotlin.version>2.13.3</jackson-kotlin.version>
