@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -494,6 +495,21 @@ public abstract class ReflectionUtils {
         throw new IllegalStateException(
                 String.format(UNSUPPORTED_MEMBER_TYPE_EXCEPTION_MESSAGE, member.getClass().getName())
         );
+    }
+
+
+    /**
+     * Returns a discernible signature without including the classname. This will contain the method name and the parameter
+     * types, such as: {@code thisIfMyMethod(java.lang.String myString, com.acme.MyGreatObject)}.
+     *
+     * @param executable The executable to make a signature of.
+     * @return The discernible signature.
+     */
+    public static String toDiscernibleSignature(Executable executable) {
+        return String.format("%s(%s)",
+                             executable.getName(),
+                             Arrays.stream(executable.getParameterTypes()).map(Class::getName)
+                                   .collect(Collectors.joining(",")));
     }
 
     private ReflectionUtils() {
