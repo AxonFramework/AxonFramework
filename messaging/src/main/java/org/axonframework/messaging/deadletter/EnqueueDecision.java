@@ -5,19 +5,21 @@ import org.axonframework.messaging.Message;
 import java.util.Optional;
 
 /**
- * A contract towards describing a decision among a {@link DeadLetter dead-letter} of type {@code D}.
+ * A contract towards describing a decision among a {@link DeadLetter dead-letter} containing a message of type
+ * {@code M}.
  * <p>
- * Either describes the letter should be {@link #shouldEnqueue() enqueued} or {@link #shouldEvict() evicted}. If the
- * letter should be enqueued the {@link #enqueueCause()} may contain a {@link Throwable}. Furthermore,
- * {@link #addDiagnostics(DeadLetter)} may add {@link DeadLetter#diagnostic() diagnostic} information to the dead-letter
- * that should be taken into account when enqueueing the letter.
+ * Either describes that the letter should be {@link #shouldEnqueue() enqueued} or {@link #shouldEvict() evicted}. If
+ * the letter should be enqueued the {@link #enqueueCause()} may contain a {@link Throwable}. Furthermore,
+ * {@link #addDiagnostics(DeadLetter)} may add {@link DeadLetter#diagnostics() diagnostic} information to the
+ * dead-letter that should be taken into account when enqueueing the letter.
  *
- * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ *            decision on.
  * @author Steven van Beelen
- * @since 4.6.0
  * @see Decisions
+ * @since 4.6.0
  */
-public interface EnqueueDecision<D extends DeadLetter<? extends Message<?>>> {
+public interface EnqueueDecision<M extends Message<?>> {
 
     /**
      * The decision whether the {@link DeadLetter dead-letter} should be evicted from its queue.
@@ -43,18 +45,18 @@ public interface EnqueueDecision<D extends DeadLetter<? extends Message<?>>> {
     Optional<Throwable> enqueueCause();
 
     /**
-     * Adds {@link DeadLetter#diagnostic() diagnostic} {@link org.axonframework.messaging.MetaData} to the given
-     * {@code letter}. The added diagnostics may provide additional information on the decision that may be used to
-     * influence future decisions.
+     * Adds {@link DeadLetter#diagnostics()} {@link org.axonframework.messaging.MetaData} to the given {@code letter}.
+     * The added diagnostics may provide additional information on the decision that may be used to influence future
+     * decisions.
      * <p>
      * By default, the {@code letter} is returned as is.
      *
-     * @param letter The {@link DeadLetter dead-letter} of type {@code D} to add
-     *               {@link DeadLetter#diagnostic() diagnostic} {@link org.axonframework.messaging.MetaData} to.
-     * @return A copy of the given {@code letter} when {@link DeadLetter#diagnostic() diagnostic}
+     * @param letter The {@link DeadLetter dead-letter} to add {@link DeadLetter#diagnostics() diagnostic}
+     *               {@link org.axonframework.messaging.MetaData} to.
+     * @return A copy of the given {@code letter} when {@link DeadLetter#diagnostics() diagnostic}
      * {@link org.axonframework.messaging.MetaData} was added.
      */
-    default D addDiagnostics(D letter) {
+    default DeadLetter<? extends M> addDiagnostics(DeadLetter<? extends M> letter) {
         return letter;
     }
 }

@@ -8,11 +8,12 @@ import java.util.Optional;
  * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should be ignored. This typically means that a
  * dead-letter remains in the queue.
  *
- * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ *            decision on.
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class IgnoreDecision<D extends DeadLetter<? extends Message<?>>> implements EnqueueDecision<D> {
+public class IgnoreDecision<M extends Message<?>> implements EnqueueDecision<M> {
 
     @Override
     public boolean shouldEvict() {

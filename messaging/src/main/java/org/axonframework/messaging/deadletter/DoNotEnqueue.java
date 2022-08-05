@@ -7,11 +7,12 @@ import java.util.Optional;
 /**
  * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should not be enqueued.
  *
- * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ *            decision on.
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class DoNotEnqueue<D extends DeadLetter<? extends Message<?>>> implements EnqueueDecision<D> {
+public class DoNotEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
 
     @Override
     public boolean shouldEvict() {

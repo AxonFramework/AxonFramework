@@ -18,20 +18,20 @@ public abstract class Decisions {
     /**
      * Construct a {@link IgnoreDecision} defining that a {@link DeadLetter dead-letter} should remain in the queue.
      *
-     * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link IgnoreDecision} defining that a {@link DeadLetter dead-letter} should remain in the queue.
      */
-    public static <D extends DeadLetter<? extends Message<?>>> IgnoreDecision<D> ignore() {
+    public static <M extends Message<?>> IgnoreDecision<M> ignore() {
         return new IgnoreDecision<>();
     }
 
     /**
      * Construct a {@link DoNotEnqueue} defining that a {@link DeadLetter dead-letter} should not be enqueued at all.
      *
-     * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead-letter} should not be enqueued at all.
      */
-    public static <D extends DeadLetter<? extends Message<?>>> DoNotEnqueue<D> doNotEnqueue() {
+    public static <M extends Message<?>> DoNotEnqueue<M> doNotEnqueue() {
         return new DoNotEnqueue<>();
     }
 
@@ -39,20 +39,20 @@ public abstract class Decisions {
      * Construct a {@link DoNotEnqueue} defining that a {@link DeadLetter dead-letter} should be evicted from the
      * queue.
      *
-     * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead-letter} should be evicted from the queue.
      */
-    public static <D extends DeadLetter<? extends Message<?>>> DoNotEnqueue<D> evict() {
+    public static <M extends Message<?>> DoNotEnqueue<M> evict() {
         return new DoNotEnqueue<>();
     }
 
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued.
      *
-     * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued.
      */
-    public static <D extends DeadLetter<?>> ShouldEnqueue<D> enqueue() {
+    public static <M extends Message<?>> ShouldEnqueue<M> enqueue() {
         return enqueue(null);
     }
 
@@ -61,27 +61,28 @@ public abstract class Decisions {
      * the given {@code enqueueCause}.
      *
      * @param enqueueCause The reason for enqueueing a {@link DeadLetter dead-letter}.
-     * @param <D>          An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M>          The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
-    public static <D extends DeadLetter<?>> ShouldEnqueue<D> enqueue(Throwable enqueueCause) {
+    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(Throwable enqueueCause) {
         return enqueue(enqueueCause, letter -> MetaData.emptyInstance());
     }
 
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued because of
      * the given {@code enqueueCause}. The {@code diagnosticsBuilder} constructs
-     * {@link DeadLetter#diagnostic() diagnostic} {@link MetaData} to append to the letter to enqueue.
+     * {@link DeadLetter#diagnostics() diagnostic} {@link MetaData} to append to the letter to enqueue.
      *
      * @param enqueueCause       The reason for enqueueing a {@link DeadLetter dead-letter}.
-     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostic() diagnostic} {@link MetaData}.
-     * @param <D>                An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
+     * @param <M>                The type of message contained in  the {@link DeadLetter} that's been made a decision
+     *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
-    public static <D extends DeadLetter<?>> ShouldEnqueue<D> enqueue(Throwable enqueueCause,
-                                                                     Function<D, MetaData> diagnosticsBuilder) {
+    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(Throwable enqueueCause,
+                                                                  Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
         return new ShouldEnqueue<>(enqueueCause, diagnosticsBuilder);
     }
 
@@ -90,27 +91,28 @@ public abstract class Decisions {
      * the given {@code requeueCause}.
      *
      * @param requeueCause The reason for requeueing a {@link DeadLetter dead-letter}.
-     * @param <D>          An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param <M>          The type of message contained in  the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be requeued because of the
      * given {@code requeueCause}.
      */
-    public static <D extends DeadLetter<?>> ShouldEnqueue<D> requeue(Throwable requeueCause) {
+    public static <M extends Message<?>> ShouldEnqueue<M> requeue(Throwable requeueCause) {
         return requeue(requeueCause, letter -> MetaData.emptyInstance());
     }
 
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be requeued because of
      * the given {@code requeueCause}. The {@code diagnosticsBuilder} constructs
-     * {@link DeadLetter#diagnostic() diagnostic} {@link MetaData} to append to the letter to requeue.
+     * {@link DeadLetter#diagnostics() diagnostic} {@link MetaData} to append to the letter to requeue.
      *
      * @param requeueCause       The reason for requeueing a {@link DeadLetter dead-letter}.
-     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostic() diagnostic} {@link MetaData}.
-     * @param <D>                An implementation of {@link DeadLetter} that's been made a decision on.
+     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
+     * @param <M>                The type of message contained in  the {@link DeadLetter} that's been made a decision
+     *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be requeued because of the
      * given {@code requeueCause}.
      */
-    public static <D extends DeadLetter<?>> ShouldEnqueue<D> requeue(Throwable requeueCause,
-                                                                     Function<D, MetaData> diagnosticsBuilder) {
+    public static <M extends Message<?>> ShouldEnqueue<M> requeue(Throwable requeueCause,
+                                                                  Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
         return new ShouldEnqueue<>(requeueCause, diagnosticsBuilder);
     }
 

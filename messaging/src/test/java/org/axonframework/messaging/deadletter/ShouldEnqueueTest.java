@@ -1,8 +1,6 @@
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.deadletter.EventSequenceIdentifier;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
@@ -22,21 +20,18 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ShouldEnqueueTest {
 
-    private DeadLetter<EventMessage<String>> testLetter;
+    private DeadLetter<? extends Message<?>> testLetter;
 
     @BeforeEach
     void setUp() {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        testLetter = new GenericDeadLetter<>(
-                new EventSequenceIdentifier("seqId", "group"),
-                GenericEventMessage.asEventMessage("payload")
-        );
+        testLetter = new GenericDeadLetter<>("seqId", GenericEventMessage.asEventMessage("payload"));
     }
 
     @Test
     void testDefaultShouldEnqueue() {
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject = new ShouldEnqueue<>();
+        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -48,7 +43,7 @@ class ShouldEnqueueTest {
 
     @Test
     void testDecisionsEnqueue() {
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject = new ShouldEnqueue<>();
+        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -62,7 +57,7 @@ class ShouldEnqueueTest {
     void testShouldEnqueueWithCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject = new ShouldEnqueue<>(testCause);
+        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause);
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -78,7 +73,7 @@ class ShouldEnqueueTest {
     void testDecisionsEnqueueWithCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject = Decisions.enqueue(testCause);
+        ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue(testCause);
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -94,7 +89,7 @@ class ShouldEnqueueTest {
     void testDecisionsRequeueWithCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject = Decisions.requeue(testCause);
+        ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause);
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -111,8 +106,7 @@ class ShouldEnqueueTest {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject =
-                new ShouldEnqueue<>(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetaData);
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -121,13 +115,11 @@ class ShouldEnqueueTest {
         assertEquals(testCause, resultCause.get());
 
         DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
-        assertEquals(testLetter.identifier(), result.identifier());
-        assertEquals(testLetter.sequenceIdentifier(), result.sequenceIdentifier());
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
         assertEquals(testLetter.lastTouched(), result.lastTouched());
-        assertEquals(testMetaData, result.diagnostic());
+        assertEquals(testMetaData, result.diagnostics());
     }
 
     @Test
@@ -135,8 +127,7 @@ class ShouldEnqueueTest {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 
-        ShouldEnqueue<DeadLetter<? extends Message<?>>> testSubject =
-                Decisions.requeue(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause, letter -> testMetaData);
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -145,12 +136,10 @@ class ShouldEnqueueTest {
         assertEquals(testCause, resultCause.get());
 
         DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
-        assertEquals(testLetter.identifier(), result.identifier());
-        assertEquals(testLetter.sequenceIdentifier(), result.sequenceIdentifier());
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
         assertEquals(testLetter.lastTouched(), result.lastTouched());
-        assertEquals(testMetaData, result.diagnostic());
+        assertEquals(testMetaData, result.diagnostics());
     }
 }

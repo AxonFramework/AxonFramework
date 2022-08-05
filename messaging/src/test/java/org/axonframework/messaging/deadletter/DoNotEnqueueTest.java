@@ -2,7 +2,6 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.deadletter.EventSequenceIdentifier;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
@@ -26,15 +25,12 @@ class DoNotEnqueueTest {
     void setUp() {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        testLetter = new GenericDeadLetter<>(
-                new EventSequenceIdentifier("seqId", "group"),
-                GenericEventMessage.asEventMessage("payload")
-        );
+        testLetter = new GenericDeadLetter<>("seqId", GenericEventMessage.asEventMessage("payload"));
     }
 
     @Test
     void testDefaultIgnoreDecision() {
-        DoNotEnqueue<DeadLetter<? extends Message<?>>> testSubject = new DoNotEnqueue<>();
+        DoNotEnqueue<Message<?>> testSubject = new DoNotEnqueue<>();
 
         assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());
@@ -46,7 +42,7 @@ class DoNotEnqueueTest {
 
     @Test
     void testDecisionsDoNotEnqueue() {
-        DoNotEnqueue<DeadLetter<? extends Message<?>>> testSubject = Decisions.doNotEnqueue();
+        DoNotEnqueue<Message<?>> testSubject = Decisions.doNotEnqueue();
 
         assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());
@@ -58,7 +54,7 @@ class DoNotEnqueueTest {
 
     @Test
     void testDecisionsEvict() {
-        DoNotEnqueue<DeadLetter<? extends Message<?>>> testSubject = Decisions.evict();
+        DoNotEnqueue<Message<?>> testSubject = Decisions.evict();
 
         assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());

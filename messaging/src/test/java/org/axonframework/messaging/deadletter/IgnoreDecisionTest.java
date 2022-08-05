@@ -2,7 +2,6 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.deadletter.EventSequenceIdentifier;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
@@ -26,15 +25,12 @@ class IgnoreDecisionTest {
     void setUp() {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        testLetter = new GenericDeadLetter<>(
-                new EventSequenceIdentifier("seqId", "group"),
-                GenericEventMessage.asEventMessage("payload")
-        );
+        testLetter = new GenericDeadLetter<>("seqId", GenericEventMessage.asEventMessage("payload"));
     }
 
     @Test
     void testDefaultIgnoreDecision() {
-        IgnoreDecision<DeadLetter<? extends Message<?>>> testSubject = new IgnoreDecision<>();
+        IgnoreDecision<Message<?>> testSubject = new IgnoreDecision<>();
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
@@ -46,7 +42,7 @@ class IgnoreDecisionTest {
 
     @Test
     void testDecisionsIgnore() {
-        IgnoreDecision<DeadLetter<? extends Message<?>>> testSubject = Decisions.ignore();
+        IgnoreDecision<Message<?>> testSubject = Decisions.ignore();
 
         assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());

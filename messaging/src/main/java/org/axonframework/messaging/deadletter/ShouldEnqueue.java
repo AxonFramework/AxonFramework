@@ -10,14 +10,15 @@ import java.util.function.Function;
 /**
  * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should be enqueued.
  *
- * @param <D> An implementation of {@link DeadLetter} that's been made a decision on.
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ *            decision on.
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class ShouldEnqueue<D extends DeadLetter<? extends Message<?>>> implements EnqueueDecision<D> {
+public class ShouldEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
 
     private final Throwable enqueueCause;
-    private final Function<D, MetaData> diagnosticsBuilder;
+    private final Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder;
 
     /**
      * Constructs a default {@link EnqueueDecision} to enqueue without any {@link #enqueueCause()}.
@@ -44,7 +45,7 @@ public class ShouldEnqueue<D extends DeadLetter<? extends Message<?>>> implement
      * @param diagnosticsBuilder A function constructing diagnostics to append during
      *                           {@link #addDiagnostics(DeadLetter)}.
      */
-    public ShouldEnqueue(Throwable enqueueCause, Function<D, MetaData> diagnosticsBuilder) {
+    public ShouldEnqueue(Throwable enqueueCause, Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
         this.enqueueCause = enqueueCause;
         this.diagnosticsBuilder = diagnosticsBuilder;
     }
@@ -65,9 +66,8 @@ public class ShouldEnqueue<D extends DeadLetter<? extends Message<?>>> implement
     }
 
     @Override
-    public D addDiagnostics(D letter) {
-        //noinspection unchecked
-        return (D) letter.andDiagnostics(diagnosticsBuilder.apply(letter));
+    public DeadLetter<? extends M> addDiagnostics(DeadLetter<? extends M> letter) {
+        return letter.andDiagnostics(diagnosticsBuilder.apply(letter));
     }
 
     @Override
