@@ -40,9 +40,9 @@ public class DeadLetterQueueOverflowException extends AxonException {
     /**
      * Constructs an exception based on the given {@code identifier}.
      *
-     * @param identifier The {@link SequenceIdentifier} referencing the sequence that has reached its limit.
+     * @param identifier The identifier referencing the sequence that has reached its limit.
      */
-    public DeadLetterQueueOverflowException(SequenceIdentifier identifier) {
+    public DeadLetterQueueOverflowException(Object identifier) {
         super("Unable to enqueue letter in sequence [" + identifier + "]. "
                       + "The maximum capacity of dead-letters has been reached.");
     }
