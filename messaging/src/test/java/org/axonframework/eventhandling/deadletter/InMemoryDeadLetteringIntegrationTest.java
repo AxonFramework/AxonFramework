@@ -17,20 +17,20 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link InMemorySequencedDeadLetterQueue}
- * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
+ * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
+ * {@link InMemorySequencedDeadLetterQueue} with an {@link org.axonframework.eventhandling.EventProcessor} and
+ * {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Steven van Beelen
  */
 class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
-    SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> buildDeadLetterQueue() {
+    SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
         return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 }

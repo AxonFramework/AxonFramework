@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.deadletter.EventSequenceIdentifier;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
@@ -32,41 +32,30 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class InMemorySequencedDeadLetterQueueTest
-        extends SequencedDeadLetterQueueTest<EventSequenceIdentifier, DeadLetter<?>> {
+class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
     @Override
-    SequencedDeadLetterQueue<DeadLetter<?>> buildTestSubject() {
+    SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
         return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 
     @Override
-    EventSequenceIdentifier generateSequenceId() {
-        return generateSequenceId(generateId());
+    DeadLetter<EventMessage<?>> generateInitialLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
     }
 
     @Override
-    EventSequenceIdentifier generateSequenceId(String group) {
-        return new EventSequenceIdentifier(generateId(), group);
+    DeadLetter<EventMessage<?>> generateFollowUpLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
     }
 
     @Override
-    DeadLetter<?> generateInitialLetter(EventSequenceIdentifier sequenceIdentifier) {
-        return new GenericDeadLetter<>(sequenceIdentifier, generateEvent(), generateThrowable());
-    }
-
-    @Override
-    DeadLetter<?> generateFollowUpLetter(EventSequenceIdentifier sequenceIdentifier) {
-        return new GenericDeadLetter<>(sequenceIdentifier, generateEvent());
-    }
-
-    @Override
-    protected DeadLetter<?> generateRequeuedLetter(DeadLetter<?> original,
-                                                   Instant lastTouched,
-                                                   Throwable requeueCause,
-                                                   MetaData diagnostics) {
+    protected DeadLetter<EventMessage<?>> generateRequeuedLetter(DeadLetter<EventMessage<?>> original,
+                                                                 Instant lastTouched,
+                                                                 Throwable requeueCause,
+                                                                 MetaData diagnostics) {
         setAndGetTime(lastTouched);
-        return original.withCause(requeueCause).andDiagnostics(diagnostics);
+        return original.withCause(requeueCause).andDiagnostics(diagnostics).markTouched();
     }
 
     @Override
@@ -78,8 +67,8 @@ class InMemorySequencedDeadLetterQueueTest
     void testMaxSequences() {
         int expectedMaxSequences = 128;
 
-        InMemorySequencedDeadLetterQueue<DeadLetter<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.builder()
+        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
+                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
                                                 .maxSequences(expectedMaxSequences)
                                                 .build();
 
@@ -90,8 +79,8 @@ class InMemorySequencedDeadLetterQueueTest
     void testMaxSequenceSize() {
         int expectedMaxSequenceSize = 128;
 
-        InMemorySequencedDeadLetterQueue<DeadLetter<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.builder()
+        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
+                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
                                                 .maxSequenceSize(expectedMaxSequenceSize)
                                                 .build();
 
@@ -105,7 +94,7 @@ class InMemorySequencedDeadLetterQueueTest
 
     @Test
     void testBuildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<DeadLetter<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
@@ -114,7 +103,7 @@ class InMemorySequencedDeadLetterQueueTest
     @Test
     void testBuildWithValueLowerThanMinimumMaxSequencesThrowsAxonConfigurationException() {
         IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<DeadLetter<?>> builderTestSubject =
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                     InMemorySequencedDeadLetterQueue.builder();
 
             assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(i));
@@ -123,7 +112,7 @@ class InMemorySequencedDeadLetterQueueTest
 
     @Test
     void testBuildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<DeadLetter<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
@@ -132,7 +121,7 @@ class InMemorySequencedDeadLetterQueueTest
     @Test
     void testBuildWithValueLowerThanMinimumMaxSequenceSizeThrowsAxonConfigurationException() {
         IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<DeadLetter<?>> builderTestSubject =
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                     InMemorySequencedDeadLetterQueue.builder();
 
             assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(i));
