@@ -17,4 +17,11 @@ class StringUtilsTest {
         assertFalse(StringUtils.nonEmptyOrNull(null));
         assertTrue(StringUtils.nonEmptyOrNull("some-string"));
     }
+
+    @Test
+    void testEmptyOrNull() {
+        assertTrue(StringUtils.emptyOrNull(""));
+        assertTrue(StringUtils.emptyOrNull(null));
+        assertFalse(StringUtils.emptyOrNull("some-string"));
+    }
 }
