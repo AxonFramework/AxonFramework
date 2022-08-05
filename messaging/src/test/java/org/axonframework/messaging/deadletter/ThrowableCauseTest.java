@@ -1,11 +1,6 @@
 package org.axonframework.messaging.deadletter;
 
-import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
-
-import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,22 +30,5 @@ class ThrowableCauseTest {
 
         assertEquals(testType, testSubject.type());
         assertEquals(testMessage, testSubject.message());
-    }
-
-    @MethodSource("serializers")
-    @ParameterizedTest
-    void testSerializationOfThrowableCause(TestSerializer serializer) {
-        Throwable testThrowable = new RuntimeException("just because");
-
-        ThrowableCause testSubject = new ThrowableCause(testThrowable);
-
-        ThrowableCause result = serializer.serializeDeserialize(testSubject);
-
-        assertEquals(testSubject.type(), result.type());
-        assertEquals(testSubject.message(), result.message());
-    }
-
-    static Collection<TestSerializer> serializers() {
-        return TestSerializer.all();
     }
 }
