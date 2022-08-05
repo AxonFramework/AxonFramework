@@ -19,7 +19,6 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
@@ -28,41 +27,28 @@ import java.util.function.Function;
  * Interface describing a dead-lettered {@link Message} implementation of generic type {@code M}.
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
- * accessed on either {@link SequencedDeadLetterQueue#enqueue(DeadLetter) insertion} or
+ * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, Function)} or
  * {@link SequencedDeadLetterQueue#process(Function) processing}, is kept in {@link #lastTouched()}. Additional
- * information on why the letter is enqueued can be found in the {@link #diagnostic() diagnostics}.
+ * information on why the letter is enqueued can be found in the {@link #diagnostics() diagnostics}.
  *
  * @param <M> The type of {@link Message} represented by this interface.
  * @author Steven van Beelen
  * @author Allard Buijze
  * @since 4.6.0
  */
-public interface DeadLetter<M extends Message<?>> extends Serializable {
+public interface DeadLetter<M extends Message<?>> {
 
     /**
-     * The identifier of this dead-letter.
+     * The {@link Message} of type {@code M} contained in this letter.
      *
-     * @return The identifier of this dead-letter.
-     */
-    String identifier();
-
-    /**
-     * The {@link SequenceIdentifier} this dead-letter belongs to.
-     *
-     * @return The {@link SequenceIdentifier} this dead-letter belongs to
-     */
-    SequenceIdentifier sequenceIdentifier();
-
-    /**
-     * The {@link Message} of type {@code T} contained in this letter.
-     *
-     * @return The {@link Message} of type {@code T} contained in this letter.
+     * @return The {@link Message} of type {@code M} contained in this letter.
      */
     M message();
 
     /**
-     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. Is an {@link Optional#empty()} in case
-     * this letter is enqueued as part of a sequence (based on the {@link SequenceIdentifier}).
+     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. Can be an {@link Optional#empty()} in
+     * case this letter is enqueued without a causal error. For instance, when another letter already present in the
+     * queue was blocking it being handled.
      *
      * @return The {@link Cause cause} for the {@link #message()} to be dead-lettered.
      */
@@ -88,7 +74,14 @@ public interface DeadLetter<M extends Message<?>> extends Serializable {
      *
      * @return The diagnostic {@link MetaData} concerning this letter.
      */
-    MetaData diagnostic();
+    MetaData diagnostics();
+
+    /**
+     * Construct a copy of this {@link DeadLetter}, replacing the {@link #lastTouched()} with the current time.
+     *
+     * @return A copy of this {@link DeadLetter} with {@link #lastTouched()} set to now.
+     */
+    DeadLetter<M> markTouched();
 
     /**
      * Construct a copy of this {@link DeadLetter}, replacing the {@link #cause()} with the given {@code requeueCause}.
@@ -100,11 +93,11 @@ public interface DeadLetter<M extends Message<?>> extends Serializable {
 
     /**
      * Construct a copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
-     * {@link #diagnostic() diagnostics}.
+     * {@link #diagnostics() diagnostics}.
      *
      * @param diagnostics The diagnostic {@link MetaData} to append to the {@link DeadLetter} under construction.
      * @return A copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
-     * {@link #diagnostic() diagnostics}.
+     * {@link #diagnostics() diagnostics}.
      */
     DeadLetter<M> andDiagnostics(MetaData diagnostics);
 }
