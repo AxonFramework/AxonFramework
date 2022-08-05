@@ -20,7 +20,6 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -45,27 +44,24 @@ import java.util.function.Function;
  * @since 4.6.0
  */
 class DeadLetteredEventProcessingTask
-        implements Function<DeadLetter<EventMessage<?>>, EnqueueDecision<DeadLetter<EventMessage<?>>>> {
+        implements Function<DeadLetter<EventMessage<?>>, EnqueueDecision<EventMessage<?>>> {
 
     private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<EventMessageHandler> eventHandlingComponents;
-    private final EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy;
+    private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private final TransactionManager transactionManager;
-    private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     DeadLetteredEventProcessingTask(List<EventMessageHandler> eventHandlingComponents,
-                                    EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy,
-                                    TransactionManager transactionManager,
-                                    ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+                                    EnqueuePolicy<EventMessage<?>> enqueuePolicy,
+                                    TransactionManager transactionManager) {
         this.eventHandlingComponents = eventHandlingComponents;
         this.enqueuePolicy = enqueuePolicy;
         this.transactionManager = transactionManager;
-        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     @Override
-    public EnqueueDecision<DeadLetter<EventMessage<?>>> apply(DeadLetter<EventMessage<?>> letter) {
+    public EnqueueDecision<EventMessage<?>> apply(DeadLetter<EventMessage<?>> letter) {
         return process(letter);
     }
 
@@ -80,13 +76,12 @@ class DeadLetteredEventProcessingTask
      * @param letter The {@link DeadLetter dead-letter} to process.
      * @return An {@link EnqueueDecision} describing what to do after processing the given {@code letter}.
      */
-    public EnqueueDecision<DeadLetter<EventMessage<?>>> process(DeadLetter<EventMessage<?>> letter) {
+    public EnqueueDecision<EventMessage<?>> process(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Start evaluation of dead-letter [{}] with queue identifier [{}].",
-                         letter.identifier(), letter.sequenceIdentifier().combinedIdentifier());
+            logger.debug("Start evaluation of dead-letter [{}].", letter);
         }
 
-        AtomicReference<EnqueueDecision<DeadLetter<EventMessage<?>>>> decision = new AtomicReference<>();
+        AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
         UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
 
         unitOfWork.attachTransaction(transactionManager);
@@ -97,32 +92,25 @@ class DeadLetteredEventProcessingTask
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
 
-    private Object handle(DeadLetter<EventMessage<?>> letter) throws Exception {
+    private Object handle(DeadLetter<? extends EventMessage<?>> letter) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
-            try {
-                handler.handle(letter.message());
-            } catch (Exception e) {
-                listenerInvocationErrorHandler.onError(e, letter.message(), handler);
-            }
+            handler.handle(letter.message());
         }
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
         return null;
     }
 
-    private EnqueueDecision<DeadLetter<EventMessage<?>>> onCommit(DeadLetter<EventMessage<?>> letter) {
+    private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead-letter [{}] for sequence identifier [{}] was successfully.",
-                        letter.identifier(), letter.sequenceIdentifier().combinedIdentifier());
+            logger.info("Processing dead-letter [{}] was successfully.", letter);
         }
         return Decisions.evict();
     }
 
-    private EnqueueDecision<DeadLetter<EventMessage<?>>> onRollback(DeadLetter<EventMessage<?>> letter,
-                                                                    Throwable cause) {
+    private EnqueueDecision<EventMessage<?>> onRollback(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
         if (logger.isWarnEnabled()) {
-            logger.warn("Processing dead-letter [{}] for sequence identifier [{}] failed.",
-                        letter.identifier(), letter.sequenceIdentifier().combinedIdentifier(), cause);
+            logger.warn("Processing dead-letter [{}] failed.", letter, cause);
         }
         return enqueuePolicy.decide(letter, cause);
     }
