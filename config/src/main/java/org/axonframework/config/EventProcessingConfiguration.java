@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -228,7 +227,7 @@ public interface EventProcessingConfiguration {
      * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}, {@link Optional#empty()}
      * if there is none.
      */
-    default Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(
+    default Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(
             @Nonnull String processingGroup
     ) {
         return Optional.empty();
@@ -242,7 +241,7 @@ public interface EventProcessingConfiguration {
      * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
      * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.
      */
-    default Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> enqueuePolicy(@Nonnull String processingGroup) {
+    default Optional<EnqueuePolicy<EventMessage<?>>> enqueuePolicy(@Nonnull String processingGroup) {
         return Optional.empty();
     }
 

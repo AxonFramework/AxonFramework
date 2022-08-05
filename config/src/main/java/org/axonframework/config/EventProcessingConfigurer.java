@@ -670,19 +670,20 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Register a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}. The {@code SequencedDeadLetterQueue} will
-     * automatically enqueue failed events and evaluate them per the queue's configuration.
+     * Register a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}. The
+     * {@code SequencedDeadLetterQueue} will automatically enqueue failed events and evaluate them per the queue's
+     * configuration.
      *
-     * @param processingGroup A {@link String} specifying the name of the processing group to register the given {@link
-     *                        SequencedDeadLetterQueue} for.
-     * @param queueBuilder    A builder method returning a {@link SequencedDeadLetterQueue} based on a {@link Configuration}. The
-     *                        outcome is used by the given {@code processingGroup} to enqueue and evaluate failed
-     *                        events in.
+     * @param processingGroup A {@link String} specifying the name of the processing group to register the given
+     *                        {@link SequencedDeadLetterQueue} for.
+     * @param queueBuilder    A builder method returning a {@link SequencedDeadLetterQueue} based on a
+     *                        {@link Configuration}. The outcome is used by the given {@code processingGroup} to enqueue
+     *                        and evaluate failed events in.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
     default EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> queueBuilder
+            @Nonnull Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
     ) {
         return this;
     }
@@ -691,7 +692,7 @@ public interface EventProcessingConfigurer {
      * Register a default {@link EnqueuePolicy} for any processing group using a
      * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
-     * {@link SequencedDeadLetterQueue#enqueue(DeadLetter) enqueued} for later evaluation.
+     * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
      * <p>
      * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
      * queue.
@@ -700,7 +701,7 @@ public interface EventProcessingConfigurer {
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
     default EventProcessingConfigurer registerDefaultEnqueuePolicy(
-            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         return this;
     }
@@ -709,7 +710,7 @@ public interface EventProcessingConfigurer {
      * Register an {@link EnqueuePolicy} for the given {@code processingGroup} using a
      * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
-     * {@link SequencedDeadLetterQueue#enqueue(DeadLetter) enqueued} for later evaluation.
+     * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
      * <p>
      * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
      * queue.
@@ -721,7 +722,7 @@ public interface EventProcessingConfigurer {
      */
     default EventProcessingConfigurer registerEnqueuePolicy(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         return this;
     }
@@ -795,8 +796,8 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Contract defining {@link DeadLetteringEventHandlerInvoker.Builder} based configuration when constructing a {@link
-     * DeadLetteringEventHandlerInvoker}.
+     * Contract defining {@link DeadLetteringEventHandlerInvoker.Builder} based configuration when constructing a
+     * {@link DeadLetteringEventHandlerInvoker}.
      */
     @FunctionalInterface
     interface DeadLetteringInvokerConfiguration extends

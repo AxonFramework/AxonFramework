@@ -45,7 +45,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
@@ -121,8 +120,8 @@ public class EventProcessingModule
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    protected final Map<String, Component<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>>> deadLetterQueues = new HashMap<>();
-    protected final Map<String, Component<EnqueuePolicy<DeadLetter<EventMessage<?>>>>> enqueuePolicies = new HashMap<>();
+    protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
+    protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> enqueuePolicies = new HashMap<>();
 
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
@@ -165,7 +164,7 @@ public class EventProcessingModule
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private final Component<EnqueuePolicy<DeadLetter<EventMessage<?>>>> defaultEnqueuePolicy = new Component<>(
+    private final Component<EnqueuePolicy<EventMessage<?>>> defaultEnqueuePolicy = new Component<>(
             () -> configuration,
             "enqueuePolicy",
             c -> c.getComponent(EnqueuePolicy.class, () -> (letter, cause) -> Decisions.enqueue(cause))
@@ -291,11 +290,11 @@ public class EventProcessingModule
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker(String processorName,
                                                                   String processingGroup,
                                                                   List<Object> handlers) {
-        SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>> deadLetterQueue =
+        SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue =
                 deadLetterQueue(processingGroup).orElseThrow(() -> new IllegalStateException(
                         "Cannot find a Dead Letter Queue for processing group [" + processingGroup + "]."
                 ));
-        EnqueuePolicy<DeadLetter<EventMessage<?>>> enqueuePolicy =
+        EnqueuePolicy<EventMessage<?>> enqueuePolicy =
                 enqueuePolicy(processingGroup).orElseThrow(() -> new IllegalStateException(
                         "Cannot find a Enqueue Policy for processing group [" + processingGroup + "]."
                 ));
@@ -305,13 +304,9 @@ public class EventProcessingModule
                                                 .handlerDefinition(retrieveHandlerDefinition(handlers))
                                                 .parameterResolverFactory(configuration.parameterResolverFactory())
                                                 .sequencingPolicy(sequencingPolicy(processingGroup))
-                                                .processingGroup(processingGroup)
                                                 .queue(deadLetterQueue)
                                                 .enqueuePolicy(enqueuePolicy)
-                                                .transactionManager(transactionManager(processorName))
-                                                .listenerInvocationErrorHandler(listenerInvocationErrorHandler(
-                                                        processingGroup
-                                                ));
+                                                .transactionManager(transactionManager(processorName));
         DeadLetteringEventHandlerInvoker deadLetteringInvoker =
                 deadLetteringInvokerConfigs.getOrDefault(processingGroup, DeadLetteringInvokerConfiguration.noOp())
                                            .apply(configuration, builder)
@@ -491,14 +486,14 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> deadLetterQueue(@Nonnull String processingGroup) {
+    public Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
         return deadLetterQueues.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterQueues.get(processingGroup).get()) : Optional.empty();
     }
 
     @Override
-    public Optional<EnqueuePolicy<DeadLetter<EventMessage<?>>>> enqueuePolicy(@Nonnull String processingGroup) {
+    public Optional<EnqueuePolicy<EventMessage<?>>> enqueuePolicy(@Nonnull String processingGroup) {
         validateConfigInitialization();
         return enqueuePolicies.containsKey(processingGroup)
                 ? Optional.ofNullable(enqueuePolicies.get(processingGroup).get())
@@ -825,7 +820,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, SequencedDeadLetterQueue<DeadLetter<EventMessage<?>>>> queueBuilder
+            @Nonnull Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
     ) {
         this.deadLetterQueues.put(
                 processingGroup, new Component<>(() -> configuration, "deadLetterQueue", queueBuilder)
@@ -835,7 +830,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultEnqueuePolicy(
-            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         this.defaultEnqueuePolicy.update(policyBuilder);
         return this;
@@ -844,7 +839,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerEnqueuePolicy(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, EnqueuePolicy<DeadLetter<EventMessage<?>>>> policyBuilder
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         enqueuePolicies.put(processingGroup, new Component<>(() -> configuration, "enqueuePolicy", policyBuilder));
         return this;
