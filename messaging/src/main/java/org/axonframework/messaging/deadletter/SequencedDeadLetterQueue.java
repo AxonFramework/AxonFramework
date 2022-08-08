@@ -72,11 +72,6 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
         if (!contains(sequenceIdentifier)) {
             return false;
         }
-
-        if (isFull(sequenceIdentifier)) {
-            throw new DeadLetterQueueOverflowException(sequenceIdentifier);
-        }
-
         enqueue(sequenceIdentifier, letterBuilder.get());
         return true;
     }

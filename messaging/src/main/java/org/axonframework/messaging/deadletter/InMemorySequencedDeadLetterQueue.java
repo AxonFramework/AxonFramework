@@ -106,10 +106,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     public void enqueue(@Nonnull Object sequenceIdentifier,
                         @Nonnull DeadLetter<? extends M> letter) throws DeadLetterQueueOverflowException {
         if (isFull(sequenceIdentifier)) {
-            throw new DeadLetterQueueOverflowException(
-                    "No room left to enqueue [" + letter.message() + "] for identifier ["
-                            + sequenceIdentifier + "] since the queue is full."
-            );
+            throw new DeadLetterQueueOverflowException(sequenceIdentifier);
         }
 
         if (logger.isDebugEnabled()) {
