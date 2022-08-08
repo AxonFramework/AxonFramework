@@ -1123,7 +1123,7 @@ class EventProcessingModuleTest {
         Configuration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
-                                                                        .enqueuePolicy(processingGroup);
+                                                                        .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
         EnqueuePolicy<EventMessage<?>> expectedPolicy = optionalPolicy.get();
 
@@ -1154,7 +1154,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterDefaultEnqueuePolicy(
+    void testRegisterDefaultDeadLetterPolicy(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
@@ -1165,12 +1165,12 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerDefaultEnqueuePolicy(c -> expectedPolicy)
+                  .registerDefaultDeadLetterPolicy(c -> expectedPolicy)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         Configuration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
-                                                                        .enqueuePolicy(processingGroup);
+                                                                        .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
         EnqueuePolicy<EventMessage<?>> resultPolicy = optionalPolicy.get();
         assertEquals(expectedPolicy, resultPolicy);
@@ -1200,7 +1200,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterEnqueuePolicy(
+    void testRegisterDeadLetterPolicy(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
@@ -1212,13 +1212,13 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerEnqueuePolicy(processingGroup, c -> expectedPolicy)
-                  .registerEnqueuePolicy("unused-processing-group", c -> unexpectedPolicy)
+                  .registerDeadLetterPolicy(processingGroup, c -> expectedPolicy)
+                  .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         Configuration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
-                                                                        .enqueuePolicy(processingGroup);
+                                                                        .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
         EnqueuePolicy<EventMessage<?>> resultPolicy = optionalPolicy.get();
         assertEquals(expectedPolicy, resultPolicy);

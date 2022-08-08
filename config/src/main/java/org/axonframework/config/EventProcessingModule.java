@@ -121,7 +121,7 @@ public class EventProcessingModule
     protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
     protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
-    protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> enqueuePolicies = new HashMap<>();
+    protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
 
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
@@ -164,9 +164,9 @@ public class EventProcessingModule
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private final Component<EnqueuePolicy<EventMessage<?>>> defaultEnqueuePolicy = new Component<>(
+    private final Component<EnqueuePolicy<EventMessage<?>>> defaultDeadLetterPolicy = new Component<>(
             () -> configuration,
-            "enqueuePolicy",
+            "deadLetterPolicy",
             c -> c.getComponent(EnqueuePolicy.class, () -> (letter, cause) -> Decisions.enqueue(cause))
     );
     @SuppressWarnings("unchecked")
@@ -295,8 +295,8 @@ public class EventProcessingModule
                         "Cannot find a Dead Letter Queue for processing group [" + processingGroup + "]."
                 ));
         EnqueuePolicy<EventMessage<?>> enqueuePolicy =
-                enqueuePolicy(processingGroup).orElseThrow(() -> new IllegalStateException(
-                        "Cannot find a Enqueue Policy for processing group [" + processingGroup + "]."
+                deadLetterPolicy(processingGroup).orElseThrow(() -> new IllegalStateException(
+                        "Cannot find a Dead Letter Policy for processing group [" + processingGroup + "]."
                 ));
         DeadLetteringEventHandlerInvoker.Builder builder =
                 DeadLetteringEventHandlerInvoker.builder()
@@ -493,11 +493,11 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<EnqueuePolicy<EventMessage<?>>> enqueuePolicy(@Nonnull String processingGroup) {
+    public Optional<EnqueuePolicy<EventMessage<?>>> deadLetterPolicy(@Nonnull String processingGroup) {
         validateConfigInitialization();
-        return enqueuePolicies.containsKey(processingGroup)
-                ? Optional.ofNullable(enqueuePolicies.get(processingGroup).get())
-                : Optional.ofNullable(defaultEnqueuePolicy.get());
+        return deadLetterPolicies.containsKey(processingGroup)
+                ? Optional.ofNullable(deadLetterPolicies.get(processingGroup).get())
+                : Optional.ofNullable(defaultDeadLetterPolicy.get());
     }
 
     @Override
@@ -829,19 +829,20 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerDefaultEnqueuePolicy(
+    public EventProcessingConfigurer registerDefaultDeadLetterPolicy(
             @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
-        this.defaultEnqueuePolicy.update(policyBuilder);
+        this.defaultDeadLetterPolicy.update(policyBuilder);
         return this;
     }
 
     @Override
-    public EventProcessingConfigurer registerEnqueuePolicy(
+    public EventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
             @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
-        enqueuePolicies.put(processingGroup, new Component<>(() -> configuration, "enqueuePolicy", policyBuilder));
+        deadLetterPolicies.put(processingGroup,
+                               new Component<>(() -> configuration, "deadLetterPolicy", policyBuilder));
         return this;
     }
 

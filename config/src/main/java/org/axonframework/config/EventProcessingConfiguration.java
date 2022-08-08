@@ -234,14 +234,14 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Returns the {@link EnqueuePolicy} tied to the given {@code processingGroup} in an {@link Optional}. May return an
-     * {@link Optional} containing the
-     * {@link EventProcessingConfigurer#registerDefaultEnqueuePolicy(Function) default policy} if present.
+     * Returns the {@link EnqueuePolicy dead-letter policy} tied to the given {@code processingGroup} in an
+     * {@link Optional}. May return an {@link Optional} containing the
+     * {@link EventProcessingConfigurer#registerDefaultDeadLetterPolicy(Function) default policy} if present.
      *
      * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
      * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.
      */
-    default Optional<EnqueuePolicy<EventMessage<?>>> enqueuePolicy(@Nonnull String processingGroup) {
+    default Optional<EnqueuePolicy<EventMessage<?>>> deadLetterPolicy(@Nonnull String processingGroup) {
         return Optional.empty();
     }
 
