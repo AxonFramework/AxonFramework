@@ -15,11 +15,6 @@ import java.util.Optional;
 public class DoNotEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
 
     @Override
-    public boolean shouldEvict() {
-        return true;
-    }
-
-    @Override
     public boolean shouldEnqueue() {
         return false;
     }

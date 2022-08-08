@@ -32,11 +32,10 @@ class IgnoreDecisionTest {
     void testDefaultIgnoreDecision() {
         IgnoreDecision<Message<?>> testSubject = new IgnoreDecision<>();
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -44,11 +43,10 @@ class IgnoreDecisionTest {
     void testDecisionsIgnore() {
         IgnoreDecision<Message<?>> testSubject = Decisions.ignore();
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 }

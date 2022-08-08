@@ -66,7 +66,7 @@ public abstract class Decisions {
      * given {@code enqueueCause}.
      */
     public static <M extends Message<?>> ShouldEnqueue<M> enqueue(Throwable enqueueCause) {
-        return enqueue(enqueueCause, letter -> MetaData.emptyInstance());
+        return enqueue(enqueueCause, DeadLetter::diagnostics);
     }
 
     /**
@@ -81,8 +81,10 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(Throwable enqueueCause,
-                                                                  Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
+    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(
+            Throwable enqueueCause,
+            Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
+    ) {
         return new ShouldEnqueue<>(enqueueCause, diagnosticsBuilder);
     }
 
@@ -96,7 +98,7 @@ public abstract class Decisions {
      * given {@code requeueCause}.
      */
     public static <M extends Message<?>> ShouldEnqueue<M> requeue(Throwable requeueCause) {
-        return requeue(requeueCause, letter -> MetaData.emptyInstance());
+        return requeue(requeueCause, DeadLetter::diagnostics);
     }
 
     /**
@@ -111,8 +113,10 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead-letter} should be requeued because of the
      * given {@code requeueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> requeue(Throwable requeueCause,
-                                                                  Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
+    public static <M extends Message<?>> ShouldEnqueue<M> requeue(
+            Throwable requeueCause,
+            Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
+    ) {
         return new ShouldEnqueue<>(requeueCause, diagnosticsBuilder);
     }
 

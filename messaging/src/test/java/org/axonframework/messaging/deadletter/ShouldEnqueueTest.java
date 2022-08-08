@@ -33,11 +33,10 @@ class ShouldEnqueueTest {
     void testDefaultShouldEnqueue() {
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -45,11 +44,10 @@ class ShouldEnqueueTest {
     void testDecisionsEnqueue() {
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -59,13 +57,12 @@ class ShouldEnqueueTest {
 
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause);
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -75,13 +72,12 @@ class ShouldEnqueueTest {
 
         ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue(testCause);
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -91,13 +87,12 @@ class ShouldEnqueueTest {
 
         ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause);
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -108,13 +103,12 @@ class ShouldEnqueueTest {
 
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetaData);
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
@@ -129,13 +123,12 @@ class ShouldEnqueueTest {
 
         ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause, letter -> testMetaData);
 
-        assertFalse(testSubject.shouldEvict());
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());

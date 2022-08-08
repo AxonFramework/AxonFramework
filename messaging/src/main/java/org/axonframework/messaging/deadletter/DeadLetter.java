@@ -92,12 +92,26 @@ public interface DeadLetter<M extends Message<?>> {
     DeadLetter<M> withCause(Throwable requeueCause);
 
     /**
-     * Construct a copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
-     * {@link #diagnostics() diagnostics}.
+     * Construct a copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the given
+     * {@code diagnostics}.
      *
      * @param diagnostics The diagnostic {@link MetaData} to append to the {@link DeadLetter} under construction.
-     * @return A copy of this {@link DeadLetter}, appending the given {@code diagnostics} to the existing
-     * {@link #diagnostics() diagnostics}.
+     * @return A copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the given
+     * {@code diagnostics}.
      */
-    DeadLetter<M> andDiagnostics(MetaData diagnostics);
+    DeadLetter<M> withDiagnostics(MetaData diagnostics);
+
+    /**
+     * Construct a copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the result of
+     * the given {@code diagnosticsBuilder}. The {@code diagnosticsBuilder} will be invoked with the diagnostics of this
+     * instance.
+     *
+     * @param diagnosticsBuilder The {@link Function lambda} constructing diagnostic {@link MetaData} to replace the
+     *                           {@code MetaData} of the {@link DeadLetter} under construction.
+     * @return A copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the result of the
+     * given {@code diagnosticsBuilder}.
+     */
+    default DeadLetter<M> withDiagnostics(Function<MetaData, MetaData> diagnosticsBuilder) {
+        return withDiagnostics(diagnosticsBuilder.apply(this.diagnostics()));
+    }
 }

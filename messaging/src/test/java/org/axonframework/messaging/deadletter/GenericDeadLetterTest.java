@@ -57,22 +57,23 @@ class GenericDeadLetterTest {
 
     @Test
     void testConstructCompletelyManual() {
-        ThrowableCause testCause = new ThrowableCause(new RuntimeException("just because"));
-        Instant testEnqueuedAt = Instant.now();
-        Instant testLastTouched = Instant.now();
-        MetaData testDiagnostics = MetaData.with("key", "value");
+        ThrowableCause expectedCause = new ThrowableCause(new RuntimeException("just because"));
+        Instant expectedEnqueuedAt = Instant.now();
+        Instant expectedLastTouched = Instant.now();
+        MetaData expectedDiagnostics = MetaData.with("key", "value");
 
         DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
-                SEQUENCE_IDENTIFIER, MESSAGE, testCause, testEnqueuedAt, testLastTouched, testDiagnostics
+                SEQUENCE_IDENTIFIER, MESSAGE, expectedCause, expectedEnqueuedAt, expectedLastTouched,
+                expectedDiagnostics
         );
 
         assertEquals(MESSAGE, testSubject.message());
         Optional<Cause> resultCause = testSubject.cause();
         assertTrue(resultCause.isPresent());
-        assertEquals(testCause, resultCause.get());
-        assertEquals(testEnqueuedAt, testSubject.enqueuedAt());
-        assertEquals(testLastTouched, testSubject.lastTouched());
-        assertEquals(testDiagnostics, testSubject.diagnostics());
+        assertEquals(expectedCause, resultCause.get());
+        assertEquals(expectedEnqueuedAt, testSubject.enqueuedAt());
+        assertEquals(expectedLastTouched, testSubject.lastTouched());
+        assertEquals(expectedDiagnostics, testSubject.diagnostics());
     }
 
     @Test
@@ -83,12 +84,12 @@ class GenericDeadLetterTest {
         GenericDeadLetter.clock = Clock.fixed(expectedLastTouched, ZoneId.systemDefault());
         DeadLetter<EventMessage<String>> result = testSubject.markTouched();
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
         assertFalse(resultCause.isPresent());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(expectedLastTouched, testSubject.lastTouched());
-        assertEquals(result.diagnostics(), testSubject.diagnostics());
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(expectedLastTouched, result.lastTouched());
+        assertEquals(testSubject.diagnostics(), result.diagnostics());
     }
 
     @Test
@@ -100,13 +101,13 @@ class GenericDeadLetterTest {
 
         DeadLetter<EventMessage<String>> result = testSubject.withCause(testThrowable);
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
         assertTrue(resultCause.isPresent());
         assertEquals(expectedCause, resultCause.get());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(result.lastTouched(), testSubject.lastTouched());
-        assertEquals(result.diagnostics(), testSubject.diagnostics());
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(testSubject.diagnostics(), result.diagnostics());
     }
 
     @Test
@@ -120,13 +121,13 @@ class GenericDeadLetterTest {
 
         DeadLetter<EventMessage<String>> result = testSubject.withCause(testThrowable);
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
         assertTrue(resultCause.isPresent());
         assertEquals(expectedCause, resultCause.get());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(result.lastTouched(), testSubject.lastTouched());
-        assertEquals(result.diagnostics(), testSubject.diagnostics());
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(testSubject.diagnostics(), result.diagnostics());
     }
 
     @Test
@@ -135,11 +136,11 @@ class GenericDeadLetterTest {
 
         DeadLetter<EventMessage<String>> result = testSubject.withCause(null);
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         assertFalse(result.cause().isPresent());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(result.lastTouched(), testSubject.lastTouched());
-        assertEquals(result.diagnostics(), testSubject.diagnostics());
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(testSubject.diagnostics(), result.diagnostics());
     }
 
     @Test
@@ -152,28 +153,44 @@ class GenericDeadLetterTest {
 
         DeadLetter<EventMessage<String>> result = testSubject.withCause(null);
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
         assertTrue(resultCause.isPresent());
-        assertEquals(expectedCause, resultCause.get());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(result.lastTouched(), testSubject.lastTouched());
-        assertEquals(result.diagnostics(), testSubject.diagnostics());
+        assertEquals(resultCause.get(), expectedCause);
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(testSubject.diagnostics(), result.diagnostics());
     }
 
     @Test
-    void testAndDiagnostics() {
+    void testWithDiagnostics() {
         MetaData expectedDiagnostics = MetaData.with("key", "value");
 
         DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
-        DeadLetter<EventMessage<String>> result = testSubject.andDiagnostics(expectedDiagnostics);
+        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(expectedDiagnostics);
 
-        assertEquals(result.message(), testSubject.message());
+        assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
         assertFalse(resultCause.isPresent());
-        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
-        assertEquals(result.lastTouched(), testSubject.lastTouched());
-        assertEquals(result.diagnostics(), expectedDiagnostics);
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(expectedDiagnostics, result.diagnostics());
+    }
+
+    @Test
+    void testWithDiagnosticsBuilder() {
+        MetaData expectedDiagnostics = MetaData.with("key", "value");
+
+        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+
+        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(original -> original.and("key", "value"));
+
+        assertEquals(testSubject.message(), result.message());
+        Optional<Cause> resultCause = result.cause();
+        assertFalse(resultCause.isPresent());
+        assertEquals(testSubject.enqueuedAt(), result.enqueuedAt());
+        assertEquals(testSubject.lastTouched(), result.lastTouched());
+        assertEquals(expectedDiagnostics, result.diagnostics());
     }
 }

@@ -53,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * already contained "sequence identifier", according to the {@link SequencingPolicy}, are also enqueued. This ensures
  * event ordering is maintained in face of failures.
  * <p>
- * This dead lettering invoker provides several operations to {@link #processAny()} process}
+ * This dead lettering invoker provides several operations to {@link #processAny() process}
  * {@link DeadLetter dead-letters} it has enqueued. It will ensure the same set of Event Handling Components is invoked
  * as with regular event handling when processing a dead-letter. These methods will try to process an entire sequence of
  * dead-letters. Furthermore, these are exposed through the {@link SequencedDeadLetterProcessor} contract.
@@ -109,10 +109,7 @@ public class DeadLetteringEventHandlerInvoker
         }
 
         Object sequenceIdentifier = super.sequenceIdentifier(message);
-        boolean enqueued = transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(
-                sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message)
-        ));
-        if (enqueued) {
+        if (queue.enqueueIfPresent(sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message))) {
             if (logger.isInfoEnabled()) {
                 logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
                             message, sequenceIdentifier);
@@ -129,9 +126,7 @@ public class DeadLetteringEventHandlerInvoker
                 DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
                 EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
                 if (decision.shouldEnqueue()) {
-                    transactionManager.executeInTransaction(() -> queue.enqueue(
-                            sequenceIdentifier, decision.addDiagnostics(letter)
-                    ));
+                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter));
                 } else if (logger.isInfoEnabled()) {
                     logger.info("The enqueue policy decided not to dead-letter event [{}].", message.getIdentifier());
                 }
@@ -156,13 +151,13 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> letterFilter) {
+    public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask =
                 new DeadLetteredEventProcessingTask(super.eventHandlers(), enqueuePolicy, transactionManager);
 
         UnitOfWork<?> uow = new DefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult(() -> queue.process(letterFilter, processingTask::process)).getPayload();
+        return uow.executeWithResult(() -> queue.process(sequenceFilter, processingTask::process)).getPayload();
     }
 
     /**

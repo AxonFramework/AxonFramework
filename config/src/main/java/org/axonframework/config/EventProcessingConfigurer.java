@@ -689,7 +689,7 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Register a default {@link EnqueuePolicy} for any processing group using a
+     * Register a default {@link EnqueuePolicy dead-letter policy} for any processing group using a
      * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
      * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
@@ -697,17 +697,17 @@ public interface EventProcessingConfigurer {
      * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
      * queue.
      *
-     * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy}.
+     * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy dead-letter policy}.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerDefaultEnqueuePolicy(
+    default EventProcessingConfigurer registerDefaultDeadLetterPolicy(
             @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         return this;
     }
 
     /**
-     * Register an {@link EnqueuePolicy} for the given {@code processingGroup} using a
+     * Register a {@link EnqueuePolicy dead-letter policy} for the given {@code processingGroup} using a
      * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
      * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
@@ -716,11 +716,11 @@ public interface EventProcessingConfigurer {
      * queue.
      *
      * @param processingGroup The name of the processing group to build an {@link EnqueuePolicy} for.
-     * @param policyBuilder   A builder method to construct an {@link EnqueuePolicy} for the given
+     * @param policyBuilder   A builder method to construct a {@link EnqueuePolicy dead-letter policy} for the given
      *                        {@code processingGroup}.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
-    default EventProcessingConfigurer registerEnqueuePolicy(
+    default EventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
             @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
