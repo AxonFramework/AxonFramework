@@ -139,7 +139,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> andDiagnostics(MetaData diagnostics) {
+    public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
         return new JpaDeadLetter<>(id, index, sequence, enqueuedAt, lastTouched, cause, diagnostics, message);
     }
 

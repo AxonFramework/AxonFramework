@@ -101,7 +101,7 @@ class JpaDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?
                                                                  Throwable requeueCause,
                                                                  MetaData diagnostics) {
         setAndGetTime(lastTouched);
-        return original.withCause(requeueCause).andDiagnostics(diagnostics).markTouched();
+        return original.withCause(requeueCause).withDiagnostics(diagnostics).markTouched();
     }
 
     @Override

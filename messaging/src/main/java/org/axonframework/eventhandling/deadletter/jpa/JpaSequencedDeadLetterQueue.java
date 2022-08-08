@@ -331,7 +331,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 evict(oldLetter);
             } else {
                 requeue(deadLetter,
-                        l -> decision.addDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
+                        l -> decision.withDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
                 return false;
             }
         }
