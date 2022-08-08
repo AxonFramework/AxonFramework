@@ -43,16 +43,11 @@ public class ShouldEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
      *
      * @param enqueueCause       The {@link Throwable} that was used to decide to enqueue.
      * @param diagnosticsBuilder A function constructing diagnostics to append during
-     *                           {@link #addDiagnostics(DeadLetter)}.
+     *                           {@link #withDiagnostics(DeadLetter)}.
      */
     public ShouldEnqueue(Throwable enqueueCause, Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
         this.enqueueCause = enqueueCause;
         this.diagnosticsBuilder = diagnosticsBuilder;
-    }
-
-    @Override
-    public boolean shouldEvict() {
-        return false;
     }
 
     @Override
@@ -66,8 +61,8 @@ public class ShouldEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
     }
 
     @Override
-    public DeadLetter<? extends M> addDiagnostics(DeadLetter<? extends M> letter) {
-        return letter.andDiagnostics(diagnosticsBuilder.apply(letter));
+    public DeadLetter<? extends M> withDiagnostics(DeadLetter<? extends M> letter) {
+        return letter.withDiagnostics(diagnosticsBuilder.apply(letter));
     }
 
     @Override

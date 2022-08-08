@@ -129,9 +129,7 @@ public class DeadLetteringEventHandlerInvoker
                 DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
                 EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
                 if (decision.shouldEnqueue()) {
-                    transactionManager.executeInTransaction(() -> queue.enqueue(
-                            sequenceIdentifier, decision.addDiagnostics(letter)
-                    ));
+                    queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter));
                 } else if (logger.isInfoEnabled()) {
                     logger.info("The enqueue policy decided not to dead-letter event [{}].", message.getIdentifier());
                 }

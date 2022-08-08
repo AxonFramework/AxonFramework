@@ -16,11 +16,6 @@ import java.util.Optional;
 public class IgnoreDecision<M extends Message<?>> implements EnqueueDecision<M> {
 
     @Override
-    public boolean shouldEvict() {
-        return false;
-    }
-
-    @Override
     public boolean shouldEnqueue() {
         return true;
     }

@@ -259,19 +259,22 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
             return false;
         }
 
-        while (deadLetters.get(sequenceId) != null && !deadLetters.get(sequenceId).isEmpty()) {
-            DeadLetter<? extends M> letter = deadLetters.get(sequenceId).getFirst();
-            EnqueueDecision<M> decision = processingTask.apply(letter);
-            if (decision.shouldEvict()) {
-                evict(letter);
-            } else if (decision.shouldEnqueue()) {
-                requeue(letter, l -> decision.addDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
-                takenSequences.remove(sequenceId);
-                return false;
+        try {
+            while (deadLetters.get(sequenceId) != null && !deadLetters.get(sequenceId).isEmpty()) {
+                DeadLetter<? extends M> letter = deadLetters.get(sequenceId).getFirst();
+                EnqueueDecision<M> decision = processingTask.apply(letter);
+
+                if (decision.shouldEnqueue()) {
+                    requeue(letter, l -> decision.withDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
+                    return false;
+                } else {
+                    evict(letter);
+                }
             }
+            return true;
+        } finally {
+            takenSequences.remove(sequenceId);
         }
-        takenSequences.remove(sequenceId);
-        return true;
     }
 
     private String getLastTouchedSequence(Map<String, DeadLetter<? extends M>> sequenceIdsToLetter) {

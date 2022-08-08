@@ -32,11 +32,10 @@ class DoNotEnqueueTest {
     void testDefaultIgnoreDecision() {
         DoNotEnqueue<Message<?>> testSubject = new DoNotEnqueue<>();
 
-        assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -44,11 +43,10 @@ class DoNotEnqueueTest {
     void testDecisionsDoNotEnqueue() {
         DoNotEnqueue<Message<?>> testSubject = Decisions.doNotEnqueue();
 
-        assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -56,11 +54,10 @@ class DoNotEnqueueTest {
     void testDecisionsEvict() {
         DoNotEnqueue<Message<?>> testSubject = Decisions.evict();
 
-        assertTrue(testSubject.shouldEvict());
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.addDiagnostics(testLetter);
+        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 }
