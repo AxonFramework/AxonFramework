@@ -154,13 +154,13 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> letterFilter) {
+    public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask =
                 new DeadLetteredEventProcessingTask(super.eventHandlers(), enqueuePolicy, transactionManager);
 
         UnitOfWork<?> uow = new DefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult(() -> queue.process(letterFilter, processingTask::process)).getPayload();
+        return uow.executeWithResult(() -> queue.process(sequenceFilter, processingTask::process)).getPayload();
     }
 
     /**

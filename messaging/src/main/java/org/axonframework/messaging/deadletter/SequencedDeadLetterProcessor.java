@@ -10,22 +10,23 @@ import java.util.function.Predicate;
  * Should use the {@link SequencedDeadLetterQueue} as this ensures dead-lettered {@link Message Messages} are kept in
  * sequence. Thus processed in order through this component.
  *
+ * @param <M> An implementation of {@link Message} contained in the processed {@link DeadLetter dead-letters}.
  * @author Steven van Beelen
  * @since 4.6.0
  */
 public interface SequencedDeadLetterProcessor<M extends Message<?>> {
 
     /**
-     * Process a sequence of {@link DeadLetter dead-letters} matching the given {@code letterFilter}.
+     * Process a sequence of {@link DeadLetter dead-letters} matching the given {@code sequenceFilter}.
      * <p>
-     * Note that the {@code letterFilter} is <em>only</em> invoked for the first letter of a sequence, as the first
+     * Note that the {@code sequenceFilter} is <em>only</em> invoked for the first letter of a sequence, as the first
      * entry blocks the entire sequence.
      *
-     * @param letterFilter A filter for the first {@link DeadLetter dead-letter} entries of each sequence.
+     * @param sequenceFilter A filter for the first {@link DeadLetter dead-letter} entries of each sequence.
      * @return {@code true} if at least one {@link DeadLetter dead-letter} was processed successfully, {@code false}
      * otherwise.
      */
-    boolean process(Predicate<DeadLetter<? extends M>> letterFilter);
+    boolean process(Predicate<DeadLetter<? extends M>> sequenceFilter);
 
     /**
      * Process any sequence of {@link DeadLetter dead-letters} belonging to this component.
