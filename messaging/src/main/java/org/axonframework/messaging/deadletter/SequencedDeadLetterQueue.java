@@ -48,11 +48,12 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * The {@code dead-letter} will be appended to a sequence depending on the {@code sequenceIdentifier}. If there is
      * no sequence yet, it will construct one.
      *
-     * @param letter The {@link DeadLetter} to enqueue.
+     * @param sequenceIdentifier The identifier of the sequence the {@code letter} belongs to.
+     * @param letter             The {@link DeadLetter} to enqueue.
      * @throws DeadLetterQueueOverflowException Thrown when this queue {@link #isFull(Object) is full}.
      */
-    void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
-            throws DeadLetterQueueOverflowException;
+    void enqueue(@Nonnull Object sequenceIdentifier,
+                 @Nonnull DeadLetter<? extends M> letter) throws DeadLetterQueueOverflowException;
 
     /**
      * Enqueue the result of the given {@code letterBuilder} only if there already are other
@@ -66,9 +67,10 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * @throws DeadLetterQueueOverflowException Thrown when this queue is {@link #isFull(Object)} for the given
      *                                          {@code sequenceIdentifier}.
      */
-    default boolean enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                     @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder)
-            throws DeadLetterQueueOverflowException {
+    default boolean enqueueIfPresent(
+            @Nonnull Object sequenceIdentifier,
+            @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder
+    ) throws DeadLetterQueueOverflowException {
         if (!contains(sequenceIdentifier)) {
             return false;
         }
@@ -97,9 +99,10 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      *                      {@link DeadLetter#diagnostics()}, for example.
      * @throws NoSuchDeadLetterException Thrown if the given {@code letter} does not exist in the queue.
      */
-    void requeue(@Nonnull DeadLetter<? extends M> letter,
-                 @Nonnull Function<DeadLetter<? extends M>, DeadLetter<? extends M>> letterUpdater)
-            throws NoSuchDeadLetterException;
+    void requeue(
+            @Nonnull DeadLetter<? extends M> letter,
+            @Nonnull Function<DeadLetter<? extends M>, DeadLetter<? extends M>> letterUpdater
+    ) throws NoSuchDeadLetterException;
 
     /**
      * Check whether there's a sequence of {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier}.
@@ -114,6 +117,7 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     /**
      * Return all the {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier} in insert order.
      *
+     * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead-letters }to return.
      * @return All the {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier} in insert order.
      */
     Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier);
@@ -172,7 +176,8 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, Function)} a dead-letter from the selected sequence.
      * The {@code processingTask} is invoked as long as letters are present in the selected sequence and the result of
-     * processing returns an {@link EnqueueDecision#shouldEvict()} decision.
+     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the
+     * dead-letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence.
      * Doing so ensure enqueued messages are handled in order.
@@ -184,11 +189,10 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      *                       {@link #requeue(DeadLetter, Function)} the dead-letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
-     * sequence and the outcome was {@link EnqueueDecision#shouldEvict() to evict} each instance.
+     * sequence and the outcome was to evict each instance.
      */
     boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                     @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask);
-
 
     /**
      * Process a sequence of enqueued {@link DeadLetter dead-letters} with the given {@code processingTask}. Will pick
@@ -197,8 +201,9 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, Function)} the dead-letter. The {@code processingTask}
-     * is invoked as long as letters are present in the selected sequence and the result of processing returns an
-     * {@link EnqueueDecision#shouldEvict()} decision.
+     * is invoked as long as letters are present in the selected sequence and the result of processing returns
+     * {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the dead-letter should be
+     * evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence. *
      * Doing so ensure enqueued messages are handled in order.
@@ -208,7 +213,7 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      *                       {@link #requeue(DeadLetter, Function)} the dead-letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
-     * sequence and the outcome was {@link EnqueueDecision#shouldEvict() to evict} each instance.
+     * sequence and the outcome was to evict each instance.
      */
     default boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         return process(letter -> true, processingTask);
