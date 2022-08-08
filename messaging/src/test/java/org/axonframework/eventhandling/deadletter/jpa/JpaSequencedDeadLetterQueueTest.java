@@ -43,7 +43,7 @@ import javax.persistence.Persistence;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class JpaDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
+class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
     EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
@@ -114,8 +114,8 @@ class JpaDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?
         assertEquals(expected.message().getIdentifier(), actual.message().getIdentifier());
         assertEquals(expected.cause(), actual.cause());
         // Database rounding/parse differences
-        assertTrue(ChronoUnit.MILLIS.between(expected.enqueuedAt(), actual.enqueuedAt()) <= 10);
-        assertTrue(ChronoUnit.MILLIS.between(expected.lastTouched(), actual.lastTouched()) <= 10);
+        assertTrue(ChronoUnit.MILLIS.between(expected.enqueuedAt(), actual.enqueuedAt()) <= 100);
+        assertTrue(ChronoUnit.MILLIS.between(expected.lastTouched(), actual.lastTouched()) <= 100);
         assertEquals(expected.diagnostics(), actual.diagnostics());
     }
 
