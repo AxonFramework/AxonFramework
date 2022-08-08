@@ -119,8 +119,10 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
             }
         }
 
-        deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier), id -> new ConcurrentLinkedDeque<>())
-                   .addLast(letter);
+        synchronized (deadLetters) {
+            deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier), id -> new ConcurrentLinkedDeque<>())
+                       .addLast(letter);
+        }
     }
 
     @Override
@@ -132,14 +134,15 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                            .findFirst();
 
         if (optionalSequence.isPresent()) {
-            String sequenceId = optionalSequence.get().getKey();
-            Deque<DeadLetter<? extends M>> sequence = optionalSequence.get().getValue();
-            if (sequence.isEmpty()) {
-                logger.trace("Sequence [{}] is empty and will be removed.", sequenceId);
-                deadLetters.remove(sequenceId);
-            }
-            if (logger.isTraceEnabled()) {
-                logger.trace("Evicted letter [{}] for sequence [{}].", letter, sequenceId);
+            synchronized (deadLetters) {
+                String sequenceId = optionalSequence.get().getKey();
+                if (deadLetters.get(sequenceId).isEmpty()) {
+                    logger.trace("Sequence [{}] is empty and will be removed.", sequenceId);
+                    deadLetters.remove(sequenceId);
+                }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Evicted letter [{}] for sequence [{}].", letter, sequenceId);
+                }
             }
         } else if (logger.isDebugEnabled()) {
             logger.debug("Cannot evict [{}] as it could not be found in this queue.", letter);
@@ -158,11 +161,13 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                            .findFirst();
 
         if (optionalSequence.isPresent()) {
-            String sequenceId = optionalSequence.get().getKey();
-            Deque<DeadLetter<? extends M>> sequence = optionalSequence.get().getValue();
-            sequence.addFirst(letterUpdater.apply(letter.markTouched()));
-            if (logger.isTraceEnabled()) {
-                logger.trace("Requeued letter [{}] for sequence [{}].", letter, sequenceId);
+            synchronized (deadLetters) {
+                String sequenceId = optionalSequence.get().getKey();
+                deadLetters.get(sequenceId)
+                           .addFirst(letterUpdater.apply(letter.markTouched()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Requeued letter [{}] for sequence [{}].", letter, sequenceId);
+                }
             }
         } else {
             throw new NoSuchDeadLetterException(
@@ -186,7 +191,9 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     }
 
     private boolean contains(String identifier) {
-        return deadLetters.containsKey(identifier);
+        synchronized (deadLetters) {
+            return deadLetters.containsKey(identifier);
+        }
     }
 
     @Override
