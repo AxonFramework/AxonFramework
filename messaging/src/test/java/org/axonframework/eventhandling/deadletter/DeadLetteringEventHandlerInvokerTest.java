@@ -119,7 +119,6 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
 
-        verify(transactionManager).fetchInTransaction(any());
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
@@ -127,7 +126,7 @@ class DeadLetteringEventHandlerInvokerTest {
         assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().get());
 
         verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
-        verify(transactionManager, never()).executeInTransaction(any());
+        verifyNoInteractions(transactionManager);
     }
 
     @Test
@@ -160,7 +159,6 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
 
-        verify(transactionManager).fetchInTransaction(any());
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
@@ -176,7 +174,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ArgumentCaptor<DeadLetter<EventMessage<?>>> enqueueCaptor = ArgumentCaptor.forClass(DeadLetter.class);
         verify(queue).enqueue(eq(TEST_SEQUENCE_ID), enqueueCaptor.capture());
         assertLetter(expectedEnqueuedLetter, enqueueCaptor.getValue());
-        verify(transactionManager).executeInTransaction(any());
+        verifyNoInteractions(transactionManager);
     }
 
     @Test
@@ -199,7 +197,6 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler).handle(TEST_EVENT);
 
-        verify(transactionManager).fetchInTransaction(any());
         //noinspection unchecked
         ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
@@ -212,7 +209,7 @@ class DeadLetteringEventHandlerInvokerTest {
         assertLetter(expectedEnqueuedLetter, policyCaptor.getValue());
 
         verify(queue, never()).enqueue(eq(TEST_SEQUENCE_ID), any());
-        verify(transactionManager, never()).executeInTransaction(any());
+        verifyNoInteractions(transactionManager);
     }
 
     @Test
@@ -224,8 +221,7 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT);
         verify(handler, never()).handle(TEST_EVENT);
         verify(queue, never()).enqueue(TEST_SEQUENCE_ID, TEST_DEAD_LETTER);
-        verify(transactionManager).fetchInTransaction(any());
-        verify(transactionManager, never()).executeInTransaction(any());
+        verifyNoInteractions(transactionManager);
     }
 
     @Test

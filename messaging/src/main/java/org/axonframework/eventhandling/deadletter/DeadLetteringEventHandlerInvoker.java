@@ -53,7 +53,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * already contained "sequence identifier", according to the {@link SequencingPolicy}, are also enqueued. This ensures
  * event ordering is maintained in face of failures.
  * <p>
- * This dead lettering invoker provides several operations to {@link #processAny()} process}
+ * This dead lettering invoker provides several operations to {@link #processAny() process}
  * {@link DeadLetter dead-letters} it has enqueued. It will ensure the same set of Event Handling Components is invoked
  * as with regular event handling when processing a dead-letter. These methods will try to process an entire sequence of
  * dead-letters. Furthermore, these are exposed through the {@link SequencedDeadLetterProcessor} contract.
@@ -109,10 +109,7 @@ public class DeadLetteringEventHandlerInvoker
         }
 
         Object sequenceIdentifier = super.sequenceIdentifier(message);
-        boolean enqueued = transactionManager.fetchInTransaction(() -> queue.enqueueIfPresent(
-                sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message)
-        ));
-        if (enqueued) {
+        if (queue.enqueueIfPresent(sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message))) {
             if (logger.isInfoEnabled()) {
                 logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
                             message, sequenceIdentifier);
