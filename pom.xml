@@ -74,7 +74,7 @@
         <mockito.version>3.8.0</mockito.version>
         <projectreactor.version>3.4.21</projectreactor.version>
         <micrometer.version>1.6.13</micrometer.version>
-        <dropwizard.metrics.version>4.1.32</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.1.33</dropwizard.metrics.version>
         <jackson.version>2.12.7</jackson.version>
         <!--
             Please note that there are dependencies between the gRPC and Netty TcNative versions.
