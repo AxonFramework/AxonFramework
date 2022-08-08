@@ -162,6 +162,10 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
         return new GenericDeadLetter<>(this, this.diagnostics.mergedWith(diagnostics));
     }
 
+    public Object getSequenceIdentifier() {
+        return sequenceIdentifier;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

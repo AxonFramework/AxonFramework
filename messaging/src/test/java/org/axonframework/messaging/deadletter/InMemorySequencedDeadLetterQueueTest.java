@@ -35,17 +35,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
     @Override
-    SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
+    public SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
         return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 
     @Override
-    DeadLetter<EventMessage<?>> generateInitialLetter() {
+    public DeadLetter<EventMessage<?>> generateInitialLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
     }
 
     @Override
-    DeadLetter<EventMessage<?>> generateFollowUpLetter() {
+    protected DeadLetter<EventMessage<?>> generateFollowUpLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
     }
 
@@ -59,7 +59,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Override
-    void setClock(Clock clock) {
+    protected void setClock(Clock clock) {
         GenericDeadLetter.clock = clock;
     }
 

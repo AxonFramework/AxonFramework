@@ -95,7 +95,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
         assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
-        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(6, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
     @Test
