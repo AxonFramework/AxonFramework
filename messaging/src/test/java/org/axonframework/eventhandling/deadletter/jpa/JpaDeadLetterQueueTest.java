@@ -114,8 +114,8 @@ class JpaDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?
         assertEquals(expected.message().getIdentifier(), actual.message().getIdentifier());
         assertEquals(expected.cause(), actual.cause());
         // Database rounding/parse differences
-        assertTrue(ChronoUnit.MILLIS.between(expected.enqueuedAt(), actual.enqueuedAt()) <= 1);
-        assertTrue(ChronoUnit.MILLIS.between(expected.lastTouched(), actual.lastTouched()) <= 1);
+        assertTrue(ChronoUnit.MILLIS.between(expected.enqueuedAt(), actual.enqueuedAt()) <= 10);
+        assertTrue(ChronoUnit.MILLIS.between(expected.lastTouched(), actual.lastTouched()) <= 10);
         assertEquals(expected.diagnostics(), actual.diagnostics());
     }
 
