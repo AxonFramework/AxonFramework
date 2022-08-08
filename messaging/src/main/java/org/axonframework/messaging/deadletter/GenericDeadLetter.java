@@ -158,8 +158,8 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> andDiagnostics(MetaData diagnostics) {
-        return new GenericDeadLetter<>(this, this.diagnostics.mergedWith(diagnostics));
+    public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
+        return new GenericDeadLetter<>(this, diagnostics);
     }
 
     @Override

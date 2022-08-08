@@ -162,12 +162,28 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testAndDiagnostics() {
+    void testWithDiagnostics() {
         MetaData expectedDiagnostics = MetaData.with("key", "value");
 
         DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
-        DeadLetter<EventMessage<String>> result = testSubject.andDiagnostics(expectedDiagnostics);
+        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(expectedDiagnostics);
+
+        assertEquals(result.message(), testSubject.message());
+        Optional<Cause> resultCause = result.cause();
+        assertFalse(resultCause.isPresent());
+        assertEquals(result.enqueuedAt(), testSubject.enqueuedAt());
+        assertEquals(result.lastTouched(), testSubject.lastTouched());
+        assertEquals(result.diagnostics(), expectedDiagnostics);
+    }
+
+    @Test
+    void testWithDiagnosticsBuilder() {
+        MetaData expectedDiagnostics = MetaData.with("key", "value");
+
+        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+
+        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(original -> original.and("key", "value"));
 
         assertEquals(result.message(), testSubject.message());
         Optional<Cause> resultCause = result.cause();
