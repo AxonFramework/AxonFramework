@@ -201,7 +201,9 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     }
 
     private static String toIdentifier(Object sequenceIdentifier) {
-        return Integer.toString(sequenceIdentifier.hashCode());
+        return sequenceIdentifier instanceof String
+                ? (String) sequenceIdentifier
+                : Integer.toString(sequenceIdentifier.hashCode());
     }
 
     private boolean maximumNumberOfSequencesReached(String identifier) {
