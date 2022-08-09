@@ -179,8 +179,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         });
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createHandlerSpan("TrackingEventProcessor[" + builder.name + "] ",
-                                   unitOfWork.getMessage())
+                .createLinkedHandlerSpan("TrackingEventProcessor[" + builder.name + "] ",
+                                         unitOfWork.getMessage())
                 .runCallable(interceptorChain::proceed));
     }
 

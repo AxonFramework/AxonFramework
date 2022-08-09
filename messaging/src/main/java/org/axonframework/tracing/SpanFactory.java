@@ -55,11 +55,10 @@ public interface SpanFactory {
     Span createRootTrace(String operationName);
 
     /**
-     * Creates a new {@link Span} linked to asynchronously handling a {@link Message}, for example when handling a
-     * command from Axon Server. The message attributes will be added to the span, based on the provided
-     * {@link SpanAttributesProvider SpanAttributesProviders} for additional debug information.
+     * Creates a new {@link Span} linked which becomes its own separate trace, linked to the previous span. Useful for
+     * asynchronous invocations, such as handling an event in a StreamingEventProcessor.
      * <p>
-     * In monitoring systems, this Span will be the root of the trace.
+     * In monitoring systems, this Span will start a separate trace linked to the previous one.
      * <p>
      * The message's name will be concatenated with the {@code operationName}, see
      * {@link SpanUtils#determineMessageName(Message)}.
@@ -68,8 +67,25 @@ public interface SpanFactory {
      * @param parentMessage The message that is being handled.
      * @return The created {@link Span}
      */
-    default Span createHandlerSpan(String operationName, Message<?> parentMessage) {
-        return createHandlerSpan(operationName, parentMessage, false);
+    default Span createLinkedHandlerSpan(String operationName, Message<?> parentMessage, Message<?>... linkedParents) {
+        return createHandlerSpan(operationName, parentMessage, false, linkedParents);
+    }
+
+    /**
+     * Creates a new {@link Span} which is part of the current trace. The message attributes will be added to the span,
+     * based on the provided {@link SpanAttributesProvider SpanAttributesProviders} for additional debug information.
+     * <p>
+     * In monitoring systems, this Span will be part of another trace.
+     * <p>
+     * The message's name will be concatenated with the {@code operationName}, see
+     * {@link SpanUtils#determineMessageName(Message)}.
+     *
+     * @param operationName The operation name
+     * @param parentMessage The message that is being handled.
+     * @return The created {@link Span}
+     */
+    default Span createChildHandlerSpan(String operationName, Message<?> parentMessage, Message<?>... linkedParents) {
+        return createHandlerSpan(operationName, parentMessage, true, linkedParents);
     }
 
     /**
@@ -82,16 +98,16 @@ public interface SpanFactory {
      * The message's name will be concatenated with the {@code operationName}, see
      * {@link SpanUtils#determineMessageName(Message)}.
      *
-     * @param operationName  The operation name
-     * @param parentMessage  The message that is being handled.
-     * @param forceSameTrace Whether to force the span being part of the current trace. This means not linking, but
-     *                       setting a parent.
-     * @param linkedParents  Optional parameter, providing this will link the provided message to the current, in
-     *                       addition to the original. The difference is that {@code forceSameTrace} has no effect on
-     *                       this since there can only be one true parent.
+     * @param operationName The operation name
+     * @param parentMessage The message that is being handled.
+     * @param isChildTrace  Whether to force the span being part of the current trace. This means not linking, but
+     *                      setting a parent.
+     * @param linkedParents Optional parameter, providing this will link the provided message to the current, in
+     *                      addition to the original. The difference is that {@code forceSameTrace} has no effect on
+     *                      this since there can only be one true parent.
      * @return The created {@link Span}
      */
-    Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean forceSameTrace,
+    Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
                            Message<?>... linkedParents);
 
     /**
@@ -148,8 +164,8 @@ public interface SpanFactory {
 
     /**
      * Propagates the currently active trace and span to the message. It should do so in a way that the context be
-     * retrieved by the {@link #createHandlerSpan(String, Message)} method. The most efficient method currently known is
-     * to enhance the message's metadata.
+     * retrieved by the {@link #createLinkedHandlerSpan(String, Message, Message[])} method. The most efficient method
+     * currently known is to enhance the message's metadata.
      * <p>
      * Since messages are immutable, the method returns the enhanced message. This enhanced message should be used
      * during dispatch instead of the original message.

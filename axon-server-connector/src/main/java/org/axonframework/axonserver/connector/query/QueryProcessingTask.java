@@ -139,7 +139,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         try {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
             QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
-            spanFactory.createHandlerSpan("QueryProcessingTask ", queryMessage, true).run(() -> {
+            spanFactory.createChildHandlerSpan("QueryProcessingTask ", queryMessage).run(() -> {
                 if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
                     if (supportsStreaming && reactorOnClassPath.get()) {
                         streamingQuery(queryMessage);

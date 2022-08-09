@@ -79,7 +79,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                                   QueryUpdate next = result.updates().nextIfAvailable();
                                   if (next != null) {
                                       SubscriptionQueryUpdateMessage<Object> nextMessage = subscriptionSerializer.deserialize(next);
-                                      spanFactory.createHandlerSpan("SubscriptionQuery update", nextMessage, true)
+                                      spanFactory.createChildHandlerSpan("SubscriptionQuery update", nextMessage)
                                                  .run(() -> fluxSink.next(next));
                                   }
                               } else {

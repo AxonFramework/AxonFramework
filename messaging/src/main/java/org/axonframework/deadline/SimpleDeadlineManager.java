@@ -346,7 +346,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
         @Override
         public void run() {
-            Span span = spanFactory.createHandlerSpan("SimpleDeadlineManager.execute", deadlineMessage).start();
+            Span span = spanFactory.createLinkedHandlerSpan("SimpleDeadlineManager.execute", deadlineMessage).start();
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered deadline");
             }

@@ -146,7 +146,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
-        Span span = spanFactory.createHandlerSpan("SimpleQueryUpdateEmitter.emit", message, true);
+        Span span = spanFactory.createChildHandlerSpan("SimpleQueryUpdateEmitter.emit", message);
         runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(message))));
     }
 
@@ -191,7 +191,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory.createHandlerSpan("QueryUpdateEmitter " + query.getQueryName(), update, true, query).run(() -> {
+        spanFactory.createChildHandlerSpan("QueryUpdateEmitter " + query.getQueryName(), update, query).run(() -> {
             SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
             MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
             try {

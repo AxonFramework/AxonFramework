@@ -155,7 +155,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .build();
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
-                .createHandlerSpan(
+                .createLinkedHandlerSpan(
                         "PooledStreamingEventProcessor[" + builder.name() + "] ",
                         unitOfWork.getMessage())
                 .runCallable(interceptorChain::proceed));
