@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -770,7 +771,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return {@link Instant#now()}, the current time for the invoker of this method.
      */
     protected Instant setAndGetTime() {
-        return setAndGetTime(Instant.now());
+        return setAndGetTime(Instant.now().truncatedTo(ChronoUnit.MILLIS));
     }
 
     /**

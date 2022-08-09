@@ -33,7 +33,6 @@ import org.junit.jupiter.api.*;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.stream.IntStream;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -63,7 +62,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Override
     protected void setClock(Clock clock) {
-        JpaSequencedDeadLetterQueue.clock = clock;
+        GenericDeadLetter.clock = clock;
     }
 
     @Override
@@ -86,8 +85,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                                        0L,
                                        ((GenericDeadLetter<EventMessage<?>>) deadLetter).getSequenceIdentifier()
                                                                                         .toString(),
-                                       JpaSequencedDeadLetterQueue.clock.instant(),
-                                       JpaSequencedDeadLetterQueue.clock.instant(),
+                                       GenericDeadLetter.clock.instant(),
+                                       GenericDeadLetter.clock.instant(),
                                        deadLetter.cause().orElse(null),
                                        deadLetter.diagnostics(),
                                        deadLetter.message());
@@ -100,7 +99,6 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
                                                                  MetaData diagnostics) {
-        setAndGetTime(lastTouched);
         return original.withCause(requeueCause).withDiagnostics(diagnostics).markTouched();
     }
 
@@ -113,9 +111,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         assertEquals(expected.message().getMetaData(), actual.message().getMetaData());
         assertEquals(expected.message().getIdentifier(), actual.message().getIdentifier());
         assertEquals(expected.cause(), actual.cause());
-        // Database rounding/parse differences
-        assertTrue(ChronoUnit.MILLIS.between(expected.enqueuedAt(), actual.enqueuedAt()) <= 100);
-        assertTrue(ChronoUnit.MILLIS.between(expected.lastTouched(), actual.lastTouched()) <= 100);
+        assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
+        assertEquals(expected.lastTouched(), actual.lastTouched());
         assertEquals(expected.diagnostics(), actual.diagnostics());
     }
 

@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 
 import java.time.Instant;
@@ -27,7 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * JPA entity representing a {@link DeadLetter} that was saved to the database.
+ * A {@link DeadLetter} that was saved to the database and reconstructed from it.
  *
  * @param <M> The {@link EventMessage} type of the contained message.
  * @author Mitchell Herrijgers
@@ -44,6 +45,10 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     private final MetaData diagnostics;
     private final M message;
 
+    /**
+     * Constructs a new {@link JpaDeadLetter} from a {@link DeadLetterEntry}, deserialized diagnostics and a
+     * reconstructed message.
+     */
     public JpaDeadLetter(DeadLetterEntry entry, MetaData diagnostics, M message) {
         this.id = entry.getDeadLetterId();
         this.index = entry.getIndex();
@@ -59,14 +64,18 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
         this.message = message;
     }
 
-    public JpaDeadLetter(String id,
-                         Long index,
-                         String sequence,
-                         Instant enqueuedAt,
-                         Instant lastTouched,
-                         Cause cause,
-                         MetaData diagnostics,
-                         M message) {
+    /**
+     * Constructs a new {@link JpaDeadLetter} from all possible properties. This is called by itself with changed since
+     * this {@link DeadLetter} is immutable.
+     */
+    JpaDeadLetter(String id,
+                  Long index,
+                  String sequence,
+                  Instant enqueuedAt,
+                  Instant lastTouched,
+                  Cause cause,
+                  MetaData diagnostics,
+                  M message) {
         this.id = id;
         this.index = index;
         this.sequence = sequence;
@@ -121,7 +130,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
                                    index,
                                    sequence,
                                    enqueuedAt,
-                                   JpaSequencedDeadLetterQueue.clock.instant(),
+                                   GenericDeadLetter.clock.instant(),
                                    cause,
                                    diagnostics,
                                    message);
