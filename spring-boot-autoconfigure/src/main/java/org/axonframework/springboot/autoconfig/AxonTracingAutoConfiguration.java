@@ -41,7 +41,10 @@ import java.util.List;
  * {@link OpenTelemetrySpanFactory} is on the classpath, uses Open Telemetry instead.
  * <p>
  * For Open tracing, take a look at the <a href="https://github.com/AxonFramework/extension-tracing">Open Tracing
- * extension</a>
+ * extension</a>.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 @Configuration
 @AutoConfigureBefore({AxonServerAutoConfiguration.class, AxonAutoConfiguration.class})

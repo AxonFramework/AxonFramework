@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 
 import javax.annotation.Nonnull;
 
@@ -61,6 +62,12 @@ public class SimpleEventBus extends AbstractEventBus {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

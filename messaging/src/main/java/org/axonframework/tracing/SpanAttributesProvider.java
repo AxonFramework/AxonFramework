@@ -24,6 +24,9 @@ import javax.annotation.Nonnull;
 /**
  * Represents a provider of attributes to a {@link Span}, based on a {@link Message}. It's the responsibility of the
  * {@link SpanFactory} to invoke these and add the attributes to the {@link Span}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public interface SpanAttributesProvider {
 

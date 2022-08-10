@@ -269,11 +269,13 @@ public class SimpleCommandBus implements CommandBus {
      * Builder class to instantiate a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a {@link
-     * RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()}. The {@link TransactionManager}, {@link
-     * MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to {@code null}
-     * will result in an {@link AxonConfigurationException}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link SpanFactory} defaults to a
+     * {@link NoOpSpanFactory}.
+     * <p>
+     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
+     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      */
     public static class Builder {
 
@@ -354,12 +356,14 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
             this.builderSpanFactory = spanFactory;
             return this;
         }

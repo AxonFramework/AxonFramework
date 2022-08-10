@@ -24,9 +24,16 @@ import java.util.function.Supplier;
 /**
  * {@link SpanFactory} implementation that creates a {@link NoOpSpan}. This span does not do any tracing at all. It's
  * used as a fallback when there is no tracing implementation available, so framework code does not have to check.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class NoOpSpanFactory implements SpanFactory {
 
+    /**
+     * Singleton instance of the {@link NoOpSpanFactory}, which is used for configuration when there is no specific
+     * implementation configured.
+     */
     public static final NoOpSpanFactory INSTANCE = new NoOpSpanFactory();
 
     @Override
@@ -93,8 +100,8 @@ public class NoOpSpanFactory implements SpanFactory {
         }
 
         @Override
-        public <T> T runCallable(Callable<T> callable) throws Exception {
-            return callable.call();
+        public <T> Callable<T> wrapCallable(Callable<T> callable) {
+            return callable;
         }
 
         @Override

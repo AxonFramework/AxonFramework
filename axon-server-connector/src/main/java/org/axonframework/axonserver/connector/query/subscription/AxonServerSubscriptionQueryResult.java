@@ -79,7 +79,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                                   QueryUpdate next = result.updates().nextIfAvailable();
                                   if (next != null) {
                                       SubscriptionQueryUpdateMessage<Object> nextMessage = subscriptionSerializer.deserialize(next);
-                                      spanFactory.createChildHandlerSpan("SubscriptionQuery update", nextMessage)
+                                      spanFactory.createChildHandlerSpan("SubscriptionQuery.update", nextMessage)
                                                  .run(() -> fluxSink.next(next));
                                   }
                               } else {
@@ -92,7 +92,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                       }).doOnError(e -> result.updates().close())
                       .map(subscriptionSerializer::deserialize);
 
-        Span initialResultSpan = spanFactory.createInternalSpan("SubscriptionQuery initialResult");
+        Span initialResultSpan = spanFactory.createInternalSpan("SubscriptionQuery.initialResult");
         this.initialResult = Mono.fromCompletionStage(() -> initialResultSpan.startForFuture(result.initialResult()))
                                  .onErrorMap(GrpcExceptionParser::parse)
                                  .map(subscriptionSerializer::deserialize);

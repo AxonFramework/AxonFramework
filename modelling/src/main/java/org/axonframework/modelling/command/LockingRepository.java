@@ -179,8 +179,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         if (aggregate.version() != null && !aggregate.isLockHeld()) {
             throw new ConcurrencyException(String.format(
                     "The aggregate of type [%s] with identifier [%s] could not be " +
-                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            +
+                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
                             "the current thread had released its lock earlier on.",
                     aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
         }
@@ -198,8 +197,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         if (aggregate.version() != null && !aggregate.isLockHeld()) {
             throw new ConcurrencyException(String.format(
                     "The aggregate of type [%s] with identifier [%s] could not be " +
-                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            +
+                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
                             "the current thread had released its lock earlier on.",
                     aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
         }

@@ -368,11 +368,13 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     /**
      * Abstract Builder class to instantiate {@link AbstractRepository} implementations.
      * <p>
-     * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate type
+     * to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate
+     * this AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of
+     * type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * <p>
+     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */
@@ -471,7 +473,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

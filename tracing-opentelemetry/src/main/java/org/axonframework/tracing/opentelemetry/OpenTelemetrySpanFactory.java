@@ -38,10 +38,13 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
 
 /**
  * Creates {@link Span} implementations that are compatible with OpenTelemetry java agent instrumentation. OpenTelemetry
- * is a standard to collect logging, tracing and metrics from applications. This {@link SpanFactory} focusses on
+ * is a standard to collect logging, tracing and metrics from applications. This {@link SpanFactory} focuses on
  * supporting the tracing part of the standard.
  * <p>
  * To get started with OpenTelemetry, <a href="https://opentelemetry.io/docs/">check out their documentation</a>.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class OpenTelemetrySpanFactory implements SpanFactory {
 
@@ -170,7 +173,6 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
                              operationName,
                              determineMessageName(message));
     }
-
 
     private void addMessageAttributes(SpanBuilder spanBuilder, Message<?> message) {
         if (message == null) {

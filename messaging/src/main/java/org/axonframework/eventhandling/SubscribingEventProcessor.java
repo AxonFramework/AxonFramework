@@ -213,6 +213,12 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
             return this;
         }
 
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
          * implementation will subscribe itself to receive {@link EventMessage}s.
@@ -252,19 +258,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
-            return this;
-        }
-
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
-         *
-         * @param spanFactory The {@link SpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        @Override
-        public Builder spanFactory(SpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
             return this;
         }
 

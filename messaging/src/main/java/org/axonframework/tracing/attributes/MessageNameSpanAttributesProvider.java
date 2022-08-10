@@ -19,6 +19,7 @@ package org.axonframework.tracing.attributes;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Map;
@@ -28,7 +29,11 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 /**
- * Adds the message to the Span
+ * Adds the name of a {@link Message} to the {@link Span}. Note this only takes effect for
+ * {@link CommandMessage CommandMessages} and {@link QueryMessage QueryMessages}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class MessageNameSpanAttributesProvider implements SpanAttributesProvider {
 

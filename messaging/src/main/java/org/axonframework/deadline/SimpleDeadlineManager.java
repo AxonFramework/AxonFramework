@@ -247,9 +247,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * Builder class to instantiate a {@link SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
-     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
-     * provided.
+     * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
+     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -302,12 +302,13 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

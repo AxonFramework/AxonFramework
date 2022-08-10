@@ -17,6 +17,7 @@
 package org.axonframework.tracing.attributes;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanAttributesProvider;
 
 import java.util.Collections;
@@ -24,7 +25,10 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
- * Adds the payload type as attribute to the span.
+ * Adds the {@link Message#getPayloadType payload type} as an attribute to the {@link Span}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class PayloadTypeSpanAttributesProvider implements SpanAttributesProvider {
 

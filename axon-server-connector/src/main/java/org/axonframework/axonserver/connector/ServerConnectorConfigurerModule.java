@@ -109,6 +109,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 .transactionManager(c.getComponent(
                                         TransactionManager.class, NoTransactionManager::instance
                                 ))
+                                .spanFactory(c.spanFactory())
                                 .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         return AxonServerCommandBus.builder()

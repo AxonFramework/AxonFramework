@@ -27,10 +27,20 @@ import javax.annotation.Nonnull;
  * The trace parent is part of the message's {@link org.axonframework.messaging.MetaData}, if it was set when
  * dispatching by the {@link MetadataContextSetter}. This is done using the
  * {@link org.axonframework.tracing.SpanFactory#propagateContext(Message)} method for the message.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class MetadataContextGetter implements TextMapGetter<Message<?>> {
 
+    /**
+     * Singleton instance of the {@link MetadataContextGetter}, used by the {@link OpenTelemetrySpanFactory}.
+     */
     public static final MetadataContextGetter INSTANCE = new MetadataContextGetter();
+
+    private MetadataContextGetter() {
+
+    }
 
     @Override
     public Iterable<String> keys(Message<?> message) {

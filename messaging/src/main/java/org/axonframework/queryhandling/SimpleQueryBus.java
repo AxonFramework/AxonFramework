@@ -544,7 +544,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link SpanFactory} defaults to a
+     * {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
@@ -629,7 +630,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

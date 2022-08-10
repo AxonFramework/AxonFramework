@@ -250,8 +250,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
      * Abstract Builder class to instantiate {@link AbstractSagaManager} implementations.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
-     * a {@link LoggingErrorHandler}.
+     * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to
+     * a {@link LoggingErrorHandler} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}.
      * The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and as such should be provided.
      *
      * @param <T> a generic specifying the Saga type managed by this implementation
@@ -325,7 +325,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

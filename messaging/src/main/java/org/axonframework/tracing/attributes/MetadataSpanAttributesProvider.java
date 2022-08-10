@@ -25,6 +25,9 @@ import javax.annotation.Nonnull;
 
 /**
  * Adds the metadata of the message to the span as attributes.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
 

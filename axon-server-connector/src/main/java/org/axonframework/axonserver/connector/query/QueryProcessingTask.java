@@ -89,7 +89,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
      * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
-     * @param spanFactory
+     * @param spanFactory     The {@link SpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,

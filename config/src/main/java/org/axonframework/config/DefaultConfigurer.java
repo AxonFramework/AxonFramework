@@ -470,6 +470,7 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(EventBus.class, config)
                 .orElseGet(() -> SimpleEventBus.builder()
                                                .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                                               .spanFactory(config.spanFactory())
                                                .build());
     }
 
@@ -484,6 +485,12 @@ public class DefaultConfigurer implements Configurer {
                 .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
     }
 
+    /**
+     * Returns the default {@link SpanFactory}, or a {@link NoOpSpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default event gateway.
+     */
     protected SpanFactory defaultSpanFactory(Configuration config) {
         return defaultComponent(SpanFactory.class, config)
                 .orElseGet(NoOpSpanFactory::new);

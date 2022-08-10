@@ -197,9 +197,9 @@ public interface Configuration extends LifecycleOperations {
     }
 
     /**
-     * Returns the {@link SpanFactory} defined in this configuration
+     * Returns the {@link SpanFactory} defined in this configuration.
      *
-     * @return the {@link SpanFactory} defined in this configuration
+     * @return the {@link SpanFactory} defined in this configuration.
      */
     default SpanFactory spanFactory() {
         return getComponent(SpanFactory.class);

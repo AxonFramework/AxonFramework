@@ -31,6 +31,9 @@ import java.util.function.Supplier;
  * <p>
  * These traces should always be created using the {@link OpenTelemetrySpanFactory} since this will make sure the proper
  * parent context is extracted before creating the {@link Span}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class OpenTelemetrySpan implements Span {
 
@@ -62,7 +65,6 @@ public class OpenTelemetrySpan implements Span {
         span.end();
     }
 
-
     @Override
     public Span recordException(Throwable t) {
         Objects.requireNonNull(activeScope, "Span is not started!");
@@ -72,29 +74,33 @@ public class OpenTelemetrySpan implements Span {
     }
 
     @Override
-    public void run(Runnable runnable) {
-        try {
-            this.start();
-            runnable.run();
-        } catch (Exception e) {
-            this.recordException(e);
-            throw e;
-        } finally {
-            this.end();
-        }
+    public Runnable wrapRunnable(Runnable runnable) {
+        return () -> {
+            try {
+                this.start();
+                runnable.run();
+            } catch (Exception e) {
+                this.recordException(e);
+                throw e;
+            } finally {
+                this.end();
+            }
+        };
     }
 
     @Override
-    public <T> T runCallable(Callable<T> callable) throws Exception {
-        try {
-            this.start();
-            return callable.call();
-        } catch (Exception e) {
-            this.recordException(e);
-            throw e;
-        } finally {
-            this.end();
-        }
+    public <T> Callable<T> wrapCallable(Callable<T> callable) {
+        return () -> {
+            try {
+                this.start();
+                return callable.call();
+            } catch (Exception e) {
+                this.recordException(e);
+                throw e;
+            } finally {
+                this.end();
+            }
+        };
     }
 
     @Override

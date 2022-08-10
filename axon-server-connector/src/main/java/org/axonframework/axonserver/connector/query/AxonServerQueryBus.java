@@ -175,13 +175,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        StreamingQueryMessage<Q, R> messageWithContext = spanFactory.propagateContext(query);
-        int priority = priorityCalculator.determinePriority(messageWithContext);
+        Span span = spanFactory.createInternalSpan("AxonServerQueryBus.streamingQuery", query).start();
+        StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
+        int priority = priorityCalculator.determinePriority(queryWithContext);
         AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(queryExecutor,
                                                                                                         priority,
                                                                                                         TASK_SEQUENCE));
         return Mono.fromSupplier(this::registerStreamingQueryActivity)
-                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(messageWithContext))
+                   .flatMapMany(activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
                                                 .flatMapMany(
                                                         intercepted -> Mono.just(serializeStreaming(intercepted,
                                                                                                     priority))
@@ -194,7 +195,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                            ))
                                                 )
                                                 .publishOn(scheduler.get())
-                                                .doFinally(new ActivityFinisher(activity)))
+                                                .doOnError(span::recordException)
+                                                .doFinally(new ActivityFinisher(activity, span)))
                    .subscribeOn(scheduler.get());
     }
 
@@ -247,12 +249,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
         Span span = spanFactory.createDispatchSpan("AxonServerQueryBus.query", queryMessage).start();
-        QueryMessage<Q, R> messageWithContext = spanFactory.propagateContext(queryMessage);
+        QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The direct query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
-        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(messageWithContext);
+        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryWithContext);
         //noinspection resource
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
         CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
@@ -304,13 +306,16 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private static class ActivityFinisher implements Consumer<SignalType> {
 
         private final ShutdownLatch.ActivityHandle activity;
+        private final Span span;
 
-        private ActivityFinisher(ShutdownLatch.ActivityHandle activity) {
+        private ActivityFinisher(ShutdownLatch.ActivityHandle activity, Span span) {
             this.activity = activity;
+            this.span = span;
         }
 
         @Override
         public void accept(SignalType signalType) {
+            span.end();
             activity.end();
         }
     }
@@ -436,8 +441,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                 "Cannot dispatch new %s as this bus is being shut down", "subscription queries"
         ));
 
-        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(
-                query));
+        SubscriptionQueryMessage<Q, I, U> interceptedQuery = dispatchInterceptors.intercept(
+                spanFactory.propagateContext(query)
+        );
         String subscriptionId = interceptedQuery.getIdentifier();
         String targetContext = targetContextResolver.resolveContext(interceptedQuery);
 
@@ -507,9 +513,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
      * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
-     * The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local {@link QueryBus}, the
-     * {@link QueryUpdateEmitter}, and the message and generic {@link Serializer}s are <b>hard requirements</b> and as
-     * such should be provided.
+     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the
+     * {@link AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and
+     * generic {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -702,12 +708,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "The SpanFactory may not be null or empty");
             this.spanFactory = spanFactory;
             return this;

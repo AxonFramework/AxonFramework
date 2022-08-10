@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -191,7 +192,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Builder spanFactory(SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -510,6 +511,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

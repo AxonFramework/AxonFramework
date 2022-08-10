@@ -289,7 +289,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a
+     * {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
@@ -312,6 +313,14 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             return this;
         }
 
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;

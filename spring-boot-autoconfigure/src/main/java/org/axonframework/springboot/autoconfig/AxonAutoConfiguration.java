@@ -223,6 +223,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return EmbeddedEventStore.builder()
                                  .storageEngine(storageEngine)
                                  .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                                 .spanFactory(configuration.spanFactory())
                                  .build();
     }
 
@@ -243,6 +244,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public SimpleEventBus eventBus(Configuration configuration) {
         return SimpleEventBus.builder()
                              .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                             .spanFactory(configuration.spanFactory())
                              .build();
     }
 

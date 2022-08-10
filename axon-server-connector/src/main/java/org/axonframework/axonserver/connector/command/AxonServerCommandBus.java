@@ -164,23 +164,22 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                    CommandCallback<? super C, ? super R> commandCallback) {
         Span span = spanFactory.createDispatchSpan("AxonServerCommandBus.dispatch", commandMessage)
                                .start();
-        CommandMessage<C> commandMessageWithContext = spanFactory.propagateContext(commandMessage);
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
-            Command command = serializer.serialize(commandMessageWithContext,
-                                                   routingStrategy.getRoutingKey(commandMessageWithContext),
-                                                   priorityCalculator.determinePriority(commandMessageWithContext));
+            Command command = serializer.serialize(spanFactory.propagateContext(commandMessage),
+                                                   routingStrategy.getRoutingKey(commandMessage),
+                                                   priorityCalculator.determinePriority(commandMessage));
 
             CompletableFuture<CommandResponse> result =
-                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessageWithContext))
+                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessage))
                                                .commandChannel()
                                                .sendCommand(command);
             //noinspection unchecked
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
-                  .thenAccept(r -> commandCallback.onResult(commandMessageWithContext, r))
+                  .thenAccept(r -> commandCallback.onResult(commandMessage, r))
                   .whenComplete((r, e) -> {
                       commandInTransit.end();
                       if (e != null) {
@@ -196,7 +195,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                     "Exception while dispatching a command to AxonServer", e
             );
             commandCallback.onResult(
-                    commandMessageWithContext, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
+                    commandMessage, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
             );
         }
     }
@@ -288,7 +287,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
                                      CompletableFuture<CommandResponse> result,
-                                     CommandBus localSegment, SpanFactory spanFactory) {
+                                     CommandBus localSegment,
+                                     SpanFactory spanFactory) {
             this.command = command;
             this.serializer = serializer;
             this.result = result;
@@ -325,10 +325,11 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     /**
      * Builder class to instantiate an {@link AxonServerCommandBus}.
      * <p>
-     * The {@link CommandPriorityCalculator} is defaulted to {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}
-     * and the {@link TargetContextResolver} defaults to a lambda returning the {@link
-     * AxonServerConfiguration#getContext()} as the context. The {@link ExecutorServiceBuilder} defaults to {@link
-     * ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}. The {@link AxonServerConnectionManager}, the
+     * The {@link CommandPriorityCalculator} is defaulted to
+     * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator(), and the {@link TargetContextResolver}
+     * defaults to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
+     * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
+     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the
      * {@link AxonServerConfiguration}, the local {@link CommandBus}, {@link Serializer} and the {@link RoutingStrategy}
      * are <b>hard requirements</b> and as such should be provided.
      */
@@ -415,7 +416,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             this.routingStrategy = routingStrategy;
             return this;
         }
-
 
         /**
          * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
@@ -510,12 +510,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities.
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
         }
