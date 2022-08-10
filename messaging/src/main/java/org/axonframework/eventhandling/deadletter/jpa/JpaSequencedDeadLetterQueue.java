@@ -31,7 +31,6 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -65,7 +64,8 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link DeadLetterEntry#getProcessingStarted()} property, locking other processes out of the sequence for the
  * configured {@code claimDuration} (30 seconds by default).
  * <p>
- * Configuring a chain of upcasters is not supported.
+ * {@link org.axonframework.serialization.upcasting.Upcaster upcasters} are not supported by this implementation, so
+ * breaking changes for events messages stored in the queue should be avoided.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
  * @author Mitchell Herrijgers
@@ -98,8 +98,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     /**
      * Creates a new builder, capable of building a {@link JpaSequencedDeadLetterQueue} according to the provided
-     * configuration. Note that the {@link Builder#processingGroup(String)} is mandatory for the queue to work
-     * correctly.
+     * configuration. Note that the {@link Builder#processingGroup(String)}, {@link Builder#transactionManager},
+     * {@link Builder#eventSerializer(Serializer)} and {@link Builder#entityManagerProvider} are mandatory for the queue
+     * to be constructed correctly.
      *
      * @param <M> The message type
      * @return The builder
@@ -111,42 +112,48 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     @Override
     public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
             throws DeadLetterQueueOverflowException {
-        String sequence = toIdentifier(sequenceIdentifier);
-        if (isFull(sequence)) {
+        String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
+        if (isFull(stringSequenceIdentifier)) {
             throw new DeadLetterQueueOverflowException(
                     "No room left to enqueue [" + letter.message() + "] for identifier ["
-                            + sequence + "] since the queue is full."
+                            + stringSequenceIdentifier + "] since the queue is full."
             );
         }
 
-        if (logger.isDebugEnabled()) {
-            Optional<Cause> optionalCause = letter.cause();
-            if (optionalCause.isPresent()) {
-                logger.debug("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
-            } else {
-                logger.debug("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
-                             letter.message(), sequence);
-            }
+        Optional<Cause> optionalCause = letter.cause();
+        if (optionalCause.isPresent()) {
+            logger.info("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
+        } else {
+            logger.info("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
+                        letter.message(), stringSequenceIdentifier);
         }
 
-        DeadLetterEntryMessage converter = converters
+        DeadLetterEventEntry converter = converters
                 .stream()
                 .filter(c -> c.canConvert(letter.message()))
                 .findFirst()
                 .map(c -> c.toEntry(letter.message(), serializer))
-                .orElseThrow(() -> new IllegalArgumentException("No converter found"));
+                .orElseThrow(() -> new NoJpaConverterFoundException(
+                        String.format("No converter found for message of type: [%s]",
+                                      letter.message().getClass().getName()))
+                );
 
         transactionManager.executeInTransaction(() -> {
-            Long maxIndexForQueueIdentifier = getNextIndexForSequence(sequence);
+            Long sequenceIndex = getNextIndexForSequence(stringSequenceIdentifier);
             DeadLetterEntry deadLetter = new DeadLetterEntry(processingGroup,
-                                                             sequence,
-                                                             maxIndexForQueueIdentifier,
+                                                             stringSequenceIdentifier,
+                                                             sequenceIndex,
                                                              converter,
                                                              letter.enqueuedAt(),
                                                              letter.lastTouched(),
                                                              letter.cause().orElse(null),
                                                              letter.diagnostics(),
                                                              serializer);
+            logger.info("Storing DeadLetter (id: [{}]) for sequence [{}] with index [{}] in processing group [{}].",
+                        deadLetter.getDeadLetterId(),
+                        stringSequenceIdentifier,
+                        sequenceIndex,
+                        processingGroup);
             entityManager().persist(deadLetter);
         });
     }
@@ -156,10 +163,14 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     public void evict(DeadLetter<? extends M> letter) {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(
-                    "Evict should be called with a JpaDeadLetter instance. Instead got: [" + letter.getClass().getName()
-                            + "]");
+                    String.format("Evict should be called with a JpaDeadLetter instance. Instead got: [%s]",
+                                  letter.getClass().getName()));
         }
         JpaDeadLetter<M> jpaDeadLetter = (JpaDeadLetter<M>) letter;
+        logger.info("Evicting JpaDeadLetter with id {} for processing group {} and sequence {}",
+                    jpaDeadLetter.getId(),
+                    processingGroup,
+                    jpaDeadLetter.getSequenceIdentifier());
 
         transactionManager.executeInTransaction(
                 () -> entityManager().createQuery("delete from DeadLetterEntry dl where dl.deadLetterId=:deadLetterId")
@@ -167,71 +178,68 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                      .executeUpdate());
     }
 
-    private EntityManager entityManager() {
-        return entityManagerProvider.getEntityManager();
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public void requeue(@Nonnull DeadLetter<? extends M> letter,
-                        @Nonnull Function<DeadLetter<? extends M>, DeadLetter<? extends M>> letterUpdater)
+                        @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater)
             throws NoSuchDeadLetterException {
         if (!(letter instanceof JpaDeadLetter)) {
-            throw new WrongDeadLetterTypeException(
-                    "Evict should be called with a JpaDeadLetter instance. Instead got: [" + letter.getClass().getName()
-                            + "]");
+            throw new WrongDeadLetterTypeException(String.format(
+                    "Evict should be called with a JpaDeadLetter instance. Instead got: [%s]",
+                    letter.getClass().getName()));
         }
         EntityManager entityManager = entityManager();
         DeadLetter<? extends M> updatedLetter = letterUpdater.apply(letter).markTouched();
         String id = ((JpaDeadLetter<? extends M>) letter).getId();
-        DeadLetterEntry letterEntity = entityManager.find(DeadLetterEntry.class,
-                                                          id);
+        DeadLetterEntry letterEntity = entityManager.find(DeadLetterEntry.class, id);
         if (letterEntity == null) {
-            throw new NoSuchDeadLetterException("Can not find dead letter with id [" + id + "]");
+            throw new NoSuchDeadLetterException(String.format("Can not find dead letter with id [%s] to requeue.", id));
         }
         letterEntity.setDiagnostics(updatedLetter.diagnostics(), serializer);
         letterEntity.setLastTouched(updatedLetter.lastTouched());
         letterEntity.setCause(updatedLetter.cause().orElse(null));
         letterEntity.clearProcessingStarted();
+
+        logger.info("Requeueing dead letter with id [{}] with cause [{}]",
+                    letterEntity.getDeadLetterId(),
+                    updatedLetter.cause());
         entityManager.persist(letterEntity);
     }
 
     @Override
     public boolean contains(@Nonnull Object sequenceIdentifier) {
-        String identifier = toIdentifier(sequenceIdentifier);
-        return getNumberInQueue(identifier) > 0;
+        String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
+        return getSequenceSize(stringSequenceIdentifier) > 0;
     }
 
     @Override
     public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
-        String identifier = toIdentifier(sequenceIdentifier);
+        String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
 
-        return entityManagerProvider
-                .getEntityManager()
-                .createQuery(
-                        "SELECT dl FROM DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequence=:identifier",
-                        DeadLetterEntry.class)
-                .setParameter("processingGroup", processingGroup)
-                .setParameter("identifier", identifier)
-                .getResultList()
-                .stream()
-                .map(this::toLetter)
-                .collect(Collectors.toList());
+        return new PagingJpaQueryIterator<>(100, transactionManager,
+                                            () -> entityManagerProvider
+                                                    .getEntityManager()
+                                                    .createQuery(
+                                                            "select dl from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:identifier",
+                                                            DeadLetterEntry.class)
+                                                    .setParameter("processingGroup", processingGroup)
+                                                    .setParameter("identifier", stringSequenceIdentifier),
+                                            this::toLetter);
     }
 
     @Override
     public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
-        List<String> sequences = entityManagerProvider
+        List<String> sequenceIdentifiers = entityManagerProvider
                 .getEntityManager()
                 .createQuery(
-                        "SELECT dl.sequence FROM DeadLetterEntry dl where dl.processingGroup=:processingGroup order by dl.lastTouched asc",
+                        "select dl.sequenceIdentifier from DeadLetterEntry dl where dl.processingGroup=:processingGroup order by dl.lastTouched asc",
                         String.class)
                 .setParameter("processingGroup", processingGroup)
                 .getResultList();
 
 
         return () -> {
-            Iterator<String> sequenceIterator = sequences.iterator();
+            Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
             return new Iterator<Iterable<DeadLetter<? extends M>>>() {
                 @Override
                 public boolean hasNext() {
@@ -256,16 +264,14 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      */
     @SuppressWarnings("unchecked")
     private JpaDeadLetter<M> toLetter(DeadLetterEntry entry) {
-        MetaData deserializedDiagnostics = serializer.deserialize(new SimpleSerializedObject<>(
-                entry.getDiagnostics(),
-                byte[].class,
-                MetaData.class.getName(),
-                null));
+        MetaData deserializedDiagnostics = serializer.deserialize(entry.getDiagnostics());
         DeadLetterJpaConverter<M> converter = (DeadLetterJpaConverter<M>) converters
                 .stream()
                 .filter(c -> c.canConvert(entry.getMessage()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No such converter"));
+                .orElseThrow(() -> new NoJpaConverterFoundException(String.format(
+                        "No converter found to convert message of class [%s].",
+                        entry.getMessage().getMessageType())));
         return new JpaDeadLetter<>(entry,
                                    deserializedDiagnostics,
                                    converter.fromEntry(entry.getMessage(), serializer));
@@ -273,8 +279,13 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     @Override
     public boolean isFull(@Nonnull Object sequenceIdentifier) {
-        String identifier = toIdentifier(sequenceIdentifier);
-        return maximumNumberOfQueuesReached(identifier) || maximumQueueSizeReached(identifier);
+        String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
+        Long numberInSequence = getSequenceSize(stringSequenceIdentifier);
+        if(numberInSequence > 0) {
+            // Is already in queue, cannot cause overflow any longer.
+            return numberInSequence >= maxSequenceSize;
+        }
+        return getSequenceCount() >= maxSequences;
     }
 
     @Override
@@ -291,19 +302,51 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                            @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
 
-        Optional<JpaDeadLetter<M>> first = findFirstLetterOfEachAvailableSequence()
-                .stream()
-                .map(this::toLetter)
-                .filter(sequenceFilter)
-                .findFirst();
-        if (!first.isPresent()) {
-            return false;
+        JpaDeadLetter<M> claimedLetter = null;
+        Iterator<DeadLetterEntry> iterator = findFirstLetterOfEachAvailableSequence(10);
+        while (iterator.hasNext() && claimedLetter == null) {
+            JpaDeadLetter<M> next = toLetter(iterator.next());
+            if (sequenceFilter.test(next) && claimDeadLetter(next)) {
+                claimedLetter = next;
+            }
         }
 
-        JpaDeadLetter<M> deadLetter = first.get();
-        claimDeadLetter(deadLetter);
+        if (claimedLetter != null) {
+            return processLetterAndFollowing(claimedLetter, processingTask);
+        }
+        return false;
+    }
 
+    @Override
+    public boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+        Iterator<DeadLetterEntry> iterator = findFirstLetterOfEachAvailableSequence(1);
+        if (iterator.hasNext()) {
+            JpaDeadLetter<M> deadLetter = toLetter(iterator.next());
+            claimDeadLetter(deadLetter);
+            return processLetterAndFollowing(deadLetter, processingTask);
+        }
+        return false;
+    }
+
+    /**
+     * Processes the given {@code firstDeadLetter} using the provided {@code processingTask}. When successful (the
+     * message is evicted) it will automatically process all messages in the same
+     * {@link JpaDeadLetter#getSequenceIdentifier()}, evicting messages that succeed and stopping when the first one
+     * fails (and is requeued).
+     * <p>
+     * Will claim the next letter in the same sequence before removing the old one to prevent concurrency issues. Note
+     * that we do not use paging on the results here, since messages can be added to the end of the sequence before
+     * processing ends, and deletes would throw the ordering off.
+     *
+     * @param firstDeadLetter The dead letter to start processing.
+     * @param processingTask  The task to use to process the dead letter, providing a dicision afterwards.
+     * @return Whether processing all letters in this sequence was successful.
+     */
+    private boolean processLetterAndFollowing(JpaDeadLetter<M> firstDeadLetter,
+                                              Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+        JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
+            logger.info("Processing dead letter with id [{}]", deadLetter.getId());
             EnqueueDecision<M> decision = processingTask.apply(deadLetter);
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
@@ -329,28 +372,28 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     }
 
     /**
-     * Fetches the first letter for each sequence in the provided {@code processingGroup}. This is th message with the
+     * Fetches the first letter for each sequence in the provided {@code processingGroup}. This is the message with the
      * lowest index.
      * <p>
      * This fetches only letters which are available, having a {@code processingStarted} of null or longer ago than the
-     * configured {@code claimDuration}.
+     * configured {@code claimDuration}. The messages are lazily reconstructed by the {@link PagingJpaQueryIterator}.
      *
-     * @return A list of first letters of each sequence
+     * @param pageSize The size of the paging on the query. Lower is faster, but with many results a larger page is
+     *                 better.
+     * @return A list of first letters of each sequence.
      */
-    private List<DeadLetterEntry> findFirstLetterOfEachAvailableSequence() {
-        return transactionManager.fetchInTransaction(
-                () -> entityManager()
-                        .createQuery(
-                                "SELECT dl FROM DeadLetterEntry dl "
-                                        + "where dl.processingGroup=:processingGroup "
-                                        + "and dl.index = (select min(dl2.index) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequence=dl.sequence) "
-                                        + "and (dl.processingStarted is null or dl.processingStarted < :processingStartedLimit) "
-                                        + "order by dl.lastTouched asc ",
-                                DeadLetterEntry.class
-                        )
-                        .setParameter("processingGroup", processingGroup)
-                        .setParameter("processingStartedLimit", getProcessingStartedLimit())
-                        .getResultList());
+    private Iterator<DeadLetterEntry> findFirstLetterOfEachAvailableSequence(int pageSize) {
+        return new PagingJpaQueryIterator<>(pageSize, transactionManager, () -> entityManager()
+                .createQuery(
+                        "select dl from DeadLetterEntry dl "
+                                + "where dl.processingGroup=:processingGroup "
+                                + "and dl.index = (select min(dl2.index) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
+                                + "and (dl.processingStarted is null or dl.processingStarted < :processingStartedLimit) "
+                                + "order by dl.lastTouched asc ",
+                        DeadLetterEntry.class
+                )
+                .setParameter("processingGroup", processingGroup)
+                .setParameter("processingStartedLimit", getProcessingStartedLimit()));
     }
 
     /**
@@ -365,16 +408,17 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
             try {
                 return entityManager()
                         .createQuery(
-                                "SELECT dl FROM DeadLetterEntry dl "
+                                "select dl from DeadLetterEntry dl "
                                         + "where dl.processingGroup=:processingGroup "
-                                        + "and dl.sequence=:sequence "
+                                        + "and dl.sequenceIdentifier=:sequenceIdentifier "
                                         + "and dl.index > :previousIndex "
                                         + "order by dl.index asc ",
                                 DeadLetterEntry.class
                         )
                         .setParameter("processingGroup", processingGroup)
-                        .setParameter("sequence", oldLetter.getSequence())
+                        .setParameter("sequenceIdentifier", oldLetter.getSequenceIdentifier())
                         .setParameter("previousIndex", oldLetter.getIndex())
+                        .setMaxResults(1)
                         .getSingleResult();
             } catch (NoResultException exception) {
                 return null;
@@ -384,11 +428,13 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     /**
      * Claims the dead provided {@link DeadLetter} in the database by setting the {@code processingStarted} property.
-     * Will check whether it was claimed successfully, or throw a {@link DeadLetterClaimException}.
+     * Will check whether it was claimed successfully and return an appropriate boolean result.
+     *
+     * @return Whether the letter was successfully claimed or not.
      */
-    private void claimDeadLetter(JpaDeadLetter<M> deadLetter) {
+    private boolean claimDeadLetter(JpaDeadLetter<M> deadLetter) {
         Instant processingStartedLimit = getProcessingStartedLimit();
-        transactionManager.executeInTransaction(() -> {
+        return transactionManager.fetchInTransaction(() -> {
             int updatedRows = entityManager().createQuery("update DeadLetterEntry dl set dl.processingStarted=:time "
                                                                   + "where dl.deadLetterId=:deadletterId "
                                                                   + "and (dl.processingStarted is null or dl.processingStarted < :processingStartedLimit)")
@@ -396,11 +442,12 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                              .setParameter("time", GenericDeadLetter.clock.instant())
                                              .setParameter("processingStartedLimit", processingStartedLimit)
                                              .executeUpdate();
-            if (updatedRows == 0) {
-                throw new DeadLetterClaimException(String.format(
-                        "Dead letter [%s] was already claimed or processed by another node.",
-                        deadLetter.getId()));
+            if (updatedRows > 0) {
+                logger.info("Claimed dead letter with id [{}] to process.", deadLetter.getId());
+                return true;
             }
+            logger.info("Failed to claim dead letter with id [{}].", deadLetter.getId());
+            return false;
         });
     }
 
@@ -414,53 +461,30 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     @Override
     public void clear() {
-        transactionManager.executeInTransaction(() -> {
-            entityManagerProvider.getEntityManager()
-                                 .createQuery(
-                                         "delete from DeadLetterEntry dl where dl.processingGroup=:processingGroup")
-                                 .setParameter("processingGroup", processingGroup)
-                                 .executeUpdate();
-        });
-    }
-
-    /**
-     * Checks whether the maximum amount of unique sequences within this processingGroup of the DLQ is reached. If there
-     * already is a dead letter with this sequence present, it can be added to an already existing queue and the method
-     * will return false.
-     *
-     * @param queueIdentifier The sequence to check for.
-     * @return Whether the maximum amount of queues is reached.
-     */
-    private boolean maximumNumberOfQueuesReached(String queueIdentifier) {
-        return getNumberInQueue(queueIdentifier) == 0 && getNumberOfQueues() >= maxSequences;
-    }
-
-    /**
-     * Checks whether the maximum amount of dead letters within a sequence is reached.
-     *
-     * @param sequence The sequence to check for.
-     * @return Whether the maximum amount of dead letters is reached.
-     */
-    private boolean maximumQueueSizeReached(String sequence) {
-        return getNumberInQueue(sequence) >= maxSequenceSize;
+        transactionManager.executeInTransaction(
+                () -> entityManagerProvider.getEntityManager()
+                                           .createQuery(
+                                                   "delete from DeadLetterEntry dl where dl.processingGroup=:processingGroup")
+                                           .setParameter("processingGroup", processingGroup)
+                                           .executeUpdate());
     }
 
     /**
      * Counts the amount of messages for a given sequence.
      *
-     * @param sequence The sequence to check for
+     * @param sequenceIdentifier The sequence to check for
      * @return The amount of dead letters for this sequence
      */
-    private Long getNumberInQueue(String sequence) {
+    private Long getSequenceSize(String sequenceIdentifier) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
-                                                   "SELECT count(dl) FROM DeadLetterEntry dl "
+                                                   "select count(dl) from DeadLetterEntry dl "
                                                            + "where dl.processingGroup=:processingGroup "
-                                                           + "and dl.sequence=:sequence",
+                                                           + "and dl.sequenceIdentifier=:sequenceIdentifier",
                                                    Long.class
                                            )
                                            .setParameter("processingGroup", processingGroup)
-                                           .setParameter("sequence", sequence)
+                                           .setParameter("sequenceIdentifier", sequenceIdentifier)
                                            .getSingleResult());
     }
 
@@ -469,10 +493,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      *
      * @return The amount of sequences
      */
-    private Long getNumberOfQueues() {
+    private Long getSequenceCount() {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
-                                                   "SELECT count(distinct dl.sequence) FROM DeadLetterEntry dl "
+                                                   "select count(distinct dl.sequenceIdentifier) from DeadLetterEntry dl "
                                                            + "where dl.processingGroup=:processingGroup",
                                                    Long.class
                                            )
@@ -484,11 +508,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * Fetches the next maximum index for a sequence that should be used when inserting a new item into the databse for
      * this {@code sequence}.
      *
-     * @param sequence The identifier of the queue to fetch the next index for.
+     * @param sequenceIdentifier The identifier of the sequence to fetch the next index for.
      * @return The next sequence index.
      */
-    private Long getNextIndexForSequence(String sequence) {
-        Long maxIndex = getMaxIndexForSequence(sequence);
+    private Long getNextIndexForSequence(String sequenceIdentifier) {
+        Long maxIndex = getMaxIndexForSequence(sequenceIdentifier);
         if (maxIndex == null) {
             return 0L;
         }
@@ -499,17 +523,17 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * Fetches the current maximum index for a queue identifier. Messages which are enqueued next should have an index
      * higher than the one returned. If the query returns null it indicates that the queue is empty.
      *
-     * @param sequence The identifier of the queue to check the index for.
+     * @param sequenceIdentifier The identifier of the sequence to check the index for.
      * @return The current maximum index, or null if not present.
      */
-    private Long getMaxIndexForSequence(String sequence) {
+    private Long getMaxIndexForSequence(String sequenceIdentifier) {
         return transactionManager.fetchInTransaction(() -> {
             try {
                 return entityManager().createQuery(
-                                              "SELECT max(dl.index) FROM DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequence=:sequence",
+                                              "select max(dl.index) from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:sequenceIdentifier",
                                               Long.class
                                       )
-                                      .setParameter("sequence", sequence)
+                                      .setParameter("sequenceIdentifier", sequenceIdentifier)
                                       .setParameter("processingGroup", processingGroup)
                                       .getSingleResult();
             } catch (NoResultException e) {
@@ -522,22 +546,29 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     /**
      * Converts the given sequence identifier to a String.
      */
-    private String toIdentifier(Object sequenceIdentifier) {
+    private String toStringSequenceIdentifier(Object sequenceIdentifier) {
         if (sequenceIdentifier instanceof String) {
             return (String) sequenceIdentifier;
         }
         return Integer.toString(sequenceIdentifier.hashCode());
     }
 
+    private EntityManager entityManager() {
+        return entityManagerProvider.getEntityManager();
+    }
+
 
     /**
      * Builder class to instantiate an {@link JpaSequencedDeadLetterQueue}.
      * <p>
-     * The maximum number of unique sequences defaults to {@code 1024}, the maximum amount of dead letters inside an
+     * The maximum number of unique sequences defaults to {@code 1024}, the maximum amount of dead letters inside a
      * unique sequence to {@code 1024}, the claim duration defaults to {@code 30} seconds and the converters default to
      * containing a single {@link EventMessageDeadLetterJpaConverter}.
      * <p>
      * If you have custom {@link EventMessage} to use with this queue, replace the current (or add a second) converter.
+     * <p>
+     * The {@code processingGroup}, {@link EntityManagerProvider}, {@link TransactionManager} and {@link Serializer}
+     * have to be configured for the {@link JpaSequencedDeadLetterQueue} to be constructed.
      *
      * @param <T> The type of {@link Message} maintained in this {@link JpaSequencedDeadLetterQueue}.
      */
@@ -701,6 +732,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
             if (processingGroup == null) {
                 throw new AxonConfigurationException(
                         "Must supply processingGroup when constructing a JpaSequencedDeadLetterQueue");
+            }
+            if (transactionManager == null) {
+                throw new AxonConfigurationException(
+                        "Must supply a TransactionManager when constructing a JpaSequencedDeadLetterQueue");
             }
             if (serializer == null) {
                 logger.warn(

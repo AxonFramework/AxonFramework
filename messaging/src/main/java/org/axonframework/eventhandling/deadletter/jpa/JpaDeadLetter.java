@@ -38,7 +38,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
 
     private final String id;
     private final Long index;
-    private final String sequence;
+    private final String sequenceIdentifier;
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Cause cause;
@@ -48,13 +48,17 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     /**
      * Constructs a new {@link JpaDeadLetter} from a {@link DeadLetterEntry}, deserialized diagnostics and a
      * reconstructed message.
+     *
+     * @param entry       The {@link DeadLetterEntry} to construct this letter from.
+     * @param diagnostics The deserialized diagnostics {@link MetaData}.
+     * @param message     The reconstructed {@link EventMessage}.
      */
     public JpaDeadLetter(DeadLetterEntry entry, MetaData diagnostics, M message) {
         this.id = entry.getDeadLetterId();
         this.index = entry.getIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
         this.lastTouched = entry.getLastTouched();
-        this.sequence = entry.getSequence();
+        this.sequenceIdentifier = entry.getSequenceIdentifier();
         if (entry.getCauseType() != null) {
             cause = new ThrowableCause(entry.getCauseType(), entry.getCauseMessage());
         } else {
@@ -67,10 +71,20 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     /**
      * Constructs a new {@link JpaDeadLetter} from all possible properties. This is called by itself with changed since
      * this {@link DeadLetter} is immutable.
+     *
+     * @param id                 The ID of the {@link DeadLetterEntry}.
+     * @param index              The index of the {@link DeadLetterEntry}.
+     * @param sequenceIdentifier The sequenceIdentifier of the {@link DeadLetterEntry}.
+     * @param enqueuedAt         The time the message was enqueued.
+     * @param lastTouched        The time the message was last touched.
+     * @param cause              The cause of enqueueing, can be null if it was queued because there was another message
+     *                           in the same {@code sequenceIdentifier} queued.
+     * @param diagnostics        The diagnostics provided during enqueueing.
+     * @param message            The message that was enqueued.
      */
     JpaDeadLetter(String id,
                   Long index,
-                  String sequence,
+                  String sequenceIdentifier,
                   Instant enqueuedAt,
                   Instant lastTouched,
                   Cause cause,
@@ -78,7 +92,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
                   M message) {
         this.id = id;
         this.index = index;
-        this.sequence = sequence;
+        this.sequenceIdentifier = sequenceIdentifier;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
         this.cause = cause;
@@ -111,24 +125,40 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
         return diagnostics;
     }
 
+    /**
+     * The ID of the entity in the database.
+     *
+     * @return The ID of this {@link JpaDeadLetter}.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * The index of the dead letter in this sequence identified by the {@code sequenceIdentifier}. Will ensure the
+     * events are kept in the original order.
+     *
+     * @return The index of this {@link JpaDeadLetter}.
+     */
     public Long getIndex() {
         return index;
     }
 
-    public String getSequence() {
-        return sequence;
+    /**
+     * The sequence identifier of this {@link DeadLetter}. If letters belong to the same sequence, they should be
+     * handled sequentially at all times. This is ensured by the {@link #getIndex()} property.
+     *
+     * @return The sequence identifier of this {@link DeadLetter}.
+     */
+    public String getSequenceIdentifier() {
+        return sequenceIdentifier;
     }
-
 
     @Override
     public DeadLetter<M> markTouched() {
         return new JpaDeadLetter<>(id,
                                    index,
-                                   sequence,
+                                   sequenceIdentifier,
                                    enqueuedAt,
                                    GenericDeadLetter.clock.instant(),
                                    cause,
@@ -139,7 +169,8 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     @Override
     public DeadLetter<M> withCause(Throwable requeueCause) {
         return new JpaDeadLetter<>(id,
-                                   index, sequence,
+                                   index,
+                                   sequenceIdentifier,
                                    enqueuedAt,
                                    lastTouched,
                                    requeueCause != null ? new ThrowableCause(requeueCause) : cause,
@@ -149,7 +180,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
 
     @Override
     public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
-        return new JpaDeadLetter<>(id, index, sequence, enqueuedAt, lastTouched, cause, diagnostics, message);
+        return new JpaDeadLetter<>(id, index, sequenceIdentifier, enqueuedAt, lastTouched, cause, diagnostics, message);
     }
 
     @Override
@@ -157,7 +188,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
         return "JpaDeadLetter{" +
                 "id='" + id + "'" +
                 ", index=" + index +
-                ", sequence='" + sequence + "'" +
+                ", sequenceIdentifier='" + sequenceIdentifier + "'" +
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +
                 ", cause=" + cause +
@@ -183,7 +214,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
         if (!index.equals(that.index)) {
             return false;
         }
-        if (!sequence.equals(that.sequence)) {
+        if (!sequenceIdentifier.equals(that.sequenceIdentifier)) {
             return false;
         }
         if (!enqueuedAt.equals(that.enqueuedAt)) {
@@ -205,7 +236,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     public int hashCode() {
         int result = id.hashCode();
         result = 31 * result + index.hashCode();
-        result = 31 * result + sequence.hashCode();
+        result = 31 * result + sequenceIdentifier.hashCode();
         result = 31 * result + enqueuedAt.hashCode();
         result = 31 * result + lastTouched.hashCode();
         result = 31 * result + (cause != null ? cause.hashCode() : 0);

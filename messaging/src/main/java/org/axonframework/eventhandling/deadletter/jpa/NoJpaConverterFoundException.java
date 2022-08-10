@@ -18,21 +18,9 @@ package org.axonframework.eventhandling.deadletter.jpa;
 
 import org.axonframework.common.AxonException;
 
-/**
- * Exception indicating that something went wrong with claiming or unclaiming a {@link DeadLetterEntry}. The
- * {@link #getMessage()} contains more information about the original cause.
- *
- * @author Mitchell Herrijgers
- * @since 4.6.0
- */
-public class DeadLetterClaimException extends AxonException {
+public class NoJpaConverterFoundException extends AxonException {
 
-    /**
-     * Constructs a {@code DeadLetterClaimException} with the provided {@code message}.
-     *
-     * @param message The messages containing more details about the cause.
-     */
-    public DeadLetterClaimException(String message) {
+    public NoJpaConverterFoundException(String message) {
         super(message);
     }
 }

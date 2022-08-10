@@ -124,6 +124,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .transactionManager(transactionManager)
                 .entityManagerProvider(entityManagerProvider)
                 .maxSequences(128)
+                .maxSequenceSize(128)
                 .processingGroup("my_processing_group")
                 .build();
     }
@@ -132,12 +133,12 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     void testMaxSequences() {
         int expectedMaxQueues = 128;
 
-        JpaSequencedDeadLetterQueue<EventMessage<?>> testSubject = JpaSequencedDeadLetterQueue.builder()
-                                                                                              .maxSequences(
-                                                                                                      expectedMaxQueues)
-                                                                                              .processingGroup(
-                                                                                                      "my_processing_group")
-                                                                                              .build();
+        JpaSequencedDeadLetterQueue<EventMessage<?>> testSubject = JpaSequencedDeadLetterQueue
+                .builder()
+                .maxSequences(expectedMaxQueues)
+                .processingGroup("my_processing_group")
+                .transactionManager(transactionManager)
+                .build();
 
         assertEquals(expectedMaxQueues, testSubject.maxSequences());
     }
@@ -146,12 +147,12 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     void testMaxSequenceSize() {
         int expectedMaxQueueSize = 128;
 
-        JpaSequencedDeadLetterQueue<EventMessage<?>> testSubject = JpaSequencedDeadLetterQueue.builder()
-                                                                                              .maxSequenceSize(
-                                                                                                      expectedMaxQueueSize)
-                                                                                              .processingGroup(
-                                                                                                      "my_processing_group")
-                                                                                              .build();
+        JpaSequencedDeadLetterQueue<EventMessage<?>> testSubject = JpaSequencedDeadLetterQueue
+                .builder()
+                .maxSequenceSize(expectedMaxQueueSize)
+                .processingGroup("my_processing_group")
+                .transactionManager(transactionManager)
+                .build();
 
         assertEquals(expectedMaxQueueSize, testSubject.maxSequenceSize());
     }

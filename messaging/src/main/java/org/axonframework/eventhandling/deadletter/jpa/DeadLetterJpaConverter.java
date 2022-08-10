@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.Serializer;
 
 /**
- * Converter that can convert a {@link EventMessage} to a {@link DeadLetterEntryMessage} and vice versa.
+ * Converter that can convert a {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -28,30 +28,30 @@ import org.axonframework.serialization.Serializer;
 public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
 
     /**
-     * Converts an {@link EventMessage} to a {@link DeadLetterEntryMessage}.
+     * Converts an {@link EventMessage} to a {@link DeadLetterEventEntry}.
      *
      * @param message    The message to convert.
      * @param serializer The {@link Serializer} to use for payload and metadata.
-     * @return The created {@link DeadLetterEntryMessage}
+     * @return The created {@link DeadLetterEventEntry}
      */
-    DeadLetterEntryMessage toEntry(M message, Serializer serializer);
+    DeadLetterEventEntry toEntry(M message, Serializer serializer);
 
     /**
-     * Converts a {@link DeadLetterEntryMessage} to a {@link EventMessage}.
+     * Converts a {@link DeadLetterEventEntry} to a {@link EventMessage}.
      *
      * @param entry      The database entry to convert to a {@link EventMessage}
      * @param serializer The {@link Serializer} to use for payload and metadata.
-     * @return The created {@link DeadLetterEntryMessage}
+     * @return The created {@link DeadLetterEventEntry}
      */
-    M fromEntry(DeadLetterEntryMessage entry, Serializer serializer);
+    M fromEntry(DeadLetterEventEntry entry, Serializer serializer);
 
     /**
-     * Check whether this converter supports the given {@link DeadLetterEntryMessage}.
+     * Check whether this converter supports the given {@link DeadLetterEventEntry}.
      *
      * @param message The message to check support for.
      * @return Whether the provided message is supported by this converter.
      */
-    boolean canConvert(DeadLetterEntryMessage message);
+    boolean canConvert(DeadLetterEventEntry message);
 
     /**
      * Check whether this converter supports the given {@link EventMessage}.

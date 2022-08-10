@@ -49,7 +49,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @SuppressWarnings("rawtypes")
     @Override
-    public DeadLetterEntryMessage toEntry(EventMessage<?> message, Serializer serializer) {
+    public DeadLetterEventEntry toEntry(EventMessage<?> message, Serializer serializer) {
         GenericEventMessage<?> eventMessage = (GenericEventMessage<?>) message;
         Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
                 TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
@@ -62,7 +62,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                                                                                byte[].class));
 
 
-        return new DeadLetterEntryMessage(
+        return new DeadLetterEventEntry(
                 message.getClass().getName(),
                 message.getIdentifier(),
                 message.getTimestamp().toString(),
@@ -79,7 +79,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public EventMessage<?> fromEntry(DeadLetterEntryMessage entry, Serializer serializer) {
+    public EventMessage<?> fromEntry(DeadLetterEventEntry entry, Serializer serializer) {
         SerializedMessage<?> serializedMessage = new SerializedMessage<>(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
                                                                          entry.getMetaData(),
@@ -104,7 +104,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
             return new GenericDomainEventMessage<>(entry.getType(),
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
-                                                   serializedMessage);
+                                                   serializedMessage.getPayload(),
+                                                   serializedMessage.getMetaData(),
+                                                   serializedMessage.getIdentifier(),
+                                                   timestampSupplier.get());
         } else {
             return new GenericEventMessage<>(serializedMessage,
                                              timestampSupplier);
@@ -112,7 +115,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public boolean canConvert(DeadLetterEntryMessage message) {
+    public boolean canConvert(DeadLetterEventEntry message) {
         return message.getMessageType().equals(GenericTrackedDomainEventMessage.class.getName()) ||
                 message.getMessageType().equals(GenericEventMessage.class.getName()) ||
                 message.getMessageType().equals(GenericDomainEventMessage.class.getName()) ||

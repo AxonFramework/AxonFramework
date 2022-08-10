@@ -26,9 +26,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Deque;
-import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +97,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         long maxSequenceSize = testSubject.maxSequenceSize();
         assertTrue(maxSequenceSize > 0);
 
-        for (int i = 0; i < maxSequenceSize; i++) {
+        for (int i = 0; i < maxSequenceSize ; i++) {
             testSubject.enqueue(testId, generateInitialLetter());
         }
 
@@ -496,6 +496,40 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertLetter(thirdTestLetter, resultSequence.pollFirst());
     }
 
+    @Test
+    void testProcessHandlesMassiveAmountOfLettersInSequence() {
+        AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
+        Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
+            Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
+            if (sequence == null) {
+                sequence = new LinkedList<>();
+            }
+            sequence.addLast(letter);
+            resultLetters.set(sequence);
+            return Decisions.evict();
+        };
+
+        Object testId = generateId();
+        DeadLetter<? extends M> firstTestLetter = generateInitialLetter();
+        testSubject.enqueue(testId, firstTestLetter);
+
+        List<DeadLetter<M>> expectedOrderList = new LinkedList<>();
+        for(int i = 0; i < 100; i++) {
+            DeadLetter<M> deadLetter = generateFollowUpLetter();
+            expectedOrderList.add(deadLetter);
+            testSubject.enqueueIfPresent(testId, () -> deadLetter);
+        }
+
+        boolean result = testSubject.process(testTask);
+        assertTrue(result);
+        Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
+
+        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        for(int i = 0; i < 100; i++) {
+            assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
+        }
+    }
+
     /**
      * A "claimed sequence" in this case means that a process task for a given "sequence identifier" is still processing
      * the sequence. Furthermore, if it's the sole sequence, the processing task will not be invoked. This approach
@@ -673,7 +707,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         // Add another letter in a different sequence that we do not expect to receive.
         testSubject.enqueue(generateId(), generateInitialLetter());
 
-        boolean result = testSubject.process(letter -> letter.equals(firstTestLetter), testTask);
+        boolean result = testSubject.process(equals(firstTestLetter), testTask);
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 

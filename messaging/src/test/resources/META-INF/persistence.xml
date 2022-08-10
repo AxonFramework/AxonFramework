@@ -17,7 +17,7 @@
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntryMessage</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
         <properties>
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.HSQLDialect"/>

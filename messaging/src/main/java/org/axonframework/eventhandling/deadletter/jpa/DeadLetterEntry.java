@@ -21,6 +21,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -37,8 +38,8 @@ import javax.persistence.Table;
  * Default DeadLetter JPA entity implementation of dead letters. Used by the {@link JpaSequencedDeadLetterQueue} to
  * store these into the database to be retried later.
  * <p>
- * The original messages is embedded as a {@link DeadLetterEntryMessage}. This is mapped, upon both storage and
- * retrieval, by one of the configured {@link DeadLetterJpaConverter converters}.
+ * The original messages is embedded as a {@link DeadLetterEventEntry}. This is mapped, upon both storage and retrieval,
+ * by one of the configured {@link DeadLetterJpaConverter converters}.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -46,7 +47,7 @@ import javax.persistence.Table;
 @Entity
 @Table(indexes = {
         @Index(columnList = "processingGroup"),
-        @Index(columnList = "processingGroup,sequence"),
+        @Index(columnList = "processingGroup,sequenceIdentifier"),
 })
 public class DeadLetterEntry {
 
@@ -57,13 +58,13 @@ public class DeadLetterEntry {
     private String processingGroup;
 
     @Basic(optional = false)
-    private String sequence;
+    private String sequenceIdentifier;
 
     @Basic(optional = false)
     private long index;
 
     @Embedded
-    private DeadLetterEntryMessage message;
+    private DeadLetterEventEntry message;
 
     @Basic(optional = false)
     private Instant enqueuedAt;
@@ -91,21 +92,21 @@ public class DeadLetterEntry {
     /**
      * Creates a new {@link DeadLetterEntry} consisting of the given parameters.
      *
-     * @param processingGroup The processing group this message belongs to.
-     * @param sequence        The sequence identifier this message belongs to.
-     * @param index           The index of this message within the sequence
-     * @param message         An embedded {@link DeadLetterEntryMessage} containing all information about the message
-     *                        itself.
-     * @param enqueuedAt      The time the message was enqueued.
-     * @param lastTouched     The time the message has been last processed.
-     * @param cause           The reason the message was enqueued.
-     * @param diagnostics     The diagnostics, a map of metadata
-     * @param serializer      The {@link Serializer } to use for the {@code diagnostics}
+     * @param processingGroup    The processing group this message belongs to.
+     * @param sequenceIdentifier The sequence identifier this message belongs to.
+     * @param index              The index of this message within the sequence
+     * @param message            An embedded {@link DeadLetterEventEntry} containing all information about the message
+     *                           itself.
+     * @param enqueuedAt         The time the message was enqueued.
+     * @param lastTouched        The time the message has been last processed.
+     * @param cause              The reason the message was enqueued.
+     * @param diagnostics        The diagnostics, a map of metadata
+     * @param serializer         The {@link Serializer } to use for the {@code diagnostics}
      */
     public DeadLetterEntry(String processingGroup,
-                           String sequence,
+                           String sequenceIdentifier,
                            long index,
-                           DeadLetterEntryMessage message,
+                           DeadLetterEventEntry message,
                            Instant enqueuedAt,
                            Instant lastTouched,
                            Cause cause,
@@ -113,7 +114,7 @@ public class DeadLetterEntry {
                            Serializer serializer) {
         this.deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
         this.processingGroup = processingGroup;
-        this.sequence = sequence;
+        this.sequenceIdentifier = sequenceIdentifier;
         this.index = index;
         this.message = message;
         this.enqueuedAt = enqueuedAt;
@@ -148,12 +149,12 @@ public class DeadLetterEntry {
      *
      * @return The sequence identifier.
      */
-    public String getSequence() {
-        return sequence;
+    public String getSequenceIdentifier() {
+        return sequenceIdentifier;
     }
 
     /**
-     * The index of this message within the {@link #getSequence()}, used for ordering and keeping the messages
+     * The index of this message within the {@link #getSequenceIdentifier()}, used for ordering and keeping the messages
      * sequential.
      *
      * @return The index.
@@ -163,11 +164,11 @@ public class DeadLetterEntry {
     }
 
     /**
-     * The embedded {@link DeadLetterEntryMessage} representing the original message.
+     * The embedded {@link DeadLetterEventEntry} representing the original message.
      *
      * @return The embedded original message.
      */
-    public DeadLetterEntryMessage getMessage() {
+    public DeadLetterEventEntry getMessage() {
         return message;
     }
 
@@ -181,7 +182,7 @@ public class DeadLetterEntry {
     }
 
     /**
-     * The time the messages was last touch, meaning having been queued or having been tried to process.
+     * The time the messages was last touched, meaning having been queued or having been tried to process.
      *
      * @return The time the messages was last touched.
      */
@@ -232,8 +233,12 @@ public class DeadLetterEntry {
      *
      * @return The serialized diagnostics.
      */
-    public byte[] getDiagnostics() {
-        return diagnostics;
+    public SerializedObject<byte[]> getDiagnostics() {
+        return new SimpleSerializedObject<>(
+                diagnostics,
+                byte[].class,
+                MetaData.class.getName(),
+                null);
     }
 
     /**
