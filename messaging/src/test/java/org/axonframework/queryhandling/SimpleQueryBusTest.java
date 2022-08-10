@@ -745,6 +745,23 @@ class SimpleQueryBusTest {
         assertEquals("hello1234", result.get().getPayload());
     }
 
+    @Test
+    void testOnSubscriptionQueryCancelTheActiveSubscriptionIsRemovedFromTheEmitterIfFluxIsNotSubscribed() {
+        //noinspection resource
+        testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "1234");
+
+        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                "test", ResponseTypes.instanceOf(String.class), ResponseTypes.instanceOf(String.class)
+        );
+
+        //noinspection resource
+        SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result =
+                testSubject.subscriptionQuery(testQuery);
+
+        result.cancel();
+        assertEquals(0, testSubject.queryUpdateEmitter().activeSubscriptions().size());
+    }
+
     @SuppressWarnings("unused")
     public Future<String> futureMethod() {
         return null;

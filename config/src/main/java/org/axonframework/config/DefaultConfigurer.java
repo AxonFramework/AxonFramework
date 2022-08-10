@@ -857,9 +857,10 @@ public class DefaultConfigurer implements Configurer {
                         lifecycleState.description, currentLifecyclePhase
                 ));
             } catch (TimeoutException e) {
+            	final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
                 logger.warn(String.format(
-                        "Timed out during %s phase [%d] after 5 seconds. Proceeding to following phase",
-                        lifecycleState.description, currentLifecyclePhase
+                        "Timed out during %s phase [%d] after %d second(s). Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds
                 ));
             }
         } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);

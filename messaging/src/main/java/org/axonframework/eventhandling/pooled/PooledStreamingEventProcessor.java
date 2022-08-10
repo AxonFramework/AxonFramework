@@ -326,7 +326,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
-                             ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]
+                             ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
+                             getName(),
+                             segments[i]
                      ));
         });
     }

@@ -71,7 +71,7 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.18.0</log4j.version>
-        <spring.version>5.3.21</spring.version>
+        <spring.version>5.3.22</spring.version>
         <spring-security.version>5.7.0</spring-security.version>
         <spring.boot.version>2.7.0</spring.boot.version>
         <mockito.version>4.6.0</mockito.version>
@@ -92,7 +92,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
         <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <mysql-connector-java.version>8.0.29</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -104,7 +104,7 @@
         <javassist.version>3.29.0-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <postgresql.version>42.4.0</postgresql.version>
+        <postgresql.version>42.4.1</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
         <junit.jupiter.version>5.9.0</junit.jupiter.version>
         <axonserver-connector-java.version>4.6.1</axonserver-connector-java.version>
