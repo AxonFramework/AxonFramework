@@ -42,7 +42,7 @@ class ShouldEnqueueTest {
 
     @Test
     void testDecisionsEnqueue() {
-        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
+        ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());

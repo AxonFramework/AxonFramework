@@ -25,8 +25,10 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Deque;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +85,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
             testSubject.enqueue(generateId(), generateInitialLetter());
         }
 
-        String oneSequenceToMany = generateId();
+        Object oneSequenceToMany = generateId();
         DeadLetter<M> testLetter = generateInitialLetter();
         assertThrows(DeadLetterQueueOverflowException.class, () -> testSubject.enqueue(oneSequenceToMany, testLetter));
     }
@@ -191,8 +193,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(testSubject.contains(testId));
         Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultLetters.hasNext());
-        DeadLetter<? extends M> actualLetter = resultLetters.next();
-        assertLetter(testLetter, actualLetter);
+        assertLetter(testLetter, resultLetters.next());
         assertFalse(resultLetters.hasNext());
 
         testSubject.evict(mapToQueueImplementation(generateInitialLetter()));
@@ -382,7 +383,6 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertFalse(taskInvoked.get());
     }
 
-
     @Test
     void testProcessReturnsTrueAndEvictsTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
@@ -456,6 +456,44 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         result = testSubject.process(testTask);
         assertTrue(result);
         assertLetter(testThatLetter, resultLetter.get());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    void testProcessHandlesAllLettersInSequence() {
+        AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
+        Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
+            Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
+            if (sequence == null) {
+                sequence = new LinkedList<>();
+            }
+            sequence.addLast(letter);
+            resultLetters.set(sequence);
+            return Decisions.evict();
+        };
+
+        Object testId = generateId();
+        DeadLetter<? extends M> firstTestLetter = generateInitialLetter();
+        testSubject.enqueue(testId, firstTestLetter);
+        // Move time to impose changes to enqueuedAt and lastTouched.
+        setAndGetTime(Instant.now());
+        DeadLetter<? extends M> secondTestLetter = generateFollowUpLetter();
+        testSubject.enqueueIfPresent(testId, () -> secondTestLetter);
+        // Move time to impose changes to enqueuedAt and lastTouched.
+        setAndGetTime(Instant.now());
+        DeadLetter<? extends M> thirdTestLetter = generateFollowUpLetter();
+        testSubject.enqueueIfPresent(testId, () -> thirdTestLetter);
+
+        // Add another letter in a different sequence that we do not expect to receive.
+        testSubject.enqueue(generateId(), generateInitialLetter());
+
+        boolean result = testSubject.process(testTask);
+        assertTrue(result);
+        Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
+
+        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        assertLetter(secondTestLetter, resultSequence.pollFirst());
+        assertLetter(thirdTestLetter, resultSequence.pollFirst());
     }
 
     /**
@@ -606,6 +644,44 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(testSubject.deadLetters().iterator().hasNext());
     }
 
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    void testProcessLetterPredicateHandlesAllLettersInSequence() {
+        AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
+        Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
+            Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
+            if (sequence == null) {
+                sequence = new LinkedList<>();
+            }
+            sequence.addLast(letter);
+            resultLetters.set(sequence);
+            return Decisions.evict();
+        };
+
+        Object testId = generateId();
+        DeadLetter<? extends M> firstTestLetter = generateInitialLetter();
+        testSubject.enqueue(testId, firstTestLetter);
+        // Move time to impose changes to enqueuedAt and lastTouched.
+        setAndGetTime(Instant.now());
+        DeadLetter<? extends M> secondTestLetter = generateFollowUpLetter();
+        testSubject.enqueueIfPresent(testId, () -> secondTestLetter);
+        // Move time to impose changes to enqueuedAt and lastTouched.
+        setAndGetTime(Instant.now());
+        DeadLetter<? extends M> thirdTestLetter = generateFollowUpLetter();
+        testSubject.enqueueIfPresent(testId, () -> thirdTestLetter);
+
+        // Add another letter in a different sequence that we do not expect to receive.
+        testSubject.enqueue(generateId(), generateInitialLetter());
+
+        boolean result = testSubject.process(letter -> letter.equals(firstTestLetter), testTask);
+        assertTrue(result);
+        Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
+
+        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        assertLetter(secondTestLetter, resultSequence.pollFirst());
+        assertLetter(thirdTestLetter, resultSequence.pollFirst());
+    }
+
     /**
      * A "claimed sequence" in this case means that a process task for a given "sequence identifier" is still processing
      * the sequence. Furthermore, if it's the sole sequence, the processing task will not be invoked. This approach
@@ -684,11 +760,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     /**
-     * Generate a unique {@link String} based on {@link UUID#randomUUID()}.
+     * Generate a unique {@link Object} based on {@link UUID#randomUUID()}.
      *
-     * @return A unique {@link String}, based on {@link UUID#randomUUID()}.
+     * @return A unique {@link Object}, based on {@link UUID#randomUUID()}.
      */
-    protected static String generateId() {
+    protected static Object generateId() {
         return UUID.randomUUID().toString();
     }
 
@@ -771,7 +847,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return {@link Instant#now()}, the current time for the invoker of this method.
      */
     protected Instant setAndGetTime() {
-        return setAndGetTime(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        return setAndGetTime(Instant.now());
     }
 
     /**

@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
 /**
@@ -94,15 +95,13 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * {@link DeadLetter#diagnostics()}, depending on the given {@code letterUpdater}.
      *
      * @param letter        The {@link DeadLetter dead-letter} to reenter in this queue.
-     * @param letterUpdater A {@link Function lambda} taking in the given {@code letter} and updating the entry for
+     * @param letterUpdater A {@link UnaryOperator lambda} taking in the given {@code letter} and updating the entry for
      *                      requeueing. This may adjust the {@link DeadLetter#cause()} and
      *                      {@link DeadLetter#diagnostics()}, for example.
      * @throws NoSuchDeadLetterException Thrown if the given {@code letter} does not exist in the queue.
      */
-    void requeue(
-            @Nonnull DeadLetter<? extends M> letter,
-            @Nonnull Function<DeadLetter<? extends M>, DeadLetter<? extends M>> letterUpdater
-    ) throws NoSuchDeadLetterException;
+    void requeue(@Nonnull DeadLetter<? extends M> letter,
+                 @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) throws NoSuchDeadLetterException;
 
     /**
      * Check whether there's a sequence of {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier}.
@@ -174,10 +173,10 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * the sequence.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, Function)} a dead-letter from the selected sequence.
-     * The {@code processingTask} is invoked as long as letters are present in the selected sequence and the result of
-     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the
-     * dead-letter should be evicted.
+     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} a dead-letter from the selected
+     * sequence. The {@code processingTask} is invoked as long as letters are present in the selected sequence and the
+     * result of processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means
+     * the dead-letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence.
      * Doing so ensure enqueued messages are handled in order.
@@ -186,7 +185,7 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      *                       {@code processingTask}.
      * @param processingTask A function processing a {@link DeadLetter dead-letter} implementation. Returns a
      *                       {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter)} or
-     *                       {@link #requeue(DeadLetter, Function)} the dead-letter.
+     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
      * sequence and the outcome was to evict each instance.
@@ -200,17 +199,17 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * entry.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, Function)} the dead-letter. The {@code processingTask}
-     * is invoked as long as letters are present in the selected sequence and the result of processing returns
-     * {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the dead-letter should be
-     * evicted.
+     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter. The
+     * {@code processingTask} is invoked as long as letters are present in the selected sequence and the result of
+     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the
+     * dead-letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence. *
      * Doing so ensure enqueued messages are handled in order.
      *
      * @param processingTask A function processing a {@link DeadLetter dead-letter} implementation. Returns a
      *                       {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter)} or
-     *                       {@link #requeue(DeadLetter, Function)} the dead-letter.
+     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
      * sequence and the outcome was to evict each instance.

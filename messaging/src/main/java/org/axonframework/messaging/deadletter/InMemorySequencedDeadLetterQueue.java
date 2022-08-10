@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -152,7 +153,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     @Override
     public void requeue(
             @Nonnull DeadLetter<? extends M> letter,
-            @Nonnull Function<DeadLetter<? extends M>, DeadLetter<? extends M>> letterUpdater
+            @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater
     ) throws NoSuchDeadLetterException {
         Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
                 deadLetters.entrySet()

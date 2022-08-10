@@ -22,12 +22,13 @@ import org.axonframework.messaging.MetaData;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Interface describing a dead-lettered {@link Message} implementation of generic type {@code M}.
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
- * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, Function)} or
+ * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator)} or
  * {@link SequencedDeadLetterQueue#process(Function) processing}, is kept in {@link #lastTouched()}. Additional
  * information on why the letter is enqueued can be found in the {@link #diagnostics() diagnostics}.
  *
@@ -106,12 +107,12 @@ public interface DeadLetter<M extends Message<?>> {
      * the given {@code diagnosticsBuilder}. The {@code diagnosticsBuilder} will be invoked with the diagnostics of this
      * instance.
      *
-     * @param diagnosticsBuilder The {@link Function lambda} constructing diagnostic {@link MetaData} to replace the
-     *                           {@code MetaData} of the {@link DeadLetter} under construction.
+     * @param diagnosticsBuilder The {@link UnaryOperator lambda} constructing diagnostic {@link MetaData} to replace
+     *                           the {@code MetaData} of the {@link DeadLetter} under construction.
      * @return A copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the result of the
      * given {@code diagnosticsBuilder}.
      */
-    default DeadLetter<M> withDiagnostics(Function<MetaData, MetaData> diagnosticsBuilder) {
+    default DeadLetter<M> withDiagnostics(UnaryOperator<MetaData> diagnosticsBuilder) {
         return withDiagnostics(diagnosticsBuilder.apply(this.diagnostics()));
     }
 }
