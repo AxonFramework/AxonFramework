@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -97,7 +98,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         long maxSequenceSize = testSubject.maxSequenceSize();
         assertTrue(maxSequenceSize > 0);
 
-        for (int i = 0; i < maxSequenceSize ; i++) {
+        for (int i = 0; i < maxSequenceSize; i++) {
             testSubject.enqueue(testId, generateInitialLetter());
         }
 
@@ -444,7 +445,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         testSubject.enqueue(testThisId, testThisLetter);
 
         // Move time to impose changes to enqueuedAt and lastTouched.
-        setAndGetTime();
+        setAndGetTime(Instant.now().plus(5, ChronoUnit.SECONDS));
         Object testThatId = generateId();
         DeadLetter<? extends M> testThatLetter = generateInitialLetter();
         testSubject.enqueue(testThatId, testThatLetter);
@@ -514,7 +515,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         testSubject.enqueue(testId, firstTestLetter);
 
         List<DeadLetter<M>> expectedOrderList = new LinkedList<>();
-        for(int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             DeadLetter<M> deadLetter = generateFollowUpLetter();
             expectedOrderList.add(deadLetter);
             testSubject.enqueueIfPresent(testId, () -> deadLetter);
@@ -525,7 +526,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
         assertLetter(firstTestLetter, resultSequence.pollFirst());
-        for(int i = 0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
         }
     }
@@ -837,6 +838,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      */
     protected abstract DeadLetter<M> generateFollowUpLetter();
 
+    /**
+     * Generates a {@link DeadLetter} implementation specific to the {@link SequencedDeadLetterQueue} tested. Should use
+     * the original properties set on the provided {@code deadLetter}.
+     * <p>
+     * By default, it keeps the original the way it is.
+     *
+     * @param deadLetter The dead letter to convert.
+     * @return The converted dead letter.
+     */
     protected DeadLetter<M> mapToQueueImplementation(DeadLetter<M> deadLetter) {
         return deadLetter;
     }
