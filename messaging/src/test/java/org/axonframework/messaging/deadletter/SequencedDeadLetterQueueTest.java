@@ -649,6 +649,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @Test
     void testProcessLetterPredicateReturnsFalseAndRequeuesTheLetter() {
+        setAndGetTime();
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
