@@ -49,7 +49,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @SuppressWarnings("rawtypes")
     @Override
-    public DeadLetterEventEntry toEntry(EventMessage<?> message, Serializer serializer) {
+    public DeadLetterEventEntry convert(EventMessage<?> message, Serializer serializer) {
         GenericEventMessage<?> eventMessage = (GenericEventMessage<?>) message;
         Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
                 TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
@@ -79,7 +79,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public EventMessage<?> fromEntry(DeadLetterEventEntry entry, Serializer serializer) {
+    public EventMessage<?> convert(DeadLetterEventEntry entry, Serializer serializer) {
         SerializedMessage<?> serializedMessage = new SerializedMessage<>(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
                                                                          entry.getMetaData(),

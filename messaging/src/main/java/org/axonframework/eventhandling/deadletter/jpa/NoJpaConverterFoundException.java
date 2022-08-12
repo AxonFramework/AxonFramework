@@ -18,8 +18,20 @@ package org.axonframework.eventhandling.deadletter.jpa;
 
 import org.axonframework.common.AxonException;
 
+/**
+ * Indicates that the {@link JpaSequencedDeadLetterQueue} could not resolve a converter based on the
+ * {@link DeadLetterEntry} or {@link org.axonframework.eventhandling.EventMessage} that needed to be converted.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
+ */
 public class NoJpaConverterFoundException extends AxonException {
 
+    /**
+     * Constructs a {@code NoJpaConverterFoundException} with the provided {@code message}.
+     *
+     * @param message The message containing more details about the cause.
+     */
     public NoJpaConverterFoundException(String message) {
         super(message);
     }

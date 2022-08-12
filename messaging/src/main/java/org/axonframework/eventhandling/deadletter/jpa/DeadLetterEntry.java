@@ -47,7 +47,8 @@ import javax.persistence.Table;
 @Entity
 @Table(indexes = {
         @Index(columnList = "processingGroup"),
-        @Index(columnList = "processingGroup,sequenceIdentifier", unique = true),
+        @Index(columnList = "processingGroup,sequenceIdentifier"),
+        @Index(columnList = "processingGroup,sequenceIdentifier,index", unique = true),
 })
 public class DeadLetterEntry {
 

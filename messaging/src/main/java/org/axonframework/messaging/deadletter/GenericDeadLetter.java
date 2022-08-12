@@ -162,6 +162,11 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
         return new GenericDeadLetter<>(this, diagnostics);
     }
 
+    /**
+     * Gets the sequence identifier of the sequence this message belongs to.
+     *
+     * @return The sequence identifier
+     */
     public Object getSequenceIdentifier() {
         return sequenceIdentifier;
     }

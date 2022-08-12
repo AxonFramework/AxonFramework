@@ -28,6 +28,8 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
+import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
+import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
 
 import java.sql.SQLException;
@@ -45,8 +47,8 @@ import static org.mockito.Mockito.*;
 class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
-    EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
-    EntityManager entityManager = emf.createEntityManager();
+    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
+    private final EntityManager entityManager = emf.createEntityManager();
     private EntityTransaction transaction;
 
     @BeforeEach
@@ -85,8 +87,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                                        0L,
                                        ((GenericDeadLetter<EventMessage<?>>) deadLetter).getSequenceIdentifier()
                                                                                         .toString(),
-                                       GenericDeadLetter.clock.instant(),
-                                       GenericDeadLetter.clock.instant(),
+                                       deadLetter.enqueuedAt(),
+                                       deadLetter.lastTouched(),
                                        deadLetter.cause().orElse(null),
                                        deadLetter.diagnostics(),
                                        deadLetter.message());
@@ -126,6 +128,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequences(128)
                 .maxSequenceSize(128)
                 .processingGroup("my_processing_group")
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .build();
     }
 
@@ -138,6 +141,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequences(expectedMaxQueues)
                 .processingGroup("my_processing_group")
                 .transactionManager(transactionManager)
+                .entityManagerProvider(() -> entityManager)
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .build();
 
         assertEquals(expectedMaxQueues, testSubject.maxSequences());
@@ -152,6 +157,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequenceSize(expectedMaxQueueSize)
                 .processingGroup("my_processing_group")
                 .transactionManager(transactionManager)
+                .entityManagerProvider(() -> entityManager)
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .build();
 
         assertEquals(expectedMaxQueueSize, testSubject.maxSequenceSize());
@@ -187,6 +194,88 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
             assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(i));
         });
+    }
+
+    @Test
+    void testCanNotSetNegativeQueryPageSize() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.queryPageSize(-1);
+        });
+    }
+
+    @Test
+    void testCanNotSetZeroQueryPageSize() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.queryPageSize(0);
+        });
+    }
+
+    @Test
+    void testCannotRequeueGenericDeadLetter() {
+        SequencedDeadLetterQueue<EventMessage<?>> queue = buildTestSubject();
+        DeadLetter<EventMessage<?>> letter = generateInitialLetter();
+        assertThrows(WrongDeadLetterTypeException.class, () -> {
+            queue.requeue(letter, d -> d);
+        });
+    }
+
+    @Test
+    void testCannotEvictGenericDeadLetter() {
+        SequencedDeadLetterQueue<EventMessage<?>> queue = buildTestSubject();
+        DeadLetter<EventMessage<?>> letter = generateInitialLetter();
+        assertThrows(WrongDeadLetterTypeException.class, () -> {
+            queue.evict(letter);
+        });
+    }
+
+    @Test
+    void testCanNotSetProcessingGroupToEmpty() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.processingGroup("");
+        });
+    }
+
+    @Test
+    void testCanNotSetProcessingGroupToNull() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.processingGroup("");
+        });
+    }
+
+    @Test
+    void canNotBuildWithoutProcessingGroup() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+                .builder()
+                .transactionManager(transactionManager)
+                .entityManagerProvider(() -> entityManager)
+                .serializer(TestSerializer.JACKSON.getSerializer());
+        assertThrows(AxonConfigurationException.class, builder::build);
+    }
+
+    @Test
+    void canNotBuildWithoutTransactionManager() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+                .builder()
+                .processingGroup("my_processing_Group")
+                .entityManagerProvider(() -> entityManager)
+                .serializer(TestSerializer.JACKSON.getSerializer());
+
+        assertThrows(AxonConfigurationException.class, builder::build);
+    }
+
+    @Test
+    void canNotBuildWithoutEntityManagerProvider() {
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+                .builder()
+                .processingGroup("my_processing_Group")
+                .transactionManager(transactionManager)
+                .serializer(TestSerializer.JACKSON.getSerializer());
+
+        assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     /**

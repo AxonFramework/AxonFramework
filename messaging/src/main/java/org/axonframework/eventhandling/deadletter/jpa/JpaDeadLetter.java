@@ -28,7 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A {@link DeadLetter} that was saved to the database and reconstructed from it.
+ * A {@link DeadLetter} that was saved to the database and reconstructed from it. This object is immutable and should
+ * only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(MetaData)} and
+ * {@link #markTouched()} functions. These reconstruct a new object with the specified new properties.
  *
  * @param <M> The {@link EventMessage} type of the contained message.
  * @author Mitchell Herrijgers
@@ -69,8 +71,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     }
 
     /**
-     * Constructs a new {@link JpaDeadLetter} from all possible properties. This is called by itself with changed since
-     * this {@link DeadLetter} is immutable.
+     * Constructs a new {@link JpaDeadLetter} with all possible parameters.
      *
      * @param id                 The ID of the {@link DeadLetterEntry}.
      * @param index              The index of the {@link DeadLetterEntry}.

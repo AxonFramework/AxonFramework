@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.deadletter.jpa;
+package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonException;
-import org.axonframework.messaging.deadletter.DeadLetter;
 
 /**
  * Exception representing that a wrong dead letter was provided to the queue. All
@@ -34,7 +33,7 @@ public class WrongDeadLetterTypeException extends AxonException {
     /**
      * Constructs a {@code WrongDeadLetterTypeException} with the provided {@code message}.
      *
-     * @param message The messages containing more details about the cause.
+     * @param message The message containing more details about the cause.
      */
     public WrongDeadLetterTypeException(String message) {
         super(message);

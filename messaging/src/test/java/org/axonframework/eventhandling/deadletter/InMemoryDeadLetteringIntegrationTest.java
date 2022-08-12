@@ -30,7 +30,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
-    SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
         return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 }

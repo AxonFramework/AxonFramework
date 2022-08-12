@@ -96,12 +96,12 @@ class EventMessageDeadLetterJpaConverterTest {
     private void test(EventMessage<?> message) {
 
         assertTrue(converter.canConvert(message));
-        DeadLetterEventEntry deadLetterEventEntry = converter.toEntry(message, serializer);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, serializer);
 
         assertCorrectlyMapped(message, deadLetterEventEntry);
         assertTrue(converter.canConvert(deadLetterEventEntry));
 
-        EventMessage<?> restoredEventMessage = converter.fromEntry(deadLetterEventEntry, serializer);
+        EventMessage<?> restoredEventMessage = converter.convert(deadLetterEventEntry, serializer);
         assertCorrectlyRestored(message, restoredEventMessage);
     }
 
