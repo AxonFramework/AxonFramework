@@ -135,7 +135,7 @@
 
         <dependency>
             <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
+            <artifactId>hibernate-core</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -146,12 +146,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc7</artifactId>
-            <version>12.1.0.2</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/src/test/binary/ojdbc7.jar</systemPath>
-            <optional>true</optional>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>21.6.0.0.1</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -177,6 +175,15 @@
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Enforce older version of jakarta.validation (one with `javax` namespace)
+        to be compatible with Hibernate -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation.legacy.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
