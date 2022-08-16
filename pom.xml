@@ -122,7 +122,7 @@
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
-        <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
         <jakarta.el.version>4.0.0</jakarta.el.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
