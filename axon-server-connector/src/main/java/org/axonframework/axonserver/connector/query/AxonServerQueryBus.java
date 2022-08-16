@@ -377,13 +377,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 @Nonnull TimeUnit timeUnit) {
+        Span span = spanFactory.createDispatchSpan("AxonServerQueryBus.scatterGather", queryMessage).start();
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(
                 "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
         ));
 
-        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
+        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(spanFactory.propagateContext(queryMessage));
         ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
@@ -403,12 +404,19 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                    queryResult,
                                                    deadline,
                                                    serializer,
-                                                   queryInTransit::end),
+                                                   () -> {
+                                                       queryInTransit.end();
+                                                       span.end();
+                                                   }),
                     false
-            ).onClose(queryInTransit::end);
+            ).onClose(() -> {
+                queryInTransit.end();
+                span.end();
+            });
         } catch (Exception e) {
             logger.debug("There was a problem issuing a scatter-gather query {}.", interceptedQuery, e);
             queryInTransit.end();
+            span.recordException(e).end();
             throw e;
         }
     }
@@ -458,7 +466,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                    configuration.getQueryFlowControl().getInitialNrOfPermits(),
                                                    configuration.getQueryFlowControl().getNrOfNewPermits()
                                            );
-        return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer, spanFactory);
+        return new AxonServerSubscriptionQueryResult<>(result, subscriptionSerializer);
     }
 
     @Override

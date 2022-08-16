@@ -191,7 +191,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory.createChildHandlerSpan("QueryUpdateEmitter " + query.getQueryName(), update, query).run(() -> {
+        spanFactory.createDispatchSpan("QueryUpdateEmitter.emit " + query.getQueryName(), update, query).run(() -> {
             SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
             MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
             try {

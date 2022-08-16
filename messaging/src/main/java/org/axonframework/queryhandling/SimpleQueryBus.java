@@ -167,13 +167,13 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
-                       () -> "Direct query does not support Flux as a return type.");
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        QueryMessage<Q, R> interceptedQuery = intercept(query);
-        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
-        CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
         return spanFactory.createInternalSpan("SimpleQueryBus.query", query).runSupplier(() -> {
+            Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+                           () -> "Direct query does not support Flux as a return type.");
+            MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
+            QueryMessage<Q, R> interceptedQuery = intercept(query);
+            List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+            CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
             try {
                 ResponseType<R> responseType = interceptedQuery.getResponseType();
                 if (handlers.isEmpty()) {
@@ -327,6 +327,8 @@ public class SimpleQueryBus implements QueryBus {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         return handlers.stream()
                        .map(handler -> {
+                           Span handlerSpan = spanFactory.createInternalSpan("SimpleQueryBus.scatterGather", query)
+                                                         .start();
                            long leftTimeout = getRemainingOfDeadline(deadline);
                            ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
                                    interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery),
@@ -334,16 +336,19 @@ public class SimpleQueryBus implements QueryBus {
                            QueryResponseMessage<R> response = null;
                            if (resultMessage.isExceptional()) {
                                monitorCallback.reportFailure(resultMessage.exceptionResult());
+                               handlerSpan.recordException(resultMessage.exceptionResult());
                                errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
                            } else {
                                try {
                                    response = resultMessage.getPayload().get(leftTimeout, TimeUnit.MILLISECONDS);
                                    monitorCallback.reportSuccess();
                                } catch (Exception e) {
+                                   handlerSpan.recordException(e);
                                    monitorCallback.reportFailure(e);
                                    errorHandler.onError(e, interceptedQuery, handler);
                                }
                            }
+                           handlerSpan.end();
                            return response;
                        }).filter(Objects::nonNull);
     }
@@ -424,8 +429,7 @@ public class SimpleQueryBus implements QueryBus {
             UnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>> handler
     ) {
-        Span span = spanFactory.createInternalSpan("SimpleQueryBus.invokeQuery", uow.getMessage());
-        return uow.executeWithResult(() -> span.runCallable(() -> {
+        return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
             if (queryResponse instanceof CompletableFuture) {
@@ -443,7 +447,7 @@ public class SimpleQueryBus implements QueryBus {
                 });
             }
             return buildCompletableFuture(responseType, queryResponse);
-        }));
+        });
     }
 
     private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(

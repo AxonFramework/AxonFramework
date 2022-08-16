@@ -115,11 +115,11 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(@Nonnull List<? extends EventMessage<?>> events) {
-        Span span = spanFactory.createInternalSpan("EventBus.publish", events.get(0))
-                               .start();
-        List<? extends EventMessage<?>> eventsWithContext = events.stream().map(spanFactory::propagateContext)
-                                                                  .collect(
-                                                                          Collectors.toList());
+        List<? extends EventMessage<?>> eventsWithContext = events
+                .stream()
+                .map(e -> spanFactory.createInternalSpan("EventBus.publish", e)
+                                     .runSupplier(() -> spanFactory.propagateContext(e)))
+                .collect(Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
                                                                          .map(messageMonitor::onMessageIngested)
                                                                          .collect(Collectors.toList());
@@ -135,11 +135,9 @@ public abstract class AbstractEventBus implements EventBus {
 
             unitOfWork.afterCommit(u -> {
                 ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
-                span.end();
             });
             unitOfWork.onRollback(uow -> {
                 ingested.forEach(message -> message.reportFailure(uow.getExecutionResult().getExceptionResult()));
-                span.recordException(uow.getExecutionResult().getExceptionResult()).end();
             });
 
             eventsQueue(unitOfWork).addAll(eventsWithContext);
@@ -149,10 +147,8 @@ public abstract class AbstractEventBus implements EventBus {
                 commit(eventsWithContext);
                 afterCommit(eventsWithContext);
                 ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
-                span.end();
             } catch (Exception e) {
                 ingested.forEach(m -> m.reportFailure(e));
-                span.recordException(e).end();
                 throw e;
             }
         }
@@ -192,7 +188,6 @@ public abstract class AbstractEventBus implements EventBus {
                 } else {
                     doWithEvents(this::afterCommit, eventQueue);
                 }
-                span.end();
             });
             unitOfWork.onCleanup(u -> {
                 u.resources().remove(eventsKey);
@@ -294,8 +289,8 @@ public abstract class AbstractEventBus implements EventBus {
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
-         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a {@link
-         * NoOpMessageMonitor}.
+         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a
+         * {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing

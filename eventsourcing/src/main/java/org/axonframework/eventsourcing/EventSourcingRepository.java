@@ -124,23 +124,20 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
-        return spanFactory.createInternalSpan("EventSourcedAggregate.doLoadWithLock " + aggregateIdentifier)
-                          .runSupplier(() -> {
-                              DomainEventStream eventStream = readEvents(aggregateIdentifier);
-                              if (!eventStream.hasNext()) {
-                                  throw new AggregateNotFoundException(aggregateIdentifier,
-                                                                       "The aggregate was not found in the event store");
-                              }
-                              EventSourcedAggregate<T> aggregate = EventSourcedAggregate
-                                      .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier,
-                                                                                       eventStream.peek()),
-                                                  aggregateModel(), eventStore, repositoryProvider, trigger);
-                              aggregate.initializeState(eventStream);
-                                  if (aggregate.isDeleted()) {
-                                      throw new AggregateDeletedException(aggregateIdentifier);
-                                  }
-                                  return aggregate;
-                              });
+        DomainEventStream eventStream = readEvents(aggregateIdentifier);
+        if (!eventStream.hasNext()) {
+            throw new AggregateNotFoundException(aggregateIdentifier,
+                                                 "The aggregate was not found in the event store");
+        }
+        EventSourcedAggregate<T> aggregate = EventSourcedAggregate
+                .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier,
+                                                                 eventStream.peek()),
+                            aggregateModel(), eventStore, repositoryProvider, trigger);
+        aggregate.initializeState(eventStream);
+        if (aggregate.isDeleted()) {
+            throw new AggregateDeletedException(aggregateIdentifier);
+        }
+        return aggregate;
     }
 
     /**
