@@ -143,7 +143,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
-                JobDetail jobDetail = buildJobDetail(interceptedDeadlineMessage,
+                JobDetail jobDetail = buildJobDetail(spanFactory.propagateContext(interceptedDeadlineMessage),
                                                      deadlineScope,
                                                      new JobKey(deadlineId, deadlineName));
                 scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
