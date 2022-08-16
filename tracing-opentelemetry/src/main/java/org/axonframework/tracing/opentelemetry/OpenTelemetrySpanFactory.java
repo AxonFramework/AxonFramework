@@ -22,14 +22,17 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapPropagator;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.tracing.SpanUtils.determineMessageName;
 
@@ -48,26 +51,38 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
  */
 public class OpenTelemetrySpanFactory implements SpanFactory {
 
-    private final Tracer tracer = GlobalOpenTelemetry.getTracer("axon-opentelemetry");
+    private static final TextMapPropagator PROPAGATOR = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
+
+    private final Tracer tracer;
     private final List<SpanAttributesProvider> spanAttributesProviders;
-    private final TextMapPropagator textMapPropagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
 
     /**
-     * Creates a new {@link SpanFactory} that creates {@link Span} implementations that are compatible with
-     * OpenTelemetry.
+     * Instantiate a {@link OpenTelemetrySpanFactory} based on the fields contained in the {@link Builder}.
      *
-     * @param spanAttributesProviders A list of {@link SpanAttributesProvider}s, which add metadata to span based on the
-     *                                input of a {@link Message}.
+     * @param builder the {@link Builder} used to instantiate a {@link OpenTelemetrySpanFactory} instance.
      */
-    public OpenTelemetrySpanFactory(List<SpanAttributesProvider> spanAttributesProviders) {
-        this.spanAttributesProviders = spanAttributesProviders;
+    public OpenTelemetrySpanFactory(Builder builder) {
+        this.spanAttributesProviders = builder.spanAttributesProviders;
+        this.tracer = builder.tracer;
+    }
+
+    /**
+     * Instantiate a Builder to create a {@link OpenTelemetrySpanFactory}.
+     * <p>
+     * The {@link SpanAttributesProvider SpanAttributeProvieders} are defaulted to an empty list, and the {@link Tracer}
+     * is defaulted to the tracer defined by {@link GlobalOpenTelemetry}.
+     *
+     * @return a Builder able to create a {@link OpenTelemetrySpanFactory}.
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <M extends Message<?>> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
-        textMapPropagator.inject(Context.current(), additionalMetadataProperties, MetadataContextSetter.INSTANCE);
+        PROPAGATOR.inject(Context.current(), additionalMetadataProperties, MetadataContextSetter.INSTANCE);
         return (M) message.andMetaData(additionalMetadataProperties);
     }
 
@@ -82,9 +97,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     @Override
     public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
                                   Message<?>... linkedParents) {
-        Context parentContext = textMapPropagator.extract(Context.current(),
-                                                          parentMessage,
-                                                          MetadataContextGetter.INSTANCE);
+        Context parentContext = PROPAGATOR.extract(Context.current(),
+                                                   parentMessage,
+                                                   MetadataContextGetter.INSTANCE);
         SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
                                         .setSpanKind(SpanKind.CONSUMER);
         if (isChildTrace) {
@@ -109,9 +124,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     private void addLinks(SpanBuilder spanBuilder, Message<?>[] linkedMessages) {
         for (Message<?> message : linkedMessages) {
-            Context linkedContext = textMapPropagator.extract(Context.current(),
-                                                              message,
-                                                              MetadataContextGetter.INSTANCE);
+            Context linkedContext = PROPAGATOR.extract(Context.current(),
+                                                       message,
+                                                       MetadataContextGetter.INSTANCE);
             spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
         }
     }
@@ -153,5 +168,50 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
             Map<String, String> attributes = supplier.provideForMessage(message);
             attributes.forEach(spanBuilder::setAttribute);
         });
+    }
+
+    /**
+     * Builder class to instantiate a {@link OpenTelemetrySpanFactory}.
+     * <p>
+     * The {@link SpanAttributesProvider SpanAttributeProvieders} are defaulted to an empty list, and the {@link Tracer}
+     * is defaulted to the tracer defined by {@link GlobalOpenTelemetry}.
+     */
+    public static class Builder {
+
+        private Tracer tracer = GlobalOpenTelemetry.getTracer("AxonFramework-OpenTelemetry");
+        private final List<SpanAttributesProvider> spanAttributesProviders = new LinkedList<>();
+
+        /**
+         * Adds all provided {@link SpanAttributesProvider}s to the {@link SpanFactory}.
+         *
+         * @param attributesProviders The {@link SpanAttributesProvider}s to add.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder addSpanAttributeProviders(@Nonnull List<SpanAttributesProvider> attributesProviders) {
+            BuilderUtils.assertNonNull(attributesProviders, "The attributesProviders should not be null");
+            spanAttributesProviders.addAll(attributesProviders);
+            return this;
+        }
+
+        /**
+         * Defines the {@link Tracer} from OpenTelemetry to use.
+         *
+         * @param tracer The {@link Tracer} to configure for use.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder tracer(@Nonnull Tracer tracer) {
+            BuilderUtils.assertNonNull(tracer, "The Tracer should not be null");
+            this.tracer = tracer;
+            return this;
+        }
+
+        /**
+         * Initializes the {@link OpenTelemetrySpanFactory}.
+         *
+         * @return The created {@link OpenTelemetrySpanFactory} with the provided configuration.
+         */
+        public OpenTelemetrySpanFactory build() {
+            return new OpenTelemetrySpanFactory(this);
+        }
     }
 }

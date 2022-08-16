@@ -42,6 +42,8 @@ public class OpenTelemetryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SpanFactory.class)
     public SpanFactory openTelemetrySpanFactory(List<SpanAttributesProvider> attributesProviders) {
-        return new OpenTelemetrySpanFactory(attributesProviders);
+        return OpenTelemetrySpanFactory.builder()
+                                       .addSpanAttributeProviders(attributesProviders)
+                                       .build();
     }
 }
