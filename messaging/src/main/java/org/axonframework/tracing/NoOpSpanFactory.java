@@ -48,7 +48,7 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(String operationName, Message<?> parentMessage) {
+    public Span createDispatchSpan(String operationName, Message<?> parentMessage, Message<?>... linkedSiblings) {
         return new NoOpSpan();
     }
 

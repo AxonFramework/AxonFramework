@@ -22,14 +22,11 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +38,10 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
  * is a standard to collect logging, tracing and metrics from applications. This {@link SpanFactory} focuses on
  * supporting the tracing part of the standard.
  * <p>
- * To get started with OpenTelemetry, <a href="https://opentelemetry.io/docs/">check out their documentation</a>.
+ * To get started with OpenTelemetry, <a href="https://opentelemetry.io/docs/">check out their documentation</a>. Note
+ * that, even after configuring the correct dependencies, you still need to run the application using the OpenTelemetry
+ * java agent to export data. Without this, it will have the same effect as the
+ * {@link org.axonframework.tracing.NoOpSpanFactory} since the data is not sent anywhere.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -50,7 +50,6 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("axon-opentelemetry");
     private final List<SpanAttributesProvider> spanAttributesProviders;
-    private final boolean useParentsInsteadOfLinks;
     private final TextMapPropagator textMapPropagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
 
     /**
@@ -61,27 +60,11 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
      *                                input of a {@link Message}.
      */
     public OpenTelemetrySpanFactory(List<SpanAttributesProvider> spanAttributesProviders) {
-        this(spanAttributesProviders, false);
-    }
-
-    /**
-     * Creates a new {@link SpanFactory} that creates {@link Span} implementations that are compatible with
-     * OpenTelemetry.
-     *
-     * @param spanAttributesProviders  A list of {@link SpanAttributesProvider}s, which add metadata to span based on
-     *                                 the input of a {@link Message}.
-     * @param useParentsInsteadOfLinks To make traces comprehensible, we can split them up and link them together
-     *                                 instead of forming one big trace. Supplying true as an argument will create large
-     *                                 traces instead.
-     */
-    public OpenTelemetrySpanFactory(List<SpanAttributesProvider> spanAttributesProviders,
-                                    boolean useParentsInsteadOfLinks) {
         this.spanAttributesProviders = spanAttributesProviders;
-        this.useParentsInsteadOfLinks = useParentsInsteadOfLinks;
     }
-
 
     @Override
+    @SuppressWarnings("unchecked")
     public <M extends Message<?>> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
         textMapPropagator.inject(Context.current(), additionalMetadataProperties, MetadataContextSetter.INSTANCE);
@@ -92,9 +75,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public Span createRootTrace(String operationName) {
         SpanBuilder spanBuilder = tracer.spanBuilder(operationName)
                                         .setSpanKind(SpanKind.INTERNAL);
-        if (!useParentsInsteadOfLinks) {
-            spanBuilder.addLink(io.opentelemetry.api.trace.Span.current().getSpanContext()).setNoParent();
-        }
+        spanBuilder.addLink(io.opentelemetry.api.trace.Span.current().getSpanContext()).setNoParent();
         return new OpenTelemetrySpan(spanBuilder);
     }
 
@@ -106,28 +87,33 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
                                                           MetadataContextGetter.INSTANCE);
         SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
                                         .setSpanKind(SpanKind.CONSUMER);
-        if (isChildTrace || (useParentsInsteadOfLinks && !messageIsOld(parentMessage))) {
+        if (isChildTrace) {
             spanBuilder.setParent(parentContext);
         } else {
             spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(parentContext).getSpanContext())
                        .setNoParent();
         }
-        for (Message<?> linkedParent : linkedParents) {
-            Context linkedContext = textMapPropagator.extract(Context.current(),
-                                                              linkedParent,
-                                                              MetadataContextGetter.INSTANCE);
-            spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
-        }
+        addLinks(spanBuilder, linkedParents);
         addMessageAttributes(spanBuilder, parentMessage);
         return new OpenTelemetrySpan(spanBuilder);
     }
 
     @Override
-    public Span createDispatchSpan(String operationName, Message<?> parentMessage) {
+    public Span createDispatchSpan(String operationName, Message<?> parentMessage, Message<?>... linkedSiblings) {
         SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
                                         .setSpanKind(SpanKind.PRODUCER);
+        addLinks(spanBuilder, linkedSiblings);
         addMessageAttributes(spanBuilder, parentMessage);
         return new OpenTelemetrySpan(spanBuilder);
+    }
+
+    private void addLinks(SpanBuilder spanBuilder, Message<?>[] linkedMessages) {
+        for (Message<?> message : linkedMessages) {
+            Context linkedContext = textMapPropagator.extract(Context.current(),
+                                                              message,
+                                                              MetadataContextGetter.INSTANCE);
+            spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
+        }
     }
 
     @Override
@@ -150,26 +136,11 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         spanAttributesProviders.add(provider);
     }
 
-    /**
-     * Determines whether the message is old that we can disregard it as part of the older trace, two minutes by
-     * default.
-     * <p>
-     * This prevents replays of event messages being added to very old command traces, if the
-     * {@code useParentsInsteadOfLinks} option is enabled.
-     *
-     * @param message The message to determine for whether it's too old
-     * @return Whether it's too old to be part of the original trace
-     */
-    private boolean messageIsOld(Message<?> message) {
-        if (message instanceof EventMessage<?>) {
-            Instant timestamp = ((EventMessage<?>) message).getTimestamp();
-            return Instant.now().isBefore(timestamp.minus(2, ChronoUnit.MINUTES));
-        }
-        return false;
-    }
-
     private String formatName(String operationName, Message<?> message) {
-        return String.format("%s %s",
+        if (message == null) {
+            return operationName;
+        }
+        return String.format("%s(%s)",
                              operationName,
                              determineMessageName(message));
     }
@@ -180,9 +151,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         }
         spanAttributesProviders.forEach(supplier -> {
             Map<String, String> attributes = supplier.provideForMessage(message);
-            if (attributes != null) {
-                attributes.forEach(spanBuilder::setAttribute);
-            }
+            attributes.forEach(spanBuilder::setAttribute);
         });
     }
 }

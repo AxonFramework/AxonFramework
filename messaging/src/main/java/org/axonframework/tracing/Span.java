@@ -25,7 +25,8 @@ import java.util.function.Supplier;
  * often used to debug and monitor (distributed) applications.
  * <p>
  * The {@link Span} is an abstraction for Axon Framework to have tracing capabilities without knowing the specific
- * tracing provider.
+ * tracing provider. Calling {@link #start()} will start the {@code span} and make it active to the current thread. For
+ * every start invocation, a respective {@link #end()} should be called as well to prevent scope leaks.
  * <p>
  * Creating {@link Span spans} is the responsibility of the {@link SpanFactory} which should be implemented by the
  * tracing provider of choice.
@@ -115,7 +116,7 @@ public interface Span {
      * automatically end when the provided {@code future} is completed, registering an exception if any occurred.
      *
      * @param future The {@link CompletableFuture} to instrument.
-     * @param <T> The result type of the {@code future}.
+     * @param <T>    The result type of the {@code future}.
      * @return The instrumented {@link CompletableFuture}
      */
     default <T> CompletableFuture<T> startForFuture(CompletableFuture<T> future) {
