@@ -23,7 +23,10 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 /**
- * This {@link TextMapSetter} implementation is able to insert the current span context into a {@link Message}.
+ * This {@link TextMapSetter} implementation is able to insert the current OpenTelemetry span context into a
+ * {@link Message}. However, since a {@code Message} is immutable, this injector injects it into the provided
+ * {@link Map}. It's the responsibility the implementing {@link OpenTelemetrySpanFactory} to mutate the message through
+ * {@link OpenTelemetrySpanFactory#propagateContext(Message)}.
  * <p>
  * The trace becomes the message's parent span in its{@link org.axonframework.messaging.MetaData}.
  *
@@ -38,13 +41,13 @@ public class MetadataContextSetter implements TextMapSetter<Map<String, String>>
     public static final MetadataContextSetter INSTANCE = new MetadataContextSetter();
 
     private MetadataContextSetter() {
-
+        // Should not be initialized directly, use the public static INSTANCE.
     }
 
     @Override
     public void set(Map<String, String> metadata, @Nonnull String key, @Nonnull String value) {
         if (metadata == null) {
-            return;
+            throw new IllegalArgumentException("The provided metadata may not be null!");
         }
         metadata.put(key, value);
     }

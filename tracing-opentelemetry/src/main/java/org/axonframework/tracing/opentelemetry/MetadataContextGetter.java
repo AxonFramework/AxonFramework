@@ -22,7 +22,8 @@ import org.axonframework.messaging.Message;
 import javax.annotation.Nonnull;
 
 /**
- * This {@link TextMapGetter} implementation is able to extract the parent span context from a {@link Message}.
+ * This {@link TextMapGetter} implementation is able to extract the parent OpenTelemetry span context from a
+ * {@link Message}.
  * <p>
  * The trace parent is part of the message's {@link org.axonframework.messaging.MetaData}, if it was set when
  * dispatching by the {@link MetadataContextSetter}. This is done using the
@@ -39,7 +40,7 @@ public class MetadataContextGetter implements TextMapGetter<Message<?>> {
     public static final MetadataContextGetter INSTANCE = new MetadataContextGetter();
 
     private MetadataContextGetter() {
-
+        // Should not be initialized directly, use the public static INSTANCE.
     }
 
     @Override
