@@ -16,63 +16,86 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.springboot.TracingProperties;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.TracingHandlerEnhancerDefinition;
 import org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MetadataSpanAttributesProvider;
 import org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider;
-import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
- * Configures tracing for Axon Framework. Defaults to the {@link NoOpSpanFactory}. If the
- * {@link OpenTelemetrySpanFactory} is on the classpath, uses Open Telemetry instead.
+ * Configures common tracing components for Axon Framework. Defaults to the {@link NoOpSpanFactory} if no other
+ * {@link SpanFactory} bean is configured.
  * <p>
- * For Open tracing, take a look at the <a href="https://github.com/AxonFramework/extension-tracing">Open Tracing
- * extension</a>.
+ * You can define additional {@link SpanAttributesProvider}s by defining your own implementations as a bean or a
+ * {@link org.springframework.stereotype.Component}. These will be picked up automatically.
  *
  * @author Mitchell Herrijgers
+ * @see OpenTelemetryAutoConfiguration
  * @since 4.6.0
  */
 @Configuration
 @AutoConfigureBefore({AxonServerAutoConfiguration.class, AxonAutoConfiguration.class})
+@EnableConfigurationProperties(TracingProperties.class)
 public class AxonTracingAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingClass("org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory")
     @ConditionalOnMissingBean(SpanFactory.class)
     public SpanFactory noOpSpanFactory() {
         return NoOpSpanFactory.INSTANCE;
     }
 
     @Bean
-    @ConditionalOnClass(name = "org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory")
-    @ConditionalOnMissingBean(SpanFactory.class)
-    public SpanFactory openTelemetrySpanFactory(List<SpanAttributesProvider> attributesProviders) {
-        return new OpenTelemetrySpanFactory(attributesProviders, false);
+    public HandlerEnhancerDefinition tracingHandlerEnhancerDefinition(SpanFactory spanFactory,
+                                                                      TracingProperties properties) {
+        return new TracingHandlerEnhancerDefinition(spanFactory, properties.isShowEventSourcingHandlers());
     }
 
     @Bean
-    public List<SpanAttributesProvider> spanAttributesProviders() {
-        return Arrays.asList(
-                new AggregateIdentifierSpanAttributesProvider(),
-                new MessageIdSpanAttributesProvider(),
-                new MessageNameSpanAttributesProvider(),
-                new MessageTypeSpanAttributesProvider(),
-                new MetadataSpanAttributesProvider(),
-                new PayloadTypeSpanAttributesProvider()
-        );
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.aggregate-identifier", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider aggregateIdentifierSpanAttributesProvider() {
+        return new AggregateIdentifierSpanAttributesProvider();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.message-id", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider messageIdSpanAttributesProvider() {
+        return new MessageIdSpanAttributesProvider();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.message-name", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider messageNameSpanAttributesProvider() {
+        return new MessageNameSpanAttributesProvider();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.message-type", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider messageTypeSpanAttributesProvider() {
+        return new MessageTypeSpanAttributesProvider();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.metadata", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider metadataSpanAttributesProvider() {
+        return new MetadataSpanAttributesProvider();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "axon.tracing.attribute-providers.payload-type", havingValue = "true", matchIfMissing = true)
+    public SpanAttributesProvider payloadTypeSpanAttributesProvider() {
+        return new PayloadTypeSpanAttributesProvider();
     }
 }
