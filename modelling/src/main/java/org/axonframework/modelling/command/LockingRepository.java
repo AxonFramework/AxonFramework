@@ -129,18 +129,17 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      */
     @Override
     protected LockAwareAggregate<T, A> doLoad(String aggregateIdentifier, Long expectedVersion) {
-        return spanFactory.createInternalSpan("LockingRepository.doLoad").runSupplier(() -> {
-            Lock lock = lockFactory.obtainLock(aggregateIdentifier);
-            try {
-                final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
-                CurrentUnitOfWork.get().onCleanup(u -> lock.release());
-                return new LockAwareAggregate<>(aggregate, lock);
-            } catch (Throwable ex) {
-                logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
-                lock.release();
-                throw ex;
-            }
-        });
+        Lock lock = spanFactory.createInternalSpan("LockingRepository.obtainLock")
+                               .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
+        try {
+            final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
+            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+            return new LockAwareAggregate<>(aggregate, lock);
+        } catch (Throwable ex) {
+            logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
+            lock.release();
+            throw ex;
+        }
     }
 
     @Override

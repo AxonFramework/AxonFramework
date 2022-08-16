@@ -21,7 +21,8 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import org.axonframework.tracing.Span;
 
-import java.util.Objects;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
@@ -31,6 +32,11 @@ import java.util.function.Supplier;
  * <p>
  * These traces should always be created using the {@link OpenTelemetrySpanFactory} since this will make sure the proper
  * parent context is extracted before creating the {@link Span}.
+ * <p>
+ * Each {@link #start()} should result in an {@link #end()} being called. Only when the last {@code end()} is called
+ * will the OpenTelemetry span actually be ended. This is because {@link Scope}s that are kept active should be closed
+ * before ending the span, or memory leaks can occur. This is also the reason the {@code scopes} are kept in a
+ * {@link Deque}.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -38,8 +44,8 @@ import java.util.function.Supplier;
 public class OpenTelemetrySpan implements Span {
 
     private final SpanBuilder spanBuilder;
-    private io.opentelemetry.api.trace.Span span;
-    private Scope activeScope;
+    private final Deque<Scope> scopeQueue = new ArrayDeque<>();
+    private io.opentelemetry.api.trace.Span span = null;
 
     /**
      * Creates the span, based on the {@link SpanBuilder} provided. This {@link SpanBuilder} will supply the
@@ -52,22 +58,24 @@ public class OpenTelemetrySpan implements Span {
     }
 
     public Span start() {
-        if (activeScope == null) {
+        if (span == null) {
             span = spanBuilder.startSpan();
-            activeScope = span.makeCurrent();
         }
+        scopeQueue.addLast(span.makeCurrent());
         return this;
     }
 
     public void end() {
-        Objects.requireNonNull(activeScope, "Span is not started!");
-        activeScope.close();
-        span.end();
+        if (!scopeQueue.isEmpty()) {
+            scopeQueue.remove().close();
+        }
+        if (scopeQueue.isEmpty()) {
+            span.end();
+        }
     }
 
     @Override
     public Span recordException(Throwable t) {
-        Objects.requireNonNull(activeScope, "Span is not started!");
         span.recordException(t);
         span.setStatus(StatusCode.ERROR, t.getMessage());
         return this;
