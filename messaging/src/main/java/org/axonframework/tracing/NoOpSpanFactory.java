@@ -18,9 +18,6 @@ package org.axonframework.tracing;
 
 import org.axonframework.messaging.Message;
 
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-
 /**
  * {@link SpanFactory} implementation that creates a {@link NoOpSpan}. This span does not do any tracing at all. It's
  * used as a fallback when there is no tracing implementation available, so framework code does not have to check.
@@ -87,26 +84,6 @@ public class NoOpSpanFactory implements SpanFactory {
         @Override
         public Span recordException(Throwable t) {
             return this;
-        }
-
-        @Override
-        public void run(Runnable runnable) {
-            runnable.run();
-        }
-
-        @Override
-        public Runnable wrapRunnable(Runnable runnable) {
-            return runnable;
-        }
-
-        @Override
-        public <T> Callable<T> wrapCallable(Callable<T> callable) {
-            return callable;
-        }
-
-        @Override
-        public <T> T runSupplier(Supplier<T> supplier) {
-            return supplier.get();
         }
     }
 }

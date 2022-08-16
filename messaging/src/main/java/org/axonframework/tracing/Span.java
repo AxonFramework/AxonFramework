@@ -17,7 +17,6 @@
 package org.axonframework.tracing;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
@@ -68,7 +67,15 @@ public interface Span {
      * @param runnable The {@link Runnable} to execute.
      */
     default void run(Runnable runnable) {
-        wrapRunnable(runnable).run();
+        try {
+            this.start();
+            runnable.run();
+        } catch (Exception e) {
+            this.recordException(e);
+            throw e;
+        } finally {
+            this.end();
+        }
     }
 
     /**
@@ -79,7 +86,9 @@ public interface Span {
      * @param runnable The {@link Runnable} to wrap
      * @return A wrapped runnable which propagates the span's context across threads.
      */
-    Runnable wrapRunnable(Runnable runnable);
+    default Runnable wrapRunnable(Runnable runnable) {
+        return () -> run(runnable);
+    }
 
     /**
      * Runs a piece of code which will be traced. Exceptions will be caught automatically and added to the span, then
@@ -89,7 +98,15 @@ public interface Span {
      * @param callable The {@link Callable} to execute.
      */
     default <T> T runCallable(Callable<T> callable) throws Exception {
-        return wrapCallable(callable).call();
+        try {
+            this.start();
+            return callable.call();
+        } catch (Exception e) {
+            this.recordException(e);
+            throw e;
+        } finally {
+            this.end();
+        }
     }
 
     /**
@@ -100,7 +117,9 @@ public interface Span {
      * @param callable The {@link Callable} to wrap
      * @return A wrapped callable which propagates the span's context across threads.
      */
-    <T> Callable<T> wrapCallable(Callable<T> callable);
+    default <T> Callable<T> wrapCallable(Callable<T> callable) {
+        return () -> runCallable(callable);
+    }
 
     /**
      * Runs a piece of code that returns a value and which will be traced. Exceptions will be caught automatically and
@@ -109,23 +128,19 @@ public interface Span {
      *
      * @param supplier The {@link Supplier} to execute.
      */
-    <T> T runSupplier(Supplier<T> supplier);
-
-    /**
-     * Starts the span and adds a completion stage to the provided {@link CompletableFuture}. The {@link Span} will
-     * automatically end when the provided {@code future} is completed, registering an exception if any occurred.
-     *
-     * @param future The {@link CompletableFuture} to instrument.
-     * @param <T>    The result type of the {@code future}.
-     * @return The instrumented {@link CompletableFuture}
-     */
-    default <T> CompletableFuture<T> startForFuture(CompletableFuture<T> future) {
-        this.start();
-        return future.whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                this.recordException(throwable);
-            }
+    default <T> T runSupplier(Supplier<T> supplier) {
+        try {
+            this.start();
+            return supplier.get();
+        } catch (Exception e) {
+            this.recordException(e);
+            throw e;
+        } finally {
             this.end();
-        });
+        }
+    }
+
+    default <T> Supplier<T> wrapSupplier(Supplier<T> supplier) {
+        return () -> runSupplier(supplier);
     }
 }

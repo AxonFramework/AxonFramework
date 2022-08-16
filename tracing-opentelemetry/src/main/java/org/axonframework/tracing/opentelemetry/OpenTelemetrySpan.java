@@ -23,8 +23,6 @@ import org.axonframework.tracing.Span;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 /**
  * {@link Span} implementation that uses OpenTelemetry's {@link io.opentelemetry.api.trace.Span} to provide tracing
@@ -61,7 +59,7 @@ public class OpenTelemetrySpan implements Span {
         if (span == null) {
             span = spanBuilder.startSpan();
         }
-        scopeQueue.addLast(span.makeCurrent());
+        scopeQueue.addFirst(span.makeCurrent());
         return this;
     }
 
@@ -79,48 +77,5 @@ public class OpenTelemetrySpan implements Span {
         span.recordException(t);
         span.setStatus(StatusCode.ERROR, t.getMessage());
         return this;
-    }
-
-    @Override
-    public Runnable wrapRunnable(Runnable runnable) {
-        return () -> {
-            try {
-                this.start();
-                runnable.run();
-            } catch (Exception e) {
-                this.recordException(e);
-                throw e;
-            } finally {
-                this.end();
-            }
-        };
-    }
-
-    @Override
-    public <T> Callable<T> wrapCallable(Callable<T> callable) {
-        return () -> {
-            try {
-                this.start();
-                return callable.call();
-            } catch (Exception e) {
-                this.recordException(e);
-                throw e;
-            } finally {
-                this.end();
-            }
-        };
-    }
-
-    @Override
-    public <T> T runSupplier(Supplier<T> supplier) {
-        try {
-            this.start();
-            return supplier.get();
-        } catch (Exception e) {
-            this.recordException(e);
-            throw e;
-        } finally {
-            this.end();
-        }
     }
 }

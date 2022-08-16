@@ -34,7 +34,7 @@
     <packaging>bundle</packaging>
 
     <properties>
-        <opentelemetry-api.version>1.15.0</opentelemetry-api.version>
+        <opentelemetry-api.version>1.16.0</opentelemetry-api.version>
     </properties>
 
     <dependencies>
