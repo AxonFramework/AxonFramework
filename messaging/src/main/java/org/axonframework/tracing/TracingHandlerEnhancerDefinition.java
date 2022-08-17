@@ -72,7 +72,7 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
         return original.attribute("EventSourcingHandler.payloadType").isPresent();
     }
 
-    public static String toMethodSignature(Executable executable) {
+    private String toMethodSignature(Executable executable) {
         return String.format("%s(%s)",
                              executable.getName(),
                              Arrays.stream(executable.getParameterTypes()).map(Class::getSimpleName)
