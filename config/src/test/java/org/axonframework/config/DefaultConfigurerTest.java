@@ -60,19 +60,13 @@ import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
+import org.junit.jupiter.api.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
 import org.quartz.SchedulerException;
 
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,25 +74,20 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating several {@link DefaultConfigurer} operations.
@@ -611,6 +600,27 @@ class DefaultConfigurerTest {
                                  .deadlineManager();
 
         assertTrue(result instanceof QuartzDeadlineManager);
+    }
+
+    @Test
+    void testDefaultConfiguredSpanFactory() {
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                                              .buildConfiguration()
+                                              .spanFactory();
+
+        assertTrue(result instanceof NoOpSpanFactory);
+    }
+
+    @Test
+    void testCustomConfiguredSpanFactory() {
+        SpanFactory custom = mock(SpanFactory.class);
+
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                        .configureSpanFactory((config) -> custom)
+                                 .buildConfiguration()
+                                 .spanFactory();
+
+        assertSame(custom, result);
     }
 
     @Test

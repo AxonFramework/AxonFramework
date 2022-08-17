@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -43,11 +44,13 @@ import static org.mockito.Mockito.*;
  */
 class SimpleCommandBusTest {
 
+    private TestSpanFactory spanFactory;
     private SimpleCommandBus testSubject;
 
     @BeforeEach
     void setUp() {
-        this.testSubject = SimpleCommandBus.builder().build();
+        spanFactory = new TestSpanFactory();
+        this.testSubject = SimpleCommandBus.builder().spanFactory(spanFactory).build();
     }
 
     @AfterEach
@@ -69,6 +72,32 @@ class SimpleCommandBusTest {
                                  }
                                  assertEquals("Say hi!", commandResultMessage.getPayload().getPayload());
                              });
+    }
+
+    @Test
+    void testDispatchIsCorrectlyTraced() {
+        testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
+        testSubject.dispatch(asCommandMessage("Say hi!"),
+                             (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
+                                 spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanActive("SimpleCommandBus.handle");
+                             });
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+    }
+
+    @Test
+    void testDispatchIsCorrectlyTracedDuringException() {
+        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
+        testSubject.subscribe(String.class.getName(), command -> {
+            throw new RuntimeException("Some exception");
+        });
+        testSubject.dispatch(asCommandMessage("Say hi!"),
+                             (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
+                                 spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanActive("SimpleCommandBus.handle");
+                             });
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        spanFactory.verifySpanHasException("SimpleCommandBus.dispatch", RuntimeException.class);
     }
 
     @Test

@@ -31,8 +31,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -80,9 +82,11 @@ class PooledStreamingEventProcessorTest {
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         stubMessageSource = new InMemoryMessageSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
@@ -109,6 +113,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder processorBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
+                                             .spanFactory(spanFactory)
                                              .eventHandlerInvoker(stubEventHandler)
                                              .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .errorHandler(PropagatingErrorHandler.instance())
@@ -208,18 +213,50 @@ class PooledStreamingEventProcessorTest {
     }
 
     @Test
+    void testHandlingEventsAreCorrectlyTraced() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(8);
+        List<Message<?>> invokedMessages = new CopyOnWriteArrayList<>();
+        mockEventHandlerInvoker();
+        doAnswer(
+                answer -> {
+                    EventMessage message = answer.getArgument(0, EventMessage.class);
+                    invokedMessages.add(message);
+                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    countDownLatch.countDown();
+                    return null;
+                }
+        ).when(stubEventHandler).handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 8)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+        testSubject.start();
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+        invokedMessages.forEach(e -> {
+            spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e);
+        });
+    }
+
+    @Test
     void testProcessorOnlyTriesToClaimAvailableSegments() {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(
+                2,
+                0,
+                1,
+                2,
+                3)));
 
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
-        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()),
+                                               intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
     @Test
@@ -750,7 +787,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens();
@@ -775,7 +814,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -801,7 +842,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
@@ -827,7 +870,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
@@ -876,6 +921,13 @@ class PooledStreamingEventProcessorTest {
                                 .getPayload()
                                 .equals(answer.getArgument(1, Segment.class).getSegmentId())
         );
+    }
+
+    @Test
+    void testBuildWithNullSpanFactoryThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
     }
 
     @Test

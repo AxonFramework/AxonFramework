@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -42,6 +43,7 @@ class AsynchronousCommandBusTest {
     private MessageHandler<CommandMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -50,11 +52,12 @@ class AsynchronousCommandBusTest {
         executorService = mock(ExecutorService.class);
         dispatchInterceptor = mock(MessageDispatchInterceptor.class);
         handlerInterceptor = mock(MessageHandlerInterceptor.class);
+        spanFactory = new TestSpanFactory();
         doAnswer(invocation -> {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;
         }).when(executorService).execute(isA(Runnable.class));
-        testSubject = AsynchronousCommandBus.builder().executor(executorService).build();
+        testSubject = AsynchronousCommandBus.builder().executor(executorService).spanFactory(spanFactory).build();
         testSubject.registerDispatchInterceptor(dispatchInterceptor);
         testSubject.registerHandlerInterceptor(handlerInterceptor);
         when(dispatchInterceptor.handle(isA(CommandMessage.class)))
@@ -71,6 +74,11 @@ class AsynchronousCommandBusTest {
         when(mockCallback.wrap(any())).thenCallRealMethod();
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
+
+        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+        spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
 
         InOrder inOrder = inOrder(mockCallback,
                                   executorService,
@@ -94,7 +102,14 @@ class AsynchronousCommandBusTest {
     void testDispatchWithoutCallback() throws Exception {
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
-        testSubject.dispatch(asCommandMessage(new Object()), NoOpCallback.INSTANCE);
+        CommandMessage<Object> command = asCommandMessage(new Object());
+        testSubject.dispatch(command, NoOpCallback.INSTANCE);
+
+        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+        spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+
+
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
@@ -117,6 +132,8 @@ class AsynchronousCommandBusTest {
         when(callback.wrap(any())).thenCallRealMethod();
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
+
+
         //noinspection rawtypes
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -124,6 +141,7 @@ class AsynchronousCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
+        spanFactory.verifySpanHasException("SimpleCommandBus.dispatch", NoHandlerForCommandException.class);
     }
 
     @Test

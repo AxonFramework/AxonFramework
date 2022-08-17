@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventsourcing.utils.StubDomainEvent;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;

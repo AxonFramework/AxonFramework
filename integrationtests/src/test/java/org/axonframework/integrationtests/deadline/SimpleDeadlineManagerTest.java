@@ -37,6 +37,7 @@ class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
         return SimpleDeadlineManager.builder()
                                     .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+                                    .spanFactory(configuration.spanFactory())
                                     .build();
     }
 

@@ -117,7 +117,7 @@ public abstract class AbstractEventBus implements EventBus {
     public void publish(@Nonnull List<? extends EventMessage<?>> events) {
         List<? extends EventMessage<?>> eventsWithContext = events
                 .stream()
-                .map(e -> spanFactory.createInternalSpan("EventBus.publish", e)
+                .map(e -> spanFactory.createInternalSpan(getClass().getSimpleName() + ".publish", e)
                                      .runSupplier(() -> spanFactory.propagateContext(e)))
                 .collect(Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
@@ -156,7 +156,7 @@ public abstract class AbstractEventBus implements EventBus {
 
     private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            Span span = spanFactory.createInternalSpan("AbstractEventBus.commit");
+            Span span = spanFactory.createInternalSpan(getClass().getSimpleName() + ".commit");
             List<EventMessage<?>> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
@@ -309,7 +309,7 @@ public abstract class AbstractEventBus implements EventBus {
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
-            assertNonNull(messageMonitor, "SpanFactory may not be null");
+            assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
         }

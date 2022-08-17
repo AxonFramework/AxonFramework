@@ -48,6 +48,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                          .serializer(TestSerializer.xStreamSerializer())
+                                         .spanFactory(configuration.spanFactory())
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;

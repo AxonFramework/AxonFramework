@@ -248,11 +248,10 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                 });
         commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
                                          c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                                               .repository(repository.get())
-                                                                               .commandTargetResolver(
-                                                                                       commandTargetResolver.get())
-                                                                               .aggregateModel(metaModel.get())
-                                                                               .build());
+                                                 .repository(repository.get())
+                                                 .commandTargetResolver(commandTargetResolver.get())
+                                                 .aggregateModel(metaModel.get())
+                                                 .build());
     }
 
     private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {

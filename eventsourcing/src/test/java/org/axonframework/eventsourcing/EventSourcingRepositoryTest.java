@@ -32,6 +32,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -56,6 +57,7 @@ class EventSourcingRepositoryTest {
     private StubAggregateFactory stubAggregateFactory;
     private SnapshotTriggerDefinition triggerDefinition;
     private SnapshotTrigger snapshotTrigger;
+    private TestSpanFactory testSpanFactory;
 
     @BeforeEach
     void setUp() {
@@ -63,12 +65,14 @@ class EventSourcingRepositoryTest {
         stubAggregateFactory = new StubAggregateFactory();
         snapshotTrigger = mock(SnapshotTrigger.class);
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
+        testSpanFactory = new TestSpanFactory();
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
         testSubject = EventSourcingRepository.builder(TestAggregate.class)
                                              .aggregateFactory(stubAggregateFactory)
                                              .eventStore(mockEventStore)
                                              .snapshotTriggerDefinition(triggerDefinition)
                                              .filterByAggregateType()
+                                             .spanFactory(testSpanFactory)
                                              .build();
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
@@ -87,9 +91,17 @@ class EventSourcingRepositoryTest {
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
         DomainEventMessage event2 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
+        when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
+            testSpanFactory.verifySpanActive("EventSourcingRepository.load " + identifier);
+            testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+            testSpanFactory.verifyNoSpan("type.initializeState");
+            return DomainEventStream.of(event1, event2);
+        });
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+        testSpanFactory.verifySpanCompleted("EventSourcingRepository.load " + identifier);
+        testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+        testSpanFactory.verifySpanCompleted("type.initializeState");
 
         assertEquals(2, aggregate.invoke(TestAggregate::getHandledEvents).size());
         assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));

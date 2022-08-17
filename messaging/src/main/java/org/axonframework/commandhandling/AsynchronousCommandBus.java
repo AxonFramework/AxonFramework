@@ -25,6 +25,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -153,6 +154,13 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         public Builder duplicateCommandHandlerResolver(
                 @Nonnull DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
             super.duplicateCommandHandlerResolver(duplicateCommandHandlerResolver);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(
+                @Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

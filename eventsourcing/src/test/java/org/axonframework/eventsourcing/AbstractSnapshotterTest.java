@@ -28,6 +28,8 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
@@ -54,11 +56,16 @@ class AbstractSnapshotterTest {
     private EventStore mockEventStore;
     private Logger logger;
     private Logger originalLogger;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
-        testSubject = TestSnapshotter.builder().eventStore(mockEventStore).build();
+        spanFactory = new TestSpanFactory();
+        testSubject = TestSnapshotter.builder()
+                                     .eventStore(mockEventStore)
+                                     .spanFactory(spanFactory)
+                                     .build();
         logger = mock(Logger.class);
         originalLogger = replaceLogger(logger);
     }
@@ -80,6 +87,21 @@ class AbstractSnapshotterTest {
                 .thenReturn(DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+    }
+
+    @Test
+    void testSnapshotTracing() {
+        String aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents(aggregateIdentifier))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object)");
+                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
+                    return DomainEventStream.of(createEvents(2));
+                });
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object)");
+        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
     }
 
     @Test
@@ -264,6 +286,12 @@ class AbstractSnapshotterTest {
             @Override
             public Builder transactionManager(TransactionManager transactionManager) {
                 super.transactionManager(transactionManager);
+                return this;
+            }
+
+            @Override
+            public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+                super.spanFactory(spanFactory);
                 return this;
             }
 

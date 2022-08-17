@@ -39,6 +39,7 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -79,12 +80,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final boolean CLOSED = true;
 
     protected Configuration configuration;
+    protected TestSpanFactory spanFactory;
     private List<Object> published;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         EventStore eventStore = spy(EmbeddedEventStore.builder()
                                                       .storageEngine(new InMemoryEventStorageEngine())
+                                                      .spanFactory(spanFactory)
                                                       .build());
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
@@ -93,6 +97,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration = configurer.configureEventStore(c -> eventStore)
                                   .configureAggregate(MyAggregate.class)
                                   .registerComponent(DeadlineManager.class, this::buildDeadlineManager)
+                                  .configureSpanFactory(c -> spanFactory)
                                   .start();
 
         published = new CopyOnWriteArrayList<>();
@@ -119,6 +124,19 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
+
+    @Test
+    void testDeadlineScheduleAndExecutionIsTraced() throws InterruptedException {
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+        spanFactory.verifySpanCompleted(configuration.deadlineManager().getClass().getSimpleName() + ".schedule");
+
+        Thread.sleep(100); // Takes time to complete
+        spanFactory.verifySpanCompleted("DeadlineJob.execute");
+    }
+
 
     @Test
     void testDeadlineCancellationWithinScopeOnAggregate() {

@@ -38,6 +38,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -55,6 +56,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Integration tests of {@link QueryProcessingTask}.
@@ -98,13 +101,34 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(10);
         assertEquals(1, responseHandler.sent().size());
         assertOrder(responseHandler.sent().get(0));
         assertTrue(responseHandler.completed());
+    }
+
+    @Test
+    void testQueryProcessingTaskIsTracedAsChildHandler() {
+        NoOpSpanFactory spanFactory = Mockito.spy(NoOpSpanFactory.INSTANCE);
+        QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
+                                                                                            ResponseTypes.publisherOf(String.class));
+
+        QueryRequest request =
+                querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1);
+        QueryProcessingTask task = new QueryProcessingTask(localSegment,
+                                                           request,
+                                                           responseHandler,
+                                                           querySerializer,
+                                                           CLIENT_ID,
+                                                           spanFactory);
+
+        task.run();
+        verify(spanFactory, times(1))
+                .createChildHandlerSpan(eq("QueryProcessingTask"), any());
     }
 
     @Test
@@ -118,7 +142,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.request(10);
         task.run();
@@ -138,7 +163,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.cancel();
         task.run();
@@ -160,7 +186,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.request(10);
         task.run();
@@ -192,7 +219,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.request(10);
         task.run();
@@ -308,7 +336,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         CountDownLatch latch = new CountDownLatch(101);
         Runnable queryExecutor = () -> {
@@ -356,7 +385,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.request(10);
         task.run();
@@ -383,7 +413,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(1000);
@@ -411,7 +442,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
         task.run();
         assertTrue(responseHandler.sent().isEmpty());
         task.request(100);
@@ -439,7 +471,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
         task.cancel();
         task.run();
         assertTrue(responseHandler.sent().isEmpty());
@@ -512,7 +545,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(100);
@@ -538,7 +572,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(100);
@@ -563,7 +598,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(100);
@@ -589,7 +625,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(100);
@@ -614,7 +651,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(Long.MAX_VALUE);
@@ -639,7 +677,8 @@ class QueryProcessingTaskIntegrationTest {
                                                            request,
                                                            responseHandler,
                                                            querySerializer,
-                                                           CLIENT_ID, NoOpSpanFactory.INSTANCE);
+                                                           CLIENT_ID,
+                                                           NoOpSpanFactory.INSTANCE);
 
         task.run();
         task.request(Long.MAX_VALUE);

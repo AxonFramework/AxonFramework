@@ -133,7 +133,10 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                 .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier,
                                                                  eventStream.peek()),
                             aggregateModel(), eventStore, repositoryProvider, trigger);
-        aggregate.initializeState(eventStream);
+        spanFactory.createInternalSpan(aggregate.type() + ".initializeState").run(
+                () -> aggregate.initializeState(eventStream)
+        );
+
         if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }

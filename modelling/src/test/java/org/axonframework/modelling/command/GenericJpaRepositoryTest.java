@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
@@ -60,9 +61,11 @@ class GenericJpaRepositoryTest {
     private StubJpaAggregate aggregate;
     private Function<String, ?> identifierConverter;
     private EventBus eventBus;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
@@ -72,6 +75,7 @@ class GenericJpaRepositoryTest {
                                           .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                                           .eventBus(eventBus)
                                           .identifierConverter(identifierConverter)
+                                          .spanFactory(spanFactory)
                                           .build();
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
@@ -105,6 +109,18 @@ class GenericJpaRepositoryTest {
     void testLoadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
         assertSame(aggregate, actualResult.invoke(Function.identity()));
+    }
+
+    @Test
+    void testLoadAggregateTracing() {
+        when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class)))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+                    spanFactory.verifySpanActive("GenericJpaRepository.load 123");
+                    return aggregate;
+                });
+        testSubject.load(aggregateId);
+        spanFactory.verifySpanCompleted("GenericJpaRepository.load 123");
     }
 
     @Test

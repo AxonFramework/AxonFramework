@@ -134,42 +134,31 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        Span span = spanFactory.createInternalSpan(
-                String.format("SimpleDeadlineManager.cancelSchedule %s %s", deadlineName, scheduleId));
         runOnPrepareCommitOrNow(
-                span.wrapRunnable(() -> scheduledTasks.keySet().stream()
-                                                      .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName()
-                                                                                                .equals(deadlineName)
-                                                              && scheduledTaskId.getDeadlineId().equals(scheduleId))
-                                                      .forEach(this::cancelSchedule)
-                ));
+                () -> scheduledTasks.keySet().stream()
+                                    .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
+                                            && scheduledTaskId.getDeadlineId().equals(scheduleId))
+                                    .forEach(this::cancelSchedule)
+        );
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(
-                String.format("SimpleDeadlineManager.cancelAll %s", deadlineName));
         runOnPrepareCommitOrNow(
-                span.wrapRunnable(() -> scheduledTasks.keySet().stream()
-                                                      .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName()
-                                                                                                .equals(deadlineName))
-                                                      .forEach(this::cancelSchedule)
-                ));
+                () -> scheduledTasks.keySet().stream()
+                                    .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
+                                    .forEach(this::cancelSchedule)
+        );
     }
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        Span span = spanFactory.createInternalSpan(
-                String.format("QuartzDeadlineManager.cancelAllWithinScope %s %s",
-                              deadlineName,
-                              scope.scopeDescription()));
         runOnPrepareCommitOrNow(
-                span.wrapRunnable(() -> scheduledTasks.keySet().stream()
-                                                      .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName()
-                                                                                                .equals(deadlineName)
-                                                              && scheduledTaskId.getDeadlineScope().equals(scope))
-                                                      .forEach(this::cancelSchedule)
-                ));
+                () -> scheduledTasks.keySet().stream()
+                                    .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
+                                            && scheduledTaskId.getDeadlineScope().equals(scope))
+                                    .forEach(this::cancelSchedule)
+        );
     }
 
     private void cancelSchedule(DeadlineId deadlineId) {
@@ -347,7 +336,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
         @Override
         public void run() {
-            Span span = spanFactory.createLinkedHandlerSpan("SimpleDeadlineManager.execute", deadlineMessage).start();
+            Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered deadline");
             }

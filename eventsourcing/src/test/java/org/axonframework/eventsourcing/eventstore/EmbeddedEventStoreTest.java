@@ -30,6 +30,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -64,9 +65,11 @@ class EmbeddedEventStoreTest {
     private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         storageEngine = spy(new InMemoryEventStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
@@ -84,6 +87,7 @@ class EmbeddedEventStoreTest {
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
                                         .optimizeEventConsumption(optimizeEventConsumption)
+                                        .spanFactory(spanFactory)
                                         .build();
     }
 
@@ -310,6 +314,18 @@ class EmbeddedEventStoreTest {
         unitOfWork.rollback();
 
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test
+    void testAppendEventsCreatesCorrectSpans() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events);
+        events.forEach(e -> spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e));
+        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+
+        CurrentUnitOfWork.commit();
+        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
     }
 
     @Test
