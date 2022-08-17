@@ -103,6 +103,12 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-tracing-opentelemetry</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>

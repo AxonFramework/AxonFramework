@@ -85,10 +85,9 @@
                         <Bundle-Description>${project.description}</Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
-                            org.axonframework.micrometer.*
+                            org.axonframework.tracing.opentelemetry.*
                         </Export-Package>
                         <Import-Package>
-                            org.slf4j.*,
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>
@@ -117,10 +116,6 @@
                                     <excludes>
                                         <exclude>org.springframework</exclude>
                                     </excludes>
-                                    <includes>
-                                        <!-- allow any spring dependency with test scope -->
-                                        <include>org.springframework:*:*:*:test</include>
-                                    </includes>
                                 </bannedDependencies>
                             </rules>
                             <fail>true</fail>
