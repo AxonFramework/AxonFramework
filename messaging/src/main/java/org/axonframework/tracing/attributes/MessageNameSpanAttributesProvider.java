@@ -41,7 +41,7 @@ public class MessageNameSpanAttributesProvider implements SpanAttributesProvider
     public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
         String name = determineName(message);
         if (name != null) {
-            return singletonMap("axon.message-name", message.getIdentifier());
+            return singletonMap("axon_message_name", name);
         }
         return emptyMap();
     }
@@ -51,7 +51,7 @@ public class MessageNameSpanAttributesProvider implements SpanAttributesProvider
             return ((CommandMessage<?>) message).getCommandName();
         }
         if (message instanceof QueryMessage) {
-            return ((QueryMessage<?, ?>) message).getQueryName();
+            return QueryMessage.queryName(message);
         }
         return null;
     }

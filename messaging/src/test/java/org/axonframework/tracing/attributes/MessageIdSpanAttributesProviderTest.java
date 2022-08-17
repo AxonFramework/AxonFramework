@@ -16,27 +16,24 @@
 
 package org.axonframework.tracing.attributes;
 
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.SpanAttributesProvider;
+import org.junit.jupiter.api.*;
 
-import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nonnull;
 
-/**
- * Adds the metadata of the message to the span as attributes.
- * <p>
- * The values are not serialized to a specific format, rather the {@link Object#toString()} method is called on it.
- *
- * @author Mitchell Herrijgers
- * @since 4.6.0
- */
-public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
-        Map<String, String> map = new HashMap<>();
-        message.getMetaData().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
-        return map;
+class MessageIdSpanAttributesProviderTest {
+
+    private final SpanAttributesProvider provider = new MessageIdSpanAttributesProvider();
+
+    @Test
+    void testExtractsMessageIdentifier() {
+        Message<?> event = GenericEventMessage.asEventMessage("Some event");
+        Map<String, String> map = provider.provideForMessage(event);
+        assertEquals(1, map.size());
+        assertEquals(event.getIdentifier(), map.get("axon_message_id"));
     }
 }
