@@ -76,13 +76,13 @@
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.18.0</log4j.version>
         <spring.version>5.3.22</spring.version>
-        <spring-security.version>5.7.0</spring-security.version>
-        <spring.boot.version>2.7.0</spring.boot.version>
+        <spring-security.version>5.7.3</spring-security.version>
+        <spring.boot.version>2.7.2</spring.boot.version>
         <mockito.version>4.7.0</mockito.version>
-        <projectreactor.version>3.4.21</projectreactor.version>
-        <micrometer.version>1.9.0</micrometer.version>
+        <projectreactor.version>3.4.22</projectreactor.version>
+        <micrometer.version>1.9.3</micrometer.version>
         <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
-        <jackson.version>2.13.2.20220324</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
 
         <!-- Validation -->
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
@@ -101,8 +101,8 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
-        <hibernate-core.version>5.6.7.Final</hibernate-core.version>
-        <byte-buddy.version>1.12.8</byte-buddy.version>
+        <hibernate-core.version>5.6.10.Final</hibernate-core.version>
+        <byte-buddy.version>1.12.13</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.29.0-GA</javassist.version>
@@ -115,14 +115,14 @@
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.17.3</testcontainers.version>
         <xstream.version>1.4.19</xstream.version>
-        <reactive.streams.spec.version>1.0.3</reactive.streams.spec.version>
+        <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.4</felix.maven-bundle-plugin.version>
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
-        <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
         <jakarta.el.version>4.0.0</jakarta.el.version>
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
