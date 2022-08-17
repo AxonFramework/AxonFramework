@@ -75,12 +75,20 @@ public class SerializedMessage<T> extends AbstractMessage<T> {
 
     @Override
     public T getPayload() {
-        return payload.getObject();
+        try {
+            return payload.getObject();
+        } catch (SerializationException e) {
+            throw new SerializationException("Error while deserializing payload of message " + getIdentifier(), e);
+        }
     }
 
     @Override
     public MetaData getMetaData() {
-        return metaData.getObject();
+        try {
+            return metaData.getObject();
+        } catch (SerializationException e) {
+            throw new SerializationException("Error while deserializing meta data of message " + getIdentifier(), e);
+        }
     }
 
     @Override
