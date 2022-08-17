@@ -21,7 +21,9 @@ import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.context.propagation.TextMapSetter;
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.tracing.Span;
@@ -51,10 +53,10 @@ import static org.axonframework.tracing.SpanUtils.determineMessageName;
  */
 public class OpenTelemetrySpanFactory implements SpanFactory {
 
-    private static final TextMapPropagator PROPAGATOR = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
-
     private final Tracer tracer;
     private final List<SpanAttributesProvider> spanAttributesProviders;
+    private final TextMapGetter<Message<?>> textMapGetter;
+    private final TextMapSetter<Map<String, String>> textMapSetter;
 
     /**
      * Instantiate a {@link OpenTelemetrySpanFactory} based on the fields contained in the {@link Builder}.
@@ -64,6 +66,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public OpenTelemetrySpanFactory(Builder builder) {
         this.spanAttributesProviders = builder.spanAttributesProviders;
         this.tracer = builder.tracer;
+        this.textMapGetter = builder.textMapGetter;
+        this.textMapSetter = builder.textMapSetter;
     }
 
     /**
@@ -82,7 +86,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     @SuppressWarnings("unchecked")
     public <M extends Message<?>> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
-        PROPAGATOR.inject(Context.current(), additionalMetadataProperties, MetadataContextSetter.INSTANCE);
+        propagator().inject(Context.current(), additionalMetadataProperties, textMapSetter);
         return (M) message.andMetaData(additionalMetadataProperties);
     }
 
@@ -97,9 +101,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     @Override
     public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
                                   Message<?>... linkedParents) {
-        Context parentContext = PROPAGATOR.extract(Context.current(),
-                                                   parentMessage,
-                                                   MetadataContextGetter.INSTANCE);
+        Context parentContext = propagator().extract(Context.current(),
+                                                     parentMessage,
+                                                     textMapGetter);
         SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
                                         .setSpanKind(SpanKind.CONSUMER);
         if (isChildTrace) {
@@ -124,9 +128,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     private void addLinks(SpanBuilder spanBuilder, Message<?>[] linkedMessages) {
         for (Message<?> message : linkedMessages) {
-            Context linkedContext = PROPAGATOR.extract(Context.current(),
-                                                       message,
-                                                       MetadataContextGetter.INSTANCE);
+            Context linkedContext = propagator().extract(Context.current(),
+                                                         message,
+                                                         textMapGetter);
             spanBuilder.addLink(io.opentelemetry.api.trace.Span.fromContext(linkedContext).getSpanContext());
         }
     }
@@ -170,15 +174,23 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         });
     }
 
+    private TextMapPropagator propagator() {
+        return GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
+    }
+
     /**
      * Builder class to instantiate a {@link OpenTelemetrySpanFactory}.
      * <p>
-     * The {@link SpanAttributesProvider SpanAttributeProvieders} are defaulted to an empty list, and the {@link Tracer}
-     * is defaulted to the tracer defined by {@link GlobalOpenTelemetry}.
+     * The {@link SpanAttributesProvider SpanAttributeProvieders} are defaulted to an empty list, the {@link Tracer} is
+     * defaulted to the tracer defined by {@link GlobalOpenTelemetry}, the {@link TextMapSetter} is defaulted to the
+     * {@link MetadataContextSetter} and the {@link TextMapGetter} is defaulted to the {@link MetadataContextGetter}.
      */
     public static class Builder {
 
-        private Tracer tracer = GlobalOpenTelemetry.getTracer("AxonFramework-OpenTelemetry");
+        private Tracer tracer = null;
+        private TextMapSetter<Map<String, String>> textMapSetter = MetadataContextSetter.INSTANCE;
+        private TextMapGetter<Message<?>> textMapGetter = MetadataContextGetter.INSTANCE;
+
         private final List<SpanAttributesProvider> spanAttributesProviders = new LinkedList<>();
 
         /**
@@ -206,11 +218,40 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         }
 
         /**
+         * Defines the {@link TextMapSetter} to use, which is used for propagating the context to another thread or
+         * service.
+         *
+         * @param textMapSetter The {@link TextMapSetter} to configure for use.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder textMapSetter(TextMapSetter<Map<String, String>> textMapSetter) {
+            BuilderUtils.assertNonNull(textMapSetter, "The TextMapSetter should not be null");
+            this.textMapSetter = textMapSetter;
+            return this;
+        }
+
+        /**
+         * Defines the {@link TextMapGetter} to use, which is used for extracting the propagated context from another
+         * thread or service.
+         *
+         * @param textMapGetter The {@link TextMapGetter} to configure for use.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder textMapGetter(TextMapGetter<Message<?>> textMapGetter) {
+            BuilderUtils.assertNonNull(textMapGetter, "The TextMapGetter should not be null");
+            this.textMapGetter = textMapGetter;
+            return this;
+        }
+
+        /**
          * Initializes the {@link OpenTelemetrySpanFactory}.
          *
          * @return The created {@link OpenTelemetrySpanFactory} with the provided configuration.
          */
         public OpenTelemetrySpanFactory build() {
+            if (tracer == null) {
+                tracer = GlobalOpenTelemetry.getTracer("AxonFramework-OpenTelemetry");
+            }
             return new OpenTelemetrySpanFactory(this);
         }
     }
