@@ -120,10 +120,10 @@ class SubscriptionMessageSerializerTest {
 
     @Test
     void testSubscriptionQueryMessage() {
-        GenericSubscriptionQueryMessage<String, Integer, Integer> message = new GenericSubscriptionQueryMessage<>(
+        GenericSubscriptionQueryMessage<String, String, Integer> message = new GenericSubscriptionQueryMessage<>(
                 "query",
                 "MyQueryName",
-                instanceOf(int.class),
+                instanceOf(String.class),
                 instanceOf(int.class));
         SubscriptionQuery grpcMessage = testSubject.serialize(message);
         SubscriptionQueryMessage<Object, Object, Object> deserialized = testSubject.deserialize(grpcMessage);
