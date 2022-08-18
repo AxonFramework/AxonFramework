@@ -132,8 +132,6 @@ class AsynchronousCommandBusTest {
         when(callback.wrap(any())).thenCallRealMethod();
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
-
-
         //noinspection rawtypes
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);

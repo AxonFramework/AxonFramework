@@ -50,6 +50,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -131,7 +132,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
-        spanFactory.verifySpanCompleted(configuration.deadlineManager().getClass().getSimpleName() + ".schedule");
+        spanFactory.verifySpanCompleted(managerName() + ".schedule(deadlineName)");
 
         Thread.sleep(100); // Takes time to complete
         spanFactory.verifySpanCompleted("DeadlineJob.execute");
@@ -146,7 +147,16 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
         configuration.commandGateway().sendAndWait(new CancelDeadlineWithinScope(IDENTIFIER));
 
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(deadlineName)");
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(specificDeadlineName)");
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(payloadlessDeadline)");
+
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
+    }
+
+    @Nonnull
+    private String managerName() {
+        return configuration.deadlineManager().getClass().getSimpleName();
     }
 
     @Test
@@ -269,6 +279,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertPublishedEvents(sagaStartingEvent, firstSchedule, secondSchedule, thirdSchedule, scheduleCancellation);
         assertSagaIs(LIVE);
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(deadlineName)");
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(specificDeadlineName)");
+        spanFactory.verifySpanCompleted(managerName() + ".cancelAllWithinScope(payloadlessDeadline)");
     }
 
     @Test

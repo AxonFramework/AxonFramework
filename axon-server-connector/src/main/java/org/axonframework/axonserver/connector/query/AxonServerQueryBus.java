@@ -280,6 +280,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
         return queryTransaction.whenComplete((r, e) -> {
             queryInTransit.end();
+            if(e != null) {
+                span.recordException(e);
+            }
+            if(r.isExceptional()) {
+                span.recordException(r.exceptionResult());
+            }
             span.end();
         });
     }

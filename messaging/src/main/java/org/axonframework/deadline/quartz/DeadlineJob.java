@@ -128,41 +128,37 @@ public class DeadlineJob implements Job {
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
         Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
-        try {
-            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
-            unitOfWork.attachTransaction(transactionManager);
-            InterceptorChain chain =
-                    new DefaultInterceptorChain<>(unitOfWork,
-                                                  handlerInterceptors,
-                                                  interceptedDeadlineMessage -> {
-                                                      executeScheduledDeadline(scopeAwareComponents,
-                                                                               interceptedDeadlineMessage,
-                                                                               deadlineScope);
-                                                      return null;
-                                                  });
+        DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
+        unitOfWork.attachTransaction(transactionManager);
+        unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+        unitOfWork.onCleanup(uow -> span.end());
+        InterceptorChain chain =
+                new DefaultInterceptorChain<>(unitOfWork,
+                                              handlerInterceptors,
+                                              interceptedDeadlineMessage -> {
+                                                  executeScheduledDeadline(scopeAwareComponents,
+                                                                           interceptedDeadlineMessage,
+                                                                           deadlineScope);
+                                                  return null;
+                                              });
 
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
-            if (resultMessage.isExceptional()) {
-                Throwable exceptionResult = resultMessage.exceptionResult();
-                span.recordException(exceptionResult);
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
+        if (resultMessage.isExceptional()) {
+            Throwable exceptionResult = resultMessage.exceptionResult();
 
-                @SuppressWarnings("unchecked")
-                Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(
-                        REFIRE_IMMEDIATELY_POLICY);
-                if (refirePolicy.test(exceptionResult)) {
-                    logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
-                                 jobDetail.getDescription(), exceptionResult);
-                    throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
-                }
-                logger.error("Exception occurred during processing a deadline job [{}]",
+            @SuppressWarnings("unchecked")
+            Predicate<Throwable> refirePolicy = (Predicate<Throwable>) schedulerContext.get(REFIRE_IMMEDIATELY_POLICY);
+            if (refirePolicy.test(exceptionResult)) {
+                logger.error("Exception occurred during processing a deadline job which will be retried [{}]",
                              jobDetail.getDescription(), exceptionResult);
-                throw new JobExecutionException(exceptionResult);
-            } else if (logger.isInfoEnabled()) {
-                logger.info("Job successfully executed. Deadline message [{}] processed.",
-                            deadlineMessage.getPayloadType().getSimpleName());
+                throw new JobExecutionException(exceptionResult, REFIRE_IMMEDIATELY);
             }
-        } finally {
-            span.end();
+            logger.error("Exception occurred during processing a deadline job [{}]",
+                         jobDetail.getDescription(), exceptionResult);
+            throw new JobExecutionException(exceptionResult);
+        } else if (logger.isInfoEnabled()) {
+            logger.info("Job successfully executed. Deadline message [{}] processed.",
+                        deadlineMessage.getPayloadType().getSimpleName());
         }
     }
 

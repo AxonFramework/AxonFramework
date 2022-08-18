@@ -133,12 +133,10 @@ public abstract class AbstractEventBus implements EventBus {
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
                                  "committed.");
 
-            unitOfWork.afterCommit(u -> {
-                ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
-            });
-            unitOfWork.onRollback(uow -> {
-                ingested.forEach(message -> message.reportFailure(uow.getExecutionResult().getExceptionResult()));
-            });
+            unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
+            unitOfWork.onRollback(uow -> ingested.forEach(
+                    message -> message.reportFailure(uow.getExecutionResult().getExceptionResult())
+            ));
 
             eventsQueue(unitOfWork).addAll(eventsWithContext);
         } else {

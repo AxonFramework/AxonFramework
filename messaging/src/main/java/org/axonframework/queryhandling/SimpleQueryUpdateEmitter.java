@@ -145,9 +145,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
-        SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
-        Span span = spanFactory.createChildHandlerSpan("SimpleQueryUpdateEmitter.emit", message);
-        runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(message))));
+        SubscriptionQueryUpdateMessage<U> updateMessage = spanFactory.propagateContext(update);
+        Span span = spanFactory.createInternalSpan("SimpleQueryUpdateEmitter.emit", updateMessage);
+        runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(updateMessage))));
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
@@ -243,16 +243,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}. This is
-     * done to ensure any emitter calls made from a message handling function are executed in the
-     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * done to ensure any emitter calls made from a message handling function are executed in the {@link
+     * UnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
      * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done to
      * allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do this
      * by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a different
      * phase.
      *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
-     *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
+     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
+     *                        SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
      */
     private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
         if (inStartedPhaseOfUnitOfWork()) {
@@ -302,8 +302,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
          * Defaults to a {@link NoOpMessageMonitor}.
          *
-         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor
-         *                             {@link SubscriptionQueryUpdateMessage}s being processed
+         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s
+         *                             being processed
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateMessageMonitor(

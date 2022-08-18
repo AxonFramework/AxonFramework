@@ -64,14 +64,14 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
-     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
-     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
-     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and
-     * will also result in an AxonConfigurationException if both are missing.
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met. The same
+     * criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it will be
+     * instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and will
+     * also result in an AxonConfigurationException if both are missing.
      * <p>
      * Additionally will assert that the {@link LockFactory}, {@link EventStore} and {@link SnapshotTriggerDefinition}
      * are not {@code null}, resulting in an AxonConfigurationException if for any of these this is the case.
@@ -88,20 +88,20 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link EventSourcingRepository} for aggregate type {@code T}.
-     * Can also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This
-     * Builder will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function
-     * returns a CachingEventSourcingRepository instead of an EventSourcingRepository.
+     * Instantiate a Builder to be able to create a {@link EventSourcingRepository} for aggregate type {@code T}. Can
+     * also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This Builder
+     * will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function returns a
+     * CachingEventSourcingRepository instead of an EventSourcingRepository.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
-     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation.
-     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
-     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
-     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
-     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement.
+     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation. A goal of this Builder
+     * goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All
+     * aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel,
+     * either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can
+     * be used. The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
+     * {@code aggregateType} should be provided. The same criteria holds for the {@link AggregateFactory}. Either the
+     * AggregateFactory can be set directly or it will be instantiated internally based on the {@code aggregateType}.
+     * Hence, one of both is a hard requirement.
      * <p>
      * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
@@ -126,21 +126,33 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         DomainEventStream eventStream = readEvents(aggregateIdentifier);
         if (!eventStream.hasNext()) {
-            throw new AggregateNotFoundException(aggregateIdentifier,
-                                                 "The aggregate was not found in the event store");
+            throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
         }
-        EventSourcedAggregate<T> aggregate = EventSourcedAggregate
-                .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier,
-                                                                 eventStream.peek()),
-                            aggregateModel(), eventStore, repositoryProvider, trigger);
-        spanFactory.createInternalSpan(aggregate.type() + ".initializeState").run(
-                () -> aggregate.initializeState(eventStream)
-        );
+        AggregateModel<T> model = aggregateModel();
+        EventSourcedAggregate<T> aggregate = spanFactory
+                .createInternalSpan(model.type() + ".initializeState")
+                .runSupplier(() -> doLoadAggregate(aggregateIdentifier, trigger, eventStream, model));
 
         if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
         return aggregate;
+    }
+
+    private EventSourcedAggregate<T> doLoadAggregate(String aggregateIdentifier,
+                                                     SnapshotTrigger trigger,
+                                                     DomainEventStream eventStream,
+                                                     AggregateModel<T> model) {
+        EventSourcedAggregate<T> loadingAggregate = EventSourcedAggregate
+                .initialize(aggregateFactory.createAggregateRoot(
+                                    aggregateIdentifier,
+                                    eventStream.peek()),
+                            model,
+                            eventStore,
+                            repositoryProvider,
+                            trigger);
+        loadingAggregate.initializeState(eventStream);
+        return loadingAggregate;
     }
 
     /**
@@ -203,20 +215,20 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
      * EventSourcingRepository.
      * <p>
-     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
-     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation.
-     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
-     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
-     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
-     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement.
+     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory}, the
+     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory} and the
+     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation. A goal of this Builder
+     * goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All
+     * aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel,
+     * either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can
+     * be used. The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
+     * {@code aggregateType} should be provided. The same criteria holds for the {@link AggregateFactory}. Either the
+     * AggregateFactory can be set directly or it will be instantiated internally based on the {@code aggregateType}.
+     * Hence, one of both is a hard requirement.
      * <p>
      * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this
-     *            {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 
@@ -287,8 +299,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         /**
          * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.
          *
-         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source an
-         *                   Aggregate
+         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source
+         *                   an Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> eventStore(EventStore eventStore) {
@@ -346,9 +358,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         /**
-         * Sets the {@link Predicate} used to filter events when reading from the EventStore. By default, all
-         * events with the Aggregate identifier passed to {@link EventSourcingRepository#readEvents(String)} are
-         * returned. Calls to {@link #filterByAggregateType()} will overwrite this configuration and vice versa.
+         * Sets the {@link Predicate} used to filter events when reading from the EventStore. By default, all events
+         * with the Aggregate identifier passed to {@link EventSourcingRepository#readEvents(String)} are returned.
+         * Calls to {@link #filterByAggregateType()} will overwrite this configuration and vice versa.
          *
          * @param filter a {@link Predicate} that may return false to discard events.
          */
@@ -359,9 +371,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
 
         /**
          * Configures a filter that rejects events with a different Aggregate type than the one specified by this
-         * Repository's {@link AggregateModel}. This may be used to enable multiple Aggregate types to share
-         * overlapping Aggregate identifiers. Calls to {@link #eventStreamFilter(Predicate)} will overwrite this configuration
-         * and vice versa.
+         * Repository's {@link AggregateModel}. This may be used to enable multiple Aggregate types to share overlapping
+         * Aggregate identifiers. Calls to {@link #eventStreamFilter(Predicate)} will overwrite this configuration and
+         * vice versa.
          *
          * <p>If the caller supplies an explicit {@link AggregateModel} to this Builder, that must be done before
          * calling this method.

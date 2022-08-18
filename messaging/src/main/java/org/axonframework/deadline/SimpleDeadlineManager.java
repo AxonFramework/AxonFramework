@@ -116,7 +116,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
-        Span span = spanFactory.createDispatchSpan("SimpleDeadlineManager.schedule", deadlineMessage);
+        Span span = spanFactory.createDispatchSpan("SimpleDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineId, interceptedDeadlineMessage);
@@ -134,31 +134,37 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        runOnPrepareCommitOrNow(
+        String spanName = format("SimpleDeadlineManager.cancelSchedule(%s,%s)", deadlineName, scheduleId);
+        Span span = spanFactory.createInternalSpan(spanName);
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
                                             && scheduledTaskId.getDeadlineId().equals(scheduleId))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        runOnPrepareCommitOrNow(
+        String spanName = format("SimpleDeadlineManager.cancelAll(%s)", deadlineName);
+        Span span = spanFactory.createInternalSpan(spanName);
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        runOnPrepareCommitOrNow(
+        String spanName = format("SimpleDeadlineManager.cancelAllWithinScope(%s)", deadlineName);
+        Span span = spanFactory.createInternalSpan(spanName);
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
                                             && scheduledTaskId.getDeadlineScope().equals(scope))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     private void cancelSchedule(DeadlineId deadlineId) {
@@ -336,17 +342,19 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
         @Override
         public void run() {
-            Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered deadline");
             }
 
             try {
+                Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
                 Instant triggerInstant = GenericEventMessage.clock.instant();
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),
                         deadlineMessage,
                         () -> triggerInstant));
+                unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+                unitOfWork.onCleanup(uow -> span.end());
                 unitOfWork.attachTransaction(transactionManager);
                 InterceptorChain chain =
                         new DefaultInterceptorChain<>(unitOfWork,
@@ -359,17 +367,14 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                 ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
                 if (resultMessage.isExceptional()) {
                     Throwable e = resultMessage.exceptionResult();
-                    span.recordException(e);
                     logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
                                  deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
                 }
             } catch (Exception e) {
-                span.recordException(e);
                 logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
                              deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
             } finally {
                 scheduledTasks.remove(deadlineId);
-                span.end();
             }
         }
 

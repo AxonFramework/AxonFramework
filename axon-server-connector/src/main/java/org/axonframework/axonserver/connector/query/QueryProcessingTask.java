@@ -123,7 +123,8 @@ class QueryProcessingTask implements Runnable, FlowControl {
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        Supplier<Boolean> reactorOnClassPath, SpanFactory spanFactory) {
+                        Supplier<Boolean> reactorOnClassPath,
+                        SpanFactory spanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;

@@ -92,7 +92,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
 
         Supplier<Lock> lockSupplier;
         if (!Objects.isNull(aggregateIdentifier)) {
-            Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+            Lock lock = spanFactory.createInternalSpan("LockingRepository.obtainLock")
+                                   .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
             unitOfWork.onCleanup(u -> lock.release());
             lockSupplier = () -> lock;
         } else {
@@ -145,7 +146,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     @Override
     protected LockAwareAggregate<T, A> doLoadOrCreate(String aggregateIdentifier,
                                                       Callable<T> factoryMethod) throws Exception {
-        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
+        Lock lock = spanFactory.createInternalSpan("LockingRepository.obtainLock")
+                               .runSupplier(() -> lockFactory.obtainLock(aggregateIdentifier));
         try {
             final A aggregate = doLoadWithLock(aggregateIdentifier, null);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());

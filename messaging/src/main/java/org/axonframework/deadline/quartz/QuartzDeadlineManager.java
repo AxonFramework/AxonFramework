@@ -85,6 +85,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
      * <p>
+     * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
+     * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.
      *
@@ -134,12 +136,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
                            @Nonnull String deadlineName,
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = spanFactory.propagateContext(asDeadlineMessage(deadlineName,
-                                                                                                 messageOrPayload,
-                                                                                                 triggerDateTime));
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
-        Span span = spanFactory.createDispatchSpan("QuartzDeadlineManager.schedule", deadlineMessage);
+        Span span = spanFactory.createDispatchSpan("QuartzDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
@@ -166,14 +166,13 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         Span span = spanFactory.createInternalSpan(
-                String.format("QuartzDeadlineManager.cancelSchedule %s %s", deadlineName, scheduleId));
+                String.format("QuartzDeadlineManager.cancelSchedule(%s,%s)", deadlineName, scheduleId));
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> cancelSchedule(jobKey(scheduleId, deadlineName))));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(
-                String.format("QuartzDeadlineManager.cancelAll %s", deadlineName));
+        Span span = spanFactory.createInternalSpan(String.format("QuartzDeadlineManager.cancelAll(%s)", deadlineName));
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
@@ -186,10 +185,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        Span span = spanFactory.createInternalSpan(
-                String.format("QuartzDeadlineManager.cancelAllWithinScope %s %s",
-                              deadlineName,
-                              scope.scopeDescription()));
+        Span span = spanFactory
+                .createInternalSpan(String.format("QuartzDeadlineManager.cancelAllWithinScope(%s)", deadlineName));
         span.run(() -> {
             try {
                 Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));

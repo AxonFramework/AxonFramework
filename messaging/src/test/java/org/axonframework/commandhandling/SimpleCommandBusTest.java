@@ -80,6 +80,7 @@ class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
                                  spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
                                  spanFactory.verifySpanActive("SimpleCommandBus.handle");
                              });
         spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
@@ -94,6 +95,7 @@ class SimpleCommandBusTest {
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
                                  spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
                                  spanFactory.verifySpanActive("SimpleCommandBus.handle");
                              });
         spanFactory.verifySpanCompleted("SimpleCommandBus.handle");

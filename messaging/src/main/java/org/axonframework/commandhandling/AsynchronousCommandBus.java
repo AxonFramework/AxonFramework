@@ -112,13 +112,14 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * Builder class to instantiate a {@link AsynchronousCommandBus}.
      * <p>
      * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration},
-     * {@link DuplicateCommandHandlerResolver} and {@link Executor} are respectively defaulted to a
+     * {@link DuplicateCommandHandlerResolver}, {@link SpanFactory} and {@link Executor} are respectively defaulted to a
      * {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, a
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()}and a {@link Executors#newCachedThreadPool}.
-     * The default {@code executor} uses an {@link AxonThreadFactory} to create threads with a sensible naming scheme.
-     * The TransactionManager, MessageMonitor, RollbackConfiguration and Executor are <b>hard requirements</b>. Thus
-     * setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()}, {@link org.axonframework.tracing.NoOpSpanFactory} and
+     * a {@link Executors#newCachedThreadPool}. The default {@code executor} uses an {@link AxonThreadFactory} to create
+     * threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration and Executor
+     * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
+     * {@link AxonConfigurationException}.
      */
     public static class Builder extends SimpleCommandBus.Builder {
 
@@ -158,8 +159,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
 
         @Override
-        public Builder spanFactory(
-                @Nonnull SpanFactory spanFactory) {
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

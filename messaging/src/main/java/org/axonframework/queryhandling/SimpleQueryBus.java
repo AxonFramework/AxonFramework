@@ -167,53 +167,57 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        return spanFactory.createInternalSpan("SimpleQueryBus.query", query).runSupplier(() -> {
-            Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
-                           () -> "Direct query does not support Flux as a return type.");
-            MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-            QueryMessage<Q, R> interceptedQuery = intercept(query);
-            List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
-            CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
-            try {
-                ResponseType<R> responseType = interceptedQuery.getResponseType();
-                if (handlers.isEmpty()) {
-                    throw noHandlerException(interceptedQuery);
-                }
-                Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
-                boolean invocationSuccess = false;
-                while (!invocationSuccess && handlerIterator.hasNext()) {
-                    DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
-                            interceptAndInvoke(uow, handlerIterator.next());
-                    if (resultMessage.isExceptional()) {
-                        if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
-                            GenericQueryResponseMessage<R> queryResponseMessage =
-                                    responseType.convertExceptional(resultMessage.exceptionResult())
-                                                .map(GenericQueryResponseMessage::new)
-                                                .orElse(new GenericQueryResponseMessage<>(
-                                                        responseType.responseMessagePayloadType(),
-                                                        resultMessage.exceptionResult()));
+        return spanFactory.createInternalSpan("SimpleQueryBus.query", query).runSupplier(() -> doQuery(query));
+    }
 
-
-                            result.complete(queryResponseMessage);
-                            monitorCallback.reportFailure(resultMessage.exceptionResult());
-                            return result;
-                        }
-                    } else {
-                        result.complete(resultMessage.getPayload().get());
-                        invocationSuccess = true;
-                    }
-                }
-                if (!invocationSuccess) {
-                    throw noSuitableHandlerException(interceptedQuery);
-                }
-                monitorCallback.reportSuccess();
-            } catch (Exception e) {
-                result.completeExceptionally(e);
-                monitorCallback.reportFailure(e);
+    @Nonnull
+    private <Q, R> CompletableFuture<QueryResponseMessage<R>> doQuery(
+            @Nonnull QueryMessage<Q, R> query) {
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.getResponseType().getExpectedResponseType()),
+                       () -> "Direct query does not support Flux as a return type.");
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
+        QueryMessage<Q, R> interceptedQuery = intercept(query);
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+        CompletableFuture<QueryResponseMessage<R>> result = new CompletableFuture<>();
+        try {
+            ResponseType<R> responseType = interceptedQuery.getResponseType();
+            if (handlers.isEmpty()) {
+                throw noHandlerException(interceptedQuery);
             }
-            return result;
-        });
+            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
+            boolean invocationSuccess = false;
+            while (!invocationSuccess && handlerIterator.hasNext()) {
+                DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+                ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
+                        interceptAndInvoke(uow, handlerIterator.next());
+                if (resultMessage.isExceptional()) {
+                    if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
+                        GenericQueryResponseMessage<R> queryResponseMessage =
+                                responseType.convertExceptional(resultMessage.exceptionResult())
+                                            .map(GenericQueryResponseMessage::new)
+                                            .orElse(new GenericQueryResponseMessage<>(
+                                                    responseType.responseMessagePayloadType(),
+                                                    resultMessage.exceptionResult()));
+
+
+                        result.complete(queryResponseMessage);
+                        monitorCallback.reportFailure(resultMessage.exceptionResult());
+                        return result;
+                    }
+                } else {
+                    result = resultMessage.getPayload();
+                    invocationSuccess = true;
+                }
+            }
+            if (!invocationSuccess) {
+                throw noSuitableHandlerException(interceptedQuery);
+            }
+            monitorCallback.reportSuccess();
+        } catch (Exception e) {
+            result.completeExceptionally(e);
+            monitorCallback.reportFailure(e);
+        }
+        return result;
     }
 
     @Override
@@ -327,7 +331,7 @@ public class SimpleQueryBus implements QueryBus {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         return handlers.stream()
                        .map(handler -> {
-                           Span handlerSpan = spanFactory.createInternalSpan("SimpleQueryBus.scatterGather", query)
+                           Span handlerSpan = spanFactory.createInternalSpan("SimpleQueryBus.scatterGather(" + handlers.indexOf(handler) + ")", query)
                                                          .start();
                            long leftTimeout = getRemainingOfDeadline(deadline);
                            ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =

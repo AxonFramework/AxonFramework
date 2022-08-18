@@ -321,7 +321,10 @@ class EmbeddedEventStoreTest {
         List<DomainEventMessage<?>> events = createEvents(10);
         DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
-        events.forEach(e -> spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e));
+        events.forEach(e -> {
+            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
+            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
+        });
         spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
 
         CurrentUnitOfWork.commit();

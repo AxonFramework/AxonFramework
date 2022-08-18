@@ -154,21 +154,18 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
-        CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandWithContext);
-
-        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(commandWithContext);
+        Optional<MessageHandler<? super CommandMessage<?>>> optionalHandler = findCommandHandlerFor(command);
         if (optionalHandler.isPresent()) {
-            handle(commandWithContext,
-                   optionalHandler.get(),
-                   new MonitorAwareCallback<>(callback, monitorCallback));
+            CommandMessage<C> commandWithContext = spanFactory.propagateContext(command);
+            handle(commandWithContext, optionalHandler.get(), new MonitorAwareCallback<>(callback, monitorCallback));
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(format(
-                    "No handler was subscribed for command [%s].",
-                    commandWithContext.getCommandName()));
+                    "No handler was subscribed for command [%s].", command.getCommandName()
+            ));
             monitorCallback.reportFailure(exception);
-            callback.onResult(commandWithContext, asCommandResultMessage(exception));
+            callback.onResult(command, asCommandResultMessage(exception));
         }
     }
 
@@ -359,7 +356,7 @@ public class SimpleCommandBus implements CommandBus {
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
-         * @param spanFactory The {@link SpanFactory} implementation
+         * @param spanFactory The {@link SpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {

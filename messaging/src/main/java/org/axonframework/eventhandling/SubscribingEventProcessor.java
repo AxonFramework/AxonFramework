@@ -165,8 +165,9 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      * <p>
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
+     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}, the
+     * {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to
+     * a {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      */

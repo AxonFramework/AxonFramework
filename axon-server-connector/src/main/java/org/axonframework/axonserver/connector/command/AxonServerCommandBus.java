@@ -179,12 +179,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             //noinspection unchecked
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
-                  .thenAccept(r -> commandCallback.onResult(commandMessage, r))
+                  .thenAccept(r -> {
+                      if(r.isExceptional()) {
+                          span.recordException(r.exceptionResult());
+                      }
+                      commandCallback.onResult(commandMessage, r);
+                  })
                   .whenComplete((r, e) -> {
                       commandInTransit.end();
-                      if (e != null) {
-                          span.recordException(e);
-                      }
                       span.end();
                   });
         } catch (Exception e) {

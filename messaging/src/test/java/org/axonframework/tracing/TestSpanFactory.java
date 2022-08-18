@@ -42,10 +42,19 @@ public class TestSpanFactory implements SpanFactory {
 
     private final Logger logger = LoggerFactory.getLogger(TestSpanFactory.class);
 
-    private final ThreadLocal<Deque<TestSpan>> activeSpan = new ThreadLocal<>();
+    private final Deque<TestSpan> activeSpan = new ArrayDeque<>();
     public final List<TestSpan> createdSpans = new CopyOnWriteArrayList<>();
     public final Map<Message<?>, TestSpan> propagatedContexts = new HashMap<>();
     public final Map<Message<?>, TestSpan> spanParents = new HashMap<>();
+
+
+    public void reset() {
+        this.activeSpan.clear();
+        this.createdSpans.clear();
+        this.propagatedContexts.clear();
+        this.spanParents.clear();
+        logger.info("SpanFactory cleared");
+    }
 
     public void verifyNotStarted(String name) {
         assertFalse(findSpan(name).started);
@@ -66,6 +75,7 @@ public class TestSpanFactory implements SpanFactory {
         assertTrue(findSpan(name).started);
         assertFalse(findSpan(name).ended);
     }
+
     public void verifySpanActive(String name, Message<?> message) {
         assertTrue(findSpan(name, message).started);
         assertFalse(findSpan(name, message).ended);
@@ -86,9 +96,11 @@ public class TestSpanFactory implements SpanFactory {
 
 
     public void verifySpanPropagated(String name, Message<?> message) {
-        TestSpan span = findSpan(name);
-        assertTrue(propagatedContexts.containsKey(message));
-        assertSame(propagatedContexts.get(message), span);
+        assertTrue(createdSpans.stream()
+                               .anyMatch(s -> s.name.equals(name)
+                                       && propagatedContexts.containsKey(message)
+                                       && propagatedContexts.get(message) == s),
+                   createMessageForName(name));
     }
 
     public void verifySpanParentSet(String name, Message<?> message) {
@@ -101,11 +113,15 @@ public class TestSpanFactory implements SpanFactory {
         Optional<TestSpan> span = createdSpans.stream().filter(s -> s.name.equals(name))
                                               .findFirst();
 
-        assertTrue(span.isPresent(), () -> String.format(
+        assertTrue(span.isPresent(), () -> createMessageForName(name));
+        return span.get();
+    }
+
+    private String createMessageForName(String name) {
+        return String.format(
                 "No span matching name %s, but got the following recorded spans: %s",
                 name,
-                createdSpans.stream().map(TestSpan::toString).collect(Collectors.joining("\n"))));
-        return span.get();
+                createdSpans.stream().map(TestSpan::toString).collect(Collectors.joining("\n")));
     }
 
     private TestSpan findSpan(String name, Message<?> message) {
@@ -166,11 +182,14 @@ public class TestSpanFactory implements SpanFactory {
 
     @Override
     public <M extends Message<?>> M propagateContext(M message) {
-        propagatedContexts.put(message, activeSpan.get().getFirst());
+        if(activeSpan.isEmpty()) {
+            return message;
+        }
+        propagatedContexts.put(message, activeSpan.getFirst());
         return message;
     }
 
-    public static enum TestSpanType {
+    public enum TestSpanType {
         ROOT,
         HANDLER_CHILD,
         HANDLER_LINK,
@@ -196,10 +215,7 @@ public class TestSpanFactory implements SpanFactory {
         @Override
         public Span start() {
             started = true;
-            if (activeSpan.get() == null) {
-                activeSpan.set(new ArrayDeque<>());
-            }
-            activeSpan.get().addFirst(this);
+            activeSpan.addFirst(this);
             logger.info("+ {}", name);
             return this;
         }
@@ -207,12 +223,13 @@ public class TestSpanFactory implements SpanFactory {
         @Override
         public void end() {
             ended = true;
-            activeSpan.get().remove(this);
+            activeSpan.remove(this);
             logger.info("- {}", name);
         }
 
         @Override
         public Span recordException(Throwable t) {
+            logger.info("Recorded exception for span with name {}", name, t);
             this.exception = t;
             return this;
         }

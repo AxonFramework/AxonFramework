@@ -63,8 +63,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStore} is not {@code null}, and will throw an {@link AxonConfigurationException}
-     * if it is {@code null}.
+     * Will assert that the {@link EventStore} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSnapshotter} instance
      */
@@ -132,6 +132,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @param aggregateType       The type of the aggregate to create a snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
+     *
      * @return the task containing snapshot creation logic
      */
     protected Runnable createSnapshotterTask(Class<?> aggregateType, String aggregateIdentifier) {
@@ -169,7 +170,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     private static class AggregateTypeId {
-
         private final Class<?> aggregateType;
         private final String aggregateIdentifier;
 
@@ -242,7 +242,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
          * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
          *
-         * @param spanFactory The {@link SpanFactory} implementation
+         * @param spanFactory The {@link SpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
@@ -303,10 +303,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public Runnable andFinally(Runnable r) {
             return new RunnableAndFinally(this, r);
         }
+
     }
 
     private static class RunnableAndFinally implements Runnable {
-
         private final Runnable first;
 
         private final Runnable then;
@@ -324,6 +324,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 then.run();
             }
         }
+
     }
 
     private final class CreateSnapshotTask implements Runnable {

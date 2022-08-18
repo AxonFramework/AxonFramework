@@ -412,6 +412,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
+     *     <li>The {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -483,8 +484,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Sets the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link EventProcessor} will
          * track.
          *
-         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this
-         *                      {@link EventProcessor} will track
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@code EventStore}) which this {@link
+         *                      EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(@Nonnull StreamableMessageSource<TrackedEventMessage<?>> messageSource) {

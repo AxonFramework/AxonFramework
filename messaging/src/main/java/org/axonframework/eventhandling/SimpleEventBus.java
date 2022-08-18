@@ -55,7 +55,8 @@ public class SimpleEventBus extends AbstractEventBus {
     /**
      * Builder class to instantiate a {@link SimpleEventBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defaulted
+     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      */
     public static class Builder extends AbstractEventBus.Builder {
 

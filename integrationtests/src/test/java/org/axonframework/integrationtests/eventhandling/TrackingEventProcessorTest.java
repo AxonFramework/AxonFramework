@@ -197,7 +197,10 @@ class TrackingEventProcessorTest {
             r.run();
             return null;
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
-        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).spanFactory(spanFactory).build();
+        eventBus = EmbeddedEventStore.builder()
+                                     .storageEngine(new InMemoryEventStorageEngine())
+                                     .spanFactory(spanFactory)
+                                     .build();
         sleepInstructions = new CopyOnWriteArrayList<>();
 
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
@@ -218,7 +221,7 @@ class TrackingEventProcessorTest {
                                       .trackingEventProcessorConfiguration(config)
                                       .tokenStore(tokenStore)
                                       .transactionManager(mockTransactionManager)
-                        .spanFactory(spanFactory);
+                                      .spanFactory(spanFactory);
         testSubject = new TrackingEventProcessor(customization.apply(eventProcessorBuilder)) {
             @Override
             protected void doSleepFor(long millisToSleep) {

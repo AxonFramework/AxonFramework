@@ -30,6 +30,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
+import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -75,10 +76,12 @@ class SimpleQueryBusTest {
     private MessageMonitor<QueryMessage<?, ?>> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
     private MessageMonitor.MonitorCallback monitorCallback;
+    private TestSpanFactory spanFactory;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         messageMonitor = mock(MessageMonitor.class);
         errorHandler = mock(QueryInvocationErrorHandler.class);
         monitorCallback = mock(MessageMonitor.MonitorCallback.class);
@@ -87,6 +90,7 @@ class SimpleQueryBusTest {
         testSubject = SimpleQueryBus.builder()
                                     .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
+                                    .spanFactory(spanFactory)
                                     .build();
 
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
@@ -250,6 +254,39 @@ class SimpleQueryBusTest {
         verify(mockTxManager).startTransaction();
         verify(mockTx).commit();
     }
+
+    @Test
+    void testQuerySingleIsTraced() throws ExecutionException, InterruptedException {
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.query", testQueryMessage);
+            return q.getPayload() + "1234";
+        });
+
+        testSubject.query(testQueryMessage).get();
+
+        spanFactory.verifySpanCompleted("SimpleQueryBus.query", testQueryMessage);
+    }
+
+    @Test
+    void testScatterGatherIsTraced() {
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(0)", testQueryMessage);
+            return q.getPayload() + "1234";
+        });
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+            return q.getPayload() + "12345678";
+        });
+
+        testSubject.scatterGather(testQueryMessage, 500, TimeUnit.MILLISECONDS).collect(Collectors.toList());
+
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(0)", testQueryMessage);
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+    }
+
 
     @Test
     void testQueryListWithSingleHandlerReturnsSingleAsList() throws Exception {
@@ -428,6 +465,7 @@ class SimpleQueryBusTest {
         } catch (ExecutionException e) {
             assertEquals(NoHandlerForQueryException.class, e.getCause().getClass());
         }
+        spanFactory.verifySpanHasException("SimpleQueryBus.query", NoHandlerForQueryException.class);
     }
 
     @Test
