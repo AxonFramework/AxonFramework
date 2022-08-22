@@ -53,7 +53,7 @@ public class AxonTracingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SpanFactory.class)
-    public SpanFactory noOpSpanFactory() {
+    public SpanFactory spanFactory() {
         return NoOpSpanFactory.INSTANCE;
     }
 
