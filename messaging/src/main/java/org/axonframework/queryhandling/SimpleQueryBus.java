@@ -167,7 +167,13 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        return spanFactory.createInternalSpan("SimpleQueryBus.query", query).runSupplier(() -> doQuery(query));
+        Span span = spanFactory.createInternalSpan("SimpleQueryBus.query", query).start();
+        return doQuery(query).whenComplete((r, t) -> {
+            if(t != null) {
+                span.recordException(t);
+            }
+            span.end();
+        });
     }
 
     @Nonnull
