@@ -716,7 +716,6 @@ class SimpleQueryBusTest {
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
         Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
                                     .doOnNext(next -> {
-                                        System.out.println(next);
                                         if (next == 10L) {
                                             ten.countDown();
                                         }

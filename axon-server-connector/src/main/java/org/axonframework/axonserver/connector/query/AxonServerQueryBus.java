@@ -275,15 +275,15 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             logger.debug("There was a problem issuing a query {}.", interceptedQuery, e);
             AxonException exception = ErrorCode.QUERY_DISPATCH_ERROR.convert(configuration.getClientId(), e);
             queryTransaction.completeExceptionally(exception);
-            span.recordException(e);
+            span.recordException(e).end();
         }
 
         return queryTransaction.whenComplete((r, e) -> {
             queryInTransit.end();
-            if(e != null) {
+            if (e != null) {
                 span.recordException(e);
             }
-            if(r.isExceptional()) {
+            if (r != null && r.isExceptional()) {
                 span.recordException(r.exceptionResult());
             }
             span.end();
