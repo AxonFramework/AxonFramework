@@ -138,6 +138,7 @@
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>

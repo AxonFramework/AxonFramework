@@ -43,11 +43,14 @@ public class TestSpanFactory implements SpanFactory {
     private final Logger logger = LoggerFactory.getLogger(TestSpanFactory.class);
 
     private final Deque<TestSpan> activeSpan = new ArrayDeque<>();
-    public final List<TestSpan> createdSpans = new CopyOnWriteArrayList<>();
-    public final Map<Message<?>, TestSpan> propagatedContexts = new HashMap<>();
-    public final Map<Message<?>, TestSpan> spanParents = new HashMap<>();
+    private final List<TestSpan> createdSpans = new CopyOnWriteArrayList<>();
+    private final Map<Message<?>, TestSpan> propagatedContexts = new HashMap<>();
+    private final Map<Message<?>, TestSpan> spanParents = new HashMap<>();
 
 
+    /**
+     * Resets the {@link TestSpanFactory} to pristine state.
+     */
     public void reset() {
         this.activeSpan.clear();
         this.createdSpans.clear();
@@ -56,36 +59,74 @@ public class TestSpanFactory implements SpanFactory {
         logger.info("SpanFactory cleared");
     }
 
+    /**
+     * Verifies that a span was created, but not started.
+     *
+     * @param name Name of the span to verify.
+     */
     public void verifyNotStarted(String name) {
         assertFalse(findSpan(name).started);
         assertFalse(findSpan(name).ended);
     }
 
-    public void verifySpanCompleted(String name) {
-        assertTrue(findSpan(name).started);
-        assertTrue(findSpan(name).ended);
-    }
-
-    public void verifySpanCompleted(String name, Message<?> message) {
-        assertTrue(findSpan(name, message).started);
-        assertTrue(findSpan(name, message).ended);
-    }
-
+    /**
+     * Verifies that a span was created and started, but it not yet ended.
+     *
+     * @param name Name of the span to verify.
+     */
     public void verifySpanActive(String name) {
         assertTrue(findSpan(name).started);
         assertFalse(findSpan(name).ended);
     }
 
+    /**
+     * Verifies that a span was created and started, but it not yet ended.
+     *
+     * @param name    Name of the span to verify.
+     * @param message The exact message the span should have been created for.
+     */
     public void verifySpanActive(String name, Message<?> message) {
         assertTrue(findSpan(name, message).started);
         assertFalse(findSpan(name, message).ended);
     }
 
+    /**
+     * Verifies that a span was created, started and ended.
+     *
+     * @param name Name of the span to verify.
+     */
+    public void verifySpanCompleted(String name) {
+        assertTrue(findSpan(name).started);
+        assertTrue(findSpan(name).ended);
+    }
 
+    /**
+     * Verifies that a span was created, started and ended.
+     *
+     * @param name    Name of the span to verify.
+     * @param message The exact message the span should have been created for.
+     */
+    public void verifySpanCompleted(String name, Message<?> message) {
+        assertTrue(findSpan(name, message).started);
+        assertTrue(findSpan(name, message).ended);
+    }
+
+
+    /**
+     * Verifies that a span had an exception registered to it.
+     *
+     * @param name           Name of the span to verify.
+     * @param exceptionClass The type of exception
+     */
     public void verifySpanHasException(String name, Class<?> exceptionClass) {
         assertInstanceOf(exceptionClass, findSpan(name).exception);
     }
 
+    /**
+     * Verify no span was started by this name.
+     *
+     * @param name Name of the span to verify.
+     */
     public void verifyNoSpan(String name) {
         Optional<TestSpan> span = createdSpans.stream()
                                               .filter(s -> s.name.equals(name))
@@ -94,30 +135,39 @@ public class TestSpanFactory implements SpanFactory {
         assertFalse(span.isPresent());
     }
 
-
+    /**
+     * Verifies the provided message had the context propagates to it.
+     *
+     * @param name    Name of the span to verify.
+     * @param message The exact message the span should have been propagated to.
+     */
     public void verifySpanPropagated(String name, Message<?> message) {
         assertTrue(createdSpans.stream()
                                .anyMatch(s -> s.name.equals(name)
                                        && propagatedContexts.containsKey(message)
                                        && propagatedContexts.get(message) == s),
-                   createMessageForName(name));
+                   createErrorMessageForSpan(name));
     }
 
-    public void verifySpanParentSet(String name, Message<?> message) {
-        TestSpan span = findSpan(name);
-        assertTrue(spanParents.containsKey(message));
-        assertSame(spanParents.get(message), span);
+    /**
+     * Verifies that a span was created and was of a certain type.
+     *
+     * @param name Name of the span to verify.
+     * @see TestSpanType
+     */
+    public void verifySpanHasType(String name, TestSpanType type) {
+        assertEquals(type, findSpan(name).type);
     }
 
     private TestSpan findSpan(String name) {
         Optional<TestSpan> span = createdSpans.stream().filter(s -> s.name.equals(name))
                                               .findFirst();
 
-        assertTrue(span.isPresent(), () -> createMessageForName(name));
+        assertTrue(span.isPresent(), () -> createErrorMessageForSpan(name));
         return span.get();
     }
 
-    private String createMessageForName(String name) {
+    private String createErrorMessageForSpan(String name) {
         return String.format(
                 "No span matching name %s, but got the following recorded spans: %s",
                 name,
@@ -180,15 +230,26 @@ public class TestSpanFactory implements SpanFactory {
 
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note that this method does not return a modified message. Lots of testcases rely on an equality check. Modifying
+     * the metadata of the message will break this.
+     */
     @Override
     public <M extends Message<?>> M propagateContext(M message) {
-        if(activeSpan.isEmpty()) {
-            return message;
+        synchronized (activeSpan) {
+            if (activeSpan.isEmpty()) {
+                return message;
+            }
+            propagatedContexts.put(message, activeSpan.getFirst());
         }
-        propagatedContexts.put(message, activeSpan.getFirst());
         return message;
     }
 
+    /**
+     * The type of the span, relates to the method of {@link SpanFactory}. Used for assertions.
+     */
     public enum TestSpanType {
         ROOT,
         HANDLER_CHILD,
@@ -197,14 +258,20 @@ public class TestSpanFactory implements SpanFactory {
         INTERNAL
     }
 
+    /**
+     * Implementation of a {@link Span} that registers what happens to it. Other than that, it does not do anything.
+     * <p>
+     * Starting a span will register it as the current to the {@link TestSpanFactory#activeSpan} deque. All actions are
+     * logged to be able to easily debug testcases.
+     */
     public class TestSpan implements Span {
 
-        public final TestSpanType type;
-        public final String name;
-        public final Message<?> message;
-        public boolean started;
-        public boolean ended;
-        public Throwable exception;
+        private final TestSpanType type;
+        private final String name;
+        private final Message<?> message;
+        private boolean started;
+        private boolean ended;
+        private Throwable exception;
 
         public TestSpan(TestSpanType type, String name, Message<?> message) {
             this.type = type;
@@ -215,7 +282,9 @@ public class TestSpanFactory implements SpanFactory {
         @Override
         public Span start() {
             started = true;
-            activeSpan.addFirst(this);
+            synchronized (activeSpan) {
+                activeSpan.addFirst(this);
+            }
             logger.info("+ {}", name);
             return this;
         }
@@ -223,7 +292,9 @@ public class TestSpanFactory implements SpanFactory {
         @Override
         public void end() {
             ended = true;
-            activeSpan.remove(this);
+            synchronized (activeSpan) {
+                activeSpan.remove(this);
+            }
             logger.info("- {}", name);
         }
 

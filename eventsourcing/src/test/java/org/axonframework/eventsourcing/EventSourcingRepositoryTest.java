@@ -91,17 +91,9 @@ class EventSourcingRepositoryTest {
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
         DomainEventMessage event2 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
-        when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
-            testSpanFactory.verifySpanActive("EventSourcingRepository.load " + identifier);
-            testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-            testSpanFactory.verifyNoSpan("type.initializeState");
-            return DomainEventStream.of(event1, event2);
-        });
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
-        testSpanFactory.verifySpanCompleted("EventSourcingRepository.load " + identifier);
-        testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
-        testSpanFactory.verifySpanCompleted("type.initializeState");
 
         assertEquals(2, aggregate.invoke(TestAggregate::getHandledEvents).size());
         assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
@@ -119,6 +111,37 @@ class EventSourcingRepositoryTest {
         verify(mockEventStore, times(1)).publish((EventMessage) any());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
         assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+    }
+
+    @Test
+    void testLoadAndSaveAggregateIsTracedCorrectly() {
+        String identifier = UUID.randomUUID().toString();
+        DomainEventMessage event1 =
+                new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
+        DomainEventMessage event2 =
+                new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", emptyInstance());
+        when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
+            testSpanFactory.verifySpanActive("EventSourcingRepository.load " + identifier);
+            testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+            testSpanFactory.verifyNoSpan("type.initializeState");
+            return DomainEventStream.of(event1, event2);
+        });
+
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
+        testSpanFactory.verifySpanCompleted("EventSourcingRepository.load " + identifier);
+        testSpanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+        testSpanFactory.verifySpanCompleted("type.initializeState");
+
+        // now the aggregate is loaded (and hopefully correctly locked)
+        StubDomainEvent event3 = new StubDomainEvent();
+
+        aggregate.execute(r -> r.apply(event3));
+
+        CurrentUnitOfWork.commit();
+
+        testSpanFactory.verifySpanHasType("EventSourcingRepository.load " + identifier, TestSpanFactory.TestSpanType.INTERNAL);
+        testSpanFactory.verifySpanHasType("LockingRepository.obtainLock", TestSpanFactory.TestSpanType.INTERNAL);
+        testSpanFactory.verifySpanHasType("type.initializeState", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

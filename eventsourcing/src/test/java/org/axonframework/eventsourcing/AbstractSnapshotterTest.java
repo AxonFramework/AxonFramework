@@ -102,6 +102,8 @@ class AbstractSnapshotterTest {
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
         spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object)");
         spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
+        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object)", TestSpanFactory.TestSpanType.ROOT);
+        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

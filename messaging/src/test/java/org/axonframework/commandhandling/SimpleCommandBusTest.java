@@ -49,7 +49,7 @@ class SimpleCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        spanFactory = new TestSpanFactory();
+        this.spanFactory = new TestSpanFactory();
         this.testSubject = SimpleCommandBus.builder().spanFactory(spanFactory).build();
     }
 

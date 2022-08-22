@@ -101,6 +101,13 @@
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+            <version>${project.version}</version>
+        </dependency>
 
     </dependencies>
 

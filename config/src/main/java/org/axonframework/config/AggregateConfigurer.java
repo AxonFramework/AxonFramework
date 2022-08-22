@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,6 +136,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                .entityManagerProvider(entityManagerProvider)
                                                .eventBus(c.eventBus())
                                                .repositoryProvider(c::repository)
+                                               .spanFactory(c.spanFactory())
                                                .build();
                 });
     }
@@ -161,6 +162,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                          .entityManagerProvider(entityManagerProvider)
                                          .eventBus(c.eventBus())
                                          .repositoryProvider(c::repository)
+                                         .spanFactory(c.spanFactory())
                                          .build()
         );
     }

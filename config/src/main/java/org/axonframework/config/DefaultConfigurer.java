@@ -343,7 +343,7 @@ public class DefaultConfigurer implements Configurer {
                                                               () -> LoggingQueryInvocationErrorHandler.builder().build()
                                                       ))
                                                       .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                      .spanFactory(config.getComponent(SpanFactory.class))
+                                                      .spanFactory(config.spanFactory())
                                                       .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;

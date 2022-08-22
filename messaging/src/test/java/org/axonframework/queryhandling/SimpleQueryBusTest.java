@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -91,6 +91,9 @@ class SimpleQueryBusTest {
                                     .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
                                     .spanFactory(spanFactory)
+                                    .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
+                                                                                .spanFactory(spanFactory)
+                                                                                .build())
                                     .build();
 
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
@@ -709,6 +712,7 @@ class SimpleQueryBusTest {
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
         Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
             .doOnNext(next -> {
+                System.out.println(next);
                 if (next == 10L) {
                     ten.countDown();
                 }
@@ -739,6 +743,34 @@ class SimpleQueryBusTest {
         Long anotherInitialResult = Objects.requireNonNull(initialResult.block()).getPayload();
         assertTrue(fistUpdate <= firstInitialResult + 1);
         assertTrue(firstInitialResult <= anotherInitialResult);
+    }
+
+    @Test
+    void testSubscriptionQueryIsTraced() throws InterruptedException {
+        CountDownLatch updatedLatch = new CountDownLatch(1);
+        final AtomicLong value = new AtomicLong();
+        testSubject.subscribe("queryName", Long.class, q -> value.get());
+        QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
+        Flux.interval(Duration.ofMillis(0), Duration.ofMillis(20))
+            .doOnNext(next -> {
+                updatedLatch.countDown();
+                updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+            })
+            .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+            .subscribe();
+
+
+        SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
+                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                         "queryName",
+                                                                         ResponseTypes.instanceOf(Long.class),
+                                                                         ResponseTypes.instanceOf(Long.class)));
+        Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
+        Objects.requireNonNull(initialResult.block()).getPayload();
+        spanFactory.verifySpanCompleted("SimpleQueryBus.query");
+        updatedLatch.await();
+        Objects.requireNonNull(result.updates().next().block()).getPayload();
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emit queryName");
     }
 
     @Test

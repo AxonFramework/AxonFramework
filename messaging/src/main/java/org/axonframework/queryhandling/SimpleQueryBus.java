@@ -563,7 +563,9 @@ public class SimpleQueryBus implements QueryBus {
                                                                                              .logger(logger)
                                                                                              .build();
         private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
-        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
+        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder()
+                                                                                .spanFactory(NoOpSpanFactory.INSTANCE)
+                                                                                .build();
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
