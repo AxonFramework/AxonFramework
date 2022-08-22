@@ -22,8 +22,6 @@ import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.*;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
 import java.util.List;
@@ -45,13 +43,11 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-@Transactional
 public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
         extends EventStorageEngineTest {
 
     private AbstractEventStorageEngine testSubject;
 
-    @DirtiesContext
     @Test
     public void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
@@ -60,7 +56,6 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         );
     }
 
-    @DirtiesContext
     @Test
     public void testUniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
@@ -70,7 +65,6 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    @DirtiesContext
     public void testStoreAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         //noinspection unchecked
@@ -95,7 +89,6 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         }
     }
 
-    @DirtiesContext
     @Test
     public void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
@@ -104,7 +97,6 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         );
     }
 
-    @DirtiesContext
     @Test
     public void testStoreDuplicateEventWithExceptionTranslator() {
         assertThrows(
@@ -113,7 +105,6 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         );
     }
 
-    @DirtiesContext
     @Test
     public void testStoreDuplicateEventWithoutExceptionResolver() {
         //noinspection unchecked
