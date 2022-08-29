@@ -38,12 +38,12 @@ jobs:
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -Possrh -Dcoverage clean verify
+          ./mvnw -B -U -Dstyle.color=always -Possrh -Dcoverage clean verify
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          ./mvnw -B sonar:sonar \
+          ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
