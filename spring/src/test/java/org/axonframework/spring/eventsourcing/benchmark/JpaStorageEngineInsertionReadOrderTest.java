@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
+package org.axonframework.spring.eventsourcing.benchmark;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -25,8 +25,9 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
-import org.axonframework.integrationtests.utils.TestSerializer;
+import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -57,8 +58,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -73,7 +72,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
 
-    private final Serializer serializer = TestSerializer.xStreamSerializer();
+    private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -192,8 +191,8 @@ class JpaStorageEngineInsertionReadOrderTest {
                     final int s = j;
                     try {
                         txTemplate.execute(ts -> {
-                            testSubject.appendEvents(createEvent(
-                                    AGGREGATE, (long) threadIndex * eventsPerThread + s, "Thread" + threadIndex
+                            testSubject.appendEvents(EventStoreTestUtils.createEvent(
+                                    EventStoreTestUtils.AGGREGATE, (long) threadIndex * eventsPerThread + s, "Thread" + threadIndex
                             ));
                             if (s % inverseRollbackRate == 0) {
                                 throw new RuntimeException("Rolling back on purpose");
@@ -252,7 +251,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         @Bean
         public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactory.setPersistenceUnitName("integrationtest");
+            entityManagerFactory.setPersistenceUnitName("eventStore");
 
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
             vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");

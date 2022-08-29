@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,16 +37,8 @@ import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -57,8 +49,9 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
@@ -71,32 +64,36 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-@ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
-@Transactional
+
 class JpaEventStorageEngineTest
         extends BatchingEventStorageEngineTest<JpaEventStorageEngine, JpaEventStorageEngine.Builder> {
 
     private JpaEventStorageEngine testSubject;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-    private EntityManagerProvider entityManagerProvider;
-    @Autowired
-    private DataSource dataSource;
-    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
+    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("eventStore");
+    private final EntityManager entityManager = entityManagerFactory.createEntityManager();
+    private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
+    private EntityTransaction transaction;
+    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
+    void setUp() {
+        String databaseProductName = "HSQL Database Engine";
+        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(databaseProductName);
         setTestSubject(testSubject = createEngine());
 
+        transaction = entityManager.getTransaction();
+        transaction.begin();
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
-        entityManager.flush();
+        transaction.commit();
         entityManager.clear();
+        transaction.begin();
+    }
+
+    @AfterEach
+    public void cleanup(){
+        transaction.commit();
     }
 
     @Test
@@ -189,13 +186,6 @@ class JpaEventStorageEngineTest
         );
         // and we've got a new gap in this batch
         assertEquals(2, ((GapAwareTrackingToken) events.get(0).trackingToken()).getGaps().size());
-    }
-
-    @Test
-    void testStoreTwoExactSameSnapshots() {
-        testSubject.storeSnapshot(createEvent(1));
-        entityManager.clear();
-        testSubject.storeSnapshot(createEvent(1));
     }
 
     @Test

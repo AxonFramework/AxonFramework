@@ -18,51 +18,27 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.ConfigToken;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.serialization.TestSerializer;
-import org.hibernate.dialect.HSQLDialect;
-import org.hibernate.jpa.HibernatePersistenceProvider;
-import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
+import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.LockModeType;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
+import javax.persistence.Persistence;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,37 +46,29 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ContextConfiguration
-@ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class JpaTokenStoreTest {
+class JpaTokenStoreTest {
 
-    @Autowired
-    @Qualifier("jpaTokenStore")
-    private JpaTokenStore jpaTokenStore;
+    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("tokenstore");
+    private final EntityManager entityManager = entityManagerFactory.createEntityManager();
+    private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
 
-    @Autowired
-    @Qualifier("concurrentJpaTokenStore")
-    private JpaTokenStore concurrentJpaTokenStore;
+    private final JpaTokenStore jpaTokenStore = getTokenStore("local", null);
+    private final JpaTokenStore concurrentJpaTokenStore = getTokenStore("concurrent", Duration.ofSeconds(2));
+    private final JpaTokenStore stealingJpaTokenStore = getTokenStore("stealing", Duration.ofSeconds(-1));
 
-    @Autowired
-    @Qualifier("stealingJpaTokenStore")
-    private JpaTokenStore stealingJpaTokenStore;
+    private EntityTransaction transaction;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-    private TransactionTemplate txTemplate;
-
-    @Transactional
     @BeforeEach
     public void setUp() {
-        this.txTemplate = new TransactionTemplate(transactionManager);
+        transaction = entityManager.getTransaction();
+        transaction.begin();
     }
 
-    @Transactional
+    @AfterEach
+    public void cleanup(){
+        transaction.commit();
+    }
+
     @Test
     void testUpdateNullToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -116,7 +84,6 @@ public class JpaTokenStoreTest {
         assertNull(tokens.get(0).getToken(TestSerializer.XSTREAM.getSerializer()));
     }
 
-    @Transactional
     @Test
     void testUpdateAndLoadNullToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -129,7 +96,6 @@ public class JpaTokenStoreTest {
         assertNull(token);
     }
 
-    @Transactional
     @Test
     void testIdentifierInitializedOnDemand() {
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
@@ -139,7 +105,6 @@ public class JpaTokenStoreTest {
         assertEquals(id1.get(), id2.get());
     }
 
-    @Transactional
     @Test
     void testIdentifierReadIfAvailable() {
         entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer()));
@@ -152,7 +117,6 @@ public class JpaTokenStoreTest {
         assertEquals("test", id1.get());
     }
 
-    @Transactional
     @Test
     void testCustomLockMode() {
         EntityManager spyEntityManager = mock(EntityManager.class);
@@ -172,7 +136,6 @@ public class JpaTokenStoreTest {
         verify(spyEntityManager).find(eq(TokenEntry.class), any(), eq(LockModeType.NONE));
     }
 
-    @Transactional
     @Test
     void testInitializeTokens() {
         jpaTokenStore.initializeTokenSegments("test1", 7);
@@ -183,7 +146,6 @@ public class JpaTokenStoreTest {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
     @Test
     void testInitializeTokensAtGivenPosition() {
         jpaTokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
@@ -197,13 +159,11 @@ public class JpaTokenStoreTest {
         }
     }
 
-    @Transactional
     @Test
     void testInitializeTokensWhileAlreadyPresent() {
         assertThrows(UnableToClaimTokenException.class, () -> jpaTokenStore.fetchToken("test1", 1));
     }
 
-    @Transactional
     @Test
     void testDeleteTokenRejectedIfNotClaimedOrNotInitialized() {
         jpaTokenStore.initializeTokenSegments("test", 2);
@@ -223,7 +183,6 @@ public class JpaTokenStoreTest {
         }
     }
 
-    @Transactional
     @Test
     void testDeleteToken() {
         jpaTokenStore.initializeSegment(null, "delete", 0);
@@ -238,7 +197,6 @@ public class JpaTokenStoreTest {
                                              .getSingleResult());
     }
 
-    @Transactional
     @Test
     void testClaimAndUpdateToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -262,7 +220,6 @@ public class JpaTokenStoreTest {
         assertNull(token.getOwner());
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegment() {
         jpaTokenStore.initializeTokenSegments("test", 2);
@@ -271,7 +228,6 @@ public class JpaTokenStoreTest {
         assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegmentSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -280,7 +236,6 @@ public class JpaTokenStoreTest {
         assertNull(jpaTokenStore.fetchToken("test", segmentToFetch));
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegmentFailsDuringMerge() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -292,7 +247,6 @@ public class JpaTokenStoreTest {
         );
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegmentFailsDuringMergeSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 1);
@@ -303,7 +257,6 @@ public class JpaTokenStoreTest {
         );
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegmentFailsDuringSplit() {
         jpaTokenStore.initializeTokenSegments("test", 4);
@@ -315,7 +268,6 @@ public class JpaTokenStoreTest {
         );
     }
 
-    @Transactional
     @Test
     void testFetchTokenBySegmentFailsDuringSplitSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 2);
@@ -326,7 +278,6 @@ public class JpaTokenStoreTest {
         );
     }
 
-    @Transactional
     @Test
     void testQuerySegments() {
         prepareTokenStore();
@@ -348,7 +299,6 @@ public class JpaTokenStoreTest {
         entityManager.clear();
     }
 
-    @Transactional
     @Test
     void testQueryAvailableSegments() {
         prepareTokenStore();
@@ -392,7 +342,6 @@ public class JpaTokenStoreTest {
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 0);
     }
 
-    @Transactional
     @Test
     void testClaimTokenConcurrently() {
         jpaTokenStore.initializeTokenSegments("concurrent", 1);
@@ -405,7 +354,6 @@ public class JpaTokenStoreTest {
         }
     }
 
-    @Transactional
     @Test
     void testStealToken() {
         jpaTokenStore.initializeTokenSegments("stealing", 1);
@@ -424,7 +372,6 @@ public class JpaTokenStoreTest {
         stealingJpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "stealing", 0);
     }
 
-    @Transactional
     @Test
     void testExtendingLostClaimFails() {
         jpaTokenStore.initializeTokenSegments("processor", 1);
@@ -438,163 +385,41 @@ public class JpaTokenStoreTest {
         }
     }
 
-    @Transactional
-    @Test
-    void testStealingFromOtherThreadFailsWithRowLock() throws Exception {
-        jpaTokenStore.initializeTokenSegments("processor", 1);
-
-        ExecutorService executor1 = Executors.newSingleThreadExecutor();
-        CountDownLatch cdl = new CountDownLatch(1);
-        try {
-            jpaTokenStore.fetchToken("processor", 0);
-            Future<?> result = executor1.submit(() -> {
-
-                DefaultTransactionDefinition txDef = new DefaultTransactionDefinition();
-                txDef.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                TransactionStatus tx = transactionManager.getTransaction(txDef);
-                cdl.countDown();
-                try {
-                    stealingJpaTokenStore.fetchToken("processor", 0);
-                } finally {
-                    transactionManager.rollback(tx);
-                }
-            });
-            cdl.await();
-            try {
-                result.get(250, TimeUnit.MILLISECONDS);
-                fail("Expected task to time out on the write lock");
-            } catch (TimeoutException e) {
-                // we expect this;
-            }
-            assertFalse(result.isDone());
-
-            // we cancel the task
-            result.cancel(true);
-
-            // and make sure the token is still owned
-            TokenEntry tokenEntry = entityManager.find(TokenEntry.class, new TokenEntry.PK("processor", 0));
-            assertEquals("local", tokenEntry.getOwner());
-        } finally {
-            executor1.shutdown();
-        }
-    }
-
     @Test
     void testStoreAndLoadAcrossTransactions() {
-        txTemplate.execute(status -> {
-            jpaTokenStore.initializeTokenSegments("multi", 1);
-            return null;
-        });
 
-        txTemplate.execute(status -> {
-            jpaTokenStore.fetchToken("multi", 0);
-            jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "multi", 0);
-            return null;
-        });
+        jpaTokenStore.initializeTokenSegments("multi", 1);
+        newTransAction();
 
-        txTemplate.execute(status -> {
-            TrackingToken actual = jpaTokenStore.fetchToken("multi", 0);
-            assertEquals(new GlobalSequenceTrackingToken(1), actual);
-            jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2), "multi", 0);
-            return null;
-        });
+        jpaTokenStore.fetchToken("multi", 0);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "multi", 0);
+        newTransAction();
 
-        txTemplate.execute(status -> {
-            TrackingToken actual = jpaTokenStore.fetchToken("multi", 0);
-            assertEquals(new GlobalSequenceTrackingToken(2), actual);
-            return null;
-        });
+        TrackingToken actual = jpaTokenStore.fetchToken("multi", 0);
+        assertEquals(new GlobalSequenceTrackingToken(1), actual);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2), "multi", 0);
+        newTransAction();
+
+        actual = jpaTokenStore.fetchToken("multi", 0);
+        assertEquals(new GlobalSequenceTrackingToken(2), actual);
     }
 
-    @Configuration
-    public static class Context {
-
-        @SuppressWarnings("Duplicates")
-        @Bean
-        public DataSource dataSource() {
-            JDBCDataSource dataSource = new JDBCDataSource();
-            dataSource.setUrl("jdbc:hsqldb:mem:testdb");
-            dataSource.setUser("sa");
-            dataSource.setPassword("");
-            return dataSource;
+    private JpaTokenStore getTokenStore(String nodeId, @Nullable TemporalAmount claimTimeOut){
+        JpaTokenStore.Builder builder = JpaTokenStore.builder()
+                                             .entityManagerProvider(entityManagerProvider)
+                                             .serializer(TestSerializer.XSTREAM.getSerializer())
+                                             .nodeId(nodeId);
+        if (! Objects.isNull(claimTimeOut)){
+            builder.claimTimeout(claimTimeOut);
         }
+        return builder.build();
+    }
 
-        @Bean
-        public LocalContainerEntityManagerFactoryBean sessionFactory() {
-            LocalContainerEntityManagerFactoryBean sessionFactory = new LocalContainerEntityManagerFactoryBean();
-            sessionFactory.setPersistenceProvider(new HibernatePersistenceProvider());
-            sessionFactory.setPackagesToScan(TokenEntry.class.getPackage().getName());
-            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.dialect", new HSQLDialect()));
-            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.hbm2ddl.auto", "create-drop"));
-            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.show_sql", "false"));
-            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url",
-                                                                      "jdbc:hsqldb:mem:testdb"));
-            return sessionFactory;
-        }
-
-        @Bean
-        public PlatformTransactionManager txManager() {
-            return new JpaTransactionManager();
-        }
-
-        @Bean
-        public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return JpaTokenStore.builder()
-                                .entityManagerProvider(entityManagerProvider)
-                                .serializer(TestSerializer.XSTREAM.getSerializer())
-                                .nodeId("local")
-                                .build();
-        }
-
-        @Bean
-        public JpaTokenStore concurrentJpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return JpaTokenStore.builder()
-                                .entityManagerProvider(entityManagerProvider)
-                                .serializer(TestSerializer.XSTREAM.getSerializer())
-                                .claimTimeout(Duration.ofSeconds(2))
-                                .nodeId("concurrent")
-                                .build();
-        }
-
-        @Bean
-        public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return JpaTokenStore.builder()
-                                .entityManagerProvider(entityManagerProvider)
-                                .serializer(TestSerializer.XSTREAM.getSerializer())
-                                .claimTimeout(Duration.ofSeconds(-1))
-                                .nodeId("stealing")
-                                .build();
-        }
-
-        @Bean
-        public TransactionManager transactionManager(PlatformTransactionManager txManager) {
-            //noinspection Duplicates
-            return () -> {
-                TransactionStatus transaction = txManager.getTransaction(new DefaultTransactionDefinition());
-                return new Transaction() {
-                    @Override
-                    public void commit() {
-                        txManager.commit(transaction);
-                    }
-
-                    @Override
-                    public void rollback() {
-                        txManager.rollback(transaction);
-                    }
-                };
-            };
-        }
-
-        @Configuration
-        public static class PersistenceConfig {
-
-            @PersistenceContext
-            private EntityManager entityManager;
-
-            @Bean
-            public EntityManagerProvider entityManagerProvider() {
-                return new SimpleEntityManagerProvider(entityManager);
-            }
-        }
+    private void newTransAction(){
+        entityManager.flush();
+        entityManager.clear();
+        transaction.commit();
+        transaction = entityManager.getTransaction();
+        transaction.begin();
     }
 }
