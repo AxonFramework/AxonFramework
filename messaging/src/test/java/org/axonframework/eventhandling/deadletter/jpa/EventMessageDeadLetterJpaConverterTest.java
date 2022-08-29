@@ -50,50 +50,50 @@ class EventMessageDeadLetterJpaConverterTest {
 
     @Test
     void testCanConvertGenericEventMessageAndBackCorrectly() {
-        test(GenericEventMessage.asEventMessage(event).andMetaData(metaData));
+        testConversion(GenericEventMessage.asEventMessage(event).andMetaData(metaData));
     }
 
     @Test
     void testCanConvertDomainEventMessageAndBackCorrectly() {
-        test(new GenericDomainEventMessage<>("MyType", "8239081092", 25L, event, metaData));
+        testConversion(new GenericDomainEventMessage<>("MyType", "8239081092", 25L, event, metaData));
     }
 
     @Test
     void testCanConvertTrackedDomainEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
-        test(new GenericTrackedDomainEventMessage<>(new GlobalSequenceTrackingToken(232323L),
-                                                    "MyType",
-                                                    "8239081092",
-                                                    25L,
-                                                    new GenericEventMessage<>(event, metaData),
-                                                    Instant::now));
+        testConversion(new GenericTrackedDomainEventMessage<>(new GlobalSequenceTrackingToken(232323L),
+                                                              "MyType",
+                                                              "8239081092",
+                                                              25L,
+                                                              new GenericEventMessage<>(event, metaData),
+                                                              Instant::now));
     }
 
     @Test
     void testCanConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
-        test(new GenericTrackedDomainEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
-                                                    "MyType",
-                                                    "8239081092",
-                                                    25L,
-                                                    new GenericEventMessage<>(event, metaData),
-                                                    Instant::now));
+        testConversion(new GenericTrackedDomainEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
+                                                              "MyType",
+                                                              "8239081092",
+                                                              25L,
+                                                              new GenericEventMessage<>(event, metaData),
+                                                              Instant::now));
     }
 
     @Test
     void testCanConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
-        test(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(232323L),
-                                              new GenericEventMessage<>(event, metaData),
-                                              Instant::now));
+        testConversion(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(232323L),
+                                                        new GenericEventMessage<>(event, metaData),
+                                                        Instant::now));
     }
 
 
     @Test
     void testCanConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
-        test(new GenericTrackedEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
-                                              new GenericEventMessage<>(event, metaData),
-                                              Instant::now));
+        testConversion(new GenericTrackedEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
+                                                        new GenericEventMessage<>(event, metaData),
+                                                        Instant::now));
     }
 
-    private void test(EventMessage<?> message) {
+    private void testConversion(EventMessage<?> message) {
 
         assertTrue(converter.canConvert(message));
         DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, serializer);
