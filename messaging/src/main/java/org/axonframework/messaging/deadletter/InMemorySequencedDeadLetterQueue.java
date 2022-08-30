@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -58,7 +58,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Map<String, Deque<DeadLetter<? extends M>>> deadLetters = new ConcurrentSkipListMap<>();
+    private final Map<String, Deque<DeadLetter<? extends M>>> deadLetters = new ConcurrentHashMap<>();
     private final Set<String> takenSequences = new ConcurrentSkipListSet<>();
 
     private final int maxSequences;
