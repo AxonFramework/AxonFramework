@@ -39,7 +39,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * In-memory implementation of the {@link SequencedDeadLetterQueue}.
@@ -349,16 +349,13 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
          * Sets the maximum number of sequences this {@link SequencedDeadLetterQueue} may contain. This requirement
          * reflects itself as the maximum amount of unique "sequence identifiers."
          * <p>
-         * The given {@code maxSequences} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequences} is required to be a strictly positive number. It defaults to {@code 1024}.
          *
          * @param maxSequences The maximum amount of sequences for the queue under construction.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<M> maxSequences(int maxSequences) {
-            assertThat(maxSequences,
-                       value -> value >= 128,
-                       "The maximum number of sequences should be larger or equal to 128");
+            assertStrictPositive(maxSequences, "The maximum number of sequences should be a strictly positive number");
             this.maxSequences = maxSequences;
             return this;
         }
@@ -367,16 +364,16 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
          * Sets the maximum amount of {@link DeadLetter dead-letters} per sequence this {@link SequencedDeadLetterQueue}
          * can store.
          * <p>
-         * The given {@code maxSequenceSize} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequenceSize} is required to be a strictly positive number. It defaults to {@code 1024}.
          *
          * @param maxSequenceSize The maximum amount of {@link DeadLetter dead-letters} per sequence.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<M> maxSequenceSize(int maxSequenceSize) {
-            assertThat(maxSequenceSize,
-                       value -> value >= 128,
-                       "The maximum number of dead-letters in a sequence should be larger or equal to 128");
+            assertStrictPositive(
+                    maxSequenceSize,
+                    "The maximum number of dead-letters in a sequence should be a strictly positive number"
+            );
             this.maxSequenceSize = maxSequenceSize;
             return this;
         }

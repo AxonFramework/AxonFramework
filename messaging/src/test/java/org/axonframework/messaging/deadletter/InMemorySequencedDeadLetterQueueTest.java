@@ -23,7 +23,6 @@ import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -103,13 +102,11 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void buildWithValueLowerThanMinimumMaxSequencesThrowsAxonConfigurationException() {
-        IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
-                    InMemorySequencedDeadLetterQueue.builder();
+    void buildWithZeroMaxSequencesThrowsAxonConfigurationException() {
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+                InMemorySequencedDeadLetterQueue.builder();
 
-            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(i));
-        });
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
     }
 
     @Test
@@ -121,12 +118,10 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void buildWithValueLowerThanMinimumMaxSequenceSizeThrowsAxonConfigurationException() {
-        IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
-                    InMemorySequencedDeadLetterQueue.builder();
+    void buildWithZeroMaxSequenceSizeThrowsAxonConfigurationException() {
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+                InMemorySequencedDeadLetterQueue.builder();
 
-            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(i));
-        });
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
     }
 }
