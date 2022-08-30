@@ -241,7 +241,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void eventHandlerIsRegistered() {
+    void testEventHandlerIsRegistered() {
         eventBus.publish(asEventMessage("Testing 123"));
 
         assertNotNull(myEventHandler.eventBus, "Expected EventBus to be wired");
@@ -250,7 +250,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void sagaIsConfigured() {
+    void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
         eventProcessingConfigurer.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
@@ -265,7 +265,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void wiresCommandHandler() {
+    void testWiresCommandHandler() {
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         commandBus.dispatch(asCommandMessage("test"), callback);
         callback.getResult(1, TimeUnit.SECONDS);
@@ -281,7 +281,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void customCommandTargetResolverWiring() {
+    void testCustomCommandTargetResolverWiring() {
         FutureCallback<Object, Object> callback1 = new FutureCallback<>();
         commandBus.dispatch(asCommandMessage(new Context.CreateMyOtherAggregateCommand("id")), callback1);
         callback1.getResult();
@@ -296,7 +296,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void listenerInvocationErrorHandler() {
+    void testListenerInvocationErrorHandler() {
         eventBus.publish(asEventMessage("Testing 123"));
 
         assertNotNull(myEventHandler.eventBus, "Expected EventBus to be wired");
@@ -304,7 +304,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void sagaInvocationErrorHandler() {
+    void testSagaInvocationErrorHandler() {
         eventBus.publish(asEventMessage(new SomeEvent("id")));
         eventBus.publish(asEventMessage(new SomeEventWhichHandlingFails("id")));
 
@@ -314,7 +314,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void wiringOfQueryHandlerAndQueryUpdateEmitter() {
+    void testWiringOfQueryHandlerAndQueryUpdateEmitter() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "axonCR",
                 ResponseTypes.multipleInstancesOf(String.class),
@@ -333,7 +333,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void handlerDefinitionAndHandlerEnhancerBeansRegistered() {
+    void testHandlerDefinitionAndHandlerEnhancerBeansRegistered() {
         MultiHandlerDefinition handlerDefinition = (MultiHandlerDefinition) axonConfig.handlerDefinition(getClass());
         MultiHandlerEnhancerDefinition handlerEnhancerDefinition =
                 (MultiHandlerEnhancerDefinition) handlerDefinition.getHandlerEnhancerDefinition();
@@ -373,14 +373,14 @@ public class SpringAxonAutoConfigurerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void eventUpcasterBeanPickedUp() {
+    void testEventUpcasterBeanPickedUp() {
         Stream<IntermediateEventRepresentation> representationStream = mock(Stream.class);
         axonConfig.upcasterChain().upcast(representationStream);
         verify(eventUpcaster).upcast(representationStream);
     }
 
     @Test
-    void aggregateCaching() {
+    void testAggregateCaching() {
         FutureCallback<Object, Object> callback1 = new FutureCallback<>();
         commandBus.dispatch(asCommandMessage(new Context.CreateMyCachedAggregateCommand("id")), callback1);
         callback1.getResult();
@@ -391,7 +391,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void aggregateLockFactory() {
+    void testAggregateLockFactory() {
         String expectedAggregateId = "someIdentifier";
 
         FutureCallback<Object, Object> commandCallback = new FutureCallback<>();
@@ -404,7 +404,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    void eventSchedulerUsesEventSerializer() {
+    void testEventSchedulerUsesEventSerializer() {
         when(eventSerializer.serialize(any(), eq(byte[].class))).thenReturn(new SimpleSerializedObject<>(new byte[1], byte[].class, SerializedType.emptyType()));
         quartzEventScheduler.schedule(Instant.now(), "deadline");
         //The below check shows we have serialized both the payload and metadata using this serializer
