@@ -29,7 +29,7 @@ class DoNotEnqueueTest {
     }
 
     @Test
-    void testDefaultIgnoreDecision() {
+    void constructorDoNotEnqueueDoesNotAllowEnqueueing() {
         DoNotEnqueue<Message<?>> testSubject = new DoNotEnqueue<>();
 
         assertFalse(testSubject.shouldEnqueue());
@@ -40,7 +40,7 @@ class DoNotEnqueueTest {
     }
 
     @Test
-    void testDecisionsDoNotEnqueue() {
+    void decisionsDoNotEnqueueDoesNotAllowEnqueueing() {
         DoNotEnqueue<Message<?>> testSubject = Decisions.doNotEnqueue();
 
         assertFalse(testSubject.shouldEnqueue());
@@ -51,7 +51,7 @@ class DoNotEnqueueTest {
     }
 
     @Test
-    void testDecisionsEvict() {
+    void decisionsEvictDoesNotAllowEnqueueing() {
         DoNotEnqueue<Message<?>> testSubject = Decisions.evict();
 
         assertFalse(testSubject.shouldEnqueue());

@@ -19,7 +19,7 @@ class StringUtilsTest {
     }
 
     @Test
-    void testEmptyOrNull() {
+    void emptyOrNullReturnsTrueForEmptyAndNullStrings() {
         assertTrue(StringUtils.emptyOrNull(""));
         assertTrue(StringUtils.emptyOrNull(null));
         assertFalse(StringUtils.emptyOrNull("some-string"));

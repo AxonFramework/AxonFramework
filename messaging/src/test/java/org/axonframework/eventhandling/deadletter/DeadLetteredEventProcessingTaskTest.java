@@ -71,7 +71,7 @@ class DeadLetteredEventProcessingTaskTest {
     }
 
     @Test
-    void testProcessLetterSuccessfully() throws Exception {
+    void taskProcessesLetterSuccessfully() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
         //noinspection unchecked
@@ -87,7 +87,7 @@ class DeadLetteredEventProcessingTaskTest {
     }
 
     @Test
-    void testProcessLetterUnsuccessfully() throws Exception {
+    void taskProcessesLetterUnsuccessfullyWhenHandlersThrowsAnException() throws Exception {
         //noinspection unchecked
         DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
         //noinspection unchecked

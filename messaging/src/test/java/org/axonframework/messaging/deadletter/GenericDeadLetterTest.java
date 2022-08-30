@@ -23,7 +23,7 @@ class GenericDeadLetterTest {
     private static final EventMessage<String> MESSAGE = GenericEventMessage.asEventMessage("payload");
 
     @Test
-    void testConstructForIdentifierAndMessage() {
+    void constructorForIdentifierAndMessageSetsGivenIdentifierAndMessage() {
         Instant expectedTime = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
@@ -37,7 +37,7 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testConstructForIdentifierMessageAndThrowable() {
+    void constructorForIdentifierMessageAndThrowableSetsGivenIdentifierMessageAndIdentifier() {
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
         Instant expectedTime = Instant.now();
@@ -56,7 +56,7 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testConstructCompletelyManual() {
+    void constructorCompletelyManualSetsGivenFields() {
         ThrowableCause expectedCause = new ThrowableCause(new RuntimeException("just because"));
         Instant expectedEnqueuedAt = Instant.now();
         Instant expectedLastTouched = Instant.now();
@@ -77,7 +77,7 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testMarkTouched() {
+    void invokingMarkTouchedAdjustsLastTouched() {
         DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
         Instant expectedLastTouched = Instant.now();
@@ -93,7 +93,10 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithCauseAndNoOriginalCause() {
+    void invokingWithCauseAndWithoutOriginalCauseSetsGivenCause() {
+        // Fix the clock to keep time consistent after withCause invocation.
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
 
@@ -111,7 +114,10 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithCauseAndOriginalCause() {
+    void invokingWithCauseAndOriginalCauseReplacesTheOriginalCause() {
+        // Fix the clock to keep time consistent after withCause invocation.
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
         Throwable originalThrowable = new RuntimeException("some other issue");
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
@@ -131,7 +137,10 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithNullCauseAndNoOriginalCause() {
+    void invokingWithNullCauseAndNoOriginalCauseLeavesTheCauseEmpty() {
+        // Fix the clock to keep time consistent after withCause invocation.
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
         DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
         DeadLetter<EventMessage<String>> result = testSubject.withCause(null);
@@ -144,7 +153,10 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithNullCauseAndOriginalCause() {
+    void invokingWithNullCauseAndOriginalCauseKeepsTheOriginalCause() {
+        // Fix the clock to keep time consistent after withCause invocation.
+        GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
 
@@ -163,10 +175,17 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithDiagnostics() {
-        MetaData expectedDiagnostics = MetaData.with("key", "value");
+    void invokingWithDiagnosticsReplacesTheOriginalDiagnostics() {
+        // Fix the clock to keep time consistent after withDiagnostics invocation.
+        Instant expectedTime = Instant.now();
+        GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
+        MetaData expectedDiagnostics = MetaData.with("new-key", "new-value");
+
+        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
+                SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
+        );
 
         DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(expectedDiagnostics);
 
@@ -179,12 +198,20 @@ class GenericDeadLetterTest {
     }
 
     @Test
-    void testWithDiagnosticsBuilder() {
-        MetaData expectedDiagnostics = MetaData.with("key", "value");
+    void invokingWithDiagnosticsBuilderAppendsTheOriginalDiagnostics() {
+        // Fix the clock to keep time consistent after withDiagnostics invocation.
+        Instant expectedTime = Instant.now();
+        GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
+        MetaData expectedDiagnostics = MetaData.with("old-key", "old-value").and("new-key", "new-value");
 
-        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(original -> original.and("key", "value"));
+        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
+                SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
+        );
+
+        DeadLetter<EventMessage<String>> result =
+                testSubject.withDiagnostics(original -> original.and("new-key", "new-value"));
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();

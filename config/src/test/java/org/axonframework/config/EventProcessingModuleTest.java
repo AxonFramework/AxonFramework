@@ -1109,7 +1109,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
+    void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
@@ -1154,9 +1154,8 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterDefaultDeadLetterPolicy(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
+            throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
 
@@ -1200,9 +1199,8 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterDeadLetterPolicy(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
-    ) throws NoSuchFieldException, IllegalAccessException {
+    void registerDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
+            throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
         EnqueuePolicy<EventMessage<?>> unexpectedPolicy = (letter, cause) -> Decisions.evict();
@@ -1250,7 +1248,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterDeadLetteringEventHandlerInvokerConfiguration(
+    void registeredDeadLetteringEventHandlerInvokerConfigurationIsUsed(
             @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
@@ -1291,7 +1289,9 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSequencedDeadLetterProcessor(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue) {
+    void sequencedDeadLetterProcessorReturnsForProcessingGroupWithDlq(
+            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+    ) {
         String processingGroup = "pooled-streaming";
         String otherProcessingGroup = "tracking";
 

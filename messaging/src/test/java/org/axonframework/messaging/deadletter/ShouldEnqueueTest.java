@@ -30,7 +30,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testDefaultShouldEnqueue() {
+    void constructorShouldEnqueueAllowsEnqueueing() {
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
 
         assertTrue(testSubject.shouldEnqueue());
@@ -41,7 +41,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testDecisionsEnqueue() {
+    void decisionsEnqueueAllowsEnqueueing() {
         ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue();
 
         assertTrue(testSubject.shouldEnqueue());
@@ -52,7 +52,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testShouldEnqueueWithCause() {
+    void constructorShouldEnqueueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
         ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause);
@@ -67,7 +67,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testDecisionsEnqueueWithCause() {
+    void decisionsEnqueueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
         ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue(testCause);
@@ -82,7 +82,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testDecisionsRequeueWithCause() {
+    void decisionsRequeueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
         ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause);
@@ -97,7 +97,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testShouldEnqueueWithCauseAndDiagnostics() {
+    void constructorShouldEnqueueWithCauseAndDiagnosticsAllowsEnqueueingWithGivenCauseAndDiagnostics() {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 
@@ -117,7 +117,7 @@ class ShouldEnqueueTest {
     }
 
     @Test
-    void testDecisionsRequeueWithCauseAndDiagnostics() {
+    void decisionsRequeueWithCauseAndDiagnosticsAllowsEnqueueingWithGivenCauseAndDiagnostics() {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 

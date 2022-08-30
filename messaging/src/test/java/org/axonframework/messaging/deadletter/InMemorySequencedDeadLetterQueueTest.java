@@ -66,7 +66,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testMaxSequences() {
+    void maxSequencesReturnsConfiguredValue() {
         int expectedMaxSequences = 128;
 
         InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
@@ -78,7 +78,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testMaxSequenceSize() {
+    void maxSequenceSizeReturnsConfiguredValue() {
         int expectedMaxSequenceSize = 128;
 
         InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
@@ -90,12 +90,12 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildDefaultQueue() {
+    void buildDefaultQueue() {
         assertDoesNotThrow(() -> InMemorySequencedDeadLetterQueue.defaultQueue());
     }
 
     @Test
-    void testBuildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
+    void buildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
         InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
@@ -103,7 +103,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildWithValueLowerThanMinimumMaxSequencesThrowsAxonConfigurationException() {
+    void buildWithValueLowerThanMinimumMaxSequencesThrowsAxonConfigurationException() {
         IntStream.range(0, 127).forEach(i -> {
             InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                     InMemorySequencedDeadLetterQueue.builder();
@@ -113,7 +113,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
+    void buildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
         InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
@@ -121,7 +121,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildWithValueLowerThanMinimumMaxSequenceSizeThrowsAxonConfigurationException() {
+    void buildWithValueLowerThanMinimumMaxSequenceSizeThrowsAxonConfigurationException() {
         IntStream.range(0, 127).forEach(i -> {
             InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                     InMemorySequencedDeadLetterQueue.builder();

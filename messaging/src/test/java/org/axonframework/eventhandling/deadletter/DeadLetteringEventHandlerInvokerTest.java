@@ -107,7 +107,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleHandlesEventJustFine() throws Exception {
+    void handleMethodHandlesEventJustFine() throws Exception {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         DeadLetter<EventMessage<?>> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
@@ -130,7 +130,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleIgnoresEventForNonMatchingSegment() throws Exception {
+    void handleMethodIgnoresEventForNonMatchingSegment() throws Exception {
         Segment testSegment = mock(Segment.class);
         when(testSegment.matches(any())).thenReturn(false);
 
@@ -143,7 +143,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleEnqueuesOnShouldEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
+    void handleMethodEnqueuesOnShouldEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         RuntimeException testCause = new RuntimeException("some-cause");
@@ -178,7 +178,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleDoesNotEnqueueForShouldNotEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
+    void handleMethodDoesNotEnqueueForShouldNotEnqueueDecisionWhenDelegateThrowsAnException() throws Exception {
         when(enqueuePolicy.decide(any(), any())).thenReturn(Decisions.doNotEnqueue());
 
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
@@ -213,7 +213,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testHandleDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
+    void handleMethodDoesNotHandleEventOnDelegateWhenEnqueueIfPresentReturnsTrue() throws Exception {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(true);
 
         testSubject.handle(TEST_EVENT, Segment.ROOT_SEGMENT);
@@ -225,7 +225,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetOnlyInvokesParentForAllowResetSetToFalse() {
+    void performResetOnlyInvokesParentWhenAllowResetSetToFalse() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
 
         testSubject.performReset();
@@ -236,7 +236,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetClearsOutTheQueueForAllowResetSetToTrue() {
+    void performResetClearsOutTheQueueWhenAllowResetSetToTrue() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(true)));
 
         testSubject.performReset();
@@ -247,7 +247,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetWithContextOnlyInvokesParentForAllowResetSetToFalse() {
+    void performResetWithContextOnlyInvokesParentForAllowResetSetToFalse() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(false)));
 
         String testContext = "some-reset-context";
@@ -260,7 +260,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetWithContextClearsOutTheQueueForAllowResetSetToTrue() {
+    void performResetWithContextClearsOutTheQueueForAllowResetSetToTrue() {
         setTestSubject(createTestSubject(builder -> builder.allowReset(true)));
 
         String testContext = "some-reset-context";
@@ -273,7 +273,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testProcessAnyReturnsFalseWhenFirstInvocationReturnsFalse() {
+    void processAnyLettersReturnsFalseWhenFirstInvocationReturnsFalse() {
         when(queue.process(any(), any())).thenReturn(false);
 
         boolean result = testSubject.processAny();
@@ -291,7 +291,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testProcessAnyReturnsTrueWhenFirstInvocationReturnsTrue() {
+    void processAnyLettersReturnsTrueWhenFirstInvocationReturnsTrue() {
         DeadLetter<EventMessage<?>> testDeadLetter =
                 new GenericDeadLetter<>("expectedIdentifier", GenericEventMessage.asEventMessage("payload"));
 
@@ -321,7 +321,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testProcessLetterMatchingSequenceReturnsFalseWhenFirstInvocationReturnsFalse() {
+    void processLettersMatchingSequenceReturnsFalseWhenFirstInvocationReturnsFalse() {
         AtomicBoolean filterInvoked = new AtomicBoolean();
         Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {
             filterInvoked.set(true);
@@ -345,7 +345,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testProcessLetterMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
+    void processLettersMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
         DeadLetter<EventMessage<?>> testDeadLetter =
                 new GenericDeadLetter<>("expectedIdentifier", GenericEventMessage.asEventMessage("payload"));
 
@@ -380,65 +380,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testProcessReturnsFalseWhenFirstInvocationReturnsFalse() {
-        AtomicBoolean filterInvoked = new AtomicBoolean();
-        Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {
-            filterInvoked.set(true);
-            return true;
-        };
-        when(queue.process(any(), any())).thenReturn(false);
-
-        boolean result = testSubject.process(testFilter);
-
-        assertFalse(result);
-        verify(transactionManager).startTransaction();
-
-        //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> letterFilterCaptor =
-                ArgumentCaptor.forClass(Predicate.class);
-        verify(queue).process(letterFilterCaptor.capture(), any());
-
-        Predicate<DeadLetter<? extends EventMessage<?>>> letterFilter = letterFilterCaptor.getValue();
-        assertTrue(letterFilter.test(null));
-        assertTrue(filterInvoked.get());
-    }
-
-    @Test
-    void testProcessReturnsTrueWhenFirstInvocationReturnsTrue() {
-        String expectedIdentifier = "test-id";
-        DeadLetter<EventMessage<?>> testDeadLetter =
-                new GenericDeadLetter<>(expectedIdentifier, GenericEventMessage.asEventMessage("payload"));
-        AtomicBoolean filterInvoked = new AtomicBoolean();
-        Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {
-            filterInvoked.set(true);
-            return true;
-        };
-        when(queue.process(any(), any())).thenReturn(true)
-                                         .thenReturn(false);
-
-        boolean result = testSubject.process(testFilter);
-
-        assertTrue(result);
-        verify(transactionManager).startTransaction();
-
-        //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> letterFilterCaptor =
-                ArgumentCaptor.forClass(Predicate.class);
-        //noinspection unchecked
-        ArgumentCaptor<Function<DeadLetter<? extends EventMessage<?>>, EnqueueDecision<EventMessage<?>>>> taskFilterCaptor =
-                ArgumentCaptor.forClass(Function.class);
-
-        verify(queue).process(letterFilterCaptor.capture(), taskFilterCaptor.capture());
-        // Invoking the first processing task will set the sequenceIdentifier for subsequent invocations.
-        // This allows thorough validation of the second sequenceIdentifierFilter.
-        taskFilterCaptor.getAllValues().get(0).apply(testDeadLetter);
-
-        letterFilterCaptor.getAllValues().forEach(letterFilter -> assertTrue(letterFilter.test(null)));
-        assertTrue(filterInvoked.get());
-    }
-
-    @Test
-    void testBuildWithNullDeadLetterQueueThrowsAxonConfigurationException() {
+    void buildWithNullDeadLetterQueueThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
 
         //noinspection ConstantConditions
@@ -446,7 +388,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithoutDeadLetterQueueThrowsAxonConfigurationException() {
+    void buildWithoutDeadLetterQueueThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
                                                 .transactionManager(NoTransactionManager.instance());
@@ -455,14 +397,14 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithNullEnqueuePolicyThrowsAxonConfigurationException() {
+    void buildWithNullEnqueuePolicyThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject = DeadLetteringEventHandlerInvoker.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.enqueuePolicy(null));
     }
 
     @Test
-    void testBuildWithNullTransactionManagerThrowsAxonConfigurationException() {
+    void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder();
 
@@ -471,7 +413,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithoutTransactionManagerThrowsAxonConfigurationException() {
+    void buildWithoutTransactionManagerThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder()
                                                 .queue(queue);
@@ -480,7 +422,7 @@ class DeadLetteringEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
+    void buildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
         DeadLetteringEventHandlerInvoker.Builder builderTestSubject =
                 DeadLetteringEventHandlerInvoker.builder();
 

@@ -61,7 +61,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     abstract SequencedDeadLetterQueue<M> buildTestSubject();
 
     @Test
-    void testEnqueue() {
+    void enqueueAddsDeadLetter() {
         Object testId = generateId();
         DeadLetter<? extends M> testLetter = generateInitialLetter();
 
@@ -75,7 +75,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequencesIsReached() {
+    void enqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequencesIsReached() {
         long maxSequences = testSubject.maxSequences();
         assertTrue(maxSequences > 0);
 
@@ -89,7 +89,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequenceSizeIsReached() {
+    void enqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequenceSizeIsReached() {
         Object testId = generateId();
 
         long maxSequenceSize = testSubject.maxSequenceSize();
@@ -104,7 +104,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueIfPresentThrowsDeadLetterQueueOverflowExceptionForFullQueue() {
+    void enqueueIfPresentThrowsDeadLetterQueueOverflowExceptionForFullQueue() {
         Object testId = generateId();
 
         long maxSequenceSize = testSubject.maxSequenceSize();
@@ -119,7 +119,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueIfPresentDoesNotEnqueueForEmptyQueue() {
+    void enqueueIfPresentDoesNotEnqueueForEmptyQueue() {
         Object testId = generateId();
 
         boolean result = testSubject.enqueueIfPresent(testId, this::generateFollowUpLetter);
@@ -129,7 +129,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueIfPresentDoesNotEnqueueForNonExistentSequenceIdentifier() {
+    void enqueueIfPresentDoesNotEnqueueForNonExistentSequenceIdentifier() {
         Object testFirstId = generateId();
 
         testSubject.enqueue(testFirstId, generateInitialLetter());
@@ -144,7 +144,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEnqueueIfPresentEnqueuesForExistingSequenceIdentifier() {
+    void enqueueIfPresentEnqueuesForExistingSequenceIdentifier() {
         Object testId = generateId();
         DeadLetter<M> testFirstLetter = generateInitialLetter();
         DeadLetter<M> testSecondLetter = generateFollowUpLetter();
@@ -162,7 +162,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEvictDoesNotChangeTheQueueForNonExistentSequenceIdentifier() {
+    void evictDoesNotChangeTheQueueForNonExistentSequenceIdentifier() {
         Object testId = generateId();
         DeadLetter<? extends M> testLetter = generateInitialLetter();
         testSubject.enqueue(testId, testLetter);
@@ -183,7 +183,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEvictDoesNotChangeTheQueueForNonExistentLetterIdentifier() {
+    void evictDoesNotChangeTheQueueForNonExistentLetterIdentifier() {
         Object testId = generateId();
         DeadLetter<M> testLetter = generateInitialLetter();
         testSubject.enqueue(testId, testLetter);
@@ -204,7 +204,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testEvictRemovesLetterFromQueue() {
+    void evictRemovesLetterFromQueue() {
         Object testId = generateId();
         DeadLetter<M> testLetter = generateInitialLetter();
 
@@ -224,14 +224,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testRequeueThrowsNoSuchDeadLetterExceptionForNonExistentSequenceIdentifier() {
+    void requeueThrowsNoSuchDeadLetterExceptionForNonExistentSequenceIdentifier() {
         DeadLetter<M> testLetter = generateInitialLetter();
 
         assertThrows(NoSuchDeadLetterException.class, () -> testSubject.requeue(testLetter, l -> l));
     }
 
     @Test
-    void testRequeueThrowsNoSuchDeadLetterExceptionForNonExistentLetterIdentifier() {
+    void requeueThrowsNoSuchDeadLetterExceptionForNonExistentLetterIdentifier() {
         Object testId = generateId();
         DeadLetter<M> testLetter = generateInitialLetter();
         DeadLetter<M> otherTestLetter = generateInitialLetter();
@@ -242,7 +242,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testRequeueReenterLetterToQueueWithUpdatedLastTouchedAndCause() {
+    void requeueReentersLetterToQueueWithUpdatedLastTouchedAndCause() {
         Object testId = generateId();
         DeadLetter<M> testLetter = generateInitialLetter();
         Throwable testCause = generateThrowable();
@@ -268,7 +268,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testContains() {
+    void containsReturnsTrueForContainedLetter() {
         Object testId = generateId();
         Object otherTestId = generateId();
 
@@ -281,7 +281,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testDeadLettersPerSequenceIdentifier() {
+    void deadLettersInvocationPerSequenceIdentifierReturnsEnqueuedLettersMatchingGivenSequenceIdentifier() {
         Object testId = generateId();
         DeadLetter<M> expected = generateInitialLetter();
 
@@ -297,7 +297,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testDeadLetters() {
+    void deadLettersInvocationReturnsAllEnqueuedDeadLetters() {
         Object thisTestId = generateId();
         Object thatTestId = generateId();
 
@@ -336,7 +336,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testIsFullReturnsTrueAfterMaximumAmountOfSequencesIsReached() {
+    void isFullReturnsTrueAfterMaximumAmountOfSequencesIsReached() {
         assertFalse(testSubject.isFull(generateId()));
 
         long maxSequences = testSubject.maxSequences();
@@ -350,7 +350,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testIsFullReturnsTrueAfterMaximumSequenceSizeIsReached() {
+    void isFullReturnsTrueAfterMaximumSequenceSizeIsReached() {
         Object testId = generateId();
 
         assertFalse(testSubject.isFull(testId));
@@ -366,7 +366,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessReturnsFalseIfThereAreNoLetters() {
+    void processInvocationReturnsFalseIfThereAreNoLetters() {
         AtomicBoolean taskInvoked = new AtomicBoolean(false);
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             taskInvoked.set(true);
@@ -380,7 +380,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessReturnsTrueAndEvictsTheLetter() {
+    void processInvocationReturnsTrueAndEvictsTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
@@ -400,7 +400,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessReturnsFalseAndRequeuesTheLetter() {
+    void processInvocationReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -428,7 +428,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessInvokesProcessingTaskWithLastTouchedOrder() {
+    void processInvocationInvokesProcessingTaskInLastTouchedOrderOfLetters() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
@@ -456,7 +456,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    void testProcessHandlesAllLettersInSequence() {
+    void processInvocationHandlesAllLettersInSequence() {
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
@@ -499,7 +499,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * sequence).
      */
     @Test
-    void testProcessReturnsFalseIfAllLetterSequencesAreClaimed() throws InterruptedException {
+    void processInvocationReturnsFalseIfAllLetterSequencesAreClaimed() throws InterruptedException {
         CountDownLatch isBlocking = new CountDownLatch(1);
         CountDownLatch hasProcessed = new CountDownLatch(1);
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
@@ -539,7 +539,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessLetterPredicateReturnsFalseIfThereAreNoMatchingLetters() {
+    void processWithLetterPredicateReturnsFalseIfThereAreNoMatchingLetters() {
         AtomicBoolean releasedLetter = new AtomicBoolean(false);
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             releasedLetter.set(true);
@@ -555,7 +555,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessLetterPredicateInvokesProcessingTaskWithMatchingLetter() {
+    void processWithLetterPredicateInvokesProcessingTaskWithMatchingLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
@@ -580,7 +580,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessLetterPredicateReturnsTrueAndEvictsTheLetter() {
+    void processWithLetterPredicateReturnsTrueAndEvictsTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
@@ -604,7 +604,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessLetterPredicateReturnsFalseAndRequeuesTheLetter() {
+    void processWithLetterPredicateReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -637,7 +637,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    void testProcessLetterPredicateHandlesAllLettersInSequence() {
+    void processWithLetterPredicateHandlesAllLettersInSequence() {
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
@@ -680,7 +680,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * sequence).
      */
     @Test
-    void testProcessLetterPredicateReturnsFalseIfAllLetterSequencesAreClaimed() throws InterruptedException {
+    void processWithLetterPredicateReturnsFalseIfAllLetterSequencesAreClaimed() throws InterruptedException {
         CountDownLatch isBlocking = new CountDownLatch(1);
         CountDownLatch hasProcessed = new CountDownLatch(1);
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
@@ -726,7 +726,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testClearRemovesAllEntries() {
+    void clearInvocationRemovesAllEntries() {
         Object idOne = generateId();
         Object idTwo = generateId();
         Object idThree = generateId();
