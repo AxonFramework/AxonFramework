@@ -15,23 +15,31 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
+        <groupId>org.axonframework</groupId>
         <version>4.6.0-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-messaging</artifactId>
+    <artifactId>axon-messaging-jakarta</artifactId>
 
-    <name>Axon Framework Messaging</name>
+    <name>Axon Framework Messaging (Jakarta)</name>
     <description>
         Module containing all the necessary components and building blocks to support command, event and query
         messaging.
+
+        This is an automatic clone of the original module transformed to use `jakarta` packages instead of `javax` ones.
     </description>
 
-    <packaging>bundle</packaging>
+    <packaging>jar</packaging>
+
+    <!--
+        Copies of the dependencies from the original module
+    -->
 
     <dependencies>
         <!-- Logging -->
@@ -42,25 +50,27 @@
 
         <!-- Validation -->
         <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>javax.el</groupId>
-            <artifactId>javax.el-api</artifactId>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.web</groupId>
-            <artifactId>el-impl</artifactId>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
+            <version>7.0.4.Final</version> <!-- newer version supports jakarta -->
             <scope>test</scope>
         </dependency>
+
 
         <!-- Event Handling -->
         <dependency>
@@ -88,14 +98,13 @@
 
         <!-- Persistence -->
         <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>javax.persistence-api</artifactId>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
+            <artifactId>hibernate-core-jakarta</artifactId>
             <optional>true</optional>
         </dependency>
 
@@ -202,8 +211,8 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -223,48 +232,66 @@
     <build>
         <plugins>
             <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.messaging</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>unpack</id>
+                        <phase>process-classes</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>unpack</goal>
                         </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.axonframework</groupId>
+                                    <artifactId>axon-messaging</artifactId>
+                                    <version>${project.version}</version>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-tests</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.axonframework</groupId>
+                                    <artifactId>axon-messaging</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>tests</classifier>
+                                    <type>test-jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${felix.maven-bundle-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>${project.description}</Bundle-Description>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Export-Package>
-                            org.axonframework.*
-                        </Export-Package>
-                        <Import-Package>
-                            org.slf4j.*,
-                            *;resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
+                <groupId>org.eclipse.transformer</groupId>
+                <artifactId>transformer-maven-plugin</artifactId>
                 <executions>
-                    <!-- This execution makes sure that the manifest is available when the tests are executed -->
                     <execution>
+                        <id>transform</id>
                         <goals>
-                            <goal>manifest</goal>
+                            <goal>transform</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>transform-test</id>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformDirectory>${project.build.testOutputDirectory}</transformDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -281,6 +308,17 @@
                             <rules>
                                 <bannedDependencies>
                                     <excludes>
+                                        <exclude>javax.validation:*</exclude>
+                                        <exclude>javax.el:*</exclude>
+                                        <exclude>javax.persistence:*</exclude>
+                                        <exclude>javax.inject:*</exclude>
+
+                                        <exclude>jakarta.annotation:*:(,2.0.0)</exclude>
+                                        <exclude>jakarta.validation:*:(,3.0.0)</exclude>
+                                        <exclude>jakarta.el:*:(,4.0.0)</exclude>
+                                        <exclude>jakarta.persistence:*:(,3.0.0)</exclude>
+                                        <exclude>jakarta.inject:*:(,2.0.0)</exclude>
+
                                         <exclude>org.springframework</exclude>
                                     </excludes>
                                     <includes>
