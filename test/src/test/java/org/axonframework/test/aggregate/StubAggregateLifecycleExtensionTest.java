@@ -43,7 +43,7 @@ class StubAggregateLifecycleExtensionTest {
     }
 
     @Test
-    void markDeletedIsRegisteredWithActiveLifecycle() {
+    void testMarkDeletedIsRegisteredWithActiveLifecycle() {
         markDeleted();
 
         assertEquals(0, TEST_SUBJECT.getAppliedEvents().size());
