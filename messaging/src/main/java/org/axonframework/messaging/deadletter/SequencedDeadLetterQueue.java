@@ -143,6 +143,29 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     boolean isFull(@Nonnull Object sequenceIdentifier);
 
     /**
+     * Returns the number of dead-letters contained in this queue.
+     *
+     * @return The number of dead-letters contained in this queue.
+     */
+    long size();
+
+    /**
+     * Returns the number of dead-letters for the sequence matching the given {@code sequenceIdentifier} contained in
+     * this queue.
+     *
+     * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
+     * @return The number of dead-letters for the sequence matching the given {@code sequenceIdentifier}.
+     */
+    long sequenceSize(@Nonnull Object sequenceIdentifier);
+
+    /**
+     * Returns the number of unique sequences contained in this queue.
+     *
+     * @return The number of unique sequences contained in this queue.
+     */
+    long amountOfSequences();
+
+    /**
      * The maximum number of distinct sequences this dead letter queue can hold. This comes down to the maximum number
      * of unique "sequence identifiers" stored.
      * <p>

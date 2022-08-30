@@ -208,18 +208,37 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         return maximumNumberOfSequencesReached(identifier) || maximumSequenceSizeReached(identifier);
     }
 
-    private static String toIdentifier(Object sequenceIdentifier) {
-        return sequenceIdentifier instanceof String
-                ? (String) sequenceIdentifier
-                : Integer.toString(sequenceIdentifier.hashCode());
-    }
-
     private boolean maximumNumberOfSequencesReached(String identifier) {
         return !deadLetters.containsKey(identifier) && deadLetters.keySet().size() >= maxSequences;
     }
 
     private boolean maximumSequenceSizeReached(String identifier) {
         return deadLetters.containsKey(identifier) && deadLetters.get(identifier).size() >= maxSequenceSize;
+    }
+
+    @Override
+    public long size() {
+        return deadLetters.values()
+                          .stream()
+                          .mapToLong(Deque::size)
+                          .sum();
+    }
+
+    @Override
+    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
+        String identifier = toIdentifier(sequenceIdentifier);
+        return contains(identifier) ? deadLetters.get(identifier).size() : 0L;
+    }
+
+    private static String toIdentifier(Object sequenceIdentifier) {
+        return sequenceIdentifier instanceof String
+                ? (String) sequenceIdentifier
+                : Integer.toString(sequenceIdentifier.hashCode());
+    }
+
+    @Override
+    public long amountOfSequences() {
+        return deadLetters.size();
     }
 
     @Override

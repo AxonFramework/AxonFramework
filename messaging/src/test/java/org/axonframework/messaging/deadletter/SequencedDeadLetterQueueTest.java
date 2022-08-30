@@ -366,6 +366,55 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
+    void sizeReturnsOverallNumberOfContainedDeadLetters() {
+        assertEquals(0, testSubject.size());
+
+        Object testId = generateId();
+        testSubject.enqueue(testId, generateInitialLetter());
+        assertEquals(1, testSubject.size());
+        testSubject.enqueue(testId, generateInitialLetter());
+        assertEquals(2, testSubject.size());
+
+        // This generates a new sequence, increasing the size.
+        testSubject.enqueue(generateId(), generateInitialLetter());
+        assertEquals(3, testSubject.size());
+    }
+
+    @Test
+    void sequenceSizeForSequenceIdentifierReturnsTheNumberOfContainedLettersForGivenSequenceIdentifier() {
+        assertEquals(0, testSubject.sequenceSize("some-id"));
+
+        Object testId = generateId();
+        testSubject.enqueue(testId, generateInitialLetter());
+        assertEquals(0, testSubject.sequenceSize("some-id"));
+        assertEquals(1, testSubject.sequenceSize(testId));
+        testSubject.enqueue(testId, generateInitialLetter());
+        assertEquals(2, testSubject.sequenceSize(testId));
+
+        // This generates a new sequence, so shouldn't increase the sequence size.
+        testSubject.enqueue(generateId(), generateInitialLetter());
+        assertEquals(0, testSubject.sequenceSize("some-id"));
+        assertEquals(2, testSubject.sequenceSize(testId));
+    }
+
+    @Test
+    void amountOfSequencesReturnsTheNumberOfUniqueSequences() {
+        assertEquals(0, testSubject.amountOfSequences());
+
+        testSubject.enqueue(generateId(), generateInitialLetter());
+        assertEquals(1, testSubject.amountOfSequences());
+
+        testSubject.enqueue(generateId(), generateInitialLetter());
+        assertEquals(2, testSubject.amountOfSequences());
+
+        Object testId = generateId();
+        testSubject.enqueue(testId, generateInitialLetter());
+        testSubject.enqueue(testId, generateInitialLetter());
+        testSubject.enqueue(testId, generateInitialLetter());
+        assertEquals(3, testSubject.amountOfSequences());
+    }
+
+    @Test
     void processInvocationReturnsFalseIfThereAreNoLetters() {
         AtomicBoolean taskInvoked = new AtomicBoolean(false);
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
