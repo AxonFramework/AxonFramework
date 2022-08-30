@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class MetaDataTest {
 
     @Test
-    void testAddNullValueToMetaData() {
+    void addNullValueToMetaData() {
         MetaData metaData = MetaData.with("nullkey", null).and("otherkey", "value").and("lastkey", "lastvalue")
                 .subset("nullkey", "otherkey");
 

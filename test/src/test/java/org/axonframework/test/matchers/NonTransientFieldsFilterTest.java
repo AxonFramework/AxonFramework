@@ -31,13 +31,13 @@ class NonTransientFieldsFilterTest {
     private String nonTransientField;
 
     @Test
-    void testAcceptNonTransientField() throws Exception {
+    void acceptNonTransientField() throws Exception {
         assertTrue(NonTransientFieldsFilter.instance()
                                            .accept(getClass().getDeclaredField("nonTransientField")));
     }
 
     @Test
-    void testRejectTransientField() throws Exception {
+    void rejectTransientField() throws Exception {
         assertFalse(NonTransientFieldsFilter.instance()
                                             .accept(getClass().getDeclaredField("transientField")));
     }

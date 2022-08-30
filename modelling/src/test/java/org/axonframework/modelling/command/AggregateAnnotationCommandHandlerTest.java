@@ -116,7 +116,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testAggregateConstructorThrowsException() {
+    void aggregateConstructorThrowsException() {
         commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
                             (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
@@ -128,7 +128,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testAggregateCommandHandlerThrowsException() {
+    void aggregateCommandHandlerThrowsException() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(eq(aggregateIdentifier), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -144,7 +144,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testSupportedCommands() {
+    void supportedCommands() {
         Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
@@ -169,7 +169,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerSubscribesToCommands() {
+    void commandHandlerSubscribesToCommands() {
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
                                      any(MessageHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
@@ -179,7 +179,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerCreatesAggregateInstance() throws Exception {
+    void commandHandlerCreatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
@@ -194,7 +194,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
+    public void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
 
@@ -214,7 +214,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerAlwaysCreatesAggregateInstance() throws Exception {
+    public void commandHandlerAlwaysCreatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
 
@@ -229,7 +229,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
+    void commandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
@@ -244,7 +244,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -263,7 +263,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -292,7 +292,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -312,7 +312,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceAnnotatedField() {
+    void commandHandlerUpdatesAggregateInstanceAnnotatedField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -331,7 +331,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -351,7 +351,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -372,7 +372,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandForEntityRejectedWhenNoInstanceIsAvailable() {
+    void commandForEntityRejectedWhenNoInstanceIsAvailable() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -394,7 +394,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntity() {
+    void commandHandledByEntity() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         aggregate.initializeEntity("1");
@@ -416,7 +416,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollection() {
+    void commandHandledByEntityFromCollection() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -439,7 +439,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollectionNoEntityAvailable() {
+    void commandHandledByEntityFromCollectionNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -460,7 +460,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollectionNullIdInCommand() {
+    void commandHandledByEntityFromCollectionNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -481,7 +481,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByNestedEntity() {
+    void commandHandledByNestedEntity() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -503,7 +503,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
+    void annotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
             @Mock Repository<CollectionFieldWithoutGenerics> mockRepo) {
         AggregateAnnotationCommandHandler.Builder<CollectionFieldWithoutGenerics> repoBuilder = AggregateAnnotationCommandHandler.<CollectionFieldWithoutGenerics>builder()
                 .aggregateType(CollectionFieldWithoutGenerics.class)
@@ -513,7 +513,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromMap() {
+    void commandHandledByEntityFromMap() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -536,7 +536,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromMapNoEntityAvailable() {
+    void commandHandledByEntityFromMapNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -557,7 +557,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromMapNullIdInCommand() {
+    void commandHandledByEntityFromMapNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -577,7 +577,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testUsesDuplicateCommandHandlerResolver() {
+    void usesDuplicateCommandHandlerResolver() {
         commandBus = SimpleCommandBus.builder()
                                      .duplicateCommandHandlerResolver(rejectDuplicates())
                                      .build();
@@ -594,7 +594,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerByAbstractEntityWithTheSameCommandType() {
+    void commandHandlerByAbstractEntityWithTheSameCommandType() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -615,7 +615,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerByAbstractEntityWithNoAvailableEntity() {
+    void commandHandlerByAbstractEntityWithNoAvailableEntity() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -634,7 +634,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testDuplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
+    void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
         commandBus = SimpleCommandBus.builder()
                                      .duplicateCommandHandlerResolver(rejectDuplicates())
                                      .build();

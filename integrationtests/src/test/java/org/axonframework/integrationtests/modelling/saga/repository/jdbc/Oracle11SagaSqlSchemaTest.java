@@ -67,7 +67,7 @@ class Oracle11SagaSqlSchemaTest {
     }
 
     @Test
-    void testSql_createTableAssocValueEntry() throws Exception {
+    void sql_createTableAssocValueEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableAssocValueEntry(connection)
                    .execute();
@@ -81,7 +81,7 @@ class Oracle11SagaSqlSchemaTest {
     }
 
     @Test
-    void testSql_createTableSagaEntry() throws Exception {
+    void sql_createTableSagaEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableSagaEntry(connection)
                    .execute();

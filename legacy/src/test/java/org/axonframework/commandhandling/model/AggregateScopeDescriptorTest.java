@@ -40,7 +40,7 @@ class AggregateScopeDescriptorTest {
     private static final String AGGREGATE_ID = "aggregate-id";
 
     @Test
-    void testXStreamSerializationOfOldAggregateScopeDescriptor() {
+    void xStreamSerializationOfOldAggregateScopeDescriptor() {
         XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedScopeDescriptor =
@@ -63,7 +63,7 @@ class AggregateScopeDescriptorTest {
     }
 
     @Test
-    void testJacksonSerializationOfOldAggregateScopeDescriptor() {
+    void jacksonSerializationOfOldAggregateScopeDescriptor() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedScopeDescriptor =

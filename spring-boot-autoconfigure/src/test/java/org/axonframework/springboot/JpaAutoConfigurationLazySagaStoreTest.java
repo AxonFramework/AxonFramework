@@ -58,7 +58,7 @@ class JpaAutoConfigurationLazySagaStoreTest {
      * being initialized.
      */
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         EntityManagerProvider entityManagerProvider = applicationContext.getBean(EntityManagerProvider.class);
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         verifyNoInteractions(entityManager);

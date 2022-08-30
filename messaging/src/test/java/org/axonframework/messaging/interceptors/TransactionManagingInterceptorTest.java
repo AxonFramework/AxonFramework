@@ -56,7 +56,7 @@ class TransactionManagingInterceptorTest {
     }
 
     @Test
-    void testStartTransaction() throws Exception {
+    void startTransaction() throws Exception {
         UnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
         subject.handle(unitOfWork, interceptorChain);
@@ -68,7 +68,7 @@ class TransactionManagingInterceptorTest {
     }
 
     @Test
-    void testUnitOfWorkCommit() throws Exception {
+    void unitOfWorkCommit() throws Exception {
         subject.handle(unitOfWork, interceptorChain);
         unitOfWork.commit();
 

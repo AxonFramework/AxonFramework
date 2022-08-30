@@ -38,7 +38,7 @@ class MergedTrackingTokenSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestSerializer serializer) {
         MergedTrackingToken testSubject = new MergedTrackingToken(new MergedTrackingToken(token(1), token(5)), token(3));
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }

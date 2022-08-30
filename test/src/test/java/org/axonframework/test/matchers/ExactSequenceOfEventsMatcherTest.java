@@ -61,7 +61,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_FullMatch() {
+    void match_FullMatch() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3)));
 
         verify(mockMatcher1).matches(stubEvent1);
@@ -78,7 +78,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_FullMatchAndNoMore() {
+    void match_FullMatchAndNoMore() {
         testSubject = exactSequenceOf(mockMatcher1, mockMatcher2, mockMatcher3, andNoMore());
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3)));
 
@@ -96,7 +96,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_ExcessIsRefused() {
+    void match_ExcessIsRefused() {
         testSubject = exactSequenceOf(mockMatcher1, mockMatcher2, mockMatcher3, andNoMore());
         assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3, new StubEvent())));
 
@@ -114,7 +114,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_FullMatchWithGaps() {
+    void match_FullMatchWithGaps() {
         reset(mockMatcher2);
         when(mockMatcher2.matches(any())).thenReturn(false);
 
@@ -132,7 +132,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_MoreMatchersThanEvents() {
+    void match_MoreMatchersThanEvents() {
         when(mockMatcher3.matches(null)).thenReturn(false);
         assertFalse(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2)));
 
@@ -146,7 +146,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_ExcessEventsIgnored() {
+    void match_ExcessEventsIgnored() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3, new StubEvent())));
 
         verify(mockMatcher1).matches(stubEvent1);
@@ -159,7 +159,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testDescribe() {
+    void describe() {
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
@@ -172,7 +172,7 @@ class ExactSequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testDescribe_OneMatcherFailed() {
+    void describe_OneMatcherFailed() {
         when(mockMatcher1.matches(any())).thenReturn(true);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);

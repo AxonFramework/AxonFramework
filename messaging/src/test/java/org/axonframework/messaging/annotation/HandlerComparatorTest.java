@@ -52,7 +52,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testSubclassesBeforeSuperclasses() {
+    void subclassesBeforeSuperclasses() {
         assertTrue(testSubject.compare(stringHandler, objectHandler) < 0, "String should appear before Object");
         assertTrue(testSubject.compare(objectHandler, stringHandler) > 0, "String should appear before Object");
 
@@ -67,7 +67,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testHandlersIsEqualWithItself() {
+    void handlersIsEqualWithItself() {
         assertEquals(0, testSubject.compare(stringHandler, stringHandler));
         assertEquals(0, testSubject.compare(objectHandler, objectHandler));
         assertEquals(0, testSubject.compare(longHandler, longHandler));
@@ -83,7 +83,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testHandlersSortedCorrectly() {
+    void handlersSortedCorrectly() {
         List<MessageHandlingMember<?>> members = new ArrayList<>(Arrays.asList(objectHandler, numberHandler, stringHandler, longHandler));
 
         members.sort(this.testSubject);
@@ -92,7 +92,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testNotInSameHierarchyUsesPriorityBasedEvaluation() {
+    void notInSameHierarchyUsesPriorityBasedEvaluation() {
         assertTrue(testSubject.compare(priorityHandler, stringHandler) < 0, "priorityHandler should appear before String based on priority");
         assertTrue(testSubject.compare(stringHandler, priorityHandler) > 0, "priorityHandler should appear before String based on priority");
     }

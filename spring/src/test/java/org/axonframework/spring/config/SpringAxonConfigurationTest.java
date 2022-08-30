@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class SpringAxonConfigurationTest {
 
     @Test
-    void testAxonStartedEventIsPublished() {
+    void axonStartedEventIsPublished() {
         Configurer configurer = mock(Configurer.class);
         ApplicationContext context = mock(ApplicationContext.class);
         Configuration configuration = mock(Configuration.class);

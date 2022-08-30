@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class UpdateHandlerRegistrationTest {
 
     @Test
-    void testCompleteClosesTheRegistration() {
+    void completeClosesTheRegistration() {
         AtomicBoolean registrationInvocation = new AtomicBoolean(false);
         AtomicBoolean completeInvocation = new AtomicBoolean(false);
 

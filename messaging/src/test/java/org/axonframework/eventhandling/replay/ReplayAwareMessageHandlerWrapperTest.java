@@ -45,7 +45,7 @@ class ReplayAwareMessageHandlerWrapperTest {
     }
 
     @Test
-    void testInvokeWithReplayTokens() throws Exception {
+    void invokeWithReplayTokens() throws Exception {
         GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage("1"));
         GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
         assertTrue(testSubject.canHandle(stringEvent));

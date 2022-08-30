@@ -25,7 +25,7 @@ class AndCommandMessageFilterSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testAndCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
+    void andCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

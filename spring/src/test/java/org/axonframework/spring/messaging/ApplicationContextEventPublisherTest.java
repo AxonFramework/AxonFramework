@@ -32,7 +32,7 @@ public class ApplicationContextEventPublisherTest {
     private EventBus eventBus;
 
     @Test
-    void testEventsForwardedToListenerBean() {
+    void eventsForwardedToListenerBean() {
         eventBus.publish(asEventMessage("test"));
 
         assertEquals("test", listenerBean.getEvents().get(0));

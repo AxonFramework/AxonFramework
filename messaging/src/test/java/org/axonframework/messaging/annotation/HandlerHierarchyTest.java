@@ -53,7 +53,7 @@ class HandlerHierarchyTest {
     }
 
     @Test
-    void testHierarchySort() throws NoSuchMethodException {
+    void hierarchySort() throws NoSuchMethodException {
         MultiParameterResolverFactory multiParameterResolverFactory = MultiParameterResolverFactory.ordered(new DefaultParameterResolverFactory());
 
         MessageHandlingMember<?> bHandler = new AnnotatedMessageHandlingMember<>(MyEventHandler.class.getMethod("handle", B.class),

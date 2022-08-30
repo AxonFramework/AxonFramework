@@ -16,7 +16,7 @@ class ShutdownLatchTest {
     private final ShutdownLatch testSubject = new ShutdownLatch();
 
     @Test
-    void testInitializeCancelsEarlierShutdown() {
+    void initializeCancelsEarlierShutdown() {
         testSubject.registerActivity();
 
         CompletableFuture<Void> latch = testSubject.initiateShutdown();
@@ -26,14 +26,14 @@ class ShutdownLatchTest {
     }
 
     @Test
-    void testIncrementThrowsShutdownInProgressExceptionIfShuttingDown() {
+    void incrementThrowsShutdownInProgressExceptionIfShuttingDown() {
         testSubject.initiateShutdown();
 
         assertThrows(ShutdownInProgressException.class, testSubject::registerActivity);
     }
 
     @Test
-    void testDecrementCompletesWaitProcess() {
+    void decrementCompletesWaitProcess() {
         ShutdownLatch.ActivityHandle activityHandle = testSubject.registerActivity();
 
         CompletableFuture<Void> latch = testSubject.initiateShutdown();
@@ -46,19 +46,19 @@ class ShutdownLatchTest {
     }
 
     @Test
-    void testIsShuttingDownIsFalseForNonAwaitedLatch() {
+    void isShuttingDownIsFalseForNonAwaitedLatch() {
         assertFalse(testSubject.isShuttingDown());
     }
 
     @Test
-    void testInitiateShutdownOnEmptyLatchOpensImmediately() {
+    void initiateShutdownOnEmptyLatchOpensImmediately() {
         CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertTrue(latch.isDone());
     }
 
     @Test
-    void testIsShuttingDownIsTrueForAwaitedLatch() {
+    void isShuttingDownIsTrueForAwaitedLatch() {
         CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertTrue(testSubject.isShuttingDown());
@@ -66,7 +66,7 @@ class ShutdownLatchTest {
     }
 
     @Test
-    void testIsShuttingDownThrowsSuppliedExceptionForAwaitedLatch() {
+    void isShuttingDownThrowsSuppliedExceptionForAwaitedLatch() {
         CompletableFuture<Void> latch = testSubject.initiateShutdown();
 
         assertThrows(SomeException.class, () -> testSubject.ifShuttingDown(SomeException::new));
@@ -74,7 +74,7 @@ class ShutdownLatchTest {
     }
 
     @Test
-    void testSubsequentActivityHandleEndCallsDoNotInfluenceOtherHandles() {
+    void subsequentActivityHandleEndCallsDoNotInfluenceOtherHandles() {
         ShutdownLatch.ActivityHandle handleOne = testSubject.registerActivity();
         ShutdownLatch.ActivityHandle handleTwo = testSubject.registerActivity();
 

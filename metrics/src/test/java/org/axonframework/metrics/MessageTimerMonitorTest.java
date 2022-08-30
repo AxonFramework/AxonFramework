@@ -47,7 +47,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testSuccessMessage() {
+    void successMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportSuccess();
@@ -66,7 +66,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testFailureMessage() {
+    void failureMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportFailure(null);
@@ -85,7 +85,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testIgnoredMessage() {
+    void ignoredMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportIgnored();
@@ -109,7 +109,7 @@ class MessageTimerMonitorTest {
      * in {@link #testSuccessMessage()}.
      */
     @Test
-    void testCustomReservoir() {
+    void customReservoir() {
         MessageTimerMonitor customReservoirTestSubject =
                 MessageTimerMonitor.builder()
                                    .clock(testClock)
@@ -133,13 +133,13 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testBuildWithNullClockThrowsAxonConfigurationException() {
+    void buildWithNullClockThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.clock(null));
     }
 
     @Test
-    void testBuildWithNullReservoirFactoryThrowsAxonConfigurationException() {
+    void buildWithNullReservoirFactoryThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.reservoirFactory(null));
     }

@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DateTimeUtilsTest {
 
     @Test
-    void testFormattedDateAlwaysContainsMillis() {
+    void formattedDateAlwaysContainsMillis() {
         Instant now = Instant.now();
         Instant nowAtZeroMillis = now.minusNanos(now.get(ChronoField.NANO_OF_SECOND));
 
@@ -43,7 +43,7 @@ class DateTimeUtilsTest {
     }
 
     @Test
-    void testFormatInstantHasFixedPrecisionAtThree() {
+    void formatInstantHasFixedPrecisionAtThree() {
         String expectedDateTimeString = "2021-03-22T15:41:02.101Z";
 
         Instant testInstantWithTrailingZeroes = Instant.parse("2021-03-22T15:41:02.101900Z");

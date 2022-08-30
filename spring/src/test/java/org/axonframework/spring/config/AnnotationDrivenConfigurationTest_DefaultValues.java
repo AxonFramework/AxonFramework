@@ -47,7 +47,7 @@ public class AnnotationDrivenConfigurationTest_DefaultValues {
     private ApplicationContext applicationContext;
 
     @Test
-    void testAnnotationConfigurationAnnotationWrapsBeans() {
+    void annotationConfigurationAnnotationWrapsBeans() {
         Object eventHandler = applicationContext.getBean("eventHandler");
         Object commandHandler = applicationContext.getBean("commandHandler");
 

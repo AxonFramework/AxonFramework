@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SQLStateResolverTest {
 
     @Test
-    void testDefaultResolver_duplicateKeyException() {
+    void defaultResolver_duplicateKeyException() {
         SQLStateResolver resolver = new SQLStateResolver();
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(duplicateKeyException());
@@ -38,7 +38,7 @@ class SQLStateResolverTest {
     }
 
     @Test
-    void testDefaultResolver_integrityConstraintViolated() {
+    void defaultResolver_integrityConstraintViolated() {
         SQLStateResolver resolver = new SQLStateResolver();
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(integrityContraintViolation());
@@ -47,7 +47,7 @@ class SQLStateResolverTest {
     }
 
     @Test
-    void testExplicitResolver_duplicateKeyException() {
+    void explicitResolver_duplicateKeyException() {
         SQLStateResolver resolver = new SQLStateResolver("23505");
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(duplicateKeyException());
@@ -57,7 +57,7 @@ class SQLStateResolverTest {
 
 
     @Test
-    void testExplicitResolver_integrityConstraintViolated() {
+    void explicitResolver_integrityConstraintViolated() {
         SQLStateResolver resolver = new SQLStateResolver("23505");
 
         boolean isDuplicateKey = resolver.isDuplicateKeyViolation(integrityContraintViolation());

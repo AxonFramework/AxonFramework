@@ -46,7 +46,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    void testCreateAggregateYieldsLiveAggregate() {
+    void createAggregateYieldsLiveAggregate() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
                .when(new CreateAggregateCommand("id"))
@@ -55,7 +55,7 @@ class FixtureTest_MarkDeleted {
     }
 
     @Test
-    void testCreateAggregateYieldsLiveAggregateInverted() {
+    void createAggregateYieldsLiveAggregateInverted() {
         fixture.registerInjectableResource(new HardToCreateResource());
 
         assertThrows(AxonAssertionError.class, () ->
@@ -67,7 +67,7 @@ class FixtureTest_MarkDeleted {
 
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert") // Test succeeds when no Error is thrown
-    void testDeletedAggregateYieldsAggregateMarkedDeleted() {
+    void deletedAggregateYieldsAggregateMarkedDeleted() {
         fixture.given(new MyEvent("id", 0))
                .when(new DeleteCommand("id", false))
                .expectEvents(new MyAggregateDeletedEvent(false))
@@ -75,7 +75,7 @@ class FixtureTest_MarkDeleted {
     }
 
     @Test
-    void testDeletedAggregateYieldsAggregateMarkedDeletedInverted() {
+    void deletedAggregateYieldsAggregateMarkedDeletedInverted() {
         assertThrows(AxonAssertionError.class, () ->
                 fixture.given(new MyEvent("id", 0))
                         .when(new DeleteCommand("id", false))

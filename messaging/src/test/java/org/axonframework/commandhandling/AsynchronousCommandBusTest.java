@@ -65,7 +65,7 @@ class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testDispatchWithCallback() throws Exception {
+    void dispatchWithCallback() throws Exception {
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         CommandMessage<Object> command = asCommandMessage(new Object());
@@ -90,7 +90,7 @@ class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testDispatchWithoutCallback() throws Exception {
+    void dispatchWithoutCallback() throws Exception {
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()), NoOpCallback.INSTANCE);
@@ -103,7 +103,7 @@ class AsynchronousCommandBusTest {
     }
 
     @Test
-    void testShutdown_ExecutorServiceUsed() {
+    void shutdown_ExecutorServiceUsed() {
         testSubject.shutdown();
 
         verify(executorService).shutdown();
@@ -111,7 +111,7 @@ class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testExceptionIsThrownWhenNoHandlerIsRegistered() {
+    void exceptionIsThrownWhenNoHandlerIsRegistered() {
         CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         CommandMessage<Object> command = asCommandMessage("test");
         testSubject.dispatch(command, callback);
@@ -125,7 +125,7 @@ class AsynchronousCommandBusTest {
     }
 
     @Test
-    void testShutdown_ExecutorUsed() {
+    void shutdown_ExecutorUsed() {
         Executor executor = mock(Executor.class);
         AsynchronousCommandBus.builder().executor(executor).build().shutdown();
 

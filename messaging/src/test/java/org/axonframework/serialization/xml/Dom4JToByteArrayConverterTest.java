@@ -36,13 +36,13 @@ class Dom4JToByteArrayConverterTest {
     }
 
     @Test
-    void testCanConvert() {
+    void canConvert() {
         assertEquals(Document.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         DocumentFactory df = DocumentFactory.getInstance();
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));

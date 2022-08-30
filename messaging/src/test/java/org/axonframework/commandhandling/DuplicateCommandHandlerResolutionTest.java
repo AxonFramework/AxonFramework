@@ -44,7 +44,7 @@ class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    void testLogAndOverride() {
+    void logAndOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.logAndOverride();
 
         MessageHandler<? super CommandMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
@@ -53,7 +53,7 @@ class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    void testSilentlyOverride() {
+    void silentlyOverride() {
         DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.silentOverride();
 
         MessageHandler<? super CommandMessage<?>> result = testSubject.resolve("test", initialHandler, duplicateHandler);
@@ -62,7 +62,7 @@ class DuplicateCommandHandlerResolutionTest {
     }
 
     @Test
-    void testDuplicateHandlersRejected() {
+    void duplicateHandlersRejected() {
         DuplicateCommandHandlerResolver testSubject =
                 DuplicateCommandHandlerResolution.rejectDuplicates();
 

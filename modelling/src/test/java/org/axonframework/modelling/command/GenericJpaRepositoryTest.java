@@ -88,7 +88,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateStoredBeforeEventsPublished() throws Exception {
+    void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
         Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
         eventBus.subscribe(mockConsumer);
@@ -102,20 +102,20 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate() {
+    void loadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testLoadAggregateWithConverter() {
+    void loadAggregateWithConverter() {
         when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
         Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
+    void aggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -158,7 +158,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
+    void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -189,7 +189,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_NotFound() {
+    void loadAggregate_NotFound() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         try {
             testSubject.load(aggregateIdentifier);
@@ -200,7 +200,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_WrongVersion() {
+    void loadAggregate_WrongVersion() {
         try {
             testSubject.load(aggregateId, 2L);
             fail("Expected ConflictingAggregateVersionException");
@@ -211,14 +211,14 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_DefaultFlushMode() {
+    void persistAggregate_DefaultFlushMode() {
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOn() {
+    void persistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -226,7 +226,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOff() {
+    void persistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -234,7 +234,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+    void buildWithNullSubtypesThrowsAxonConfigurationException() {
         GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
                                     .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
@@ -244,7 +244,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+    void buildWithNullSubtypeThrowsAxonConfigurationException() {
         GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
                                     .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))

@@ -43,7 +43,7 @@ class FixtureTest_ExceptionHandling {
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
 
     @Test
-    void testCreateAggregate() {
+    void createAggregate() {
         fixture.givenCommands()
                .when(new CreateMyAggregateCommand("14"))
                .expectEvents(new MyAggregateCreatedEvent("14"));
@@ -61,14 +61,14 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testWhenExceptionTriggeringCommand() {
+    void whenExceptionTriggeringCommand() {
         fixture.givenCommands(new CreateMyAggregateCommand("14"))
                .when(new ExceptionTriggeringCommand("14"))
                .expectException(RuntimeException.class);
     }
 
     @Test
-    void testGivenExceptionTriggeringCommand() {
+    void givenExceptionTriggeringCommand() {
         assertThrows(RuntimeException.class, () ->
                 fixture.givenCommands(
                         new CreateMyAggregateCommand("14"),
@@ -78,14 +78,14 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testGivenCommandWithInvalidIdentifier() {
+    void givenCommandWithInvalidIdentifier() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
                .expectException(EventStoreException.class);
     }
 
     @Test
-    void testExceptionMessageCheck() {
+    void exceptionMessageCheck() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
                .expectException(EventStoreException.class)
@@ -97,7 +97,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testExceptionMessageCheckWithMatcher() {
+    void exceptionMessageCheckWithMatcher() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
                .expectException(EventStoreException.class)
@@ -105,7 +105,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testExceptionDetailsCheckWithEquality() {
+    void exceptionDetailsCheckWithEquality() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                 .when(new ExceptionWithDetailsTriggeringCommand("1"))
                 .expectException(CommandExecutionException.class)
@@ -113,7 +113,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testExceptionDetailsCheckWithType() {
+    void exceptionDetailsCheckWithType() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ExceptionWithDetailsTriggeringCommand("1"))
                .expectException(CommandExecutionException.class)
@@ -121,7 +121,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testExceptionDetailsCheckWithMatcher() {
+    void exceptionDetailsCheckWithMatcher() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ExceptionWithDetailsTriggeringCommand("1"))
                .expectException(CommandExecutionException.class)
@@ -129,7 +129,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testWhenCommandWithInvalidIdentifier() {
+    void whenCommandWithInvalidIdentifier() {
         assertThrows(FixtureExecutionException.class, () ->
                 fixture.givenCommands(
                         new CreateMyAggregateCommand("1"),
@@ -139,7 +139,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    void testExpectExceptionMessageThrowsFixtureExecutionExceptionWhenNoExceptionIsThrown() {
+    void expectExceptionMessageThrowsFixtureExecutionExceptionWhenNoExceptionIsThrown() {
         assertThrows(
                 AxonAssertionError.class,
                 () -> fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID))

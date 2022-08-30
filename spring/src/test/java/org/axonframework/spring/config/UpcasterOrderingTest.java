@@ -54,7 +54,7 @@ class UpcasterOrderingTest {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    void testUpcastersAreRegisteredInOrder() {
+    void upcastersAreRegisteredInOrder() {
         //noinspection unchecked
         Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
 

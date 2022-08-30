@@ -102,7 +102,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembers() {
+    void createAggregateModelDoesNotDuplicateRootLevelAggregateMembers() {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
@@ -120,7 +120,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreateAggregateModelDoesNotDuplicateRootLevelAggregateMembersForPolymorphicAggregates() {
+    void createAggregateModelDoesNotDuplicateRootLevelAggregateMembersForPolymorphicAggregates() {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
@@ -140,7 +140,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
+    void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
@@ -156,7 +156,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelReturnsCommandHandlingFunctionFromParentAggregateForPolymorphicAggregate()
+    void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregateForPolymorphicAggregate()
             throws Exception {
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
@@ -176,7 +176,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelInvokesAllCommandInterceptors() throws Exception {
+    void createdAggregateModelInvokesAllCommandInterceptors() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
 
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
@@ -194,7 +194,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testCreatedAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
+    void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
         CommandMessage<MemberCommand> testMemberCommand = GenericCommandMessage.asCommandMessage(MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);

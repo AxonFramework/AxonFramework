@@ -75,7 +75,7 @@ class DirectEventJobDataBinderTest {
 
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    void testEventMessageToJobData(
+    void eventMessageToJobData(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
@@ -101,7 +101,7 @@ class DirectEventJobDataBinderTest {
     @SuppressWarnings("unchecked")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    void testEventMessageFromJobData(
+    void eventMessageFromJobData(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher

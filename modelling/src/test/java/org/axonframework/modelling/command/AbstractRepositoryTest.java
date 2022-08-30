@@ -97,19 +97,19 @@ class AbstractRepositoryTest {
     }
 
     @Test
-    void testAggregateTypeVerification_CorrectType() throws Exception {
+    void aggregateTypeVerification_CorrectType() throws Exception {
         testSubject.newInstance(() -> new JpaAggregate("hi"));
     }
 
     @Test
-    void testAggregateTypeVerification_SubclassesAreAllowed() throws Exception {
+    void aggregateTypeVerification_SubclassesAreAllowed() throws Exception {
         testSubject.newInstance(() -> new JpaAggregate("hi") {
             // anonymous subclass
         });
     }
 
     @Test
-    void testAggregateTypeVerification_WrongType() {
+    void aggregateTypeVerification_WrongType() {
         //noinspection rawtypes
         AbstractRepository anonymousTestSubject =
                 new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
@@ -143,24 +143,24 @@ class AbstractRepositoryTest {
     }
 
     @Test
-    void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+    void canResolveReturnsTrueForMatchingAggregateDescriptor() {
         assertTrue(testSubject.canResolve(new AggregateScopeDescriptor(
                 JpaAggregate.class.getSimpleName(), AGGREGATE_ID)
         ));
     }
 
     @Test
-    void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+    void canResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
         assertFalse(testSubject.canResolve(new SagaScopeDescriptor("some-saga-type", AGGREGATE_ID)));
     }
 
     @Test
-    void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+    void canResolveReturnsFalseForNonMatchingAggregateType() {
         assertFalse(testSubject.canResolve(new AggregateScopeDescriptor("other-non-matching-type", AGGREGATE_ID)));
     }
 
     @Test
-    void testSendWorksAsExpected() throws Exception {
+    void sendWorksAsExpected() throws Exception {
         DeadlineMessage<String> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
@@ -172,7 +172,7 @@ class AbstractRepositoryTest {
     }
 
     @Test
-    void testSendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
+    void sendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
 
@@ -184,7 +184,7 @@ class AbstractRepositoryTest {
     }
 
     @Test
-    void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
+    void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
         DeadlineMessage<String> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", "payload", Instant.now());
         AggregateScopeDescriptor testDescriptor =
@@ -196,7 +196,7 @@ class AbstractRepositoryTest {
     }
 
     @Test
-    void testCheckedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
+    void checkedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
         // committing the unit of work does not throw an exception
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         uow.executeWithResult(() -> testSubject.newInstance(() -> {

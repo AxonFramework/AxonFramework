@@ -62,7 +62,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testNullIdentifierIsRejected() {
+    void nullIdentifierIsRejected() {
         AxonAssertionError error = assertThrows(AxonAssertionError.class, () ->
                 fixture.given(new MyEvent(null, 0))
                        .when(new TestCommand("test"))
@@ -77,7 +77,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testEventsCarryCorrectTimestamp() {
+    void eventsCarryCorrectTimestamp() {
         fixture.givenCurrentTime(Instant.EPOCH)
                .andGiven(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .andGivenCommands(new TestCommand("AggregateId"))
@@ -107,7 +107,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testClockStandsStillDuringExecution() {
+    void clockStandsStillDuringExecution() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .when(new TestCommand("AggregateId"));
 
@@ -119,7 +119,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAggregateCommandHandlersOverwrittenByCustomHandlers() {
+    void aggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
         fixture.registerCommandHandler(CreateAggregateCommand.class, commandMessage -> {
             invoked.set(true);
@@ -131,20 +131,20 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAggregateIdentifier_ServerGeneratedIdentifier() {
+    void aggregateIdentifier_ServerGeneratedIdentifier() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
                .when(new CreateAggregateCommand());
     }
 
     @Test
-    void testUnavailableResourcesCausesFailure() {
+    void unavailableResourcesCausesFailure() {
         TestExecutor<AnnotatedAggregate> given = fixture.given();
         assertThrows(FixtureExecutionException.class, () -> given.when(new CreateAggregateCommand()));
     }
 
     @Test
-    void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
+    void aggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .when(new TestCommand("AggregateId"))
                .expectEvents(new MyEvent("AggregateId", 3))
@@ -160,14 +160,14 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testFixtureGivenCommands_ResourcesNotAvailable() {
+    void fixtureGivenCommands_ResourcesNotAvailable() {
         assertThrows(
                 FixtureExecutionException.class, () -> fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
         );
     }
 
     @Test
-    void testFixtureGivenCommands_ResourcesAvailable() {
+    void fixtureGivenCommands_ResourcesAvailable() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID),
                               new TestCommand(AGGREGATE_ID),
@@ -178,7 +178,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAggregateIdentifier_CustomTargetResolver() {
+    void aggregateIdentifier_CustomTargetResolver() {
         CommandTargetResolver mockCommandTargetResolver = mock(CommandTargetResolver.class);
         when(mockCommandTargetResolver.resolveTarget(any()))
                 .thenReturn(new VersionedAggregateIdentifier(AGGREGATE_ID, 0L));
@@ -193,7 +193,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
+    void aggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
         // a 'when' will cause command handlers to be registered.
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
@@ -203,7 +203,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
+    void fixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         assertThrows(EventStoreException.class, () ->
                 fixture.getEventStore().publish(
                         new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
@@ -212,7 +212,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
+    void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
         assertThrows(EventStoreException.class, () ->
                 fixture.getEventStore().publish(
@@ -222,14 +222,14 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testFixture_AggregateDeleted() {
+    void fixture_AggregateDeleted() {
         fixture.given(new MyEvent(AGGREGATE_ID, 5))
                .when(new DeleteCommand(AGGREGATE_ID, false))
                .expectEvents(new MyAggregateDeletedEvent(false));
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+    void fixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
         TestExecutor<AnnotatedAggregate> exec = fixture.given(new MyEvent(AGGREGATE_ID, 5));
         AssertionError error =
                 assertThrows(AssertionError.class, () -> exec.when(new DeleteCommand(AGGREGATE_ID, true)));
@@ -237,7 +237,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAndGiven() {
+    void andGiven() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenCommands(new CreateAggregateCommand(AGGREGATE_ID))
                .andGiven(new MyEvent(AGGREGATE_ID, 1))
@@ -246,7 +246,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testAndGivenCommands() {
+    void andGivenCommands() {
         fixture.given(new MyEvent(AGGREGATE_ID, 1))
                .andGivenCommands(new TestCommand(AGGREGATE_ID))
                .when(new TestCommand(AGGREGATE_ID))
@@ -254,7 +254,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testMultipleAndGivenCommands() {
+    void multipleAndGivenCommands() {
         fixture.given(new MyEvent(AGGREGATE_ID, 1))
                .andGivenCommands(new TestCommand(AGGREGATE_ID))
                .andGivenCommands(new TestCommand(AGGREGATE_ID))
@@ -263,7 +263,7 @@ class FixtureTest_Annotated {
     }
 
     @Test
-    void testGivenNoPriorActivityAndPublishingNoEvents() {
+    void givenNoPriorActivityAndPublishingNoEvents() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.givenNoPriorActivity()
                .when(new CreateAggregateCommand(AGGREGATE_ID, CreateAggregateCommand.SHOULD_NOT_PUBLISH))

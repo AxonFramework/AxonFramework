@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AxonAutoConfigurationTest {
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         new ApplicationContextRunner()
                 .withUserConfiguration(AxonAutoConfigurationTest.Context.class)
                 .withPropertyValues("axon.axonserver.enabled=false")

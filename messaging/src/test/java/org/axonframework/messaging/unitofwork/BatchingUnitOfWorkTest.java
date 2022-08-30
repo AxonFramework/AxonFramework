@@ -59,7 +59,7 @@ class BatchingUnitOfWorkTest {
     }
 
     @Test
-    void testExecuteTask() throws Exception {
+    void executeTask() throws Exception {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         subject.executeWithResult(() -> {
@@ -73,7 +73,7 @@ class BatchingUnitOfWorkTest {
     }
 
     @Test
-    void testRollback() {
+    void rollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         MockException e = new MockException();
@@ -94,7 +94,7 @@ class BatchingUnitOfWorkTest {
     }
 
     @Test
-    void testSuppressedExceptionOnRollback() {
+    void suppressedExceptionOnRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         AtomicInteger cleanupCounter = new AtomicInteger();
         subject = new BatchingUnitOfWork<>(messages);

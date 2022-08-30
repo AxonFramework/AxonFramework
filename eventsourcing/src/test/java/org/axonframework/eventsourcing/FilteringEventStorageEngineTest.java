@@ -42,7 +42,7 @@ class FilteringEventStorageEngineTest {
     }
 
     @Test
-    void testEventsFromArrayMatchingAreForwarded() {
+    void eventsFromArrayMatchingAreForwarded() {
         EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
         EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
         EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
@@ -53,7 +53,7 @@ class FilteringEventStorageEngineTest {
     }
 
     @Test
-    void testEventsFromListMatchingAreForwarded() {
+    void eventsFromListMatchingAreForwarded() {
         EventMessage<String> event1 = GenericEventMessage.asEventMessage("accept");
         EventMessage<String> event2 = GenericEventMessage.asEventMessage("fail");
         EventMessage<String> event3 = GenericEventMessage.asEventMessage("accept");
@@ -64,7 +64,7 @@ class FilteringEventStorageEngineTest {
     }
 
     @Test
-    void testStoreSnapshotDelegated() {
+    void storeSnapshotDelegated() {
         GenericDomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>("type", "id", 0, "fail");
         testSubject.storeSnapshot(snapshot);
 
@@ -72,21 +72,21 @@ class FilteringEventStorageEngineTest {
     }
 
     @Test
-    void testCreateTailTokenDelegated() {
+    void createTailTokenDelegated() {
         testSubject.createTailToken();
 
         verify(mockStorage).createTailToken();
     }
 
     @Test
-    void testCreateHeadTokenDelegated() {
+    void createHeadTokenDelegated() {
         testSubject.createHeadToken();
 
         verify(mockStorage).createHeadToken();
     }
 
     @Test
-    void testCreateTokenAtDelegated() {
+    void createTokenAtDelegated() {
         Instant now = Instant.now();
         testSubject.createTokenAt(now);
 

@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ComplexAggregateStructureTest {
 
     @Test
-    void testCommandsAreRoutedToCorrectEntity() throws Exception {
+    void commandsAreRoutedToCorrectEntity() throws Exception {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = SimpleEventBus.builder().build();
         AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize(

@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
 
     @Test
-    void testPolymorphicHierarchy() throws NoSuchMethodException {
+    void polymorphicHierarchy() throws NoSuchMethodException {
         Executable aHandle = A.class.getMethod("handle", String.class);
         Executable bHandle = B.class.getMethod("handle", Boolean.class);
         Executable cHandle = C.class.getMethod("handle", Boolean.class);
@@ -86,14 +86,14 @@ class AnnotatedPolymorphicAggregateMetaModelFactoryTest {
     }
 
     @Test
-    void testUniqueAggregateIdentifierField() {
+    void uniqueAggregateIdentifierField() {
         assertThrows(AggregateModellingException.class,
                      () -> AnnotatedAggregateMetaModelFactory
                              .inspectAggregate(D.class, new HashSet<>(singleton(E.class))));
     }
 
     @Test
-    void testUniqueAggregateIdentifierFieldShouldIgnorePersistenceId() {
+    void uniqueAggregateIdentifierFieldShouldIgnorePersistenceId() {
         // should not throw an exception
         AnnotatedAggregateMetaModelFactory.inspectAggregate(D.class, new HashSet<>(singleton(F.class)));
     }

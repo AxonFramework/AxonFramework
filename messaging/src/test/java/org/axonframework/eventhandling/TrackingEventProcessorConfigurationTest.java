@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TrackingEventProcessorConfigurationTest {
 
     @Test
-    void testConfiguredEventTrackerStatusChangeListener() {
+    void configuredEventTrackerStatusChangeListener() {
         Map<Integer, EventTrackerStatus> expectedTrackerStatus = Collections.emptyMap();
         EventTrackerStatusChangeListener expectedChangeListener =
                 updatedTrackerStatus -> assertEquals(expectedTrackerStatus, updatedTrackerStatus);

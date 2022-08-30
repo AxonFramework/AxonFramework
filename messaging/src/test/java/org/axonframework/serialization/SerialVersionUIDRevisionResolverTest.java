@@ -37,12 +37,12 @@ class SerialVersionUIDRevisionResolverTest {
     }
 
     @Test
-    void testRevisionOfAnnotatedClass() {
+    void revisionOfAnnotatedClass() {
         assertEquals("7038084420164786502", testSubject.revisionOf(IsSerializable.class));
     }
 
     @Test
-    void testRevisionOfNonAnnotatedClass() {
+    void revisionOfNonAnnotatedClass() {
         assertNull(testSubject.revisionOf(NotSerializable.class));
     }
 

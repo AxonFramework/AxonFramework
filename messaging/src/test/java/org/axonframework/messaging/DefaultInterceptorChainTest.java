@@ -44,7 +44,7 @@ class DefaultInterceptorChainTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void testChainWithDifferentProceedCalls() throws Exception {
+    void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
             unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
             return interceptorChain.proceed();

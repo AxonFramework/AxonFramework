@@ -131,7 +131,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     @DirtiesContext
     @Test
-    public void testPublishSomeEvents() throws InterruptedException {
+    public void publishSomeEvents() throws InterruptedException {
         publishEvent(UsedEvent.INSTANCE, UsedEvent.INSTANCE);
         transactionManager.executeInTransaction(() -> {
             entityManager.createQuery("DELETE FROM TokenEntry t").executeUpdate();
@@ -157,7 +157,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     @DirtiesContext
     @Test
-    void testResetHandlerIsCalledOnResetTokens() {
+    void resetHandlerIsCalledOnResetTokens() {
         String resetContext = "reset-context";
 
         Optional<TrackingEventProcessor> optionalFirstTep =
@@ -185,7 +185,7 @@ public class TrackingEventProcessorIntegrationTest {
 
     @DirtiesContext
     @Test
-    void testUnhandledEventsAreFilteredOutOfTheBlockingStream() throws InterruptedException {
+    void unhandledEventsAreFilteredOutOfTheBlockingStream() throws InterruptedException {
         publishEvent(UsedEvent.INSTANCE, UnusedEvent.INSTANCE, UsedEvent.INSTANCE, UsedEvent.INSTANCE);
 
         assertTrue(countDownLatch1.await(10, TimeUnit.SECONDS));

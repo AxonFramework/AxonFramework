@@ -48,7 +48,7 @@ class WeakReferenceCacheTest {
     }
 
     @Test
-    void testItemPurgedWhenNoLongerReferenced() throws Exception {
+    void itemPurgedWhenNoLongerReferenced() throws Exception {
         // Mockito holds a reference to all parameters, preventing GC
         registration.cancel();
         final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
@@ -86,7 +86,7 @@ class WeakReferenceCacheTest {
     }
 
     @Test
-    void testEntryListenerNotifiedOfCreationUpdateAndDeletion() {
+    void entryListenerNotifiedOfCreationUpdateAndDeletion() {
 
         Object value = new Object();
         Object value2 = new Object();
@@ -107,12 +107,12 @@ class WeakReferenceCacheTest {
     }
 
     @Test
-    void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnGet() {
+    void shouldThrowIllegalArgumentExceptionWhenKeyIsNullOnGet() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.get(null));
     }
 
     @Test
-    void testShouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
+    void shouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.containsKey(null));
     }
 }

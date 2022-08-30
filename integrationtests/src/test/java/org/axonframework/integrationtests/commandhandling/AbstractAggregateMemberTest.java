@@ -43,28 +43,28 @@ public class AbstractAggregateMemberTest {
     }
 
     @Test
-    public void testInitializingFactoryAggregate_ShouldBeAbleToInitialize(){
+    public void initializingFactoryAggregate_ShouldBeAbleToInitialize(){
         fixture.givenNoPriorActivity()
                 .when(new CreateFactoryCommand(factoryId))
                 .expectEvents(new FactoryCreatedEvent(factoryId));
     }
 
     @Test
-    public void testForwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToEmployeeAggregate(){
+    public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToEmployeeAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "employeeId"))
                 .expectEvents(new EmployeeTaskCreatedEvent(factoryId, "employeeId"));
     }
 
     @Test
-    public void testForwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToManagerAggregate(){
+    public void forwardingCommandToAggregateMemberWithTheSameGenericType_ShouldForwardCommandToManagerAggregate(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "managerId"))
                 .expectEvents(new ManagerTaskCreatedEvent(factoryId, "managerId"));
     }
 
     @Test
-    public void testSendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
+    public void sendCommandToNoneExistEntity_ShouldThrowAggregateEntityNotFoundException(){
         fixture.givenCommands(new CreateFactoryCommand(factoryId))
                 .when(new CreateTaskCommand(factoryId, "none-exist-id"))
                 .expectException(AggregateEntityNotFoundException.class);

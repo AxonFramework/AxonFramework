@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericResultMessageTest {
 
     @Test
-    void testExceptionalResult() {
+    void exceptionalResult() {
         Throwable t = new Throwable("oops");
         ResultMessage<?> resultMessage = asResultMessage(t);
         try {
@@ -42,7 +42,7 @@ class GenericResultMessageTest {
     }
 
     @Test
-    void testExceptionSerialization() {
+    void exceptionSerialization() {
         Throwable expected = new Throwable("oops");
         ResultMessage<?> resultMessage = asResultMessage(expected);
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();

@@ -71,7 +71,7 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
     private Context.MyOtherEventHandler myOtherEventHandler;
 
     @Test
-    void testEventHandlerIsRegisteredWithCustomProcessor() {
+    void eventHandlerIsRegisteredWithCustomProcessor() {
         eventBus.publish(asEventMessage("Testing 123"));
 
         assertNotNull(myEventHandler.eventBus, "Expected EventBus to be wired");

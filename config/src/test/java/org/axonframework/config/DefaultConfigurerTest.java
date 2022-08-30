@@ -292,7 +292,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(
                 () -> em, transactionManager).configureCommandBus(c -> {
@@ -324,7 +324,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config =
                 DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
@@ -350,7 +350,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testMissingEntityManagerProviderIsReported() {
+    void missingEntityManagerProviderIsReported() {
         Configuration config =
                 DefaultConfigurer.defaultConfiguration()
                                  .configureCommandBus(c -> {
@@ -373,7 +373,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithJpaRepository() throws Exception {
+    void jpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em).registerComponent(
                 TransactionManager.class, c -> transactionManager
@@ -429,7 +429,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testRegisterSeveralModules() {
+    void registerSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureAggregate(Object.class)
@@ -443,7 +443,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
+    void queryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
         QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
@@ -472,7 +472,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfiguredSnapshotterDefaultsToAggregateSnapshotter() {
+    void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter =
                 DefaultConfigurer.jpaConfiguration(() -> em)
                                  .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
@@ -483,7 +483,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigureSnapshotterSetsCustomSnapshotter() {
+    void configureSnapshotterSetsCustomSnapshotter() {
         Snapshotter expectedSnapshotter = mock(Snapshotter.class);
 
         AggregateConfigurer<StubAggregate> aggregateConfigurer = defaultConfiguration(StubAggregate.class)
@@ -505,7 +505,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigurationSnapshotFilterContainsConfiguredSnapshotFilters() {
+    void configurationSnapshotFilterContainsConfiguredSnapshotFilters() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -537,7 +537,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testAggregateSnapshotFilterIsAddedToTheEventStore() {
+    void aggregateSnapshotFilterIsAddedToTheEventStore() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -586,7 +586,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testDefaultConfiguredDeadlineManager() {
+    void defaultConfiguredDeadlineManager() {
         DeadlineManager result = DefaultConfigurer.defaultConfiguration()
                                                   .buildConfiguration()
                                                   .deadlineManager();
@@ -595,7 +595,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testCustomConfiguredDeadlineManager() throws SchedulerException {
+    void customConfiguredDeadlineManager() throws SchedulerException {
         Scheduler mockScheduler = mock(Scheduler.class);
         when(mockScheduler.getContext()).thenReturn(mock(SchedulerContext.class));
 
@@ -614,7 +614,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testDefaultConfiguredScopeAwareProvider() {
+    void defaultConfiguredScopeAwareProvider() {
         ScopeAwareProvider result = DefaultConfigurer.defaultConfiguration()
                                                      .buildConfiguration()
                                                      .scopeAwareProvider();

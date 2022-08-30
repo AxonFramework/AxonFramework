@@ -43,7 +43,7 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testWrapperDelegatesAllButClose() throws Exception {
+    void wrapperDelegatesAllButClose() throws Exception {
         Connection wrapped = wrap(connection, closeHandler);
         wrapped.commit();
         verify(closeHandler).commit(connection);
@@ -59,7 +59,7 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testEquals_WithWrapper() {
+    void equals_WithWrapper() {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
 
@@ -68,7 +68,7 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testEquals_WithoutWrapper() {
+    void equals_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
 
         assertNotEquals(wrapped, connection);
@@ -76,20 +76,20 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testHashCode_WithWrapper() {
+    void hashCode_WithWrapper() {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }
 
     @Test
-    void testHashCode_WithoutWrapper() {
+    void hashCode_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }
 
     @Test
-    void testUnwrapInvocationTargetException() throws Exception {
+    void unwrapInvocationTargetException() throws Exception {
         when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
 
         Connection wrapper = wrap(connection, closeHandler);
@@ -97,7 +97,7 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface1() throws Exception {
+    void unwrapInvocationTargetExceptionWithAdditionalWrapperInterface1() throws Exception {
         WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
         when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
 
@@ -106,7 +106,7 @@ class ConnectionWrapperFactoryTest {
     }
 
     @Test
-    void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface2() throws Exception {
+    void unwrapInvocationTargetExceptionWithAdditionalWrapperInterface2() throws Exception {
         WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
         doThrow(new SQLException()).when(wrapperImplementation).foo();
 

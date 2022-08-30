@@ -84,7 +84,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testInnerUnitOfWorkNotifiedOfOuterCommitFailure() {
+    void innerUnitOfWorkNotifiedOfOuterCommitFailure() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -113,7 +113,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testInnerUnitOfWorkNotifiedOfOuterPrepareCommitFailure() {
+    void innerUnitOfWorkNotifiedOfOuterPrepareCommitFailure() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -140,7 +140,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testInnerUnitOfWorkNotifiedOfOuterCommit() {
+    void innerUnitOfWorkNotifiedOfOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.commit();
@@ -161,7 +161,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testInnerUnitRollbackDoesNotAffectOuterCommit() {
+    void innerUnitRollbackDoesNotAffectOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.rollback(new MockException());
@@ -180,7 +180,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testRollbackOfMiddleUnitOfWorkRollsBackInner() {
+    void rollbackOfMiddleUnitOfWorkRollsBackInner() {
         outer.onPrepareCommit(u -> {
             middle.start();
             inner.start();
@@ -209,7 +209,7 @@ class UnitOfWorkNestingTest {
     }
 
     @Test
-    void testInnerUnitCommitFailureDoesNotAffectOuterCommit() {
+    void innerUnitCommitFailureDoesNotAffectOuterCommit() {
         outer.onPrepareCommit(u -> {
             inner.start();
             inner.onCommit(uow -> {

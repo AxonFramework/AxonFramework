@@ -34,7 +34,7 @@ class StubAggregateLifecycleExtensionTest {
     static final StubAggregateLifecycleExtension TEST_SUBJECT = new StubAggregateLifecycleExtension();
 
     @Test
-    void testAppliedEventsArePassedToActiveLifecycle() {
+    void appliedEventsArePassedToActiveLifecycle() {
         apply("test");
 
         assertEquals(1, TEST_SUBJECT.getAppliedEvents().size());
@@ -43,7 +43,7 @@ class StubAggregateLifecycleExtensionTest {
     }
 
     @Test
-    void testMarkDeletedIsRegisteredWithActiveLifecycle() {
+    void markDeletedIsRegisteredWithActiveLifecycle() {
         markDeleted();
 
         assertEquals(0, TEST_SUBJECT.getAppliedEvents().size());

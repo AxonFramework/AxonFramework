@@ -48,7 +48,7 @@ class UpcastedEventRepresentationTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testContentType(Serializer serializer) {
+    void contentType(Serializer serializer) {
         Class<JsonNode> expectedContentType = JsonNode.class;
 
         UpcastedEventRepresentation<JsonNode> testSubject = new UpcastedEventRepresentation<>(

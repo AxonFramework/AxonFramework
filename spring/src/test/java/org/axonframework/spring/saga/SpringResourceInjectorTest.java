@@ -44,7 +44,7 @@ public class SpringResourceInjectorTest {
     }
 
     @Test
-    void testInjectSaga() {
+    void injectSaga() {
         InjectableSaga injectableSaga = new InjectableSaga();
         testSubject.injectResources(injectableSaga);
         assertNotNull(injectableSaga.getCommandBus());
@@ -53,7 +53,7 @@ public class SpringResourceInjectorTest {
     }
 
     @Test
-    void testResourcesNotAvailable() {
+    void resourcesNotAvailable() {
         ProblematicInjectableSaga injectableSaga = new ProblematicInjectableSaga();
         assertThrows(BeanCreationException.class, () -> testSubject.injectResources(injectableSaga));
     }

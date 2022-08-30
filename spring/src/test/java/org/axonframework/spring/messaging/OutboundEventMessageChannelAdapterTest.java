@@ -46,7 +46,7 @@ class OutboundEventMessageChannelAdapterTest {
     }
 
     @Test
-    void testMessageForwardedToChannel() {
+    void messageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handle(singletonList(new GenericEventMessage<>(event)));
 
@@ -54,7 +54,7 @@ class OutboundEventMessageChannelAdapterTest {
     }
 
     @Test
-    void testEventListenerRegisteredOnInit() {
+    void eventListenerRegisteredOnInit() {
         verify(mockEventBus, never()).subscribe(any());
         testSubject.afterPropertiesSet();
         verify(mockEventBus).subscribe(any());
@@ -62,7 +62,7 @@ class OutboundEventMessageChannelAdapterTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testFilterBlocksEvents() {
+    void filterBlocksEvents() {
         testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class));
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));

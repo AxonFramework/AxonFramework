@@ -49,7 +49,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @Test
-    void testCreateInstance() throws Exception {
+    void createInstance() throws Exception {
         Method someMethod = getClass().getMethod("someMethod", UnitOfWork.class);
 
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
@@ -57,7 +57,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolveParameterValue() {
+    void resolveParameterValue() {
         DefaultUnitOfWork.startAndGet(null);
         try {
             assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
@@ -67,12 +67,12 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolveParameterValueWithoutActiveUnitOfWork() {
+    void resolveParameterValueWithoutActiveUnitOfWork() {
         assertNull(testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
     }
 
     @Test
-    void testMatches() {
+    void matches() {
         assertTrue(testSubject.matches(mock(GenericCommandMessage.class)));
         DefaultUnitOfWork.startAndGet(null);
         try {

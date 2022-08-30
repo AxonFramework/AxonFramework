@@ -49,7 +49,7 @@ class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testJavaSerializationCorrectlySetsIdentifierField() throws Exception {
+    void javaSerializationCorrectlySetsIdentifierField() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
         objectOutputStream.writeObject(testSubject);
@@ -64,7 +64,7 @@ class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testXStreamSerializationWorksAsExpected() {
+    void xStreamSerializationWorksAsExpected() {
         XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
         xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
 
@@ -76,7 +76,7 @@ class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testJacksonSerializationWorksAsExpected() {
+    void jacksonSerializationWorksAsExpected() {
         JacksonSerializer jacksonSerializer = JacksonSerializer.defaultSerializer();
 
         SerializedObject<String> serializedObject = jacksonSerializer.serialize(testSubject, String.class);
@@ -87,7 +87,7 @@ class SagaScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testResponseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() {
+    void responseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() {
         ObjectMapper objectMapper = OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper());
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
 

@@ -88,7 +88,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testAggregatesRetrievedFromCache() throws Exception {
+    void aggregatesRetrievedFromCache() throws Exception {
         startAndGetUnitOfWork();
 
         LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> aggregate1 =
@@ -121,7 +121,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadOrCreateNewAggregate() throws Exception {
+    void loadOrCreateNewAggregate() throws Exception {
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> aggregate = testSubject.loadOrCreate("id1", StubAggregate::new);
         aggregate.execute(s -> s.setIdentifier("id1"));
@@ -133,7 +133,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadDeletedAggregate() throws Exception {
+    void loadDeletedAggregate() throws Exception {
         String identifier = "aggregateId";
 
         startAndGetUnitOfWork();
@@ -157,7 +157,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
+    void cacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});
         try {
@@ -170,7 +170,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testCacheClearedAfterRollbackOfLoadedAggregate() throws Exception {
+    void cacheClearedAfterRollbackOfLoadedAggregate() throws Exception {
 
         startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
@@ -186,7 +186,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testCacheClearedAfterRollbackOfLoadedAggregateUsingLoadOrCreate() throws Exception {
+    void cacheClearedAfterRollbackOfLoadedAggregateUsingLoadOrCreate() throws Exception {
 
         startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
@@ -202,7 +202,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    void testCacheClearedAfterRollbackOfCreatedAggregateUsingLoadOrCreate() throws Exception {
+    void cacheClearedAfterRollbackOfCreatedAggregateUsingLoadOrCreate() throws Exception {
 
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});

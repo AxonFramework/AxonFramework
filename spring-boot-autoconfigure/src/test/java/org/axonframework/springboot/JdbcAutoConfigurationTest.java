@@ -62,7 +62,7 @@ import static org.mockito.Mockito.*;
 public class JdbcAutoConfigurationTest {
 
     @Test
-    void testAllJdbcComponentsAutoConfigured() {
+    void allJdbcComponentsAutoConfigured() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -78,7 +78,7 @@ public class JdbcAutoConfigurationTest {
     }
 
     @Test
-    void testCustomTokenSchema() {
+    void customTokenSchema() {
         TokenSchema tokenSchema = TokenSchema.builder().setTokenTable("TEST123").build();
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
@@ -90,7 +90,7 @@ public class JdbcAutoConfigurationTest {
     }
 
     @Test
-    void testConfigurationOfEventBusPreventsEventStoreDefinition() {
+    void configurationOfEventBusPreventsEventStoreDefinition() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class, ExplicitEventBusContext.class)
                 .run(context -> assertThat(context).doesNotHaveBean(EventStorageEngine.class)

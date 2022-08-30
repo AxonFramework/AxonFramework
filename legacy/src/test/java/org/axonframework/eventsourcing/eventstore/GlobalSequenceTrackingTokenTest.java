@@ -40,7 +40,7 @@ class GlobalSequenceTrackingTokenTest {
     private static final int GLOBAL_INDEX = 10;
 
     @Test
-    void testXStreamSerializationOfOldGlobalSequenceTrackingToken() {
+    void xStreamSerializationOfOldGlobalSequenceTrackingToken() {
         XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedGlobalSequenceTrackingToken =
@@ -57,7 +57,7 @@ class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    void testJacksonSerializationOfOldGlobalSequenceTrackingToken() {
+    void jacksonSerializationOfOldGlobalSequenceTrackingToken() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedGlobalSequenceTrackingToken =

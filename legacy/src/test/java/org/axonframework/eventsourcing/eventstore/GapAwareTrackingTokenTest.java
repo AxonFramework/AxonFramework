@@ -46,7 +46,7 @@ class GapAwareTrackingTokenTest {
     private static final List<Long> TOKEN_GAPS = Stream.of(0L, 25L, 58L).collect(Collectors.toList());
 
     @Test
-    void testXStreamSerializationOfOldGapAwareTrackingToken() {
+    void xStreamSerializationOfOldGapAwareTrackingToken() {
         XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedGapAwareTrackingToken =
@@ -79,7 +79,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testJacksonSerializationOfOldGapAwareTrackingToken() {
+    void jacksonSerializationOfOldGapAwareTrackingToken() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedGapAwareTrackingToken =
