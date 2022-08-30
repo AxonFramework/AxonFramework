@@ -173,6 +173,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                             SubscriptionQueryUpdateMessage<U> update) {
         updateHandlers.keySet()
                       .stream()
+                      .filter(sqm -> sqm.getUpdateResponseType().matches(update.getPayloadType()))
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(uh -> doEmit(query, uh, update)));
