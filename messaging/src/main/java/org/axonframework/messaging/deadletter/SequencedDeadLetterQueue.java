@@ -152,6 +152,9 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     /**
      * Returns the number of dead-letters for the sequence matching the given {@code sequenceIdentifier} contained in
      * this queue.
+     * <p>
+     * Note that there's a window of opportunity where the size might exceed the {@link #maxSequenceSize()} value to
+     * accompany concurrent usage.
      *
      * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
      * @return The number of dead-letters for the sequence matching the given {@code sequenceIdentifier}.
@@ -160,6 +163,9 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
 
     /**
      * Returns the number of unique sequences contained in this queue.
+     * <p>
+     * Note that there's a window of opportunity where the size might exceed the {@link #maxSequences()} value to
+     * accompany concurrent usage of this dead letter queue.
      *
      * @return The number of unique sequences contained in this queue.
      */
