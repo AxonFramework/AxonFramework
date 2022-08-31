@@ -162,7 +162,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSeveralSubscribeInvocationsUseSameQueryHandlerInstance() {
+    void severalSubscribeInvocationsUseSameQueryHandlerInstance() {
         QueryDefinition firstExpectedQueryDefinition = new QueryDefinition(TEST_QUERY, String.class);
         QueryDefinition secondExpectedQueryDefinition = new QueryDefinition("testIntegerQuery", Integer.class);
 
@@ -216,7 +216,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectException() throws ExecutionException, InterruptedException {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
         ));
@@ -240,7 +240,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testQueryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
                                   "Faking non transient exception result")
@@ -414,12 +414,12 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testLocalSegmentReturnsLocalQueryBus() {
+    void localSegmentReturnsLocalQueryBus() {
         assertEquals(localSegment, testSubject.localSegment());
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
@@ -431,7 +431,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testShutdownTakesFinishedQueriesIntoAccount() {
+    void shutdownTakesFinishedQueriesIntoAccount() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(QueryResponse.newBuilder().build()));
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
@@ -442,7 +442,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
@@ -457,7 +457,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesWithExceptionOnUpdateDeserializationError() {
+    void subscriptionQueryCompletesWithExceptionOnUpdateDeserializationError() {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
@@ -479,7 +479,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesWithExceptionOnInitialResultDeserializationError() {
+    void subscriptionQueryCompletesWithExceptionOnInitialResultDeserializationError() {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
@@ -501,7 +501,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
         SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
                 new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
 

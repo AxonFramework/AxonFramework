@@ -85,7 +85,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadAndSaveAggregate() {
+    void loadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -114,7 +114,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadAndSaveAggregateIsTracedCorrectly() {
+    void loadAndSaveAggregateIsTracedCorrectly() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -145,7 +145,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testFilterEventsByType() {
+    void filterEventsByType() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -162,7 +162,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoad_FirstEventIsSnapshot() {
+    void load_FirstEventIsSnapshot() {
         String identifier = UUID.randomUUID().toString();
         TestAggregate aggregate = new TestAggregate(identifier);
         when(mockEventStore.readEvents(identifier)).thenReturn(
@@ -171,7 +171,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadWithConflictingChanges() {
+    void loadWithConflictingChanges() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -191,7 +191,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
+    void loadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -210,7 +210,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadEventsWithSnapshotter() {
+    void loadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -229,7 +229,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+    void buildWithNullSubtypesThrowsAxonConfigurationException() {
         EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
                 EventSourcingRepository.builder(TestAggregate.class)
                                        .eventStore(mockEventStore);
@@ -238,7 +238,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+    void buildWithNullSubtypeThrowsAxonConfigurationException() {
         EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
                 EventSourcingRepository.builder(TestAggregate.class)
                                        .eventStore(mockEventStore);

@@ -26,7 +26,7 @@ class MultipleInstancesResponseTypeSerializationTest extends AbstractResponseTyp
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testResponseTypeShouldBeSerializable(TestSerializer serializer) {
+    void responseTypeShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject.getExpectedResponseType(), serializer.serializeDeserialize(testSubject).getExpectedResponseType());
     }
 }

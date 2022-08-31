@@ -90,7 +90,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testDirectQueryWhenRequesterDoesntSupportStreaming() {
+    void directQueryWhenRequesterDoesntSupportStreaming() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                             ResponseTypes.publisherOf(String.class));
 
@@ -111,7 +111,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testQueryProcessingTaskIsTraced() {
+    void queryProcessingTaskIsTraced() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                             ResponseTypes.publisherOf(String.class));
 
@@ -129,7 +129,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testDirectQueryWhenRequesterDoesntSupportStreamingAndFlowControlMessagesComesBeforeQueryExecution() {
+    void directQueryWhenRequesterDoesntSupportStreamingAndFlowControlMessagesComesBeforeQueryExecution() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                             ResponseTypes.publisherOf(String.class));
 
@@ -150,7 +150,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testDirectQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
+    void directQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                             ResponseTypes.publisherOf(String.class));
 
@@ -170,7 +170,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingQuery() {
+    void streamingQuery() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(new FluxQuery(1000),
                                                                                             ResponseTypes.publisherOf(String.class));
 
@@ -202,7 +202,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAList() {
+    void streamingAList() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
                                           ResponseTypes.multipleInstancesOf(String.class));
@@ -235,7 +235,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAListWhenReactorIsNotOnClasspath() {
+    void streamingAListWhenReactorIsNotOnClasspath() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
                                           ResponseTypes.multipleInstancesOf(String.class));
@@ -268,7 +268,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests()
+    void streamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests()
             throws InterruptedException {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000),
@@ -319,7 +319,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingQueryWithConcurrentRequests() throws InterruptedException {
+    void streamingQueryWithConcurrentRequests() throws InterruptedException {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new FluxQuery(1000),
                                           ResponseTypes.publisherOf(String.class));
@@ -369,7 +369,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingStringViaDirectQuery() {
+    void streamingStringViaDirectQuery() {
         QueryMessage<InstanceQuery, String> queryMessage =
                 new GenericQueryMessage<>(new InstanceQuery(), ResponseTypes.instanceOf(String.class));
 
@@ -396,7 +396,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testMultipleInstanceQueryShouldInvokeFlux() {
+    void multipleInstanceQueryShouldInvokeFlux() {
         QueryMessage<MultipleInstanceQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new MultipleInstanceQuery(1000), ResponseTypes.publisherOf(String.class));
 
@@ -425,7 +425,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testCancellationOfStreamingFluxQuery() {
+    void cancellationOfStreamingFluxQuery() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
@@ -454,7 +454,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingFluxQueryWhenCancelMessageComesFirst() {
+    void streamingFluxQueryWhenCancelMessageComesFirst() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
@@ -477,7 +477,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testCancellationOfStreamingListQuery() {
+    void cancellationOfStreamingListQuery() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
@@ -505,7 +505,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testStreamingListQueryWhenCancelMessageComesFirst() {
+    void streamingListQueryWhenCancelMessageComesFirst() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 
@@ -528,7 +528,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testFluxEmittingErrorAfterAWhile() {
+    void fluxEmittingErrorAfterAWhile() {
         QueryMessage<ErroringAfterAWhileFluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new ErroringAfterAWhileFluxQuery(), ResponseTypes.publisherOf(String.class));
 
@@ -555,7 +555,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testFluxEmittingErrorRightAway() {
+    void fluxEmittingErrorRightAway() {
         QueryMessage<ErroringFluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new ErroringFluxQuery(), ResponseTypes.publisherOf(String.class));
 
@@ -581,7 +581,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testFluxHandlerThrowingAnException() {
+    void fluxHandlerThrowingAnException() {
         QueryMessage<ThrowingExceptionFluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new ThrowingExceptionFluxQuery(), ResponseTypes.publisherOf(String.class));
 
@@ -607,7 +607,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testListHandlerThrowingAnException() {
+    void listHandlerThrowingAnException() {
         QueryMessage<ThrowingExceptionListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ThrowingExceptionListQuery(),
                                           ResponseTypes.multipleInstancesOf(String.class));
@@ -634,7 +634,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testFluxStreamingQueryWhenRequestingTooMany() {
+    void fluxStreamingQueryWhenRequestingTooMany() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
                 new GenericQueryMessage<>(new FluxQuery(1000), ResponseTypes.publisherOf(String.class));
 
@@ -660,7 +660,7 @@ class QueryProcessingTaskIntegrationTest {
     }
 
     @Test
-    void testListStreamingQueryWhenRequestingTooMany() {
+    void listStreamingQueryWhenRequestingTooMany() {
         QueryMessage<ListQuery, List<String>> queryMessage =
                 new GenericQueryMessage<>(new ListQuery(1000), ResponseTypes.multipleInstancesOf(String.class));
 

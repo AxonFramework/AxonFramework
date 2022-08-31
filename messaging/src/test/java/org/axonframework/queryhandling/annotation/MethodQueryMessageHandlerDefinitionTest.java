@@ -51,18 +51,18 @@ class MethodQueryMessageHandlerDefinitionTest {
     }
 
     @Test
-    void testVoidNotAcceptedAsReturnType() {
+    void voidNotAcceptedAsReturnType() {
         assertThrows(UnsupportedHandlerException.class, () -> messageHandler("illegalQueryResponseType"));
     }
 
     @Test
-    void testFutureResponseTypeUnwrapped() {
+    void futureResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("futureReturnType");
         assertEquals(String.class, handler.getResultType());
     }
 
     @Test
-    void testOptionalResponseTypeUnwrapped() throws Exception {
+    void optionalResponseTypeUnwrapped() throws Exception {
         QueryHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.getResultType());
 
@@ -77,19 +77,19 @@ class MethodQueryMessageHandlerDefinitionTest {
 
 
     @Test
-    void testUnspecifiedOptionalResponseTypeUnwrapped() {
+    void unspecifiedOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("unspecifiedOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    void testWildcardOptionalResponseTypeUnwrapped() {
+    void wildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("wildcardOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    void testUpperBoundWildcardOptionalResponseTypeUnwrapped() {
+    void upperBoundWildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("upperBoundWildcardOptionalType");
         assertEquals(CharSequence.class, handler.getResultType());
     }

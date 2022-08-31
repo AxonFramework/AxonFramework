@@ -56,7 +56,7 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
     private Serializer messageSerializer;
 
     @Test
-    void testRevertsToDefaultSerializer() {
+    void revertsToDefaultSerializer() {
         assertNotNull(serializer);
         assertNotNull(eventSerializer);
         assertNotNull(messageSerializer);

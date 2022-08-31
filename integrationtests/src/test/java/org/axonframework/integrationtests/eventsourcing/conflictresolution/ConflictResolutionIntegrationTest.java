@@ -51,14 +51,14 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    void testNonConflictingEventsAllowed() {
+    void nonConflictingEventsAllowed() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update2", 0L));
     }
 
     @Test
-    void testUnresolvedConflictCausesException() {
+    void unresolvedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         assertThrows(
@@ -68,7 +68,7 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    void testExpressedConflictCausesException() {
+    void expressedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         assertThrows(
@@ -78,7 +78,7 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    void testNoExpectedVersionIgnoresConflicts() {
+    void noExpectedVersionIgnoresConflicts() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", null));

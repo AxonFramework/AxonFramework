@@ -41,7 +41,7 @@ class EventProcessorLatencyMonitorTest {
     private final Map<String, Metric> metricSet = testSubject.getMetrics();
 
     @Test
-    void testMessages() {
+    void messages() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
@@ -61,7 +61,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testFailureMessage() {
+    void failureMessage() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
@@ -81,7 +81,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testNullMessage() {
+    void nullMessage() {
         testSubject.onMessageIngested(null).reportSuccess();
 
         //noinspection unchecked

@@ -33,7 +33,7 @@ class MetricsConfigurerModuleTest {
     }
 
     @Test
-    void testConfigureModuleCallsGlobalMetricRegistry() {
+    void configureModuleCallsGlobalMetricRegistry() {
         Configurer configurerMock = mock(Configurer.class);
 
         metricsConfigurerModule.configureModule(configurerMock);

@@ -38,7 +38,7 @@ class AnnotationSagaMetaModelFactoryTest {
     }
 
     @Test
-    void testInspectSaga() {
+    void inspectSaga() {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
         Optional<AssociationValue> actual = sagaModel.resolveAssociation(asEventMessage(new MySagaStartEvent("value")));

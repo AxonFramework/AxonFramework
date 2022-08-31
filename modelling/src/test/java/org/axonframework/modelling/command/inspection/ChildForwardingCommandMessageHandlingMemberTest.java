@@ -35,7 +35,7 @@ class ChildForwardingCommandMessageHandlingMemberTest {
     }
 
     @Test
-    void testCanHandleMessageTypeIsDelegatedToChildHandler() {
+    void canHandleMessageTypeIsDelegatedToChildHandler() {
         when(childMember.canHandleMessageType(any())).thenReturn(true);
 
         assertTrue(testSubject.canHandleMessageType(CommandMessage.class));
@@ -44,7 +44,7 @@ class ChildForwardingCommandMessageHandlingMemberTest {
     }
 
     @Test
-    void testHasAnnotationIsDelegatedToChildHandler() {
+    void hasAnnotationIsDelegatedToChildHandler() {
         when(childMember.hasAnnotation(any())).thenReturn(true);
 
         assertTrue(testSubject.hasAnnotation(CommandHandler.class));
@@ -53,7 +53,7 @@ class ChildForwardingCommandMessageHandlingMemberTest {
     }
 
     @Test
-    void testAttributeIsDelegatedToChildHandler() {
+    void attributeIsDelegatedToChildHandler() {
         AggregateCreationPolicy expectedPolicy = AggregateCreationPolicy.NEVER;
         when(childMember.attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY))
                 .thenReturn(Optional.of(expectedPolicy));

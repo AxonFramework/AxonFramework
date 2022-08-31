@@ -94,7 +94,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorWorkerCount() {
+    void processorWorkerCount() {
         testSubject.start();
         // give it some time to split segments from the store and submit to executor service.
         assertWithin(1, SECONDS, () -> assertEquals(2, testSubject.activeProcessorThreads()));
@@ -106,7 +106,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorInitializesMoreTokensThanWorkerCount() throws InterruptedException {
+    void processorInitializesMoreTokensThanWorkerCount() throws InterruptedException {
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                               .andInitialSegmentsCount(4));
         testSubject.start();
@@ -120,7 +120,7 @@ class TrackingEventProcessorTest_MultiThreaded {
 
     // Reproduce issue #508 (https://github.com/AxonFramework/AxonFramework/issues/508)
     @Test
-    void testProcessorInitializesAndUsesSameTokens() {
+    void processorInitializesAndUsesSameTokens() {
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(6)
                                                               .andInitialSegmentsCount(6));
         testSubject.start();
@@ -132,7 +132,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorWorkerCountWithMultipleSegments() {
+    void processorWorkerCountWithMultipleSegments() {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -159,7 +159,7 @@ class TrackingEventProcessorTest_MultiThreaded {
      * This processor won't be able to handle any segments, as claiming a segment will fail.
      */
     @Test
-    void testProcessorWorkerCountWithMultipleSegmentsClaimFails() throws InterruptedException {
+    void processorWorkerCountWithMultipleSegmentsClaimFails() throws InterruptedException {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -178,7 +178,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorClaimsSegment() {
+    void processorClaimsSegment() {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
 
@@ -192,7 +192,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testBlacklistingSegmentWillHaveProcessorClaimAnotherOne() {
+    void blacklistingSegmentWillHaveProcessorClaimAnotherOne() {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 2);
@@ -211,7 +211,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorWorkerCountWithMultipleSegmentsWithOneThread() throws InterruptedException {
+    void processorWorkerCountWithMultipleSegmentsWithOneThread() throws InterruptedException {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -225,7 +225,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadSegmentsExceedsWorkerCount() throws Exception {
+    void multiThreadSegmentsExceedsWorkerCount() throws Exception {
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                               .andInitialSegmentsCount(4));
 
@@ -247,7 +247,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadPublishedEventsGetPassedToHandler() throws Exception {
+    void multiThreadPublishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
         doAnswer(invocation -> {
@@ -263,7 +263,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadTokenIsStoredWhenEventIsRead() throws Exception {
+    void multiThreadTokenIsStoredWhenEventIsRead() throws Exception {
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
@@ -279,7 +279,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadContinueFromPreviousToken() throws Exception {
+    void multiThreadContinueFromPreviousToken() throws Exception {
 
         tokenStore = spy(new InMemoryTokenStore());
         eventBus.publish(createEvents(10));
@@ -308,7 +308,7 @@ class TrackingEventProcessorTest_MultiThreaded {
 
     @Test
     @Timeout(value = 10)
-    void testMultiThreadContinueAfterPause() throws Exception {
+    void multiThreadContinueAfterPause() throws Exception {
 
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
 
@@ -369,7 +369,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadProcessorGoesToRetryModeWhenOpenStreamFails() throws Exception {
+    void multiThreadProcessorGoesToRetryModeWhenOpenStreamFails() throws Exception {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
@@ -398,7 +398,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testMultiThreadTokensAreStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
+    void multiThreadTokensAreStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         //noinspection Duplicates
@@ -423,7 +423,7 @@ class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    void testProcessorIncrementAndDecrementCorrectly() throws InterruptedException {
+    void processorIncrementAndDecrementCorrectly() throws InterruptedException {
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                               .andInitialSegmentsCount(4));
         testSubject.start();

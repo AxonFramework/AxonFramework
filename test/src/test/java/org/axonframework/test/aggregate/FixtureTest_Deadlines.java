@@ -54,49 +54,49 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectScheduledDeadline() {
+    void expectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
     }
 
     @Test
-    void testExpectScheduledDeadlineOfType() {
+    void expectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .when(CREATE_COMMAND)
                .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    void testExpectScheduledDeadlineWithName() {
+    void expectScheduledDeadlineWithName() {
         fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, DEADLINE_NAME, "deadlineId"))
                .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
                .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
     }
 
     @Test
-    void testExpectNoScheduledDeadline() {
+    void expectNoScheduledDeadline() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
     }
 
     @Test
-    void testExpectNoScheduledDeadlineOfType() {
+    void expectNoScheduledDeadlineOfType() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
     }
 
     @Test
-    void testExpectNoScheduledDeadlineWithName() {
+    void expectNoScheduledDeadlineWithName() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
                .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_NAME);
     }
 
     @Test
-    void testDeadlineMetMatching() {
+    void deadlineMetMatching() {
         //noinspection deprecation
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -105,7 +105,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesMatching() {
+    void triggeredDeadlinesMatching() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -113,7 +113,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlinesMet() {
+    void deadlinesMet() {
         //noinspection deprecation
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -122,7 +122,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlines() {
+    void triggeredDeadlines() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -130,7 +130,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -147,7 +147,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -162,7 +162,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithName() {
+    void triggeredDeadlinesWithName() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -170,7 +170,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -187,7 +187,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -202,7 +202,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfType() {
+    void triggeredDeadlinesOfType() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -210,7 +210,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -227,7 +227,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
                        .andGivenCommands(CREATE_COMMAND)
@@ -242,7 +242,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineWhichCancelsSchedule() {
+    void deadlineWhichCancelsSchedule() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
@@ -250,7 +250,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineWhichCancelsAll() {
+    void deadlineWhichCancelsAll() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .when(new ResetAllTriggerCommand(AGGREGATE_ID))
@@ -258,7 +258,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineDispatcherInterceptor() {
+    void deadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
                .givenNoPriorActivity()
@@ -268,7 +268,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineHandlerInterceptor() {
+    void deadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
                     deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())

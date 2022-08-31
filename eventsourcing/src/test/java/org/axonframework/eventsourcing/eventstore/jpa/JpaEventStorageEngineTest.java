@@ -97,14 +97,14 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testStoreAndLoadEventsFromDatastore() {
+    void storeAndLoadEventsFromDatastore() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
-    void testLoadLastSequenceNumber() {
+    void loadLastSequenceNumber() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
@@ -112,7 +112,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testGapsForVeryOldEventsAreNotIncluded() {
+    void gapsForVeryOldEventsAreNotIncluded() {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
 
         GenericEventMessage.clock =
@@ -140,7 +140,7 @@ class JpaEventStorageEngineTest
 
     @DirtiesContext
     @Test
-    void testOldGapsAreRemovedFromProvidedTrackingToken() {
+    void oldGapsAreRemovedFromProvidedTrackingToken() {
         testSubject.setGapCleaningThreshold(50);
         testSubject.setGapTimeout(50001);
         Instant now = Clock.systemUTC().instant();
@@ -189,7 +189,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testUnknownSerializedTypeCausesException() {
+    void unknownSerializedTypeCausesException() {
         testSubject.appendEvents(createEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                      .executeUpdate();
@@ -200,7 +200,7 @@ class JpaEventStorageEngineTest
     @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    void testStoreEventsWithCustomEntity() {
+    void storeEventsWithCustomEntity() {
         XStreamSerializer serializer = xStreamSerializer();
         JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
                 JpaEventStorageEngine.builder()
@@ -245,7 +245,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
+    void eventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
 
@@ -277,7 +277,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testAppendEventsIsPerformedInATransaction() {
+    void appendEventsIsPerformedInATransaction() {
         testSubject.appendEvents(createEvents(2));
 
         verify(transactionManager).executeInTransaction(any());

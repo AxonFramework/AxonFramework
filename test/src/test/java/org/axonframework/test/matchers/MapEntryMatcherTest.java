@@ -31,14 +31,14 @@ class MapEntryMatcherTest {
     }
 
     @Test
-    void testExpectedEntriesNotPresent() {
+    void expectedEntriesNotPresent() {
         assertFalse(matcher.matches(singletonMap("a", new ValueItem("a"))));
 
         assertThat(matcher.getMissingEntries(), equalTo(newHashMap("b", new ValueItem("b"), "c", new ValueItem("c"))));
     }
 
     @Test
-    void testTooManyEntries() {
+    void tooManyEntries() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", new ValueItem("c"),
                                                "d", new ValueItem("d"), "e", new ValueItem("e"))));
 
@@ -46,7 +46,7 @@ class MapEntryMatcherTest {
     }
 
     @Test
-    void testIncorrectValue() {
+    void incorrectValue() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", new ValueItem("CCCC"))));
 
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("c", new ValueItem("CCCC"))));
@@ -58,7 +58,7 @@ class MapEntryMatcherTest {
     }
 
     @Test
-    void testIncorrectKey() {
+    void incorrectKey() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "CCCC", new ValueItem("c"))));
 
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("CCCC", new ValueItem("c"))));
@@ -70,7 +70,7 @@ class MapEntryMatcherTest {
     }
 
     @Test
-    void testAnyOrder() {
+    void anyOrder() {
         TreeMap<String, Object> sortedMap = new TreeMap<>();
         sortedMap.putAll(EXPECTED);
 
@@ -89,7 +89,7 @@ class MapEntryMatcherTest {
     }
 
     @Test
-    void testNonMapType() {
+    void nonMapType() {
         assertFalse(new MapEntryMatcher(emptyMap()).matches(new Object()));
         assertFalse(new MapEntryMatcher(emptyMap()).matches(emptySet()));
     }

@@ -37,7 +37,7 @@ class InputStreamToByteArrayConverterTest {
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         byte[] bytes = "Hello, world!".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         byte[] actual = testSubject.convert(inputStream);

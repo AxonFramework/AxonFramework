@@ -47,7 +47,7 @@ class AnnotationCommandHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testCommandHandlerCallsRedirectToAdapter() throws Exception {
+    void commandHandlerCallsRedirectToAdapter() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
@@ -65,7 +65,7 @@ class AnnotationCommandHandlerBeanPostProcessorTest {
     }
 
     @Test
-    void testCommandHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
+    void commandHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new CustomAnnotatedCommandHandler(), "beanName");
@@ -83,7 +83,7 @@ class AnnotationCommandHandlerBeanPostProcessorTest {
     }
 
     @Test
-    void testProcessorIgnoresFactoryBeans() {
+    void processorIgnoresFactoryBeans() {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         when(mockBeanFactory.containsBean("beanName")).thenReturn(true);
         FactoryBean mockFactoryBean = mock(FactoryBean.class);

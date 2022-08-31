@@ -40,7 +40,7 @@ class SerializationAwareTest {
     }
 
     @Test
-    void testIsSerializedAsGenericEventMessage() throws IOException, ClassNotFoundException {
+    void isSerializedAsGenericEventMessage() throws IOException, ClassNotFoundException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(testSubject);
@@ -51,7 +51,7 @@ class SerializationAwareTest {
     }
 
     @Test
-    void testSerializePayloadTwice() {
+    void serializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -67,7 +67,7 @@ class SerializationAwareTest {
     }
 
     @Test
-    void testSerializePayloadTwice_DifferentRepresentations() {
+    void serializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -85,7 +85,7 @@ class SerializationAwareTest {
     }
 
     @Test
-    void testSerializeMetaDataTwice() {
+    void serializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
@@ -100,7 +100,7 @@ class SerializationAwareTest {
     }
 
     @Test
-    void testSerializeMetaDataTwice_DifferentRepresentations() {
+    void serializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);

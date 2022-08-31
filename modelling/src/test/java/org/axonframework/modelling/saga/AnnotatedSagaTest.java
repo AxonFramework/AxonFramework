@@ -56,7 +56,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSaga() {
+    void invokeSaga() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("wrongId")));
@@ -66,7 +66,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSagaAssociationPropertyNotExistingInPayload() {
+    void invokeSagaAssociationPropertyNotExistingInPayload() {
         AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
         assertThrows(
                 AxonConfigurationException.class,
@@ -75,13 +75,13 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSagaAssociationPropertyEmpty() {
+    void invokeSagaAssociationPropertyEmpty() {
         AnnotationSagaMetaModelFactory testSubject = new AnnotationSagaMetaModelFactory();
         assertThrows(AxonConfigurationException.class, () -> testSubject.modelOf(SagaAssociationPropertyEmpty.class));
     }
 
     @Test
-    void testInvokeSagaMetaDataAssociationResolver() {
+    void invokeSagaMetaDataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
@@ -92,7 +92,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testInvokeSagaResolverWithoutNoArgConstructor() {
+    void invokeSagaResolverWithoutNoArgConstructor() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> new AnnotationSagaMetaModelFactory().modelOf(SagaUsingResolverWithoutNoArgConstructor.class)
@@ -100,7 +100,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocationBeanProperty() {
+    void endedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -111,7 +111,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocationWhenAssociationIsRemoved() {
+    void endedAfterInvocationWhenAssociationIsRemoved() {
         StubAnnotatedSaga testSaga = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         AnnotatedSaga<StubAnnotatedSaga> testSubject = new AnnotatedSaga<>(
                 "id", Collections.emptySet(), testSaga,
@@ -128,7 +128,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testEndedAfterInvocationUniformAccessPrinciple() {
+    void endedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
         testSubject.handle(new GenericEventMessage<>(new Object()));
@@ -139,7 +139,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testPrepareResetThrowsResetNotSupportedException() {
+    void prepareResetThrowsResetNotSupportedException() {
         AnnotatedSaga<StubAnnotatedSaga> spiedTestSubject = spy(testSubject);
 
         assertThrows(ResetNotSupportedException.class, spiedTestSubject::prepareReset);
@@ -148,12 +148,12 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testPrepareResetWithResetContextThrowsResetNotSupportedException() {
+    void prepareResetWithResetContextThrowsResetNotSupportedException() {
         assertThrows(ResetNotSupportedException.class, () -> testSubject.prepareReset("some-reset-context"));
     }
 
     @Test
-    void testLifecycleAssociationValues() {
+    void lifecycleAssociationValues() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.execute(() -> {
             Set<AssociationValue> associationValues = SagaLifecycle.associationValues();

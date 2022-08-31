@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericEventMessageTest {
 
     @Test
-    void testConstructor() {
+    void constructor() {
         Object payload = new Object();
         GenericEventMessage<Object> message1 = new GenericEventMessage<>(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
@@ -60,7 +60,7 @@ class GenericEventMessageTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -74,7 +74,7 @@ class GenericEventMessageTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -90,7 +90,7 @@ class GenericEventMessageTest {
     }
 
     @Test
-    void testTimestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
+    void timestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         GenericEventMessage<String> testSubject =

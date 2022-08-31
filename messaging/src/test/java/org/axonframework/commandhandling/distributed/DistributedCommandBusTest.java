@@ -74,7 +74,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDispatchWithoutCallbackWithMessageMonitor() throws Exception {
+    void dispatchWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
@@ -88,7 +88,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDefaultCallbackIsUsedWhenFireAndForget() {
+    void defaultCallbackIsUsedWhenFireAndForget() {
         CommandMessage<Object> message = GenericCommandMessage.asCommandMessage("test");
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
@@ -106,7 +106,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
+    void dispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
@@ -120,7 +120,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+    void dispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         testSubject = DistributedCommandBus.builder()
@@ -138,7 +138,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+    void unknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
         CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
@@ -164,7 +164,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDispatchWithCallbackAndMessageMonitor() throws Exception {
+    void dispatchWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
@@ -184,7 +184,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testUnknownCommandWithCallbackAndMessageMonitor() throws Exception {
+    void unknownCommandWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
@@ -206,7 +206,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
+    void dispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
@@ -225,7 +225,7 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testLocalSegmentReturnsTheCommandBusConnectorsLocalSegmentResult() {
+    void localSegmentReturnsTheCommandBusConnectorsLocalSegmentResult() {
         CommandBus expectedLocalSegment = mock(CommandBus.class);
         when(mockConnector.localSegment()).thenReturn(Optional.of(expectedLocalSegment));
 
@@ -235,24 +235,24 @@ class DistributedCommandBusTest {
     }
 
     @Test
-    void testDisconnectRemovesAllSubscribedCommandHandlers() {
+    void disconnectRemovesAllSubscribedCommandHandlers() {
         testSubject.disconnect();
         verify(mockCommandRouter).updateMembership(INITIAL_LOAD_FACTOR, DenyAll.INSTANCE);
     }
 
     @Test
-    void testShutdownDispatchingInitiatesShutdownOfCommandBusConnector() {
+    void shutdownDispatchingInitiatesShutdownOfCommandBusConnector() {
         testSubject.shutdownDispatching();
         verify(mockConnector).initiateShutdown();
     }
 
     @Test
-    void testLoadFactorDefault() {
+    void loadFactorDefault() {
         assertEquals(INITIAL_LOAD_FACTOR, testSubject.getLoadFactor());
     }
 
     @Test
-    void testUpdateLoadFactor() {
+    void updateLoadFactor() {
         int expectedLoadFactor = 42;
 
         testSubject.updateLoadFactor(expectedLoadFactor);

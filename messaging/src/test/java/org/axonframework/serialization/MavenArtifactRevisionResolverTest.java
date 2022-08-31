@@ -27,14 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class MavenArtifactRevisionResolverTest {
 
     @Test
-    void testFindVersionOfExistingPomProperties() throws Exception {
+    void findVersionOfExistingPomProperties() throws Exception {
         MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("org.axonframework", "axon-modelling");
 
         assertEquals("2.1-SNAPSHOT", testSubject.revisionOf(Object.class));
     }
 
     @Test
-    void testFindVersionOfNonExistingProperties() throws Exception {
+    void findVersionOfNonExistingProperties() throws Exception {
         MavenArtifactRevisionResolver testSubject = new MavenArtifactRevisionResolver("does.not.exist", "axon-modelling");
 
         assertNull(testSubject.revisionOf(Object.class));

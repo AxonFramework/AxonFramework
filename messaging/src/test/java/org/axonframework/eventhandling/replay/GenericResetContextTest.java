@@ -36,7 +36,7 @@ class GenericResetContextTest {
     private static final Object TEST_PAYLOAD = new Object();
 
     @Test
-    void testConstructor() {
+    void constructor() {
         ResetContext<Object> messageOne = asResetContext(TEST_PAYLOAD);
         ResetContext<Object> messageTwo = asResetContext(new GenericMessage<>(TEST_PAYLOAD));
         ResetContext<Object> messageThree = asResetContext(new GenericResetContext<>(TEST_PAYLOAD));
@@ -73,7 +73,7 @@ class GenericResetContextTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
         ResetContext<Object> startMessage = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
@@ -86,7 +86,7 @@ class GenericResetContextTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
         ResetContext<Object> startMessage = new GenericResetContext<>(TEST_PAYLOAD, metaData);
 
@@ -101,7 +101,7 @@ class GenericResetContextTest {
     }
 
     @Test
-    void testDescribeType() {
+    void describeType() {
         assertEquals("GenericResetContext", new GenericResetContext<>(TEST_PAYLOAD).describeType());
     }
 }

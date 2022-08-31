@@ -43,7 +43,7 @@ class FixtureTest_Resources {
     }
 
     @Test
-    void testResourcesAreScopedToSingleTest_ConstructorPartOne() {
+    void resourcesAreScopedToSingleTest_ConstructorPartOne() {
         // executing the same test should pass, as resources are scoped to a single test only
         final Executor resource = mock(Executor.class);
         fixture.registerInjectableResource(resource)
@@ -55,12 +55,12 @@ class FixtureTest_Resources {
     }
 
     @Test
-    void testResourcesAreScopedToSingleTest_ConstructorPartTwo() {
-        testResourcesAreScopedToSingleTest_ConstructorPartOne();
+    void resourcesAreScopedToSingleTest_ConstructorPartTwo() {
+        resourcesAreScopedToSingleTest_ConstructorPartOne();
     }
 
     @Test
-    void testResourcesAreScopedToSingleTest_MethodPartOne() {
+    void resourcesAreScopedToSingleTest_MethodPartOne() {
         // executing the same test should pass, as resources are scoped to a single test only
         final Executor resource = mock(Executor.class);
         fixture.registerInjectableResource(resource)
@@ -73,8 +73,8 @@ class FixtureTest_Resources {
     }
 
     @Test
-    void testResourcesAreScopedToSingleTest_MethodPartTwo() {
-        testResourcesAreScopedToSingleTest_MethodPartOne();
+    void resourcesAreScopedToSingleTest_MethodPartTwo() {
+        resourcesAreScopedToSingleTest_MethodPartOne();
     }
 
     public static class AggregateWithResources {

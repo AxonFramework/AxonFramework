@@ -402,12 +402,12 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testLocalSegmentReturnsLocalCommandBus() {
+    void localSegmentReturnsLocalCommandBus() {
         assertEquals(localSegment, testSubject.localSegment());
     }
 
     @Test
-    void testDisconnectUnsubscribesAllRegisteredCommands() {
+    void disconnectUnsubscribesAllRegisteredCommands() {
         String testCommandOne = "testCommandOne";
         String testCommandTwo = "testCommandTwo";
         testSubject.subscribe(testCommandOne, command -> "Done");
@@ -420,7 +420,7 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
         GenericCommandMessage<String> command = new GenericCommandMessage<>("some-command");
@@ -431,7 +431,7 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testShutdownDispatchingWaitsForCommandsInTransitToComplete() {
+    void shutdownDispatchingWaitsForCommandsInTransitToComplete() {
         AtomicBoolean commandHandled = new AtomicBoolean(false);
         // Commands containing "blocking" will sleep for 500 millis
         GenericCommandMessage<String> testCommand = new GenericCommandMessage<>("some-blocking-command");

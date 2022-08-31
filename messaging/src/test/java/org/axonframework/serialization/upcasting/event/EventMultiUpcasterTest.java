@@ -80,7 +80,7 @@ class EventMultiUpcasterTest {
     }
 
     @Test
-    void testUpcasterIgnoresWrongEventType() {
+    void upcasterIgnoresWrongEventType() {
         GenericDomainEventMessage<String> testEventMessage =
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString");
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
@@ -97,7 +97,7 @@ class EventMultiUpcasterTest {
     }
 
     @Test
-    void testUpcasterIgnoresWrongEventRevision() {
+    void upcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
         GenericDomainEventMessage<StubDomainEvent> testEventMessage =
@@ -123,7 +123,7 @@ class EventMultiUpcasterTest {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
-    void testUpcastingDomainEventData() {
+    void upcastingDomainEventData() {
         String testAggregateType = "test";
         String testAggregateId = "aggregateId";
         GlobalSequenceTrackingToken testTrackingToken = new GlobalSequenceTrackingToken(10);
@@ -163,7 +163,7 @@ class EventMultiUpcasterTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    void testUpcastsKnownType() {
+    void upcastsKnownType() {
         String expectedRevisionNumber = "1";
         String expectedSecondAndThirdRevisionNumber = null;
 

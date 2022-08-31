@@ -41,7 +41,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     private BatchingEventStorageEngine testSubject;
 
     @Test
-    protected void testLoadLargeAmountOfEventsFromAggregateStream() {
+    protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
         testSubject.appendEvents(new GenericEventMessage<>("test"));
@@ -53,7 +53,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     }
 
     @Test
-    void testLoadLargeAmountFromOpenStream() {
+    void loadLargeAmountFromOpenStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
         GenericEventMessage<String> last = new GenericEventMessage<>("test");

@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
     @Test
-    void testEventStore() {
+    void eventStore() {
         new ApplicationContextRunner()
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(TestContext.class)
@@ -53,7 +53,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
     }
 
     @Test
-    void testEventBusOverridesEventStoreDefinition() {
+    void eventBusOverridesEventStoreDefinition() {
         new ApplicationContextRunner()
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(EventBusContext.class, TestContext.class)

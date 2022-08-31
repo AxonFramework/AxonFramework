@@ -84,7 +84,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testStoreNewAggregate() throws Exception {
+    void storeNewAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -144,7 +144,7 @@ class LockingRepositoryTest {
      * aggregate with.
      */
     @Test
-    void testStoringAggregateWithoutSettingAggregateIdentifierDoesNotInvokeLockFactory() throws Exception {
+    void storingAggregateWithoutSettingAggregateIdentifierDoesNotInvokeLockFactory() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<StubAggregate> result = testSubject.newInstance(
                 () -> new StubAggregate(null),
@@ -159,7 +159,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLoadOrCreateAggregate() {
+    void loadOrCreateAggregate() {
         startAndGetUnitOfWork();
         Aggregate<StubAggregate> createdAggregate = testSubject.loadOrCreate("newAggregate", StubAggregate::new);
         //noinspection resource
@@ -172,7 +172,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLoadAndStoreAggregate() throws Exception {
+    void loadAndStoreAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -195,7 +195,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLoadAndStoreAggregate_LockReleasedOnException() throws Exception {
+    void loadAndStoreAggregate_LockReleasedOnException() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
 
@@ -226,7 +226,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
+    void loadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventBus(eventBus).build();
         testSubject = spy(testSubject);

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GlobalSequenceTrackingTokenTest {
 
     @Test
-    void testUpperBound() {
+    void upperBound() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -33,7 +33,7 @@ class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    void testLowerBound() {
+    void lowerBound() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -43,7 +43,7 @@ class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    void testCovers() {
+    void covers() {
         GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
         GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
 
@@ -54,7 +54,7 @@ class GlobalSequenceTrackingTokenTest {
     }
 
     @Test
-    void testPosition() {
+    void position() {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
 
         assertEquals(1L, token.position().getAsLong());

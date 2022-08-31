@@ -95,7 +95,7 @@ class JpaSagaStoreTest {
     }
 
     @Test
-    void testAddingAnInactiveSagaDoesntStoreIt() {
+    void addingAnInactiveSagaDoesntStoreIt() {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -114,7 +114,7 @@ class JpaSagaStoreTest {
 
 
     @Test
-    void testAddAndLoadSaga_ByIdentifier() {
+    void addAndLoadSaga_ByIdentifier() {
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
                                       .getPayload();
@@ -128,7 +128,7 @@ class JpaSagaStoreTest {
     }
 
     @Test
-    void testAddAndLoadSaga_ByAssociationValue() {
+    void addAndLoadSaga_ByAssociationValue() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -147,13 +147,13 @@ class JpaSagaStoreTest {
     }
 
     @Test
-    void testLoadSaga_NotFound() {
+    void loadSaga_NotFound() {
         unitOfWork.execute(() -> assertNull(repository.load("123456")));
     }
 
 
     @Test
-    void testLoadSaga_AssociationValueRemoved() {
+    void loadSaga_AssociationValueRemoved() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -174,7 +174,7 @@ class JpaSagaStoreTest {
     }
 
     @Test
-    void testEndSaga() {
+    void endSaga() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -197,7 +197,7 @@ class JpaSagaStoreTest {
     }
 
     @Test
-    void testStoreSagaWithCustomEntity() {
+    void storeSagaWithCustomEntity() {
         JpaSagaStore sagaStore = new JpaSagaStore(
                 JpaSagaStore.builder()
                             .serializer(xStreamSerializer())

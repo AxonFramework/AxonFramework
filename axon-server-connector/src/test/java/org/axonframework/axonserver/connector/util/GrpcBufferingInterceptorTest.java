@@ -46,7 +46,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_BiDiStreaming() {
+    void interceptClientCall_BiDiStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -60,7 +60,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ServerStreaming() {
+    void interceptClientCall_ServerStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.SERVER_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -74,7 +74,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ClientStreaming() {
+    void interceptClientCall_ClientStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.CLIENT_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -88,7 +88,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_NoStreaming() {
+    void interceptClientCall_NoStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.UNARY);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -102,7 +102,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ZeroBuffer() {
+    void interceptClientCall_ZeroBuffer() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(0);

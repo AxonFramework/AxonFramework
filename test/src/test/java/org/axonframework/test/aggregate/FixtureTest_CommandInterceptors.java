@@ -78,7 +78,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorsAreInvoked() {
+    void registeredCommandDispatchInterceptorsAreInvoked() {
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
         fixture.registerCommandDispatchInterceptor(firstMockCommandDispatchInterceptor);
@@ -106,7 +106,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
+    void registeredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -122,7 +122,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
+    void registeredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
         MetaData expectedValues =
@@ -134,7 +134,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorsAreInvoked() throws Exception {
+    void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
         when(mockCommandHandlerInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class)))
@@ -160,7 +160,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
+    void registeredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -176,7 +176,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
+    void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
         Map<String, Object> expectedMetaDataMap = new HashMap<>();
@@ -188,7 +188,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
+    void registeredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -208,7 +208,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
+    void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
             invocations.incrementAndGet();
@@ -225,7 +225,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
+    void registeredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandDispatchInterceptor(messages -> (i, command) -> {
             invocations.incrementAndGet();

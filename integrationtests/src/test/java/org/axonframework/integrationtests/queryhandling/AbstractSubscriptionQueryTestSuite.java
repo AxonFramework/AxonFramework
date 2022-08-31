@@ -104,7 +104,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     public abstract QueryUpdateEmitter queryUpdateEmitter();
 
     @Test
-    void testEmittingAnUpdate() {
+    void emittingAnUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -159,7 +159,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testEmittingNullUpdate() {
+    void emittingNullUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -184,7 +184,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testEmittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void emittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = TEST_PAYLOAD;
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -219,7 +219,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testCompletingSubscriptionQueryExceptionally() {
+    void completingSubscriptionQueryExceptionally() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -251,7 +251,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Deprecated
     @Test
-    void testCompletingSubscriptionQueryExceptionallyDeprecated() {
+    void completingSubscriptionQueryExceptionallyDeprecated() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -283,7 +283,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testCompletingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
+    void completingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -322,7 +322,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testCompletingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void completingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = TEST_PAYLOAD;
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -360,7 +360,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testCompletingSubscriptionQuery() {
+    void completingSubscriptionQuery() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -388,7 +388,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testCompletingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+    void completingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
         String testQueryPayload = TEST_PAYLOAD;
         String testQueryName = "chatMessages";
         String testUpdate = "some-update";
@@ -425,7 +425,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testOrderingOfOperationOnUpdateHandler() {
+    void orderingOfOperationOnUpdateHandler() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -450,7 +450,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscribingQueryHandlerFailing() {
+    void subscribingQueryHandlerFailing() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -474,7 +474,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSeveralSubscriptions() {
+    void severalSubscriptions() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -543,7 +543,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Deprecated
     @Test
-    void testSeveralSubscriptionsDeprecated() {
+    void severalSubscriptionsDeprecated() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -612,7 +612,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testDoubleSubscriptionMessage() {
+    void doubleSubscriptionMessage() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -628,7 +628,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testReplayBufferOverflow() {
+    void replayBufferOverflow() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
                 "chatMessages",
@@ -665,7 +665,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testOnBackpressureError() {
+    void onBackpressureError() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
                 "chatMessages",
@@ -696,7 +696,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionDisposal() {
+    void subscriptionDisposal() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
                 "chatMessages",
@@ -717,7 +717,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryWithInterceptors() {
+    void subscriptionQueryWithInterceptors() {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
         queryBus.registerDispatchInterceptor(
@@ -747,7 +747,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryUpdateWithInterceptors() {
+    void subscriptionQueryUpdateWithInterceptors() {
         // given
         Map<String, String> metaData = Collections.singletonMap("key", "value");
         queryUpdateEmitter.registerDispatchInterceptor(
@@ -774,7 +774,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testActiveSubscriptions() {
+    void activeSubscriptions() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -801,7 +801,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandle() throws InterruptedException {
+    void subscriptionQueryResultHandle() throws InterruptedException {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -830,7 +830,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult()
+    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult()
             throws InterruptedException {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -862,7 +862,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Deprecated
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdateDeprecated() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdateDeprecated() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -892,7 +892,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Deprecated
     @Test
-    void testBufferOverflowDeprecated() {
+    void bufferOverflowDeprecated() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
                 "chatMessages",
@@ -921,7 +921,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Deprecated
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdateDeprecated() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdateDeprecated() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -953,7 +953,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdate() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -982,7 +982,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdate() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdate() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -1014,7 +1014,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -1038,7 +1038,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
+    void subscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 TEST_PAYLOAD,
@@ -1061,7 +1061,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testQueryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
+    void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
         QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
 
@@ -1071,7 +1071,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
-    void testQueryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
+    void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
         QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
         String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
                                     .initialResult()

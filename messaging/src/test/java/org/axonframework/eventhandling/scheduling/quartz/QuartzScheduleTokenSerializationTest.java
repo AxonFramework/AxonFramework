@@ -21,7 +21,7 @@ class QuartzScheduleTokenSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestSerializer serializer) {
         QuartzScheduleToken tokenToTest = new QuartzScheduleToken("jobIdentifier", "groupIdentifier");
         assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
     }

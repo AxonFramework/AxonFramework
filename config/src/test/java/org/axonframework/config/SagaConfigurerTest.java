@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SagaConfigurerTest {
 
     @Test
-    void testNullChecksOnSagaConfigurer() {
+    void nullChecksOnSagaConfigurer() {
         SagaConfigurer<Object> configurer = SagaConfigurer.forType(Object.class);
         assertConfigurerNullCheck(() -> SagaConfigurer.forType(null), "Saga type should be checked for null");
         assertConfigurerNullCheck(() -> configurer.configureSagaStore(null), "Saga store builder should be checked for null");
@@ -43,7 +43,7 @@ class SagaConfigurerTest {
     }
 
     @Test
-    void testDefaultConfiguration(
+    void defaultConfiguration(
             @Mock ListenerInvocationErrorHandler listenerInvocationErrorHandler,
             @Mock SagaStore store) {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
@@ -62,7 +62,7 @@ class SagaConfigurerTest {
     }
 
     @Test
-    void testCustomConfiguration(
+    void customConfiguration(
             @Mock SagaRepository<Object> repository,
             @Mock AnnotatedSagaManager<Object> manager) {
         SagaStore<Object> sagaStore = new InMemorySagaStore();

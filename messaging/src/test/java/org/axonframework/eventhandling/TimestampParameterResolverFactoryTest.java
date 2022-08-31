@@ -79,7 +79,7 @@ class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesToDateTimeWhenAnnotated() {
+    void resolvesToDateTimeWhenAnnotated() {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
@@ -89,7 +89,7 @@ class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesToReadableInstantWhenAnnotated() {
+    void resolvesToReadableInstantWhenAnnotated() {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
@@ -99,20 +99,20 @@ class TimestampParameterResolverFactoryTest {
     }
 
     @Test
-    void testIgnoredWhenNotAnnotated() {
+    void ignoredWhenNotAnnotated() {
         ParameterResolver resolver =
                 testSubject.createInstance(nonAnnotatedInstantMethod, nonAnnotatedInstantMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    void testIgnoredWhenWrongType() {
+    void ignoredWhenWrongType() {
         ParameterResolver resolver = testSubject.createInstance(stringMethod, stringMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    void testResolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
+    void resolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");

@@ -81,7 +81,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot() {
+    void scheduleSnapshot() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(DomainEventStream.of(createEvents(2)));
@@ -90,7 +90,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testSnapshotTracing() {
+    void snapshotTracing() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenAnswer(invocation -> {
@@ -107,7 +107,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
+    void scheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
@@ -121,7 +121,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshotOnlyOnce() {
+    void scheduleSnapshotOnlyOnce() {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
@@ -139,7 +139,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
+    void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
@@ -155,7 +155,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_SnapshotIsNull() {
+    void scheduleSnapshot_SnapshotIsNull() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -163,7 +163,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_SnapshotReplacesOneEvent() {
+    void scheduleSnapshot_SnapshotReplacesOneEvent() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -172,7 +172,7 @@ class AbstractSnapshotterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testScheduleSnapshot_WithTransaction() {
+    void scheduleSnapshot_WithTransaction() {
         Transaction mockTransaction = mock(Transaction.class);
         TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
         when(txManager.startTransaction()).thenReturn(mockTransaction);
@@ -182,7 +182,7 @@ class AbstractSnapshotterTest {
                                      .transactionManager(txManager)
                                      .build();
 
-        testScheduleSnapshot();
+        scheduleSnapshot();
 
         InOrder inOrder = inOrder(mockEventStore, txManager, mockTransaction);
         inOrder.verify(txManager).startTransaction();
@@ -192,7 +192,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_IgnoredWhenSnapshotAlreadyScheduled() {
+    void scheduleSnapshot_IgnoredWhenSnapshotAlreadyScheduled() {
         StubExecutor executor = new StubExecutor();
         testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
 
@@ -209,7 +209,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_AcceptedWhenOtherSnapshotIsScheduled() {
+    void scheduleSnapshot_AcceptedWhenOtherSnapshotIsScheduled() {
         StubExecutor executor = new StubExecutor();
         testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
 

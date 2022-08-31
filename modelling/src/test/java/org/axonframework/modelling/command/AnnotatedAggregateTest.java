@@ -79,7 +79,7 @@ public class AnnotatedAggregateTest {
     }
 
     @Test
-    void testApplyingEventInHandlerPublishesInRightOrder() {
+    void applyingEventInHandlerPublishesInRightOrder() {
         Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
@@ -95,7 +95,7 @@ public class AnnotatedAggregateTest {
 
     // Test for issue #1506 - https://github.com/AxonFramework/AxonFramework/issues/1506
     @Test
-    void testLastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
+    void lastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
         final Command command = new Command(ID, 0);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         AnnotatedAggregate<AggregateRoot> testSubject =
@@ -107,7 +107,7 @@ public class AnnotatedAggregateTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testConditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
+    void conditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
         Command_2 command = new Command_2(ID, 0, applyConditional);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
         Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository

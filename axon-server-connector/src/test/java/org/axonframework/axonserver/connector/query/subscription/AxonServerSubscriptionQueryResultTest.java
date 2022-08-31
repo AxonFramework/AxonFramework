@@ -78,7 +78,7 @@ class AxonServerSubscriptionQueryResultTest {
     }
 
     @Test
-    void testSubscriptionQueryClosesUpdateFluxWithErrorOnErrorInResultStream() {
+    void subscriptionQueryClosesUpdateFluxWithErrorOnErrorInResultStream() {
         executorService.schedule(() -> {
             subscriptionQueryUpdateBuffer.onError(new RuntimeException("Test"));
         }, 10, TimeUnit.MILLISECONDS);
@@ -89,7 +89,7 @@ class AxonServerSubscriptionQueryResultTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesUpdateFluxOnCompletedResultStream() {
+    void subscriptionQueryCompletesUpdateFluxOnCompletedResultStream() {
         executorService.schedule(() -> {
             subscriptionQueryUpdateBuffer.onCompleted();
         }, 10, TimeUnit.MILLISECONDS);

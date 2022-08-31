@@ -98,7 +98,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfiguredDisruptorCommandBusCreatesTheRepository() {
+    void configuredDisruptorCommandBusCreatesTheRepository() {
         //noinspection unchecked
         Repository<Object> expectedRepository = mock(Repository.class);
 
@@ -120,7 +120,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfiguredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
+    void configuredDisruptorCommandBusAsLocalSegmentCreatesTheRepository() {
         //noinspection unchecked
         Repository<Object> expectedRepository = mock(Repository.class);
 
@@ -144,7 +144,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testPolymorphicConfig() {
+    void polymorphicConfig() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .withSubtypes(B.class);
 
@@ -168,7 +168,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testAggregateFactoryConfiguration() {
+    void aggregateFactoryConfiguration() {
         AggregateFactory<TestAggregate> expectedAggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
 
         testSubject.configureAggregateFactory(configuration -> expectedAggregateFactory);
@@ -177,7 +177,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testSnapshotFilterConfiguration() {
+    void snapshotFilterConfiguration() {
         SnapshotFilter testFilter = snapshotData -> true;
 
         testSubject.configureSnapshotFilter(configuration -> testFilter);
@@ -186,7 +186,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testAggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
+    void aggregateConfigurationCreatesRevisionSnapshotFilterForAggregateWithRevision() {
         DomainEventMessage<TestAggregateWithRevision> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregateWithRevision.class.getName(), "some-aggregate-id", 0, new TestAggregateWithRevision()
         );
@@ -204,7 +204,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testAggregateConfigurationThrowsAxonConfigExceptionWhenCreatingRevisionSnapshotFilterForUndefinedDeclaredType() {
+    void aggregateConfigurationThrowsAxonConfigExceptionWhenCreatingRevisionSnapshotFilterForUndefinedDeclaredType() {
         //noinspection unchecked
         AggregateModel<TestAggregateWithRevision> mockModel = mock(AggregateModel.class);
         when(mockModel.declaredType(TestAggregateWithRevision.class)).thenReturn(Optional.empty());
@@ -221,7 +221,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureLockFactoryForEventSourcedAggregate() {
+    void configureLockFactoryForEventSourcedAggregate() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .configureLockFactory(config -> lockFactory);
@@ -241,7 +241,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureSpanFactoryForEventSourcedAggregate() {
+    void configureSpanFactoryForEventSourcedAggregate() {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
 
         TestSpanFactory testSpanFactory = new TestSpanFactory();
@@ -262,7 +262,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
+    void configureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
                                                                         .configureLockFactory(config -> lockFactory);
@@ -285,7 +285,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureSpanFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
+    void configureSpanFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
                                                                         .configureLockFactory(config -> lockFactory);
@@ -311,7 +311,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureLockFactoryForStateStoredAggregate() {
+    void configureLockFactoryForStateStoredAggregate() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer =
                 AggregateConfigurer.jpaMappedConfiguration(
@@ -334,7 +334,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testConfigureSpanFactoryForStateStoredAggregate() {
+    void configureSpanFactoryForStateStoredAggregate() {
         AggregateConfigurer<A> aggregateConfigurer =
                 AggregateConfigurer.jpaMappedConfiguration(
                         A.class, new SimpleEntityManagerProvider(mock(EntityManager.class))
@@ -358,7 +358,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testNullRevisionEventAndNullRevisionAggregateAllowed() {
+    void nullRevisionEventAndNullRevisionAggregateAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregate());
 
@@ -376,7 +376,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void testNonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
+    void nonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregate()
         );

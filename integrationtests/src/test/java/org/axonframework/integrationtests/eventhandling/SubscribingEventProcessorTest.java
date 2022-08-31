@@ -71,7 +71,7 @@ class SubscribingEventProcessorTest {
     }
 
     @Test
-    void testRestartSubscribingEventProcessor() throws Exception {
+    void restartSubscribingEventProcessor() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch.countDown();
@@ -87,7 +87,7 @@ class SubscribingEventProcessorTest {
     }
 
     @Test
-    void testSubscribingEventProcessorIsTraced() throws Exception {
+    void subscribingEventProcessorIsTraced() throws Exception {
         doAnswer(invocation -> {
             EventMessage<?> message = invocation.getArgument(0, EventMessage.class);
             spanFactory.verifySpanActive("SubscribingEventProcessor[test].process", message);
@@ -102,7 +102,7 @@ class SubscribingEventProcessorTest {
     }
 
     @Test
-    void testStartTransactionManager() throws Exception {
+    void startTransactionManager() throws Exception {
         testSubject.start();
         eventBus.publish(EventTestUtils.createEvents(1));
 
@@ -110,7 +110,7 @@ class SubscribingEventProcessorTest {
     }
 
     @Test
-    void testBuildWithNullTransactionManagerThrowsAxonConfigurationException() {
+    void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
         SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
 
         assertThrows(AxonConfigurationException.class,  () -> builder.transactionManager(null));

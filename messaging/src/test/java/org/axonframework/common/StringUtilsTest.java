@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StringUtilsTest {
 
     @Test
-    void testNonEmptyOrNull() {
+    void nonEmptyOrNull() {
         assertFalse(StringUtils.nonEmptyOrNull(""));
         assertFalse(StringUtils.nonEmptyOrNull(null));
         assertTrue(StringUtils.nonEmptyOrNull("some-string"));

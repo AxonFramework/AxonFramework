@@ -56,7 +56,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testCreateOrUpdatePolicyForNewInstance() {
+    void createOrUpdatePolicyForNewInstance() {
         fixture.givenNoPriorActivity()
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
@@ -65,7 +65,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testCreateOrUpdatePolicyForExistingInstance() {
+    void createOrUpdatePolicyForExistingInstance() {
         fixture.given(new CreatedEvent(AGGREGATE_ID))
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
@@ -74,7 +74,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testAlwaysCreatePolicyWithoutResultReturnsAggregateId() {
+    void alwaysCreatePolicyWithoutResultReturnsAggregateId() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
@@ -84,7 +84,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testAlwaysCreatePolicyWithResultReturnsCommandHandlingResult() {
+    void alwaysCreatePolicyWithResultReturnsCommandHandlingResult() {
         Object testResult = "some-result";
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithResultCommand(AGGREGATE_ID, testResult))
@@ -95,7 +95,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testAlwaysCreatePolicyWithResultReturnsNullCommandHandlingResult() {
+    void alwaysCreatePolicyWithResultReturnsNullCommandHandlingResult() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithResultCommand(AGGREGATE_ID, null))
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
@@ -105,7 +105,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testNeverCreatePolicy() {
+    void neverCreatePolicy() {
         fixture.given(new CreatedEvent(AGGREGATE_ID))
                .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
                .expectEvents(new ExecutedOnExistingEvent(AGGREGATE_ID))
@@ -114,7 +114,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testAlwaysCreatePolicyWithStateReturnsStateInCommandHandlingResult() {
+    void alwaysCreatePolicyWithStateReturnsStateInCommandHandlingResult() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID))
                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
@@ -124,7 +124,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testAlwaysCreateExceptionsArePropagates() {
+    void alwaysCreateExceptionsArePropagates() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))
                .expectNoEvents()
@@ -133,7 +133,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    void testCreateOrUpdatePolicyDoesNotPublishAnyEvents() {
+    void createOrUpdatePolicyDoesNotPublishAnyEvents() {
         fixture.givenNoPriorActivity()
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))
                .expectNoEvents()

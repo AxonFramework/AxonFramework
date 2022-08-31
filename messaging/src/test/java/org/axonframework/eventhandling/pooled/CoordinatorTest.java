@@ -88,7 +88,7 @@ class CoordinatorTest {
     }
 
     @Test
-    void testIfCoordinationTaskRescheduledAfterTokenReleaseClaimFails() {
+    void ifCoordinationTaskRescheduledAfterTokenReleaseClaimFails() {
         //arrange
         final RuntimeException streamOpenException = new RuntimeException("Some exception during event stream open");
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
@@ -113,7 +113,7 @@ class CoordinatorTest {
     }
 
     @Test
-    void testIfCoordinationTaskInitializesTokenStoreWhenNeeded() {
+    void ifCoordinationTaskInitializesTokenStoreWhenNeeded() {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
@@ -132,7 +132,7 @@ class CoordinatorTest {
 
     @SuppressWarnings("rawtypes") // Mockito cannot deal with the wildcard generics of the TrackedEventMessage
     @Test
-    void testIfCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
+    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
         TrackedEventMessage testEventOne =
                 new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("this-event"));

@@ -67,7 +67,7 @@ class AxonAutoConfigurationWithoutObjectMapperTest {
     private ApplicationContext applicationContext;
 
     @Test
-    void testNoObjectMapperBeanIsCreatedIfNoJacksonSerializerIsSpecified() {
+    void noObjectMapperBeanIsCreatedIfNoJacksonSerializerIsSpecified() {
         assertThrows(NoSuchBeanDefinitionException.class, () -> applicationContext.getBean(ObjectMapper.class));
 
     }
