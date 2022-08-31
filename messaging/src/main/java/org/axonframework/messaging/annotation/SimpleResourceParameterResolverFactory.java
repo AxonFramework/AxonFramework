@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.lang.reflect.Parameter;
  * Uses the {@link FixedValueParameterResolver} to inject a resource as a fixed value
  * on message handling if the resource equals a message handling method parameter.
  */
-@Priority(Priority.LOW)
+@Priority(Priority.LAST)
 public class SimpleResourceParameterResolverFactory implements ParameterResolverFactory {
 
     private final Iterable<?> resources;
