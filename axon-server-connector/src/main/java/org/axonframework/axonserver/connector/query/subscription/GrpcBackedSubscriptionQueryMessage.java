@@ -62,7 +62,7 @@ public class GrpcBackedSubscriptionQueryMessage<Q, I, U> implements Subscription
                 subscriptionQuery,
                 new GrpcBackedQueryMessage<>(subscriptionQuery.getQueryRequest(), messageSerializer, serializer),
                 new LazyDeserializingObject<>(
-                        new GrpcSerializedObject(subscriptionQuery.getQueryRequest().getResponseType()), serializer
+                        new GrpcSerializedObject(subscriptionQuery.getUpdateResponseType()), serializer
                 )
         );
     }
