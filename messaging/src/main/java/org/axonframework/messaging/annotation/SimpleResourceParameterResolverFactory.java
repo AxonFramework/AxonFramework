@@ -26,7 +26,7 @@ import java.lang.reflect.Parameter;
  * Uses the {@link FixedValueParameterResolver} to inject a resource as a fixed value
  * on message handling if the resource equals a message handling method parameter.
  */
-@Priority(Priority.LAST)
+@Priority(Priority.LOWER)
 public class SimpleResourceParameterResolverFactory implements ParameterResolverFactory {
 
     private final Iterable<?> resources;
