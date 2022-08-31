@@ -60,6 +60,20 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      */
     abstract SequencedDeadLetterQueue<M> buildTestSubject();
 
+    /**
+     * Return the configured maximum amount of sequences for the {@link #buildTestSubject() test subject}.
+     *
+     * @return The configured maximum amount of sequences for the {@link #buildTestSubject() test subject}.
+     */
+    abstract long maxSequences();
+
+    /**
+     * Return the configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
+     *
+     * @return The configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
+     */
+    abstract long maxSequenceSize();
+
     @Test
     void enqueueAddsDeadLetter() {
         Object testId = generateId();
@@ -76,7 +90,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @Test
     void enqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequencesIsReached() {
-        long maxSequences = testSubject.maxSequences();
+        long maxSequences = this.maxSequences();
         assertTrue(maxSequences > 0);
 
         for (int i = 0; i < maxSequences; i++) {
@@ -92,7 +106,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     void enqueueThrowsDeadLetterQueueOverflowExceptionWhenMaxSequenceSizeIsReached() {
         Object testId = generateId();
 
-        long maxSequenceSize = testSubject.maxSequenceSize();
+        long maxSequenceSize = this.maxSequenceSize();
         assertTrue(maxSequenceSize > 0);
 
         for (int i = 0; i < maxSequenceSize; i++) {
@@ -107,7 +121,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     void enqueueIfPresentThrowsDeadLetterQueueOverflowExceptionForFullQueue() {
         Object testId = generateId();
 
-        long maxSequenceSize = testSubject.maxSequenceSize();
+        long maxSequenceSize = this.maxSequenceSize();
         assertTrue(maxSequenceSize > 0);
 
         for (int i = 0; i < maxSequenceSize; i++) {
@@ -339,7 +353,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     void isFullReturnsTrueAfterMaximumAmountOfSequencesIsReached() {
         assertFalse(testSubject.isFull(generateId()));
 
-        long maxSequences = testSubject.maxSequences();
+        long maxSequences = this.maxSequences();
         assertTrue(maxSequences > 0);
 
         for (int i = 0; i < maxSequences; i++) {
@@ -355,7 +369,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
         assertFalse(testSubject.isFull(testId));
 
-        long maxSequenceSize = testSubject.maxSequenceSize();
+        long maxSequenceSize = this.maxSequenceSize();
         assertTrue(maxSequenceSize > 0);
 
         for (int i = 0; i < maxSequenceSize; i++) {

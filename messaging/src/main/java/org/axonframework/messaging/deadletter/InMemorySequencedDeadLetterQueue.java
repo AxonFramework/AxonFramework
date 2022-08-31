@@ -242,16 +242,6 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     }
 
     @Override
-    public long maxSequences() {
-        return maxSequences;
-    }
-
-    @Override
-    public long maxSequenceSize() {
-        return maxSequenceSize;
-    }
-
-    @Override
     public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                            @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         if (deadLetters.isEmpty()) {

@@ -33,9 +33,24 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
+    private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 128;
+
     @Override
     SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
-        return InMemorySequencedDeadLetterQueue.defaultQueue();
+        return InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
+                                               .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                               .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                               .build();
+    }
+
+    @Override
+    long maxSequences() {
+        return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
+    }
+
+    @Override
+    long maxSequenceSize() {
+        return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
     }
 
     @Override
@@ -62,30 +77,6 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     @Override
     void setClock(Clock clock) {
         GenericDeadLetter.clock = clock;
-    }
-
-    @Test
-    void maxSequencesReturnsConfiguredValue() {
-        int expectedMaxSequences = 128;
-
-        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
-                                                .maxSequences(expectedMaxSequences)
-                                                .build();
-
-        assertEquals(expectedMaxSequences, testSubject.maxSequences());
-    }
-
-    @Test
-    void maxSequenceSizeReturnsConfiguredValue() {
-        int expectedMaxSequenceSize = 128;
-
-        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
-                                                .maxSequenceSize(expectedMaxSequenceSize)
-                                                .build();
-
-        assertEquals(expectedMaxSequenceSize, testSubject.maxSequenceSize());
     }
 
     @Test
