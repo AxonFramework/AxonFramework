@@ -137,6 +137,30 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
+    void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
+        SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(Integer.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, "some-awesome-text");
+        testSubject.emit(any -> true, 1234);
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(1234)
+                    .verifyComplete();
+    }
+
+    @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
