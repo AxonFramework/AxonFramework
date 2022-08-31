@@ -41,7 +41,7 @@ class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testShutdownInvokesExecutorServiceShutdown(@Mock ScopeAwareProvider scopeAwareProvider,
+    void shutdownInvokesExecutorServiceShutdown(@Mock ScopeAwareProvider scopeAwareProvider,
                                                     @Mock ScheduledExecutorService scheduledExecutorService) {
         SimpleDeadlineManager testSubject = SimpleDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)

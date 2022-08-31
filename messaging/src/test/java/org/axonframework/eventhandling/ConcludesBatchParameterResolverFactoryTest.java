@@ -33,7 +33,7 @@ class ConcludesBatchParameterResolverFactoryTest {
     private ConcludesBatchParameterResolverFactory subject = new ConcludesBatchParameterResolverFactory();
 
     @Test
-    void testCreateInstance() throws Exception {
+    void createInstance() throws Exception {
         Method method = getClass().getDeclaredMethod("handle", String.class, Boolean.class);
         assertSame(subject.getResolver(), subject.createInstance(method, method.getParameters(), 1));
         method = getClass().getDeclaredMethod("handlePrimitive", String.class, boolean.class);
@@ -41,30 +41,30 @@ class ConcludesBatchParameterResolverFactoryTest {
     }
 
     @Test
-    void testOnlyMatchesEventMessages() {
+    void onlyMatchesEventMessages() {
         assertTrue(subject.matches(asEventMessage("testEvent")));
         assertFalse(subject.matches(new GenericCommandMessage<>("testCommand")));
     }
 
     @Test
-    void testResolvesToTrueWithoutUnitOfWork() {
+    void resolvesToTrueWithoutUnitOfWork() {
         assertTrue(subject.resolveParameterValue(asEventMessage("testEvent")));
     }
 
     @Test
-    void testResolvesToTrueWithRegularUnitOfWork() {
+    void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage<?> event = asEventMessage("testEvent");
         DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(subject.resolveParameterValue(event)));
     }
 
     @Test
-    void testResolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
+    void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
         new BatchingUnitOfWork<>(events).execute(() -> assertFalse(subject.resolveParameterValue(events.get(0))));
     }
 
     @Test
-    void testResolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
+    void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
         new BatchingUnitOfWork<>(events).execute(() -> assertTrue(subject.resolveParameterValue(events.get(4))));
     }

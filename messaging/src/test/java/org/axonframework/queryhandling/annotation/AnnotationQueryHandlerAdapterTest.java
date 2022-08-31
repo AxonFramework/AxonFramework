@@ -55,7 +55,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testSubscribe() {
+    void subscribe() {
         when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
         Registration registration = testSubject.subscribe(queryBus);
 
@@ -66,7 +66,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testSubscribeFailsForHandlerWithInvalidParameters() {
+    void subscribeFailsForHandlerWithInvalidParameters() {
         assertThrows(
                 UnsupportedHandlerException.class,
                 () -> new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler())
@@ -74,7 +74,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testSubscribeFailsForHandlerWithVoidReturnType() {
+    void subscribeFailsForHandlerWithVoidReturnType() {
         assertThrows(
                 UnsupportedHandlerException.class,
                 () -> new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler())
@@ -82,7 +82,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQuery() throws Exception {
+    void handleQuery() throws Exception {
         String testResponse = "hello";
         QueryMessage<String, String> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
@@ -92,7 +92,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQueryWithException() {
+    void handleQueryWithException() {
         QueryMessage<String, Integer> testQuery =
                 new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
 
@@ -100,7 +100,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQueryWithEmptyOptional() throws Exception {
+    void handleQueryWithEmptyOptional() throws Exception {
         QueryMessage<String, String> testQuery =
                 new GenericQueryMessage<>("hello", "noEcho", ResponseTypes.instanceOf(String.class));
 
@@ -108,7 +108,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQueryWithProvidedOptional() throws Exception {
+    void handleQueryWithProvidedOptional() throws Exception {
         QueryMessage<String, String> testQuery =
                 new GenericQueryMessage<>("hello", "Hello", ResponseTypes.instanceOf(String.class));
 
@@ -116,7 +116,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQueryForCollection() throws Exception {
+    void handleQueryForCollection() throws Exception {
         int testResponse = 5;
         QueryMessage<Integer, List<String>> testQueryMessage =
                 new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));
@@ -128,7 +128,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testHandleQueryThrowsNoHandlerForQueryException() {
+    void handleQueryThrowsNoHandlerForQueryException() {
         QueryMessage<Long, List<String>> testQueryMessage =
                 new GenericQueryMessage<>(42L, ResponseTypes.multipleInstancesOf(String.class));
 
@@ -136,7 +136,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testInterceptMessages() throws Exception {
+    void interceptMessages() throws Exception {
         List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();
         List<QueryMessage<?, ?>> withoutInterceptor = new ArrayList<>();
         testSubject = new AnnotationQueryHandlerAdapter<>(
@@ -154,7 +154,7 @@ class AnnotationQueryHandlerAdapterTest {
     }
 
     @Test
-    void testCanHandleMessage() {
+    void canHandleMessage() {
         QueryMessage<String, Integer> testIntegerQuery =
                 new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
         QueryMessage<String, Long> testLongQuery =

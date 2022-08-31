@@ -50,7 +50,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     }
 
     @Test
-    void testPublishedEventsEmittedToExistingStreams() {
+    void publishedEventsEmittedToExistingStreams() {
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(TEST_EVENT);
 
@@ -58,7 +58,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     }
 
     @Test
-    void testPublishedEventsEmittedToExistingStreams_WithOffset() {
+    void publishedEventsEmittedToExistingStreams_WithOffset() {
         testSubject = new InMemoryEventStorageEngine(1);
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(TEST_EVENT);
@@ -71,7 +71,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     }
 
     @Test
-    void testEventsAreStoredOnCommitIfCurrentUnitOfWorkIsActive() {
+    void eventsAreStoredOnCommitIfCurrentUnitOfWorkIsActive() {
         UnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
@@ -90,7 +90,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
     }
 
     @Test
-    void testEventsAreNotStoredWhenTheUnitOfWorkIsRolledBackIfCurrentUnitOfWorkIsActive() {
+    void eventsAreNotStoredWhenTheUnitOfWorkIsRolledBackIfCurrentUnitOfWorkIsActive() {
         UnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...

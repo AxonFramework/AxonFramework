@@ -50,7 +50,7 @@ class AsynchronousEventProcessorConcurrencyTest {
 
     @Test
     @Timeout(value = EventsPublisher.EVENTS_COUNT, unit = TimeUnit.MILLISECONDS)
-    void testHandleEvents() throws InterruptedException {
+    void handleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
         Consumer<List<? extends EventMessage<?>>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
 

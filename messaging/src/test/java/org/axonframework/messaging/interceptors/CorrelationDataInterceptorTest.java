@@ -50,7 +50,7 @@ class CorrelationDataInterceptorTest {
     }
 
     @Test
-    void testAttachesCorrelationDataProvidersToUnitOfWork() throws Exception {
+    void attachesCorrelationDataProvidersToUnitOfWork() throws Exception {
         subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);

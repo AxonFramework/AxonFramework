@@ -75,7 +75,7 @@ class ChainedConverterTest {
     }
 
     @Test
-    void testComplexRoute() throws Exception {
+    void complexRoute() throws Exception {
         target = InputStream.class;
         source = 1L;
         testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
@@ -100,7 +100,7 @@ class ChainedConverterTest {
     }
     
     @Test
-    void testSimpleRoute() {
+    void simpleRoute() {
         target = String.class;
         source = 1L;
         testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
@@ -120,7 +120,7 @@ class ChainedConverterTest {
     }
 
     @Test
-    void testInexistentRoute() {
+    void inexistentRoute() {
         target = InputStream.class;
         source = new StringReader("hello");
         assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(Reader.class, target, candidates));
@@ -128,7 +128,7 @@ class ChainedConverterTest {
 
     // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
     @Test
-    void testAnotherInexistentRoute() {
+    void anotherInexistentRoute() {
         target = Number.class;
         source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
@@ -136,14 +136,14 @@ class ChainedConverterTest {
     }
 
     @Test
-    void testAThirdInexistentRoute() {
+    void aThirdInexistentRoute() {
         target = Documented.class;
         source = "hello".getBytes();
         assertThrows(CannotConvertBetweenTypesException.class, () -> ChainedConverter.calculateChain(byte[].class, target, candidates));
     }
 
     @Test
-    void testDiscontinuousChainIsRejected() {
+    void discontinuousChainIsRejected() {
         try {
             testSubject = new ChainedConverter(Arrays.<ContentTypeConverter>asList(numberToStringConverter,
                                                                                    bytesToInputStreamConverter));

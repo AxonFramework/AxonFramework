@@ -58,7 +58,7 @@ class QuerySerializerTest {
             new QuerySerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    void testSerializeRequest() {
+    void serializeRequest() {
         QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test", "MyQueryName", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
@@ -72,7 +72,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeResponse() {
+    void serializeResponse() {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -90,7 +90,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeExceptionalResponse() {
+    void serializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         GenericQueryResponseMessage<String> responseMessage =
                 new GenericQueryResponseMessage<>(String.class, exception, MetaData.with("test", "testValue"));
@@ -108,7 +108,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeDeserializeNonTransientExceptionalResponse() {
+    void serializeDeserializeNonTransientExceptionalResponse() {
         SerializationException exception = new SerializationException("oops");
         GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
                 String.class,
@@ -128,7 +128,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeExceptionalResponseWithDetails() {
+    void serializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         GenericQueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
                 String.class,

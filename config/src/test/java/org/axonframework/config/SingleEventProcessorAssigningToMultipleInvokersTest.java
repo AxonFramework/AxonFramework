@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
-    void testMultipleAssignmentsToTrackingProcessor() {
+    void multipleAssignmentsToTrackingProcessor() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventHandler(config -> new EventHandler1())
@@ -57,7 +57,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
     }
 
     @Test
-    void testMultipleAssignmentsToSubscribingProcessor() {
+    void multipleAssignmentsToSubscribingProcessor() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
@@ -85,7 +85,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
     }
 
     @Test
-    void testMultipleAssignmentsWithProvidedProcessorName() {
+    void multipleAssignmentsWithProvidedProcessorName() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("processor1", clazz -> clazz.equals(Saga3.class))
@@ -120,7 +120,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
     }
 
     @Test
-    void testProcessorGroupAssignment() {
+    void processorGroupAssignment() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
@@ -145,7 +145,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
     }
 
     @Test
-    void testProcessorGroupAssignmentByRule() {
+    void processorGroupAssignmentByRule() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myProcessor", clazz -> clazz.equals(Saga3.class))

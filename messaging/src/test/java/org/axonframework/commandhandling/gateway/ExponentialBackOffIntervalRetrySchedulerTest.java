@@ -39,7 +39,7 @@ class ExponentialBackOffIntervalRetrySchedulerTest {
     }
 
     @Test
-    void testBuildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
+    void buildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
         ExponentialBackOffIntervalRetryScheduler.Builder builder = ExponentialBackOffIntervalRetryScheduler.builder();
         assertThrows(AxonConfigurationException.class, builder::build);
     }

@@ -57,7 +57,7 @@ class LockingSagaRepositoryTest {
     }
 
     @Test
-    void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() {
+    void lockReleasedOnUnitOfWorkCleanUpAfterCreate() {
         subject.createInstance("id", Object::new);
         verify(lockFactory).obtainLock("id");
         verify(subject).doCreateInstance(eq("id"), any());
@@ -67,7 +67,7 @@ class LockingSagaRepositoryTest {
     }
 
     @Test
-    void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() {
+    void lockReleasedOnUnitOfWorkCleanUpAfterLoad() {
         subject.load("id");
         verify(lockFactory).obtainLock("id");
         verify(subject).doLoad("id");

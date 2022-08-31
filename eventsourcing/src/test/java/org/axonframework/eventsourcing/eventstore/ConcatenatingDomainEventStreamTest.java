@@ -52,7 +52,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testForEachRemaining() {
+    void forEachRemaining() {
         List<DomainEventMessage> expectedMessages = Arrays.asList(event1, event2, event3, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
@@ -69,7 +69,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testForEachRemainingKeepsDuplicateSequenceIdEventsInSameStream() {
+    void forEachRemainingKeepsDuplicateSequenceIdEventsInSameStream() {
         List<DomainEventMessage> expectedMessages =
                 Arrays.asList(event1, event1, event2, event3, event4, event4, event5);
 
@@ -89,7 +89,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testConcatSkipsDuplicateEvents() {
+    void concatSkipsDuplicateEvents() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event2),
                                                                       DomainEventStream.of(event2, event3),
                                                                       DomainEventStream.of(event3, event4));
@@ -108,7 +108,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    public void testConcatDoesNotSkipDuplicateSequencesInSameStream() {
+    public void concatDoesNotSkipDuplicateSequencesInSameStream() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event1, event2),
                                                                       DomainEventStream.of(event2, event2, event3),
                                                                       DomainEventStream.of(event3, event4));
@@ -124,7 +124,7 @@ class ConcatenatingDomainEventStreamTest {
 
 
     @Test
-    void testLastKnownSequenceReturnsTheLastEventItsSequence() {
+    void lastKnownSequenceReturnsTheLastEventItsSequence() {
         DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1),
                                                                       DomainEventStream.of(event2, event3),
@@ -144,7 +144,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testLastKnownSequenceReturnsTheLastEventItsSequenceEventIfEventsHaveGaps() {
+    void lastKnownSequenceReturnsTheLastEventItsSequenceEventIfEventsHaveGaps() {
         DomainEventStream lastStream = DomainEventStream.of(event4, event5);
         DomainEventStream concat = new ConcatenatingDomainEventStream(DomainEventStream.of(event1, event3),
                                                                       lastStream);
@@ -162,7 +162,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testLastSequenceNumberWhenLastEventIsFilteredOut() {
+    void lastSequenceNumberWhenLastEventIsFilteredOut() {
         // the last sequence number is the one from the event that is filtered out, e.g. when using upcasters
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(
@@ -175,7 +175,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testMaxLastSequenceNumberFromDelegates() {
+    void maxLastSequenceNumberFromDelegates() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(event1, event3),
                 DomainEventStream.of(event2));
@@ -188,7 +188,7 @@ class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    void testNullSequenceNumberFromDelegates_NullPointer() {
+    void nullSequenceNumberFromDelegates_NullPointer() {
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(event1),
                 DomainEventStream.of(Stream.empty(), () -> null));

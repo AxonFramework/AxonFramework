@@ -51,7 +51,7 @@ class SingleEventUpcasterTest {
     private final Serializer serializer = TestSerializer.XSTREAM.getSerializer();
 
     @Test
-    void testUpcastsKnownType() {
+    void upcastsKnownType() {
         String newValue = "newNameValue";
         MetaData metaData = MetaData.with("key", "value");
         EventData<?> eventData = new TestDomainEventEntry(
@@ -72,7 +72,7 @@ class SingleEventUpcasterTest {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    void testUpcastingDomainEventData() {
+    void upcastingDomainEventData() {
         String aggregateType = "test";
         String aggregateId = "aggregateId";
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
@@ -100,7 +100,7 @@ class SingleEventUpcasterTest {
     }
 
     @Test
-    void testIgnoresUnknownType() {
+    void ignoresUnknownType() {
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, "someString"), serializer
         );
@@ -114,7 +114,7 @@ class SingleEventUpcasterTest {
     }
 
     @Test
-    void testIgnoresWrongVersion() {
+    void ignoresWrongVersion() {
         EventData<?> eventData = new TestDomainEventEntry(
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubDomainEvent("oldName")), serializer
         );

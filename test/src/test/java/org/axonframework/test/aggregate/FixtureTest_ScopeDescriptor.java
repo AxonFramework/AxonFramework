@@ -27,7 +27,7 @@ class FixtureTest_ScopeDescriptor {
     }
 
     @Test
-    void testResolvesScopeDescriptor() {
+    void resolvesScopeDescriptor() {
         fixture.givenNoPriorActivity()
                .when("some-identifier")
                .expectEventsMatching(payloadsMatching(sequenceOf(matches(

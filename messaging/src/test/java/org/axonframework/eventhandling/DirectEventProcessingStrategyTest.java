@@ -31,7 +31,7 @@ class DirectEventProcessingStrategyTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testEventsPassedToProcessor() {
+    void eventsPassedToProcessor() {
         List<? extends EventMessage<?>> events = createEvents(10);
         Consumer<List<? extends EventMessage<?>>> mockProcessor = mock(Consumer.class);
         DirectEventProcessingStrategy.INSTANCE.handle(events, mockProcessor);

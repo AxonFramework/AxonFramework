@@ -45,7 +45,7 @@ class EventHandlerRegistrarTest {
     }
 
     @Test
-    void testBeansRegisteredInOrder() {
+    void beansRegisteredInOrder() {
         testSubject.setEventHandlers(Arrays.asList(new OrderedBean(), new LateOrderedBean(), new UnorderedBean()));
 
         InOrder inOrder = Mockito.inOrder(eventConfigurer);

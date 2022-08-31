@@ -79,7 +79,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testSendWithCallbackCommandIsRetried() {
+    void sendWithCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback<Object, Object>) invocation.getArguments()[1])
                     .onResult((CommandMessage<Object>) invocation.getArguments()[0],
@@ -110,7 +110,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testSendWithoutCallbackCommandIsRetried() {
+    void sendWithoutCallbackCommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
                     (CommandMessage<Object>) invocation.getArguments()[0],
@@ -140,7 +140,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testSendWithoutCallback() throws ExecutionException, InterruptedException {
+    void sendWithoutCallback() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
                     (CommandMessage<Object>) invocation.getArguments()[0],
@@ -156,7 +156,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testSendWithoutCallbackCustomizedCallbackIsCalled() throws ExecutionException, InterruptedException {
+    void sendWithoutCallbackCustomizedCallbackIsCalled() throws ExecutionException, InterruptedException {
         AtomicBoolean finalCallbackCalled = new AtomicBoolean(false);
         AtomicBoolean customizedCallbackCalled = new AtomicBoolean(false);
         testSubject = DefaultCommandGateway.builder()
@@ -190,7 +190,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testSendAndWaitCommandIsRetried() {
+    void sendAndWaitCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
@@ -222,7 +222,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testSendAndWaitWithTimeoutCommandIsRetried() {
+    void sendAndWaitWithTimeoutCommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
             ((CommandCallback<Object, Object>) invocation.getArguments()[1]).onResult(
@@ -254,7 +254,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testSendAndWaitNullOnInterrupt() {
+    void sendAndWaitNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
@@ -267,7 +267,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testSendAndWaitWithTimeoutNullOnInterrupt() {
+    void sendAndWaitWithTimeoutNullOnInterrupt() {
         doAnswer(invocation -> {
             Thread.currentThread().interrupt();
             return null;
@@ -286,7 +286,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testSendAndWaitWithTimeoutNullOnTimeout() {
+    void sendAndWaitWithTimeoutNullOnTimeout() {
         try {
             assertNull(testSubject.sendAndWait("Hello", 10, TimeUnit.MILLISECONDS));
             fail("Expected interrupted exception");
@@ -298,7 +298,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testCorrelationDataIsAttachedToCommandAsObject() {
+    void correlationDataIsAttachedToCommandAsObject() {
         UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
@@ -311,7 +311,7 @@ class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testCorrelationDataIsAttachedToCommandAsMessage() {
+    void correlationDataIsAttachedToCommandAsMessage() {
         final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
@@ -326,7 +326,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+    void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         doAnswer(i -> {
             CommandCallback<String, String> callback = i.getArgument(1);
             callback.onResult(i.getArgument(0), new GenericCommandResultMessage<String>("result") {
@@ -347,7 +347,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testSendAndWaitAttachesMetaData() {
+    void sendAndWaitAttachesMetaData() {
         //noinspection unchecked
         doAnswer(invocation -> {
             //noinspection unchecked
@@ -374,7 +374,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testSendAndWaitWithTimeoutAttachesMetaData() {
+    void sendAndWaitWithTimeoutAttachesMetaData() {
         //noinspection unchecked
         doAnswer(invocation -> {
             //noinspection unchecked
@@ -401,7 +401,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testSendAttachesMetaData() {
+    void sendAttachesMetaData() {
         //noinspection unchecked
         doAnswer(invocation -> {
             //noinspection unchecked
@@ -428,7 +428,7 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void testCommandCallbackIsCustomized() {
+    void commandCallbackIsCustomized() {
         AtomicBoolean customizedCallbackIsCalled = new AtomicBoolean();
 
         testSubject = DefaultCommandGateway.builder()

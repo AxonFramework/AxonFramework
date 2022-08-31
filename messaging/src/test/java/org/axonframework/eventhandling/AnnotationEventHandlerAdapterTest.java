@@ -57,21 +57,21 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
-    void testInvokeResetHandler() {
+    void invokeResetHandler() {
         testSubject.prepareReset();
 
         assertTrue(annotatedEventListener.invocations.contains("reset"));
     }
 
     @Test
-    void testInvokeResetHandlerWithResetContext() {
+    void invokeResetHandlerWithResetContext() {
         testSubject.prepareReset("resetContext");
 
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
 
     @Test
-    void testHandlerInterceptors() throws Exception {
+    void handlerInterceptors() throws Exception {
         SomeHandler annotatedEventListener = new SomeInterceptingHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
 
@@ -80,7 +80,7 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
-    void testWrapExceptionInResultInterceptor() {
+    void wrapExceptionInResultInterceptor() {
         EventMessage<Object> testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
 
@@ -99,7 +99,7 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
-    void testMismatchingExceptionTypeFromHandlerIgnored() {
+    void mismatchingExceptionTypeFromHandlerIgnored() {
         EventMessage<Object> testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
 
@@ -116,7 +116,7 @@ class AnnotationEventHandlerAdapterTest {
     }
 
     @Test
-    void testCanHandleTypeDoesNotReturnResetHandlers() {
+    void canHandleTypeDoesNotReturnResetHandlers() {
         SomeResetHandlerWithContext annotatedEventListener = new SomeResetHandlerWithContext();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener, parameterResolverFactory);
 

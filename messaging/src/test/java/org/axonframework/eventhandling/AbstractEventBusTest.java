@@ -62,7 +62,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testConsumersRegisteredWithUnitOfWorkWhenFirstEventIsPublished() {
+    void consumersRegisteredWithUnitOfWorkWhenFirstEventIsPublished() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         verify(unitOfWork).onPrepareCommit(any());
@@ -75,7 +75,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testNoMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
+    void noMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         verify(unitOfWork).onPrepareCommit(any());
@@ -97,7 +97,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testCommitOnUnitOfWork() {
+    void commitOnUnitOfWork() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
         unitOfWork.commit();
@@ -105,7 +105,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testPublicationOrder() {
+    void publicationOrder() {
         EventMessage<?> eventA = newEvent(), eventB = newEvent();
         testSubject.publish(eventA);
         testSubject.publish(eventB);
@@ -114,7 +114,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testPublicationWithNestedUow() {
+    void publicationWithNestedUow() {
         testSubject.publish(numberedEvent(5));
         unitOfWork.commit();
         assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
@@ -130,7 +130,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testPublicationForbiddenDuringUowCommitPhase() {
+    void publicationForbiddenDuringUowCommitPhase() {
         StubPublishingEventBus.builder()
                               .publicationPhase(UnitOfWork.Phase.COMMIT)
                               .startNewUowBeforePublishing(false)
@@ -141,7 +141,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testPublicationForbiddenDuringRootUowCommitPhase() {
+    void publicationForbiddenDuringRootUowCommitPhase() {
         testSubject = spy(StubPublishingEventBus.builder().publicationPhase(UnitOfWork.Phase.COMMIT).build());
         testSubject.publish(numberedEvent(1));
 
@@ -149,7 +149,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testMessageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
+    void messageMonitorRecordsIngestionAndPublication_InUnitOfWork() {
         //noinspection unchecked
         MessageMonitor<? super EventMessage<?>> mockMonitor = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback mockMonitorCallback = mock(MessageMonitor.MonitorCallback.class);
@@ -166,7 +166,7 @@ class AbstractEventBusTest {
     }
 
     @Test
-    void testDispatchInterceptor() {
+    void dispatchInterceptor() {
         //noinspection unchecked
         MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
         String key = "additional", value = "metaData";

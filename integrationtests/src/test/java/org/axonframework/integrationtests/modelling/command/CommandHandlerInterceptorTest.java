@@ -75,7 +75,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptor() {
+    void interceptor() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         String result = commandGateway
                 .sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
@@ -94,7 +94,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptorWithChainProceeding() {
+    void interceptorWithChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", true)));
 
@@ -108,7 +108,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptorWithoutChainProceeding() {
+    void interceptorWithoutChainProceeding() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", false)));
 
@@ -120,7 +120,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptorWithNestedEntity() {
+    void interceptorWithNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedCommand("id", "state")));
 
@@ -136,7 +136,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptorWithNestedNestedEntity() {
+    void interceptorWithNestedNestedEntity() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         commandGateway.sendAndWait(asCommandMessage(new MyNestedNestedCommand("id", "state")));
 
@@ -156,7 +156,7 @@ class CommandHandlerInterceptorTest {
     }
 
     @Test
-    void testInterceptorWithNonVoidReturnType() {
+    void interceptorWithNonVoidReturnType() {
         EventSourcingRepository.Builder<MyAggregateWithInterceptorReturningNonVoid> builder =
                 EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
                         .eventStore(eventStore);
@@ -165,7 +165,7 @@ class CommandHandlerInterceptorTest {
     }
 
     @Test
-    void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
+    void interceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
         EventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
                 .eventStore(eventStore)
                 .build();
@@ -173,7 +173,7 @@ class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testInterceptorThrowingAnException() {
+    void interceptorThrowingAnException() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         assertThrows(
                 InterceptorException.class,

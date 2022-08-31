@@ -92,7 +92,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testAssignmentRules() {
+    void assignmentRules() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
@@ -123,7 +123,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testByTypeAssignmentRules() {
+    void byTypeAssignmentRules() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
@@ -154,7 +154,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testProcessorsDefaultToSubscribingWhenUsingSimpleEventBus() {
+    void processorsDefaultToSubscribingWhenUsingSimpleEventBus() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureEventBus(c -> SimpleEventBus.builder().build())
                                                        .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
@@ -174,7 +174,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testAssigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
+    void assigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration()
                                                  .configureEventBus(c -> SimpleEventBus.builder().build())
                                                  .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
@@ -185,7 +185,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testAssignmentRulesOverrideThoseWithLowerPriority() {
+    void assignmentRulesOverrideThoseWithLowerPriority() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         configurer.eventProcessing()
@@ -217,7 +217,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testDefaultAssignToKeepsAnnotationScanning() {
+    void defaultAssignToKeepsAnnotationScanning() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
         Object object = new Object();
@@ -241,7 +241,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testTypeAssignmentWithCustomDefault() {
+    void typeAssignmentWithCustomDefault() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", String.class::equals)
                   .byDefaultAssignHandlerTypesTo(
@@ -266,7 +266,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testTypeAssignment() {
+    void typeAssignment() {
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
                   .registerSaga(Object.class)
@@ -287,7 +287,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testAssignSequencingPolicy() throws NoSuchFieldException {
+    void assignSequencingPolicy() throws NoSuchFieldException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = new SequentialPolicy();
@@ -323,7 +323,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testAssignInterceptors() {
+    void assignInterceptors() {
         StubInterceptor interceptor1 = new StubInterceptor();
         StubInterceptor interceptor2 = new StubInterceptor();
         configurer.eventProcessing()
@@ -344,7 +344,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigureMonitor() throws Exception {
+    void configureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
@@ -367,7 +367,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigureDefaultListenerInvocationErrorHandler() throws Exception {
+    void configureDefaultListenerInvocationErrorHandler() throws Exception {
         GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
 
         int expectedListenerInvocationErrorHandlerCalls = 2;
@@ -393,7 +393,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
+    void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
         GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
 
         int expectedErrorHandlerCalls = 1;
@@ -423,7 +423,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigureDefaultErrorHandler() throws Exception {
+    void configureDefaultErrorHandler() throws Exception {
         GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
 
         int expectedErrorHandlerCalls = 2;
@@ -450,7 +450,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testTrackingProcessorsUsesConfiguredDefaultStreamableMessageSource(
+    void trackingProcessorsUsesConfiguredDefaultStreamableMessageSource(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mock) {
         configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> mock);
         configurer.eventProcessing().usingTrackingEventProcessors();
@@ -464,7 +464,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testTrackingProcessorsUsesSpecificSource(
+    void trackingProcessorsUsesSpecificSource(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mock,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mock2) {
         configurer.eventProcessing()
@@ -480,7 +480,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSubscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource(
+    void subscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource(
             @Mock SubscribableMessageSource<EventMessage<?>> mock) {
         configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> mock);
         configurer.eventProcessing().usingSubscribingEventProcessors();
@@ -494,7 +494,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSubscribingProcessorsUsesSpecificSource(
+    void subscribingProcessorsUsesSpecificSource(
             @Mock SubscribableMessageSource<EventMessage<?>> mock,
             @Mock SubscribableMessageSource<EventMessage<?>> mock2) {
         configurer.eventProcessing()
@@ -511,7 +511,7 @@ class EventProcessingModuleTest {
 
 
     @Test
-    void testConfigureErrorHandlerPerEventProcessor() throws Exception {
+    void configureErrorHandlerPerEventProcessor() throws Exception {
         GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
 
         int expectedErrorHandlerCalls = 1;
@@ -542,13 +542,13 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testPackageOfObject() {
+    void packageOfObject() {
         String expectedPackageName = EventProcessingModule.class.getPackage().getName();
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
     }
 
     @Test
-    void testDefaultTrackingEventProcessingConfiguration(
+    void defaultTrackingEventProcessingConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException {
         Object someHandler = new Object();
@@ -582,7 +582,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testCustomTrackingEventProcessingConfiguration(
+    void customTrackingEventProcessingConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException {
         Object someHandler = new Object();
@@ -615,7 +615,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSagaTrackingProcessorsDefaultsToSagaTrackingEventProcessorConfigIfNoCustomizationIsPresent(
+    void sagaTrackingProcessorsDefaultsToSagaTrackingEventProcessorConfigIfNoCustomizationIsPresent(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -642,7 +642,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessingGroup(
+    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessingGroup(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -670,7 +670,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessor(
+    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessor(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -698,7 +698,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomTrackingProcessorBuilder(
+    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomTrackingProcessorBuilder(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -726,7 +726,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testSagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomConfigInstance(
+    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomConfigInstance(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -756,7 +756,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testDefaultPooledStreamingEventProcessingConfiguration(
+    void defaultPooledStreamingEventProcessingConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) {
         Object someHandler = new Object();
@@ -779,7 +779,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
+    void configurePooledStreamingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
         String testName = "pooled-streaming";
         // This configurer does not contain an EventStore or other StreamableMessageSource.
         configurer.eventProcessing()
@@ -789,7 +789,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
+    void configurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         TokenStore testTokenStore = new InMemoryTokenStore();
 
@@ -820,7 +820,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessorWithSource(
+    void configurePooledStreamingEventProcessorWithSource(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -853,7 +853,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessorWithConfiguration(
+    void configurePooledStreamingEventProcessorWithConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -879,7 +879,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterPooledStreamingEventProcessorConfigurationIsUsedDuringAllPsepConstructions(
+    void registerPooledStreamingEventProcessorConfigurationIsUsedDuringAllPsepConstructions(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -916,7 +916,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testUsingPooledStreamingEventProcessorWithConfigurationIsUsedDuringAllPsepConstructions(
+    void usingPooledStreamingEventProcessorWithConfigurationIsUsedDuringAllPsepConstructions(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -950,7 +950,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterPooledStreamingEventProcessorConfigurationForNameIsUsedDuringSpecificPsepConstruction(
+    void registerPooledStreamingEventProcessorConfigurationForNameIsUsedDuringSpecificPsepConstruction(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -987,7 +987,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterPooledStreamingEventProcessorWithConfigurationOverridesDefaultPsepConfiguration(
+    void registerPooledStreamingEventProcessorWithConfigurationOverridesDefaultPsepConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -1017,7 +1017,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testRegisterPooledStreamingEventProcessorWithConfigurationOverridesCustomPsepConfiguration(
+    void registerPooledStreamingEventProcessorWithConfigurationOverridesCustomPsepConfiguration(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource
     ) throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
@@ -1052,7 +1052,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testDefaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
+    void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
         GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
 
@@ -1075,7 +1075,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void testDefaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
+    void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
         GenericEventMessage<Integer> testEvent = new GenericEventMessage<>(1000);
 

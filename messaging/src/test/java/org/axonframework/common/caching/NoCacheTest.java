@@ -33,7 +33,7 @@ import static org.mockito.Mockito.mock;
 class NoCacheTest {
 
     @Test
-    void testCacheDoesNothing() throws CacheException {
+    void cacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
         NoCache cache = NoCache.INSTANCE;
         Registration registration = cache.registerCacheEntryListener(mock(Cache.EntryListener.class));

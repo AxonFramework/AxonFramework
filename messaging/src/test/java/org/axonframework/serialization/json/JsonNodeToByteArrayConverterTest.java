@@ -39,7 +39,7 @@ class JsonNodeToByteArrayConverterTest {
     }
 
     @Test
-    void testConvertNodeToBytes() throws Exception {
+    void convertNodeToBytes() throws Exception {
         final String content = "{\"someKey\":\"someValue\",\"someOther\":true}";
         JsonNode node = objectMapper.readTree(content);
         assertArrayEquals(content.getBytes(IOUtils.UTF8), testSubject.convert(node));

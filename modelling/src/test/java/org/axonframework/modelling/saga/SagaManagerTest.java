@@ -87,7 +87,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagasLoaded() throws Exception {
+    void sagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
@@ -101,7 +101,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testExceptionPropagated() throws Exception {
+    void exceptionPropagated() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
@@ -123,7 +123,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagaIsCreatedInRootSegment() throws Exception {
+    void sagaIsCreatedInRootSegment() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -140,7 +140,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
+    void sagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -172,7 +172,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
+    void sagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
         AssociationValue associationValue = new AssociationValue("someKey", "someValue");
         testSubject = TestableAbstractSagaManager.builder()
                 .sagaRepository(mockSagaRepository)
@@ -206,7 +206,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testExceptionSuppressed() throws Exception {
+    void exceptionSuppressed() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);

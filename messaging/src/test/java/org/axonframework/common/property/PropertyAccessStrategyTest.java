@@ -40,26 +40,26 @@ class PropertyAccessStrategyTest {
     }
 
     @Test
-    void test_BeanPropertyAccess() {
+    void beanPropertyAccess() {
         assertEquals("beanProperty", PropertyAccessStrategy.getProperty(Bean.class, "beanProperty")
                                                            .getValue(new Bean()));
     }
 
     @Test
-    void test_UniformPropertyAccess() {
+    void uniformPropertyAccess() {
         assertEquals("uniformProperty", PropertyAccessStrategy.getProperty(Bean.class, "uniformProperty").getValue(
                 new Bean()));
     }
 
     @Test
-    void test_Register() {
+    void register() {
         PropertyAccessStrategy.register(testPropertyAccessStrategy);
         assertEquals("testGetterInvoked",
                      PropertyAccessStrategy.getProperty(Bean.class, "testProperty").getValue(new Bean()));
     }
 
     @Test
-    void testInvocationOrdering() {
+    void invocationOrdering() {
         PropertyAccessStrategy.register(mock1);
         PropertyAccessStrategy.register(mock2);
         assertEquals("mock2",
@@ -67,7 +67,7 @@ class PropertyAccessStrategyTest {
     }
 
     @Test
-    void testInvocationOrdering_EqualPriorityUsesClassName() {
+    void invocationOrdering_EqualPriorityUsesClassName() {
         PropertyAccessStrategy.register(mock3);
         PropertyAccessStrategy.register(mock4);
         assertEquals("mock3",

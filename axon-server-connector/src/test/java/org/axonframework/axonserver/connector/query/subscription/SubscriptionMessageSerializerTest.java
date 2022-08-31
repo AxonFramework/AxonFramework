@@ -64,7 +64,7 @@ class SubscriptionMessageSerializerTest {
             new SubscriptionMessageSerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    void testInitialResponse() {
+    void initialResponse() {
         MetaData metadata = MetaData.with("firstKey", "firstValue")
                                     .mergedWith(MetaData.with("secondKey", "secondValue"));
         QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class, "Result", metadata);
@@ -79,7 +79,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testExceptionalInitialResponse() {
+    void exceptionalInitialResponse() {
         MetaData metadata = MetaData.with("firstKey", "firstValue")
                                     .mergedWith(MetaData.with("secondKey", "secondValue"));
         QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class,
@@ -98,7 +98,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testNonTransientExceptionalInitialResponse() {
+    void nonTransientExceptionalInitialResponse() {
         MetaData metadata = MetaData.with("firstKey", "firstValue")
                                     .mergedWith(MetaData.with("secondKey", "secondValue"));
         QueryResponseMessage<String> message = new GenericQueryResponseMessage<>(String.class,
@@ -117,7 +117,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testUpdate() {
+    void update() {
         List<String> payload = new ArrayList<>();
         payload.add("A");
         payload.add("B");
@@ -131,7 +131,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testExceptionalUpdate() {
+    void exceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message =
                 new GenericSubscriptionQueryUpdateMessage<>(String.class, new RuntimeException("oops"), metaData);
@@ -146,7 +146,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testNonTransientExceptionalUpdate() {
+    void nonTransientExceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message =
                 new GenericSubscriptionQueryUpdateMessage<>(String.class, new SerializationException("oops"), metaData);
@@ -161,7 +161,7 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testSubscriptionQueryMessage() {
+    void subscriptionQueryMessage() {
         GenericSubscriptionQueryMessage<String, String, Integer> message = new GenericSubscriptionQueryMessage<>(
                 "query",
                 "MyQueryName",
@@ -180,13 +180,13 @@ class SubscriptionMessageSerializerTest {
     }
 
     @Test
-    void testComplete() {
+    void complete() {
         QueryProviderOutbound grpcMessage = testSubject.serializeComplete("subscriptionId");
         assertEquals("subscriptionId", grpcMessage.getSubscriptionQueryResponse().getSubscriptionIdentifier());
     }
 
     @Test
-    void testCompleteExceptionally() {
+    void completeExceptionally() {
         QueryProviderOutbound grpcMessage = testSubject.serializeCompleteExceptionally("subscriptionId",
                                                                                        new RuntimeException("Error"));
         SubscriptionQueryResponse subscriptionQueryResponse = grpcMessage.getSubscriptionQueryResponse();

@@ -38,7 +38,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testAddAssociationValue() {
+    void addAssociationValue() {
         testSubject.add(associationValue);
 
         assertEquals(1, testSubject.addedAssociations().size());
@@ -46,7 +46,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testAddAssociationValue_AddedTwice() {
+    void addAssociationValue_AddedTwice() {
         testSubject.add(associationValue);
         testSubject.commit();
         testSubject.add(associationValue);
@@ -55,7 +55,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testRemoveAssociationValue() {
+    void removeAssociationValue() {
         assertTrue(testSubject.add(associationValue));
         testSubject.commit();
         assertTrue(testSubject.remove(associationValue));
@@ -64,14 +64,14 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testRemoveAssociationValue_NotInContainer() {
+    void removeAssociationValue_NotInContainer() {
         testSubject.remove(associationValue);
         assertTrue(testSubject.addedAssociations().isEmpty());
         assertTrue(testSubject.removedAssociations().isEmpty());
     }
 
     @Test
-    void testAddAndRemoveEntry() {
+    void addAndRemoveEntry() {
         testSubject.add(associationValue);
         testSubject.remove(associationValue);
 
@@ -80,7 +80,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testContains() {
+    void contains() {
         assertFalse(testSubject.contains(associationValue));
         testSubject.add(associationValue);
         assertTrue(testSubject.contains(associationValue));
@@ -90,7 +90,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testAsSet() {
+    void asSet() {
         testSubject.add(associationValue);
         int t = 0;
         for (AssociationValue actual : testSubject.asSet()) {
@@ -101,7 +101,7 @@ class AssociationValuesImplTest {
     }
 
     @Test
-    void testIterator() {
+    void iterator() {
         testSubject.add(associationValue);
         Iterator<AssociationValue> iterator = testSubject.iterator();
         assertSame(associationValue, iterator.next());

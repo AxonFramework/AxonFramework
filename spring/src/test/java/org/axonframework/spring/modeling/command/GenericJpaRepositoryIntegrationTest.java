@@ -100,7 +100,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testStoreAndLoadNewAggregate() throws Exception {
+    void storeAndLoadNewAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         String originalId = repository.newInstance(() -> new JpaAggregate("Hello")).invoke(JpaAggregate::getIdentifier);
         uow.commit();
@@ -120,7 +120,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Test
-    void testUpdateAnAggregate() {
+    void updateAnAggregate() {
         JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();
@@ -138,7 +138,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Test
-    void testDeleteAnAggregate() {
+    void deleteAnAggregate() {
         JpaAggregate agg = new JpaAggregate("First message");
         entityManager.persist(agg);
         entityManager.flush();

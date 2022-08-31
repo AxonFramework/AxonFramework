@@ -45,12 +45,12 @@ class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    void testIncompatibleToken() {
+    void incompatibleToken() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.covers(new GlobalSequenceTrackingToken(0)));
     }
 
     @Test
-    void testTrackingTokenIsImmutable() {
+    void trackingTokenIsImmutable() {
         MultiSourceTrackingToken newToken = testSubject.advancedTo("token1", new GlobalSequenceTrackingToken(1));
 
         assertEquals(new GlobalSequenceTrackingToken(0), testSubject.getTokenForStream("token1"));
@@ -139,7 +139,7 @@ class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    void testPositionNotProvidedWhenUnderlyingTokensDontProvide() {
+    void positionNotProvidedWhenUnderlyingTokensDontProvide() {
         TrackingToken trackingToken = mock(TrackingToken.class);
         when(trackingToken.position()).thenReturn(OptionalLong.empty());
         testSubject = new MultiSourceTrackingToken(Collections.singletonMap("key", trackingToken));

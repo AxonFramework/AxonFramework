@@ -45,7 +45,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testManageTransaction_CustomTransactionStatus() {
+    void manageTransaction_CustomTransactionStatus() {
         testSubject = new SpringTransactionManager(transactionManager, mock(TransactionDefinition.class));
         testSubject.startTransaction().commit();
 
@@ -54,7 +54,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testManageTransaction_DefaultTransactionStatus() {
+    void manageTransaction_DefaultTransactionStatus() {
         testSubject.startTransaction().commit();
 
         verify(transactionManager).getTransaction(isA(DefaultTransactionDefinition.class));
@@ -62,7 +62,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoCommitOnInactiveTransaction() {
+    void commitTransaction_NoCommitOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.commit();
@@ -71,7 +71,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoRollbackOnInactiveTransaction() {
+    void commitTransaction_NoRollbackOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.rollback();
@@ -80,7 +80,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoCommitOnNestedTransaction() {
+    void commitTransaction_NoCommitOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.commit();
@@ -89,7 +89,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoRollbackOnNestedTransaction() {
+    void commitTransaction_NoRollbackOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.rollback();

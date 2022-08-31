@@ -30,21 +30,21 @@ class IgnoreFieldTest {
     @SuppressWarnings("unused") private String ignoredField;
 
     @Test
-    void testAcceptOtherFields_ClassStringConstructor() throws Exception {
+    void acceptOtherFields_ClassStringConstructor() throws Exception {
         IgnoreField testSubject = new IgnoreField(IgnoreFieldTest.class, "ignoredField");
         assertTrue(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("field")));
         assertFalse(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("ignoredField")));
     }
 
     @Test
-    void testAcceptOtherFields_FieldConstructor() throws Exception {
+    void acceptOtherFields_FieldConstructor() throws Exception {
         IgnoreField testSubject = new IgnoreField(IgnoreFieldTest.class.getDeclaredField("ignoredField"));
         assertTrue(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("field")));
         assertFalse(testSubject.accept(IgnoreFieldTest.class.getDeclaredField("ignoredField")));
     }
 
     @Test
-    void testRejectNonExistentField() {
+    void rejectNonExistentField() {
         assertThrows(FixtureExecutionException.class, () -> new IgnoreField(IgnoreFieldTest.class, "nonExistent"));
     }
 }

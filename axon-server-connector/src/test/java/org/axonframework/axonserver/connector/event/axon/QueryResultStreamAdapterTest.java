@@ -46,7 +46,7 @@ class QueryResultStreamAdapterTest {
     }
 
     @Test
-    void testHasNextBuffersNextEntry() throws InterruptedException {
+    void hasNextBuffersNextEntry() throws InterruptedException {
         EventQueryResultEntry mockResult1 = mock(EventQueryResultEntry.class);
         EventQueryResultEntry mockResult2 = mock(EventQueryResultEntry.class);
         doReturn(mockResult1, mockResult2, null)
@@ -61,7 +61,7 @@ class QueryResultStreamAdapterTest {
     }
 
     @Test
-    void testNextClearsBufferedEntry() throws InterruptedException {
+    void nextClearsBufferedEntry() throws InterruptedException {
         EventQueryResultEntry mockResult1 = mock(EventQueryResultEntry.class);
         EventQueryResultEntry mockResult2 = mock(EventQueryResultEntry.class);
         doReturn(mockResult1, mockResult2, null)
@@ -81,7 +81,7 @@ class QueryResultStreamAdapterTest {
     }
 
     @Test
-    void testHasNextReturnsFalseAtEnd() throws InterruptedException {
+    void hasNextReturnsFalseAtEnd() throws InterruptedException {
         EventQueryResultEntry mockResult1 = mock(EventQueryResultEntry.class);
         EventQueryResultEntry mockResult2 = mock(EventQueryResultEntry.class);
         doReturn(mockResult1, mockResult2, null)
@@ -100,7 +100,7 @@ class QueryResultStreamAdapterTest {
     }
 
     @Test
-    void testNextReturnsNullAtEnd() throws InterruptedException {
+    void nextReturnsNullAtEnd() throws InterruptedException {
         EventQueryResultEntry mockResult1 = mock(EventQueryResultEntry.class);
         EventQueryResultEntry mockResult2 = mock(EventQueryResultEntry.class);
         doReturn(mockResult1, mockResult2, null)
@@ -121,7 +121,7 @@ class QueryResultStreamAdapterTest {
 
 
     @Test
-    void testHasNextBlocksWithGivenTimeout() throws InterruptedException {
+    void hasNextBlocksWithGivenTimeout() throws InterruptedException {
         EventQueryResultEntry mockResult1 = mock(EventQueryResultEntry.class);
         EventQueryResultEntry mockResult2 = mock(EventQueryResultEntry.class);
         doReturn(mockResult1, mockResult2, null)

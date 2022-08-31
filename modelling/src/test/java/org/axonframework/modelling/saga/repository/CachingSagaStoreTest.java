@@ -67,7 +67,7 @@ class CachingSagaStoreTest {
     }
 
     @Test
-    void testSagaAddedToCacheOnAdd() {
+    void sagaAddedToCacheOnAdd() {
 
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
@@ -76,7 +76,7 @@ class CachingSagaStoreTest {
     }
 
     @Test
-    void testAssociationsAddedToCacheOnLoad() {
+    void associationsAddedToCacheOnLoad() {
         testSubject.insertSaga(StubSaga.class, "id", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
         verify(associationsCache, never()).put(any(), any());
@@ -94,7 +94,7 @@ class CachingSagaStoreTest {
     }
 
     @Test
-    void testSagaAddedToCacheOnLoad() {
+    void sagaAddedToCacheOnLoad() {
         StubSaga saga = new StubSaga();
         testSubject.insertSaga(StubSaga.class, "id", saga, singleton(new AssociationValue("key", "value")));
 
@@ -110,7 +110,7 @@ class CachingSagaStoreTest {
     }
 
     @Test
-    void testSagaNotAddedToCacheWhenLoadReturnsNull() {
+    void sagaNotAddedToCacheWhenLoadReturnsNull() {
 
         ehCache.removeAll();
         reset(sagaCache, associationsCache);
@@ -125,7 +125,7 @@ class CachingSagaStoreTest {
 
 
     @Test
-    void testCommitDelegatedAfterAddingToCache() {
+    void commitDelegatedAfterAddingToCache() {
         StubSaga saga = new StubSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
         testSubject.insertSaga(StubSaga.class, "123", saga, singleton(associationValue));

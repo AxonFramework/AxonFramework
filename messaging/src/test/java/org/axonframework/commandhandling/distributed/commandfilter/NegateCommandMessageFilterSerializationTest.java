@@ -24,7 +24,7 @@ class NegateCommandMessageFilterSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testNegateCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
+    void negateCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CapacityMonitorTest {
 
     @Test
-    void testSingleThreadedCapacity() {
+    void singleThreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
@@ -47,7 +47,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testMultithreadedCapacity() {
+    void multithreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         EventMessage<Object> foo = asEventMessage("foo");
@@ -64,7 +64,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testEmptyCapacity() {
+    void emptyCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         Map<String, Metric> metricSet = testSubject.getMetrics();

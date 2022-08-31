@@ -92,7 +92,7 @@ class IntervalRetrySchedulerTest {
     }
 
     @Test
-    void testBuildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
+    void buildingWhilstMissingScheduledExecutorServiceThrowsConfigurationException() {
         IntervalRetryScheduler.Builder builder = IntervalRetryScheduler.builder();
         assertThrows(AxonConfigurationException.class, builder::build);
     }

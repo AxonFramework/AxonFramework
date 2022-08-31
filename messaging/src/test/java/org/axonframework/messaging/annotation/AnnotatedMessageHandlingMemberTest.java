@@ -31,19 +31,19 @@ class AnnotatedMessageHandlingMemberTest {
     }
 
     @Test
-    void testCanHandleMessageType() {
+    void canHandleMessageType() {
         assertTrue(testSubject.canHandleMessageType(EventMessage.class));
         assertFalse(testSubject.canHandleMessageType(CommandMessage.class));
     }
 
     @Test
-    void testHasAnnotation() {
+    void hasAnnotation() {
         assertTrue(testSubject.hasAnnotation(EventHandler.class));
         assertFalse(testSubject.hasAnnotation(CommandHandler.class));
     }
 
     @Test
-    void testAttributeReturnsNonEmptyOptionalForMatchingAttributeKey() {
+    void attributeReturnsNonEmptyOptionalForMatchingAttributeKey() {
         Optional<Object> resultMessageType = testSubject.attribute(HandlerAttributes.MESSAGE_TYPE);
         Optional<Object> resultPayloadType = testSubject.attribute(HandlerAttributes.PAYLOAD_TYPE);
 

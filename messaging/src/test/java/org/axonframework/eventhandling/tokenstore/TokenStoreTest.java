@@ -29,7 +29,7 @@ class TokenStoreTest {
     private final TokenStore tokenStore = spy(TokenStore.class);
 
     @Test
-    void testFetchAvailableSegments() {
+    void fetchAvailableSegments() {
         when(tokenStore.fetchSegments("")).thenReturn(new int[]{0, 1, 2, 3});
         List<Segment> availableSegments = tokenStore.fetchAvailableSegments("");
 

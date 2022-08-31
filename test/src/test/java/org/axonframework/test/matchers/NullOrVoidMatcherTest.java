@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NullOrVoidMatcherTest {
 
     @Test
-    void testMatcherMatchesVoidAndNull() {
+    void matcherMatchesVoidAndNull() {
         assertTrue(nothing().matches(Void.class));
         assertTrue(nothing().matches(null));
         assertFalse(nothing().matches(new Object()));

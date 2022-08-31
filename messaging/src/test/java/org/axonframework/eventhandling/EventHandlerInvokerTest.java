@@ -43,14 +43,14 @@ class EventHandlerInvokerTest {
     });
 
     @Test
-    void testPerformResetWithNullResetContextInvokesPerformReset() {
+    void performResetWithNullResetContextInvokesPerformReset() {
         testSubject.performReset(null);
 
         verify(testSubject).performReset();
     }
 
     @Test
-    void testPerformResetWithNonNullThrowsUnsupportedOperationException() {
+    void performResetWithNonNullThrowsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> testSubject.performReset("non-null"));
     }
 }

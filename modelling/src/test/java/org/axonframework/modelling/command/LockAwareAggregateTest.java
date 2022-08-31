@@ -48,40 +48,40 @@ class LockAwareAggregateTest {
             new LockAwareAggregate<>(mockAggregate, lockSupplier);
 
     @Test
-    void testGetWrappedAggregate() {
+    void getWrappedAggregate() {
         assertEquals(mockAggregate, testSubject.getWrappedAggregate());
     }
 
     @Test
-    void testIsLockHeld() {
+    void isLockHeld() {
         when(mockLock.isHeld()).thenReturn(true);
 
         assertTrue(testSubject.isLockHeld());
     }
 
     @Test
-    void testTypeMethodInvokesWrappedAggregate() {
+    void typeMethodInvokesWrappedAggregate() {
         testSubject.type();
 
         verify(mockAggregate).type();
     }
 
     @Test
-    void testIdentifierMethodInvokesWrappedAggregate() {
+    void identifierMethodInvokesWrappedAggregate() {
         testSubject.identifier();
 
         verify(mockAggregate).identifier();
     }
 
     @Test
-    void testVersionMethodInvokesWrappedAggregate() {
+    void versionMethodInvokesWrappedAggregate() {
         testSubject.version();
 
         verify(mockAggregate).version();
     }
 
     @Test
-    void testHandleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
+    void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
         Message<?> testMessage = GenericMessage.asMessage("some-message");
 
         testSubject.handle(testMessage);
@@ -91,7 +91,7 @@ class LockAwareAggregateTest {
     }
 
     @Test
-    void testInvokeMethodInvokesWrappedAggregateAndInspectsLock() {
+    void invokeMethodInvokesWrappedAggregateAndInspectsLock() {
         testSubject.invoke(someField -> "some-return");
 
         verify(mockAggregate).invoke(any());
@@ -99,7 +99,7 @@ class LockAwareAggregateTest {
     }
 
     @Test
-    void testExecuteMethodInvokesWrappedAggregateAndInspectsLock() {
+    void executeMethodInvokesWrappedAggregateAndInspectsLock() {
         testSubject.execute(someField -> {
         });
 
@@ -108,14 +108,14 @@ class LockAwareAggregateTest {
     }
 
     @Test
-    void testIsDeletedMethodInvokesWrappedAggregate() {
+    void isDeletedMethodInvokesWrappedAggregate() {
         testSubject.isDeleted();
 
         verify(mockAggregate).isDeleted();
     }
 
     @Test
-    void testRootTypeMethodInvokesWrappedAggregate() {
+    void rootTypeMethodInvokesWrappedAggregate() {
         testSubject.rootType();
 
         verify(mockAggregate).rootType();

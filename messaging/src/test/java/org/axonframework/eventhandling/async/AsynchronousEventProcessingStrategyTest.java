@@ -68,7 +68,7 @@ class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    void testOrderingOfEvents() throws Exception {
+    void orderingOfEvents() throws Exception {
         testSubject =
                 new AsynchronousEventProcessingStrategy(Executors.newSingleThreadExecutor(), new SequentialPolicy());
 
@@ -104,7 +104,7 @@ class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    void testEventsScheduledForHandling() {
+    void eventsScheduledForHandling() {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 
@@ -114,7 +114,7 @@ class AsynchronousEventProcessingStrategyTest {
     }
 
     @Test
-    void testEventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
+    void eventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 

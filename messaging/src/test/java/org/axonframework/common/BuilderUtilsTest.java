@@ -42,7 +42,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertThat() {
+    void assertThatTest() {
         assertThat(0, n -> (n == 0), "Zero must be zero");
 
         testAssertFails(() -> assertThat(0, n -> n != 0, "Zero must be zero"),
@@ -50,7 +50,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertNonNull() {
+    void assertNonNullTest() {
         assertNonNull(this, "This is not null");
 
         testAssertFails(() -> assertNonNull(null, "Null should be null"),
@@ -58,7 +58,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertPositiveInteger() {
+    void assertPositiveInteger() {
         // Fixed tests
         assertPositive(0, "Zero is positive");
         assertPositive(1, "One is also positive");
@@ -78,7 +78,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertPositiveLong() {
+    void assertPositiveLong() {
         // Fixed tests
         assertPositive(0L, "Zero is positive");
         assertPositive(1L, "One is also positive");
@@ -98,7 +98,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertStrictPositiveInteger() {
+    void assertStrictPositiveInteger() {
         // Fixed tests
         assertStrictPositive(1, "One is positive");
         testAssertFails(() -> assertStrictPositive(0, "Zero is not strict positive"),
@@ -119,7 +119,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertStrictPositiveLong() {
+    void assertStrictPositiveLong() {
         // Fixed tests
         assertStrictPositive(1L, "One is also positive");
         testAssertFails(() -> assertStrictPositive(0L, "Zero is not strict positive"),
@@ -140,7 +140,7 @@ class BuilderUtilsTest {
     }
 
     @Test
-    void testAssertNonEmpty() {
+    void assertNonEmptyTest() {
         assertNonEmpty("some-text", "Reacts fine on some text");
         testAssertFails(() -> assertNonEmpty(null, "Should fail on null"),
                         "BuilderUtils.assertNonEmpty() should have failed on value null.");

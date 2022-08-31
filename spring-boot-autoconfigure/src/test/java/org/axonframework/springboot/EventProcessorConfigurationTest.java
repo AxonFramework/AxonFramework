@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EventProcessorConfigurationTest {
 
     @Test
-    void testProcessorConfigurationWithCustomPolicy() {
+    void processorConfigurationWithCustomPolicy() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
@@ -93,7 +93,7 @@ class EventProcessorConfigurationTest {
     }
 
     @Test
-    void testTokenClaimIntervalCanBeSetViaSpringConfiguration() {
+    void tokenClaimIntervalCanBeSetViaSpringConfiguration() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
@@ -123,7 +123,7 @@ class EventProcessorConfigurationTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessor() {
+    void configurePooledStreamingEventProcessor() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(

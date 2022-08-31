@@ -53,7 +53,7 @@ public class AutoWiredStateStoredAggregateTest {
     private Repository<Context.MyAggregate> myAggregateRepository;
 
     @Test
-    void testAggregateIsWiredUsingStateStorage() {
+    void aggregateIsWiredUsingStateStorage() {
         assertEquals(GenericJpaRepository.class, myAggregateRepository.getClass());
     }
 

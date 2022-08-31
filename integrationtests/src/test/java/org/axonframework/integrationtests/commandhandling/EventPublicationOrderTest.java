@@ -59,7 +59,7 @@ class EventPublicationOrderTest {
     }
 
     @Test
-    void testPublicationOrderIsMaintained_AggregateAdded() {
+    void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         GenericDomainEventMessage<StubAggregateCreatedEvent> event =
                 new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
