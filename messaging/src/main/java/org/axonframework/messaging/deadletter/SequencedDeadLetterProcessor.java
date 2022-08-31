@@ -19,8 +19,8 @@ public interface SequencedDeadLetterProcessor<M extends Message<?>> {
     /**
      * Process a sequence of {@link DeadLetter dead-letters} matching the given {@code sequenceFilter}.
      * <p>
-     * Note that the {@code sequenceFilter} is <em>only</em> invoked for the first letter of a sequence, as the first
-     * entry blocks the entire sequence.
+     * Note that only a <em>single</em> matching sequence is processed! Furthermore, the {@code sequenceFilter} is
+     * <em>only</em> invoked for the first letter of a sequence, as the first entry blocks the entire sequence.
      *
      * @param sequenceFilter A filter for the first {@link DeadLetter dead-letter} entries of each sequence.
      * @return {@code true} if at least one {@link DeadLetter dead-letter} was processed successfully, {@code false}
@@ -30,6 +30,8 @@ public interface SequencedDeadLetterProcessor<M extends Message<?>> {
 
     /**
      * Process any sequence of {@link DeadLetter dead-letters} belonging to this component.
+     * <p>
+     * Note that only a <em>single</em> matching sequence is processed!
      *
      * @return {@code true} if at least one {@link DeadLetter dead-letter} was processed successfully, {@code false}
      * otherwise.

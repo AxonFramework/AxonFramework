@@ -198,8 +198,8 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * the {@code sequenceFilter}. Will pick the oldest available sequence based on the {@link DeadLetter#lastTouched()}
      * field from every sequence's first entry.
      * <p>
-     * Note that only the first dead-letter is validated, because it is the blocker for the processing of the rest of
-     * the sequence.
+     * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead-letter is
+     * validated, because it is the blocker for the processing of the rest of the sequence.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} a dead-letter from the selected
@@ -226,6 +226,8 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * Process a sequence of enqueued {@link DeadLetter dead-letters} with the given {@code processingTask}. Will pick
      * the oldest available sequence based on the {@link DeadLetter#lastTouched()} field from every sequence's first
      * entry.
+     * <p>
+     * Note that only a <em>single</em> matching sequence is processed!
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter. The
