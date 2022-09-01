@@ -46,10 +46,16 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * Test class validating that command dispatched within a UnitOfWork that publishes events withholds to the desired
+ * event ordering.
+ *
  * @author Gerard de Leeuw
  * @author Allard Buijze
  */
-public class LoopBackWithInterweavedCommandsAndEventsTest {
+class LoopBackWithInterwovenCommandsAndEventsTest {
+
+    // This ensures we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     private final String aggregateIdentifier = "Aggregate";
     private MyCommand command;
@@ -57,25 +63,26 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
 
     @BeforeEach
     void setUp() {
-        configuration = DefaultConfigurer.defaultConfiguration()
-                                         .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                         .configureAggregate(AggregateConfigurer.defaultConfiguration(MyAggregate.class)
-                                                                                .configureAggregateFactory(c -> new AggregateFactory<MyAggregate>() {
-                                                                                    @Override
-                                                                                    public MyAggregate createAggregateRoot(
-                                                                                            String aggregateIdentifier,
-                                                                                            DomainEventMessage<?> firstEvent) {
-                                                                                        return new MyAggregate(
-                                                                                                aggregateIdentifier);
-                                                                                    }
+        AggregateConfigurer<MyAggregate> aggregateConfigurer =
+                AggregateConfigurer.defaultConfiguration(MyAggregate.class)
+                                   .configureAggregateFactory(c -> new AggregateFactory<MyAggregate>() {
+                                       @Override
+                                       public MyAggregate createAggregateRoot(String aggregateIdentifier,
+                                                                              DomainEventMessage<?> firstEvent) {
+                                           return new MyAggregate(aggregateIdentifier);
+                                       }
 
-                                                                                    @Override
-                                                                                    public Class<MyAggregate> getAggregateType() {
-                                                                                        return MyAggregate.class;
-                                                                                    }
-                                                                                }))
-                                         .registerCommandHandler(c -> new MyCommandHandler(c.repository(MyAggregate.class),
-                                                                                           c.commandGateway()))
+                                       @Override
+                                       public Class<MyAggregate> getAggregateType() {
+                                           return MyAggregate.class;
+                                       }
+                                   });
+        configuration = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                         .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                         .configureAggregate(aggregateConfigurer)
+                                         .registerCommandHandler(c -> new MyCommandHandler(
+                                                 c.repository(MyAggregate.class), c.commandGateway()
+                                         ))
                                          .buildConfiguration();
         configuration.start();
 

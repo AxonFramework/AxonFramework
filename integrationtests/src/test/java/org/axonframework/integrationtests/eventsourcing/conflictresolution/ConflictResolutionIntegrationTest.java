@@ -17,35 +17,37 @@
 package org.axonframework.integrationtests.eventsourcing.conflictresolution;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.modelling.command.TargetAggregateVersion;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.ConflictingAggregateVersionException;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateVersion;
+import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ConflictResolutionIntegrationTest {
+class ConflictResolutionIntegrationTest {
+
+    // This ensure we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     private CommandGateway commandGateway;
 
     @BeforeEach
     void setUp() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .configureAggregate(StubAggregate.class)
-                .buildConfiguration();
+        Configuration configuration = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                       .configureAggregate(StubAggregate.class)
+                                                       .buildConfiguration();
         configuration.start();
         commandGateway = configuration.commandGateway();
     }
