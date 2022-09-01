@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package org.axonframework.common;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Indicates the relative priority of the annotated component. Components with a higher priority are considered before
@@ -35,6 +39,10 @@ public @interface Priority {
      */
     int LAST = Integer.MIN_VALUE;
     /**
+     * Value indicating the annotated member should be placed at the "lower quarter".
+     */
+    int LOWER = (Integer.MIN_VALUE / 2) + (Integer.MIN_VALUE / 4);
+    /**
      * Value indicating the annotated member should be placed at the "lower half".
      */
     int LOW = Integer.MIN_VALUE / 2;
@@ -46,6 +54,11 @@ public @interface Priority {
      * Value indicating the annotated member should have high priority, effectively placing it "in the first half".
      */
     int HIGH = Integer.MAX_VALUE / 2;
+
+    /**
+     * Value indicating the annotated member should be placed at the "upper quarter".
+     */
+    int HIGHER = (Integer.MAX_VALUE / 2) + (Integer.MAX_VALUE / 4);
 
     /**
      * Value indicating the annotated member should be the very first
