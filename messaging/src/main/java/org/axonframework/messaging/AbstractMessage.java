@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Abstract base class for Messages.
@@ -43,7 +44,7 @@ public abstract class AbstractMessage<T> implements Message<T> {
     }
 
     @Override
-    public Message<T> withMetaData(Map<String, ?> metaData) {
+    public Message<T> withMetaData(@Nonnull Map<String, ?> metaData) {
         if (getMetaData().equals(metaData)) {
             return this;
         }
@@ -51,7 +52,7 @@ public abstract class AbstractMessage<T> implements Message<T> {
     }
 
     @Override
-    public Message<T> andMetaData(Map<String, ?> metaData) {
+    public Message<T> andMetaData(@Nonnull Map<String, ?> metaData) {
         if (metaData.isEmpty()) {
             return this;
         }

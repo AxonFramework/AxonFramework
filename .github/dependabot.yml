@@ -1,5 +1,42 @@
 version: 2
 updates:
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 5
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+    - "Status: In Progress"
+  milestone: 59
+  reviewers:
+    - "gklijs"
+    - "Morlack"
+    - "sandjelkovic"
+    - "smcvb" # Main
+    - "YvonneCeelie"
+# Updates for `master`
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  ignore:
+    - dependency-name: "*"
+      update-types: [ "version-update:semver-patch" ]
+  open-pull-requests-limit: 5
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+    - "Status: In Progress"
+  milestone: 59
+  reviewers:
+    - "gklijs"
+    - "Morlack"
+    - "sandjelkovic"
+    - "smcvb" # Main
+    - "YvonneCeelie"
+# Patch and security updates for patch branches
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -11,12 +48,12 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-    - "Target: 4.5.2"
-  milestone: 72
+  milestone: 71
   open-pull-requests-limit: 5
   reviewers:
-    - "lfgcampos"
-    - "m1l4n54v1c"
-    - "saratry"
-    - "smcvb"
+    - "gklijs"
+    - "Morlack"
+    - "sandjelkovic"
+    - "smcvb" # Main
+    - "YvonneCeelie"
   target-branch: "axon-4.5.x"

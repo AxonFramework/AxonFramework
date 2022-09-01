@@ -13,13 +13,13 @@ class NonStaticFieldsFilterTest {
     private String nonStaticField;
 
     @Test
-    void testAcceptNonTransientField() throws Exception {
+    void acceptNonTransientField() throws Exception {
         assertTrue(NonStaticFieldsFilter.instance()
                            .accept(getClass().getDeclaredField("nonStaticField")));
     }
 
     @Test
-    void testRejectTransientField() throws Exception {
+    void rejectTransientField() throws Exception {
         assertFalse(NonStaticFieldsFilter.instance()
                             .accept(getClass().getDeclaredField("staticField")));
     }

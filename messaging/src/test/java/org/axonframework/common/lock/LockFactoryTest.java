@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -46,7 +45,7 @@ class LockFactoryTest {
     }
 
     @Test
-    void testObtainLock() {
+    void obtainLock() {
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         LockUnlock[] attempts = new LockUnlock[ATTEMPTS];
         for (int t = 0; t < ATTEMPTS; t++) {

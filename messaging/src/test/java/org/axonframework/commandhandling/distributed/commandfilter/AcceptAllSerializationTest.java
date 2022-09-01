@@ -24,7 +24,7 @@ class AcceptAllSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testAcceptAllShouldBeSerializable(TestSerializer serializer) {
+    void acceptAllShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

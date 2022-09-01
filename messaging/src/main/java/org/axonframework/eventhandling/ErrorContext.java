@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Describes the context of an error.
@@ -38,7 +39,8 @@ public class ErrorContext {
      * @param error          the error that was raised during processing
      * @param failedEvents   the list of events that triggered the error
      */
-    public ErrorContext(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents) {
+    public ErrorContext(@Nonnull String eventProcessor, @Nonnull Throwable error,
+                        @Nonnull List<? extends EventMessage<?>> failedEvents) {
         this.eventProcessor = eventProcessor;
         this.error = error;
         this.failedEvents = failedEvents;

@@ -26,22 +26,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class AssertTest {
 
     @Test
-    void testState_Accept() {
+    void state_Accept() {
         Assert.state(true, () -> "Hello");
     }
 
     @Test
-    void testState_Fail() {
+    void state_Fail() {
         assertThrows(IllegalStateException.class, () -> Assert.state(false, () -> "Hello"));
     }
 
     @Test
-    void testIsTrue_Accept() {
+    void isTrue_Accept() {
         Assert.isTrue(true, () -> "Hello");
     }
 
     @Test
-    void testIsTrue_Fail() {
+    void isTrue_Fail() {
         assertThrows(IllegalArgumentException.class, () -> Assert.isTrue(false, () -> "Hello"));
     }
 }

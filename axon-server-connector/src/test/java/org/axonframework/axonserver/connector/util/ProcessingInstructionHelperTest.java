@@ -22,12 +22,12 @@ class ProcessingInstructionHelperTest {
                                                                            .build();
 
     @Test
-    void testPriorityDefaultsToZero() {
+    void priorityDefaultsToZero() {
         assertEquals(0L, ProcessingInstructionHelper.priority(Collections.emptyList()));
     }
 
     @Test
-    void testPriority() {
+    void priority() {
         ProcessingInstruction testProcessingInstruction =
                 ProcessingInstruction.newBuilder()
                                      .setKey(ProcessingKey.PRIORITY)
@@ -38,12 +38,12 @@ class ProcessingInstructionHelperTest {
     }
 
     @Test
-    void testNumberOfResultsDefaultsToZero() {
+    void numberOfResultsDefaultsToZero() {
         assertEquals(1L, ProcessingInstructionHelper.numberOfResults(Collections.emptyList()));
     }
 
     @Test
-    void testNumberOfResults() {
+    void numberOfResults() {
         ProcessingInstruction testProcessingInstruction =
                 ProcessingInstruction.newBuilder()
                                      .setKey(ProcessingKey.NR_OF_RESULTS)
@@ -54,12 +54,12 @@ class ProcessingInstructionHelperTest {
     }
 
     @Test
-    void testTimeoutDefaultsToZero() {
+    void timeoutDefaultsToZero() {
         assertEquals(0L, ProcessingInstructionHelper.timeout(Collections.emptyList()));
     }
 
     @Test
-    void testTimeoutDefaults() {
+    void timeoutDefaults() {
         ProcessingInstruction testProcessingInstruction =
                 ProcessingInstruction.newBuilder()
                                      .setKey(ProcessingKey.TIMEOUT)

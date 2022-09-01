@@ -49,7 +49,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testOnSuccess() throws InterruptedException {
+    void onSuccess() throws InterruptedException {
         Thread t = new Thread(() -> {
             try {
                 resultFromParallelThread = testSubject.get();
@@ -66,7 +66,7 @@ class FutureCallbackTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    void testOnFailure() throws InterruptedException {
+    void onFailure() throws InterruptedException {
         Thread t = new Thread(() -> {
             try {
                 resultFromParallelThread = testSubject.get();
@@ -84,7 +84,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testOnSuccessForLimitedTime_Timeout() throws InterruptedException {
+    void onSuccessForLimitedTime_Timeout() throws InterruptedException {
         Thread t = new Thread(() -> {
             try {
                 resultFromParallelThread = testSubject.get(1, TimeUnit.NANOSECONDS);
@@ -99,7 +99,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testOnResultReturnsMessageWithTimeoutExceptionOnTimeout() throws InterruptedException {
+    void onResultReturnsMessageWithTimeoutExceptionOnTimeout() throws InterruptedException {
         Thread t = new Thread(() -> {
             resultFromParallelThread = testSubject.getResult(1, TimeUnit.NANOSECONDS);
         });
@@ -111,7 +111,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testOnResultUnwrapsExecutionResult() throws InterruptedException {
+    void onResultUnwrapsExecutionResult() throws InterruptedException {
         Thread t = new Thread(() -> {
             resultFromParallelThread = testSubject.getResult();
         });
@@ -123,7 +123,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testGetThrowsExecutionException() throws InterruptedException {
+    void getThrowsExecutionException() throws InterruptedException {
         Thread t = new Thread(() -> {
             try {
                 testSubject.get();
@@ -138,7 +138,7 @@ class FutureCallbackTest {
     }
 
     @Test
-    void testOnSuccessForLimitedTime_InTime() throws InterruptedException {
+    void onSuccessForLimitedTime_InTime() throws InterruptedException {
         Thread t = new Thread(() -> {
             try {
                 resultFromParallelThread = testSubject.get(10, TimeUnit.SECONDS);

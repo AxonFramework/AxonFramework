@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,18 +22,17 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.axonframework.test.matchers.Matchers.matches;
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -50,7 +49,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFirstFixture() {
+    void firstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -59,7 +58,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatch() {
+    void payloadsMatch() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -68,7 +67,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatchExact() {
+    void payloadsMatchExact() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -77,7 +76,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatchPredicate() {
+    void payloadsMatchPredicate() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -86,7 +85,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_UnexpectedException() {
+    void fixture_UnexpectedException() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -104,7 +103,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_UnexpectedReturnValue() {
+    void fixture_UnexpectedReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -122,7 +121,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_WrongReturnValue() {
+    void fixture_WrongReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -138,7 +137,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_WrongExceptionType() {
+    void fixture_WrongExceptionType() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -155,7 +154,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_ExpectedPublishedSameAsStored() {
+    void fixture_ExpectedPublishedSameAsStored() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -176,7 +175,7 @@ class FixtureTest_MatcherParams {
 
     @Test
     @SuppressWarnings("unchecked")
-    void testFixture_DispatchMetaDataInCommand() throws Exception {
+    void fixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -195,7 +194,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_EventDoesNotMatch() {
+    void fixture_EventDoesNotMatch() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));

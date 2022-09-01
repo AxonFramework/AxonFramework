@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,10 +83,9 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
     }
 
     /**
-     * Loads a known Saga instance by its unique identifier.
-     * Due to the concurrent nature of Sagas, it is not unlikely for a Saga to have ceased to exist after it has been
-     * found based on associations. Therefore, a repository should return {@code null} in case a Saga doesn't
-     * exists, as opposed to throwing an exception.
+     * Loads a known Saga instance by its unique identifier. Due to the concurrent nature of Sagas, it is not unlikely
+     * for a Saga to have ceased to exist after it has been found based on associations. Therefore, a repository should
+     * return {@code null} in case a Saga doesn't exists, as opposed to throwing an exception.
      *
      * @param sagaIdentifier The unique identifier of the Saga to load
      * @return The Saga instance, or {@code null} if no such saga exists
@@ -106,8 +105,8 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
     /**
      * Abstract Builder class to instantiate {@link LockingSagaRepository} implementations.
      * <p>
-     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
-     * {@link PessimisticLockFactory}.
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the {@link
+     * PessimisticLockFactory}.
      *
      * @param <T> a generic specifying the Saga type contained in this {@link SagaRepository} implementation
      */
@@ -135,7 +134,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

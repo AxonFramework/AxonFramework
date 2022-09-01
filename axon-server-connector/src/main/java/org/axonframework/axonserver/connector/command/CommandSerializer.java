@@ -125,7 +125,7 @@ public class CommandSerializer {
 
         if (commandResultMessage.isExceptional()) {
             Throwable throwable = commandResultMessage.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.COMMAND_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(ErrorCode.getCommandExecutionErrorCode(throwable).errorCode());
             responseBuilder.setErrorMessage(ExceptionSerializer.serialize(configuration.getClientId(), throwable));
             commandResultMessage.exceptionDetails()
                                 .ifPresent(details -> responseBuilder.setPayload(objectSerializer.apply(details)));

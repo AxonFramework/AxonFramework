@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+
+import javax.annotation.Nonnull;
 
 /**
  * Wrapper for a Command callback. This is used in a CommandCallbackRepository
@@ -68,17 +70,18 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     }
 
     /**
-     * Invokes {@link CommandCallback#onResult(CommandMessage, CommandResultMessage)} with given {@code result} on
-     * the wrapped callback.
+     * Invokes {@link CommandCallback#onResult(CommandMessage, CommandResultMessage)} with given {@code result} on the
+     * wrapped callback.
      *
      * @param result the result of the command
      */
-    public void reportResult(CommandResultMessage<R> result) {
+    public void reportResult(@Nonnull CommandResultMessage<R> result) {
         onResult(getMessage(), result);
     }
 
     @Override
-    public void onResult(CommandMessage<? extends C> message, CommandResultMessage<? extends R> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<? extends C> message,
+                         @Nonnull CommandResultMessage<? extends R> commandResultMessage) {
         wrapped.onResult(message, commandResultMessage);
     }
 }

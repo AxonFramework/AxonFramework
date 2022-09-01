@@ -39,7 +39,7 @@ class ConfigTokenTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestSerializer serializer) {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
         assertEquals(token, serializer.serializeDeserialize(token));

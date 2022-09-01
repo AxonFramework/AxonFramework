@@ -18,11 +18,11 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
-import org.axonframework.modelling.saga.AssociationValue;
-import org.axonframework.modelling.saga.Saga;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.Saga;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -32,6 +32,8 @@ import java.util.function.Supplier;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link LockingSagaRepository}.
+ *
  * @author Rene de Waele
  */
 class LockingSagaRepositoryTest {
@@ -55,21 +57,21 @@ class LockingSagaRepositoryTest {
     }
 
     @Test
-    void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() {
+    void lockReleasedOnUnitOfWorkCleanUpAfterCreate() {
         subject.createInstance("id", Object::new);
         verify(lockFactory).obtainLock("id");
         verify(subject).doCreateInstance(eq("id"), any());
-        verifyZeroInteractions(lock);
+        verifyNoInteractions(lock);
         CurrentUnitOfWork.commit();
         verify(lock).release();
     }
 
     @Test
-    void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() {
+    void lockReleasedOnUnitOfWorkCleanUpAfterLoad() {
         subject.load("id");
         verify(lockFactory).obtainLock("id");
         verify(subject).doLoad("id");
-        verifyZeroInteractions(lock);
+        verifyNoInteractions(lock);
         CurrentUnitOfWork.commit();
         verify(lock).release();
     }

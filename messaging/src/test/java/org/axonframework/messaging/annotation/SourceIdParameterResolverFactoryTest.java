@@ -43,7 +43,7 @@ class SourceIdParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
+    void resolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         final GenericDomainEventMessage<Object> eventMessage =
@@ -53,7 +53,7 @@ class SourceIdParameterResolverFactoryTest {
     }
 
     @Test
-    void testDoesNotMatchWhenAnnotatedForCommandMessage() {
+    void doesNotMatchWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
@@ -61,14 +61,14 @@ class SourceIdParameterResolverFactoryTest {
     }
 
     @Test
-    void testIgnoredWhenNotAnnotated() {
+    void ignoredWhenNotAnnotated() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    void testIgnoredWhenWrongType() {
+    void ignoredWhenWrongType() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);

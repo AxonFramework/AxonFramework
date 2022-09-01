@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
@@ -39,8 +41,10 @@ import java.util.Optional;
  * @since 4.4
  */
 public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefinition {
+
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+    public @Nonnull
+    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
 
         if (original.annotationAttributes(MessageHandlerInterceptor.class).isPresent()) {
             Optional<Map<String, Object>> attributes = original.annotationAttributes(ResultHandler.class);
@@ -69,12 +73,12 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message) {
             return ResultParameterResolverFactory.ignoringResultParameters(() -> super.canHandle(message));
         }
 
         @Override
-        public Object handle(Message<?> message, T target) throws Exception {
+        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
                 return chain.proceed();
@@ -108,7 +112,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(Message<?> message, T target) throws Exception {
+        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             Object result = super.handle(message, target);
             if (shouldInvokeInterceptorChain) {
                 return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceed();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public abstract class JdbcEventStorageEngineStatements {
      * @param <T>   the type of payload in the message
      * @return the message converted to a domain event message
      */
-    private static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+    protected static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
         return event instanceof DomainEventMessage<?>
                 ? (DomainEventMessage<T>) event
                 : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);

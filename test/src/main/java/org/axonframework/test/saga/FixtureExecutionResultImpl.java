@@ -22,6 +22,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.EventSchedulerValidator;
@@ -34,10 +35,12 @@ import org.hamcrest.Matcher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Default implementation of FixtureExecutionResult.
@@ -54,22 +57,26 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     private final CommandValidator commandValidator;
     private final FieldFilter fieldFilter;
     private final List<Runnable> onStartRecordingCallbacks;
+    private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
      *
-     * @param sagaStore       The SagaStore to monitor
-     * @param eventScheduler  The scheduler to monitor
-     * @param deadlineManager The deadline manager to monitor
-     * @param eventBus        The event bus to monitor
-     * @param commandBus      The command bus to monitor
-     * @param sagaType        The type of Saga under test
-     * @param fieldFilter     The FieldFilter describing the fields to include in equality checks
+     * @param sagaStore                               The SagaStore to monitor
+     * @param eventScheduler                          The scheduler to monitor
+     * @param deadlineManager                         The deadline manager to monitor
+     * @param eventBus                                The event bus to monitor
+     * @param commandBus                              The command bus to monitor
+     * @param sagaType                                The type of Saga under test
+     * @param fieldFilter                             The FieldFilter describing the fields to include in equality checks
+     * @param recordingListenerInvocationErrorHandler The RecordingListenerInvocationErrorHandler to monitor
      */
     FixtureExecutionResultImpl(InMemorySagaStore sagaStore, StubEventScheduler eventScheduler,
                                StubDeadlineManager deadlineManager, EventBus eventBus, RecordingCommandBus commandBus,
-                               Class<T> sagaType, FieldFilter fieldFilter) {
+                               Class<T> sagaType, FieldFilter fieldFilter, RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler) {
+        assertNotNull(recordingListenerInvocationErrorHandler, "recordingListenerInvocationErrorHandler cannot be null");
         this.fieldFilter = fieldFilter;
+        this.recordingListenerInvocationErrorHandler = recordingListenerInvocationErrorHandler;
         commandValidator = new CommandValidator(commandBus, fieldFilter);
         repositoryContentValidator = new RepositoryContentValidator<>(sagaType, sagaStore);
         eventValidator = new EventValidator(eventBus, fieldFilter);
@@ -98,6 +105,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     public void startRecording() {
         eventValidator.startRecording();
         commandValidator.startRecording();
+        recordingListenerInvocationErrorHandler.startRecording();
         onStartRecordingCallbacks.forEach(Runnable::run);
     }
 
@@ -333,6 +341,29 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
+        return expectNoScheduledDeadlineMatching(matches(
+                deadlineMessage -> !(deadlineMessage.getTimestamp().isBefore(from) || deadlineMessage.getTimestamp().isAfter(to))
+                        && matcher.matches(deadlineMessage)
+        ));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
+    }
+
+    @Override
     public FixtureExecutionResult expectPublishedEventsMatching(
             Matcher<? extends List<? super EventMessage<?>>> matcher) {
         eventValidator.assertPublishedEventsMatching(matcher);
@@ -341,8 +372,16 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectDeadlinesMetMatching(
-            Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
-        deadlineManagerValidator.assertDeadlinesMetMatching(matcher);
+            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+    ) {
+        return expectTriggeredDeadlinesMatching(matcher);
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesMatching(
+            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+    ) {
+        deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
         return this;
     }
 
@@ -354,7 +393,35 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectDeadlinesMet(Object... expected) {
-        deadlineManagerValidator.assertDeadlinesMet(expected);
+        return expectTriggeredDeadlines(expected);
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlines(Object... expected) {
+        deadlineManagerValidator.assertTriggeredDeadlines(expected);
         return this;
     }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
+        deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
+        deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectSuccessfulHandlerExecution() {
+        Optional<Exception> throwableOptional = recordingListenerInvocationErrorHandler.getException();
+        if (throwableOptional.isPresent()) {
+            throw new AxonAssertionError(String.format("An exception occurred during event handling: [%s]",
+                                                       throwableOptional.get().getMessage()));
+        }
+        return this;
+    }
+
 }

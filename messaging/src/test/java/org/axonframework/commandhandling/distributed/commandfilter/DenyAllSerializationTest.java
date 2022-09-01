@@ -24,7 +24,7 @@ class DenyAllSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testDenyAllFilterShouldBeSerializable(TestSerializer serializer) {
+    void denyAllFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

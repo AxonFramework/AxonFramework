@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -43,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link EventSourcingRepository}.
+ *
  * @author Allard Buijze
  */
 class EventSourcingRepositoryTest {
@@ -78,7 +81,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadAndSaveAggregate() {
+    void loadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -107,7 +110,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testFilterEventsByType() {
+    void filterEventsByType() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 =
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance());
@@ -124,7 +127,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoad_FirstEventIsSnapshot() {
+    void load_FirstEventIsSnapshot() {
         String identifier = UUID.randomUUID().toString();
         TestAggregate aggregate = new TestAggregate(identifier);
         when(mockEventStore.readEvents(identifier)).thenReturn(
@@ -133,7 +136,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadWithConflictingChanges() {
+    void loadWithConflictingChanges() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -153,7 +156,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
+    void loadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -172,7 +175,7 @@ class EventSourcingRepositoryTest {
     }
 
     @Test
-    void testLoadEventsWithSnapshotter() {
+    void loadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", emptyInstance()),
@@ -188,6 +191,24 @@ class EventSourcingRepositoryTest {
         inOrder.verify(snapshotTrigger, times(3)).eventHandled(any());
         inOrder.verify(snapshotTrigger).initializationFinished();
         inOrder.verify(snapshotTrigger, times(2)).eventHandled(any());
+    }
+
+    @Test
+    void buildWithNullSubtypesThrowsAxonConfigurationException() {
+        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                EventSourcingRepository.builder(TestAggregate.class)
+                                       .eventStore(mockEventStore);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
+    }
+
+    @Test
+    void buildWithNullSubtypeThrowsAxonConfigurationException() {
+        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                EventSourcingRepository.builder(TestAggregate.class)
+                                       .eventStore(mockEventStore);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<TestAggregate> {

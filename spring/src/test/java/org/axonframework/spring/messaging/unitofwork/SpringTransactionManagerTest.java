@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,8 +17,7 @@
 package org.axonframework.spring.messaging.unitofwork;
 
 import org.axonframework.common.transaction.Transaction;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -43,7 +45,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testManageTransaction_CustomTransactionStatus() {
+    void manageTransaction_CustomTransactionStatus() {
         testSubject = new SpringTransactionManager(transactionManager, mock(TransactionDefinition.class));
         testSubject.startTransaction().commit();
 
@@ -52,7 +54,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testManageTransaction_DefaultTransactionStatus() {
+    void manageTransaction_DefaultTransactionStatus() {
         testSubject.startTransaction().commit();
 
         verify(transactionManager).getTransaction(isA(DefaultTransactionDefinition.class));
@@ -60,7 +62,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoCommitOnInactiveTransaction() {
+    void commitTransaction_NoCommitOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.commit();
@@ -69,7 +71,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoRollbackOnInactiveTransaction() {
+    void commitTransaction_NoRollbackOnInactiveTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isCompleted()).thenReturn(true);
         transaction.rollback();
@@ -78,7 +80,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoCommitOnNestedTransaction() {
+    void commitTransaction_NoCommitOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.commit();
@@ -87,7 +89,7 @@ class SpringTransactionManagerTest {
     }
 
     @Test
-    void testCommitTransaction_NoRollbackOnNestedTransaction() {
+    void commitTransaction_NoRollbackOnNestedTransaction() {
         Transaction transaction = testSubject.startTransaction();
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(false);
         transaction.rollback();

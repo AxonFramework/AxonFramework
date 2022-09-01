@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -26,6 +27,7 @@ import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -56,7 +58,7 @@ class QuerySerializerTest {
             new QuerySerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    void testSerializeRequest() {
+    void serializeRequest() {
         QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test", "MyQueryName", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
@@ -70,7 +72,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeResponse() {
+    void serializeResponse() {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -88,7 +90,7 @@ class QuerySerializerTest {
     }
 
     @Test
-    void testSerializeExceptionalResponse() {
+    void serializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         GenericQueryResponseMessage<String> responseMessage =
                 new GenericQueryResponseMessage<>(String.class, exception, MetaData.with("test", "testValue"));
@@ -96,15 +98,37 @@ class QuerySerializerTest {
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
         QueryResponseMessage<String> deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
+        assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
         assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        assertTrue(deserialize.exceptionResult().getCause() instanceof AxonServerRemoteQueryHandlingException);
     }
 
     @Test
-    void testSerializeExceptionalResponseWithDetails() {
+    void serializeDeserializeNonTransientExceptionalResponse() {
+        SerializationException exception = new SerializationException("oops");
+        GenericQueryResponseMessage responseMessage = new GenericQueryResponseMessage<>(
+                String.class,
+                exception,
+                MetaData.with("test", "testValue"));
+
+        QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
+
+        assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
+        assertEquals(responseMessage.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(responseMessage.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        assertTrue(deserialize.exceptionResult().getCause() instanceof AxonServerNonTransientRemoteQueryHandlingException);
+    }
+
+    @Test
+    void serializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         GenericQueryResponseMessage<String> responseMessage = new GenericQueryResponseMessage<>(
                 String.class,

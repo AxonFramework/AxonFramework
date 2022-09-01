@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConvertingResponseMessageTest {
 
     @Test
-    void testPayloadIsConvertedToExpectedType() {
+    void payloadIsConvertedToExpectedType() {
         QueryResponseMessage<?> msg = new GenericQueryResponseMessage<>(new String[]{"Some string result"})
                 .withMetaData(MetaData.with("test", "value"));
         QueryResponseMessage<List<String>> wrapped = new ConvertingResponseMessage<>(
@@ -27,7 +27,7 @@ class ConvertingResponseMessageTest {
     }
 
     @Test
-    void testIllegalAccessPayloadWhenResultIsExceptional() {
+    void illegalAccessPayloadWhenResultIsExceptional() {
         QueryResponseMessage<?> msg = GenericQueryResponseMessage.asResponseMessage(List.class, new RuntimeException());
         QueryResponseMessage<List<String>> wrapped = new ConvertingResponseMessage<>(
                 ResponseTypes.multipleInstancesOf(String.class),

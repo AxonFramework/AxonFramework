@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -54,7 +54,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testMessagesWithoutTags() {
+    void messagesWithoutTags() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.build();
 
         //noinspection unchecked
@@ -76,7 +76,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testMessagesWithPayloadAsCustomTag() {
+    void messagesWithPayloadAsCustomTag() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.tagsBuilder(
                 message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
         ).build();
@@ -104,7 +104,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testFailureMessageWithPayloadAsCustomTag() {
+    void failureMessageWithPayloadAsCustomTag() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.tagsBuilder(
                 message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
         ).build();
@@ -128,45 +128,45 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testBuildWithNullMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithNullMeterNamePrefixThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject = EventProcessorLatencyMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterNamePrefix(null));
     }
 
     @Test
-    void testBuildWithEmptyMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithEmptyMeterNamePrefixThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject = EventProcessorLatencyMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterNamePrefix(""));
     }
 
     @Test
-    void testBuildWithoutMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithoutMeterNamePrefixThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject =
                 EventProcessorLatencyMonitor.builder().meterRegistry(meterRegistry);
         assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 
     @Test
-    void testBuildWithNullMeterRegistryThrowsAxonConfigurationException() {
+    void buildWithNullMeterRegistryThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject = EventProcessorLatencyMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterRegistry(null));
     }
 
     @Test
-    void testBuildWithoutMeterRegistryThrowsAxonConfigurationException() {
+    void buildWithoutMeterRegistryThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject =
                 EventProcessorLatencyMonitor.builder().meterNamePrefix(METER_NAME_PREFIX);
         assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 
     @Test
-    void testBuildWithNullClockThrowsAxonConfigurationException() {
+    void buildWithNullClockThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject = EventProcessorLatencyMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.clock(null));
     }
 
     @Test
-    void testBuildWithNullTagsBuilderThrowsAxonConfigurationException() {
+    void buildWithNullTagsBuilderThrowsAxonConfigurationException() {
         EventProcessorLatencyMonitor.Builder testSubject = EventProcessorLatencyMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.tagsBuilder(null));
     }

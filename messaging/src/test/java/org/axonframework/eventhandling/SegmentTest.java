@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,7 +44,7 @@ class SegmentTest {
     }
 
     @Test
-    void testSegmentSplitAddsUp() {
+    void segmentSplitAddsUp() {
 
         final List<Long> identifiers = domainEventMessages.stream().map(de -> {
             final String aggregateIdentifier = de.getAggregateIdentifier();
@@ -64,7 +64,7 @@ class SegmentTest {
     }
 
     @Test
-    void testSegmentSplit() {
+    void segmentSplit() {
 
         // Split segment 0
         final Segment[] splitSegment0 = Segment.ROOT_SEGMENT.split();
@@ -131,7 +131,7 @@ class SegmentTest {
     }
 
     @Test
-    void testSegmentSplitNTimes() {
+    void segmentSplitNTimes() {
         {
             //
             final List<Segment> segmentMasks = Segment.splitBalanced(Segment.ROOT_SEGMENT, 5);
@@ -146,7 +146,7 @@ class SegmentTest {
     }
 
     @Test
-    void testSplitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
+    void splitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
         for (int i = 0; i < 500; i++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, i);
             assertEquals(i + 1, segments.size());
@@ -157,7 +157,7 @@ class SegmentTest {
     }
 
     @Test
-    void testMergeable() {
+    void mergeable() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         assertFalse(segments[0].isMergeableWith(segments[0]));
         assertFalse(segments[1].isMergeableWith(segments[1]));
@@ -176,7 +176,7 @@ class SegmentTest {
     }
 
     @Test
-    void testMergeableSegment() {
+    void mergeableSegment() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         assertEquals(segments[1].getSegmentId(), segments[0].mergeableSegmentId());
         assertEquals(segments[0].getSegmentId(), segments[1].mergeableSegmentId());
@@ -184,7 +184,7 @@ class SegmentTest {
     }
 
     @Test
-    void testMergeSegments() {
+    void mergeSegments() {
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         Segment[] segments2 = segments[0].split();
 
@@ -195,7 +195,7 @@ class SegmentTest {
     }
 
     @Test
-    void testSegmentResolve() {
+    void segmentResolve() {
         {
             final int[] segments = {};
             final Segment[] segmentMasks = Segment.computeSegments(segments);
@@ -289,7 +289,7 @@ class SegmentTest {
     }
 
     @Test
-    void testComputeSegment() {
+    void computeSegment() {
         for (int segmentCount = 0; segmentCount < 256; segmentCount++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount);
             int[] segmentIds = new int[segments.size()];
@@ -305,7 +305,7 @@ class SegmentTest {
     }
 
     @Test
-    void testComputeSegment_Imbalanced() {
+    void computeSegment_Imbalanced() {
         List<Segment> segments = new ArrayList<>();
         Segment initialSegment = Segment.ROOT_SEGMENT;
         for (int i = 0; i < 8; i++) {
@@ -326,13 +326,13 @@ class SegmentTest {
     }
 
     @Test
-    void testSegmentSplitBeyondBoundary() {
+    void segmentSplitBeyondBoundary() {
         final Segment segment = new Segment(0, Integer.MAX_VALUE);
         assertThrows(IllegalStateException.class, segment::split);
     }
 
     @Test
-    void testSegmentSplitOnBoundary() {
+    void segmentSplitOnBoundary() {
 
         final Segment segment = new Segment(0, Integer.MAX_VALUE >>> 1);
         final Segment[] splitSegment = segment.split();
@@ -344,7 +344,7 @@ class SegmentTest {
     }
 
     @Test
-    void testItemsAssignedToOnlyOneSegment() {
+    void itemsAssignedToOnlyOneSegment() {
         for (int j = 0; j < 10; j++) {
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1);
             for (int i = 0; i < 100_000; i++) {

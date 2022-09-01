@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -467,6 +467,50 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and {@code from} times, where {@code to} and
+     * {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from    the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to      the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param matcher the matcher defining the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
+     * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from     the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to       the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadline the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
+
+    /**
+     * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadlineType the type of the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
+
+    /**
+     * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadlineName the name of the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
+
+    /**
      * Assert that the saga published events on the EventBus as defined by the given {@code matcher}. Only events
      * published in the "when" stage of the tests are matched.
      *
@@ -480,8 +524,19 @@ public interface FixtureExecutionResult {
      *
      * @param matcher The matcher that defines the expected list of deadlines
      * @return the FixtureExecutionResult for method chaining
+     * @deprecated in favor of {@link #expectTriggeredDeadlinesMatching(Matcher)}
      */
+    @Deprecated
     FixtureExecutionResult expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+
+
+    /**
+     * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
+     *
+     * @param matcher the matcher that defines the expected list of deadlines
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected} events.
@@ -499,6 +554,44 @@ public interface FixtureExecutionResult {
      *
      * @param expected The sequence of deadlines expected to be met
      * @return the FixtureExecutionResult for method chaining
+     * @deprecated in favor of {@link #expectTriggeredDeadlines(Object...)}
      */
+    @Deprecated
     FixtureExecutionResult expectDeadlinesMet(Object... expected);
+
+    /**
+     * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared comparing their type
+     * and fields using "equals".
+     *
+     * @param expected the sequence of deadlines expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineNames} have been triggered. Matches that the given names are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getDeadlineName()}.
+     *
+     * @param expectedDeadlineNames the sequence of deadline names expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getPayloadType()}.
+     *
+     * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
+     * @return the current FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
+
+    /**
+     * Expect a successful execution of the given event handler.
+     *
+     * @return the current FixtureExecutionResult, for fluent interfacing
+     */
+    FixtureExecutionResult expectSuccessfulHandlerExecution();
 }

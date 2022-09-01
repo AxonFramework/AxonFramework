@@ -21,8 +21,12 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventTrackerStatus;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -30,7 +34,9 @@ import org.axonframework.serialization.upcasting.event.ContextAwareEventMultiUpc
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
@@ -39,8 +45,14 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -49,8 +61,8 @@ import static org.axonframework.springboot.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test for the {@link PooledStreamingEventProcessor}. Tests, for example, that all events from an {@link
- * org.axonframework.serialization.upcasting.event.EventMultiUpcaster} are read.
+ * Integration test for the {@link PooledStreamingEventProcessor}. Tests, for example, that all events from an
+ * {@link org.axonframework.serialization.upcasting.event.EventMultiUpcaster} are read.
  *
  * @author Steven van Beelen
  */
@@ -65,8 +77,8 @@ class PooledStreamingEventProcessorIntegrationTest {
     }
 
     @Test
-    void testAllEventsFromMultiUpcasterAreHandled() {
-        testApplicationContext.run(context -> {
+    void allEventsFromMultiUpcasterAreHandled() {
+        testApplicationContext.withPropertyValues("upcaster-test=true").run(context -> {
             EventProcessingConfiguration processingConfig = context.getBean(EventProcessingConfiguration.class);
             Optional<PooledStreamingEventProcessor> optionalProcessor =
                     processingConfig.eventProcessor("upcaster-test", PooledStreamingEventProcessor.class);
@@ -80,14 +92,62 @@ class PooledStreamingEventProcessorIntegrationTest {
             processor.start();
             assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processor.processingStatus().size()));
 
-            EventHandlingComponent eventHandlingComponent =
-                    context.getBean(EventHandlingComponent.class);
+            UpcasterTestEventHandlingComponent eventHandlingComponent =
+                    context.getBean(UpcasterTestEventHandlingComponent.class);
 
             assertNotNull(eventHandlingComponent);
             assertWithin(500, TimeUnit.MILLISECONDS,
                          () -> assertEquals(0, eventHandlingComponent.getOriginalEventCounter().get()));
             assertWithin(500, TimeUnit.MILLISECONDS,
                          () -> assertEquals(2, eventHandlingComponent.getUpcastedEventCounter().get()));
+        });
+    }
+
+    @Test
+    void lastEventIsNotHandledTwice() {
+        int numberOfEvents = 100;
+
+        testApplicationContext.withPropertyValues("once-test=true", "errorCount=2").run(context -> {
+            EventProcessingConfiguration processingConfig = context.getBean(EventProcessingConfiguration.class);
+            Optional<PooledStreamingEventProcessor> optionalProcessor =
+                    processingConfig.eventProcessor("once-test", PooledStreamingEventProcessor.class);
+
+            assertTrue(optionalProcessor.isPresent());
+            PooledStreamingEventProcessor processor = optionalProcessor.get();
+            processor.shutDown();
+
+            EventGateway eventGateway = context.getBean(EventGateway.class);
+
+            for (int i = 0; i < numberOfEvents; i++) {
+                eventGateway.publish(new OriginalEvent("Event[" + i + "]"));
+            }
+            processor.start();
+
+            // Validating for 15 or more status', as the failing segment might already have failed at this point,
+            //  resulting in 15 instead of 16 entries.
+            assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(processor.processingStatus().size() >= 15));
+            assertWithin(500, TimeUnit.MILLISECONDS,
+                         () -> assertTrue(processor.processingStatus()
+                                                   .values()
+                                                   .stream()
+                                                   .map(EventTrackerStatus::getTrackingToken)
+                                                   .filter(Objects::nonNull)
+                                                   .map(TrackingToken::position)
+                                                   .filter(OptionalLong::isPresent)
+                                                   .map(OptionalLong::getAsLong)
+                                                   .anyMatch(position -> position >= numberOfEvents)));
+
+            HandlingOnceEventHandlingComponent eventHandlingComponent =
+                    context.getBean(HandlingOnceEventHandlingComponent.class);
+            assertNotNull(eventHandlingComponent);
+
+            CountDownLatch errorLatch = context.getBean(CountDownLatch.class);
+            assertNotNull(errorLatch);
+
+            assertTrue(errorLatch.await(10, TimeUnit.SECONDS));
+            processor.shutDown();
+
+            assertFalse(eventHandlingComponent.hasHandledEventsMoreThanOnce());
         });
     }
 
@@ -103,22 +163,49 @@ class PooledStreamingEventProcessorIntegrationTest {
         }
 
         @Bean
-        public ConfigurerModule defaultToPooledStreaming() {
+        public ConfigurerModule configureEventProcessors(ListenerInvocationErrorHandler latchedErrorHandler) {
             return configurer -> configurer.eventProcessing()
                                            .usingPooledStreamingEventProcessors()
                                            .registerPooledStreamingEventProcessorConfiguration(
-                                                   (config, builder) -> builder.initialSegmentCount(1)
+                                                   "upcaster-test", (config, builder) -> builder.initialSegmentCount(1)
+                                           )
+                                           .registerListenerInvocationErrorHandler(
+                                                   "once-test", c -> latchedErrorHandler
+                                           )
+                                           .registerPooledStreamingEventProcessorConfiguration(
+                                                   "once-test", (config, builder) -> builder.initialSegmentCount(16)
                                            );
         }
 
         @Bean
+        @ConditionalOnProperty("upcaster-test")
         public MultiUpcaster multiUpcaster() {
             return new MultiUpcaster();
         }
 
         @Bean
-        public EventHandlingComponent eventHandlingComponent() {
-            return new EventHandlingComponent();
+        @ConditionalOnProperty("upcaster-test")
+        public UpcasterTestEventHandlingComponent upcasterTestEventHandlingComponent() {
+            return new UpcasterTestEventHandlingComponent();
+        }
+
+        @Bean
+        @ConditionalOnProperty("once-test")
+        public HandlingOnceEventHandlingComponent onceTestEventHandlingComponent() {
+            return new HandlingOnceEventHandlingComponent();
+        }
+
+        @Bean
+        public CountDownLatch errorCountLatch(@Value("${errorCount:2}") int errorCount) {
+            return new CountDownLatch(errorCount);
+        }
+
+        @Bean
+        public ListenerInvocationErrorHandler latchedErrorHandler(CountDownLatch errorCountLatch) {
+            return (exception, event, eventHandler) -> {
+                errorCountLatch.countDown();
+                throw exception;
+            };
         }
     }
 
@@ -158,7 +245,7 @@ class PooledStreamingEventProcessorIntegrationTest {
     }
 
     @ProcessingGroup("upcaster-test")
-    private static class EventHandlingComponent {
+    private static class UpcasterTestEventHandlingComponent {
 
         private final AtomicInteger originalEventCounter = new AtomicInteger(0);
         private final AtomicInteger upcastedEventCounter = new AtomicInteger(0);
@@ -179,6 +266,29 @@ class PooledStreamingEventProcessorIntegrationTest {
 
         public AtomicInteger getUpcastedEventCounter() {
             return upcastedEventCounter;
+        }
+    }
+
+    @ProcessingGroup("once-test")
+    private static class HandlingOnceEventHandlingComponent {
+
+        private final CopyOnWriteArraySet<String> eventIdentifiers = new CopyOnWriteArraySet<>();
+        private final List<String> duplicateHandles = new CopyOnWriteArrayList<>();
+
+        @EventHandler
+        public void on(OriginalEvent event, @MessageIdentifier String eventId) {
+            if (event.getTextField().equals("Event[13]")) {
+                throw new RuntimeException();
+            }
+
+            boolean didNotExistYet = eventIdentifiers.add(eventId);
+            if (!didNotExistYet) {
+                duplicateHandles.add(eventId);
+            }
+        }
+
+        public boolean hasHandledEventsMoreThanOnce() {
+            return !duplicateHandles.isEmpty();
         }
     }
 

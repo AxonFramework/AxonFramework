@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Message interceptor that registers {@link CorrelationDataProvider CorrelationDataProviders} with the Unit of Work.
@@ -60,7 +61,8 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+            throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
         return interceptorChain.proceed();
     }

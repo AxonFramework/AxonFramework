@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CapacityMonitorTest {
 
     @Test
-    void testSingleThreadedCapacity() {
+    void singleThreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
@@ -47,7 +47,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testMultithreadedCapacity() {
+    void multithreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         EventMessage<Object> foo = asEventMessage("foo");
@@ -64,7 +64,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testEmptyCapacity() {
+    void emptyCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         Map<String, Metric> metricSet = testSubject.getMetrics();

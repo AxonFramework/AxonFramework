@@ -27,6 +27,9 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.utils.TestSerializer;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.SimpleDeadlineManager;
+import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -49,6 +52,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
@@ -56,8 +60,19 @@ import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerContext;
+import org.quartz.SchedulerException;
 
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,20 +80,25 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating several {@link DefaultConfigurer} operations.
@@ -133,10 +153,18 @@ class DefaultConfigurerTest {
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .start();
         try {
-            TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+            TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                     .eventProcessor(
+                                                             getClass().getPackage().getName(),
+                                                             TrackingEventProcessor.class
+                                                     )
                                                      .orElseThrow(RuntimeException::new);
-            assertRetryingWithin(Duration.ofSeconds(5), () -> assertEquals(2, config.getComponent(TokenStore.class)
-                    .fetchSegments(processor.getName()).length));
+            assertRetryingWithin(
+                    Duration.ofSeconds(5),
+                    () -> assertEquals(
+                            2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length
+                    )
+            );
         } finally {
             config.shutdown();
         }
@@ -160,8 +188,65 @@ class DefaultConfigurerTest {
             TrackingEventProcessor processor = config.eventProcessingConfiguration()
                                                      .eventProcessor(processorName, TrackingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
-            assertRetryingWithin(Duration.ofSeconds(5), () -> assertEquals(2, config.getComponent(TokenStore.class)
-                    .fetchSegments(processor.getName()).length));
+            assertRetryingWithin(
+                    Duration.ofSeconds(5),
+                    () -> assertEquals(
+                            2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length
+                    )
+            );
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabledDoesNotComplainAtShutdown() throws Exception {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventStore,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                                                          .andAutoStart(false))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+
+        TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                 .eventProcessor(processorName, TrackingEventProcessor.class)
+                                                 .orElseThrow(RuntimeException::new);
+        try {
+            assertFalse(processor.isRunning());
+        } finally {
+            assertDoesNotThrow(config::shutdown);
+        }
+    }
+
+    @Test
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabled() throws Exception {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        String processorName = "myProcessor";
+        configurer.eventProcessing()
+                  .registerTrackingEventProcessor(processorName,
+                                                  Configuration::eventStore,
+                                                  c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                                                          .andAutoStart(false))
+                  .byDefaultAssignTo(processorName)
+                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerEventHandler(c -> (EventMessageHandler) event -> null);
+        Configuration config = configurer
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+        try {
+            TrackingEventProcessor processor = config.eventProcessingConfiguration()
+                                                     .eventProcessor(processorName, TrackingEventProcessor.class)
+                                                     .orElseThrow(RuntimeException::new);
+            assertFalse(processor.isRunning());
+            processor.start();
+            assertTrue(processor.isRunning());
         } finally {
             config.shutdown();
         }
@@ -170,25 +255,33 @@ class DefaultConfigurerTest {
     @Test
     void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();
-        Configuration config = DefaultConfigurer.defaultConfiguration().configureEmbeddedEventStore(
-                c -> JpaEventStorageEngine.builder()
-                                          .snapshotSerializer(c.serializer())
-                                          .upcasterChain(c.upcasterChain())
-                                          .persistenceExceptionResolver(c.getComponent(PersistenceExceptionResolver.class))
-                                          .entityManagerProvider(() -> em)
-                                          .transactionManager(c.getComponent(TransactionManager.class))
-                                          .eventSerializer(c.serializer())
-                                          .build()
-        ).configureAggregate(
-                defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
-                        c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)
-                )
-        ).registerEventUpcaster(c -> events -> {
-            counter.incrementAndGet();
-            return events;
-        }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)
-        ).configureSerializer(configuration -> TestSerializer.xStreamSerializer())
-         .buildConfiguration();
+        Configuration config =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureEmbeddedEventStore(
+                                         c -> JpaEventStorageEngine.builder()
+                                                                   .snapshotSerializer(c.serializer())
+                                                                   .upcasterChain(c.upcasterChain())
+                                                                   .persistenceExceptionResolver(c.getComponent(
+                                                                           PersistenceExceptionResolver.class
+                                                                   ))
+                                                                   .entityManagerProvider(() -> em)
+                                                                   .transactionManager(c.getComponent(
+                                                                           TransactionManager.class
+                                                                   ))
+                                                                   .eventSerializer(c.serializer())
+                                                                   .build()
+                                 ).configureAggregate(
+                                         defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
+                                                 c -> command -> new VersionedAggregateIdentifier(
+                                                         command.getPayload().toString(), null
+                                                 )
+                                         )
+                                 ).registerEventUpcaster(c -> events -> {
+                                     counter.incrementAndGet();
+                                     return events;
+                                 }).configureTransactionManager(c -> new EntityManagerTransactionManager(em)
+                                 ).configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                 .buildConfiguration();
 
         config.start();
 
@@ -199,7 +292,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(
                 () -> em, transactionManager).configureCommandBus(c -> {
@@ -211,10 +304,10 @@ class DefaultConfigurerTest {
         }).configureAggregate(
                 defaultConfiguration(StubAggregate.class).configureRepository(
                         c -> GenericJpaRepository.builder(StubAggregate.class)
-                                .entityManagerProvider(new SimpleEntityManagerProvider(em))
-                                .eventBus(c.eventBus())
-                                .parameterResolverFactory(c.parameterResolverFactory())
-                                .build()
+                                                 .entityManagerProvider(new SimpleEntityManagerProvider(em))
+                                                 .eventBus(c.eventBus())
+                                                 .parameterResolverFactory(c.parameterResolverFactory())
+                                                 .build()
                 )
         ).configureSerializer(c -> TestSerializer.xStreamSerializer()
         ).buildConfiguration();
@@ -225,49 +318,51 @@ class DefaultConfigurerTest {
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(1, config.getModules().size());
-        assertExpectedModules(config,
-                              AggregateConfiguration.class);
+        assertExpectedModules(config, AggregateConfiguration.class);
 
         verify(transactionManager, times(2)).startTransaction();
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
-        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
-                                                .configureSerializer(c -> TestSerializer.xStreamSerializer())
-                                                .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus =
-                                                            AsynchronousCommandBus.builder().build();
-                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                                                    return commandBus;
-                                                })
-                                                .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
-                                                .buildConfiguration();
+        Configuration config =
+                DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
+                                 .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                 .configureCommandBus(c -> {
+                                     AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(
+                                             c.getComponent(TransactionManager.class)
+                                     ));
+                                     return commandBus;
+                                 })
+                                 .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
+                                 .buildConfiguration();
 
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertTrue(config.getModules()
-                         .stream()
-                         .anyMatch(m -> m instanceof AggregateConfiguration));
+        assertTrue(config.getModules().stream().anyMatch(m -> m instanceof AggregateConfiguration));
 
         verify(transactionManager, times(2)).startTransaction();
     }
 
     @Test
-    void testMissingEntityManagerProviderIsReported() {
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus =
-                                                            AsynchronousCommandBus.builder().build();
-                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                                                    return commandBus;
-                                                })
-                                                .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
-                                                .buildConfiguration();
+    void missingEntityManagerProviderIsReported() {
+        Configuration config =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureCommandBus(c -> {
+                                     AsynchronousCommandBus commandBus =
+                                             AsynchronousCommandBus.builder().build();
+                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(
+                                             c.getComponent(TransactionManager.class)
+                                     ));
+                                     return commandBus;
+                                 })
+                                 .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
+                                 .buildConfiguration();
 
         try {
             config.start();
@@ -278,7 +373,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithJpaRepository() throws Exception {
+    void jpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em).registerComponent(
                 TransactionManager.class, c -> transactionManager
@@ -289,13 +384,14 @@ class DefaultConfigurerTest {
             );
             return commandBus;
         }).configureAggregate(
-                defaultConfiguration(StubAggregate.class).configureRepository(
-                        c -> GenericJpaRepository.builder(StubAggregate.class)
-                                .entityManagerProvider(new SimpleEntityManagerProvider(em))
-                                .eventBus(c.eventBus())
-                                .parameterResolverFactory(c.parameterResolverFactory())
-                                .build()
-                )
+                defaultConfiguration(StubAggregate.class)
+                        .configureRepository(
+                                c -> GenericJpaRepository.builder(StubAggregate.class)
+                                                         .entityManagerProvider(new SimpleEntityManagerProvider(em))
+                                                         .eventBus(c.eventBus())
+                                                         .parameterResolverFactory(c.parameterResolverFactory())
+                                                         .build()
+                        )
         ).configureSerializer(c -> TestSerializer.xStreamSerializer()
         ).buildConfiguration();
 
@@ -305,8 +401,7 @@ class DefaultConfigurerTest {
         assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(1, config.getModules().size());
-        assertExpectedModules(config,
-                              AggregateConfiguration.class);
+        assertExpectedModules(config, AggregateConfiguration.class);
 
         verify(transactionManager, times(2)).startTransaction();
     }
@@ -320,7 +415,9 @@ class DefaultConfigurerTest {
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureMessageMonitor(c -> (t, n) -> defaultMonitor)
-                                                .configureMessageMonitor(CommandBus.class, "commandBus", c -> commandBusMonitor)
+                                                .configureMessageMonitor(
+                                                        CommandBus.class, "commandBus", c -> commandBusMonitor
+                                                )
                                                 .buildConfiguration();
         config.start();
 
@@ -332,7 +429,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testRegisterSeveralModules() {
+    void registerSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureAggregate(Object.class)
@@ -346,7 +443,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
+    void queryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
         QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
@@ -358,12 +455,13 @@ class DefaultConfigurerTest {
     @Test
     void defaultConfigurationWithCache() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-            .configureCommandBus(c -> AsynchronousCommandBus.builder().build())
-            .configureAggregate(
-                defaultConfiguration(StubAggregate.class).configureCache(c-> new WeakReferenceCache())
-             )
-            .buildConfiguration();
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureCommandBus(c -> AsynchronousCommandBus.builder().build())
+                                                .configureAggregate(
+                                                        defaultConfiguration(StubAggregate.class)
+                                                                .configureCache(c -> new WeakReferenceCache())
+                                                )
+                                                .buildConfiguration();
         config.start();
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -374,7 +472,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfiguredSnapshotterDefaultsToAggregateSnapshotter() {
+    void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter =
                 DefaultConfigurer.jpaConfiguration(() -> em)
                                  .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
@@ -385,7 +483,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigureSnapshotterSetsCustomSnapshotter() {
+    void configureSnapshotterSetsCustomSnapshotter() {
         Snapshotter expectedSnapshotter = mock(Snapshotter.class);
 
         AggregateConfigurer<StubAggregate> aggregateConfigurer = defaultConfiguration(StubAggregate.class)
@@ -407,7 +505,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigurationSnapshotFilterContainsConfiguredSnapshotFilters() {
+    void configurationSnapshotFilterContainsConfiguredSnapshotFilters() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -439,7 +537,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testAggregateSnapshotFilterIsAddedToTheEventStore() {
+    void aggregateSnapshotFilterIsAddedToTheEventStore() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -485,6 +583,43 @@ class DefaultConfigurerTest {
 
         assertTrue(filteredFirst.get());
         assertTrue(filteredSecond.get());
+    }
+
+    @Test
+    void defaultConfiguredDeadlineManager() {
+        DeadlineManager result = DefaultConfigurer.defaultConfiguration()
+                                                  .buildConfiguration()
+                                                  .deadlineManager();
+
+        assertTrue(result instanceof SimpleDeadlineManager);
+    }
+
+    @Test
+    void customConfiguredDeadlineManager() throws SchedulerException {
+        Scheduler mockScheduler = mock(Scheduler.class);
+        when(mockScheduler.getContext()).thenReturn(mock(SchedulerContext.class));
+
+        DeadlineManager result =
+                DefaultConfigurer.defaultConfiguration()
+                                 .configureDeadlineManager(
+                                         config -> QuartzDeadlineManager.builder()
+                                                                        .scheduler(mockScheduler)
+                                                                        .scopeAwareProvider(config.scopeAwareProvider())
+                                                                        .build()
+                                 )
+                                 .buildConfiguration()
+                                 .deadlineManager();
+
+        assertTrue(result instanceof QuartzDeadlineManager);
+    }
+
+    @Test
+    void defaultConfiguredScopeAwareProvider() {
+        ScopeAwareProvider result = DefaultConfigurer.defaultConfiguration()
+                                                     .buildConfiguration()
+                                                     .scopeAwareProvider();
+
+        assertTrue(result instanceof ConfigurationScopeAwareProvider);
     }
 
     @SuppressWarnings("unused")

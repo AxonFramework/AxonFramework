@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -62,7 +64,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQuery() throws Exception {
+    void pointToPointQuery() throws Exception {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         CompletableFuture<String> queryResponse = testSubject.query("query", String.class);
@@ -83,7 +85,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQuerySpecifyingQueryName() throws Exception {
+    void pointToPointQuerySpecifyingQueryName() throws Exception {
         String expectedQueryName = "myQueryName";
 
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
@@ -106,7 +108,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWithMetaData() throws Exception {
+    void pointToPointQueryWithMetaData() throws Exception {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
@@ -135,7 +137,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWhenQueryBusReportsAnError() throws Exception {
+    void pointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(String.class, expected)));
@@ -148,7 +150,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWhenQueryBusThrowsException() throws Exception {
+    void pointToPointQueryWhenQueryBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
         CompletableFuture<QueryResponseMessage<String>> queryResponseCompletableFuture = new CompletableFuture<>();
         queryResponseCompletableFuture.completeExceptionally(expected);
@@ -162,7 +164,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQuery() {
+    void scatterGatherQuery() {
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
 
@@ -190,7 +192,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQuerySpecifyingQueryName() {
+    void scatterGatherQuerySpecifyingQueryName() {
         String expectedQueryName = "myQueryName";
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
@@ -220,7 +222,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQueryWithMetaData() {
+    void scatterGatherQueryWithMetaData() {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
         long expectedTimeout = 1L;
@@ -255,7 +257,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQuery() {
+    void subscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
@@ -279,7 +281,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQuerySpecifyingQueryName() {
+    void subscriptionQuerySpecifyingQueryName() {
         String expectedQueryName = "myQueryName";
 
         when(mockBus.subscriptionQuery(any(), anyInt()))
@@ -305,7 +307,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQueryWithMetaData() {
+    void subscriptionQueryWithMetaData() {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
@@ -337,7 +339,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testDispatchInterceptor() {
+    void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
                 "dispatch-" + queryMessage.getPayload(),
@@ -352,7 +354,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+    void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())),
@@ -370,7 +372,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+    void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)),
@@ -385,7 +387,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testNullUpdatesOfSubscriptionQuerySkipped() {
+    void nullUpdatesOfSubscriptionQuerySkipped() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.empty(),
@@ -401,7 +403,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+    void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<String>("test") {
                     @Override
@@ -414,6 +416,42 @@ class DefaultQueryGatewayTest {
         assertTrue(actual.isDone());
         assertTrue(actual.isCompletedExceptionally());
         assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
+    }
+
+    @Test
+    void streamingQueryIsLazy() {
+        Publisher<QueryResponseMessage<Object>> response = Flux.just(
+                new GenericQueryResponseMessage("a"),
+                new GenericQueryResponseMessage("b"),
+                new GenericQueryResponseMessage("c")
+        );
+
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(response);
+
+        //first try without subscribing
+        testSubject.streamingQuery("query", String.class);
+
+        //expect query never sent
+        verify(mockBus, never()).streamingQuery(any());
+
+        //second try with subscribing
+        StepVerifier.create(testSubject.streamingQuery("query", String.class))
+                    .expectNext("a", "b", "c")
+                    .verifyComplete();
+
+        //expect query sent
+        verify(mockBus, times(1)).streamingQuery(any(StreamingQueryMessage.class));
+    }
+
+    @Test
+    void streamingQueryPropagateErrors() {
+        when(mockBus.streamingQuery(any()))
+                .thenReturn(Flux.error(new IllegalStateException("test")));
+
+        StepVerifier.create(testSubject.streamingQuery("query", String.class))
+                .expectErrorMatches(t->t instanceof IllegalStateException && t.getMessage().equals("test"))
+                .verify();
     }
 
     @SuppressWarnings({"unused", "SameParameterValue"})

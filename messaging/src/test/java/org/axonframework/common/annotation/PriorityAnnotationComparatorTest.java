@@ -37,7 +37,7 @@ class PriorityAnnotationComparatorTest {
     }
 
     @Test
-    void testCompareDifferentPriorities() {
+    void compareDifferentPriorities() {
         assertTrue(testSubject.compare(new LowPrio(), new HighPrio()) > 0);
         assertTrue(testSubject.compare(new LowPrio(), new NeutralPrio()) > 0);
         assertTrue(testSubject.compare(new NeutralPrio(), new HighPrio()) > 0);
@@ -48,14 +48,14 @@ class PriorityAnnotationComparatorTest {
     }
 
     @Test
-    void testCompareSamePriorities() {
+    void compareSamePriorities() {
         assertEquals(0, testSubject.compare(new LowPrio(), new LowPrio()));
         assertEquals(0, testSubject.compare(new NeutralPrio(), new NeutralPrio()));
         assertEquals(0, testSubject.compare(new HighPrio(), new HighPrio()));
     }
 
     @Test
-    void testUndefinedConsideredNeutralPriority() {
+    void undefinedConsideredNeutralPriority() {
         assertTrue(testSubject.compare(new UndefinedPrio(), new HighPrio()) > 0);
         assertTrue(testSubject.compare(new UndefinedPrio(), new LowPrio()) < 0);
         assertTrue(testSubject.compare(new UndefinedPrio(), new NeutralPrio()) == 0);

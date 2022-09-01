@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,29 +90,32 @@ public class EventProcessingModule
 
     private final List<TypeProcessingGroupSelector> typeSelectors = new ArrayList<>();
     private final List<InstanceProcessingGroupSelector> instanceSelectors = new ArrayList<>();
-    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
-    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
-    private final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
-    private final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
-    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
-    private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
-    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, String> processingGroupsAssignments = new HashMap<>();
-    private final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-    private final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
-    private final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
-    private final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    private final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
-    private final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
-
     // the default selector determines the processing group by inspecting the @ProcessingGroup annotation
     private final TypeProcessingGroupSelector annotationGroupSelector = TypeProcessingGroupSelector
             .defaultSelector(type -> annotatedProcessingGroupOfType(type).orElse(null));
     private TypeProcessingGroupSelector typeFallback =
             TypeProcessingGroupSelector.defaultSelector(DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION);
     private InstanceProcessingGroupSelector instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(EventProcessingModule::packageOfObject);
+
+    private final List<SagaConfigurer<?>> sagaConfigurations = new ArrayList<>();
+    private final List<Component<Object>> eventHandlerBuilders = new ArrayList<>();
+    private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
+
+    protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+
+    protected final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
+    protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+    protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
+    protected final Map<String, Component<RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
+    protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
+
+    protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
+    protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
 
     private Configuration configuration;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -171,7 +174,7 @@ public class EventProcessingModule
                             TrackingEventProcessorConfiguration::forSingleThreadedProcessing
                     )
             );
-    private PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
+    protected PooledStreamingProcessorConfiguration defaultPooledStreamingProcessorConfiguration = noOp();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
@@ -179,35 +182,29 @@ public class EventProcessingModule
     public void initialize(Configuration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
-
-        instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
-
-        Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
-        registerSimpleEventHandlerInvokers(handlerInvokers);
-        registerSagaManagers(handlerInvokers);
-
-        handlerInvokers.forEach((processorName, invokers) -> {
-            Component<EventProcessor> eventProcessorComponent =
-                    new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
-            eventProcessors.put(processorName, eventProcessorComponent);
-        });
-
-        initializeProcessors();
+        configuration.onStart(Integer.MIN_VALUE, this::initializeProcessors);
     }
 
     /**
-     * Ideally we would be able to just call {@code eventProcessors.values().forEach(Component::get)} to have the {@link
-     * Component} register the lifecycle handlers through the {@link LifecycleHandlerInspector} directly upon
-     * initialization. However, the Spring {@code AxonConfiguration} and {@code EventHandlerRegistrar} will call the
-     * {@link #initialize(Configuration)} method twice. As the {@code #initialize(Configuration)} clears out the list of
-     * processors, some processors (for example those for registered Sagas) might pop up twice; once in the first {@code
-     * #initialize(Configuration)} call and once in the second. Registering the {@code
-     * eventProcessors.values().forEach(Component::get)} at the earliest stage in the start cycle will resolve the
-     * problem. Note that this functionality should be adjusted once the Spring configuration is more inline with the
-     * default and auto Configuration.
+     * Initializes the event processors by assigning each of the event handlers according to the defined selectors. When
+     * processors have already been initialized, this method does nothing.
      */
     private void initializeProcessors() {
-        this.configuration.onStart(Integer.MIN_VALUE, () -> eventProcessors.values().forEach(Component::get));
+        if (eventProcessors.isEmpty()) {
+            instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
+
+            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
+            registerSimpleEventHandlerInvokers(handlerInvokers);
+            registerSagaManagers(handlerInvokers);
+
+            handlerInvokers.forEach((processorName, invokers) -> {
+                Component<EventProcessor> eventProcessorComponent =
+                        new Component<>(configuration, processorName, c -> buildEventProcessor(invokers, processorName));
+                eventProcessors.put(processorName, eventProcessorComponent);
+            });
+
+            eventProcessors.values().forEach(Component::get);
+        }
     }
 
     private String selectProcessingGroupByType(Class<?> type) {
@@ -333,13 +330,13 @@ public class EventProcessingModule
     @SuppressWarnings("unchecked")
     @Override
     public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
-        ensureInitialized();
         return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
     }
 
     @Override
     public Map<String, EventProcessor> eventProcessors() {
-        ensureInitialized();
+        validateConfigInitialization();
+        initializeProcessors();
         Map<String, EventProcessor> result = new HashMap<>(eventProcessors.size());
         eventProcessors.forEach((name, component) -> result.put(name, component.get()));
         return result;
@@ -353,14 +350,14 @@ public class EventProcessingModule
 
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
                                             .orElse(Collections.emptyList());
     }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return listenerInvocationErrorHandlers.containsKey(processingGroup)
                 ? listenerInvocationErrorHandlers.get(processingGroup).get()
                 : defaultListenerInvocationErrorHandler.get();
@@ -368,7 +365,7 @@ public class EventProcessingModule
 
     @Override
     public SequencingPolicy<? super EventMessage<?>> sequencingPolicy(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return sequencingPolicies.containsKey(processingGroup)
                 ? sequencingPolicies.get(processingGroup).get()
                 : defaultSequencingPolicy.get();
@@ -376,7 +373,7 @@ public class EventProcessingModule
 
     @Override
     public RollbackConfiguration rollbackConfiguration(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return rollbackConfigurations.containsKey(processorName)
                 ? rollbackConfigurations.get(processorName).get()
                 : defaultRollbackConfiguration.get();
@@ -384,7 +381,7 @@ public class EventProcessingModule
 
     @Override
     public ErrorHandler errorHandler(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return errorHandlers.containsKey(processorName)
                 ? errorHandlers.get(processorName).get()
                 : defaultErrorHandler.get();
@@ -392,18 +389,18 @@ public class EventProcessingModule
 
     @Override
     public SagaStore sagaStore() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaStore.get();
     }
 
     @Override
     public List<SagaConfiguration<?>> sagaConfigurations() {
-        ensureInitialized();
+        validateConfigInitialization();
         return sagaConfigurations.stream().map(sc -> sc.initialize(configuration)).collect(Collectors.toList());
     }
 
     private String processorNameForProcessingGroup(String processingGroup) {
-        ensureInitialized();
+        validateConfigInitialization();
         return processingGroupsAssignments.getOrDefault(processingGroup,
                                                         defaultProcessingGroupAssignment
                                                                 .apply(processingGroup));
@@ -412,7 +409,7 @@ public class EventProcessingModule
     @Override
     public MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
             return messageMonitorFactories.get(eventProcessorName).create(configuration,
                                                                           componentType,
@@ -424,7 +421,7 @@ public class EventProcessingModule
 
     @Override
     public TokenStore tokenStore(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return tokenStore.containsKey(processorName)
                 ? tokenStore.get(processorName).get()
                 : defaultTokenStore.get();
@@ -432,14 +429,16 @@ public class EventProcessingModule
 
     @Override
     public TransactionManager transactionManager(String processorName) {
-        ensureInitialized();
+        validateConfigInitialization();
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
                 : defaultTransactionManager.get();
     }
 
-    private void ensureInitialized() {
-        assertNonNull(configuration, "Configuration is not initialized yet");
+    private void validateConfigInitialization() {
+        assertNonNull(
+                configuration, "Cannot proceed because the Configuration is not initialized for this module yet."
+        );
     }
 
     //<editor-fold desc="configurer methods">
@@ -637,6 +636,7 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
+            initializeProcessors();
             Component<EventProcessor> eps = eventProcessors.get(processorName);
             if (eps != null && eps.isInitialized()) {
                 eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
@@ -692,6 +692,14 @@ public class EventProcessingModule
         this.transactionManagers.put(name, new Component<>(() -> configuration,
                                                            "transactionManager",
                                                            transactionManagerBuilder));
+        return this;
+    }
+
+    @Override
+    public EventProcessingConfigurer registerDefaultTransactionManager(
+            Function<Configuration, TransactionManager> transactionManagerBuilder
+    ) {
+        this.defaultTransactionManager.update(transactionManagerBuilder);
         return this;
     }
 
@@ -763,9 +771,17 @@ public class EventProcessingModule
         return tepConfigs.getOrDefault(name, defaultTrackingEventProcessorConfiguration).get();
     }
 
-    private SubscribingEventProcessor subscribingEventProcessor(String name,
-                                                                EventHandlerInvoker eventHandlerInvoker,
-                                                                SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+    /**
+     * Default {@link SubscribingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the vent handling
+     * @param messageSource where to retrieve events from
+     * @return Default {@link SubscribingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor subscribingEventProcessor(String name,
+                                                       EventHandlerInvoker eventHandlerInvoker,
+                                                       SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
         return SubscribingEventProcessor.builder()
                                         .name(name)
                                         .eventHandlerInvoker(eventHandlerInvoker)
@@ -778,10 +794,19 @@ public class EventProcessingModule
                                         .build();
     }
 
-    private TrackingEventProcessor trackingEventProcessor(String name,
-                                                          EventHandlerInvoker eventHandlerInvoker,
-                                                          TrackingEventProcessorConfiguration config,
-                                                          StreamableMessageSource<TrackedEventMessage<?>> source) {
+    /**
+     * Default {@link TrackingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config for the tracking event processor construction
+     * @param source where to retrieve events from
+     * @return Default {@link TrackingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor trackingEventProcessor(String name,
+                                                    EventHandlerInvoker eventHandlerInvoker,
+                                                    TrackingEventProcessorConfiguration config,
+                                                    StreamableMessageSource<TrackedEventMessage<?>> source) {
         return TrackingEventProcessor.builder()
                                      .name(name)
                                      .eventHandlerInvoker(eventHandlerInvoker)
@@ -795,7 +820,17 @@ public class EventProcessingModule
                                      .build();
     }
 
-    private PooledStreamingEventProcessor pooledStreamingEventProcessor(
+    /**
+     * Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     *
+     * @param name of the processor
+     * @param eventHandlerInvoker used by the processor for the event handling
+     * @param config main configuration providing access for Axon components
+     * @param messageSource where to retrieve events from
+     * @param processorConfiguration for the pooled event processor construction
+     * @return Default {@link PooledStreamingEventProcessor} configuration based on this configure module.
+     */
+    protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,
             Configuration config,
@@ -814,13 +849,13 @@ public class EventProcessingModule
                                              .transactionManager(transactionManager(name))
                                              .coordinatorExecutor(processorName -> {
                                                  ScheduledExecutorService coordinatorExecutor =
-                                                         defaultExecutor("Coordinator[" + processorName + "]");
+                                                         defaultExecutor(1, "Coordinator[" + processorName + "]");
                                                  config.onShutdown(coordinatorExecutor::shutdown);
                                                  return coordinatorExecutor;
                                              })
                                              .workerExecutor(processorName -> {
                                                  ScheduledExecutorService workerExecutor =
-                                                         defaultExecutor("WorkPackage[" + processorName + "]");
+                                                         defaultExecutor(4, "WorkPackage[" + processorName + "]");
                                                  config.onShutdown(workerExecutor::shutdown);
                                                  return workerExecutor;
                                              });
@@ -830,8 +865,8 @@ public class EventProcessingModule
                                                            .build();
     }
 
-    private ScheduledExecutorService defaultExecutor(String factoryName) {
-        return Executors.newScheduledThreadPool(1, new AxonThreadFactory(factoryName));
+    private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
+        return Executors.newScheduledThreadPool(poolSize, new AxonThreadFactory(factoryName));
     }
 
     /**

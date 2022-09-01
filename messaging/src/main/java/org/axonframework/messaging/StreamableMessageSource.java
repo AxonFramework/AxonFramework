@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.TrackingToken;
 
 import java.time.Duration;
 import java.time.Instant;
+import javax.annotation.Nullable;
 
 /**
  * Interface for a source of {@link Message messages} that processors can track.
@@ -38,7 +39,7 @@ public interface StreamableMessageSource<M extends Message<?>> {
      *                      messages
      * @return a stream of messages since the given trackingToken
      */
-    BlockingStream<M> openStream(TrackingToken trackingToken);
+    BlockingStream<M> openStream(@Nullable TrackingToken trackingToken);
 
     /**
      * Creates the token at the beginning of an event stream. The beginning of an event stream in this context means the

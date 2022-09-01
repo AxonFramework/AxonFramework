@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -67,7 +68,8 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public BiFunction<Integer, T, T> handle(List<? extends T> messages) {
+    @Nonnull
+    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
         return (i, message) -> {
             logger.info("Dispatched messages: [{}]", message.getPayloadType().getSimpleName());
             return message;
@@ -75,7 +77,7 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain)
+    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         T message = unitOfWork.getMessage();
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());

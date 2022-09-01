@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,12 @@ import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
 class GrpcBufferingInterceptorTest {
@@ -46,7 +46,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_BiDiStreaming() {
+    void interceptClientCall_BiDiStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -60,7 +60,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ServerStreaming() {
+    void interceptClientCall_ServerStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.SERVER_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -74,7 +74,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ClientStreaming() {
+    void interceptClientCall_ClientStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.CLIENT_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -88,7 +88,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_NoStreaming() {
+    void interceptClientCall_NoStreaming() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.UNARY);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(1000);
@@ -102,7 +102,7 @@ class GrpcBufferingInterceptorTest {
     }
 
     @Test
-    void testInterceptClientCall_ZeroBuffer() {
+    void interceptClientCall_ZeroBuffer() {
         MethodDescriptor<Object, Object> method = buildMethod(MethodDescriptor.MethodType.BIDI_STREAMING);
 
         GrpcBufferingInterceptor testSubject = new GrpcBufferingInterceptor(0);

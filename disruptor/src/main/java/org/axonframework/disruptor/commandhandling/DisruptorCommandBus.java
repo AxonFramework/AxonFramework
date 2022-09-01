@@ -21,9 +21,20 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolution;
+import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
+import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
-import org.axonframework.common.*;
+import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.Registration;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.transaction.TransactionManager;
@@ -31,7 +42,11 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -39,7 +54,13 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.*;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -49,13 +70,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -177,11 +205,11 @@ public class DisruptorCommandBus implements CommandBus {
      * required for command execution are immediately requested from the Configuration's Executor, if any. Otherwise,
      * they are created.
      * <p>
-     * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration},
-     * {@link ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is
-     * done on the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
-     * {@code invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an
-     * {@link AxonConfigurationException} will be thrown.
+     * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link
+     * ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is done on
+     * the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and {@code
+     * invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an {@link
+     * AxonConfigurationException} will be thrown.
      *
      * @param builder the {@link Builder} used to instantiate a {@link DisruptorCommandBus} instance
      */
@@ -242,12 +270,13 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
@@ -276,9 +305,9 @@ public class DisruptorCommandBus implements CommandBus {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
-            callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(
-                    format("No handler was subscribed to command [%s]", command.getCommandName()))
-            ));
+            callback.onResult(command, asCommandResultMessage(new NoHandlerForCommandException(format(
+                    "No handler was subscribed for command [%s].", command.getCommandName()
+            ))));
             return;
         }
 
@@ -301,8 +330,9 @@ public class DisruptorCommandBus implements CommandBus {
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.reset(command, commandHandler, invokerSegment, publisherSegment,
-                        new BlacklistDetectingCallback<C, R>(callback, disruptor.getRingBuffer(), this::doDispatch,
-                                                             rescheduleOnCorruptState),
+                        new BlacklistDetectingCallback<C, R>(
+                                callback, disruptor.getRingBuffer(), this::doDispatch, rescheduleOnCorruptState
+                        ),
                         invokerInterceptors,
                         publisherInterceptors);
         } finally {
@@ -311,8 +341,8 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code eventStore} and {@code aggregateFactory}.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code eventStore} and
+     * {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
@@ -327,8 +357,8 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code eventStore} and {@code aggregateFactory}.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code eventStore} and
+     * {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
@@ -339,7 +369,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               RepositoryProvider repositoryProvider) {
         return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider);
     }
@@ -357,7 +388,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition) {
         return createRepository(eventStore,
                                 aggregateFactory,
@@ -382,7 +414,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               RepositoryProvider repositoryProvider) {
         return createRepository(eventStore,
@@ -394,9 +427,9 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
-     * resolved using the given {@code parameterResolverFactory}.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code
+     * aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are resolved
+     * using the given {@code parameterResolverFactory}.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
@@ -405,17 +438,20 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory) {
-        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE,
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                NoSnapshotTriggerDefinition.INSTANCE,
                                 parameterResolverFactory);
     }
 
     /**
-     * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
-     * resolved using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create
-     * handler instances.
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given {@code
+     * aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are resolved
+     * using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create handler
+     * instances.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
@@ -426,7 +462,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory,
                                               HandlerDefinition handlerDefinition,
                                               RepositoryProvider repositoryProvider) {
@@ -451,7 +488,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
         return createRepository(eventStore,
@@ -477,7 +515,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
                                               HandlerDefinition handlerDefinition,
@@ -494,7 +533,8 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}]", commandName);
         commandHandlers.compute(commandName, (cn, existingHandler) -> {
             if (existingHandler == null || existingHandler == handler) {
@@ -507,9 +547,9 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Shuts down the command bus. It no longer accepts new commands, and finishes processing commands that have
-     * already been published. This method <b>will not</b> shut down any executor that has been provided as part of the
-     * Builder process.
+     * Shuts down the command bus. It no longer accepts new commands, and finishes processing commands that have already
+     * been published. This method <b>will not</b> shut down any executor that has been provided as part of the Builder
+     * process.
      */
     public void stop() {
         if (!started) {
@@ -532,15 +572,16 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         invokerInterceptors.add(handlerInterceptor);
         return () -> invokerInterceptors.remove(handlerInterceptor);
     }
@@ -553,7 +594,8 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                             @Nonnull CommandResultMessage<?> commandResultMessage) {
             if (commandResultMessage.isExceptional()) {
                 logger.info("An error occurred while handling a command [{}].",
                             commandMessage.getCommandName(),
@@ -618,18 +660,20 @@ public class DisruptorCommandBus implements CommandBus {
         private CommandCallback<Object, Object> defaultCommandCallback = FailureLoggingCommandCallback.INSTANCE;
 
         /**
-         * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
-         * {@link DisruptorCommandBus} during in the invocation thread. The interceptors are invoked by the thread that
-         * also executes the command handler.
+         * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the {@link
+         * DisruptorCommandBus} during in the invocation thread. The interceptors are invoked by the thread that also
+         * executes the command handler.
          * <p/>
-         * Note that this is *not* the thread that stores and publishes the generated events. See
-         * {@link #publisherInterceptors(java.util.List)}.
+         * Note that this is *not* the thread that stores and publishes the generated events. See {@link
+         * #publisherInterceptors(java.util.List)}.
          *
-         * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming command
+         * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
+         *                            command
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder invokerInterceptors(
-                List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors) {
+                List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors
+        ) {
             this.invokerInterceptors.clear();
             this.invokerInterceptors.addAll(invokerInterceptors);
             return this;
@@ -651,9 +695,9 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Configures {@link MessageDispatchInterceptor} of generic type {@link CommandMessage} to use with the
-         * {@link DisruptorCommandBus} when commands are dispatched. The interceptors are invoked by the thread that
-         * provides the commands to the command bus.
+         * Configures {@link MessageDispatchInterceptor} of generic type {@link CommandMessage} to use with the {@link
+         * DisruptorCommandBus} when commands are dispatched. The interceptors are invoked by the thread that provides
+         * the commands to the command bus.
          *
          * @param dispatchInterceptors the {@link MessageDispatchInterceptor}s dispatch interceptors to invoke when
          *                             dispatching a command
@@ -666,12 +710,12 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link Executor} that provides the processing resources (Threads) for the components of the
-         * {@link DisruptorCommandBus}. The provided executor must be capable of providing the required number of
-         * threads. Three threads are required immediately at startup and will not be returned until the CommandBus is
-         * stopped. Additional threads are used to invoke callbacks and start a recovery process in case aggregate state
-         * has been corrupted. Failure to do this results in the disruptor hanging at startup, waiting for resources to
-         * become available.
+         * Sets the {@link Executor} that provides the processing resources (Threads) for the components of the {@link
+         * DisruptorCommandBus}. The provided executor must be capable of providing the required number of threads.
+         * Three threads are required immediately at startup and will not be returned until the CommandBus is stopped.
+         * Additional threads are used to invoke callbacks and start a recovery process in case aggregate state has been
+         * corrupted. Failure to do this results in the disruptor hanging at startup, waiting for resources to become
+         * available.
          * <p/>
          * Defaults to {@code null}, causing the DisruptorCommandBus to create the necessary threads itself. In that
          * case, threads are created in the DisruptorCommandBus ThreadGroup.
@@ -703,31 +747,31 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the cooling down period in milliseconds. This is the time in which new commands are no longer accepted,
-         * but the {@link DisruptorCommandBus} may reschedule commands that may have been executed against a
-         * corrupted Aggregate. If no commands have been rescheduled during this period, the disruptor shuts down
-         * completely. Otherwise, it wait until no commands were scheduled for processing.
+         * but the {@link DisruptorCommandBus} may reschedule commands that may have been executed against a corrupted
+         * Aggregate. If no commands have been rescheduled during this period, the disruptor shuts down completely.
+         * Otherwise, it wait until no commands were scheduled for processing.
          * <p/>
          * Defaults to 1000 ms (1 second).
          *
-         * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the
-         *                          {@link DisruptorCommandBus}, in milliseconds.
+         * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the {@link
+         *                          DisruptorCommandBus}, in milliseconds.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder coolingDownPeriod(long coolingDownPeriod) {
-            assertCoolingDownPeriod(coolingDownPeriod);
+            assertStrictPositive(coolingDownPeriod, "The cooling down period must be a positive number");
             this.coolingDownPeriod = coolingDownPeriod;
             return this;
         }
 
         /**
-         * Sets the {@link CommandTargetResolver} that must be used to indicate which Aggregate instance will be
-         * invoked by an incoming command. The {@link DisruptorCommandBus} only uses this value if
-         * {@link #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
+         * Sets the {@link CommandTargetResolver} that must be used to indicate which Aggregate instance will be invoked
+         * by an incoming command. The {@link DisruptorCommandBus} only uses this value if {@link
+         * #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
          * <p/>
          * Defaults to an {@link AnnotationCommandTargetResolver} instance.
          *
-         * @param commandTargetResolver The {@link CommandTargetResolver} to use to indicate which Aggregate
-         *                              instance is target of an incoming Command
+         * @param commandTargetResolver The {@link CommandTargetResolver} to use to indicate which Aggregate instance is
+         *                              target of an incoming Command
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder commandTargetResolver(CommandTargetResolver commandTargetResolver) {
@@ -737,8 +781,8 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to
-         * {@code 1}.
+         * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to {@code
+         * 1}.
          * <p/>
          * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
          * of I/O that the process requires. If no I/O is involved, a good starting value is {@code [processors / 2]}.
@@ -747,7 +791,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder publisherThreadCount(int publisherThreadCount) {
-            assertPublisherThreadCount(publisherThreadCount);
+            assertStrictPositive(publisherThreadCount, "The publisher thread count must at least be 1");
             this.publisherThreadCount = publisherThreadCount;
             return this;
         }
@@ -767,7 +811,8 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link TransactionManager} to use to manage a transaction around the storage and publication of
-         * events. The default ({@code null}) is to not have publication and storage of events wrapped in a transaction.
+         * events. The default ({@code null}) is to not have publication and storage of events wrapped in a
+         * transaction.
          *
          * @param transactionManager the {@link TransactionManager} to use to manage a transaction around the storage
          *                           and publication of events
@@ -802,7 +847,8 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder bufferSize(int bufferSize) {
-            assertBufferSize(bufferSize);
+            assertThat(bufferSize, size -> size > 0 && size % 2 == 0,
+                       "The buffer size must be positive and a power of 2");
             this.bufferSize = bufferSize;
             return this;
         }
@@ -849,15 +895,15 @@ public class DisruptorCommandBus implements CommandBus {
          * Sets the number of Threads that should be used to invoke the Command Handlers. Defaults to {@code 1}.
          * <p/>
          * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
-         * of I/O that the process requires. A good range, if no I/O is involved is
-         * {@code 1 .. ([processor count] / 2)}.
+         * of I/O that the process requires. A good range, if no I/O is involved is {@code 1 .. ([processor count] /
+         * 2)}.
          *
          * @param invokerThreadCount an {@code int} specifying the number of Threads to use for Command Handler
          *                           invocation
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder invokerThreadCount(int invokerThreadCount) {
-            assertInvokerThreadCount(invokerThreadCount);
+            assertStrictPositive(invokerThreadCount, "The invoker thread count must be at least 1");
             this.invokerThreadCount = invokerThreadCount;
             return this;
         }
@@ -880,23 +926,25 @@ public class DisruptorCommandBus implements CommandBus {
 
         /**
          * Sets the {@link DuplicateCommandHandlerResolver} used to resolves the road to take when a duplicate command
-         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride() Log and Override}.
+         * handler is subscribed. Defaults to {@link DuplicateCommandHandlerResolution#logAndOverride() Log and
+         * Override}.
          *
          * @param duplicateCommandHandlerResolver a {@link DuplicateCommandHandlerResolver} used to resolves the road to
          *                                        take when a duplicate command handler is subscribed
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder duplicateCommandHandlerResolver(
-                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver) {
+                DuplicateCommandHandlerResolver duplicateCommandHandlerResolver
+        ) {
             assertNonNull(duplicateCommandHandlerResolver, "DuplicateCommandHandlerResolver may not be null");
             this.duplicateCommandHandlerResolver = duplicateCommandHandlerResolver;
             return this;
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
-         * {@link #dispatch(CommandMessage)}. Defaults to a {@link FailureLoggingCommandCallback}, which logs failed
-         * commands to a logger. Passing {@code null} will result in a {@link NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
+         * #dispatch(CommandMessage)}. Defaults to a {@link FailureLoggingCommandCallback}, which logs failed commands
+         * to a logger. Passing {@code null} will result in a {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
@@ -923,27 +971,7 @@ public class DisruptorCommandBus implements CommandBus {
          *                                    specifications
          */
         protected void validate() {
-            assertCoolingDownPeriod(coolingDownPeriod);
-            assertPublisherThreadCount(publisherThreadCount);
-            assertBufferSize(bufferSize);
-            assertInvokerThreadCount(invokerThreadCount);
-        }
-
-        private void assertCoolingDownPeriod(long coolingDownPeriod) {
-            assertThat(coolingDownPeriod, count -> count > 0, "The cooling down period must be a positive number");
-        }
-
-        private void assertBufferSize(int bufferSize) {
-            assertThat(bufferSize, size -> size > 0 && size % 2 == 0,
-                       "The buffer size must be positive and a power of 2");
-        }
-
-        private void assertPublisherThreadCount(int publisherThreadCount) {
-            assertThat(publisherThreadCount, count -> count > 0, "The publisher thread count must at least be 1");
-        }
-
-        private void assertInvokerThreadCount(int invokerThreadCount) {
-            assertThat(invokerThreadCount, count -> count > 0, "The invoker thread count must be at least 1");
+            // Method kept for overriding
         }
     }
 
@@ -957,23 +985,24 @@ public class DisruptorCommandBus implements CommandBus {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
             return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier, expectedVersion);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public Aggregate<T> load(String aggregateIdentifier) {
+        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
             return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier);
         }
 
         @Override
-        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod)
+                throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).loadOrCreate(aggregateIdentifier, factoryMethod);
         }
 

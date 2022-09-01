@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Executable;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
@@ -40,10 +41,12 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  * @see org.axonframework.eventhandling.EventHandler
  */
 public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefinition {
+
     @SuppressWarnings("unchecked")
     @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                                ParameterResolverFactory parameterResolverFactory) {
+    public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                @Nonnull Executable executable,
+                                                                @Nonnull ParameterResolverFactory parameterResolverFactory) {
         return findAnnotationAttributes(executable, MessageHandler.class)
                 .map(attr -> new AnnotatedMessageHandlingMember<>(
                         executable,

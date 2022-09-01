@@ -20,6 +20,7 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
@@ -27,6 +28,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -57,7 +59,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeRequest(CommandSerializer testSubject) {
+    void serializeRequest(CommandSerializer testSubject) {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -75,7 +77,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeResponse(CommandSerializer testSubject) {
+    void serializeResponse(CommandSerializer testSubject) {
         CommandResultMessage response = new GenericCommandResultMessage<>("response",
                                                                           MetaData.with("test", "testValue"));
         CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
@@ -90,7 +92,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeExceptionalResponse(CommandSerializer testSubject) {
+    void serializeExceptionalResponse(CommandSerializer testSubject) {
         RuntimeException exception = new RuntimeException("oops");
         CommandResultMessage response = new GenericCommandResultMessage<>(exception,
                                                                           MetaData.with("test", "testValue"));
@@ -106,7 +108,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
+    void serializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
         Exception exception = new CommandExecutionException("oops", null, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
@@ -126,10 +128,51 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testDeserializeResponseWithoutPayload(CommandSerializer testSubject) {
+    void serializeNonTransientExceptionalResponse(CommandSerializer testSubject) {
+        SerializationException nonTransientExceptionCause = new SerializationException(
+                "Serialization non recoverable problem");
+        Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, null);
+        CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
+                                                                             MetaData.with("test", "testValue"));
+        CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
+        assertEquals(response.getIdentifier(), outbound.getMessageIdentifier());
+
+        assertEquals(ErrorCode.COMMAND_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
+    }
+
+    @MethodSource("data")
+    @ParameterizedTest
+    void serializeDeserializeNonTransientExceptionalResponseWithDetails(CommandSerializer testSubject) {
+        SerializationException nonTransientExceptionCause = new SerializationException(
+                "Serialization non recoverable problem");
+        Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, "Details");
+        CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
+                                                                             MetaData.with("test", "testValue"));
+        CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
+        assertEquals(response.getIdentifier(), outbound.getMessageIdentifier());
+        CommandResultMessage<?> deserialize = testSubject.deserialize(outbound);
+
+        assertEquals(response.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(response.getMetaData(), deserialize.getMetaData());
+        assertTrue(deserialize.isExceptional());
+        assertTrue(deserialize.optionalExceptionResult().isPresent());
+        assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
+        Throwable actual = deserialize.optionalExceptionResult().get();
+        assertTrue(actual instanceof CommandExecutionException);
+        assertTrue(actual.getCause() instanceof AxonServerNonTransientRemoteCommandHandlingException);
+        assertTrue(actual.getCause().getMessage().contains("Serialization non recoverable problem"));
+    }
+
+    @MethodSource("data")
+    @ParameterizedTest
+    void deserializeResponseWithoutPayload(CommandSerializer testSubject) {
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setRequestIdentifier("requestId")
-                                                  .putAllMetaData(Collections.singletonMap("meta-key", MetaDataValue.newBuilder().setTextValue("meta-value").build()))
+                                                  .putAllMetaData(Collections.singletonMap("meta-key",
+                                                                                           MetaDataValue.newBuilder()
+                                                                                                        .setTextValue(
+                                                                                                                "meta-value")
+                                                                                                        .build()))
                                                   .build();
 
         CommandResultMessage<Object> actual = testSubject.deserialize(response);

@@ -16,27 +16,25 @@
 
 package org.axonframework.config;
 
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.saga.AbstractSagaManager;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
+import org.mockito.quality.*;
 
 import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests {@link ConfigurationScopeAwareProvider}.
+ * Tests validating the {@link ConfigurationScopeAwareProvider}.
  *
  * @author Rob van der Linden Vooren
  */
@@ -47,16 +45,16 @@ class ConfigurationScopeAwareProviderTest {
     private Configuration configuration;
 
     @Mock
-    private AggregateConfiguration aggregateConfiguration;
+    private AggregateConfiguration<Object> aggregateConfiguration;
 
     @Mock
-    private Repository aggregateRepository;
+    private Repository<Object> aggregateRepository;
 
     @Mock
-    private SagaConfiguration sagaConfiguration;
+    private SagaConfiguration<Object> sagaConfiguration;
 
     @Mock
-    private AbstractSagaManager sagaManager;
+    private AbstractSagaManager<Object> sagaManager;
 
     @Mock
     private EventProcessingModule eventProcessingConfiguration;
@@ -99,7 +97,7 @@ class ConfigurationScopeAwareProviderTest {
     void lazilyInitializes() {
         new ConfigurationScopeAwareProvider(configuration);
 
-        verifyZeroInteractions(configuration);
+        verifyNoInteractions(configuration);
     }
 
     @Test
@@ -116,13 +114,21 @@ class ConfigurationScopeAwareProviderTest {
 
         // provision twice
         List<ScopeAware> second = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor()).collect(toList());
-        verifyZeroInteractions(configuration);
-        verifyZeroInteractions(aggregateConfiguration);
+        verifyNoInteractions(configuration);
+        verifyNoInteractions(aggregateConfiguration);
         assertEquals(first, second);
+    }
+    
+    @Test
+    void canWorkWithoutEventProcessingConfiguration() {
+        when(configuration.eventProcessingConfiguration()).thenReturn(null);
+        scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
+        
+        assertDoesNotThrow(() -> scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor()));
     }
 
     private static ScopeDescriptor anyScopeDescriptor() {
-        return (ScopeDescriptor) () -> "test-scope";
+        return () -> "test-scope";
     }
 
     /**

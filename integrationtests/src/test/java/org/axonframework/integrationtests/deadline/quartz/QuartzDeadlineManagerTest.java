@@ -57,7 +57,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testShutdownInvokesSchedulerShutdown(@Mock ScopeAwareProvider scopeAwareProvider) throws SchedulerException {
+    void shutdownInvokesSchedulerShutdown(@Mock ScopeAwareProvider scopeAwareProvider) throws SchedulerException {
         Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
@@ -71,7 +71,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testShutdownFailureResultsInDeadlineException(@Mock ScopeAwareProvider scopeAwareProvider)
+    void shutdownFailureResultsInDeadlineException(@Mock ScopeAwareProvider scopeAwareProvider)
             throws SchedulerException {
         Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
         doAnswer(invocation -> {
@@ -87,7 +87,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+    void buildWithoutSchedulerThrowsAxonConfigurationException() {
         ScopeAwareProvider scopeAwareProvider = mock(ScopeAwareProvider.class);
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
@@ -98,7 +98,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testBuildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
+    void buildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
         Scheduler scheduler = mock(Scheduler.class);
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()

@@ -22,9 +22,9 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -35,10 +35,10 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.common.StringUtils;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.ShutdownLatch;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -48,14 +48,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.annotation.Nonnull;
 
+import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -66,9 +68,11 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus> {
+public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final CommandBus localSegment;
@@ -76,7 +80,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
     private final CommandLoadFactorProvider loadFactorProvider;
-
+    private final String context;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors;
     private final TargetContextResolver<? super CommandMessage<?>> targetContextResolver;
     private final CommandCallback<Object, Object> defaultCommandCallback;
@@ -114,8 +118,10 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         this.priorityCalculator = builder.priorityCalculator;
         this.defaultCommandCallback = builder.defaultCommandCallback;
         this.loadFactorProvider = builder.loadFactorProvider;
-        String context = configuration.getContext();
-        this.targetContextResolver = builder.targetContextResolver.orElse(m -> context);
+
+        String c = StringUtils.nonEmptyOrNull(builder.defaultContext) ? builder.defaultContext : configuration.getContext();
+        this.context = c;
+        this.targetContextResolver = builder.targetContextResolver.orElse(m -> c);
 
         this.executorService =
                 builder.executorServiceBuilder.apply(builder.configuration, new PriorityBlockingQueue<>(1000));
@@ -123,22 +129,28 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         dispatchInterceptors = new DispatchInterceptors<>();
     }
 
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onStart(Phase.INBOUND_COMMAND_CONNECTOR, this::start);
+        handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
+        handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
+    }
+
     /**
      * Start the Axon Server {@link CommandBus} implementation.
      */
-    @StartHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void start() {
         shutdownLatch.initialize();
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         dispatch(command, defaultCommandCallback);
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> commandMessage,
-                                CommandCallback<? super C, ? super R> commandCallback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> commandMessage,
+                                @Nonnull CommandCallback<? super C, ? super R> commandCallback) {
         logger.debug("Dispatch command [{}] with callback", commandMessage.getCommandName());
         doDispatch(dispatchInterceptors.intercept(commandMessage), commandCallback);
     }
@@ -149,14 +161,14 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
         try {
-            String context = targetContextResolver.resolveContext(commandMessage);
             Command command = serializer.serialize(commandMessage,
                                                    routingStrategy.getRoutingKey(commandMessage),
                                                    priorityCalculator.determinePriority(commandMessage));
 
-            CompletableFuture<CommandResponse> result = axonServerConnectionManager.getConnection(context)
-                                                                                   .commandChannel()
-                                                                                   .sendCommand(command);
+            CompletableFuture<CommandResponse> result =
+                    axonServerConnectionManager.getConnection(targetContextResolver.resolveContext(commandMessage))
+                                               .commandChannel()
+                                               .sendCommand(command);
             //noinspection unchecked
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
@@ -175,20 +187,26 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
     }
 
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> messageHandler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> messageHandler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. "
                              + "Expect similar logging on the local segment.", commandName);
         Registration localRegistration = localSegment.subscribe(commandName, messageHandler);
         io.axoniq.axonserver.connector.Registration serverRegistration =
-                axonServerConnectionManager.getConnection()
+                axonServerConnectionManager.getConnection(context)
                                            .commandChannel()
                                            .registerCommandHandler(
                                                    c -> {
                                                        CompletableFuture<CommandResponse> result =
                                                                new CompletableFuture<>();
-                                                       executorService.execute(new CommandProcessingTask(
+                                                       CommandProcessingTask processingTask = new CommandProcessingTask(
                                                                c, serializer, result, localSegment
-                                                       ));
+                                                       );
+                                                       long priority = priority(c.getProcessingInstructionsList());
+                                                       long sequence = TASK_SEQUENCE.incrementAndGet();
+                                                       executorService.execute(
+                                                               new PriorityRunnable(processingTask, priority, sequence)
+                                                       );
                                                        return result;
                                                    },
                                                    loadFactorProvider.getFor(commandName),
@@ -205,13 +223,13 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
     @Override
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
@@ -219,10 +237,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * Disconnect the command bus for receiving commands from Axon Server, by unsubscribing all registered command
      * handlers. This shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public CompletableFuture<Void> disconnect() {
-        if (axonServerConnectionManager.isConnected(axonServerConnectionManager.getDefaultContext())) {
-            return axonServerConnectionManager.getConnection().commandChannel().prepareDisconnect();
+        if (axonServerConnectionManager.isConnected(context)) {
+            return axonServerConnectionManager.getConnection(context).commandChannel().prepareDisconnect();
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -234,7 +251,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return shutdownLatch.initiateShutdown();
     }
@@ -246,16 +262,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
      * {@code index} to differentiate between tasks with the same priority, ensuring the insert order is leading in
      * those scenarios.
      */
-    private static class CommandProcessingTask implements Runnable, Comparable<CommandProcessingTask> {
+    private static class CommandProcessingTask implements Runnable {
 
-        private static final AtomicLong COUNTER = new AtomicLong(Long.MIN_VALUE);
-
-        private final long priority;
         private final CompletableFuture<CommandResponse> result;
         private final CommandBus localSegment;
         private final Command command;
         private final CommandSerializer serializer;
-        private final long index;
 
         public CommandProcessingTask(Command command,
                                      CommandSerializer serializer,
@@ -263,14 +275,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                                      CommandBus localSegment) {
             this.command = command;
             this.serializer = serializer;
-            this.priority = ProcessingInstructionHelper.priority(command.getProcessingInstructionsList());
             this.result = result;
             this.localSegment = localSegment;
-            this.index = COUNTER.incrementAndGet();
-        }
-
-        public long getPriority() {
-            return priority;
         }
 
         @Override
@@ -285,32 +291,6 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             } catch (Exception e) {
                 result.completeExceptionally(e);
             }
-        }
-
-        @Override
-        public int compareTo(CommandProcessingTask o) {
-            int c = Long.compare(this.priority, o.priority);
-            if (c != 0) {
-                return -c;
-            }
-            return Long.compare(this.index, o.index);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CommandProcessingTask that = (CommandProcessingTask) o;
-            return priority == that.priority && index == that.index;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(priority, index);
         }
     }
 
@@ -334,11 +314,12 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         private RoutingStrategy routingStrategy;
         private CommandPriorityCalculator priorityCalculator =
                 CommandPriorityCalculator.defaultCommandPriorityCalculator();
-        private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
-                c -> configuration.getContext();
         private ExecutorServiceBuilder executorServiceBuilder =
                 ExecutorServiceBuilder.defaultCommandExecutorServiceBuilder();
         private CommandLoadFactorProvider loadFactorProvider = command -> CommandLoadFactorProvider.DEFAULT_VALUE;
+        private String defaultContext;
+        private TargetContextResolver<? super CommandMessage<?>> targetContextResolver =
+                c -> StringUtils.nonEmptyOrNull(defaultContext) ? defaultContext : configuration.getContext();
 
         /**
          * Sets the {@link AxonServerConnectionManager} used to create connections between this application and an Axon
@@ -483,6 +464,18 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         public Builder loadFactorProvider(CommandLoadFactorProvider loadFactorProvider) {
             assertNonNull(loadFactorProvider, "CommandLoadFactorProvider may not be null");
             this.loadFactorProvider = loadFactorProvider;
+            return this;
+        }
+
+        /**
+         * Sets the default context for this command bus to connect to.
+         *
+         * @param defaultContext for this bus to connect to.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder defaultContext(String defaultContext) {
+            assertNonEmpty(defaultContext, "The context may not be null or empty");
+            this.defaultContext = defaultContext;
             return this;
         }
 

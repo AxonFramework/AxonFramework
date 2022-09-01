@@ -40,12 +40,12 @@ class SpringPrototypeAggregateFactoryTest {
     private SpringPrototypeAggregateFactory<SpringWiredAggregate> testSubject;
 
     @Test
-    void testContextStarts() {
+    void contextStarts() {
         assertNotNull(testSubject);
     }
 
     @Test
-    void testCreateNewAggregateInstance() {
+    void createNewAggregateInstance() {
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", new GenericDomainEventMessage<>("SpringWiredAggregate", "id2", 0,
                                                                                                                 "FirstEvent"));
         assertTrue(aggregate.isInitialized(), "Aggregate's init method not invoked");
@@ -54,7 +54,7 @@ class SpringPrototypeAggregateFactoryTest {
     }
 
     @Test
-    void testProcessSnapshotAggregateInstance() {
+    void processSnapshotAggregateInstance() {
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2",
                                                                      new GenericDomainEventMessage<>("SpringWiredAggregate", "id2", 5,
                                                                                                      new SpringWiredAggregate()));

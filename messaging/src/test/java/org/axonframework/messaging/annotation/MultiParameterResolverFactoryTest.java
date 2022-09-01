@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +20,8 @@ import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.InOrder;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -66,7 +64,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolversQueriedInOrderProvided() throws Exception {
+    void resolversQueriedInOrderProvided() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertFalse(factory.matches(null));
@@ -85,7 +83,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testFirstMatchingResolverMayReturnValue() throws Exception {
+    void firstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
@@ -103,7 +101,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testNestedParameterResolversAreOrdered() {
+    void nestedParameterResolversAreOrdered() {
         final LowPrioParameterResolverFactory lowPrio = new LowPrioParameterResolverFactory();
         final HighPrioParameterResolverFactory highPrio = new HighPrioParameterResolverFactory();
         testSubject = MultiParameterResolverFactory.ordered(mockFactory1,

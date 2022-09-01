@@ -38,7 +38,7 @@ class DeadlineMethodMessageHandlerDefinitionTest {
     }
 
     @Test
-    void testDeadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
+    void deadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
         handlerAdapter.handle(new GenericDeadlineMessage<>("someDeadline", "test"));
 
         assertThat("Deadline handler is invoked", listener.deadlineCounter.get() == 1);
@@ -46,7 +46,7 @@ class DeadlineMethodMessageHandlerDefinitionTest {
     }
 
     @Test
-    void testNamedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
+    void namedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
         handlerAdapter.handle(new GenericDeadlineMessage<>("specificDeadline", "test"));
 
         assertThat("Generic Deadline handler was not invoked", listener.deadlineCounter.get() == 0);

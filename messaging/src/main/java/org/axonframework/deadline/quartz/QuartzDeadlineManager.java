@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.deadline.quartz;
 
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -24,11 +25,12 @@ import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -48,6 +50,7 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ExceptionUtils.findException;
@@ -61,7 +64,7 @@ import static org.quartz.JobKey.jobKey;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class QuartzDeadlineManager extends AbstractDeadlineManager {
+public class QuartzDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
 
@@ -122,10 +125,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(Instant triggerDateTime,
-                           String deadlineName,
+    public String schedule(@Nonnull Instant triggerDateTime,
+                           @Nonnull String deadlineName,
                            Object messageOrPayload,
-                           ScopeDescriptor deadlineScope) {
+                           @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
@@ -145,20 +148,20 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(Duration triggerDuration,
-                           String deadlineName,
+    public String schedule(@Nonnull Duration triggerDuration,
+                           @Nonnull String deadlineName,
                            Object messageOrPayload,
-                           ScopeDescriptor deadlineScope) {
+                           @Nonnull ScopeDescriptor deadlineScope) {
         return schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(String deadlineName, String scheduleId) {
+    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         runOnPrepareCommitOrNow(() -> cancelSchedule(jobKey(scheduleId, deadlineName)));
     }
 
     @Override
-    public void cancelAll(String deadlineName) {
+    public void cancelAll(@Nonnull String deadlineName) {
         runOnPrepareCommitOrNow(() -> {
             try {
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
@@ -170,7 +173,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
         try {
             Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
             for (JobKey jobKey : jobKeys) {
@@ -212,13 +215,12 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                              .build();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+    @Override
     public void shutdown() {
         try {
             scheduler.shutdown(true);
@@ -339,7 +341,9 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                                 "A default XStreamSerializer is used, without specifying the security context"
                         )
                 );
-                serializer = XStreamSerializer::defaultSerializer;
+                serializer = () -> XStreamSerializer.builder()
+                                                    .xStream(new XStream(new CompactDriver()))
+                                                    .build();
             }
         }
     }

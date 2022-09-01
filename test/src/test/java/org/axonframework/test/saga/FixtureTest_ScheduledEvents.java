@@ -48,21 +48,21 @@ class FixtureTest_ScheduledEvents {
     }
 
     @Test
-    void testExpectScheduledEvent() {
+    void expectScheduledEvent() {
         testSubject.givenNoPriorActivity()
                    .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
                    .expectScheduledEvent(TRIGGER_DURATION_MINUTES, EVENT_TO_SCHEDULE);
     }
 
     @Test
-    void testExpectScheduledEventOfType() {
+    void expectScheduledEventOfType() {
         testSubject.givenNoPriorActivity()
                    .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
                    .expectScheduledEventOfType(TRIGGER_DURATION_MINUTES, String.class);
     }
 
     @Test
-    void testExpectScheduledEventDurationAdjustedByElapsedTime() {
+    void expectScheduledEventDurationAdjustedByElapsedTime() {
         Duration elapsedTime = Duration.ofMinutes(1);
 
         testSubject.givenAggregate(IDENTIFIER)
@@ -73,7 +73,7 @@ class FixtureTest_ScheduledEvents {
     }
 
     @Test
-    void testNoExpectScheduledEvent() {
+    void noExpectScheduledEvent() {
         testSubject.givenAggregate(IDENTIFIER)
                    .published(new TriggerSagaStartEvent(IDENTIFIER))
                    .whenAggregate(IDENTIFIER)
@@ -82,7 +82,7 @@ class FixtureTest_ScheduledEvents {
     }
 
     @Test
-    void testNoExpectScheduledEventOfType() {
+    void noExpectScheduledEventOfType() {
         testSubject.givenAggregate(IDENTIFIER)
                    .published(new TriggerSagaStartEvent(IDENTIFIER))
                    .whenAggregate(IDENTIFIER)

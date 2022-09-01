@@ -21,7 +21,7 @@ class RemoteExceptionDescriptionSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializableWithJackson(TestSerializer serializer) {
+    void tokenShouldBeSerializableWithJackson(TestSerializer serializer) {
         Throwable cause = new IllegalArgumentException("This is a test");
         Throwable exception = new IllegalStateException("Test with cause", cause);
         RemoteExceptionDescription descriptionToTest = RemoteExceptionDescription.describing(exception);

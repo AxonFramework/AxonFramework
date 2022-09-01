@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,7 @@ class EventProcessorLatencyMonitorTest {
     private final Map<String, Metric> metricSet = testSubject.getMetrics();
 
     @Test
-    void testMessages() {
+    void messages() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
@@ -61,7 +61,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testFailureMessage() {
+    void failureMessage() {
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
@@ -81,7 +81,7 @@ class EventProcessorLatencyMonitorTest {
     }
 
     @Test
-    void testNullMessage() {
+    void nullMessage() {
         testSubject.onMessageIngested(null).reportSuccess();
 
         //noinspection unchecked

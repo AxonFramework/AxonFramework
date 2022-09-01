@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
@@ -31,12 +30,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
- * MessageHandler} implementation. Each annotated method is subscribed
- * as a CommandHandler at the {@link CommandBus} for the command type specified by the parameter of that method.
+ * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link MessageHandler}
+ * implementation. Each annotated method is subscribed as a Command Handler at the {@link CommandBus} for the command
+ * type specified by the parameter of that method.
  *
  * @author Allard Buijze
  * @see CommandHandler
@@ -80,7 +79,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition) {
-        Assert.notNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
+        assertNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
@@ -89,45 +88,58 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandMessageHandler
     }
 
     /**
-     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed
-     * for each of the supported commands.
+     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed for each
+     * of the supported commands.
      *
      * @param commandBus The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
         Collection<Registration> subscriptions =
-                supportedCommandNames().stream().map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
+                supportedCommandNames().stream()
+                                       .map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
                                        .collect(Collectors.toCollection(ArrayDeque::new));
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     /**
-     * Invokes the @CommandHandler annotated method that accepts the given {@code command}.
+     * Invokes the {@link CommandHandler @CommandHandler} annotated method that accepts the given {@link CommandMessage
+     * command}.
      *
-     * @param command The command to handle
-     * @return the result of the command handling. Is {@code null} when the annotated handler has a
-     * {@code void} return value.
+     * @param command the command to handle
+     * @return the result of the command handling. Is {@code null} when the annotated handler has a {@code void} return
+     * value.
      * @throws NoHandlerForCommandException when no handler is found for given {@code command}.
      * @throws Exception                    any exception occurring while handling the command
      */
     @Override
     public Object handle(CommandMessage<?> command) throws Exception {
-        return model.getHandlers().stream()
-                    .filter(h -> h.canHandle(command)).findFirst()
-                    .orElseThrow(() -> new NoHandlerForCommandException(format("No handler available to handle command [%s]", command.getCommandName())))
+        return model.getAllHandlers()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .filter(ch -> ch.canHandle(command))
+                    .findFirst()
+                    .orElseThrow(() -> new NoHandlerForCommandException(command))
                     .handle(command, target);
     }
 
     @Override
     public boolean canHandle(CommandMessage<?> message) {
-        return model.getHandlers().stream().anyMatch(h -> h.canHandle(message));
+        return model.getAllHandlers()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .anyMatch(h -> h.canHandle(message));
     }
 
     @Override
     public Set<String> supportedCommandNames() {
-        return model.getHandlers().stream()
-                    .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
+        return model.getAllHandlers()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .map(ch -> ch.unwrap(CommandMessageHandlingMember.class).orElse(null))
                     .filter(Objects::nonNull)
                     .map(CommandMessageHandlingMember::commandName)
                     .collect(Collectors.toSet());

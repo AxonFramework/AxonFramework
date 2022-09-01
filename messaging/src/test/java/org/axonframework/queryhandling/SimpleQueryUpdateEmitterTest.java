@@ -22,7 +22,7 @@ class SimpleQueryUpdateEmitterTest {
     private final SimpleQueryUpdateEmitter testSubject = SimpleQueryUpdateEmitter.builder().build();
 
     @Test
-    void testCompletingRegistrationOldApi() {
+    void completingRegistrationOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -45,7 +45,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testConcurrentUpdateEmitting() {
+    void concurrentUpdateEmitting() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -67,7 +67,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testConcurrentUpdateEmitting_WithBackpressure() {
+    void concurrentUpdateEmitting_WithBackpressure() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -91,7 +91,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
+    void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -114,7 +114,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCompletingRegistration() {
+    void completingRegistration() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -137,7 +137,31 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCancelingRegistrationDoesNotCompleteFluxOfUpdates() {
+    void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
+        SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(Integer.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, "some-awesome-text");
+        testSubject.emit(any -> true, 1234);
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(1234)
+                    .verifyComplete();
+    }
+
+    @Test
+    void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",

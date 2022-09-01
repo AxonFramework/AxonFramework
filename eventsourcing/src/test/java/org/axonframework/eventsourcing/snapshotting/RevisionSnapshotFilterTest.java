@@ -40,7 +40,7 @@ class RevisionSnapshotFilterTest {
     private final Serializer serializer = TestSerializer.xStreamSerializer();
 
     @Test
-    void testAllowsDomainEventDataContainingTheAllowedAggregateTypeAndRevision() {
+    void allowsDomainEventDataContainingTheAllowedAggregateTypeAndRevision() {
         RevisionSnapshotFilter testSubject =
                 RevisionSnapshotFilter.builder()
                                       .type(RightAggregateTypeAndRevision.class.getSimpleName())
@@ -59,7 +59,7 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testAllowsDomainEventDataContainingTheWrongAggregateTypeAndAllowedRevision() {
+    void allowsDomainEventDataContainingTheWrongAggregateTypeAndAllowedRevision() {
         RevisionSnapshotFilter testSubject =
                 RevisionSnapshotFilter.builder()
                                       .type(RightAggregateTypeAndRevision.class.getSimpleName())
@@ -75,7 +75,7 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testDisallowsDomainEventDataContainingTheAllowedAggregateTypeAndWrongRevision() {
+    void disallowsDomainEventDataContainingTheAllowedAggregateTypeAndWrongRevision() {
         RevisionSnapshotFilter testSubject =
                 RevisionSnapshotFilter.builder()
                                       .type(RightAggregateTypeAndWrongRevision.class)
@@ -92,7 +92,7 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testBuildWithNullOrEmptyTypeThrowsAxonConfigurationException() {
+    void buildWithNullOrEmptyTypeThrowsAxonConfigurationException() {
         RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.type(""));
@@ -100,15 +100,14 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testBuildWithNullOrEmptyRevisionThrowsAxonConfigurationException() {
+    void buildWithNullOrEmptyRevisionThrowsAxonConfigurationException() {
         RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(""));
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.revision(null));
     }
 
     @Test
-    void testBuildWithoutTypeThrowsAxonConfigurationException() {
+    void buildWithoutTypeThrowsAxonConfigurationException() {
         RevisionSnapshotFilter.Builder builderTestSubject = RevisionSnapshotFilter.builder()
                                                                                   .revision(EXPECTED_REVISION);
 
@@ -116,12 +115,11 @@ class RevisionSnapshotFilterTest {
     }
 
     @Test
-    void testBuildWithoutRevisionThrowsAxonConfigurationException() {
-        RevisionSnapshotFilter.Builder builderTestSubject =
-                RevisionSnapshotFilter.builder()
-                                      .type(RightAggregateTypeAndRevision.class);
-
-        assertThrows(AxonConfigurationException.class, builderTestSubject::build);
+    void buildWithBlankRevisionThrowsAxonConfigurationException() {
+        assertThrows(AxonConfigurationException.class, () -> RevisionSnapshotFilter.builder()
+                                                                                   .type(RightAggregateTypeAndRevision.class)
+                                                                                   .revision("")
+                                                                                   .build());
     }
 
     @Revision(EXPECTED_REVISION)

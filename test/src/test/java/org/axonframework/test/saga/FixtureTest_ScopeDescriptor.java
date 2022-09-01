@@ -26,7 +26,7 @@ class FixtureTest_ScopeDescriptor {
     }
 
     @Test
-    void testResolvesScopeDescriptor() {
+    void resolvesScopeDescriptor() {
         fixture.givenNoPriorActivity()
                .whenPublishingA(new SagaStartEvent("some-identifier"))
                .expectDispatchedCommandsMatching(payloadsMatching(sequenceOf(matches(

@@ -35,14 +35,14 @@ class ObjectUtilsTest {
     private static final String DEFAULT_VALUE = "default";
 
     @Test
-    void testGetOrDefaultUsingValueProvider() {
+    void getOrDefaultUsingValueProvider() {
         Function<String, String> valueProvider = o -> o;
         assertEquals(DEFAULT_VALUE, ObjectUtils.getOrDefault(NULL_INSTANCE, valueProvider, DEFAULT_VALUE));
         assertEquals(INSTANCE, ObjectUtils.getOrDefault(INSTANCE, valueProvider, DEFAULT_VALUE));
     }
 
     @Test
-    void testSupplySameInstance() {
+    void supplySameInstance() {
         Supplier<Object> testSubject = ObjectUtils.sameInstanceSupplier(Object::new);
         assertSame(testSubject.get(), testSubject.get());
     }

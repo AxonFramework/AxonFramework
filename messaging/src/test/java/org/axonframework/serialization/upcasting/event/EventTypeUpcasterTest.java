@@ -62,28 +62,28 @@ class EventTypeUpcasterTest {
             new EventTypeUpcaster(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
 
     @Test
-    void testUpcasterBuilderFailsForNullExpectedPayloadTypeClass() {
+    void upcasterBuilderFailsForNullExpectedPayloadTypeClass() {
         assertThrows(
                 AxonConfigurationException.class, () -> EventTypeUpcaster.from((Class<?>) null, EXPECTED_REVISION)
         );
     }
 
     @Test
-    void testUpcasterBuilderFailsForNullExpectedPayloadType() {
+    void upcasterBuilderFailsForNullExpectedPayloadType() {
         assertThrows(
                 AxonConfigurationException.class, () -> EventTypeUpcaster.from((String) null, EXPECTED_REVISION)
         );
     }
 
     @Test
-    void testUpcasterBuilderFailsForEmptyExpectedPayloadType() {
+    void upcasterBuilderFailsForEmptyExpectedPayloadType() {
         assertThrows(
                 AxonConfigurationException.class, () -> EventTypeUpcaster.from("", EXPECTED_REVISION)
         );
     }
 
     @Test
-    void testUpcasterBuilderFailsForNullUpcastedPayloadTypeClass() {
+    void upcasterBuilderFailsForNullUpcastedPayloadTypeClass() {
         EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
         assertThrows(
                 AxonConfigurationException.class, () -> testSubject.to((Class<?>) null, UPCASTED_REVISION)
@@ -91,7 +91,7 @@ class EventTypeUpcasterTest {
     }
 
     @Test
-    void testUpcasterBuilderFailsForNullUpcastedPayloadType() {
+    void upcasterBuilderFailsForNullUpcastedPayloadType() {
         EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
         assertThrows(
                 AxonConfigurationException.class, () -> testSubject.to((String) null, UPCASTED_REVISION)
@@ -99,7 +99,7 @@ class EventTypeUpcasterTest {
     }
 
     @Test
-    void testUpcasterBuilderFailsForEmptyUpcastedPayloadType() {
+    void upcasterBuilderFailsForEmptyUpcastedPayloadType() {
         EventTypeUpcaster.Builder testSubject = EventTypeUpcaster.from(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION);
         assertThrows(
                 AxonConfigurationException.class, () -> testSubject.to("", UPCASTED_REVISION)
@@ -108,7 +108,7 @@ class EventTypeUpcasterTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testCanUpcastReturnsTrueForMatchingPayloadTypeAndRevision(Serializer serializer) {
+    void canUpcastReturnsTrueForMatchingPayloadTypeAndRevision(Serializer serializer) {
         EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -117,7 +117,7 @@ class EventTypeUpcasterTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testCanUpcastReturnsFalseForIncorrectPayloadType(Serializer serializer) {
+    void canUpcastReturnsFalseForIncorrectPayloadType(Serializer serializer) {
         EventData<?> testEventData =
                 new TestEventEntry("some-non-matching-payload-type", EXPECTED_REVISION, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
@@ -127,7 +127,7 @@ class EventTypeUpcasterTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testCanUpcastReturnsFalseForIncorrectRevision(Serializer serializer) {
+    void canUpcastReturnsFalseForIncorrectRevision(Serializer serializer) {
         EventData<?> testEventData =
                 new TestEventEntry(EXPECTED_PAYLOAD_TYPE, "some-non-matching-revision", serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
@@ -136,20 +136,20 @@ class EventTypeUpcasterTest {
     }
 
     @Test
-    void testIsExpectedPayloadType() {
+    void isExpectedPayloadType() {
         assertTrue(testSubject.isExpectedPayloadType(EXPECTED_PAYLOAD_TYPE));
         assertFalse(testSubject.isExpectedPayloadType(UPCASTED_PAYLOAD_TYPE));
     }
 
     @Test
-    void testIsExpectedRevision() {
+    void isExpectedRevision() {
         assertTrue(testSubject.isExpectedRevision(EXPECTED_REVISION));
         assertFalse(testSubject.isExpectedRevision(UPCASTED_REVISION));
     }
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testDoUpcast(Serializer serializer) {
+    void doUpcast(Serializer serializer) {
         EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -161,7 +161,7 @@ class EventTypeUpcasterTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testShouldDeserializeToNewType(Serializer serializer) {
+    void shouldDeserializeToNewType(Serializer serializer) {
         // If we're dealing with an XStreamSerializer the FQCN in the XML tags defines the type.
         // Due to this, it's more reasonable to use type aliases on the XStream instance i.o. using this upcaster.
         if (serializer instanceof XStreamSerializer) {
@@ -179,7 +179,7 @@ class EventTypeUpcasterTest {
     }
 
     @Test
-    void testUpcastedType() {
+    void upcastedType() {
         SerializedType expectedType = new SimpleSerializedType(UPCASTED_PAYLOAD_TYPE, UPCASTED_REVISION);
         assertEquals(expectedType, testSubject.upcastedType());
     }

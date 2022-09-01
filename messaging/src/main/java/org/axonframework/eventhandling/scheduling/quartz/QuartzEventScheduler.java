@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -23,14 +24,16 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -48,6 +51,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
@@ -62,7 +66,7 @@ import static org.quartz.JobKey.jobKey;
  * @see FireEventJob
  * @since 0.7
  */
-public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
+public class QuartzEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
 
@@ -206,13 +210,12 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         this.groupIdentifier = groupIdentifier;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Will shutdown in the {@link Phase#INBOUND_EVENT_CONNECTORS} phase.
-     */
     @Override
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdown);
+    }
+
+    @Override
     public void shutdown() {
         try {
             scheduler.shutdown(true);
@@ -459,7 +462,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
                                     "A default XStreamSerializer is used, without specifying the security context"
                             )
                     );
-                    serializer = XStreamSerializer::defaultSerializer;
+                    serializer = () -> XStreamSerializer.builder()
+                                                        .xStream(new XStream(new CompactDriver()))
+                                                        .build();
                 }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }

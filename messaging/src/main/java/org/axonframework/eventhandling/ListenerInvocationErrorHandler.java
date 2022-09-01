@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.axonframework.eventhandling;
 
+import javax.annotation.Nonnull;
+
 /**
- * Interface of an error handler that is invoked when an exception is triggered as result of an {@link EventMessageHandler}
- * handling an event.
+ * Interface of an error handler that is invoked when an exception is triggered as result of an {@link
+ * EventMessageHandler} handling an event.
  *
  * @author Rene de Waele
  */
@@ -39,6 +41,7 @@ public interface ListenerInvocationErrorHandler {
      * @param eventHandler The listener that failed to handle given event
      * @throws Exception To stop further handling of the event
      */
-    void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) throws Exception;
+    void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                 @Nonnull EventMessageHandler eventHandler) throws Exception;
 
 }

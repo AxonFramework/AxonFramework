@@ -29,7 +29,7 @@ import org.junit.jupiter.api.*;
 class QueryEventHandlingTest {
 
     @Test
-    void testQueryHandlerAndEventHandlerCleanlyShutdown() {
+    void queryHandlerAndEventHandlerCleanlyShutdown() {
         UserSummaryProjection userSummaryProjection = new UserSummaryProjection();
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();

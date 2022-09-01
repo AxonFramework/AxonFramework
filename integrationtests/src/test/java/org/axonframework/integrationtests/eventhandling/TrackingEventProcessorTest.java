@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
@@ -54,12 +55,14 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -75,6 +78,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
@@ -90,8 +94,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
- * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and {@code
- * eventsourcing} modules.
+ * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and
+ * {@code eventsourcing} modules.
  *
  * @author Rene de Waele
  */
@@ -228,12 +232,14 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testSequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
+    void sequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
         InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
         InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
         SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
 
-        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder().storageEngine(sequenceEventStorageEngine).build();
+        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder()
+                                                                .storageEngine(sequenceEventStorageEngine)
+                                                                .build();
 
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                          .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
@@ -265,7 +271,15 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testPublishedEventsGetPassedToHandler() throws Exception {
+    void sequenceMaxCapacity() {
+        testSubject.start();
+        assertEquals(1, testSubject.maxCapacity());
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
+        assertEquals(1, testSubject.activeProcessorThreads());
+    }
+
+    @Test
+    void publishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch.countDown();
@@ -279,7 +293,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testBlacklist() throws Exception {
+    void blacklist() {
         when(mockHandler.canHandle(any())).thenReturn(false);
         when(mockHandler.canHandleType(String.class)).thenReturn(false);
         Set<Class<?>> skipped = new HashSet<>();
@@ -304,7 +318,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testProcessorExposesErrorStateOnHandlerException() throws Exception {
+    void processorExposesErrorStateOnHandlerException() throws Exception {
         doReturn(Object.class).when(mockHandler).getTargetType();
         AtomicBoolean errorFlag = new AtomicBoolean(true);
         doAnswer(invocation -> {
@@ -336,7 +350,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testHandlerIsInvokedInTransactionScope() throws Exception {
+    void handlerIsInvokedInTransactionScope() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         AtomicInteger counterAtHandle = new AtomicInteger();
@@ -360,7 +374,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testProcessorStopsOnNonTransientExceptionWhenLoadingToken() {
+    void processorStopsOnNonTransientExceptionWhenLoadingToken() {
         doThrow(new SerializationException("Faking a serialization issue")).when(tokenStore).fetchToken("test", 0);
 
         testSubject.start();
@@ -375,7 +389,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testProcessorRetriesOnTransientExceptionWhenLoadingToken() throws Exception {
+    void processorRetriesOnTransientExceptionWhenLoadingToken() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         doAnswer(invocation -> {
             countDownLatch.countDown();
@@ -397,7 +411,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenIsStoredWhenEventIsRead() throws Exception {
+    void tokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
@@ -411,7 +425,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
+    void tokenIsExtendedAtStartAndStoredAtEndOfEventBatch_WithStoringTokensAfterProcessingSetting()
             throws Exception {
         initProcessor(
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andBatchSize(100),
@@ -447,7 +461,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
+    void tokenStoredAtEndOfEventBatchAndNotExtendedWhenUsingANoTransactionManager() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andBatchSize(100);
         testSubject = TrackingEventProcessor.builder()
@@ -489,7 +503,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenStoredAtEndOfEventBatchAndNotExtendedWhenTransactionManagerIsConfigured() throws Exception {
+    void tokenStoredAtEndOfEventBatchAndNotExtendedWhenTransactionManagerIsConfigured() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing().andBatchSize(100);
         testSubject = TrackingEventProcessor.builder()
@@ -532,7 +546,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenStoredAtEndOfEventBatchAndExtendedWhenTokenClaimIntervalExceeded() throws Exception {
+    void tokenStoredAtEndOfEventBatchAndExtendedWhenTokenClaimIntervalExceeded() throws Exception {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                    .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS);
@@ -566,7 +580,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testTokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
+    void tokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
@@ -589,7 +603,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testContinueFromPreviousToken() throws Exception {
+    void continueFromPreviousToken() throws Exception {
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
         TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
@@ -620,7 +634,7 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 10)
     @DirtiesContext
-    void testContinueAfterPause() throws Exception {
+    void continueAfterPause() throws Exception {
         List<EventMessage<?>> acknowledgedEvents = new CopyOnWriteArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
@@ -661,7 +675,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @DirtiesContext
-    void testProcessorGoesToRetryModeWhenOpenStreamFails() throws Exception {
+    void processorGoesToRetryModeWhenOpenStreamFails() throws Exception {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
@@ -693,15 +707,17 @@ class TrackingEventProcessorTest {
 
     @Test
     @DirtiesContext
-    void testProcessorSetsAndUnsetsErrorState() throws Exception {
+    void processorSetsAndUnsetsErrorState() throws Exception {
         eventBus = spy(eventBus);
 
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(5));
         AtomicBoolean fail = new AtomicBoolean(true);
         when(eventBus.openStream(any())).then(invocationOnMock -> {
-           if (fail.get()) throw new MockException();
-           return invocationOnMock.callRealMethod();
+            if (fail.get()) {
+                throw new MockException();
+            }
+            return invocationOnMock.callRealMethod();
         });
 
         List<EventMessage<?>> acknowledgedEvents = new ArrayList<>();
@@ -728,13 +744,16 @@ class TrackingEventProcessorTest {
         fail.set(false);
         assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
         assertEquals(5, acknowledgedEvents.size());
-        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus().values().stream().filter(s -> s
-                .isErrorState()).findFirst();
+        Optional<EventTrackerStatus> inErrorState = testSubject.processingStatus()
+                                                               .values()
+                                                               .stream()
+                                                               .filter(EventTrackerStatus::isErrorState)
+                                                               .findFirst();
         assertThat("no processor in error state when open stream succeeds again", !inErrorState.isPresent());
     }
 
     @Test
-    void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
+    void firstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
@@ -761,7 +780,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @DirtiesContext
-    void testEventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
+    void eventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
         eventBus.shutDown();
 
         eventBus = mock(EmbeddedEventStore.class);
@@ -804,10 +823,11 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetCausesEventsToBeReplayed() throws Exception {
+    void resetCausesEventsToBeReplayedWithCorrectContext() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        final List<Object> contextInRedelivery = new CopyOnWriteArrayList<>();
         int segmentId = 0;
 
         //noinspection Duplicates
@@ -815,6 +835,7 @@ class TrackingEventProcessorTest {
             EventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
+                contextInRedelivery.add(ReplayToken.replayContext(message, MyResetContext.class).orElse(null));
             }
             handled.add(message.getIdentifier());
             return null;
@@ -824,13 +845,17 @@ class TrackingEventProcessorTest {
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         testSubject.shutDown();
-        testSubject.resetTokens();
+        MyResetContext one = new MyResetContext("one");
+        testSubject.resetTokens(one);
         // Resetting twice caused problems (see issue #559)
-        testSubject.resetTokens();
+        MyResetContext two = new MyResetContext("two");
+        testSubject.resetTokens(two);
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
         assertEquals(handled.subList(0, 4), handled.subList(4, 8));
         assertEquals(handled.subList(4, 8), handledInRedelivery);
+        assertEquals(4, contextInRedelivery.size());
+        assertTrue(contextInRedelivery.stream().allMatch(two::equals));
         assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
@@ -852,11 +877,37 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker, times(2)).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker, times(1)).performReset(one);
+        verify(eventHandlerInvoker, times(1)).performReset(two);
     }
 
     @Test
-    void testResetToPositionCausesCertainEventsToBeReplayed() throws Exception {
+    void resetTokensPassesOnResetContextToResetHandlers() throws Exception {
+        String resetContext = "reset-context";
+        final List<String> handled = new CopyOnWriteArrayList<>();
+
+        when(mockHandler.supportsReset()).thenReturn(true);
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+
+        testSubject.shutDown();
+        testSubject.resetTokens(resetContext);
+        testSubject.start();
+
+        verify(eventHandlerInvoker).performReset(resetContext);
+    }
+
+    @Test
+    void resetToPositionCausesCertainEventsToBeReplayed() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
@@ -908,7 +959,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetOnInitializeWithTokenResetToThatToken() throws Exception {
+    void resetOnInitializeWithTokenResetToThatToken() throws Exception {
         TrackingEventProcessorConfiguration config =
                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                    .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(1L));
@@ -976,7 +1027,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetBeforeStartingPerformsANormalRun() throws Exception {
+    void resetBeforeStartingPerformsANormalRun() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
@@ -1007,7 +1058,7 @@ class TrackingEventProcessorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testReplayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
+    void replayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
         testSubject = TrackingEventProcessor.builder()
                                             .name("test")
@@ -1052,27 +1103,27 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetRejectedWhileRunning() {
+    void resetRejectedWhileRunning() {
         testSubject.start();
 
         assertThrows(IllegalStateException.class, testSubject::resetTokens);
     }
 
     @Test
-    void testResetNotSupportedWhenInvokerDoesNotSupportReset() {
+    void resetNotSupportedWhenInvokerDoesNotSupportReset() {
         when(mockHandler.supportsReset()).thenReturn(false);
         assertFalse(testSubject.supportsReset());
     }
 
     @Test
-    void testResetRejectedWhenInvokerDoesNotSupportReset() {
+    void resetRejectedWhenInvokerDoesNotSupportReset() {
         when(mockHandler.supportsReset()).thenReturn(false);
 
         assertThrows(IllegalStateException.class, testSubject::resetTokens);
     }
 
     @Test
-    void testResetRejectedIfNotAllTokensCanBeClaimed() {
+    void resetRejectedIfNotAllTokensCanBeClaimed() {
         tokenStore.initializeTokenSegments("test", 4);
         when(tokenStore.fetchToken("test", 3)).thenThrow(new UnableToClaimTokenException("Mock"));
 
@@ -1081,33 +1132,67 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetTokensPassesOnResetContext() throws Exception {
+    void resetTokensPassesOnResetContextToTrackingToken() throws Exception {
         String resetContext = "reset-context";
-        final List<String> handled = new CopyOnWriteArrayList<>();
+        final AtomicInteger count = new AtomicInteger();
 
         when(mockHandler.supportsReset()).thenReturn(true);
 
-
         //noinspection Duplicates
         doAnswer(i -> {
-            EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
+            count.incrementAndGet();
             return null;
         }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
-
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, count.get()));
         testSubject.shutDown();
         testSubject.resetTokens(resetContext);
         testSubject.start();
 
-        verify(eventHandlerInvoker).performReset(resetContext);
+        TrackingToken test = tokenStore.fetchToken("test", 0);
+        assertEquals(resetContext, ReplayToken.replayContext(test, String.class).orElse(null));
+    }
+
+    private static class MyResetContext {
+
+        private String property;
+
+        private MyResetContext(String property) {
+            this.property = property;
+        }
+
+        public String getProperty() {
+            return property;
+        }
+
+        public void setProperty(String property) {
+            this.property = property;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            MyResetContext that = (MyResetContext) o;
+
+            return Objects.equals(property, that.property);
+        }
+
+        @Override
+        public int hashCode() {
+            return property != null ? property.hashCode() : 0;
+        }
     }
 
     @Test
-    void testWhenFailureDuringInit() throws InterruptedException {
+    void whenFailureDuringInit() throws InterruptedException {
         doThrow(new RuntimeException("Faking issue during fetchSegments"))
                 .doCallRealMethod()
                 .when(tokenStore).fetchSegments(anyString());
@@ -1127,7 +1212,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testUpdateActiveSegmentsWhenBatchIsEmpty() throws Exception {
+    void updateActiveSegmentsWhenBatchIsEmpty() throws Exception {
         int segmentId = 0;
         //noinspection unchecked
         StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
@@ -1154,7 +1239,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testReleaseSegment() {
+    void releaseSegment() {
         testSubject.start();
         assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
         testSubject.releaseSegment(0, 2, TimeUnit.SECONDS);
@@ -1163,7 +1248,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testHasAvailableSegments() {
+    void hasAvailableSegments() {
         assertEquals(1, testSubject.availableProcessorThreads());
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
@@ -1173,7 +1258,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testSplitSegments() throws InterruptedException {
+    void splitSegments() throws InterruptedException {
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
         testSubject.start();
         waitForSegmentStart(0);
@@ -1184,7 +1269,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeSegments() throws InterruptedException {
+    void mergeSegments() throws InterruptedException {
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         testSubject.start();
         while (testSubject.processingStatus().isEmpty()) {
@@ -1205,7 +1290,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeSegments_BothClaimedByProcessor() throws Exception {
+    void mergeSegments_BothClaimedByProcessor() throws Exception {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                          .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS)
                                                          .andBatchSize(100));
@@ -1251,7 +1336,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeSegments_WithExplicitReleaseOther() throws Exception {
+    void mergeSegments_WithExplicitReleaseOther() throws Exception {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
@@ -1286,7 +1371,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testDoubleSplitAndMerge() throws Exception {
+    void doubleSplitAndMerge() throws Exception {
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         int segmentId = 0;
@@ -1333,7 +1418,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeSegmentWithDifferentProcessingGroupsAndSequencingPolicies() throws Exception {
+    void mergeSegmentWithDifferentProcessingGroupsAndSequencingPolicies() throws Exception {
         EventMessageHandler otherHandler = mock(EventMessageHandler.class);
         when(otherHandler.canHandle(any())).thenReturn(true);
         when(otherHandler.supportsReset()).thenReturn(true);
@@ -1387,7 +1472,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeSegmentsDuringReplay() throws Exception {
+    void mergeSegmentsDuringReplay() throws Exception {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
@@ -1439,15 +1524,16 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testReplayDuringIncompleteMerge() throws Exception {
-        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
-        tokenStore.initializeTokenSegments(testSubject.getName(), 2);
+    void replayDuringIncompleteMerge() throws Exception {
+        int segmentIdZero = 0;
+        int segmentIdOne = 1;
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
-        List<EventMessage<?>> events = new ArrayList<>();
-        int segmentId = 0;
-        for (int i = 0; i < 10; i++) {
-            events.add(createEvent(UUID.randomUUID().toString(), 0));
-        }
+        List<EventMessage<?>> initialEvents = IntStream.range(0, 10)
+                                                       .mapToObj(i -> createEvent(UUID.randomUUID().toString(), 0))
+                                                       .collect(toList());
+
+        tokenStore.initializeTokenSegments(testSubject.getName(), 2);
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
@@ -1456,40 +1542,40 @@ class TrackingEventProcessorTest {
             }
             return handledEvents.add(message);
         });
-        eventBus.publish(events);
 
+        eventBus.publish(initialEvents);
         testSubject.start();
+
         while (testSubject.processingStatus().size() < 2
                 || !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
             Thread.sleep(10);
         }
 
-        testSubject.releaseSegment(1);
-        while (testSubject.processingStatus().containsKey(1)) {
+        testSubject.releaseSegment(segmentIdOne);
+        while (testSubject.processingStatus().containsKey(segmentIdOne)) {
             Thread.yield();
         }
 
         publishEvents(10);
 
-        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentId);
-        assertTrue(mergeResult.join(), "Expected split to succeed");
-
-        waitForActiveThreads(1);
+        CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentIdZero);
+        assertTrue(mergeResult.join(), "Expected merge to succeed");
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         testSubject.shutDown();
         testSubject.resetTokens();
-
         publishEvents(10);
-
         testSubject.start();
-        waitForActiveThreads(1);
+
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(segmentId);
+        waitForSegmentStart(segmentIdZero);
 
-        while (!testSubject.processingStatus().get(segmentId).isCaughtUp()) {
-            Thread.sleep(10);
-        }
+        assertWithin(
+                1, TimeUnit.SECONDS,
+                () -> assertTrue(testSubject.processingStatus().get(segmentIdZero).isCaughtUp())
+        );
 
         // Replayed messages aren't counted
         assertEquals(30, handledEvents.size());
@@ -1497,7 +1583,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeWithIncompatibleSegmentRejected() throws InterruptedException {
+    void mergeWithIncompatibleSegmentRejected() throws InterruptedException {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(3));
 
         testSubject.start();
@@ -1523,7 +1609,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 10)
-    void testMergeWithSingleSegmentRejected() throws InterruptedException {
+    void mergeWithSingleSegmentRejected() throws InterruptedException {
         int numberOfSegments = 1;
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
         int segmentId = 0;
@@ -1542,7 +1628,7 @@ class TrackingEventProcessorTest {
      */
     @Test
     @Timeout(value = 10)
-    void testMergeInvertedSegmentOrder() throws InterruptedException {
+    void mergeInvertedSegmentOrder() throws InterruptedException {
         int numberOfSegments = 4;
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(numberOfSegments));
         testSubject.start();
@@ -1558,7 +1644,7 @@ class TrackingEventProcessorTest {
      * This test is a follow-up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
      */
     @Test
-    void testThrownErrorBubblesUp() {
+    void thrownErrorBubblesUp() {
         AtomicReference<Throwable> thrownException = new AtomicReference<>();
 
         EventHandlerInvoker eventHandlerInvoker = mock(EventHandlerInvoker.class);
@@ -1615,7 +1701,7 @@ class TrackingEventProcessorTest {
      * boolean} field updates are included as changes.
      */
     @Test
-    void testPublishedEventsUpdateStatusAndHitChangeListener() throws Exception {
+    void publishedEventsUpdateStatusAndHitChangeListener() throws Exception {
         CountDownLatch eventHandlingLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             eventHandlingLatch.countDown();
@@ -1670,7 +1756,7 @@ class TrackingEventProcessorTest {
      * </ol>
      */
     @Test
-    void testPublishedEventsUpdateStatusAndHitChangeListenerIncludingPositions() throws Exception {
+    void publishedEventsUpdateStatusAndHitChangeListenerIncludingPositions() throws Exception {
         CountDownLatch eventHandlingLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             eventHandlingLatch.countDown();
@@ -1720,8 +1806,8 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    @Timeout(value = 10)
-    void testSplitAndMergeInfluenceOnChangeListenerInvocations() throws InterruptedException {
+    @Timeout(value = 15)
+    void splitAndMergeInfluenceOnChangeListenerInvocations() throws InterruptedException {
         int firstSegment = 0;
         int secondSegment = 1;
 
@@ -1740,26 +1826,30 @@ class TrackingEventProcessorTest {
             }
         };
 
+        // Provide some spare threads so that assertions don't block the processor.
+        // Added, lower the event availability timeout to have the TEP threads pick up the segments faster.
         TrackingEventProcessorConfiguration tepConfiguration =
-                TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                TrackingEventProcessorConfiguration.forParallelProcessing(4)
+                                                   .andInitialSegmentsCount(2)
+                                                   .andEventAvailabilityTimeout(50, TimeUnit.MILLISECONDS)
                                                    .andEventTrackerStatusChangeListener(statusChangeListener);
         initProcessor(tepConfiguration);
         tokenStore.initializeTokenSegments(testSubject.getName(), 1);
 
         publishEvents(2);
         testSubject.start();
-        waitForSegmentStart(firstSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(firstSegment)));
 
         assertTrue(testSubject.splitSegment(firstSegment).join(), "Expected split to succeed");
         assertArrayEquals(new int[]{firstSegment, secondSegment}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(secondSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(secondSegment)));
 
         assertWithin(
-                50, TimeUnit.MILLISECONDS,
+                500, TimeUnit.MILLISECONDS,
                 () -> assertTrue(testSubject.mergeSegment(firstSegment).join(), "Expected merge to succeed")
         );
         assertArrayEquals(new int[]{firstSegment}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(firstSegment);
+        assertWithin(5, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(firstSegment)));
 
         assertTrue(addedStatusLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updatedStatusLatch.await(5, TimeUnit.SECONDS));
@@ -1767,17 +1857,20 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testCaughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() {
+    void caughtUpSetToTrueAfterWaitingForEventAvailabilityTimeout() {
         AtomicBoolean hasNextInvoked = new AtomicBoolean(false);
         AtomicBoolean hasNextAvailableTimedOut = new AtomicBoolean(true);
+        // Set up two threads and one segment, to provide more "space" for assertions.
         TrackingEventProcessorConfiguration tepConfiguration =
-                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                   .andInitialSegmentsCount(1)
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
         EventStore enhancedEventStore = new EmbeddedEventStore(
                 EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
         ) {
             @Override
             public TrackingEventStream openStream(TrackingToken trackingToken) {
+                //noinspection resource
                 TrackingEventStream trackingEventStream = super.openStream(trackingToken);
                 return new TrackingEventStream() {
                     @Override
@@ -1819,11 +1912,11 @@ class TrackingEventProcessorTest {
             assertFalse(trackerOneStatus.isCaughtUp());
         });
 
-        assertWithin(20, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
     }
 
     @Test
-    void testRefuseStartDuringShutdown() throws Exception {
+    void refuseStartDuringShutdown() throws Exception {
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                          .andEventAvailabilityTimeout(1000, TimeUnit.MILLISECONDS));
         CountDownLatch cdl = new CountDownLatch(1);
@@ -1845,7 +1938,7 @@ class TrackingEventProcessorTest {
 
     @Test
     @Timeout(value = 1000)
-    void testIsReplayingWhenNotCaughtUp() throws Exception {
+    void isReplayingWhenNotCaughtUp() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
 
         final List<String> handled = new CopyOnWriteArrayList<>();
@@ -1903,6 +1996,54 @@ class TrackingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
+    }
+
+    @Test
+    void processorOnlyTriesToClaimAvailableSegments() {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
+        when(tokenStore.fetchAvailableSegments(testSubject.getName()))
+                .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+
+        testSubject.start();
+
+        eventBus.publish(createEvents(1));
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
+        verify(tokenStore, never())
+                .fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+    }
+
+    @Test
+    void shutdownTerminatesWorkersAfterConfiguredWorkerTerminationTimeout() throws Exception {
+        int testWorkerTerminationTimeout = 50;
+        List<Thread> createdThreads = new CopyOnWriteArrayList<>();
+        // A higher event availability timeout will block a worker thread that should shut down
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                         .andInitialSegmentsCount(2)
+                                                         .andBatchSize(100)
+                                                         .andThreadFactory(n -> r -> {
+                                                             Thread thread = new Thread(r, n);
+                                                             createdThreads.add(thread);
+                                                             return thread;
+                                                         })
+                                                         .andWorkerTerminationTimeout(testWorkerTerminationTimeout)
+                                                         .andEventAvailabilityTimeout(20, TimeUnit.SECONDS));
+
+        testSubject.start();
+
+        // sleep a little to reach the EventAvailabilityTimeout usage on the Event Stream
+        Thread.sleep(500);
+
+        assertEquals(2, createdThreads.size());
+
+        CompletableFuture<Void> result = testSubject.shutdownAsync();
+        assertWithin(testWorkerTerminationTimeout * 2, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        assertFalse(createdThreads.get(0).isAlive());
+        assertFalse(createdThreads.get(1).isAlive());
     }
 
     private void waitForStatus(String description,

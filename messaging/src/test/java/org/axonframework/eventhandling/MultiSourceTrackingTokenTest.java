@@ -16,8 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,8 +24,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link MultiSourceTrackingToken}.
@@ -47,12 +45,12 @@ class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    void testIncompatibleToken() {
+    void incompatibleToken() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.covers(new GlobalSequenceTrackingToken(0)));
     }
 
     @Test
-    void testTrackingTokenIsImmutable() {
+    void trackingTokenIsImmutable() {
         MultiSourceTrackingToken newToken = testSubject.advancedTo("token1", new GlobalSequenceTrackingToken(1));
 
         assertEquals(new GlobalSequenceTrackingToken(0), testSubject.getTokenForStream("token1"));
@@ -141,7 +139,7 @@ class MultiSourceTrackingTokenTest {
     }
 
     @Test
-    void testPositionNotProvidedWhenUnderlyingTokensDontProvide() {
+    void positionNotProvidedWhenUnderlyingTokensDontProvide() {
         TrackingToken trackingToken = mock(TrackingToken.class);
         when(trackingToken.position()).thenReturn(OptionalLong.empty());
         testSubject = new MultiSourceTrackingToken(Collections.singletonMap("key", trackingToken));

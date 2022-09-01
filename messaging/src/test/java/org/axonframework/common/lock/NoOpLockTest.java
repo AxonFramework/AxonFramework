@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NoOpLockTest {
 
     @Test
-    void testIsHeldReturnsTrue() {
+    void isHeldReturnsTrue() {
         assertTrue(NoOpLock.INSTANCE.isHeld());
     }
 }

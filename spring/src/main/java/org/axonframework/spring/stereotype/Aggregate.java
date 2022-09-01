@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,8 +86,25 @@ public @interface Aggregate {
     boolean filterEventsByType() default false;
 
     /**
-     * Sets the name of the bean providing the caching. If none is provided, no cache is
-     * created, unless explicitly configured on the referenced repository.
+     * Sets the name of the bean providing the {@link org.axonframework.common.caching.Cache caching}. If none is
+     * provided, no cache is created, unless explicitly configured on the referenced repository.
+     * <p>
+     * Note that the use of {@link #repository()}, or adding a {@link org.axonframework.modelling.command.Repository}
+     * bean to the Spring context with the default naming scheme overrides this setting, as a Repository may explicitly
+     * define the cache. The default name corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade}
+     * Aggregate would by default create/look for a bean named {@code "tradeRepository"}.
      */
     String cache() default "";
+
+    /**
+     * Sets the name of the bean providing the {@link org.axonframework.common.lock.LockFactory}. If none is provided,
+     * the {@link org.axonframework.modelling.command.Repository} implementation's default is used, unless explicitly
+     * configured on the referenced repository.
+     * <p>
+     * Note that the use of {@link #repository()}, or adding a {@link org.axonframework.modelling.command.Repository}
+     * bean to the Spring context with the default naming scheme overrides this setting, as a Repository explicitly defines
+     * the lock factory. The default name corresponds to {@code "[aggregate-name]Repository"}, thus a
+     * {@code Trade} Aggregate would by default create/look for a bean named {@code "tradeRepository"}.
+     */
+    String lockFactory() default "";
 }

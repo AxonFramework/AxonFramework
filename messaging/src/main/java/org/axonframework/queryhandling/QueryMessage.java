@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Message type that carries a Query: a request for information. Besides a payload, Query Messages also carry the
@@ -50,7 +51,7 @@ public interface QueryMessage<T, R> extends Message<T> {
      * @return the {@link QueryMessage#getQueryName()}, the name of {@link Message#getPayloadType()} or the result of
      * {@link Class#getName()}, depending on the type of the {@code payloadOrMessage}
      */
-    static String queryName(Object payloadOrMessage) {
+    static String queryName(@Nonnull Object payloadOrMessage) {
         if (payloadOrMessage instanceof QueryMessage) {
             return ((QueryMessage<?, ?>) payloadOrMessage).getQueryName();
         } else if (payloadOrMessage instanceof Message) {
@@ -72,7 +73,7 @@ public interface QueryMessage<T, R> extends Message<T> {
      * @param metaData The new MetaData for the QueryMessage
      * @return a copy of this message with the given MetaData
      */
-    QueryMessage<T, R> withMetaData(Map<String, ?> metaData);
+    QueryMessage<T, R> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this QueryMessage with its MetaData merged with given {@code metaData}. The payload remains
@@ -81,5 +82,5 @@ public interface QueryMessage<T, R> extends Message<T> {
      * @param additionalMetaData The MetaData to merge into the QueryMessage
      * @return a copy of this message with the given additional MetaData
      */
-    QueryMessage<T, R> andMetaData(Map<String, ?> additionalMetaData);
+    QueryMessage<T, R> andMetaData(@Nonnull Map<String, ?> additionalMetaData);
 }

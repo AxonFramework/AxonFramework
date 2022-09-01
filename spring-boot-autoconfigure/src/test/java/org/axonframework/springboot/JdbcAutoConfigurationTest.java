@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
+import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -31,8 +32,10 @@ import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.jupiter.api.Test;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -43,14 +46,13 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests JDBC auto-configuration.
@@ -60,7 +62,7 @@ import static org.mockito.Mockito.when;
 public class JdbcAutoConfigurationTest {
 
     @Test
-    void testAllJdbcComponentsAutoConfigured() {
+    void allJdbcComponentsAutoConfigured() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -76,7 +78,19 @@ public class JdbcAutoConfigurationTest {
     }
 
     @Test
-    void testConfigurationOfEventBusPreventsEventStoreDefinition() {
+    void customTokenSchema() {
+        TokenSchema tokenSchema = TokenSchema.builder().setTokenTable("TEST123").build();
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(TokenSchema.class, () -> tokenSchema)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(TokenStore.class);
+                    assertThat(context).getBean(TokenStore.class).extracting("schema").isSameAs(tokenSchema);
+                });
+    }
+
+    @Test
+    void configurationOfEventBusPreventsEventStoreDefinition() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class, ExplicitEventBusContext.class)
                 .run(context -> assertThat(context).doesNotHaveBean(EventStorageEngine.class)
@@ -88,7 +102,9 @@ public class JdbcAutoConfigurationTest {
     @EnableAutoConfiguration(exclude = {
             JpaRepositoriesAutoConfiguration.class,
             HibernateJpaAutoConfiguration.class,
-            AxonServerAutoConfiguration.class
+            AxonServerBusAutoConfiguration.class,
+            AxonServerAutoConfiguration.class,
+            AxonServerActuatorAutoConfiguration.class
     })
     static class Context {
 

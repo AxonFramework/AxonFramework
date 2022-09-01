@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.micrometer;
 
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
+
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of the {@link ConfigurerModule} which uses the
@@ -44,7 +46,7 @@ public class MetricsConfigurerModule implements ConfigurerModule {
     }
 
     @Override
-    public void configureModule(Configurer configurer) {
+    public void configureModule(@Nonnull Configurer configurer) {
         if (useDimensions) {
             globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
         } else {

@@ -123,7 +123,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    void testWithoutCache() throws Exception {
+    void withoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -133,7 +133,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    void testWithCache() throws Exception {
+    void withCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -143,7 +143,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    void testMinimalScenarioWithoutCache() throws Exception {
+    void minimalScenarioWithoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)
@@ -153,7 +153,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    void testMinimalScenarioWithCache() throws Exception {
+    void minimalScenarioWithCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
                 .aggregateFactory(aggregateFactory)
                 .eventStore(eventStore)

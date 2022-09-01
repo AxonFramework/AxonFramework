@@ -39,11 +39,11 @@ import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 @Testcontainers
 class Oracle11SagaSqlSchemaTest {
 
-    private static final String USERNAME = "system";
-    private static final String PASSWORD = "oracle";
+    private static final String USERNAME = "test";
+    private static final String PASSWORD = "test";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gvenzl/oracle-xe");
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
@@ -54,8 +54,8 @@ class Oracle11SagaSqlSchemaTest {
         sagaSchema = new SagaSchema();
         testSubject = new Oracle11SagaSqlSchema(sagaSchema);
         Properties properties = new Properties();
-        properties.getProperty("user", USERNAME);
-        properties.getProperty("password", PASSWORD);
+        properties.setProperty("user", USERNAME);
+        properties.setProperty("password", PASSWORD);
         //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
         properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
         connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), properties);
@@ -67,7 +67,7 @@ class Oracle11SagaSqlSchemaTest {
     }
 
     @Test
-    void testSql_createTableAssocValueEntry() throws Exception {
+    void sql_createTableAssocValueEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableAssocValueEntry(connection)
                    .execute();
@@ -81,7 +81,7 @@ class Oracle11SagaSqlSchemaTest {
     }
 
     @Test
-    void testSql_createTableSagaEntry() throws Exception {
+    void sql_createTableSagaEntry() throws Exception {
         // test passes if no exception is thrown
         testSubject.sql_createTableSagaEntry(connection)
                    .execute();

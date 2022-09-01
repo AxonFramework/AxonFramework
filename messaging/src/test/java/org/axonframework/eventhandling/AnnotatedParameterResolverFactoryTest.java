@@ -30,21 +30,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class AnnotatedParameterResolverFactoryTest {
     @Test
-    void testTimestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
+    void timestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithTimestampParameter", Instant.class, Long.class, Instant.class);
         testMethod(new TimestampParameterResolverFactory(), method,
                    new Class<?>[]{TimestampParameterResolverFactory.TimestampParameterResolver.class, null, null});
     }
 
     @Test
-    void testSequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
+    void sequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithSequenceNumberParameter", Long.class, Instant.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
                    new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
     }
 
     @Test
-    void testSequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
+    void sequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithPrimitiveParameter", long.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
                    new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class});
@@ -66,9 +66,8 @@ class AnnotatedParameterResolverFactoryTest {
     }
 
     private static void testMethod(AbstractAnnotatedParameterResolverFactory<?, ?> factory, Method method, Class<?>[] expectedResolvers) {
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        for (int param = 0; param < parameterTypes.length; param++) {
-            ParameterResolver resolver = factory.createInstance(method, method.getParameters(), param);
+        for (int param = 0; param < method.getParameterCount(); param++) {
+            ParameterResolver<?> resolver = factory.createInstance(method, method.getParameters(), param);
             assertEquals(expectedResolvers[param], resolver != null ? resolver.getClass() : null, "Result incorrect for param: " + param);
         }
     }

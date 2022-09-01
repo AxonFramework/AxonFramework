@@ -46,6 +46,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -83,6 +84,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -97,8 +99,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -122,7 +127,7 @@ public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int LIFECYCLE_PHASE_TIMEOUT_SECONDS = 5;
+    private static final Runnable NOTHING = () -> {};
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -141,9 +146,9 @@ public class DefaultConfigurer implements Configurer {
             new Component<>(config, "messageSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
-            config, "eventUpcasterChain",
-            c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
+            config, "eventUpcasterChain", this::defaultUpcasterChain
     );
+
     private final Component<Function<Class<?>, HandlerDefinition>> handlerDefinition = new Component<>(
             config, "handlerDefinition",
             c -> this::defaultHandlerDefinition
@@ -153,10 +158,39 @@ public class DefaultConfigurer implements Configurer {
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
+    private long lifecyclePhaseTimeout = 5;
+    private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
 
     private boolean initialized = false;
     private Integer currentLifecyclePhase = null;
     private LifecycleState lifecycleState = LifecycleState.DOWN;
+
+    /**
+     * Initialize the Configurer.
+     */
+    protected DefaultConfigurer() {
+        components.put(ParameterResolverFactory.class,
+                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
+        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
+        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
+        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
+        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(
+                QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
+        );
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
+        components.put(ResourceInjector.class,
+                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(ScopeAwareProvider.class,
+                       new Component<>(config, "scopeAwareProvider", this::defaultScopeAwareProvider));
+        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
+        components.put(EventUpcaster.class, upcasterChain);
+        components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
+        components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
+        components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
+    }
 
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
@@ -171,10 +205,10 @@ public class DefaultConfigurer implements Configurer {
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
      * {@link SimpleEventBus}, indicating whether to {@code autoLocateConfigurerModules}.
-     *
+     * <p>
      * When {@code autoLocateConfigurerModules} is {@code true}, a ServiceLoader will be used to locate all declared
-     * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to
-     * set default values for the configuration.
+     * instances of type {@link ConfigurerModule}. Each of the discovered instances will be invoked, allowing it to set
+     * default values for the configuration.
      *
      * @param autoLocateConfigurerModules flag indicating whether ConfigurerModules on the classpath should be
      *                                    automatically retrieved. Should be set to {@code false} when using an
@@ -250,28 +284,16 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Initialize the Configurer.
+     * Method returning a default component to use for given {@code type} for given {@code configuration}, or an empty
+     * Optional if no default can be provided.
+     *
+     * @param type          The type of component to find a default for.
+     * @param configuration The configuration the component is configured in.
+     * @param <T>           The type of component.
+     * @return An Optional containing a default component, or empty if none can be provided.
      */
-    protected DefaultConfigurer() {
-        components.put(ParameterResolverFactory.class,
-                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
-        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
-        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
-        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
-        components.put(
-                QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
-        );
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
-        components.put(ResourceInjector.class,
-                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
-        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
-        components.put(EventUpcaster.class, upcasterChain);
-        components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
-        components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
-        components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
+    protected <T> Optional<T> defaultComponent(Class<T> type, Configuration configuration) {
+        return Optional.empty();
     }
 
     /**
@@ -282,7 +304,8 @@ public class DefaultConfigurer implements Configurer {
      * @return The default command gateway.
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
-        return DefaultCommandGateway.builder().commandBus(config.commandBus()).build();
+        return defaultComponent(CommandGateway.class, config)
+                .orElseGet(() -> DefaultCommandGateway.builder().commandBus(config.commandBus()).build());
     }
 
     /**
@@ -292,7 +315,8 @@ public class DefaultConfigurer implements Configurer {
      * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
-        return DefaultQueryGateway.builder().queryBus(config.queryBus()).build();
+        return defaultComponent(QueryGateway.class, config)
+                .orElseGet(() -> DefaultQueryGateway.builder().queryBus(config.queryBus()).build());
     }
 
     /**
@@ -302,19 +326,22 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        QueryBus queryBus = SimpleQueryBus.builder()
-                                          .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
-                                          .transactionManager(config.getComponent(
-                                                  TransactionManager.class, NoTransactionManager::instance
-                                          ))
-                                          .errorHandler(config.getComponent(
-                                                  QueryInvocationErrorHandler.class,
-                                                  () -> LoggingQueryInvocationErrorHandler.builder().build()
-                                          ))
-                                          .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                          .build();
-        queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
-        return queryBus;
+        return defaultComponent(QueryBus.class, config)
+                .orElseGet(() -> {
+                    QueryBus queryBus = SimpleQueryBus.builder()
+                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                                                      .transactionManager(config.getComponent(
+                                                              TransactionManager.class, NoTransactionManager::instance
+                                                      ))
+                                                      .errorHandler(config.getComponent(
+                                                              QueryInvocationErrorHandler.class,
+                                                              () -> LoggingQueryInvocationErrorHandler.builder().build()
+                                                      ))
+                                                      .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                                      .build();
+                    queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                    return queryBus;
+                });
     }
 
     /**
@@ -325,11 +352,14 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
-                config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
-        return SimpleQueryUpdateEmitter.builder()
-                                       .updateMessageMonitor(updateMessageMonitor)
-                                       .build();
+        return defaultComponent(QueryUpdateEmitter.class, config)
+                .orElseGet(() -> {
+                    MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                            config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
+                    return SimpleQueryUpdateEmitter.builder()
+                                                   .updateMessageMonitor(updateMessageMonitor)
+                                                   .build();
+                });
     }
 
     /**
@@ -339,8 +369,9 @@ public class DefaultConfigurer implements Configurer {
      * @return The default ParameterResolverFactory to use.
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
-        return MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
-                                                     new ConfigurationParameterResolverFactory(config));
+        return defaultComponent(ParameterResolverFactory.class, config)
+                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
+                                                                       new ConfigurationParameterResolverFactory(config)));
     }
 
     /**
@@ -350,40 +381,60 @@ public class DefaultConfigurer implements Configurer {
      * @return The default HandlerDefinition to use
      */
     protected HandlerDefinition defaultHandlerDefinition(Class<?> inspectedClass) {
-        return ClasspathHandlerDefinition.forClass(inspectedClass);
+        return defaultComponent(HandlerDefinition.class, config)
+                .orElseGet(() -> ClasspathHandlerDefinition.forClass(inspectedClass));
     }
 
     /**
-     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own default.
+     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own
+     * default.
      *
      * @param config The configuration based on which the component is initialized.
      * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        CommandBus commandBus =
-                SimpleCommandBus.builder()
-                                .transactionManager(config.getComponent(
-                                        TransactionManager.class, () -> NoTransactionManager.INSTANCE
-                                ))
-                                .duplicateCommandHandlerResolver(config.getComponent(
-                                        DuplicateCommandHandlerResolver.class,
-                                        LoggingDuplicateCommandHandlerResolver::instance
-                                ))
-                                .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
-                                .build();
-        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
-        return commandBus;
+        return defaultComponent(CommandBus.class, config)
+                .orElseGet(() -> {
+                    CommandBus commandBus =
+                            SimpleCommandBus.builder()
+                                            .transactionManager(config.getComponent(
+                                                    TransactionManager.class, () -> NoTransactionManager.INSTANCE
+                                            ))
+                                            .duplicateCommandHandlerResolver(config.getComponent(
+                                                    DuplicateCommandHandlerResolver.class,
+                                                    LoggingDuplicateCommandHandlerResolver::instance
+                                            ))
+                                            .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
+                                            .build();
+                    commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                    return commandBus;
+                });
     }
 
     /**
-     * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given {@code config
-     * Configuration}.
+     * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given
+     * {@code config Configuration}.
      *
      * @param config The configuration that supplies registered components.
      * @return A resource injector that supplies components registered with the configuration.
      */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
-        return new ConfigurationResourceInjector(config);
+        return defaultComponent(ResourceInjector.class, config)
+                .orElseGet(() -> new ConfigurationResourceInjector(config));
+    }
+
+    /**
+     * Returns a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
+     * used by a {@link DeadlineManager}. Uses the given {@code config} to construct the default
+     * {@link ConfigurationScopeAwareProvider}.
+     *
+     * @param config the configuration used to construct the default {@link ConfigurationScopeAwareProvider}
+     * @return a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
+     * used by a {@link DeadlineManager}
+     */
+    protected ScopeAwareProvider defaultScopeAwareProvider(Configuration config) {
+        return defaultComponent(ScopeAwareProvider.class, config)
+                .orElseGet(() -> new ConfigurationScopeAwareProvider(config));
     }
 
     /**
@@ -394,7 +445,9 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-        return SimpleDeadlineManager.builder().scopeAwareProvider(new ConfigurationScopeAwareProvider(config)).build();
+        return defaultComponent(DeadlineManager.class, config)
+                .orElseGet(() -> SimpleDeadlineManager.builder()
+                                                      .scopeAwareProvider(config.scopeAwareProvider()).build());
     }
 
     /**
@@ -404,33 +457,48 @@ public class DefaultConfigurer implements Configurer {
      * @return The default EventBus to use.
      */
     protected EventBus defaultEventBus(Configuration config) {
-        return SimpleEventBus.builder()
-                             .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
-                             .build();
+        return defaultComponent(EventBus.class, config)
+                .orElseGet(() -> SimpleEventBus.builder()
+                                               .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                                               .build());
     }
 
     /**
-     * Returns a {@link DefaultEventGateway} that will use the configuration's {@link EventBus} to publish
-     * events.
+     * Returns a {@link DefaultEventGateway} that will use the configuration's {@link EventBus} to publish events.
      *
      * @param config The configuration that supplies the event bus.
      * @return The default event gateway.
      */
     protected EventGateway defaultEventGateway(Configuration config) {
-        return DefaultEventGateway.builder().eventBus(config.eventBus()).build();
+        return defaultComponent(EventGateway.class, config)
+                .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
     }
 
     /**
-     * Provides the default Serializer implementation. Subclasses may override this method to provide their own default.
+     * Provides the default Serializer implementation. Subclasses may override this method to provide their own
+     * default.
      *
      * @param config The configuration based on which the component is initialized.
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
-        return XStreamSerializer.builder()
-                                .revisionResolver(config.getComponent(RevisionResolver.class,
-                                                                      AnnotationRevisionResolver::new))
-                                .build();
+        return defaultComponent(Serializer.class, config)
+                .orElseGet(() -> XStreamSerializer.builder()
+                                                  .revisionResolver(config.getComponent(RevisionResolver.class,
+                                                                                        AnnotationRevisionResolver::new))
+                                                  .build());
+    }
+
+    /**
+     * Provides the default EventUpcasterChain implementation. Subclasses may override this method to provide their own
+     * default.
+     *
+     * @param config The configuration based on which the component is initialized.
+     * @return The default EventUpcasterChain to use.
+     */
+    protected EventUpcasterChain defaultUpcasterChain(Configuration config) {
+        return defaultComponent(EventUpcasterChain.class, config)
+                .orElseGet(() -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList())));
     }
 
     /**
@@ -441,31 +509,34 @@ public class DefaultConfigurer implements Configurer {
      * @return the default {@link Snapshotter}
      */
     protected Snapshotter defaultSnapshotter(Configuration config) {
-        List<AggregateConfiguration<?>> aggregateConfigurations =
-                config.findModules(AggregateConfiguration.class)
-                      .stream()
-                      .map(aggregateConfiguration -> (AggregateConfiguration<?>) aggregateConfiguration)
-                      .collect(Collectors.toList());
-        List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
-        for (AggregateConfiguration<?> aggregateConfiguration : aggregateConfigurations) {
-            aggregateFactories.add(aggregateConfiguration.aggregateFactory());
-        }
-        return AggregateSnapshotter.builder()
-                                   .eventStore(config.eventStore())
-                                   .transactionManager(config.getComponent(TransactionManager.class))
-                                   .aggregateFactories(aggregateFactories)
-                                   .repositoryProvider(config::repository)
-                                   .parameterResolverFactory(config.parameterResolverFactory())
-                                   .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
-                                   .build();
+        return defaultComponent(Snapshotter.class, config)
+                .orElseGet(() -> {
+                    List<AggregateConfiguration<?>> aggregateConfigurations =
+                            config.findModules(AggregateConfiguration.class)
+                                  .stream()
+                                  .map(aggregateConfiguration -> (AggregateConfiguration<?>) aggregateConfiguration)
+                                  .collect(Collectors.toList());
+                    List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
+                    for (AggregateConfiguration<?> aggregateConfiguration : aggregateConfigurations) {
+                        aggregateFactories.add(aggregateConfiguration.aggregateFactory());
+                    }
+                    return AggregateSnapshotter.builder()
+                                               .eventStore(config.eventStore())
+                                               .transactionManager(config.getComponent(TransactionManager.class))
+                                               .aggregateFactories(aggregateFactories)
+                                               .repositoryProvider(config::repository)
+                                               .parameterResolverFactory(config.parameterResolverFactory())
+                                               .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
+                                               .build();
+                });
     }
 
     /**
-     * The class is required to be provided in case the {@code ClasspathHandlerDefinition is used to retrieve the {@link
-     * HandlerDefinition}. Ideally, a {@code HandlerDefinition} would be retrieved per aggregate class, as potentially
-     * users would be able to define different {@link ClassLoader} instances per aggregate. For now we have deduced the
-     * latter to be to much of an edge case. Hence we assume users will use the same ClassLoader for differing
-     * aggregates within a single configuration.
+     * The class is required to be provided in case the
+     * {@code ClasspathHandlerDefinition is used to retrieve the {@link HandlerDefinition}. Ideally, a {@code
+     * HandlerDefinition} would be retrieved per aggregate class, as potentially users would be able to define different
+     * {@link ClassLoader} instances per aggregate. For now we have deduced the latter to be to much of an edge case.
+     * Hence we assume users will use the same ClassLoader for differing aggregates within a single configuration.
      */
     private HandlerDefinition retrieveHandlerDefinition(Configuration configuration,
                                                         List<AggregateConfiguration<?>> aggregateConfigurations) {
@@ -495,41 +566,42 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder) {
+    public Configurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder) {
         upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
         return this;
     }
 
     @Override
     public Configurer configureMessageMonitor(
-            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
+            @Nonnull Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
         messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
         return this;
     }
 
     @Override
-    public Configurer configureMessageMonitor(Class<?> componentType, MessageMonitorFactory messageMonitorFactory) {
+    public Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                              @Nonnull MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactoryBuilder.add(componentType, messageMonitorFactory);
         return this;
     }
 
     @Override
-    public Configurer configureMessageMonitor(Class<?> componentType,
-                                              String componentName,
-                                              MessageMonitorFactory messageMonitorFactory) {
+    public Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                              @Nonnull String componentName,
+                                              @Nonnull MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactoryBuilder.add(componentType, componentName, messageMonitorFactory);
         return this;
     }
 
     @Override
     public Configurer configureCorrelationDataProviders(
-            Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
+            @Nonnull Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
         correlationProviders.update(correlationDataProviderBuilder);
         return this;
     }
 
     @Override
-    public Configurer registerModule(ModuleConfiguration module) {
+    public Configurer registerModule(@Nonnull ModuleConfiguration module) {
         logger.debug("Registering module [{}]", module.getClass().getSimpleName());
         if (initialized) {
             module.initialize(config);
@@ -539,15 +611,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public <C> Configurer registerComponent(Class<C> componentType,
-                                            Function<Configuration, ? extends C> componentBuilder) {
+    public <C> Configurer registerComponent(@Nonnull Class<C> componentType,
+                                            @Nonnull Function<Configuration, ? extends C> componentBuilder) {
         logger.debug("Registering component [{}]", componentType.getSimpleName());
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
 
     @Override
-    public Configurer registerCommandHandler(Function<Configuration, Object> commandHandlerBuilder) {
+    public Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "CommandHandlerRegistrar",
@@ -565,7 +637,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerQueryHandler(Function<Configuration, Object> queryHandlerBuilder) {
+    public Configurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "QueryHandlerRegistrar",
@@ -583,7 +655,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerMessageHandler(Function<Configuration, Object> messageHandlerBuilder) {
+    public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
         registerCommandHandler(c -> messageHandler.get());
         eventProcessing().registerEventHandler(c -> messageHandler.get());
@@ -592,7 +664,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
+    public Configurer configureEmbeddedEventStore(
+            @Nonnull Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
@@ -606,26 +679,36 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder) {
+    public Configurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder) {
         eventSerializer.update(eventSerializerBuilder);
         return this;
     }
 
     @Override
-    public Configurer configureMessageSerializer(Function<Configuration, Serializer> messageSerializerBuilder) {
+    public Configurer configureMessageSerializer(
+            @Nonnull Function<Configuration, Serializer> messageSerializerBuilder) {
         messageSerializer.update(messageSerializerBuilder);
         return this;
     }
 
     @Override
-    public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
+    public <A> Configurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration) {
         return registerModule(aggregateConfiguration);
     }
 
     @Override
     public Configurer registerHandlerDefinition(
-            BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
+            @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
+        return this;
+    }
+
+    @Override
+    public Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
+        assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
+        assertNonNull(timeUnit, "The lifecycle phase time unit should not be null");
+        this.lifecyclePhaseTimeout = timeout;
+        this.lifecyclePhaseTimeunit = timeUnit;
         return this;
     }
 
@@ -688,14 +771,14 @@ public class DefaultConfigurer implements Configurer {
                 startHandlers,
                 e -> {
                     logger.debug("Start up is being ended prematurely due to an exception");
-                    invokeShutdownHandlers();
-                    throw new LifecycleHandlerInvocationException(
-                            String.format(
-                                    "One of the start handlers in phase [%d] failed with the following exception:",
-                                    currentLifecyclePhase
-                            ),
-                            e
+                    String startFailure = String.format(
+                            "One of the start handlers in phase [%d] failed with the following exception: ",
+                            currentLifecyclePhase
                     );
+                    logger.warn(startFailure, e);
+
+                    invokeShutdownHandlers();
+                    throw new LifecycleHandlerInvocationException(startFailure, e);
                 }
         );
 
@@ -737,9 +820,10 @@ public class DefaultConfigurer implements Configurer {
             try {
                 handlers.stream()
                         .map(LifecycleHandler::run)
-                        .reduce((cf1, cf2) -> CompletableFuture.allOf(cf1, cf2))
+                        .map(c -> c.thenRun(NOTHING))
+                        .reduce(CompletableFuture::allOf)
                         .orElse(CompletableFuture.completedFuture(null))
-                        .get(LIFECYCLE_PHASE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                        .get(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
             } catch (CompletionException | ExecutionException e) {
                 exceptionHandler.accept(e);
             } catch (InterruptedException e) {
@@ -749,9 +833,10 @@ public class DefaultConfigurer implements Configurer {
                         lifecycleState.description, currentLifecyclePhase
                 ));
             } catch (TimeoutException e) {
+            	final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
                 logger.warn(String.format(
-                        "Timed out during %s phase [%d] after 5 seconds. Proceeding to following phase",
-                        lifecycleState.description, currentLifecyclePhase
+                        "Timed out during %s phase [%d] after %d second(s). Proceeding to following phase",
+                        lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds
                 ));
             }
         } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
@@ -779,20 +864,45 @@ public class DefaultConfigurer implements Configurer {
         return components;
     }
 
+    @Override
+    public void onStart(int phase, LifecycleHandler startHandler) {
+        onInitialize(cfg -> cfg.onStart(phase, startHandler));
+    }
+
+    @Override
+    public void onShutdown(int phase, LifecycleHandler shutdownHandler) {
+        onInitialize(cfg -> cfg.onShutdown(phase, shutdownHandler));
+    }
+
+    private enum LifecycleState {
+        DOWN("down"),
+        STARTING_UP("start"),
+        UP("up"),
+        SHUTTING_DOWN("shutdown");
+
+        private final String description;
+
+        LifecycleState(String description) {
+            this.description = description;
+        }
+    }
+
     private class ConfigurationImpl implements Configuration {
 
         @Override
-        public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
+        public <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
             Object component = components.computeIfAbsent(
                     componentType,
-                    k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
+                    type -> new Component<>(config,
+                                            componentType.getSimpleName(),
+                                            c -> defaultComponent(componentType, c).orElseGet(defaultImpl))
             ).get();
             return componentType.cast(component);
         }
 
         @Override
-        public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType,
-                                                                               String componentName) {
+        public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+                                                                               @Nonnull String componentName) {
             return messageMonitorFactoryComponent.get().apply(componentType, componentName);
         }
 
@@ -882,19 +992,6 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
             return handlerDefinition.get().apply(inspectedType);
-        }
-    }
-
-    private enum LifecycleState {
-        DOWN("down"),
-        STARTING_UP("start"),
-        UP("up"),
-        SHUTTING_DOWN("shutdown");
-
-        private final String description;
-
-        LifecycleState(String description) {
-            this.description = description;
         }
     }
 }

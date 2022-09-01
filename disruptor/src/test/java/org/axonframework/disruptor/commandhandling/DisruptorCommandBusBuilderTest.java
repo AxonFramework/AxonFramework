@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,20 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Test class validating the {@link DisruptorCommandBus.Builder}.
+ *
+ * @author Allard Buijze
+ */
 class DisruptorCommandBusBuilderTest {
 
     @Test
-    void testSetIllegalPublisherThreadCount() {
+    void setIllegalPublisherThreadCount() {
         assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().publisherThreadCount(0));
     }
 
     @Test
-    void testSetIllegalInvokerThreadCount() {
+    void setIllegalInvokerThreadCount() {
         assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().invokerThreadCount(0));
     }
 }

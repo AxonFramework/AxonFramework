@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testSuccessMessage() {
+    void successMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportSuccess();
@@ -66,7 +66,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testFailureMessage() {
+    void failureMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportFailure(null);
@@ -85,7 +85,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testIgnoredMessage() {
+    void ignoredMessage() {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
         monitorCallback.reportIgnored();
@@ -109,7 +109,7 @@ class MessageTimerMonitorTest {
      * in {@link #testSuccessMessage()}.
      */
     @Test
-    void testCustomReservoir() {
+    void customReservoir() {
         MessageTimerMonitor customReservoirTestSubject =
                 MessageTimerMonitor.builder()
                                    .clock(testClock)
@@ -133,13 +133,13 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testBuildWithNullClockThrowsAxonConfigurationException() {
+    void buildWithNullClockThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.clock(null));
     }
 
     @Test
-    void testBuildWithNullReservoirFactoryThrowsAxonConfigurationException() {
+    void buildWithNullReservoirFactoryThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.reservoirFactory(null));
     }

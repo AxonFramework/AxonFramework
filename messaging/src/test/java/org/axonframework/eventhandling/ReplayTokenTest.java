@@ -41,7 +41,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testAdvanceReplayTokenWithinReplaySegment() {
+    void advanceReplayTokenWithinReplaySegment() {
         ReplayToken testSubject = new ReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
         assertTrue(actual instanceof ReplayToken);
@@ -49,7 +49,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testRegularTokenIsProvidedWhenResetBeyondCurrentPosition() {
+    void regularTokenIsProvidedWhenResetBeyondCurrentPosition() {
         TrackingToken token1 = new GlobalSequenceTrackingToken(1);
         TrackingToken token2 = new GlobalSequenceTrackingToken(2);
 
@@ -58,7 +58,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testSerializationDeserialization() throws IOException {
+    void serializationDeserialization() throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         ReplayToken replayToken = new ReplayToken(innerToken);
         String serializedReplayToken = objectMapper.writer().writeValueAsString(replayToken);
@@ -68,7 +68,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testPosition() {
+    void position() {
         GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(11L, Collections.singleton(9L));
 
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken, startPosition);
@@ -78,13 +78,13 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testPositionIsNotPresent() {
+    void positionIsNotPresent() {
         TrackingToken replayToken = ReplayToken.createReplayToken(innerToken);
         assertFalse(replayToken.position().isPresent());
     }
 
     @Test
-    void testGetTokenAtReset() {
+    void getTokenAtReset() {
         ReplayToken testSubject = new ReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
         assertTrue(actual instanceof ReplayToken);
@@ -92,7 +92,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testCreateReplayTokenReturnsStartPositionIfTokenAtResetIsNull() {
+    void createReplayTokenReturnsStartPositionIfTokenAtResetIsNull() {
         TrackingToken tokenAtReset = null;
         TrackingToken startPosition = new GlobalSequenceTrackingToken(1);
 
@@ -103,7 +103,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testCreateReplayTokenReturnsStartPositionIfStartPositionCoversTokenAtReset() {
+    void createReplayTokenReturnsStartPositionIfStartPositionCoversTokenAtReset() {
         TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(1);
         TrackingToken startPosition = new GlobalSequenceTrackingToken(2);
 
@@ -113,7 +113,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testCreateReplayTokenReturnsWrappedReplayTokenIfTokenAtResetIsReplayToken() {
+    void createReplayTokenReturnsWrappedReplayTokenIfTokenAtResetIsReplayToken() {
         TrackingToken tokenAtReset = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1));
         TrackingToken startPosition = new GlobalSequenceTrackingToken(2);
 
@@ -123,7 +123,7 @@ class ReplayTokenTest {
     }
 
     @Test
-    void testCreateReplayTokenReturnsReplayToken() {
+    void createReplayTokenReturnsReplayToken() {
         TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(2);
         TrackingToken startPosition = new GlobalSequenceTrackingToken(1);
 

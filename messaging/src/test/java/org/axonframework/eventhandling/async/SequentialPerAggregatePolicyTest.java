@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SequentialPerAggregatePolicyTest {
 
     @Test
-    void testSequentialIdentifier() {
+    void sequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
         String aggregateIdentifier = UUID.randomUUID().toString();

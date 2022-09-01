@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,10 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -230,19 +232,19 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }
 
         @Override
-        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
@@ -255,6 +257,18 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         @Override
         public Builder<T> lockFactory(LockFactory lockFactory) {
             super.lockFactory(lockFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            super.subtypes(subtypes);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            super.subtype(subtype);
             return this;
         }
 

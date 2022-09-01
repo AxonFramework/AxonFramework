@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.*;
 class AnnotatedSagaTest {
 
     @Test
-    void testFixtureApi_WhenEventOccurs() {
+    void fixtureApi_WhenEventOccurs() {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -73,7 +74,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
+    void fixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
@@ -83,7 +84,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_AggregatePublishedEventWithMetaData_NoHistoricActivity() {
+    void fixtureApi_AggregatePublishedEventWithMetaData_NoHistoricActivity() {
         String extraIdentifier = UUID.randomUUID().toString();
         Map<String, String> metaData = new HashMap<>();
         metaData.put("extraIdentifier", extraIdentifier);
@@ -98,7 +99,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_NonTransientResourceInjected() {
+    void fixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerResource(new NonTransientResource());
         fixture.givenNoPriorActivity();
@@ -112,7 +113,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_NonTransientResourceInjected_CheckDisabled() {
+    void fixtureApi_NonTransientResourceInjected_CheckDisabled() {
         FixtureConfiguration fixture = new SagaTestFixture<>(StubSaga.class)
                 .withTransienceCheckDisabled();
         fixture.registerResource(new NonTransientResource());
@@ -123,7 +124,7 @@ class AnnotatedSagaTest {
     }
 
     @Test// testing issue AXON-279
-    void testFixtureApi_PublishedEvent_NoHistoricActivity() {
+    void fixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
@@ -133,7 +134,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_PublishedEventWithMetaData_NoHistoricActivity() {
+    void fixtureApi_PublishedEventWithMetaData_NoHistoricActivity() {
         String extraIdentifier = UUID.randomUUID().toString();
         Map<String, String> metaData = new HashMap<>();
         metaData.put("extraIdentifier", extraIdentifier);
@@ -148,7 +149,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WithApplicationEvents() {
+    void fixtureApi_WithApplicationEvents() {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -167,7 +168,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WhenEventIsPublishedToEventBus() {
+    void fixtureApi_WhenEventIsPublishedToEventBus() {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -187,7 +188,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() throws Exception {
+    void fixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
@@ -213,7 +214,7 @@ class AnnotatedSagaTest {
 
 
     @Test
-    void testFixtureApi_WhenTimeElapses_UsingMockGateway() {
+    void fixtureApi_WhenTimeElapses_UsingMockGateway() {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -237,7 +238,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_givenCurrentTime() {
+    void fixtureApi_givenCurrentTime() {
         String identifier = UUID.randomUUID().toString();
         Instant fourDaysAgo = Instant.now().minus(4, ChronoUnit.DAYS);
         Instant fourDaysMinusTenMinutesAgo = fourDaysAgo.plus(10, ChronoUnit.MINUTES);
@@ -250,7 +251,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WhenTimeElapses_UsingDefaults() {
+    void fixtureApi_WhenTimeElapses_UsingDefaults() {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -270,7 +271,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Exception {
+    void fixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -294,7 +295,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testFixtureApi_WhenTimeAdvances() {
+    void fixtureApi_WhenTimeAdvances() {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -313,7 +314,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testLastResourceEvaluatedFirst() {
+    void lastResourceEvaluatedFirst() {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -335,7 +336,7 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void testPublishEventFromSecondFixtureCall() {
+    void publishEventFromSecondFixtureCall() {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.whenAggregate(identifier).publishes(new TriggerSagaStartEvent(identifier))
@@ -349,4 +350,25 @@ class AnnotatedSagaTest {
                        payloadsMatching(exactSequenceOf(any(SagaWasTriggeredEvent.class), andNoMore()))
                );
     }
+
+    @Test
+    void noExceptionThrownInHandlerMethod() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenNoPriorActivity().whenAggregate(identifier)
+                                                               .publishes(new TriggerSagaStartEvent(identifier));
+        assertDoesNotThrow(fixtureExecutionResult::expectSuccessfulHandlerExecution);
+    }
+
+    @Test
+    void exceptionThrownInHandlerMethod() {
+        String identifier = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+
+        FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier)).whenAggregate(identifier)
+                                                               .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
+        assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
+    }
+
 }

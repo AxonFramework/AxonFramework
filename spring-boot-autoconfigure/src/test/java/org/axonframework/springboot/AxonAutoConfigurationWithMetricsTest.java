@@ -74,7 +74,7 @@ class AxonAutoConfigurationWithMetricsTest {
     private MetricsConfigurerModule metricsConfigurerModule;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertTrue(applicationContext.containsBean("metricRegistry"));

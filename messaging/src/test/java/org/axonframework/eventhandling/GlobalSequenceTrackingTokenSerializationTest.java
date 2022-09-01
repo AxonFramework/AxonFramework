@@ -21,7 +21,7 @@ class GlobalSequenceTrackingTokenSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestSerializer serializer) {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(Long.MAX_VALUE);
         assertEquals(token, serializer.serializeDeserialize(token));
     }

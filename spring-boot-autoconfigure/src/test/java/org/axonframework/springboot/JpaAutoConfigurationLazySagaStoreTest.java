@@ -58,10 +58,10 @@ class JpaAutoConfigurationLazySagaStoreTest {
      * being initialized.
      */
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         EntityManagerProvider entityManagerProvider = applicationContext.getBean(EntityManagerProvider.class);
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        verifyZeroInteractions(entityManager);
+        verifyNoInteractions(entityManager);
 
         SagaStore<?> sagaStore = applicationContext.getBean(SagaStore.class);
         assertTrue(sagaStore instanceof JpaSagaStore);

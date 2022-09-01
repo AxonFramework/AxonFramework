@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -113,7 +113,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
     @Test
-    void testDeadlineOnAggregate() {
+    void deadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
@@ -121,7 +121,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineCancellationWithinScopeOnAggregate() {
+    void deadlineCancellationWithinScopeOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, "some-payload"));
@@ -132,7 +132,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineCancellationOnAggregate() {
+    void deadlineCancellationOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
                                                                                 DEADLINE_TIMEOUT,
                                                                                 CANCEL_BEFORE_DEADLINE));
@@ -141,7 +141,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineOnChildEntity() {
+    void deadlineOnChildEntity() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
 
@@ -151,7 +151,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineWithSpecifiedDeadlineName() {
+    void deadlineWithSpecifiedDeadlineName() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
@@ -164,7 +164,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineWithoutPayload() {
+    void deadlineWithoutPayload() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER,
                                                                                 DEADLINE_TIMEOUT,
                                                                                 CANCEL_BEFORE_DEADLINE));
@@ -175,7 +175,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testHandlerInterceptorOnAggregate() {
+    void handlerInterceptorOnAggregate() {
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(),
@@ -190,7 +190,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDispatchInterceptorOnAggregate() {
+    void dispatchInterceptorOnAggregate() {
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload("fakeId"),
@@ -202,7 +202,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testScheduleInPastTriggersDeadline() {
+    void scheduleInPastTriggersDeadline() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
         assertPublishedEventsWithin(100,
@@ -211,7 +211,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testFailedExecution() throws InterruptedException {
+    void failedExecution() throws InterruptedException {
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
             interceptorChain.proceed();
             throw new AxonNonTransientException("Simulating handling error") {
@@ -224,7 +224,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineOnSaga() {
+    void deadlineOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.eventStore().publish(testEventMessage);
@@ -235,7 +235,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineCancellationWithinScopeOnSaga() {
+    void deadlineCancellationWithinScopeOnSaga() {
         SagaStartingEvent sagaStartingEvent = new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE);
         ScheduleSpecificDeadline firstSchedule = new ScheduleSpecificDeadline(IDENTIFIER, "some-payload");
         ScheduleSpecificDeadline secondSchedule = new ScheduleSpecificDeadline(IDENTIFIER, "some-payload");
@@ -254,7 +254,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineCancellationOnSaga() {
+    void deadlineCancellationOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
@@ -262,7 +262,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineWithSpecifiedDeadlineNameOnSaga() {
+    void deadlineWithSpecifiedDeadlineNameOnSaga() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
@@ -277,7 +277,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDeadlineWithoutPayloadOnSaga() {
+    void deadlineWithoutPayloadOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
 
@@ -288,7 +288,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testSagaEndingDeadlineEndsTheSaga() {
+    void sagaEndingDeadlineEndsTheSaga() {
         EventStore eventStore = configuration.eventStore();
         eventStore.publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         eventStore.publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, END_SAGA)));
@@ -300,7 +300,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testHandlerInterceptorOnSaga() {
+    void handlerInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
@@ -317,7 +317,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testDispatchInterceptorOnSaga() {
+    void dispatchInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->

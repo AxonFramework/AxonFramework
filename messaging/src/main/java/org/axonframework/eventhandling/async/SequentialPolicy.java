@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.async;
 
+import javax.annotation.Nonnull;
+
 /**
  * SequencingPolicy that requires sequential handling of all events delivered to an event handler.
  *
@@ -27,7 +29,7 @@ public class SequentialPolicy implements SequencingPolicy<Object> {
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     @Override
-    public Object getSequenceIdentifierFor(Object task) {
+    public Object getSequenceIdentifierFor(@Nonnull Object task) {
         return FULL_SEQUENTIAL_POLICY;
     }
 }

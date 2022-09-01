@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,18 +51,18 @@ class MethodQueryMessageHandlerDefinitionTest {
     }
 
     @Test
-    void testVoidNotAcceptedAsReturnType() {
+    void voidNotAcceptedAsReturnType() {
         assertThrows(UnsupportedHandlerException.class, () -> messageHandler("illegalQueryResponseType"));
     }
 
     @Test
-    void testFutureResponseTypeUnwrapped() {
+    void futureResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("futureReturnType");
         assertEquals(String.class, handler.getResultType());
     }
 
     @Test
-    void testOptionalResponseTypeUnwrapped() throws Exception {
+    void optionalResponseTypeUnwrapped() throws Exception {
         QueryHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.getResultType());
 
@@ -77,19 +77,19 @@ class MethodQueryMessageHandlerDefinitionTest {
 
 
     @Test
-    void testUnspecifiedOptionalResponseTypeUnwrapped() {
+    void unspecifiedOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("unspecifiedOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    void testWildcardOptionalResponseTypeUnwrapped() {
+    void wildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("wildcardOptionalType");
         assertEquals(Object.class, handler.getResultType());
     }
 
     @Test
-    void testUpperBoundWildcardOptionalResponseTypeUnwrapped() {
+    void upperBoundWildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("upperBoundWildcardOptionalType");
         assertEquals(CharSequence.class, handler.getResultType());
     }

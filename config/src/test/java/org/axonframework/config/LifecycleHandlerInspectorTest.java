@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
@@ -28,6 +29,8 @@ import org.mockito.junit.jupiter.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,14 +46,14 @@ class LifecycleHandlerInspectorTest {
     public static final int TEST_PHASE = 1;
 
     @Test
-    void testNothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
+    void nothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
         LifecycleHandlerInspector.registerLifecycleHandlers(configuration, null);
 
-        verifyZeroInteractions(configuration);
+        verifyNoInteractions(configuration);
     }
 
     @Test
-    void testAxonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
+    void axonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
             @Mock Configuration configuration) {
         assertThrows(
                 AxonConfigurationException.class,
@@ -61,7 +64,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(@Mock Configuration config)
+    void lifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(@Mock Configuration config)
             throws ExecutionException, InterruptedException {
         String asyncShutdownResult = "some result";
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(asyncShutdownResult);
@@ -76,7 +79,21 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
+    void lifecycleAwareComponentsRegisterHandlers(@Mock Configuration config) {
+        LifecycleHandlerInspector.registerLifecycleHandlers(config, new ComponentWithLifecycle(
+                r -> {
+                    r.onStart(42, () -> {
+                    });
+                    r.onShutdown(24, () -> {
+                    });
+                }));
+
+        verify(config).onStart(eq(42), any(LifecycleHandler.class));
+        verify(config).onShutdown(eq(24), any(LifecycleHandler.class));
+    }
+
+    @Test
+    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
         AtomicBoolean started = new AtomicBoolean(false);
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(started);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
@@ -90,7 +107,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(@Mock Configuration config)
+    void lifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(@Mock Configuration config)
             throws InterruptedException {
         ComponentWithFailingLifecycleHandler testComponent = new ComponentWithFailingLifecycleHandler();
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
@@ -116,6 +133,20 @@ class LifecycleHandlerInspectorTest {
         @StartHandler(phase = TEST_PHASE)
         public void start(String someParameter) {
             // Some start up process
+        }
+    }
+
+    private static class ComponentWithLifecycle implements Lifecycle {
+
+        private final Consumer<LifecycleRegistry> registration;
+
+        public ComponentWithLifecycle(Consumer<LifecycleRegistry> registration) {
+            this.registration = registration;
+        }
+
+        @Override
+        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+            registration.accept(lifecycle);
         }
     }
 
