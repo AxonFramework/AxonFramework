@@ -118,6 +118,14 @@ class ConfigurationScopeAwareProviderTest {
         verifyNoInteractions(aggregateConfiguration);
         assertEquals(first, second);
     }
+    
+    @Test
+    void canWorkWithoutEventProcessingConfiguration() {
+        when(configuration.eventProcessingConfiguration()).thenReturn(null);
+        scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
+        
+        assertDoesNotThrow(() -> scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor()));
+    }
 
     private static ScopeDescriptor anyScopeDescriptor() {
         return () -> "test-scope";

@@ -62,6 +62,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -822,10 +823,11 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetCausesEventsToBeReplayed() throws Exception {
+    void testResetCausesEventsToBeReplayedWithCorrectContext() throws Exception {
         when(mockHandler.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        final List<Object> contextInRedelivery = new CopyOnWriteArrayList<>();
         int segmentId = 0;
 
         //noinspection Duplicates
@@ -833,6 +835,7 @@ class TrackingEventProcessorTest {
             EventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
+                contextInRedelivery.add(ReplayToken.replayContext(message, MyResetContext.class).orElse(null));
             }
             handled.add(message.getIdentifier());
             return null;
@@ -842,13 +845,17 @@ class TrackingEventProcessorTest {
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
         testSubject.shutDown();
-        testSubject.resetTokens();
+        MyResetContext one = new MyResetContext("one");
+        testSubject.resetTokens(one);
         // Resetting twice caused problems (see issue #559)
-        testSubject.resetTokens();
+        MyResetContext two = new MyResetContext("two");
+        testSubject.resetTokens(two);
         testSubject.start();
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
         assertEquals(handled.subList(0, 4), handled.subList(4, 8));
         assertEquals(handled.subList(4, 8), handledInRedelivery);
+        assertEquals(4, contextInRedelivery.size());
+        assertTrue(contextInRedelivery.stream().allMatch(two::equals));
         assertTrue(testSubject.processingStatus().get(segmentId).isReplaying());
         assertTrue(testSubject.processingStatus().get(segmentId).getCurrentPosition().isPresent());
         assertTrue(testSubject.processingStatus().get(segmentId).getResetPosition().isPresent());
@@ -870,7 +877,33 @@ class TrackingEventProcessorTest {
                 testSubject.processingStatus().get(segmentId).getCurrentPosition().getAsLong() > resetPositionAtReplay
         ));
 
-        verify(eventHandlerInvoker, times(2)).performReset(NO_RESET_PAYLOAD);
+        verify(eventHandlerInvoker, times(1)).performReset(one);
+        verify(eventHandlerInvoker, times(1)).performReset(two);
+    }
+
+    @Test
+    void testResetTokensPassesOnResetContextToResetHandlers() throws Exception {
+        String resetContext = "reset-context";
+        final List<String> handled = new CopyOnWriteArrayList<>();
+
+        when(mockHandler.supportsReset()).thenReturn(true);
+
+        //noinspection Duplicates
+        doAnswer(i -> {
+            EventMessage<?> message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            return null;
+        }).when(mockHandler).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+
+        testSubject.shutDown();
+        testSubject.resetTokens(resetContext);
+        testSubject.start();
+
+        verify(eventHandlerInvoker).performReset(resetContext);
     }
 
     @Test
@@ -1099,28 +1132,63 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    void testResetTokensPassesOnResetContext() throws Exception {
+    void testResetTokensPassesOnResetContextToTrackingToken() throws Exception {
         String resetContext = "reset-context";
-        final List<String> handled = new CopyOnWriteArrayList<>();
+        final AtomicInteger count = new AtomicInteger();
 
         when(mockHandler.supportsReset()).thenReturn(true);
 
         //noinspection Duplicates
         doAnswer(i -> {
-            EventMessage<?> message = i.getArgument(0);
-            handled.add(message.getIdentifier());
+            count.incrementAndGet();
             return null;
         }).when(mockHandler).handle(any());
 
         eventBus.publish(createEvents(4));
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
-
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, count.get()));
         testSubject.shutDown();
         testSubject.resetTokens(resetContext);
         testSubject.start();
 
-        verify(eventHandlerInvoker).performReset(resetContext);
+        TrackingToken test = tokenStore.fetchToken("test", 0);
+        assertEquals(resetContext, ReplayToken.replayContext(test, String.class).orElse(null));
+    }
+
+    private static class MyResetContext {
+
+        private String property;
+
+        private MyResetContext(String property) {
+            this.property = property;
+        }
+
+        public String getProperty() {
+            return property;
+        }
+
+        public void setProperty(String property) {
+            this.property = property;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            MyResetContext that = (MyResetContext) o;
+
+            return Objects.equals(property, that.property);
+        }
+
+        @Override
+        public int hashCode() {
+            return property != null ? property.hashCode() : 0;
+        }
     }
 
     @Test

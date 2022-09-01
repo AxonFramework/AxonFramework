@@ -818,8 +818,8 @@ class PooledStreamingEventProcessorTest {
         TrackingToken testToken = new GlobalSequenceTrackingToken(42);
 
         int expectedSegmentCount = 2;
-        TrackingToken expectedToken = ReplayToken.createReplayToken(testToken, null);
         String expectedContext = "my-context";
+        TrackingToken expectedToken = ReplayToken.createReplayToken(testToken, null, expectedContext);
 
         when(stubEventHandler.supportsReset()).thenReturn(true);
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(expectedSegmentCount)
