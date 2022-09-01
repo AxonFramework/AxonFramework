@@ -1,11 +1,11 @@
 package org.axonframework.queryhandling;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Stream;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
@@ -178,12 +178,12 @@ class SimpleQueryUpdateEmitterTest {
         );
 
         result.getUpdates().subscribe();
-        testSubject.emit(any -> true, List.of("text1","text2"));
-        testSubject.emit(any -> true, List.of("text3","text4"));
+        testSubject.emit(any -> true, Arrays.asList("text1","text2"));
+        testSubject.emit(any -> true, Arrays.asList("text3","text4"));
         result.complete();
 
         StepVerifier.create(result.getUpdates().map(Message::getPayload))
-                    .expectNext(List.of("text1","text2"), List.of("text3","text4"))
+                    .expectNext(Arrays.asList("text1","text2"), Arrays.asList("text3","text4"))
                     .verifyComplete();
     }
         
