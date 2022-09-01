@@ -1,14 +1,17 @@
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.jupiter.api.*;
-import reactor.test.StepVerifier;
-
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
+
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.junit.jupiter.api.Test;
+
+import reactor.test.StepVerifier;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -159,7 +162,55 @@ class SimpleQueryUpdateEmitterTest {
                     .expectNext(1234)
                     .verifyComplete();
     }
+    
+    @Test
+    void multipleInstanceUpdatesAreDelivered() {
+        SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.multipleInstancesOf(String.class)
+        );
 
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, List.of("text1","text2"));
+        testSubject.emit(any -> true, List.of("text3","text4"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(List.of("text1","text2"), List.of("text3","text4"))
+                    .verifyComplete();
+    }
+        
+    @Test
+    void optionalUpdatesAreDelivered() {
+        SubscriptionQueryMessage<String, Optional<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.optionalInstanceOf(String.class),
+                ResponseTypes.optionalInstanceOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, Optional.of("text1"));
+        testSubject.emit(any -> true, Optional.of("text2"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(Optional.of("text1"),Optional.of("text2"))
+                    .verifyComplete();
+    }
+    
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
