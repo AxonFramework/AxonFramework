@@ -34,8 +34,8 @@ import javax.annotation.Nonnull;
  * Since {@code EventSourcingHandlers} can be very noisy when loading the aggregate, they can be enabled or disabled
  * separately through constructor configuration.
  *
- * @since 4.6.0
  * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
@@ -68,11 +68,14 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
         return new WrappedMessageHandlingMember<T>(original) {
             @Override
             public Object handle(@Nonnull Message<?> message, T target) throws Exception {
-                String completeName = target == null ? signature : target.getClass().getSimpleName() + "." + signature;
-                return spanFactory.createInternalSpan(completeName)
+                return spanFactory.createInternalSpan(() -> getSpanName(target, signature))
                                   .runCallable(() -> super.handle(message, target));
             }
         };
+    }
+
+    private static <T> String getSpanName(T target, String signature) {
+        return target == null ? signature : target.getClass().getSimpleName() + "." + signature;
     }
 
     private boolean isEventSourcingHandler(MessageHandlingMember<?> original) {

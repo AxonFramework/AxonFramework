@@ -132,7 +132,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
         AggregateModel<T> model = aggregateModel();
         EventSourcedAggregate<T> aggregate = spanFactory
-                .createInternalSpan(model.type() + ".initializeState")
+                .createInternalSpan(() -> model.type() + ".initializeState")
                 .runSupplier(() -> doLoadAggregate(aggregateIdentifier, trigger, eventStream, model));
 
         if (aggregate.isDeleted()) {

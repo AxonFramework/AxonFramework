@@ -31,14 +31,13 @@ import static org.mockito.Mockito.*;
 class TracingHandlerEnhancerDefinitionTest {
 
     private final MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> original = mock(MessageHandlingMember.class);
-    private final SpanFactory spanFactory = mock(SpanFactory.class);
+    private final TestSpanFactory spanFactory = new TestSpanFactory();
     private final Span span = mock(Span.class);
 
     private boolean invoked = false;
 
     @BeforeEach
     void setUp() throws Exception {
-        when(spanFactory.createInternalSpan(anyString())).thenReturn(span);
         when(span.runCallable(any())).thenCallRealMethod();
 
         Method executable = this.getClass().getDeclaredMethod("executable", MyEvent.class, CommandGateway.class);
@@ -62,15 +61,14 @@ class TracingHandlerEnhancerDefinitionTest {
                 original);
         Message<?> message = mock(Message.class);
         when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
-            verify(span).start();
+            spanFactory.verifySpanActive( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
         messageHandlingMember.handle(message, this);
 
         assertTrue(invoked);
-        verify(span).end();
-        verify(spanFactory).createInternalSpan("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+        spanFactory.verifySpanCompleted( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
     }
 
     @Test
@@ -91,15 +89,14 @@ class TracingHandlerEnhancerDefinitionTest {
                 original);
         Message<?> message = mock(Message.class);
         when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
-            verify(span).start();
+            spanFactory.verifySpanActive( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
         messageHandlingMember.handle(message, this);
 
         assertTrue(invoked);
-        verify(span).end();
-        verify(spanFactory).createInternalSpan("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+        spanFactory.verifySpanCompleted( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
     }
 
     private class MyEvent {

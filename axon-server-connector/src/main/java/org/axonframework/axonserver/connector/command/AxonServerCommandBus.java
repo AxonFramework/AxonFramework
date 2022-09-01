@@ -163,7 +163,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        Span span = spanFactory.createDispatchSpan("AxonServerCommandBus.dispatch", commandMessage)
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerCommandBus.dispatch", commandMessage)
                                .start();
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
@@ -302,7 +302,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         @Override
         public void run() {
             CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            Span span = spanFactory.createChildHandlerSpan("AxonServerCommandBus.handle", deserializedCommand)
+            Span span = spanFactory.createChildHandlerSpan(() -> "AxonServerCommandBus.handle", deserializedCommand)
                                    .start();
             try {
                 localSegment.dispatch(

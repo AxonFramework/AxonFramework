@@ -127,7 +127,7 @@ public class DeadlineJob implements Job {
         DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
-        Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
+        Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
         DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));

@@ -139,7 +139,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
 
-        Span span = spanFactory.createDispatchSpan("QuartzDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
+        Span span = spanFactory.createDispatchSpan(() -> "QuartzDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             try {
@@ -166,13 +166,13 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         Span span = spanFactory.createInternalSpan(
-                String.format("QuartzDeadlineManager.cancelSchedule(%s,%s)", deadlineName, scheduleId));
+                () -> "QuartzDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> cancelSchedule(jobKey(scheduleId, deadlineName))));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        Span span = spanFactory.createInternalSpan(String.format("QuartzDeadlineManager.cancelAll(%s)", deadlineName));
+        Span span = spanFactory.createInternalSpan(() -> "QuartzDeadlineManager.cancelAll(" + deadlineName + ")");
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
@@ -185,23 +185,24 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        Span span = spanFactory
-                .createInternalSpan(String.format("QuartzDeadlineManager.cancelAllWithinScope(%s)", deadlineName));
-        span.run(() -> {
-            try {
-                Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
-                for (JobKey jobKey : jobKeys) {
-                    JobDetail jobDetail = scheduler.getJobDetail(jobKey);
-                    ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
-                            .deadlineScope(serializer, jobDetail.getJobDataMap());
-                    if (scope.equals(jobScope)) {
-                        cancelSchedule(jobKey);
+        spanFactory
+                .createInternalSpan(() -> "QuartzDeadlineManager.cancelAllWithinScope(" + deadlineName + ")")
+                .run(() -> {
+                    try {
+                        Set<JobKey> jobKeys = scheduler.getJobKeys(GroupMatcher.jobGroupEquals(deadlineName));
+                        for (JobKey jobKey : jobKeys) {
+                            JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+                            ScopeDescriptor jobScope = DeadlineJob.DeadlineJobDataBinder
+                                    .deadlineScope(serializer, jobDetail.getJobDataMap());
+                            if (scope.equals(jobScope)) {
+                                cancelSchedule(jobKey);
+                            }
+                        }
+                    } catch (SchedulerException e) {
+                        throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager",
+                                                    e);
                     }
-                }
-            } catch (SchedulerException e) {
-                throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
-            }
-        });
+                });
     }
 
     private void cancelSchedule(JobKey jobKey) {

@@ -58,8 +58,8 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
  * triggering mechanism.
  * <p>
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost then the JVM is shut down, unless special
- * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
- * org.axonframework.deadline.quartz.QuartzDeadlineManager}.
+ * measures have been taken to prevent that. For more flexible and powerful scheduling options, see
+ * {@link org.axonframework.deadline.quartz.QuartzDeadlineManager}.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -116,7 +116,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
-        Span span = spanFactory.createDispatchSpan("SimpleDeadlineManager.schedule(" + deadlineName + ")", deadlineMessage);
+        Span span = spanFactory.createDispatchSpan(() -> "SimpleDeadlineManager.schedule(" + deadlineName + ")",
+                                                   deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineId, interceptedDeadlineMessage);
@@ -134,8 +135,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        String spanName = format("SimpleDeadlineManager.cancelSchedule(%s,%s)", deadlineName, scheduleId);
-        Span span = spanFactory.createInternalSpan(spanName);
+        Span span = spanFactory.createInternalSpan(
+                () -> "SimpleDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -146,8 +147,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        String spanName = format("SimpleDeadlineManager.cancelAll(%s)", deadlineName);
-        Span span = spanFactory.createInternalSpan(spanName);
+        Span span = spanFactory.createInternalSpan(() -> "SimpleDeadlineManager.cancelAll(" + deadlineName + ")");
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
@@ -157,8 +157,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        String spanName = format("SimpleDeadlineManager.cancelAllWithinScope(%s)", deadlineName);
-        Span span = spanFactory.createInternalSpan(spanName);
+        Span span = spanFactory.createInternalSpan(
+                () -> "SimpleDeadlineManager.cancelAllWithinScope(" + deadlineName + ")");
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
@@ -255,12 +255,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
-         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of {@link
-         * org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the right
-         * Scope to trigger a deadline in.
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
+         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * right Scope to trigger a deadline in.
          *
-         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right {@link
-         *                           org.axonframework.messaging.Scope} to trigger a deadline in
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
+         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(@Nonnull ScopeAwareProvider scopeAwareProvider) {
@@ -270,8 +270,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a {@link
-         * Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
+         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a
+         * {@link Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
          *
          * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
          *                                 deadlines
@@ -347,7 +347,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
             }
 
             try {
-                Span span = spanFactory.createLinkedHandlerSpan("DeadlineJob.execute", deadlineMessage).start();
+                Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
                 Instant triggerInstant = GenericEventMessage.clock.instant();
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -175,7 +176,9 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     private TestSpan findSpan(String name, Message<?> message) {
-        Optional<TestSpan> span = createdSpans.stream().filter(s -> s.name.equals(name) && s.message.equals(message))
+        Optional<TestSpan> span = createdSpans.stream().filter(s -> s.name.equals(name)
+                                                      && s.message != null
+                                                      && s.message.equals(message))
                                               .findFirst();
 
         assertTrue(span.isPresent(), () -> String.format(
@@ -187,17 +190,17 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createRootTrace(String operationName) {
-        TestSpan span = new TestSpan(TestSpanType.ROOT, operationName, null);
+    public Span createRootTrace(Supplier<String> operationNameSupplier) {
+        TestSpan span = new TestSpan(TestSpanType.ROOT, operationNameSupplier.get(), null);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, boolean isChildTrace,
                                   Message<?>... linkedParents) {
         TestSpan span = new TestSpan(isChildTrace ? TestSpanType.HANDLER_CHILD : TestSpanType.HANDLER_LINK,
-                                     operationName,
+                                     operationNameSupplier.get(),
                                      parentMessage);
         createdSpans.add(span);
         spanParents.put(parentMessage, span);
@@ -205,22 +208,22 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(String operationName, Message<?> parentMessage, Message<?>... linkedSiblings) {
-        TestSpan span = new TestSpan(TestSpanType.DISPATCH, operationName, parentMessage);
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedSiblings) {
+        TestSpan span = new TestSpan(TestSpanType.DISPATCH, operationNameSupplier.get(), parentMessage);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createInternalSpan(String operationName) {
-        TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationName, null);
+    public Span createInternalSpan(Supplier<String> operationNameSupplier) {
+        TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationNameSupplier.get(), null);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createInternalSpan(String operationName, Message<?> message) {
-        TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationName, message);
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+        TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationNameSupplier.get(), message);
         createdSpans.add(span);
         return span;
     }

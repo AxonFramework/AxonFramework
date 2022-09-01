@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 
+import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -63,8 +64,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStore} is not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if it is {@code null}.
+     * Will assert that the {@link EventStore} is not {@code null}, and will throw an {@link AxonConfigurationException}
+     * if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSnapshotter} instance
      */
@@ -97,18 +98,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             }
         }
         if (snapshotsInProgress.add(typeAndId)) {
-            String rootTraceName = String.format("%s.createSnapshot(%s)",
-                                                 getClass().getSimpleName(),
-                                                 aggregateType.getSimpleName());
-            Span span = spanFactory.createRootTrace(rootTraceName).start();
+            Span span = spanFactory.createRootTrace(() -> traceName(aggregateType)).start();
             try {
-                // The traces here are separated for two reasons: A) measuring the delay between scheduling and making
-                // B) To have a more generic name for trace grouping and a more specific name for the span with aggId
-                String innerTraceName = String.format("%s.createSnapshot(%s,%s)",
-                                                      getClass().getSimpleName(),
-                                                      aggregateType.getSimpleName(),
-                                                      aggregateIdentifier);
-                Span internalSpan = spanFactory.createInternalSpan(innerTraceName);
+                Span internalSpan = spanFactory.createInternalSpan(() -> getInnerTraceName(aggregateType,
+                                                                                           aggregateIdentifier));
                 executor.execute(silently(internalSpan.wrapRunnable(
                         () -> transactionManager.executeInTransaction(
                                 createSnapshotterTask(aggregateType, aggregateIdentifier)))
@@ -123,6 +116,28 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         }
     }
 
+    /**
+     * Create name of the outer trace. This is separated from the inner for two reasons:
+     * <ul>
+     *     <li>Measuring the delay between scheduling and making</li>
+     *     <li>To have a more generic name for trace grouping and a more specific name for the span with aggId</li>
+     * </ul>
+     */
+    private String getInnerTraceName(Class<?> aggregateType, String aggregateIdentifier) {
+        return format("%s.createSnapshot(%s,%s)",
+                      getClass().getSimpleName(),
+                      aggregateType.getSimpleName(),
+                      aggregateIdentifier);
+    }
+
+    /**
+     * Create name of the inner trace. See {@link #getInnerTraceName(Class, String)} for more information on why the
+     * inner and outer are separate.
+     */
+    private String traceName(Class<?> aggregateType) {
+        return format("%s.createSnapshot(%s)", getClass().getSimpleName(), aggregateType.getSimpleName());
+    }
+
     private SilentTask silently(Runnable r) {
         return new SilentTask(r);
     }
@@ -132,7 +147,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @param aggregateType       The type of the aggregate to create a snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
-     *
      * @return the task containing snapshot creation logic
      */
     protected Runnable createSnapshotterTask(Class<?> aggregateType, String aggregateIdentifier) {
@@ -170,6 +184,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     private static class AggregateTypeId {
+
         private final Class<?> aggregateType;
         private final String aggregateIdentifier;
 
@@ -303,10 +318,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public Runnable andFinally(Runnable r) {
             return new RunnableAndFinally(this, r);
         }
-
     }
 
     private static class RunnableAndFinally implements Runnable {
+
         private final Runnable first;
 
         private final Runnable then;
@@ -324,7 +339,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 then.run();
             }
         }
-
     }
 
     private final class CreateSnapshotTask implements Runnable {

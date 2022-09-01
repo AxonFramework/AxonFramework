@@ -29,31 +29,31 @@ class NoOpSpanFactoryTest {
 
     @Test
     void createRootTraceReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createRootTrace("Trace");
+        Span trace = NoOpSpanFactory.INSTANCE.createRootTrace(() -> "Trace");
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
     void createHandlerSpanReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createHandlerSpan("Trace", new GenericEventMessage<>("payload"), true);
+        Span trace = NoOpSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", new GenericEventMessage<>("payload"), true);
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
     void createDispatchSpanReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createDispatchSpan("Trace", new GenericEventMessage<>("payload"));
+        Span trace = NoOpSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", new GenericEventMessage<>("payload"));
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
     void createInternalSpanWithMessageReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan("Trace", new GenericEventMessage<>("payload"));
+        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", new GenericEventMessage<>("payload"));
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
     void createInternalSpanWithoutMessageReturnsNoOpSpan() {
-        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan("Trace");
+        Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.tracing.SpanUtils.determineMessageName;
@@ -91,20 +92,20 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createRootTrace(String operationName) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(operationName)
+    public Span createRootTrace(Supplier<String> operationNameSupplier) {
+        SpanBuilder spanBuilder = tracer.spanBuilder(operationNameSupplier.get())
                                         .setSpanKind(SpanKind.INTERNAL);
         spanBuilder.addLink(io.opentelemetry.api.trace.Span.current().getSpanContext()).setNoParent();
         return new OpenTelemetrySpan(spanBuilder);
     }
 
     @Override
-    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, boolean isChildTrace,
                                   Message<?>... linkedParents) {
         Context parentContext = propagator().extract(Context.current(),
                                                      parentMessage,
                                                      textMapGetter);
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
+        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), parentMessage))
                                         .setSpanKind(SpanKind.CONSUMER);
         if (isChildTrace) {
             spanBuilder.setParent(parentContext);
@@ -118,8 +119,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(String operationName, Message<?> parentMessage, Message<?>... linkedSiblings) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, parentMessage))
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedSiblings) {
+        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), parentMessage))
                                         .setSpanKind(SpanKind.PRODUCER);
         addLinks(spanBuilder, linkedSiblings);
         addMessageAttributes(spanBuilder, parentMessage);
@@ -136,15 +137,15 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(String operationName) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(operationName)
+    public Span createInternalSpan(Supplier<String> operationNameSupplier) {
+        SpanBuilder spanBuilder = tracer.spanBuilder(operationNameSupplier.get())
                                         .setSpanKind(SpanKind.INTERNAL);
         return new OpenTelemetrySpan(spanBuilder);
     }
 
     @Override
-    public Span createInternalSpan(String operationName, Message<?> message) {
-        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationName, message))
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+        SpanBuilder spanBuilder = tracer.spanBuilder(formatName(operationNameSupplier.get(), message))
                                         .setSpanKind(SpanKind.INTERNAL);
         addMessageAttributes(spanBuilder, message);
         return new OpenTelemetrySpan(spanBuilder);

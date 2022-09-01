@@ -101,7 +101,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
         if (shouldCreateSaga(segment, sagaOfTypeInvoked || sagaMatchesOtherSegment, initializationPolicy)) {
-            spanFactory.createInternalSpan("SagaManager[" + sagaType.getSimpleName() + "].startNewSaga")
+            spanFactory.createInternalSpan(() -> "SagaManager[" + sagaType.getSimpleName() + "].startNewSaga")
                        .runCallable(() -> {
                            startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
                            return null;
@@ -176,10 +176,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
 
     private boolean doInvokeSaga(EventMessage<?> event, Saga<T> saga) throws Exception {
         if (saga.canHandle(event)) {
-            String spanName = String.format("SagaManager[%s].invokeSaga %s",
-                                            sagaType.getSimpleName(),
-                                            saga.getSagaIdentifier());
-            Span span = spanFactory.createInternalSpan(spanName).start();
+            Span span = spanFactory.createInternalSpan(() -> createInvokeSpanName(saga)).start();
             try {
                 saga.handle(event);
             } catch (Exception e) {
@@ -191,6 +188,10 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             return true;
         }
         return false;
+    }
+
+    private String createInvokeSpanName(Saga<T> saga) {
+        return "SagaManager[" + sagaType.getSimpleName() + "].invokeSaga " + saga.getSagaIdentifier();
     }
 
     /**

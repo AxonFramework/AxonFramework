@@ -175,7 +175,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> Publisher<QueryResponseMessage<R>> streamingQuery(StreamingQueryMessage<Q, R> query) {
-        Span span = spanFactory.createInternalSpan("AxonServerQueryBus.streamingQuery", query).start();
+        Span span = spanFactory.createInternalSpan(() -> "AxonServerQueryBus.streamingQuery", query).start();
         StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
         int priority = priorityCalculator.determinePriority(queryWithContext);
         AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(queryExecutor,
@@ -248,7 +248,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> queryMessage) {
-        Span span = spanFactory.createDispatchSpan("AxonServerQueryBus.query", queryMessage).start();
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.query", queryMessage).start();
         QueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(queryMessage);
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The direct query does not support Flux as a return type.");
@@ -263,7 +263,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
 
-            Span responseTaskSpan = spanFactory.createInternalSpan("AxonServerQueryBus.ResponseProcessingTask");
+            Span responseTaskSpan = spanFactory.createInternalSpan(() -> "AxonServerQueryBus.ResponseProcessingTask");
             Runnable responseProcessingTask = responseTaskSpan.wrapRunnable(new ResponseProcessingTask<>(
                     result, serializer, queryTransaction, queryMessage.getResponseType()
             ));
@@ -383,7 +383,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(@Nonnull QueryMessage<Q, R> queryMessage,
                                                                 long timeout,
                                                                 @Nonnull TimeUnit timeUnit) {
-        Span span = spanFactory.createDispatchSpan("AxonServerQueryBus.scatterGather", queryMessage).start();
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerQueryBus.scatterGather", queryMessage).start();
         Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.getResponseType().getExpectedResponseType()),
                        () -> "The scatter-Gather query does not support Flux as a return type.");
         shutdownLatch.ifShuttingDown(format(

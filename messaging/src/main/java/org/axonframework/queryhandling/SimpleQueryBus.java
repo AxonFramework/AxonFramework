@@ -168,7 +168,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
-        Span span = spanFactory.createInternalSpan("SimpleQueryBus.query", query).start();
+        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryBus.query", query).start();
         return doQuery(query).whenComplete((r, t) -> {
             if (t != null) {
                 span.recordException(t);
@@ -338,7 +338,7 @@ public class SimpleQueryBus implements QueryBus {
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         return handlers.stream()
                        .map(handler -> {
-                           Span handlerSpan = spanFactory.createInternalSpan("SimpleQueryBus.scatterGather(" + handlers.indexOf(handler) + ")", query)
+                           Span handlerSpan = spanFactory.createInternalSpan(() -> "SimpleQueryBus.scatterGather(" + handlers.indexOf(handler) + ")", query)
                                                          .start();
                            long leftTimeout = getRemainingOfDeadline(deadline);
                            ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =

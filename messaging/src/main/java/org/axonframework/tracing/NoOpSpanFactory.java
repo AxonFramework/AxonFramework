@@ -18,6 +18,8 @@ package org.axonframework.tracing;
 
 import org.axonframework.messaging.Message;
 
+import java.util.function.Supplier;
+
 /**
  * {@link SpanFactory} implementation that creates a {@link NoOpSpan}. This span does not do any tracing at all. It's
  * used as a fallback when there is no tracing implementation available, so framework code does not have to check.
@@ -34,28 +36,30 @@ public class NoOpSpanFactory implements SpanFactory {
     public static final NoOpSpanFactory INSTANCE = new NoOpSpanFactory();
 
     @Override
-    public Span createRootTrace(String operationName) {
+    public Span createRootTrace(Supplier<String> operationNameSupplier) {
         return new NoOpSpan();
     }
 
     @Override
-    public Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+                                  boolean isChildTrace,
                                   Message<?>... linkedParents) {
         return new NoOpSpan();
     }
 
     @Override
-    public Span createDispatchSpan(String operationName, Message<?> parentMessage, Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+                                   Message<?>... linkedSiblings) {
         return new NoOpSpan();
     }
 
     @Override
-    public Span createInternalSpan(String operationName) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier) {
         return new NoOpSpan();
     }
 
     @Override
-    public Span createInternalSpan(String operationName, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
         return new NoOpSpan();
     }
 

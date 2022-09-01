@@ -167,8 +167,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             MessageMonitor.MonitorCallback monitorCallback =
                     messageMonitor.onMessageIngested(unitOfWork.getMessage());
             return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
-                String spanName = String.format("%s[%s].process", getClass().getSimpleName(), getName());
-                Span span = spanFactory.createInternalSpan(spanName, m).start();
+                Span span = spanFactory.createInternalSpan(this::getSpanName, m).start();
                 try {
                     for (Segment processingSegment : processingSegments) {
                         eventHandlerInvoker.handle(m, processingSegment);
@@ -194,6 +193,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                             e.getClass().getName());
             }
         }
+    }
+
+    private String getSpanName() {
+        return getClass().getSimpleName() + "[" + getName() + "].process";
     }
 
     /**

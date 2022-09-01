@@ -133,18 +133,20 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     @Override
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
-        String spanName = String.format("%s.load %s", this.getClass().getSimpleName(), aggregateIdentifier);
-        return spanFactory.createInternalSpan(spanName).runSupplier(() -> {
-            UnitOfWork<?> uow = CurrentUnitOfWork.get();
-            Map<String, A> aggregates = managedAggregates(uow);
-            A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                     s -> doLoad(aggregateIdentifier, expectedVersion));
-            uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-            validateOnLoad(aggregate, expectedVersion);
-            prepareForCommit(aggregate);
+        return spanFactory
+                .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
+                .runSupplier(() -> {
+                    UnitOfWork<?> uow = CurrentUnitOfWork.get();
+                    Map<String, A> aggregates = managedAggregates(uow);
+                    A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
+                                                             s -> doLoad(aggregateIdentifier,
+                                                                         expectedVersion));
+                    uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
+                    validateOnLoad(aggregate, expectedVersion);
+                    prepareForCommit(aggregate);
 
-            return aggregate;
-        });
+                    return aggregate;
+                });
     }
 
 

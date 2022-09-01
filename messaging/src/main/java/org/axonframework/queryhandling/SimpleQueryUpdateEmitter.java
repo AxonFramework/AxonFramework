@@ -147,7 +147,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
         SubscriptionQueryUpdateMessage<U> updateMessage = spanFactory.propagateContext(update);
-        Span span = spanFactory.createInternalSpan("SimpleQueryUpdateEmitter.emit", updateMessage);
+        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryUpdateEmitter.emit", updateMessage);
         runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(updateMessage))));
     }
 
@@ -193,21 +193,23 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        spanFactory.createDispatchSpan("QueryUpdateEmitter.emit " + query.getQueryName(), update, query).run(() -> {
-            SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
-            MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
-            try {
-                ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(message);
-                monitorCallback.reportSuccess();
-            } catch (Exception e) {
-                logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                    "The subscription will be cancelled. Exception summary: {}",
-                            query.getQueryName(), e.toString());
-                monitorCallback.reportFailure(e);
-                updateHandlers.remove(query);
-                emitError(query, e, updateHandler);
-            }
-        });
+        spanFactory
+                .createDispatchSpan(() -> "QueryUpdateEmitter.emit " + query.getQueryName(), update, query)
+                .run(() -> {
+                    SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
+                    MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
+                    try {
+                        ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(message);
+                        monitorCallback.reportSuccess();
+                    } catch (Exception e) {
+                        logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                            "The subscription will be cancelled. Exception summary: {}",
+                                    query.getQueryName(), e.toString());
+                        monitorCallback.reportFailure(e);
+                        updateHandlers.remove(query);
+                        emitError(query, e, updateHandler);
+                    }
+                });
     }
 
     private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
