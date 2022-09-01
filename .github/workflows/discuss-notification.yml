@@ -45,7 +45,7 @@ jobs:
           --data-binary @- << EOF
           {
             "title": "${{ release_name }}",
-            "raw": "I’m glad to announce that we’ve released \n\n${{ release_name }}\n\n on \n\n${{ release_date }}\n\n.<br\>
+            "raw": "I’m glad to announce that we’ve released ${{ release_name }} on ${{ release_date }}.<br\>
           This release contains: <br/> ${{ release_notes}}",
             "category": $CATEGORY,
             "tags": ["release"]
