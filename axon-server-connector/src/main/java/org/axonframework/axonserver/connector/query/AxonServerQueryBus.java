@@ -205,12 +205,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
-     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
+     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}, the {@link TargetContextResolver} defaults
+     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context, the
      * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
-     * The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local {@link QueryBus}, the
-     * {@link QueryUpdateEmitter}, and the message and generic {@link Serializer}s are <b>hard requirements</b> and as
-     * such should be provided.
+     * The {@link AxonServerConnectionManager} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
+     * {@link AxonServerConfiguration}, the local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and
+     * generic {@link Serializer}s are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AxonServerQueryBus}
      */

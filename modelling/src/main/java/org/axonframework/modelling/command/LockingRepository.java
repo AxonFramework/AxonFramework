@@ -68,13 +68,14 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
-     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code
-     * aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus,
-     * either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An {@link
-     * org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
+     * aggregate type to be stored. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}. All aggregates in this repository must be {@code instanceOf}
+     * this aggregate type. To instantiate this AggregateModel, either an {@link AggregateModel} can be provided
+     * directly or an {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * <p>
-     * Additionally will assert that the {@link LockFactory} is not {@code null}, resulting in an
+     * Additionally, will assert that the {@link LockFactory} is not {@code null}, resulting in an
      * AxonConfigurationException if this is the case.
      *
      * @param builder the {@link Builder} used to instantiate a {@link LockingRepository} instance
@@ -232,12 +233,14 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     /**
      * Abstract Builder class to instantiate {@link LockingRepository} implementations.
      * <p>
-     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the {@link
-     * PessimisticLockFactory}. A goal of this Builder goal is to create an {@link AggregateModel} specifying generic
-     * {@code T} as the aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this
-     * aggregate type. To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or
-     * an {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
+     * {@link PessimisticLockFactory}. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}. A goal of this Builder goal is to create an
+     * {@link AggregateModel} specifying generic {@code T} as the aggregate type to be stored. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type. To instantiate this AggregateModel, either an
+     * {@link AggregateModel} can be provided directly or an {@code aggregateType} of type {@link Class} can be used.
+     * The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
+     * {@code aggregateType} should be provided.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */

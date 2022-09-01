@@ -35,7 +35,7 @@ class MetadataContextGetterTest {
             .andMetaData(Collections.singletonMap("MyKeyTwo", 2));
 
     @Test
-    void testShouldReceiveMetadataKeysFromMessage() {
+    void shouldReceiveMetadataKeysFromMessage() {
         List<String> keys = StreamSupport.stream(MetadataContextGetter.INSTANCE.keys(message).spliterator(), false)
                                          .collect(Collectors.toList());
         assertTrue(keys.contains("myKeyOne"));
@@ -44,12 +44,12 @@ class MetadataContextGetterTest {
     }
 
     @Test
-    void testShouldGetItemFromMessage() {
+    void shouldGetItemFromMessage() {
         assertEquals("myValueTwo", MetadataContextGetter.INSTANCE.get(message, "myKeyOne"));
     }
 
     @Test
-    void testShouldGetNullFromNullMessage() {
+    void shouldGetNullFromNullMessage() {
         assertNull(MetadataContextGetter.INSTANCE.get(null, "myKeyOne"));
     }
 }

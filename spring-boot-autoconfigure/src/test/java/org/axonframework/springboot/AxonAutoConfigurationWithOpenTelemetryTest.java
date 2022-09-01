@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AxonAutoConfigurationWithOpenTelemetryTest {
 
     @Test
-    void testSpanFactoryIsOpenTelemetrySpanFactory() {
+    void spanFactoryIsOpenTelemetrySpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {

@@ -50,16 +50,17 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Instantiate a {@link AnnotatedSagaManager} based on the fields contained in the {@link Builder}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
+     * {@link SagaInstantiationException} if it fails, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link ListenerInvocationErrorHandler} is defaulted to
      * a {@link LoggingErrorHandler}. The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and
      * as such should be provided.
      * <p>
      * Will assert that the {@link SagaRepository}, {@code sagaType}, {@code sagaFactory} and
      * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an
-     * {@link org.axonframework.common.AxonConfigurationException} if any of them is {@code null}.
-     * Additionally, the provided Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as
-     * the Saga type to be stored or derive it based on the given {@code sagaType}.
-     * All Sagas managed by this Saga manager must be {@code instanceOf} this Saga type.
+     * {@link org.axonframework.common.AxonConfigurationException} if any of them is {@code null}. Additionally, the
+     * provided Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as the Saga type to
+     * be stored or derive it based on the given {@code sagaType}. All Sagas managed by this Saga manager must be
+     * {@code instanceOf} this Saga type.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotatedSagaManager} instance
      */
@@ -124,7 +125,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Builder class to instantiate a {@link AnnotatedSagaManager}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
+     * {@link SagaInstantiationException} if it fails, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link ListenerInvocationErrorHandler} is defaulted to
      * a {@link LoggingErrorHandler}.
      * <p>
      * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate

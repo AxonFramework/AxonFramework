@@ -31,7 +31,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
     private final SpanAttributesProvider provider = new AggregateIdentifierSpanAttributesProvider();
 
     @Test
-    void testDomainEventMessage() {
+    void domainEventMessage() {
         Message<?> message = new GenericDomainEventMessage<>("MyType", "1729872981", 1, "payload");
 
         Map<String, String> map = provider.provideForMessage(message);
@@ -39,7 +39,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
         assertEquals("1729872981", map.get("axon_aggregate_identifier"));
     }
     @Test
-    void testGenericEventMessage() {
+    void genericEventMessage() {
         Message<?> message = new GenericEventMessage<>("payload");
 
         Map<String, String> map = provider.provideForMessage(message);

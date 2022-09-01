@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MetadataContextSetterTest {
 
     @Test
-    void testShouldSetValue() {
+    void shouldSetValue() {
         HashMap<String, String> subject = new HashMap<>();
         MetadataContextSetter.INSTANCE.set(subject, "myKeyOneThree", "myValueThree");
         assertTrue(subject.containsKey("myKeyOneThree"));
@@ -33,7 +33,7 @@ class MetadataContextSetterTest {
     }
 
     @Test
-    void testRejectNulls() {
+    void shouldRejectNulls() {
         assertThrows(IllegalArgumentException.class, () ->
                 MetadataContextSetter.INSTANCE.set(null, "", "")
         );

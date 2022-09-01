@@ -28,37 +28,37 @@ import static org.junit.jupiter.api.Assertions.*;
 class NoOpSpanFactoryTest {
 
     @Test
-    void testCreateRootTraceReturnsNoOpSpan() {
+    void createRootTraceReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createRootTrace("Trace");
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
-    void testCreateHandlerSpanReturnsNoOpSpan() {
+    void createHandlerSpanReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createHandlerSpan("Trace", new GenericEventMessage<>("payload"), true);
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
-    void testCreateDispatchSpanReturnsNoOpSpan() {
+    void createDispatchSpanReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createDispatchSpan("Trace", new GenericEventMessage<>("payload"));
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
-    void testCreateInternalSpanWithMessageReturnsNoOpSpan() {
+    void createInternalSpanWithMessageReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan("Trace", new GenericEventMessage<>("payload"));
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
-    void testCreateInternalSpanWithoutMessageReturnsNoOpSpan() {
+    void createInternalSpanWithoutMessageReturnsNoOpSpan() {
         Span trace = NoOpSpanFactory.INSTANCE.createInternalSpan("Trace");
         assertTrue(trace instanceof NoOpSpanFactory.NoOpSpan);
     }
 
     @Test
-    void testPropagateContextReturnsOriginal() {
+    void propagateContextReturnsOriginal() {
         GenericEventMessage<String> message = new GenericEventMessage<>("payload");
         GenericEventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
         assertSame(message, result);

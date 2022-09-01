@@ -81,9 +81,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * Instantiate a Builder to be able to create a {@link SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
-     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
-     * provided.
+     * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}, and the {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
+     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SimpleDeadlineManager}
      */

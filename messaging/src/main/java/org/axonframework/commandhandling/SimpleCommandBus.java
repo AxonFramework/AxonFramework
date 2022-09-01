@@ -81,11 +81,12 @@ public class SimpleCommandBus implements CommandBus {
      * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
-     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a {@link
-     * RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()}. The {@link TransactionManager}, {@link
-     * MessageMonitor} and {@link RollbackConfiguration} are <b>hard requirements</b>. Thus setting them to {@code null}
-     * will result in an {@link AxonConfigurationException}.
+     * defaulted to a {@link NoOpMessageMonitor}, the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link SpanFactory} defaults to a
+     * {@link NoOpSpanFactory}. The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration}
+     * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
+     * {@link AxonConfigurationException}.
      *
      * @return a Builder to be able to create a {@link SimpleCommandBus}
      */

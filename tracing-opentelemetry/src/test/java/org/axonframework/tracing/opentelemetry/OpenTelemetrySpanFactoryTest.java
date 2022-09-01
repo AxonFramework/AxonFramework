@@ -91,7 +91,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testPropagatesContextInjectsMetadata() {
+    void propagatesContextInjectsMetadata() {
         EventMessage<Object> originalMessage = GenericEventMessage.asEventMessage("MyEvent");
         EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
 
@@ -99,7 +99,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateRootTracesCreatesSpanWithNoParentLinkedToCurrent() {
+    void createRootTracesCreatesSpanWithNoParentLinkedToCurrent() {
         SpanContext spanContext = Span.current().getSpanContext();
         org.axonframework.tracing.Span span = factory.createRootTrace("MyRootTrace");
 
@@ -109,7 +109,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateHandlerSpanExtractsParentContext() {
+    void createHandlerSpanExtractsParentContext() {
         Message<?> message = generateMessageWithTraceId("1");
         factory.createChildHandlerSpan("MyRootTrace", message);
 
@@ -120,7 +120,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateHandlerSpanAddsLinks() {
+    void createHandlerSpanAddsLinks() {
         Message<?> message = generateMessageWithTraceId("1");
         factory.createChildHandlerSpan("MyRootTrace", message, generateMessageWithTraceId("2"), generateMessageWithTraceId("3"));
 
@@ -130,7 +130,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateHandlerSpanExtractsLinkedContext() {
+    void createHandlerSpanExtractsLinkedContext() {
         Message<?> message = generateMessageWithTraceId("1");
         factory.createLinkedHandlerSpan("MyRootTrace", message);
 
@@ -140,7 +140,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateHandlerSpanAddsAttributes() {
+    void createHandlerSpanAddsAttributes() {
         Message<?> message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createLinkedHandlerSpan("MyRootTrace", message);
@@ -149,7 +149,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateDispatchSpanAddsLinks() {
+    void createDispatchSpanAddsLinks() {
         Message<?> message = generateMessageWithTraceId("1");
         factory.createDispatchSpan("MyRootTrace", message, generateMessageWithTraceId("2"), generateMessageWithTraceId("3"));
 
@@ -158,7 +158,7 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateDispatchSpanAddsAttributes() {
+    void createDispatchSpanAddsAttributes() {
         Message<?> message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createDispatchSpan("MyRootTrace", message);
@@ -167,14 +167,14 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testCreateInternalSpanWithoutMessage() {
+    void createInternalSpanWithoutMessage() {
         factory.createInternalSpan("MyRootTrace");
 
         verify(spanBuilder).setSpanKind(SpanKind.INTERNAL);
     }
 
     @Test
-    void testCreateInternalSpanAddsAttributes() {
+    void createInternalSpanAddsAttributes() {
         Message<?> message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createInternalSpan("MyRootTrace", message);
@@ -189,25 +189,25 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     @Test
-    void testBuilderRejectsNullTracer() {
+    void builderRejectsNullTracer() {
         OpenTelemetrySpanFactory.Builder builder = OpenTelemetrySpanFactory.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.tracer(null));
     }
 
     @Test
-    void testBuilderRejectsNullSpanAttributeProviders() {
+    void builderRejectsNullSpanAttributeProviders() {
         OpenTelemetrySpanFactory.Builder builder = OpenTelemetrySpanFactory.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.addSpanAttributeProviders(null));
     }
 
     @Test
-    void testBuilderRejectsNullTextMapGetter() {
+    void builderRejectsNullTextMapGetter() {
         OpenTelemetrySpanFactory.Builder builder = OpenTelemetrySpanFactory.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.textMapGetter(null));
     }
 
     @Test
-    void testBuilderRejectsNullTextMapSetter() {
+    void builderRejectsNullTextMapSetter() {
         OpenTelemetrySpanFactory.Builder builder = OpenTelemetrySpanFactory.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.textMapSetter(null));
     }

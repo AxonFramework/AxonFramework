@@ -29,7 +29,7 @@ class SpanTest {
     private TestSpan span = new TestSpan();
 
     @Test
-    void testRunRunnableWorks() {
+    void runRunnableWorks() {
         span.run(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -38,7 +38,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunRunnableRegistersException() {
+    void runRunnableRegistersException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         assertThrows(RuntimeException.class, () -> span.run(() -> {
             assertTrue(span.started);
@@ -50,7 +50,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapRunnableWorks() {
+    void wrapRunnableWorks() {
         span.wrapRunnable(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -59,7 +59,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapRunnableRegistersException() {
+    void wrapRunnableRegistersException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         Runnable wrappedRunnable = span.wrapRunnable(() -> {
             assertTrue(span.started);
@@ -72,7 +72,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunSupplierWorks() {
+    void runSupplierWorks() {
         String result = span.runSupplier(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -83,7 +83,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunSupplierRegistersException() {
+    void runSupplierRegistersException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         assertThrows(RuntimeException.class, () -> span.runSupplier(() -> {
             assertTrue(span.started);
@@ -95,7 +95,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapSupplierWorks() {
+    void wrapSupplierWorks() {
         String result = span.wrapSupplier(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -106,7 +106,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapSupplierRegistersException() {
+    void wrapSupplierRegistersException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         Supplier<Object> wrappedSupplier = span.wrapSupplier(() -> {
             assertTrue(span.started);
@@ -119,7 +119,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunCallableWorks() throws Exception {
+    void runCallableWorks() throws Exception {
         String result = span.runCallable(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -130,7 +130,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunCallableRegistersRuntimeException() {
+    void runCallableRegistersRuntimeException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         assertThrows(RuntimeException.class, () -> span.runCallable(() -> {
             assertTrue(span.started);
@@ -142,7 +142,7 @@ class SpanTest {
     }
 
     @Test
-    void testRunCallableRegistersCheckedException() {
+    void runCallableRegistersCheckedException() {
         IOException exception = new IOException("My custom exception");
         assertThrows(IOException.class, () -> span.runCallable(() -> {
             assertTrue(span.started);
@@ -154,7 +154,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapCallableWorks() throws Exception {
+    void wrapCallableWorks() throws Exception {
         String result = span.wrapCallable(() -> {
             assertTrue(span.started);
             assertFalse(span.ended);
@@ -165,7 +165,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapCallableRegistersRuntimeException() {
+    void wrapCallableRegistersRuntimeException() {
         RuntimeException exception = new RuntimeException("My custom exception");
         Callable<Object> wrappedCallable = span.wrapCallable(() -> {
             assertTrue(span.started);
@@ -178,7 +178,7 @@ class SpanTest {
     }
 
     @Test
-    void testWrapCallableRegistersCheckedException() {
+    void wrapCallableRegistersCheckedException() {
         IOException exception = new IOException("My custom exception");
         Callable<Object> wrappedCallable = span.wrapCallable(() -> {
             assertTrue(span.started);

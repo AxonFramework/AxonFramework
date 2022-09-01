@@ -34,8 +34,8 @@ public class SimpleEventBus extends AbstractEventBus {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@code queueCapacity} to
-     * {@link Integer#MAX_VALUE}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}, the {@code queueCapacity} to
+     * {@link Integer#MAX_VALUE} and the {@link SpanFactory} to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleEventBus}
      */

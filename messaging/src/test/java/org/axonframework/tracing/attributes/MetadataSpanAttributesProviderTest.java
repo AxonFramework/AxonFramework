@@ -31,7 +31,7 @@ class MetadataSpanAttributesProviderTest {
     private final SpanAttributesProvider provider = new MetadataSpanAttributesProvider();
 
     @Test
-    void testAddsAllMetadata() {
+    void addsAllMetadata() {
         Message<?> message = new GenericEventMessage<>("MyEvent")
                 .andMetaData(singletonMap("myKeyOne", "valueOne"))
                 .andMetaData(singletonMap("myNumberKey", 2))

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Creates spans which record whether they were started, ended or ended in an exception. Useful for tracing logic
+ * Creates spans that record whether they were started, ended or ended in an exception. Useful for tracing logic
  * assertions in unit tests and provides several out of the box.
  *
  * @author Mitchell Herrijgers
@@ -136,7 +136,7 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     /**
-     * Verifies the provided message had the context propagates to it.
+     * Verifies the provided message had the context propagated to it.
      *
      * @param name    Name of the span to verify.
      * @param message The exact message the span should have been propagated to.

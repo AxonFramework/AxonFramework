@@ -33,7 +33,7 @@ import org.axonframework.messaging.Message;
  * <p>
  * The factory should support these types of spans:
  * <ul>
- *     <li>New root trace spans: These create an entirely new trace without parent. Use this for asynchronous calls that we want to measure to performance individually of. For example, snapshotting (which has no influence on a business process).</li>
+ *     <li>New root trace spans: These create an entirely new trace without parent. Use this for asynchronous calls that we want to measure the performance individually of. For example, snapshotting (which has no influence on a business process).</li>
  *     <li>New handler spans: This creates a new span in an already existing trace. The span that was active when the message was dispatched will be linked to it. It will be of the handling type</li>
  *     <li>New dispatch spans: This creates a new span in an already existing trace. It will be of a dispatching type. </li>
  *     <li>New internal span: This creates a new sub-span in an already active span. Use this for measuring individual parts of an already existing span. For example, measuring how long it takes to load the aggregate when handling an event.</li>
@@ -68,9 +68,8 @@ public interface SpanFactory {
      *
      * @param operationName The operation name.
      * @param parentMessage The message that is being handled.
-     * @param linkedParents Optional parameter, providing this will link the provided message to the current, in
-     *                      addition to the original. The difference is that {@code forceSameTrace} has no effect on
-     *                      this since there can only be one true parent.
+     * @param linkedParents Optional parameter, providing this will link the provided message(s) to the current, in
+     *                      addition to the original.
      * @return The created {@link Span}.
      */
     default Span createLinkedHandlerSpan(String operationName, Message<?> parentMessage, Message<?>... linkedParents) {
@@ -88,9 +87,8 @@ public interface SpanFactory {
      *
      * @param operationName The operation name.
      * @param parentMessage The message that is being handled.
-     * @param linkedParents Optional parameter, providing this will link the provided message to the current, in
-     *                      addition to the original. The difference is that {@code forceSameTrace} has no effect on
-     *                      this since there can only be one true parent.
+     * @param linkedParents Optional parameter, providing this will link the provided message(s) to the current, in
+     *                      addition to the original.
      * @return The created {@link Span}.
      */
     default Span createChildHandlerSpan(String operationName, Message<?> parentMessage, Message<?>... linkedParents) {
@@ -111,9 +109,8 @@ public interface SpanFactory {
      * @param parentMessage The message that is being handled.
      * @param isChildTrace  Whether to force the span to be a part of the current trace. This means not linking, but
      *                      setting a parent.
-     * @param linkedParents Optional parameter, providing this will link the provided message to the current, in
-     *                      addition to the original. The difference is that {@code forceSameTrace} has no effect on
-     *                      this since there can only be one true parent.
+     * @param linkedParents Optional parameter, providing this will link the provided message(s) to the current, in
+     *                      addition to the original.
      * @return The created {@link Span}.
      */
     Span createHandlerSpan(String operationName, Message<?> parentMessage, boolean isChildTrace,

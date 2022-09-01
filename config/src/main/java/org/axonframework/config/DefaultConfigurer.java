@@ -489,7 +489,7 @@ public class DefaultConfigurer implements Configurer {
      * Returns the default {@link SpanFactory}, or a {@link NoOpSpanFactory} if none it set.
      *
      * @param config The configuration that supplies the span factory.
-     * @return The default event gateway.
+     * @return The default {@link SpanFactory}.
      */
     protected SpanFactory defaultSpanFactory(Configuration config) {
         return defaultComponent(SpanFactory.class, config)

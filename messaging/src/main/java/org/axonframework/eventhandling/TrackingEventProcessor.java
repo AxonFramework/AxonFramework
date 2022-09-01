@@ -188,11 +188,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the {@link
-     * ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a {@link
-     * NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a {@link
-     * TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name}, {@link
-     * EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the {@link SpanFactory} to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}. The Event Processor {@code name}, {@link EventHandlerInvoker},
+     * {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link TrackingEventProcessor}

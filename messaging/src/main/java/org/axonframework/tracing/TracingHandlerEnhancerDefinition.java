@@ -42,6 +42,13 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
     private final SpanFactory spanFactory;
     private final boolean showEventSourcingHandlers;
 
+    /**
+     * Creates a new {@link TracingHandlerEnhancerDefinition}, adding spans to each message handler invocation.
+     *
+     * @param spanFactory               The {@link SpanFactory} to use.
+     * @param showEventSourcingHandlers Whether to show event sourcing handlers as a span. Can be very noisy when
+     *                                  loading large aggregates.
+     */
     public TracingHandlerEnhancerDefinition(SpanFactory spanFactory, boolean showEventSourcingHandlers) {
         this.spanFactory = spanFactory;
         this.showEventSourcingHandlers = showEventSourcingHandlers;

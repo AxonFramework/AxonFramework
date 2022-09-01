@@ -248,7 +248,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
      * Builder class to instantiate a {@link QuartzDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link SpanFactory}
-     * defaults to a {@link NoOpSpanFactory}..
+     * defaults to a {@link NoOpSpanFactory}.
      * <p>
      * The {@link Scheduler}, {@link ScopeAwareProvider} and {@link Serializer} are <b>hard requirements</b> and as such
      * should be provided.

@@ -122,7 +122,8 @@ public class SimpleQueryBus implements QueryBus {
      * <p>
      * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
-     * and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
+     * the {@link SpanFactory} to a {@link NoOpSpanFactory} and {@link QueryUpdateEmitter} to
+     * {@link SimpleQueryUpdateEmitter}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryBus}
      */
@@ -169,7 +170,7 @@ public class SimpleQueryBus implements QueryBus {
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(@Nonnull QueryMessage<Q, R> query) {
         Span span = spanFactory.createInternalSpan("SimpleQueryBus.query", query).start();
         return doQuery(query).whenComplete((r, t) -> {
-            if(t != null) {
+            if (t != null) {
                 span.recordException(t);
             }
             span.end();

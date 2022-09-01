@@ -82,7 +82,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defauled
+     * to a {@link NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
      */

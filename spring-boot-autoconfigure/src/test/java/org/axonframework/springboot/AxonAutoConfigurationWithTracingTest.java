@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AxonAutoConfigurationWithTracingTest {
 
     @Test
-    void testSpanFactoryDefaultsToNoop() {
+    void spanFactoryDefaultsToNoop() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -61,7 +61,7 @@ class AxonAutoConfigurationWithTracingTest {
 
 
     @Test
-    void testHandlerEnhancerDefinitionIsRegistered() {
+    void handlerEnhancerDefinitionIsRegistered() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -76,7 +76,7 @@ class AxonAutoConfigurationWithTracingTest {
 
 
     @Test
-    void testRegistersAllAttrributeProvidersByDefault() {
+    void registersAllAttrributeProvidersByDefault() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -103,7 +103,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testRegistersAllAttrributeProvidersByDefaultAsList() {
+    void registersAllAttrributeProvidersByDefaultAsList() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .run(context -> {
@@ -121,7 +121,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testAggregateIdAttributeProviderCanBeDisabled() {
+    void aggregateIdAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.aggregate-identifier=false"
@@ -138,7 +138,7 @@ class AxonAutoConfigurationWithTracingTest {
 
 
     @Test
-    void testMessageIdAttributeProviderCanBeDisabled() {
+    void messageIdAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.message-id=false"
@@ -154,7 +154,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testMessageNameAttributeProviderCanBeDisabled() {
+    void messageNameAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.message-name=false"
@@ -170,7 +170,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testMessageTypeAttributeProviderCanBeDisabled() {
+    void messageTypeAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.message-type=false"
@@ -186,7 +186,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testMetadataAttributeProviderCanBeDisabled() {
+    void metadataAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.metadata=false"
@@ -202,7 +202,7 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @Test
-    void testPayloadTypeAttributeProviderCanBeDisabled() {
+    void payloadTypeAttributeProviderCanBeDisabled() {
         new ApplicationContextRunner()
                 .withPropertyValues(
                         "axon.tracing.attribute-providers.payload-type=false"

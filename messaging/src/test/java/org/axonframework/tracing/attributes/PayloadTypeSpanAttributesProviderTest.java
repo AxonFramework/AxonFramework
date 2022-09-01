@@ -30,7 +30,7 @@ class PayloadTypeSpanAttributesProviderTest {
     private final SpanAttributesProvider provider = new PayloadTypeSpanAttributesProvider();
 
     @Test
-    void testStringPayload() {
+    void stringPayload() {
         Message<?> message = new GenericEventMessage<>("MyEvent");
 
         Map<String, String> map = provider.provideForMessage(message);
@@ -39,7 +39,7 @@ class PayloadTypeSpanAttributesProviderTest {
     }
 
     @Test
-    void testClassPayload() {
+    void classPayload() {
         Message<?> message = new GenericEventMessage<>(new MyEvent());
 
         Map<String, String> map = provider.provideForMessage(message);

@@ -34,8 +34,8 @@ public class TracingProperties {
     private boolean showEventSourcingHandlers = false;
 
     /**
-     * Defines which {@link org.axonframework.tracing.SpanAttributesProvider}, provided by default by Axon Framework,
-     * are active.
+     * Defines which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}, provided by
+     * default by Axon Framework, are active.
      */
     private AttributeProviders attributeProviders;
 
@@ -50,6 +50,8 @@ public class TracingProperties {
 
     /**
      * Setting value for showing event sourcing handlers in traces.
+     *
+     * @param showEventSourcingHandlers The new value for showing event sourcing handlers.
      */
     public void setShowEventSourcingHandlers(boolean showEventSourcingHandlers) {
         this.showEventSourcingHandlers = showEventSourcingHandlers;
@@ -65,7 +67,11 @@ public class TracingProperties {
     }
 
     /**
-     * Sets the value for which {@link org.axonframework.tracing.SpanAttributesProvider}s are enabled.
+     * Sets the value for which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders} are
+     * enabled.
+     *
+     * @param attributeProviders The new list of
+     *                           {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}.
      */
     public void setAttributeProviders(AttributeProviders attributeProviders) {
         this.attributeProviders = attributeProviders;
@@ -115,6 +121,8 @@ public class TracingProperties {
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.AggregateIdentifierSpanAttributesProvider} is
          * enabled.
+         *
+         * @param aggregateIdentifier Whether the provider is enabled.
          */
         public void setAggregateIdentifier(boolean aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
@@ -131,6 +139,8 @@ public class TracingProperties {
 
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.MessageIdSpanAttributesProvider} is enabled.
+         *
+         * @param messageId Whether the provider is enabled.
          */
         public void setMessageId(boolean messageId) {
             this.messageId = messageId;
@@ -147,6 +157,8 @@ public class TracingProperties {
 
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider} is enabled.
+         *
+         * @param messageName Whether the provider is enabled.
          */
         public void setMessageName(boolean messageName) {
             this.messageName = messageName;
@@ -163,6 +175,8 @@ public class TracingProperties {
 
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider} is enabled.
+         *
+         * @param messageType Whether the provider is enabled.
          */
         public void setMessageType(boolean messageType) {
             this.messageType = messageType;
@@ -179,6 +193,8 @@ public class TracingProperties {
 
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.MetadataSpanAttributesProvider} is enabled.
+         *
+         * @param metadata Whether the provider is enabled.
          */
         public void setMetadata(boolean metadata) {
             this.metadata = metadata;
@@ -195,6 +211,8 @@ public class TracingProperties {
 
         /**
          * Sets whether the {@link org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider} is enabled.
+         *
+         * @param payloadType Whether the provider is enabled.
          */
         public void setPayloadType(boolean payloadType) {
             this.payloadType = payloadType;

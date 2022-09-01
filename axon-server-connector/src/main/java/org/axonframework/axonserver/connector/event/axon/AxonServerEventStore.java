@@ -103,7 +103,8 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster} and the {@link SpanFactory} is defaulted
+     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
      * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.

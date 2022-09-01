@@ -96,7 +96,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLockingIsTracedDuringCreation() throws Exception {
+    void lockingIsTracedDuringCreation() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         when(lockFactory.obtainLock(anyString()))
@@ -110,7 +110,7 @@ class LockingRepositoryTest {
     }
 
     @Test
-    void testLockingIsTracedDuringLoad() throws Exception {
+    void lockingIsTracedDuringLoad() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);

@@ -279,7 +279,7 @@ public abstract class AbstractEventBus implements EventBus {
      * Abstract Builder class to instantiate {@link AbstractEventBus} implementations.
      * <p>
      * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to
-     * a {@link NoOpSpanFactory}..
+     * a {@link NoOpSpanFactory}.
      */
     public abstract static class Builder {
 

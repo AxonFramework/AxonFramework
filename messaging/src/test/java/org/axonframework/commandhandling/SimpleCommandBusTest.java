@@ -75,7 +75,7 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    void testDispatchIsCorrectlyTraced() {
+    void dispatchIsCorrectlyTraced() {
         testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
         testSubject.dispatch(asCommandMessage("Say hi!"),
                              (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
@@ -87,7 +87,7 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    void testDispatchIsCorrectlyTracedDuringException() {
+    void dispatchIsCorrectlyTracedDuringException() {
         testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
         testSubject.subscribe(String.class.getName(), command -> {
             throw new RuntimeException("Some exception");

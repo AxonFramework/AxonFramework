@@ -34,14 +34,14 @@ class MessageNameSpanAttributesProviderTest {
     private final SpanAttributesProvider provider = new MessageNameSpanAttributesProvider();
 
     @Test
-    void textExtractsNothingForEvent() {
+    void extractsNothingForEvent() {
         EventMessage<Object> event = GenericEventMessage.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(0, map.size());
     }
 
     @Test
-    void textExtractsForQueryWithSpecificName() {
+    void extractsForQueryWithSpecificName() {
         Message<?> genericQueryMessage = new GenericQueryMessage<>("MyQuery",
                                                                    "myQueryName",
                                                                    ResponseTypes.instanceOf(String.class));
@@ -51,7 +51,7 @@ class MessageNameSpanAttributesProviderTest {
     }
 
     @Test
-    void textExtractsForQueryWithPayloadName() {
+    void extractsForQueryWithPayloadName() {
         Message<?> genericQueryMessage = new GenericQueryMessage<>("MyQuery",
                                                                    ResponseTypes.instanceOf(String.class));
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
@@ -60,7 +60,7 @@ class MessageNameSpanAttributesProviderTest {
     }
 
     @Test
-    void textExtractsForCommandWithSpecificName() {
+    void extractsForCommandWithSpecificName() {
         Message<?> genericQueryMessage = new GenericCommandMessage<>(new GenericCommandMessage<>("payload"),
                                                                      "MyAwesomeCommand");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
@@ -69,7 +69,7 @@ class MessageNameSpanAttributesProviderTest {
     }
 
     @Test
-    void textExtractsForCommandWithPayloadName() {
+    void extractsForCommandWithPayloadName() {
         Message<?> genericQueryMessage = new GenericCommandMessage<>("payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());

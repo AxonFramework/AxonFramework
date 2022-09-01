@@ -140,6 +140,13 @@ public interface Span {
         }
     }
 
+    /**
+     * Wraps a {@link Supplier}, tracing the invocation. Exceptions will be caught automatically and added to the span,
+     * then rethrown. The span will be started before the execution, and ended after execution.
+     *
+     * @param supplier The {@link Supplier} to wrap
+     * @return A wrapped Supplier
+     */
     default <T> Supplier<T> wrapSupplier(Supplier<T> supplier) {
         return () -> runSupplier(supplier);
     }

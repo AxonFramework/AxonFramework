@@ -65,7 +65,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * Instantiate a {@link AggregateSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EventStore}, {@link ParameterResolverFactory} and {@link HandlerDefinition} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}. The
+     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AggregateSnapshotter} instance
      */

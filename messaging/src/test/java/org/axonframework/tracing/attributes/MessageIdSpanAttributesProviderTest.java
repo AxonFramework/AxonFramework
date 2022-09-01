@@ -30,7 +30,7 @@ class MessageIdSpanAttributesProviderTest {
     private final SpanAttributesProvider provider = new MessageIdSpanAttributesProvider();
 
     @Test
-    void testExtractsMessageIdentifier() {
+    void extractsMessageIdentifier() {
         Message<?> event = GenericEventMessage.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(1, map.size());

@@ -23,6 +23,7 @@ import org.axonframework.tracing.Span;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  * {@link Span} implementation that uses OpenTelemetry's {@link io.opentelemetry.api.trace.Span} to provide tracing
@@ -51,10 +52,12 @@ public class OpenTelemetrySpan implements Span {
      *
      * @param spanBuilder The provider of the {@link io.opentelemetry.api.trace.Span}.
      */
-    OpenTelemetrySpan(SpanBuilder spanBuilder) {
+    public OpenTelemetrySpan(SpanBuilder spanBuilder) {
+        Objects.requireNonNull(spanBuilder, "Span builder can not be null!");
         this.spanBuilder = spanBuilder;
     }
 
+    @Override
     public Span start() {
         if (span == null) {
             span = spanBuilder.startSpan();
@@ -63,6 +66,7 @@ public class OpenTelemetrySpan implements Span {
         return this;
     }
 
+    @Override
     public void end() {
         if (!scopeQueue.isEmpty()) {
             scopeQueue.remove().close();
