@@ -16,12 +16,8 @@
 
 package org.axonframework.integrationtests.axonserverconnector;
 
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.MethodDescriptor;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
@@ -35,6 +31,7 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -47,17 +44,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.beans.ConstructorProperties;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -98,15 +91,11 @@ class MessagePriorityIntegrationTest {
     private AxonServerCommandBus commandBus;
     private AxonServerQueryBus queryBus;
 
-    private AtomicBoolean dispatchLatch = new AtomicBoolean(false);
-    private Lock dispatchLock;
-
     @BeforeEach
     void setUp() {
         Serializer serializer = JacksonSerializer.defaultSerializer();
-        dispatchLock = new ReentrantLock();
 
-        String server = axonServer.getContainerIpAddress() + ":" + axonServer.getMappedPort(GRPC_PORT);
+        String server = axonServer.getHost() + ":" + axonServer.getMappedPort(GRPC_PORT);
         AxonServerConfiguration configuration = AxonServerConfiguration.builder()
                                                                        .componentName("messagePriority")
                                                                        .context("test")
@@ -117,20 +106,11 @@ class MessagePriorityIntegrationTest {
         connectionManager = AxonServerConnectionManager.builder()
                                                        .axonServerConfiguration(configuration)
                                                        .channelCustomizer(ManagedChannelBuilder::directExecutor)
-                .channelCustomizer(builder -> builder.intercept(new ClientInterceptor() {
-                    @Override
-                    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
-                                                                               CallOptions callOptions, Channel channel) {
-                        ClientCall<ReqT, RespT> call = channel.newCall(method, callOptions);
-                        dispatchLock.unlock();
-                        return call;
-                    }
-                }))
                                                        .build();
         connectionManager.start();
 
         CommandPriorityCalculator commandPriorityCalculator =
-                command -> Objects.equals(command.getPayloadType(), PriorityCommand.class) ? PRIORITY : REGULAR;
+                command -> Objects.equals(command.getPayloadType(), PriorityMessage.class) ? PRIORITY : REGULAR;
         CommandBus localCommandBus = SimpleCommandBus.builder().build();
         commandBus = AxonServerCommandBus.builder()
                                          .axonServerConnectionManager(connectionManager)
@@ -143,7 +123,7 @@ class MessagePriorityIntegrationTest {
         commandBus.start();
 
         QueryPriorityCalculator queryPriorityCalculator =
-                query -> Objects.equals(query.getPayloadType(), PriorityQuery.class) ? PRIORITY : REGULAR;
+                query -> Objects.equals(query.getPayloadType(), PriorityMessage.class) ? PRIORITY : REGULAR;
         QueryBus localQueryBus = SimpleQueryBus.builder().build();
         queryBus = AxonServerQueryBus.builder()
                                      .axonServerConnectionManager(connectionManager)
@@ -168,23 +148,15 @@ class MessagePriorityIntegrationTest {
         connectionManager.shutdown();
     }
 
-//    @Test
-//    @RepeatedTest(5)
-    void testCommandPriorityAndOrderingIsRespected() throws InterruptedException {
-        int numberOfCommands = 250;
+    @SuppressWarnings("resource")
+    @Test
+    void commandPriorityIsRespectedWithinThresholdByAxonServerCommandBus() throws InterruptedException {
+        int numberOfCommands = 10;
+        // No priority command should occur in the last fifth part of all dispatched commands.
+        // Quite some lenience is given to account for thread ordering within the buses.
+        int priorityThreshold = numberOfCommands - (numberOfCommands / 5);
 
-        List<Handled> actualOrdering = new CopyOnWriteArrayList<>();
-        List<Handled> expectedOrdering = new ArrayList<>();
-        List<Handled> regularOrdering = new ArrayList<>();
-        for (int i = 0; i < numberOfCommands; i++) {
-            if (i % 5 == 0) {
-                expectedOrdering.add(Handled.priority(i));
-            } else {
-                regularOrdering.add(Handled.regular(i));
-            }
-        }
-        expectedOrdering.addAll(regularOrdering);
-
+        Queue<Handled> handlingOrder = new ConcurrentLinkedQueue<>();
         CountDownLatch processingGate = new CountDownLatch(1);
         CountDownLatch finishedGate = new CountDownLatch(numberOfCommands);
 
@@ -192,120 +164,125 @@ class MessagePriorityIntegrationTest {
             processingGate.await();
             return "start-processing";
         });
-        commandBus.subscribe("regular", command -> {
-            actualOrdering.add(Handled.regular(((RegularCommand) command.getPayload()).getIndex()));
-            finishedGate.countDown();
-            return "handled-regular";
-        });
-        commandBus.subscribe("priority", command -> {
-            actualOrdering.add(Handled.priority(((PriorityCommand) command.getPayload()).getIndex()));
-            finishedGate.countDown();
-            return "handled-priority";
-        });
+        commandBus.subscribe("regular", command -> "regular");
+        commandBus.subscribe("priority", command -> "priority");
 
-        commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage("start"), "processGate"));
-        for (int i = 0; i < numberOfCommands; i++) {
-            dispatchLock.lock();
-            if (i % 5 == 0) {
-                commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage(new PriorityCommand(i)), "priority"));
-            } else {
-                commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage(new RegularCommand(i)), "regular"));
+        Thread dispatcher = new Thread(() -> {
+            commandBus.dispatch(new GenericCommandMessage<>(asCommandMessage("start"), "processGate"));
+            for (int i = 0; i < numberOfCommands; i++) {
+                GenericCommandMessage<Object> command;
+                if (i % 5 == 0) {
+                    command = new GenericCommandMessage<>(asCommandMessage(new PriorityMessage(Integer.toString(i))),
+                                                          "priority");
+                } else {
+                    command = new GenericCommandMessage<>(asCommandMessage(new RegularMessage(Integer.toString(i))),
+                                                          "regular");
+                }
+                commandBus.dispatch(command, (c, r) -> {
+                    if (r.getPayload().equals("regular")) {
+                        handlingOrder.add(Handled.regular());
+                    } else {
+                        handlingOrder.add(Handled.priority());
+                    }
+                    finishedGate.countDown();
+                });
+            }
+            processingGate.countDown();
+        });
+        dispatcher.start();
+
+        assertTrue(finishedGate.await(2, TimeUnit.SECONDS),
+                   () -> "Failed with [" + finishedGate.getCount() + "] unprocessed command(s).");
+
+        assertEquals(numberOfCommands, handlingOrder.size());
+        for (int i = 0; i < handlingOrder.size(); i++) {
+            Handled handled = handlingOrder.poll();
+            if (i >= priorityThreshold) {
+                assertFalse(handled.priority,
+                            "A priority command was handled at index [" + i + "], "
+                                    + "while it is at least expected to come before [" + priorityThreshold + "].");
             }
         }
 
-        processingGate.countDown();
-        //noinspection ResultOfMethodCallIgnored
-        finishedGate.await(5, TimeUnit.SECONDS);
-
-        assertEquals(numberOfCommands, expectedOrdering.size());
-//        for (int i = 0; i < expectedOrdering.size(); i++) {
-//            Handled expected = expectedOrdering.get(i);
-//            Handled actual = actualOrdering.get(i);
-//            assertEquals(expected.priority, actual.priority, "Expected [" + expected + "] & Actual [" + actual + "]");
-//        }
-        assertEquals(expectedOrdering, actualOrdering);
+        dispatcher.join(1000);
     }
 
-//    @Test
-//    @RepeatedTest(5)
-    void testQueryPriorityAndOrderingIsRespected() throws InterruptedException {
-        int numberOfQueries = 250;
+    @SuppressWarnings("resource")
+    @Test
+    void queryPriorityIsRespectedWithinThresholdByAxonServerQueryBus() throws InterruptedException {
+        int numberOfQueries = 10;
+        // No priority query should occur in the last fifth part of all dispatched queries.
+        // Quite some lenience is given to account for thread ordering within the buses.
+        int priorityThreshold = numberOfQueries - (numberOfQueries / 5);
 
-        List<Handled> actualOrdering = new CopyOnWriteArrayList<>();
-        List<Handled> expectedOrdering = new ArrayList<>();
-        List<Handled> regularOrdering = new ArrayList<>();
-        for (int i = 0; i < numberOfQueries; i++) {
-            if (i % 5 == 0) {
-                expectedOrdering.add(Handled.priority(i));
-            } else {
-                regularOrdering.add(Handled.regular(i));
-            }
-        }
-        expectedOrdering.addAll(regularOrdering);
-
+        Queue<Handled> handlingOrder = new ConcurrentLinkedQueue<>();
         CountDownLatch processingGate = new CountDownLatch(1);
         CountDownLatch finishedGate = new CountDownLatch(numberOfQueries);
 
-        //noinspection resource
         queryBus.subscribe("processGate", String.class, query -> {
             processingGate.await();
             return "start-processing";
         });
-        //noinspection resource
-        queryBus.subscribe("regular", String.class, query -> {
-            actualOrdering.add(Handled.regular(((RegularQuery) query.getPayload()).getIndex()));
-            finishedGate.countDown();
-            return "handled-regular";
-        });
-        //noinspection resource
-        queryBus.subscribe("priority", String.class, query -> {
-            actualOrdering.add(Handled.priority(((PriorityQuery) query.getPayload()).getIndex()));
-            finishedGate.countDown();
-            return "handled-priority";
-        });
+        queryBus.subscribe("regular", String.class, query -> "regular");
+        queryBus.subscribe("priority", String.class, query -> "priority");
 
-        queryBus.query(new GenericQueryMessage<>("start", "processGate", ResponseTypes.instanceOf(String.class)));
-        for (int i = 0; i < numberOfQueries; i++) {
-            if (i % 5 == 0) {
-                queryBus.query(new GenericQueryMessage<>(new PriorityQuery(i),
-                                                         "priority",
-                                                         ResponseTypes.instanceOf(String.class)));
-            } else {
-                queryBus.query(new GenericQueryMessage<>(new RegularQuery(i),
-                                                         "regular",
-                                                         ResponseTypes.instanceOf(String.class)));
+        Thread dispatcher = new Thread(() -> {
+            queryBus.query(new GenericQueryMessage<>("start", "processGate", ResponseTypes.instanceOf(String.class)));
+            for (int i = 0; i < numberOfQueries; i++) {
+                GenericQueryMessage<?, String> query;
+                if (i % 5 == 0) {
+                    query = new GenericQueryMessage<>(
+                            new PriorityMessage(Integer.toString(i)), "priority", ResponseTypes.instanceOf(String.class)
+                    );
+                } else {
+                    query = new GenericQueryMessage<>(
+                            new RegularMessage(Integer.toString(i)), "regular", ResponseTypes.instanceOf(String.class)
+                    );
+                }
+                CompletableFuture<QueryResponseMessage<String>> result = queryBus.query(query);
+                result.whenComplete((response, ex) -> {
+                    if (response.getPayload().equals("regular")) {
+                        handlingOrder.add(Handled.regular());
+                    } else {
+                        handlingOrder.add(Handled.priority());
+                    }
+                    finishedGate.countDown();
+                });
+            }
+            processingGate.countDown();
+        });
+        dispatcher.start();
+
+        assertTrue(finishedGate.await(2, TimeUnit.SECONDS),
+                   () -> "Failed with [" + finishedGate.getCount() + "] unprocessed query/queries");
+
+        assertEquals(numberOfQueries, handlingOrder.size());
+        for (int i = 0; i < handlingOrder.size(); i++) {
+            Handled handled = handlingOrder.poll();
+            if (i >= priorityThreshold) {
+                assertFalse(handled.priority,
+                            "A priority command was handled at index [" + i + "], "
+                                    + "while it is at least expected to come before [" + priorityThreshold + "].");
             }
         }
 
-        processingGate.countDown();
-        //noinspection ResultOfMethodCallIgnored
-        finishedGate.await(5, TimeUnit.SECONDS);
-
-        assertEquals(numberOfQueries, expectedOrdering.size());
-        for (int i = 0; i < expectedOrdering.size(); i++) {
-            Handled expected = expectedOrdering.get(i);
-            Handled actual = actualOrdering.get(i);
-            assertEquals(expected.priority, actual.priority, "Expected [" + expected + "] & Actual [" + actual + "]");
-        }
-//        assertEquals(expectedOrdering, actualOrdering);
+        dispatcher.join(1000);
     }
 
     private static class Handled {
 
         private final boolean priority;
-        private final int index;
 
-        private static Handled priority(int index) {
-            return new Handled(true, index);
+        private static Handled priority() {
+            return new Handled(true);
         }
 
-        private static Handled regular(int index) {
-            return new Handled(false, index);
+        private static Handled regular() {
+            return new Handled(false);
         }
 
-        private Handled(boolean priority, int index) {
+        private Handled(boolean priority) {
             this.priority = priority;
-            this.index = index;
         }
 
         @Override
@@ -317,141 +294,45 @@ class MessagePriorityIntegrationTest {
                 return false;
             }
             Handled handled = (Handled) o;
-            return priority == handled.priority && index == handled.index;
+            return priority == handled.priority;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(priority, index);
+            return Objects.hash(priority);
         }
 
         @Override
         public String toString() {
-            return priority ? "P[" + index + "]" : "R[" + index + "]";
+            return priority ? "P" : "R";
         }
     }
 
-    private static class RegularCommand {
+    @SuppressWarnings("unused")
+    private static class RegularMessage {
 
-        private final int index;
+        private final String text;
 
-        @ConstructorProperties({"index"})
-        private RegularCommand(int index) {
-            this.index = index;
+        public RegularMessage(@JsonProperty("text") String text) {
+            this.text = text;
         }
 
-        public int getIndex() {
-            return index;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            RegularCommand that = (RegularCommand) o;
-            return index == that.index;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index);
+        public String getText() {
+            return text;
         }
     }
 
-    private static class PriorityCommand {
+    @SuppressWarnings("unused")
+    private static class PriorityMessage {
 
-        private final int index;
+        private final String text;
 
-        @ConstructorProperties({"index"})
-        private PriorityCommand(int index) {
-            this.index = index;
+        public PriorityMessage(@JsonProperty("text") String text) {
+            this.text = text;
         }
 
-        public int getIndex() {
-            return index;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PriorityCommand that = (PriorityCommand) o;
-            return index == that.index;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index);
-        }
-    }
-
-    private static class RegularQuery {
-
-        private final int index;
-
-        @ConstructorProperties({"index"})
-        private RegularQuery(int index) {
-            this.index = index;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            RegularQuery that = (RegularQuery) o;
-            return index == that.index;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index);
-        }
-    }
-
-    private static class PriorityQuery {
-
-        private final int index;
-
-        @ConstructorProperties({"index"})
-        private PriorityQuery(int index) {
-            this.index = index;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PriorityQuery that = (PriorityQuery) o;
-            return index == that.index;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(index);
+        public String getText() {
+            return text;
         }
     }
 }
