@@ -100,7 +100,7 @@ class DisruptorCommandBusMultiThreadedTest {
     }
 
     @Test
-    void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
+    void dispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
         doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).newInstance(any());
         doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).load(isA(String.class));

@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class AxonAutoConfigurationWithDisruptorTest {
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         new ApplicationContextRunner()
                 .withUserConfiguration(AxonAutoConfigurationWithDisruptorTest.Context.class)
                 .withPropertyValues("axon.axonserver.enabled=false")

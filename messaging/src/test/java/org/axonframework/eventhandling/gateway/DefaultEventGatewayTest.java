@@ -51,7 +51,7 @@ class DefaultEventGatewayTest {
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
-    void testPublish() {
+    void publish() {
         testSubject.publish("Event1");
         verify(mockEventBus).publish(
                 argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event1")));

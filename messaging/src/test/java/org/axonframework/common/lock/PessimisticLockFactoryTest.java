@@ -36,7 +36,7 @@ class PessimisticLockFactoryTest {
     private String identifier = "mockId";
 
     @Test
-    void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
+    void lockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock = manager.obtainLock(identifier);
         lock.release();
@@ -48,7 +48,7 @@ class PessimisticLockFactoryTest {
     }
 
     @Test
-    void testLockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
+    void lockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
         Lock lock1 = manager.obtainLock(identifier);
         Lock lock2 = manager.obtainLock(identifier);
@@ -66,7 +66,7 @@ class PessimisticLockFactoryTest {
 
     @Test
     @Timeout(value = 10)
-    void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
+    void deadlockDetected_TwoThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
@@ -86,7 +86,7 @@ class PessimisticLockFactoryTest {
 
     @Test
     @Timeout(value = 12)
-    void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
+    void deadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
         final PessimisticLockFactory lock1 = PessimisticLockFactory.builder().build();
         final PessimisticLockFactory lock2 = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(1);
@@ -107,7 +107,7 @@ class PessimisticLockFactoryTest {
 
     @Test
     @Timeout(value = 10)
-    void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
+    void deadlockDetected_ThreeThreadsInVector() throws InterruptedException {
         final PessimisticLockFactory lock = PessimisticLockFactory.builder().build();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
@@ -151,7 +151,7 @@ class PessimisticLockFactoryTest {
 
     @Test
     @Timeout(value = 5)
-    void testAcquireBackoff() {
+    void acquireBackoff() {
         final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
                                                                          .acquireAttempts(10)
                                                                          .queueLengthThreshold(Integer.MAX_VALUE)
@@ -172,7 +172,7 @@ class PessimisticLockFactoryTest {
 
     @Test
     @Timeout(value = 5)
-    void testQueueBackoff() {
+    void queueBackoff() {
         final PessimisticLockFactory lockFactory = PessimisticLockFactory.builder()
                                                                          .acquireAttempts(Integer.MAX_VALUE)
                                                                          .queueLengthThreshold(2)
@@ -196,25 +196,25 @@ class PessimisticLockFactoryTest {
     }
 
     @Test
-    void testBackoffParametersConstructorAquireAttempts() {
+    void backoffParametersConstructorAquireAttempts() {
         int illegalValue = 0;
         assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().acquireAttempts(illegalValue));
     }
 
     @Test
-    void testBackoffParametersConstructorMaximumQueued() {
+    void backoffParametersConstructorMaximumQueued() {
         int illegalValue = 0;
         assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().queueLengthThreshold(illegalValue));
     }
 
     @Test
-    void testBackoffParametersConstructorSpinTime() {
+    void backoffParametersConstructorSpinTime() {
         int illegalValue = -1;
         assertThrows(IllegalArgumentException.class, () -> PessimisticLockFactory.builder().lockAttemptTimeout(illegalValue));
     }
 
     @Test
-    void testShouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
+    void shouldThrowIllegalArgumentExceptionWhenIdentifierIsNull() {
         this.identifier = null;
         PessimisticLockFactory manager = PessimisticLockFactory.builder().build();
 

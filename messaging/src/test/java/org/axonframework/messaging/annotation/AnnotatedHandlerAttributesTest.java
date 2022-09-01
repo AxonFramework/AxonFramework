@@ -40,7 +40,7 @@ class AnnotatedHandlerAttributesTest {
     }
 
     @Test
-    void testConstructHandlerAttributesForAnnotatedCommandHandler() throws NoSuchMethodException {
+    void constructHandlerAttributesForAnnotatedCommandHandler() throws NoSuchMethodException {
         Method messageHandlingMember = getClass().getMethod("annotatedCommandHandler", Object.class);
 
         Map<String, Object> expected = new HashMap<>();
@@ -59,7 +59,7 @@ class AnnotatedHandlerAttributesTest {
     }
 
     @Test
-    void testConstructHandlerAttributesForAnnotatedAllowReplayAndEventHandler() throws NoSuchMethodException {
+    void constructHandlerAttributesForAnnotatedAllowReplayAndEventHandler() throws NoSuchMethodException {
         Method messageHandlingMember = getClass().getMethod("annotatedAllowReplayAndEventHandler", Object.class);
 
         Map<String, Object> expected = new HashMap<>();
@@ -84,7 +84,7 @@ class AnnotatedHandlerAttributesTest {
      * have their attributes returned, which thus should be validated to work.
      */
     @Test
-    void testConstructHandlerAttributesForAnnotatedExceptionHandler() throws NoSuchMethodException {
+    void constructHandlerAttributesForAnnotatedExceptionHandler() throws NoSuchMethodException {
         Method messageHandlingMember = getClass().getMethod("annotatedExceptionHandler", Object.class);
 
         Map<String, Object> expected = new HashMap<>();
@@ -106,7 +106,7 @@ class AnnotatedHandlerAttributesTest {
     }
 
     @Test
-    void testConstructHandlerAttributesForAnnotatedCustomCommandHandler() throws NoSuchMethodException {
+    void constructHandlerAttributesForAnnotatedCustomCommandHandler() throws NoSuchMethodException {
         Method messageHandlingMember = getClass().getMethod("annotatedCustomCommandHandler", Object.class);
 
         Map<String, Object> expected = new HashMap<>();
@@ -127,7 +127,7 @@ class AnnotatedHandlerAttributesTest {
     }
 
     @Test
-    void testConstructHandlerAttributesForAnnotatedCustomCombinedHandlerWithAttributes() throws NoSuchMethodException {
+    void constructHandlerAttributesForAnnotatedCustomCombinedHandlerWithAttributes() throws NoSuchMethodException {
         Method messageHandlingMember =
                 getClass().getMethod("annotatedCustomCombinedHandlerWithAttributes", Object.class);
 
@@ -145,7 +145,7 @@ class AnnotatedHandlerAttributesTest {
     }
 
     @Test
-    void testConstructHandlerAttributesForAnnotatedNonMessageHandler() {
+    void constructHandlerAttributesForAnnotatedNonMessageHandler() {
         Map<String, Map<String, Object>> expected = new HashMap<>();
 
         assertEquals(expected, testSubject.getAll());

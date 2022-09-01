@@ -85,7 +85,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    void testSnapshotCreatedNoTransaction() {
+    void snapshotCreatedNoTransaction() {
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
@@ -94,7 +94,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    void testRetrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() {
+    void retrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() {
         testSubject.setEventStore(null);
         reset(mockApplicationContext);
         when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
@@ -106,11 +106,11 @@ class SpringAggregateSnapshotterFactoryBeanTest {
                                                                             .repositoryProvider(mockRepositoryProvider)
                                                                             .build()
                 ));
-        testSnapshotCreatedNoTransaction();
+        snapshotCreatedNoTransaction();
     }
 
     @Test
-    void testSnapshotCreatedNewlyCreatedTransactionCommitted() {
+    void snapshotCreatedNewlyCreatedTransactionCommitted() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus newlyCreatedTransaction = new SimpleTransactionStatus(true);
@@ -124,7 +124,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    void testSnapshotCreatedExistingTransactionNotCommitted() {
+    void snapshotCreatedExistingTransactionNotCommitted() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
@@ -137,7 +137,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    void testSnapshotCreatedExistingTransactionNotRolledBack() {
+    void snapshotCreatedExistingTransactionNotRolledBack() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
@@ -152,7 +152,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    void testSnapshotCreatedNewTransactionRolledBack() {
+    void snapshotCreatedNewTransactionRolledBack() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(true);

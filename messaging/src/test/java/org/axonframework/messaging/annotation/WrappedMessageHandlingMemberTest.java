@@ -26,13 +26,13 @@ class WrappedMessageHandlingMemberTest {
     }
 
     @Test
-    void testCanHandleMessageType() {
+    void canHandleMessageType() {
         testSubject.canHandleMessageType(QueryMessage.class);
         verify(mockedHandlingMember).canHandleMessageType(QueryMessage.class);
     }
 
     @Test
-    void testAttribute() {
+    void attribute() {
         testSubject.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
         verify(mockedHandlingMember).attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
     }

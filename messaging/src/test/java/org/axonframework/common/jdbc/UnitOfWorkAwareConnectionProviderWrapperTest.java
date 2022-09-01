@@ -54,13 +54,13 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    void testConnectionReturnedImmediatelyWhenNoActiveUnitOfWork() throws SQLException {
+    void connectionReturnedImmediatelyWhenNoActiveUnitOfWork() throws SQLException {
         Connection actual = testSubject.getConnection();
         assertSame(actual, mockConnection);
     }
 
     @Test
-    void testConnectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
+    void connectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         Connection actual = testSubject.getConnection();
         assertNotSame(actual, mockConnection);
@@ -75,7 +75,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    void testWrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
+    void wrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
@@ -95,7 +95,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    void testWrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
+    void wrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
@@ -116,7 +116,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    void testOriginalExceptionThrewWhenRollbackFailed() throws SQLException {
+    void originalExceptionThrewWhenRollbackFailed() throws SQLException {
         DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork<Message<?>>(null) {
             @Override
             public ExecutionResult getExecutionResult() {
@@ -138,7 +138,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
     }
 
     @Test
-    void testInnerUnitOfWorkCommitDoesNotCloseConnection() throws SQLException {
+    void innerUnitOfWorkCommitDoesNotCloseConnection() throws SQLException {
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 

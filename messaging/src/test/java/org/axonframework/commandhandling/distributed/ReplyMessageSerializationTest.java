@@ -45,7 +45,7 @@ class ReplyMessageSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testSerializationDeserializationOfSuccessfulMessage(TestSerializer serializer) {
+    void serializationDeserializationOfSuccessfulMessage(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> success = asCommandResultMessage("success");
         DummyReplyMessage message = new DummyReplyMessage(commandId, success, serializer.getSerializer());
@@ -55,7 +55,7 @@ class ReplyMessageSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testSerializationDeserializationOfUnsuccessfulMessage(TestSerializer serializer) {
+    void serializationDeserializationOfUnsuccessfulMessage(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> failure = asCommandResultMessage(new RuntimeException("oops"));
         DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer.getSerializer());
@@ -65,7 +65,7 @@ class ReplyMessageSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testDeserializingOfPersistentExceptions(TestSerializer serializer) {
+    void deserializingOfPersistentExceptions(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> failure = asCommandResultMessage(new SerializationException("oops"));
         DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer.getSerializer());
@@ -77,7 +77,7 @@ class ReplyMessageSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testDeserializingOfTransientExceptions(TestSerializer serializer) {
+    void deserializingOfTransientExceptions(TestSerializer serializer) {
         String commandId = "commandId";
         CommandResultMessage<String> failure = asCommandResultMessage(new RuntimeException("oops"));
         DummyReplyMessage message = new DummyReplyMessage(commandId, failure, serializer.getSerializer());

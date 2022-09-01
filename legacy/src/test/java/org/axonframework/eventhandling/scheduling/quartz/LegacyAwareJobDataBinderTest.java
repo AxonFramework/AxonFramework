@@ -36,7 +36,7 @@ class LegacyAwareJobDataBinderTest {
     }
 
     @Test
-    void testReadLegacyInstance() {
+    void readLegacyInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get("org.axonframework.domain.EventMessage")).thenAnswer(
                 i -> {
@@ -56,7 +56,7 @@ class LegacyAwareJobDataBinderTest {
     }
 
     @Test
-    void testReadRecentInstance() {
+    void readRecentInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get(EventMessage.class.getName())).thenReturn(new GenericEventMessage<>("new"));
 

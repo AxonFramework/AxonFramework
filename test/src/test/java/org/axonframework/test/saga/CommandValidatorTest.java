@@ -49,28 +49,28 @@ class CommandValidatorTest {
     }
 
     @Test
-    void testAssertEmptyDispatchedEqualTo() {
+    void assertEmptyDispatchedEqualTo() {
         when(commandBus.getDispatchedCommands()).thenReturn(emptyCommandMessageList());
 
         testSubject.assertDispatchedEqualTo();
     }
 
     @Test
-    void testAssertNonEmptyDispatchedEqualTo() {
+    void assertNonEmptyDispatchedEqualTo() {
         when(commandBus.getDispatchedCommands()).thenReturn(listOfOneCommandMessage("command"));
 
         testSubject.assertDispatchedEqualTo("command");
     }
 
     @Test
-    void testMatchWithUnexpectedNullValue() {
+    void matchWithUnexpectedNullValue() {
         when(commandBus.getDispatchedCommands()).thenReturn(listOfOneCommandMessage(new SomeCommand(null)));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertDispatchedEqualTo(new SomeCommand("test")));
     }
 
     @Test
-    void testMatchPrimitiveTypedCommands() {
+    void matchPrimitiveTypedCommands() {
         when(commandBus.getDispatchedCommands()).thenReturn(listOfOneCommandMessage("some-string"));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertDispatchedEqualTo("some-other-string"));

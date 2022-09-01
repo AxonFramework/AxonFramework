@@ -54,7 +54,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void testCorrelationDataAddedToNewMessage() {
+    void correlationDataAddedToNewMessage() {
         assertEquals(correlationData, new HashMap<>(new GenericMessage<>(new Object()).getMetaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
@@ -63,7 +63,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void testMessageSerialization() {
+    void messageSerialization() {
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
         Serializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -75,7 +75,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void testAsMessageReturnsProvidedMessageAsIs() {
+    void asMessageReturnsProvidedMessageAsIs() {
         GenericMessage<String> testMessage = new GenericMessage<>("payload");
 
         Message<?> result = GenericMessage.asMessage(testMessage);
@@ -84,7 +84,7 @@ class GenericMessageTest {
     }
 
     @Test
-    void testAsMessageWrapsProvidedObjectsInMessage() {
+    void asMessageWrapsProvidedObjectsInMessage() {
         String testPayload = "payload";
 
         Message<?> result = GenericMessage.asMessage(testPayload);

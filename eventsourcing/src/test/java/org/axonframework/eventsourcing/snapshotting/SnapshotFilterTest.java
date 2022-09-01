@@ -42,7 +42,7 @@ class SnapshotFilterTest {
     );
 
     @Test
-    void testAllowAllReturnsTrue() {
+    void allowAllReturnsTrue() {
         SnapshotFilter testSubject = SnapshotFilter.allowAll();
 
         assertTrue(testSubject.allow(NO_SNAPSHOT_DATA));
@@ -51,7 +51,7 @@ class SnapshotFilterTest {
     }
 
     @Test
-    void testRejectAllReturnsFalseOnAnyInput() {
+    void rejectAllReturnsFalseOnAnyInput() {
         SnapshotFilter testSubject = SnapshotFilter.rejectAll();
 
         assertFalse(testSubject.allow(NO_SNAPSHOT_DATA));
@@ -60,7 +60,7 @@ class SnapshotFilterTest {
     }
 
     @Test
-    void testFilterInvokesBothFiltersOnTrueForFirstFilter() {
+    void filterInvokesBothFiltersOnTrueForFirstFilter() {
         AtomicBoolean invokedFirst = new AtomicBoolean(false);
         SnapshotFilter first = snapshotData -> {
             invokedFirst.set(true);
@@ -81,7 +81,7 @@ class SnapshotFilterTest {
     }
 
     @Test
-    void testFilterInvokesFirstFilterOnlyOnFalseForFirstFilter() {
+    void filterInvokesFirstFilterOnlyOnFalseForFirstFilter() {
         AtomicBoolean invokedFirst = new AtomicBoolean(false);
         SnapshotFilter first = snapshotData -> {
             invokedFirst.set(true);

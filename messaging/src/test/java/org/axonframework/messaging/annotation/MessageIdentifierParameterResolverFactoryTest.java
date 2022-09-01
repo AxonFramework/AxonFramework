@@ -59,7 +59,7 @@ class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
+    void resolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -68,7 +68,7 @@ class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
+    void resolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
@@ -77,14 +77,14 @@ class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    void testIgnoredWhenNotAnnotated() {
+    void ignoredWhenNotAnnotated() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    void testIgnoredWhenWrongType() {
+    void ignoredWhenWrongType() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);

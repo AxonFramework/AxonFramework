@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class HeartbeatConnectionCheckerTest {
 
     @Test
-    void testHeartbeatNeverReceived() {
+    void heartbeatNeverReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
                                                                       r -> {
@@ -31,7 +31,7 @@ class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    void testHeartbeatProperlyReceived() {
+    void heartbeatProperlyReceived() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
@@ -44,7 +44,7 @@ class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    void testHeartbeatReceivedLate() {
+    void heartbeatReceivedLate() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,
@@ -57,7 +57,7 @@ class HeartbeatConnectionCheckerTest {
     }
 
     @Test
-    void testDelegateDetectsBrokenConnection() {
+    void delegateDetectsBrokenConnection() {
         AtomicReference<Instant> instant = new AtomicReference<>(Instant.now());
         AtomicReference<Runnable> heartbeatCallback = new AtomicReference<>();
         HeartbeatConnectionChecker check = new HeartbeatConnectionChecker(1_000,

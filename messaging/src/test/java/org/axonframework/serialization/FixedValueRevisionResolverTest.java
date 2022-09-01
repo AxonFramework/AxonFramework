@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class FixedValueRevisionResolverTest {
 
     @Test
-    void testRevisionOf() {
+    void revisionOf() {
         assertEquals("test", new FixedValueRevisionResolver("test").revisionOf(Object.class));
     }
 }

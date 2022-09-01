@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class StringToByteArrayConverterTest {
 
     @Test
-    void testConvert() throws UnsupportedEncodingException {
+    void convert() throws UnsupportedEncodingException {
         StringToByteArrayConverter testSubject = new StringToByteArrayConverter();
         assertEquals(String.class, testSubject.expectedSourceType());
         assertEquals(byte[].class, testSubject.targetType());

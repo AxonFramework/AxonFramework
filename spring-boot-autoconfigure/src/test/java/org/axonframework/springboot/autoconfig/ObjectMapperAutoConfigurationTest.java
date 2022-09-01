@@ -68,7 +68,7 @@ class ObjectMapperAutoConfigurationTest {
     private ApplicationContext applicationContext;
 
     @Test
-    void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
+    void eventSerializerIsOfTypeJacksonSerializerAndUsesDefaultAxonObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final ObjectMapper objectMapper = applicationContext.getBean("defaultAxonObjectMapper", ObjectMapper.class);

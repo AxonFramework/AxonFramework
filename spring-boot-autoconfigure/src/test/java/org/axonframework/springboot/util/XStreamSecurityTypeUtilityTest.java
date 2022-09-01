@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class XStreamSecurityTypeUtilityTest {
 
     @Test
-    void testAutoConfigBasePackages() {
+    void autoConfigBasePackagesTest() {
         // Axon packages are added through the default ApplicationContextRunner that adds Axon's DefaultEntityRegistrar.
         String[] expected = new String[]{
                 "org.axonframework.springboot.util.**",

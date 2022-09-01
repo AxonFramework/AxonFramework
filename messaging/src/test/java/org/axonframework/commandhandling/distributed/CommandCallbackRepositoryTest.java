@@ -34,7 +34,7 @@ class CommandCallbackRepositoryTest {
     }
 
     @Test
-    void testCallback() {
+    void callback() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         CommandCallbackWrapper<Object, Object, Object> commandCallbackWrapper = createWrapper("A");
         repository.store("A", commandCallbackWrapper);
@@ -51,7 +51,7 @@ class CommandCallbackRepositoryTest {
 
 
     @Test
-    void testOverwriteCallback() {
+    void overwriteCallback() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         CommandCallbackWrapper<Object, Object, Object> commandCallbackWrapper = createWrapper("A");
         repository.store("A", commandCallbackWrapper);
@@ -67,7 +67,7 @@ class CommandCallbackRepositoryTest {
     }
 
     @Test
-    void testCancelCallbacks() {
+    void cancelCallbacks() {
         CommandCallbackRepository<Object> repository = new CommandCallbackRepository<>();
         repository.store("A", createWrapper("A"));
         repository.store("B", createWrapper("A"));

@@ -57,7 +57,7 @@ class AxonAutoConfigurationWithTagsTest {
     private ApplicationContext applicationContext;
 
     @Test
-    void testConfig() {
+    void config() {
         TagsConfiguration tagsConfiguration = applicationContext.getBean(TagsConfiguration.class);
         assertNotNull(tagsConfiguration);
         Map<String, String> tags = tagsConfiguration.getTags();

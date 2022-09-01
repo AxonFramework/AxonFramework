@@ -86,7 +86,7 @@ class MultiStreamableMessageSourceTest {
 
     @SuppressWarnings({"unchecked", "resource"})
     @Test
-    void testConnectionsAreClosedWhenOpeningFails() {
+    void connectionsAreClosedWhenOpeningFails() {
         StreamableMessageSource<TrackedEventMessage<?>> source1 = mock(StreamableMessageSource.class);
         StreamableMessageSource<TrackedEventMessage<?>> source2 = mock(StreamableMessageSource.class);
         testSubject = MultiStreamableMessageSource.builder()
@@ -123,7 +123,7 @@ class MultiStreamableMessageSourceTest {
 
     @SuppressWarnings("resource")
     @Test
-    void testPeekingLastMessageKeepsItAvailable() throws InterruptedException {
+    void peekingLastMessageKeepsItAvailable() throws InterruptedException {
         EventMessage<?> publishedEvent1 = GenericEventMessage.asEventMessage("Event1");
 
 
@@ -395,7 +395,7 @@ class MultiStreamableMessageSourceTest {
 
     @SuppressWarnings({"unchecked", "resource"})
     @Test
-    void testSkipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
+    void skipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
                 new GlobalSequenceTrackingToken(1), GenericEventMessage.asEventMessage("some-payload")
         );
@@ -429,7 +429,7 @@ class MultiStreamableMessageSourceTest {
 
     @SuppressWarnings({"unchecked", "resource"})
     @Test
-    void testSetOnAvailableCallbackReturnsTrueIfAllStreamsReturnTrue() {
+    void setOnAvailableCallbackReturnsTrueIfAllStreamsReturnTrue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         Runnable testCallback = () -> invoked.set(true);
 
@@ -467,7 +467,7 @@ class MultiStreamableMessageSourceTest {
 
     @SuppressWarnings({"unchecked", "resource"})
     @Test
-    void testSetOnAvailableCallbackReturnsFalseIfOneStreamsReturnsFalse() {
+    void setOnAvailableCallbackReturnsFalseIfOneStreamsReturnsFalse() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         Runnable testCallback = () -> invoked.set(true);
 

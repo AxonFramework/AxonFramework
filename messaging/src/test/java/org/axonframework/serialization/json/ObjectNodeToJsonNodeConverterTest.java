@@ -33,17 +33,17 @@ class ObjectNodeToJsonNodeConverterTest {
     private final ObjectNodeToJsonNodeConverter testSubject = new ObjectNodeToJsonNodeConverter();
 
     @Test
-    void testExpectedSourceType() {
+    void expectedSourceType() {
         assertEquals(ObjectNode.class, testSubject.expectedSourceType());
     }
 
     @Test
-    void testTargetType() {
+    void targetType() {
         assertEquals(JsonNode.class, testSubject.targetType());
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         ObjectNode expectedJsonNode = new ObjectNode(JsonNodeFactory.instance);
 
         JsonNode result = testSubject.convert(expectedJsonNode);

@@ -49,7 +49,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
     }
 
     @Test
-    void testInstantiateMessageMonitorOfTypeMonitorOnMessageIngested() throws Exception {
+    void instantiateMessageMonitorOfTypeMonitorOnMessageIngested() throws Exception {
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
@@ -69,7 +69,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
     }
 
     @Test
-    void testInstantiatesOneMessageMonitorPerIngestedPayloadType() throws Exception {
+    void instantiatesOneMessageMonitorPerIngestedPayloadType() throws Exception {
         Field payloadTypeMonitorsField = testSubject.getClass().getDeclaredField("payloadTypeMonitors");
         payloadTypeMonitorsField.setAccessible(true);
 
@@ -98,7 +98,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
     }
 
     @Test
-    void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() {
+    void monitorNameFollowsGivenMonitorNameBuilderSpecifics() {
         String testPrefix = "additional-monitor-name.";
         PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject = new PayloadTypeMessageMonitorWrapper<>(
                 CapacityMonitor::new, payloadType -> testPrefix + payloadType.getName());

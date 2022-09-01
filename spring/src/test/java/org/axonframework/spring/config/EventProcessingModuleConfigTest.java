@@ -53,7 +53,7 @@ public class EventProcessingModuleConfigTest {
     private EventProcessingModule eventProcessingConfiguration;
 
     @Test
-    void testEventProcessingConfiguration() {
+    void eventProcessingConfiguration() {
         assertEquals(3, eventProcessingConfiguration.eventProcessors().size());
         assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
         assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());

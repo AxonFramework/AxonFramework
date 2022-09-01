@@ -46,7 +46,7 @@ class ReplayParameterResolverFactoryTest {
     }
 
     @Test
-    void testInvokeWithReplayTokens() throws Exception {
+    void invokeWithReplayTokens() throws Exception {
         GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken, asEventMessage(2L));
         assertTrue(testSubject.canHandle(replayEvent));

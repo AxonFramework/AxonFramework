@@ -55,7 +55,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot() {
+    void createSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
@@ -72,7 +72,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
+    void createSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
@@ -94,7 +94,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
+    void createSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());

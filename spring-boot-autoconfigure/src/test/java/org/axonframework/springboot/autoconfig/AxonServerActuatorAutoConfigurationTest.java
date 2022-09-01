@@ -44,7 +44,7 @@ class AxonServerActuatorAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerHealthIndicatorIsNotCreatedForAxonServerDisabled() {
+    void axonServerHealthIndicatorIsNotCreatedForAxonServerDisabled() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:false")
                               .run(context -> {
@@ -54,7 +54,7 @@ class AxonServerActuatorAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerHealthIndicatorIsCreated() {
+    void axonServerHealthIndicatorIsCreated() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:true")
                               .run(context -> {

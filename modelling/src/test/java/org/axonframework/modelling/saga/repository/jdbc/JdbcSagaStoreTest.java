@@ -69,7 +69,7 @@ class JdbcSagaStoreTest {
     }
 
     @Test
-    void testInsertUpdateAndLoadSaga() {
+    void insertUpdateAndLoadSaga() {
         StubSaga saga = new StubSaga();
         Set<AssociationValue> associationValues = singleton(new AssociationValue("key", "value"));
         testSubject.insertSaga(StubSaga.class, "123", saga, associationValues);
@@ -82,12 +82,12 @@ class JdbcSagaStoreTest {
     }
 
     @Test
-    void testLoadSaga_NotFound() {
+    void loadSaga_NotFound() {
         assertNull(testSubject.loadSaga(StubSaga.class, "123456"));
     }
 
     @Test
-    void testLoadSagaByAssociationValue() {
+    void loadSagaByAssociationValue() {
         AssociationValues associationsValues =
                 new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), associationsValues.asSet());
@@ -106,7 +106,7 @@ class JdbcSagaStoreTest {
     }
 
     @Test
-    void testUpdateSagaWhenDeleted() {
+    void updateSagaWhenDeleted() {
         AssociationValues associationsValues = new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
         testSubject.updateSaga(StubSaga.class, "123456", new StubSaga(), associationsValues);
         assertNull(testSubject.loadSaga(StubSaga.class, "123456"));

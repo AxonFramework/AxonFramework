@@ -45,12 +45,12 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_CommandWithoutAnnotations() {
+    void resolveTarget_CommandWithoutAnnotations() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(asCommandMessage("That won't work")));
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedMethod() {
+    void resolveTarget_WithAnnotatedMethod() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(asCommandMessage(new Object() {
             @TargetAggregateIdentifier
@@ -64,7 +64,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedMethodAndVersion() {
+    void resolveTarget_WithAnnotatedMethodAndVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(asCommandMessage(new Object() {
             @TargetAggregateIdentifier
@@ -83,7 +83,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedMethodAndStringVersion() {
+    void resolveTarget_WithAnnotatedMethodAndStringVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(asCommandMessage(new Object() {
             @TargetAggregateIdentifier
@@ -102,7 +102,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedMethodAndVoidIdentifier() {
+    void resolveTarget_WithAnnotatedMethodAndVoidIdentifier() {
         CommandMessage<Object> command = asCommandMessage(new Object() {
             @TargetAggregateIdentifier
             private void getIdentifier() {
@@ -112,7 +112,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedFields() {
+    void resolveTarget_WithAnnotatedFields() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
@@ -122,7 +122,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedFields_StringIdentifier() {
+    void resolveTarget_WithAnnotatedFields_StringIdentifier() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
@@ -132,7 +132,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedFields_ObjectIdentifier() {
+    void resolveTarget_WithAnnotatedFields_ObjectIdentifier() {
         final Object aggregateIdentifier = new Object();
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
@@ -142,7 +142,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedFields_ParsableVersion() {
+    void resolveTarget_WithAnnotatedFields_ParsableVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         final Object version = "1";
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
@@ -152,7 +152,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
     @Test
-    void testResolveTarget_WithAnnotatedFields_NonNumericVersion() {
+    void resolveTarget_WithAnnotatedFields_NonNumericVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
         final Object version = "abc";
         CommandMessage<Object> command = asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version));
@@ -160,7 +160,7 @@ class AnnotationCommandTargetResolverTest {
     }
 
 	@Test
-    void testMetaAnnotationsOnMethods() {
+    void metaAnnotationsOnMethods() {
 		final UUID aggregateIdentifier = UUID.randomUUID();
 		final Long version = Long.valueOf(98765432109L);
 
@@ -180,7 +180,7 @@ class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-    void testMetaAnnotationsOnFields() {
+    void metaAnnotationsOnFields() {
 		final UUID aggregateIdentifier = UUID.randomUUID();
 		final Long version = Long.valueOf(98765432109L);
 
@@ -192,7 +192,7 @@ class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-    void testCustomAnnotationsOnMethods() {
+    void customAnnotationsOnMethods() {
 		testSubject = AnnotationCommandTargetResolver.builder()
                 .targetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
                 .targetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)
@@ -217,7 +217,7 @@ class AnnotationCommandTargetResolverTest {
 	}
 
 	@Test
-    void testCustomAnnotationsOnFields() {
+    void customAnnotationsOnFields() {
 		testSubject = AnnotationCommandTargetResolver.builder()
                 .targetAggregateIdentifierAnnotation(CustomTargetAggregateIdentifier.class)
                 .targetAggregateVersionAnnotation(CustomTargetAggregateVersion.class)

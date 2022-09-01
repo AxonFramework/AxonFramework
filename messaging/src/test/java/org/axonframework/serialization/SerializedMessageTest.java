@@ -54,7 +54,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void testConstructor() {
+    void constructor() {
         SerializedMessage<Object> message1 = new SerializedMessage<>(eventId,
                                                                            serializedPayload,
                                                                            serializedMetaData, serializer);
@@ -67,7 +67,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
@@ -82,7 +82,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
@@ -99,7 +99,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void testSerializePayloadImmediately() {
+    void serializePayloadImmediately() {
         SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 
@@ -112,7 +112,7 @@ class SerializedMessageTest {
     }
 
     @Test
-    void testSerializeMetaDataImmediately() {
+    void serializeMetaDataImmediately() {
         SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 

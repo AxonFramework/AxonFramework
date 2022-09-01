@@ -52,13 +52,13 @@ class ConflictResolutionTest {
     }
 
     @Test
-    void testFactoryMethod() {
+    void factoryMethod() {
         assertNotNull(subject.createInstance(method, method.getParameters(), 1));
         assertNull(subject.createInstance(method, method.getParameters(), 0));
     }
 
     @Test
-    void testResolve() {
+    void resolve() {
         ConflictResolution.initialize(conflictResolver);
         assertFalse(subject.matches(GenericEventMessage.asEventMessage("testEvent")));
         assertTrue(subject.matches(commandMessage));
@@ -67,7 +67,7 @@ class ConflictResolutionTest {
     }
 
     @Test
-    void testResolveWithoutInitializationReturnsNoConflictsResolver() {
+    void resolveWithoutInitializationReturnsNoConflictsResolver() {
         assertTrue(subject.matches(commandMessage));
         assertSame(NoConflictResolver.INSTANCE, subject.resolveParameterValue(commandMessage));
     }

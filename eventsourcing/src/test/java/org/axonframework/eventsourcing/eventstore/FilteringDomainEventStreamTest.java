@@ -44,7 +44,7 @@ class FilteringDomainEventStreamTest {
     }
 
     @Test
-    void testForEachRemainingType1() {
+    void forEachRemainingType1() {
         List<DomainEventMessage> expectedMessages = Arrays.asList(event1);
 
         DomainEventStream concat = new FilteringDomainEventStream(
@@ -59,7 +59,7 @@ class FilteringDomainEventStreamTest {
     }
     
     @Test
-    void testForEachRemainingType2() {
+    void forEachRemainingType2() {
         List<DomainEventMessage> expectedMessages = Arrays.asList(event2, event3);
 
         DomainEventStream concat = new FilteringDomainEventStream(

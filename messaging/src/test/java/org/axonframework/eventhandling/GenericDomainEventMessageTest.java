@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericDomainEventMessageTest {
 
     @Test
-    void testConstructor() {
+    void constructor() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
@@ -66,7 +66,7 @@ class GenericDomainEventMessageTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
@@ -82,7 +82,7 @@ class GenericDomainEventMessageTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();

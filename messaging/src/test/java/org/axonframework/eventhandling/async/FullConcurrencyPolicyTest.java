@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class FullConcurrencyPolicyTest {
 
     @Test
-    void testSequencingIdentifier() {
+    void sequencingIdentifier() {
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
         assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));
         assertNotNull(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())));

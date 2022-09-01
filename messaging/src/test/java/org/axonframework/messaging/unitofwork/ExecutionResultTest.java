@@ -28,7 +28,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 class ExecutionResultTest {
 
     @Test
-    void testNormalExecutionResult() {
+    void normalExecutionResult() {
         Object resultPayload = new Object();
         ResultMessage<Object> result = asResultMessage(resultPayload);
         ExecutionResult subject = new ExecutionResult(result);
@@ -38,7 +38,7 @@ class ExecutionResultTest {
     }
 
     @Test
-    void testUncheckedExceptionResult() {
+    void uncheckedExceptionResult() {
         RuntimeException mockException = new RuntimeException();
         ResultMessage<RuntimeException> resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
@@ -48,7 +48,7 @@ class ExecutionResultTest {
     }
 
     @Test
-    void testCheckedExceptionResult() {
+    void checkedExceptionResult() {
         Exception mockException = new Exception();
         ResultMessage<Exception> resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);

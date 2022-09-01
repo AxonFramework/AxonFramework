@@ -65,7 +65,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     private GlobalMetricRegistry globalMetricRegistry;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertTrue(applicationContext.containsBean("metricRegistry"));
@@ -80,7 +80,7 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     }
 
     @Test
-    void testAxonServerEventStoreRequestedMonitor() {
+    void axonServerEventStoreRequestedMonitor() {
         assertNotNull(applicationContext.getBean(AxonServerEventStore.class));
 
         MessageMonitorFactory monitor = applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);

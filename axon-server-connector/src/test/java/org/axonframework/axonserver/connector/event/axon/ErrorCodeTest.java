@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ErrorCodeTest {
 
     @Test
-    void testConvert4002FromCodeAndMessage() {
+    void convert4002FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4002");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
@@ -45,7 +45,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    void testConvertUnknownFromCodeAndMessage() {
+    void convertUnknownFromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("????????");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build());
         assertTrue(exception instanceof AxonServerException);
@@ -53,14 +53,14 @@ class ErrorCodeTest {
     }
 
     @Test
-    void testConvertWithoutSource() {
+    void convertWithoutSource() {
         RuntimeException exception = new RuntimeException("oops");
         AxonException axonException = ErrorCode.getFromCode("AXONIQ-4002").convert(exception);
         assertEquals(exception.getMessage(), axonException.getMessage());
     }
 
     @Test
-    void testConvert4005FromCodeAndMessage() {
+    void convert4005FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-4005");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
         assertTrue(exception instanceof CommandExecutionException);
@@ -70,7 +70,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    void testConvert5003FromCodeAndMessage() {
+    void convert5003FromCodeAndMessage() {
         ErrorCode errorCode = ErrorCode.getFromCode("AXONIQ-5003");
         AxonException exception = errorCode.convert(ErrorMessage.newBuilder().setMessage("myMessage").build(), () -> "myCustomObject");
         assertTrue(exception instanceof QueryExecutionException);

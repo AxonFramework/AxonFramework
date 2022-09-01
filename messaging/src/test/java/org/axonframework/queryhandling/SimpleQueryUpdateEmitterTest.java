@@ -22,7 +22,7 @@ class SimpleQueryUpdateEmitterTest {
     private final SimpleQueryUpdateEmitter testSubject = SimpleQueryUpdateEmitter.builder().build();
 
     @Test
-    void testCompletingRegistrationOldApi() {
+    void completingRegistrationOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -45,7 +45,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testConcurrentUpdateEmitting() {
+    void concurrentUpdateEmitting() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -67,7 +67,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testConcurrentUpdateEmitting_WithBackpressure() {
+    void concurrentUpdateEmitting_WithBackpressure() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -91,7 +91,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
+    void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -114,7 +114,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCompletingRegistration() {
+    void completingRegistration() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -137,7 +137,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testDifferentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
+    void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
         SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",
@@ -161,7 +161,7 @@ class SimpleQueryUpdateEmitterTest {
     }
 
     @Test
-    void testCancelingRegistrationDoesNotCompleteFluxOfUpdates() {
+    void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "some-payload",
                 "chatMessages",

@@ -103,7 +103,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     @Test
     @Timeout(value = 30)
-    void testInsertConcurrentlyAndCheckReadOrder() throws Exception {
+    void insertConcurrentlyAndCheckReadOrder() throws Exception {
         int threadCount = 10;
         int eventsPerThread = 100;
         int inverseRollbackRate = 7;
@@ -122,7 +122,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     @Test
     @Timeout(value = 10)
-    void testInsertConcurrentlyAndReadUsingBlockingStreams() throws Exception {
+    void insertConcurrentlyAndReadUsingBlockingStreams() throws Exception {
         int threadCount = 10;
         int eventsPerThread = 100;
         int inverseRollbackRate = 2;
@@ -149,7 +149,7 @@ class JpaStorageEngineInsertionReadOrderTest {
 
     @Test
     @Timeout(value = 30)
-    void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
+    void insertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
         int threadCount = 4;
         int eventsPerThread = 100;
         int inverseRollbackRate = 2;
