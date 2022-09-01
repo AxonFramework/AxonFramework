@@ -41,11 +41,11 @@ public @interface Priority {
     /**
      * Value indicating the annotated member should be placed at the "lower quarter".
      */
-    int LOWER = Integer.MIN_VALUE / 2;
+    int LOWER = (Integer.MIN_VALUE / 2) + (Integer.MIN_VALUE / 4);
     /**
      * Value indicating the annotated member should be placed at the "lower half".
      */
-    int LOW = Integer.MIN_VALUE / 4;
+    int LOW = Integer.MIN_VALUE / 2;
     /**
      * Value indicating the annotated member should have medium priority, effectively placing it "in the middle".
      */
@@ -54,6 +54,11 @@ public @interface Priority {
      * Value indicating the annotated member should have high priority, effectively placing it "in the first half".
      */
     int HIGH = Integer.MAX_VALUE / 2;
+
+    /**
+     * Value indicating the annotated member should be placed at the "upper quarter".
+     */
+    int HIGHER = (Integer.MAX_VALUE / 2) + (Integer.MAX_VALUE / 4);
 
     /**
      * Value indicating the annotated member should be the very first
