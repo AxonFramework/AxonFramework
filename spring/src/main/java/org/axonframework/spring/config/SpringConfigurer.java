@@ -16,10 +16,12 @@
 
 package org.axonframework.spring.config;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -64,7 +66,11 @@ public class SpringConfigurer extends DefaultConfigurer {
             } else if (candidates.length == 1) {
                 return Optional.of(beanFactory.getBean(candidates[0], componentType));
             } else {
-                return findPrimary(componentType, candidates);
+                Optional<T> primary = findPrimary(componentType, candidates);
+                if (!primary.isPresent()) {
+                    throw new AxonConfigurationException("Expected single candidate for component [" + componentType.getSimpleName() + "]. Found candidates: " + Arrays.deepToString(candidates));
+                }
+                return primary;
             }
         }
 
