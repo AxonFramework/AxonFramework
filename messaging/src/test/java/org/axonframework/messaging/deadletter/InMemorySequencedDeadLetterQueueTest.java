@@ -36,7 +36,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 128;
 
     @Override
-    SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
+    protected SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
         return InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
                                                .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                                                .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
@@ -44,12 +44,12 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Override
-    long maxSequences() {
+    protected long maxSequences() {
         return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
     }
 
     @Override
-    long maxSequenceSize() {
+    protected long maxSequenceSize() {
         return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
     }
 

@@ -214,7 +214,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     @Override
     public boolean contains(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        return getSequenceSize(stringSequenceIdentifier) > 0;
+        return sequenceSize(stringSequenceIdentifier) > 0;
     }
 
     @Override
@@ -287,22 +287,12 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     @Override
     public boolean isFull(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        Long numberInSequence = getSequenceSize(stringSequenceIdentifier);
+        long numberInSequence = sequenceSize(stringSequenceIdentifier);
         if (numberInSequence > 0) {
             // Is already in queue, cannot cause overflow any longer.
             return numberInSequence >= maxSequenceSize;
         }
-        return getSequenceCount() >= maxSequences;
-    }
-
-    @Override
-    public long maxSequences() {
-        return maxSequences;
-    }
-
-    @Override
-    public long maxSequenceSize() {
-        return maxSequenceSize;
+        return amountOfSequences() >= maxSequences;
     }
 
     @Override
@@ -488,7 +478,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * @param sequenceIdentifier The sequence to check for.
      * @return The amount of dead letters for this sequence.
      */
-    private Long getSequenceSize(String sequenceIdentifier) {
+    @Override
+    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(dl) from DeadLetterEntry dl "
@@ -501,12 +492,20 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                            .getSingleResult());
     }
 
-    /**
-     * Counts the amount of unique sequences within this DLQ.
-     *
-     * @return The amount of sequences.
-     */
-    private Long getSequenceCount() {
+    @Override
+    public long size() {
+        return transactionManager.fetchInTransaction(
+                () -> entityManagerProvider.getEntityManager().createQuery(
+                                                   "select count(dl) from DeadLetterEntry dl "
+                                                           + "where dl.processingGroup=:processingGroup",
+                                                   Long.class
+                                           )
+                                           .setParameter("processingGroup", processingGroup)
+                                           .getSingleResult());
+    }
+
+    @Override
+    public long amountOfSequences() {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(distinct dl.sequenceIdentifier) from DeadLetterEntry dl "
@@ -624,9 +623,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
          * @return The current Builder, for fluent interfacing.
          */
         public JpaSequencedDeadLetterQueue.Builder<T> maxSequences(int maxSequences) {
-            assertThat(maxSequences,
-                       value -> value >= 128,
-                       "The maximum number of sequences should be larger or equal to 128");
+            assertStrictPositive(maxSequences,
+                       "The maximum number of sequences should be larger or equal to 0");
             this.maxSequences = maxSequences;
             return this;
         }
@@ -642,8 +640,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
          * @return The current Builder, for fluent interfacing.
          */
         public JpaSequencedDeadLetterQueue.Builder<T> maxSequenceSize(int maxSequenceSize) {
-            assertThat(maxSequenceSize,
-                       value -> value >= 128,
+            assertStrictPositive(maxSequenceSize,
                        "The maximum number of entries in a sequence should be larger or equal to 128");
             this.maxSequenceSize = maxSequenceSize;
             return this;

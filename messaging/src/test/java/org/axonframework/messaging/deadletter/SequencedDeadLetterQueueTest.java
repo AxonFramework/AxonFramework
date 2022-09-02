@@ -68,14 +68,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      *
      * @return The configured maximum amount of sequences for the {@link #buildTestSubject() test subject}.
      */
-    abstract long maxSequences();
+    protected abstract long maxSequences();
 
     /**
      * Return the configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
      *
      * @return The configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
      */
-    abstract long maxSequenceSize();
+    protected abstract long maxSequenceSize();
 
     @Test
     void enqueueAddsDeadLetter() {
@@ -578,7 +578,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         testSubject.enqueue(testId, firstTestLetter);
 
         List<DeadLetter<M>> expectedOrderList = new LinkedList<>();
-        for (int i = 0; i < 100; i++) {
+        long loopSize = maxSequences() - 5;
+        for (int i = 0; i < loopSize; i++) {
             DeadLetter<M> deadLetter = generateFollowUpLetter();
             expectedOrderList.add(deadLetter);
             testSubject.enqueueIfPresent(testId, () -> deadLetter);
@@ -589,7 +590,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
         assertLetter(firstTestLetter, resultSequence.pollFirst());
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < loopSize; i++) {
             assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
         }
     }
