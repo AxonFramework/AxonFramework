@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.deadletter.jpa;
+package org.axonframework.common.jpa;
 
 import org.axonframework.common.transaction.TransactionManager;
 

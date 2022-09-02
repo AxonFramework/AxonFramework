@@ -173,7 +173,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
                                    index,
                                    sequenceIdentifier,
                                    enqueuedAt,
-                                   lastTouched,
+                                   GenericDeadLetter.clock.instant(),
                                    requeueCause != null ? new ThrowableCause(requeueCause) : cause,
                                    diagnostics,
                                    message);
@@ -181,7 +181,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
 
     @Override
     public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
-        return new JpaDeadLetter<>(id, index, sequenceIdentifier, enqueuedAt, lastTouched, cause, diagnostics, message);
+        return new JpaDeadLetter<>(id, index, sequenceIdentifier, enqueuedAt, GenericDeadLetter.clock.instant(), cause, diagnostics, message);
     }
 
     @Override

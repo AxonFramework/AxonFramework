@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.deadletter.jpa;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.PagingJpaQueryIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
@@ -360,7 +361,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 requeue(deadLetter,
                         l -> decision.withDiagnostics(l)
                                      .withCause(decision.enqueueCause().orElse(null))
-                                     .markTouched()
                 );
                 return false;
             }
