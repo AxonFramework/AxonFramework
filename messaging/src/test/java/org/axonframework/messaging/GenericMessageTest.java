@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -38,10 +42,11 @@ import static org.mockito.Mockito.*;
 class GenericMessageTest {
 
     private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+    private UnitOfWork<?> unitOfWork;
 
     @BeforeEach
     void setUp() {
-        UnitOfWork<?> unitOfWork = mock(UnitOfWork.class);
+        unitOfWork = mock(UnitOfWork.class);
         when(unitOfWork.getCorrelationData()).thenAnswer(invocation -> correlationData);
         CurrentUnitOfWork.set(unitOfWork);
     }
@@ -91,5 +96,17 @@ class GenericMessageTest {
 
         assertNotEquals(testPayload, result);
         assertEquals(testPayload, result.getPayload());
+    }
+
+    @Test
+    void whenCorrelationDataProviderThrowsException_thenCatchException(){
+        unitOfWork = new DefaultUnitOfWork<>(new GenericEventMessage<>("Input 1"));
+        CurrentUnitOfWork.set(unitOfWork);
+        unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
+        CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
+
+        Message<?> result = GenericMessage.asMessage(exception);
+
+        assertNotNull(result);
     }
 }
