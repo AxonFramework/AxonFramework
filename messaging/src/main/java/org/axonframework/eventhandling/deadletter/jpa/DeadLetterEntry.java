@@ -95,13 +95,13 @@ public class DeadLetterEntry {
      *
      * @param processingGroup    The processing group this message belongs to.
      * @param sequenceIdentifier The sequence identifier this message belongs to.
-     * @param index              The index of this message within the sequence
+     * @param index              The index of this message within the sequence.
      * @param message            An embedded {@link DeadLetterEventEntry} containing all information about the message
      *                           itself.
      * @param enqueuedAt         The time the message was enqueued.
      * @param lastTouched        The time the message has been last processed.
      * @param cause              The reason the message was enqueued.
-     * @param diagnostics        The diagnostics, a map of metadata
+     * @param diagnostics        The diagnostics, a map of metadata.
      * @param serializer         The {@link Serializer } to use for the {@code diagnostics}
      */
     public DeadLetterEntry(String processingGroup,
@@ -155,8 +155,8 @@ public class DeadLetterEntry {
     }
 
     /**
-     * The index of this message within the {@link #getSequenceIdentifier()}, used for ordering and keeping the messages
-     * sequential.
+     * The index of this message within the {@link #getSequenceIdentifier()}, used for keeping the messages in the same
+     * order within the same sequence.
      *
      * @return The index.
      */

@@ -264,7 +264,6 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                 return false;
             }
 
-            logger.info("Got sequences: {}", sequenceIdsToLetter.keySet());
             String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
             boolean freshlyTaken = takenSequences.add(sequenceId);
             while (sequenceId != null && !freshlyTaken) {

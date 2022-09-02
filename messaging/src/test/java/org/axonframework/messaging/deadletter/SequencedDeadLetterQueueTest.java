@@ -561,7 +561,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     @Test
-    void testProcessHandlesMassiveAmountOfLettersInSequence() {
+    void processHandlesMassiveAmountOfLettersInSequence() {
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
@@ -747,6 +747,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     @SuppressWarnings("ConstantConditions")
     @Test
     void processWithLetterPredicateHandlesAllLettersInSequence() {
+        setAndGetTime();
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             Deque<DeadLetter<? extends M>> sequence = resultLetters.get();

@@ -30,7 +30,9 @@ import javax.persistence.Lob;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Represents an {@link org.axonframework.eventhandling.EventMessage} when stored into the database.
+ * Represents an {@link org.axonframework.eventhandling.EventMessage} when stored into the database. It contains all
+ * properties known in the framework implementations. Based on which properties are present, the original message type
+ * can be determined. For example, if an aggregate identifier is present, it was a {@link DomainEventMessage}.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0

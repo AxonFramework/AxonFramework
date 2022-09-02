@@ -49,17 +49,17 @@ class EventMessageDeadLetterJpaConverterTest {
     private final MetaData metaData = MetaData.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
     @Test
-    void testCanConvertGenericEventMessageAndBackCorrectly() {
+    void canConvertGenericEventMessageAndBackCorrectly() {
         testConversion(GenericEventMessage.asEventMessage(event).andMetaData(metaData));
     }
 
     @Test
-    void testCanConvertDomainEventMessageAndBackCorrectly() {
+    void canConvertDomainEventMessageAndBackCorrectly() {
         testConversion(new GenericDomainEventMessage<>("MyType", "8239081092", 25L, event, metaData));
     }
 
     @Test
-    void testCanConvertTrackedDomainEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
+    void canConvertTrackedDomainEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
         testConversion(new GenericTrackedDomainEventMessage<>(new GlobalSequenceTrackingToken(232323L),
                                                               "MyType",
                                                               "8239081092",
@@ -69,7 +69,7 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     @Test
-    void testCanConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
+    void canConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
         testConversion(new GenericTrackedDomainEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
                                                               "MyType",
                                                               "8239081092",
@@ -79,7 +79,7 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     @Test
-    void testCanConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
+    void canConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
         testConversion(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(232323L),
                                                         new GenericEventMessage<>(event, metaData),
                                                         Instant::now));
@@ -87,7 +87,7 @@ class EventMessageDeadLetterJpaConverterTest {
 
 
     @Test
-    void testCanConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
+    void canConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
         testConversion(new GenericTrackedEventMessage<>(new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L)),
                                                         new GenericEventMessage<>(event, metaData),
                                                         Instant::now));
