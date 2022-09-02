@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-/*
- * Copyright (c) 2010-2018. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.axonframework.integrationtests.modelling.command;
+package org.axonframework.spring.modeling.command;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -47,7 +31,8 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,14 +59,13 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
 @TestPropertySource("classpath:hsqldb.database.properties")
 @Transactional
-public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
+class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
     private final List<EventMessage> capturedEvents = new ArrayList<>();
     @Autowired
@@ -126,7 +110,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
         List<JpaAggregate> results = entityManager.createQuery("SELECT a FROM JpaAggregate a").getResultList();
         assertEquals(1, results.size());
         JpaAggregate aggregate = results.get(0);
-        assertEquals(originalId, aggregate.getIdentifier());
+        Assertions.assertEquals(originalId, aggregate.getIdentifier());
 
         uow = startAndGetUnitOfWork();
         Aggregate<JpaAggregate> storedAggregate = repository.load(originalId);
@@ -159,7 +143,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
         entityManager.persist(agg);
         entityManager.flush();
         entityManager.clear();
-        assertEquals((Long) 0L, agg.getVersion());
+        Assertions.assertEquals((Long) 0L, agg.getVersion());
 
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<JpaAggregate> aggregate = repository.load(agg.getIdentifier());
@@ -207,7 +191,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
                                      @Value("${jdbc.password}") String password) {
             DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
             driverManagerDataSource.setDriverClassName(driverClass);
-            return spy(driverManagerDataSource);
+            return Mockito.spy(driverManagerDataSource);
         }
 
         @Bean("entityManagerFactory")
@@ -219,7 +203,6 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
-            entityManagerFactoryBean.setPersistenceXmlLocation("classpath:META-INF/persistence.xml");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);
@@ -247,7 +230,7 @@ public class GenericJpaRepositoryIntegrationTest implements EventMessageHandler 
 
         @Bean("mockEventBus")
         public EventBus mockEventBus() {
-            return mock(EventBus.class);
+            return Mockito.mock(EventBus.class);
         }
 
         @Bean

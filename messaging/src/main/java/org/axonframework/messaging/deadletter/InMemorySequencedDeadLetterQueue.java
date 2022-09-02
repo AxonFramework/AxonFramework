@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -39,7 +39,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertThat;
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
  * In-memory implementation of the {@link SequencedDeadLetterQueue}.
@@ -58,7 +58,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Map<String, Deque<DeadLetter<? extends M>>> deadLetters = new ConcurrentSkipListMap<>();
+    private final Map<String, Deque<DeadLetter<? extends M>>> deadLetters = new ConcurrentHashMap<>();
     private final Set<String> takenSequences = new ConcurrentSkipListSet<>();
 
     private final int maxSequences;
@@ -208,12 +208,6 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         return maximumNumberOfSequencesReached(identifier) || maximumSequenceSizeReached(identifier);
     }
 
-    private static String toIdentifier(Object sequenceIdentifier) {
-        return sequenceIdentifier instanceof String
-                ? (String) sequenceIdentifier
-                : Integer.toString(sequenceIdentifier.hashCode());
-    }
-
     private boolean maximumNumberOfSequencesReached(String identifier) {
         return !deadLetters.containsKey(identifier) && deadLetters.keySet().size() >= maxSequences;
     }
@@ -223,13 +217,28 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     }
 
     @Override
-    public long maxSequences() {
-        return maxSequences;
+    public long size() {
+        return deadLetters.values()
+                          .stream()
+                          .mapToLong(Deque::size)
+                          .sum();
     }
 
     @Override
-    public long maxSequenceSize() {
-        return maxSequenceSize;
+    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
+        String identifier = toIdentifier(sequenceIdentifier);
+        return contains(identifier) ? deadLetters.get(identifier).size() : 0L;
+    }
+
+    private static String toIdentifier(Object sequenceIdentifier) {
+        return sequenceIdentifier instanceof String
+                ? (String) sequenceIdentifier
+                : Integer.toString(sequenceIdentifier.hashCode());
+    }
+
+    @Override
+    public long amountOfSequences() {
+        return deadLetters.size();
     }
 
     @Override
@@ -335,16 +344,13 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
          * Sets the maximum number of sequences this {@link SequencedDeadLetterQueue} may contain. This requirement
          * reflects itself as the maximum amount of unique "sequence identifiers."
          * <p>
-         * The given {@code maxSequences} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequences} is required to be a strictly positive number. It defaults to {@code 1024}.
          *
          * @param maxSequences The maximum amount of sequences for the queue under construction.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<M> maxSequences(int maxSequences) {
-            assertThat(maxSequences,
-                       value -> value >= 128,
-                       "The maximum number of sequences should be larger or equal to 128");
+            assertStrictPositive(maxSequences, "The maximum number of sequences should be a strictly positive number");
             this.maxSequences = maxSequences;
             return this;
         }
@@ -353,16 +359,16 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
          * Sets the maximum amount of {@link DeadLetter dead-letters} per sequence this {@link SequencedDeadLetterQueue}
          * can store.
          * <p>
-         * The given {@code maxSequenceSize} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequenceSize} is required to be a strictly positive number. It defaults to {@code 1024}.
          *
          * @param maxSequenceSize The maximum amount of {@link DeadLetter dead-letters} per sequence.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<M> maxSequenceSize(int maxSequenceSize) {
-            assertThat(maxSequenceSize,
-                       value -> value >= 128,
-                       "The maximum number of dead-letters in a sequence should be larger or equal to 128");
+            assertStrictPositive(
+                    maxSequenceSize,
+                    "The maximum number of dead-letters in a sequence should be a strictly positive number"
+            );
             this.maxSequenceSize = maxSequenceSize;
             return this;
         }

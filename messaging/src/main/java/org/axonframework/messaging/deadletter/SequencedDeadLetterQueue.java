@@ -132,45 +132,50 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     /**
      * Validates whether this queue is full for the given {@code sequenceIdentifier}.
      * <p>
-     * This method returns {@code true} either when {@link #maxSequences()} is reached or when the
-     * {@link #maxSequenceSize()} is reached. The former dictates no new identifiable sequences can be introduced. The
-     * latter that the sequence of the given {@code sequenceIdentifier} is full.
+     * This method returns {@code true} either when the maximum amount of sequences or the maximum sequence size is
+     * reached.
      *
      * @param sequenceIdentifier The identifier of the sequence to validate for.
-     * @return {@code true} either when {@link #maxSequences()} is reached or when the {@link #maxSequenceSize()} is
-     * reached. Returns {@code false} otherwise.
+     * @return {@code true} either when the limit of this queue is reached. Returns {@code false} otherwise.
      */
     boolean isFull(@Nonnull Object sequenceIdentifier);
 
     /**
-     * The maximum number of distinct sequences this dead letter queue can hold. This comes down to the maximum number
-     * of unique "sequence identifiers" stored.
-     * <p>
-     * Note that there's a window of opportunity where the queue might exceed the {@code maxSequences} value to
-     * accompany concurrent usage of this dead letter queue.
+     * Returns the number of dead-letters contained in this queue.
      *
-     * @return The maximum number of distinct sequences this dead letter queue can hold.
+     * @return The number of dead-letters contained in this queue.
      */
-    long maxSequences();
+    long size();
 
     /**
-     * The maximum number of letters a single sequence can contain. A single sequence is referenced based on it's
-     * "sequence identifier".
+     * Returns the number of dead-letters for the sequence matching the given {@code sequenceIdentifier} contained in
+     * this queue.
      * <p>
-     * Note that there's a window of opportunity where the queue might exceed the {@code maxSequenceSize} value to
-     * accompany concurrent usage.
+     * Note that there's a window of opportunity where the size might exceed the maximum sequence size to accompany
+     * concurrent usage.
      *
-     * @return The maximum number of letters a single sequence can contain.
+     * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
+     * @return The number of dead-letters for the sequence matching the given {@code sequenceIdentifier}.
      */
-    long maxSequenceSize();
+    long sequenceSize(@Nonnull Object sequenceIdentifier);
+
+    /**
+     * Returns the number of unique sequences contained in this queue.
+     * <p>
+     * Note that there's a window of opportunity where the size might exceed the maximum amount of sequences to
+     * accompany concurrent usage of this dead letter queue.
+     *
+     * @return The number of unique sequences contained in this queue.
+     */
+    long amountOfSequences();
 
     /**
      * Process a sequence of enqueued {@link DeadLetter dead-letters} through the given {@code processingTask} matching
      * the {@code sequenceFilter}. Will pick the oldest available sequence based on the {@link DeadLetter#lastTouched()}
      * field from every sequence's first entry.
      * <p>
-     * Note that only the first dead-letter is validated, because it is the blocker for the processing of the rest of
-     * the sequence.
+     * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead-letter is
+     * validated, because it is the blocker for the processing of the rest of the sequence.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} a dead-letter from the selected
@@ -197,6 +202,8 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * Process a sequence of enqueued {@link DeadLetter dead-letters} with the given {@code processingTask}. Will pick
      * the oldest available sequence based on the {@link DeadLetter#lastTouched()} field from every sequence's first
      * entry.
+     * <p>
+     * Note that only a <em>single</em> matching sequence is processed!
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
      * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter. The

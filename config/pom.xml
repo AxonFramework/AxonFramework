@@ -67,7 +67,7 @@
 
         <dependency>
             <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
+            <artifactId>hibernate-core</artifactId>
             <optional>true</optional>
             <scope>test</scope>
         </dependency>
@@ -102,6 +102,14 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Enforce older version of jakarta.validation (one with `javax` namespace)
+        to be compatible with Hibernate -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation.legacy.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -115,6 +123,13 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>

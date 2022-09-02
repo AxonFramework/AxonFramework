@@ -28,6 +28,7 @@ import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
@@ -48,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
@@ -61,22 +61,22 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class JdbcTokenStoreTest {
 
-    @Inject
+    @Autowired
     private DataSource dataSource;
 
-    @Inject
+    @Autowired
     @Named("tokenStore")
     private JdbcTokenStore tokenStore;
 
-    @Inject
+    @Autowired
     @Named("concurrentTokenStore")
     private JdbcTokenStore concurrentTokenStore;
 
-    @Inject
+    @Autowired
     @Named("stealingTokenStore")
     private JdbcTokenStore stealingTokenStore;
 
-    @Inject
+    @Autowired
     private TransactionManager transactionManager;
 
     @BeforeEach

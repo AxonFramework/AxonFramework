@@ -23,7 +23,6 @@ import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,9 +33,24 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
 
+    private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 128;
+
     @Override
-    public SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
-        return InMemorySequencedDeadLetterQueue.defaultQueue();
+    SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
+        return InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
+                                               .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                               .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
+                                               .build();
+    }
+
+    @Override
+    long maxSequences() {
+        return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
+    }
+
+    @Override
+    long maxSequenceSize() {
+        return MAX_SEQUENCES_AND_SEQUENCE_SIZE;
     }
 
     @Override
@@ -66,36 +80,12 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testMaxSequences() {
-        int expectedMaxSequences = 128;
-
-        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
-                                                .maxSequences(expectedMaxSequences)
-                                                .build();
-
-        assertEquals(expectedMaxSequences, testSubject.maxSequences());
-    }
-
-    @Test
-    void testMaxSequenceSize() {
-        int expectedMaxSequenceSize = 128;
-
-        InMemorySequencedDeadLetterQueue<EventMessage<?>> testSubject =
-                InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
-                                                .maxSequenceSize(expectedMaxSequenceSize)
-                                                .build();
-
-        assertEquals(expectedMaxSequenceSize, testSubject.maxSequenceSize());
-    }
-
-    @Test
-    void testBuildDefaultQueue() {
+    void buildDefaultQueue() {
         assertDoesNotThrow(() -> InMemorySequencedDeadLetterQueue.defaultQueue());
     }
 
     @Test
-    void testBuildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
+    void buildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
         InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
@@ -103,17 +93,15 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildWithValueLowerThanMinimumMaxSequencesThrowsAxonConfigurationException() {
-        IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
-                    InMemorySequencedDeadLetterQueue.builder();
+    void buildWithZeroMaxSequencesThrowsAxonConfigurationException() {
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+                InMemorySequencedDeadLetterQueue.builder();
 
-            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(i));
-        });
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
     }
 
     @Test
-    void testBuildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
+    void buildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
         InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
@@ -121,12 +109,10 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Test
-    void testBuildWithValueLowerThanMinimumMaxSequenceSizeThrowsAxonConfigurationException() {
-        IntStream.range(0, 127).forEach(i -> {
-            InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
-                    InMemorySequencedDeadLetterQueue.builder();
+    void buildWithZeroMaxSequenceSizeThrowsAxonConfigurationException() {
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+                InMemorySequencedDeadLetterQueue.builder();
 
-            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(i));
-        });
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
     }
 }

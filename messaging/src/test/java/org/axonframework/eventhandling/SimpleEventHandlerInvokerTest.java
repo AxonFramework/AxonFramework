@@ -98,14 +98,14 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithNullEventHandlersListThrowsAxonConfigurationException() {
+    void buildWithNullEventHandlersListThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
-
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.eventHandlers((List<?>) null));
     }
 
     @Test
-    void testBuildWithEmptyEventHandlersListThrowsAxonConfigurationException() {
+    void buildWithEmptyEventHandlersListThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
         List<Object> testEventHandlers = Collections.emptyList();
 
@@ -113,37 +113,37 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testBuildWithoutEventHandlersListThrowsAxonConfigurationException() {
+    void buildWithoutEventHandlersListThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     @Test
-    void testBuildWithNullParameterResolverFactoryThrowsAxonConfigurationException() {
+    void buildWithNullParameterResolverFactoryThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
-
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.parameterResolverFactory(null));
     }
 
     @Test
-    void testBuildWithNullHandlerDefinitionThrowsAxonConfigurationException() {
+    void buildWithNullHandlerDefinitionThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
-
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.handlerDefinition(null));
     }
 
     @Test
-    void testBuildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
+    void buildWithNullListenerInvocationErrorHandlerThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
-
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.listenerInvocationErrorHandler(null));
     }
 
     @Test
-    void testBuildWithNullSequencingPolicyThrowsAxonConfigurationException() {
+    void buildWithNullSequencingPolicyThrowsAxonConfigurationException() {
         SimpleEventHandlerInvoker.Builder<?> builderTestSubject = SimpleEventHandlerInvoker.builder();
-
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.sequencingPolicy(null));
     }
 }

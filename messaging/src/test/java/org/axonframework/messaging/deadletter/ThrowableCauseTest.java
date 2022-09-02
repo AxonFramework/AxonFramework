@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ThrowableCauseTest {
 
     @Test
-    void testConstructThrowableCauseWithThrowable() {
+    void constructThrowableCauseWithThrowable() {
         Throwable testThrowable = new RuntimeException("just because");
 
         ThrowableCause testSubject = new ThrowableCause(testThrowable);
@@ -22,7 +22,7 @@ class ThrowableCauseTest {
     }
 
     @Test
-    void testConstructThrowableCauseWithTypeAndMessage() {
+    void constructThrowableCauseWithTypeAndMessage() {
         String testType = "type";
         String testMessage = "message";
 

@@ -16,13 +16,13 @@ import java.util.function.Function;
 public abstract class Decisions {
 
     /**
-     * Construct a {@link IgnoreDecision} defining that a {@link DeadLetter dead-letter} should remain in the queue.
+     * Construct a {@link Ignore} defining that a {@link DeadLetter dead-letter} should remain in the queue.
      *
      * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
-     * @return A {@link IgnoreDecision} defining that a {@link DeadLetter dead-letter} should remain in the queue.
+     * @return A {@link Ignore} defining that a {@link DeadLetter dead-letter} should remain in the queue.
      */
-    public static <M extends Message<?>> IgnoreDecision<M> ignore() {
-        return new IgnoreDecision<>();
+    public static <M extends Message<?>> Ignore<M> ignore() {
+        return new Ignore<>();
     }
 
     /**

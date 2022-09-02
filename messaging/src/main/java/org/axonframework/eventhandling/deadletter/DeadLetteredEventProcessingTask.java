@@ -103,7 +103,7 @@ class DeadLetteredEventProcessingTask
 
     private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead-letter [{}] was successfully.", letter);
+            logger.info("Processing dead-letter [{}] was successful.", letter);
         }
         return Decisions.evict();
     }

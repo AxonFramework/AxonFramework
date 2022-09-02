@@ -23,7 +23,7 @@ public interface EnqueueDecision<M extends Message<?>> {
 
     /**
      * The decision whether the {@link DeadLetter dead-letter} should be enqueued in a queue. When {@code false} the
-     * dead-letter should be evicted instead.
+     * dead-letter should be evicted.
      *
      * @return {@code true} if the {@link DeadLetter dead-letter} should be enqueued, {@code false} if the dead-letter
      * should be evicted.

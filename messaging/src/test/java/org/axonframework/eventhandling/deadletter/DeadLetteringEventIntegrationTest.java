@@ -194,7 +194,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    void testFailedEventHandlingEnqueuesTheEvent() {
+    void failedEventHandlingEnqueuesTheEvent() {
         EventMessage<Object> failedEvent = asEventMessage(new DeadLetterableEvent("failure", FAIL));
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent("success", SUCCEED)));
         eventSource.publishMessage(failedEvent);
@@ -222,7 +222,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    void testEventsInTheSameSequenceAreAllEnqueuedIfOneOfThemFails() {
+    void eventsInTheSameSequenceAreAllEnqueuedIfOneOfThemFails() {
         int expectedSuccessfulHandlingCount = 3;
         String aggregateId = UUID.randomUUID().toString();
         // Three events in sequence "aggregateId" succeed
@@ -267,7 +267,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    void testSuccessfulRetryingEvictsTheDeadLetterFromTheQueue() {
+    void successfulRetryingLettersEvictsTheLettersFromTheQueue() {
         int expectedSuccessfulInitialHandlingCount = 3;
         // The first failure ensure subsequent events don't reach the handler.
         // So there can only be a single failure per sequence on the first try.
@@ -323,7 +323,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    void testUnsuccessfulProcessingRequeuesTheDeadLetterInTheQueue() {
+    void unsuccessfulProcessingLettersRequeuesTheLettersInTheQueue() {
         int expectedSuccessfulInitialHandlingCount = 3;
         // The first failure ensure subsequent events don't reach the handler.
         // So there can only be a single failure per sequence on the first try.
@@ -381,7 +381,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    void testPublishEventsAndProcessDeadLettersConcurrently() {
+    void publishEventsAndProcessDeadLettersConcurrentlyShouldWorkFine() {
         int expectedSuccessfulInitialHandlingCount = 3;
         // The first failure ensure subsequent events don't reach the handler.
         // So there can only be a single failure per sequence on the first try.
@@ -443,7 +443,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     @Test
     @Timeout(10)
-    void testPublishEventsAndProcessDeadLettersConcurrentlyInBulk() throws InterruptedException {
+    void publishEventsAndProcessDeadLettersConcurrentlyInBulkShouldWorkFine() throws InterruptedException {
         int immediateSuccessesPerAggregate = 5;
         int failFirstAndThenSucceedPerAggregate = 4;
         int persistentFailingPerAggregate = 1;

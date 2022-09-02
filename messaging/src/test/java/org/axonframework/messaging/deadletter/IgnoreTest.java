@@ -12,12 +12,12 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating {@link IgnoreDecision}. Either constructed through the constructor or through the
- * {@link Decisions} utility class.
+ * Test class validating {@link Ignore}. Either constructed through the constructor or through the {@link Decisions}
+ * utility class.
  *
  * @author Steven van Beelen
  */
-class IgnoreDecisionTest {
+class IgnoreTest {
 
     private DeadLetter<EventMessage<String>> testLetter;
 
@@ -29,8 +29,8 @@ class IgnoreDecisionTest {
     }
 
     @Test
-    void testDefaultIgnoreDecision() {
-        IgnoreDecision<Message<?>> testSubject = new IgnoreDecision<>();
+    void constructorIgnoreAllowsEnqueueing() {
+        Ignore<Message<?>> testSubject = new Ignore<>();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
@@ -40,8 +40,8 @@ class IgnoreDecisionTest {
     }
 
     @Test
-    void testDecisionsIgnore() {
-        IgnoreDecision<Message<?>> testSubject = Decisions.ignore();
+    void decisionsIgnoreAllowsEnqueueing() {
+        Ignore<Message<?>> testSubject = Decisions.ignore();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());

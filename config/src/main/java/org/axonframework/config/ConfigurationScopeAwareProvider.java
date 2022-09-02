@@ -24,6 +24,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -77,7 +78,11 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
     }
 
     private List<AbstractSagaManager> retrieveSagaManagers() {
-        return configuration.eventProcessingConfiguration()
+        EventProcessingConfiguration eventProcessingConfiguration = configuration.eventProcessingConfiguration();
+        if (eventProcessingConfiguration == null) {
+        	return Collections.emptyList();
+        }
+        return eventProcessingConfiguration
                             .sagaConfigurations()
                             .stream()
                             .map(SagaConfiguration::manager)
