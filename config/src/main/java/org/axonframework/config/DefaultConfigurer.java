@@ -104,6 +104,7 @@ import javax.annotation.Nonnull;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.util.HandlerTypeResolver.*;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -657,9 +658,16 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
-        registerCommandHandler(c -> messageHandler.get());
-        eventProcessing().registerEventHandler(c -> messageHandler.get());
-        registerQueryHandler(c -> messageHandler.get());
+        Class<?> handlerClass = messageHandler.get().getClass();
+        if (isCommandHandler(handlerClass)){
+            registerCommandHandler(c -> messageHandler.get());
+        }
+        if (isEventHandler(handlerClass)){
+            eventProcessing().registerEventHandler(c -> messageHandler.get());
+        }
+        if (isQueryHandler(handlerClass)){
+            registerQueryHandler(c -> messageHandler.get());
+        }
         return this;
     }
 
