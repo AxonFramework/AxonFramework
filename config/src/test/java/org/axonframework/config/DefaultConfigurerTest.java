@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,22 +57,15 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
+import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
 import org.quartz.SchedulerException;
 
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,25 +73,21 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating several {@link DefaultConfigurer} operations.
@@ -622,6 +611,26 @@ class DefaultConfigurerTest {
         assertTrue(result instanceof ConfigurationScopeAwareProvider);
     }
 
+    @Test
+    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubAggregate());
+
+        verify(configurer, times(1)).registerCommandHandler(any());
+        verify(configurer, times(1)).eventProcessing();
+        verify(configurer, never()).registerQueryHandler(any());
+    }
+
+    @Test
+    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubQueryHandler());
+
+        verify(configurer, never()).registerCommandHandler(any());
+        verify(configurer, never()).eventProcessing();
+        verify(configurer, times(1)).registerQueryHandler(any());
+    }
+
     @SuppressWarnings("unused")
     @Entity(name = "StubAggregate")
     private static class StubAggregate {
@@ -647,6 +656,14 @@ class DefaultConfigurerTest {
         @EventSourcingHandler
         protected void on(String event) {
             this.id = event;
+        }
+    }
+
+    private static class StubQueryHandler {
+
+        @QueryHandler
+        public String handle(String query) {
+            return "foo";
         }
     }
 
