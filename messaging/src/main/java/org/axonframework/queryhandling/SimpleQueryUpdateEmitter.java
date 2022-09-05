@@ -36,10 +36,12 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
+import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,6 +195,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 			}
 			if(sqm.getUpdateResponseType() instanceof OptionalResponseType) {
 				return Optional.class.isAssignableFrom(payloadType);
+			}			
+			if(sqm.getUpdateResponseType() instanceof PublisherResponseType) {
+				return Publisher.class.isAssignableFrom(payloadType);
 			}			
 			return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
 		};
