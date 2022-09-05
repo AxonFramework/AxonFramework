@@ -1,14 +1,23 @@
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.jupiter.api.*;
-import reactor.test.StepVerifier;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.log;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -159,7 +168,171 @@ class SimpleQueryUpdateEmitterTest {
                     .expectNext(1234)
                     .verifyComplete();
     }
+    
+    @Test
+    void updateResponseTypeFilteringWorksForMultipleInstanceOfWithArrayAndList() {
+        SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.multipleInstancesOf(String.class)
+        );
 
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, "some-awesome-text");
+        testSubject.emit(any -> true, 1234);
+        testSubject.emit(any -> true, Optional.of("optional-payload"));
+        testSubject.emit(any -> true, Optional.empty());
+        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
+        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
+        testSubject.emit(any -> true, Mono.just("mono-item"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        			.expectNextMatches(actual -> equalTo(new String[] { "array-item-1", "array-item-2" }).matches(actual) )
+        			.expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual) )
+                    .verifyComplete();
+    }
+
+    @Test
+    void updateResponseTypeFilteringWorksForOptionaInstanceOf() {
+        SubscriptionQueryMessage<String, List<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.optionalInstanceOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, "some-awesome-text");
+        testSubject.emit(any -> true, 1234);
+        testSubject.emit(any -> true, Optional.of("optional-payload"));
+        testSubject.emit(any -> true, Optional.empty());
+        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
+        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
+        testSubject.emit(any -> true, Mono.just("mono-item"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        			.expectNext(Optional.of("optional-payload"), Optional.empty() )
+                    .verifyComplete();
+    }
+    
+	@Test
+    @SuppressWarnings("unchecked")
+    void updateResponseTypeFilteringWorksForPublisherOf() {
+        SubscriptionQueryMessage<String, List<String>, Publisher<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.publisherOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, "some-awesome-text");
+        testSubject.emit(any -> true, 1234);
+        testSubject.emit(any -> true, Optional.of("optional-payload"));
+        testSubject.emit(any -> true, Optional.empty());
+        testSubject.emit(any -> true, new String[] { "array-item-1", "array-item-2" });
+        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
+        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
+        testSubject.emit(any -> true, Mono.just("mono-item"));
+        testSubject.emit(any -> true, Mono.empty());
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        			.expectNextMatches( publisher -> {
+        				try {
+        					StepVerifier.create((Publisher<String>) publisher).expectNext("flux-item-1", "flux-item-2").verifyComplete();
+        				} catch (Exception e) {
+        					return false;
+        				}
+        				return true;
+        			})
+        			.expectNextMatches( publisher -> {
+        				try {
+        					StepVerifier.create((Publisher<String>) publisher).expectNext("mono-item").verifyComplete();
+        				} catch (Exception e) {
+        					return false;
+        				}
+        				return true;
+        			})
+        			.expectNextMatches( publisher -> {
+        				try {
+        					StepVerifier.create((Publisher<String>) publisher).verifyComplete();
+        				} catch (Exception e) {
+        					return false;
+        				}
+        				return true;
+        			})
+                    .verifyComplete();
+    }
+    
+    @Test
+    void multipleInstanceUpdatesAreDelivered() {
+        SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.multipleInstancesOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, Arrays.asList("text1","text2"));
+        testSubject.emit(any -> true, Arrays.asList("text3","text4"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(Arrays.asList("text1","text2"), Arrays.asList("text3","text4"))
+                    .verifyComplete();
+    }
+        
+    @Test
+    void optionalUpdatesAreDelivered() {
+        SubscriptionQueryMessage<String, Optional<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "some-payload",
+                "chatMessages",
+                ResponseTypes.optionalInstanceOf(String.class),
+                ResponseTypes.optionalInstanceOf(String.class)
+        );
+
+        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+                queryMessage,
+                1024
+        );
+
+        result.getUpdates().subscribe();
+        testSubject.emit(any -> true, Optional.of("text1"));
+        testSubject.emit(any -> true, Optional.of("text2"));
+        result.complete();
+
+        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+                    .expectNext(Optional.of("text1"),Optional.of("text2"))
+                    .verifyComplete();
+    }
+    
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(

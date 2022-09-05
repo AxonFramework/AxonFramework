@@ -16,19 +16,8 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import reactor.core.publisher.EmitterProcessor;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.Sinks;
+import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,10 +28,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+
 import javax.annotation.Nonnull;
 
-import static java.lang.String.format;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
+import org.axonframework.messaging.responsetypes.OptionalResponseType;
+import org.axonframework.messaging.responsetypes.PublisherResponseType;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Sinks;
 
 /**
  * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
@@ -176,12 +182,27 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                             SubscriptionQueryUpdateMessage<U> update) {
         updateHandlers.keySet()
                       .stream()
-                      .filter(sqm -> sqm.getUpdateResponseType().matches(update.getPayloadType()))
+      				  .filter(payloadMatchesQueryResponseType(update.getPayloadType()))
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(uh -> doEmit(query, uh, update)));
     }
-
+	
+    private Predicate<SubscriptionQueryMessage<?,?,?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
+		return sqm -> {			
+			if(sqm.getUpdateResponseType() instanceof MultipleInstancesResponseType) {
+				return payloadType.isArray() ||	Iterable.class.isAssignableFrom(payloadType);
+			}
+			if(sqm.getUpdateResponseType() instanceof OptionalResponseType) {
+				return Optional.class.isAssignableFrom(payloadType);
+			}			
+			if(sqm.getUpdateResponseType() instanceof PublisherResponseType) {
+				return Publisher.class.isAssignableFrom(payloadType);
+			}			
+			return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
+		};
+	}
+    
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
