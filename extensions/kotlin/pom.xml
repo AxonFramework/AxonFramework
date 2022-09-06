@@ -34,7 +34,7 @@
     <axon.version>4.5.15</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <kotlin.version>1.7.10</kotlin.version>
-    <jackson-kotlin.version>2.13.3</jackson-kotlin.version>
+    <jackson-kotlin.version>2.13.4</jackson-kotlin.version>
     <kotlin-logging.version>2.1.23</kotlin-logging.version>
     <mockk.version>1.12.4</mockk.version>
     <junit.jupiter.version>5.8.2</junit.jupiter.version>
