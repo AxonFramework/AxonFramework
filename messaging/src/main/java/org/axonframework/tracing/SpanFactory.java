@@ -169,7 +169,7 @@ public interface SpanFactory {
      *
      * @param provider The provider to add.
      */
-    void registerTagProvider(SpanAttributesProvider provider);
+    void registerSpanAttributeProvider(SpanAttributesProvider provider);
 
     /**
      * Propagates the currently active trace and span to the message. It should do so in a way that the context can be
