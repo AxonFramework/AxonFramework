@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,11 +65,11 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event,
                                 EventMessage<TriggerSagaStartEvent> message,
-                                @MetaDataValue("extraIdentifier") String extraIdentifier) {
+                                @MetaDataValue("extraIdentifier") Object extraIdentifier) {
         handledEvents.add(event);
 
         if (extraIdentifier != null) {
-            associateWith("extraIdentifier", extraIdentifier);
+            associateWith("extraIdentifier", extraIdentifier.toString());
         }
 
         timer = scheduler.schedule(message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),

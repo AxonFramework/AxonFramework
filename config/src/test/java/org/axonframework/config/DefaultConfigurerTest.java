@@ -57,6 +57,7 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
+import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
@@ -632,6 +633,26 @@ class DefaultConfigurerTest {
         assertTrue(result instanceof ConfigurationScopeAwareProvider);
     }
 
+    @Test
+    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubAggregate());
+
+        verify(configurer, times(1)).registerCommandHandler(any());
+        verify(configurer, times(1)).eventProcessing();
+        verify(configurer, never()).registerQueryHandler(any());
+    }
+
+    @Test
+    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubQueryHandler());
+
+        verify(configurer, never()).registerCommandHandler(any());
+        verify(configurer, never()).eventProcessing();
+        verify(configurer, times(1)).registerQueryHandler(any());
+    }
+
     @SuppressWarnings("unused")
     @Entity(name = "StubAggregate")
     private static class StubAggregate {
@@ -657,6 +678,14 @@ class DefaultConfigurerTest {
         @EventSourcingHandler
         protected void on(String event) {
             this.id = event;
+        }
+    }
+
+    private static class StubQueryHandler {
+
+        @QueryHandler
+        public String handle(String query) {
+            return "foo";
         }
     }
 

@@ -18,7 +18,10 @@ package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
@@ -48,6 +51,7 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -109,6 +113,57 @@ class AxonAutoConfigurationTest {
                                applicationContext.getBean("messageSerializer"));
                     assertSame(applicationContext.getBean("serializer"),
                                applicationContext.getBean("messageSerializer"));
+                });
+    }
+
+    @Test
+    void ambiguousComponentsThrowExceptionWhenRequestedFromConfiguration() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
+                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
+            applicationContextRunner
+                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+        });
+        assertTrue(actual.getMessage().contains("CommandGateway"));
+        assertTrue(actual.getMessage().contains("gatewayOne"));
+        assertTrue(actual.getMessage().contains("gatewayTwo"));
+
+    }
+
+    @Test
+    void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
+                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
+            applicationContextRunner
+                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+        });
+        assertTrue(actual.getMessage().contains("CommandGateway"));
+        assertTrue(actual.getMessage().contains("gatewayOne"));
+        assertTrue(actual.getMessage().contains("gatewayTwo"));
+    }
+
+    @Test
+    void ambiguousBeanDependenciesThrowException() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandBus.class, () -> SimpleCommandBus.builder().build())
+                .withBean("gatewayTwo", CommandBus.class, () -> SimpleCommandBus.builder().build())
+                .withPropertyValues("axon.axonserver.enabled=false")
+                .run(ctx -> {
+                    Throwable startupFailure = ctx.getStartupFailure();
+                    assertTrue(startupFailure instanceof UnsatisfiedDependencyException);
+                    assertTrue(startupFailure.getMessage().contains("CommandBus"), "Expected mention of 'CommandBus' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayOne"), "Expected mention of 'gatewayOne' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayTwo"), "Expected mention of 'gatewayTwo' in: " + startupFailure.getMessage());
                 });
     }
 
