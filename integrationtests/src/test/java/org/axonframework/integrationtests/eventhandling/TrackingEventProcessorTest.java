@@ -49,6 +49,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
+import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.*;
@@ -1963,6 +1964,11 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 1000)
     void isReplayingWhenNotCaughtUp() throws Exception {
+        initProcessor(
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE)
+        );
         when(mockHandler.supportsReset()).thenReturn(true);
 
         final List<String> handled = new CopyOnWriteArrayList<>();
