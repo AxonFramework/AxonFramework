@@ -120,7 +120,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
                                 @Nonnull final CommandCallback<? super C, ? super R> callback) {
-        Span span = spanFactory.createInternalSpan(() -> "SimpleCommandBus.dispatch", command).start();
+        Span span = spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".dispatch", command).start();
         CommandCallback<? super C, ? super R> spanAwareCallback = callback.wrap((commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
                 span.recordException(commandResultMessage.exceptionResult());
@@ -186,7 +186,7 @@ public class SimpleCommandBus implements CommandBus {
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
-        spanFactory.createInternalSpan(() -> "SimpleCommandBus.handle", command).run(() -> {
+        spanFactory.createInternalSpan(() -> getClass().getSimpleName() + ".handle", command).run(() -> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Handling command [{}]", command.getCommandName());
             }

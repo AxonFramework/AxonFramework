@@ -73,8 +73,9 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Instantiate a Builder to be able to create a {@link AnnotatedSagaManager}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
-     * a {@link LoggingErrorHandler}.
+     * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to a
+     * {@link LoggingErrorHandler} and the {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
      * one based of the required {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the

@@ -73,10 +73,11 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, {@link RollbackConfiguration} defaults to a
      * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, the {@link DuplicateCommandHandlerResolver} defaults to
-     * {@link DuplicateCommandHandlerResolution#logAndOverride()} and the {@link Executor} defaults to a
-     * {@link Executors#newCachedThreadPool}. The default{@code executor} uses an {@link AxonThreadFactory} to create
-     * threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration and Executor
-     * are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
+     * {@link DuplicateCommandHandlerResolution#logAndOverride()}, the {@link Executor} defaults to a
+     * {@link Executors#newCachedThreadPool} and the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}. The default{@code executor} uses an {@link AxonThreadFactory}
+     * to create threads with a sensible naming scheme. The TransactionManager, MessageMonitor, RollbackConfiguration
+     * and Executor are <b>hard requirements</b>. Thus setting them to {@code null} will result in an
      * {@link AxonConfigurationException}.
      *
      * @return a Builder to be able to create a {@link AsynchronousCommandBus}

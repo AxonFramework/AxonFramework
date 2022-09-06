@@ -16,6 +16,7 @@
 
 package org.axonframework.tracing;
 
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -43,15 +44,26 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
     private final boolean showEventSourcingHandlers;
 
     /**
-     * Creates a new {@link TracingHandlerEnhancerDefinition}, adding spans to each message handler invocation.
+     * Creates a new {@link TracingHandlerEnhancerDefinition} based on the builder.
      *
-     * @param spanFactory               The {@link SpanFactory} to use.
-     * @param showEventSourcingHandlers Whether to show event sourcing handlers as a span. Can be very noisy when
-     *                                  loading large aggregates.
+     * @param builder The builder to construct the {@link TracingHandlerEnhancerDefinition} from.
      */
-    public TracingHandlerEnhancerDefinition(SpanFactory spanFactory, boolean showEventSourcingHandlers) {
-        this.spanFactory = spanFactory;
-        this.showEventSourcingHandlers = showEventSourcingHandlers;
+    protected TracingHandlerEnhancerDefinition(Builder builder) {
+        BuilderUtils.assertNonNull(builder.spanFactory, "SpanFactory must be provided!");
+        this.spanFactory = builder.spanFactory;
+        this.showEventSourcingHandlers = builder.showEventSourcingHandlers;
+    }
+
+    /**
+     * Instantiate a builder to create a {@link TracingHandlerEnhancerDefinition}.
+     * <p>
+     * The {@code showEventSourcingHandlers} is defaulted to {@code false}. The {@link SpanFactory} is a hard
+     * requirement and should be provided.
+     *
+     * @return The builder to create a {@link TracingHandlerEnhancerDefinition}.
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -87,5 +99,50 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
                              executable.getName(),
                              Arrays.stream(executable.getParameterTypes()).map(Class::getSimpleName)
                                    .collect(Collectors.joining(",")));
+    }
+
+    /**
+     * Builder class to instantiate a {@link TracingHandlerEnhancerDefinition}.
+     * <p>
+     * The {@code showEventSourcingHandlers} is defaulted to {@code false}. The {@link SpanFactory} is a hard
+     * requirement and should be provided.
+     */
+    public static class Builder {
+
+        private SpanFactory spanFactory;
+        private boolean showEventSourcingHandlers = false;
+
+
+        /**
+         * Configures the {@link SpanFactory} the handler enhancer should use for tracing.
+         *
+         * @param spanFactory The {@link SpanFactory} to configure.
+         * @return The builder, for fluent interfacing.
+         */
+        public Builder spanFactory(SpanFactory spanFactory) {
+            BuilderUtils.assertNonNull(spanFactory, "SpanFactory can not be set to null!");
+            this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Configures whether event sourcing handlers should be traced. Defaults to {@code false}.
+         *
+         * @param showEventSourcingHandlers Whether event sourcing handlers should be traced.
+         * @return The builder, for fluent interfacing.
+         */
+        public Builder showEventSourcingHandlers(boolean showEventSourcingHandlers) {
+            this.showEventSourcingHandlers = showEventSourcingHandlers;
+            return this;
+        }
+
+        /**
+         * Initializes the {@link TracingHandlerEnhancerDefinition} based on the builder contents.
+         *
+         * @return The {@link TracingHandlerEnhancerDefinition}.
+         */
+        public TracingHandlerEnhancerDefinition build() {
+            return new TracingHandlerEnhancerDefinition(this);
+        }
     }
 }

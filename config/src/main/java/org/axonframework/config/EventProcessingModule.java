@@ -50,7 +50,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -819,7 +818,7 @@ public class EventProcessingModule
                                      .tokenStore(tokenStore(name))
                                      .transactionManager(transactionManager(name))
                                      .trackingEventProcessorConfiguration(config)
-                                     .spanFactory(configuration.getComponent(SpanFactory.class))
+                                     .spanFactory(configuration.spanFactory())
                                      .build();
     }
 
@@ -862,7 +861,7 @@ public class EventProcessingModule
                                                  config.onShutdown(workerExecutor::shutdown);
                                                  return workerExecutor;
                                              })
-                                             .spanFactory(config.getComponent(SpanFactory.class));
+                                             .spanFactory(config.spanFactory());
         return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
                                                            .andThen(processorConfiguration)
                                                            .apply(config, builder)

@@ -17,6 +17,7 @@
 package org.axonframework.tracing;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;
@@ -56,27 +57,34 @@ class TracingHandlerEnhancerDefinitionTest {
     void showsWhenNotEventSourcingHandler() throws Exception {
         setupOriginal(false);
 
-        TracingHandlerEnhancerDefinition definition = new TracingHandlerEnhancerDefinition(spanFactory, false);
+        TracingHandlerEnhancerDefinition definition = TracingHandlerEnhancerDefinition.builder()
+                                                                                      .spanFactory(spanFactory)
+                                                                                      .showEventSourcingHandlers(false)
+                                                                                      .build();
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
         Message<?> message = mock(Message.class);
         when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
-            spanFactory.verifySpanActive( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+            spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
         messageHandlingMember.handle(message, this);
 
         assertTrue(invoked);
-        spanFactory.verifySpanCompleted( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+        spanFactory.verifySpanCompleted("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
     }
 
     @Test
     void doesNotShowWhenEventSourcingHandler() throws Exception {
         setupOriginal(true);
 
-        TracingHandlerEnhancerDefinition definition = new TracingHandlerEnhancerDefinition(spanFactory, false);
-        MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(original);
+        TracingHandlerEnhancerDefinition definition = TracingHandlerEnhancerDefinition.builder()
+                                                                                      .spanFactory(spanFactory)
+                                                                                      .showEventSourcingHandlers(false)
+                                                                                      .build();
+        MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
+                original);
         assertSame(original, messageHandlingMember);
     }
 
@@ -84,19 +92,34 @@ class TracingHandlerEnhancerDefinitionTest {
     void showsWhenEventSourcingHandlerButOptionIsTrue() throws Exception {
         setupOriginal(true);
 
-        TracingHandlerEnhancerDefinition definition = new TracingHandlerEnhancerDefinition(spanFactory, true);
+        TracingHandlerEnhancerDefinition definition = TracingHandlerEnhancerDefinition.builder()
+                                                                                      .spanFactory(spanFactory)
+                                                                                      .showEventSourcingHandlers(true)
+                                                                                      .build();
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
         Message<?> message = mock(Message.class);
         when(original.handle(any(), any())).thenAnswer(invocationOnMock -> {
-            spanFactory.verifySpanActive( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+            spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
             return null;
         });
         messageHandlingMember.handle(message, this);
 
         assertTrue(invoked);
-        spanFactory.verifySpanCompleted( "TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+        spanFactory.verifySpanCompleted("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
+    }
+
+    @Test
+    void canNotSetSpanFactoryToNull() {
+        TracingHandlerEnhancerDefinition.Builder builder = TracingHandlerEnhancerDefinition.builder();
+        assertThrows(AxonConfigurationException.class, () -> builder.spanFactory(null));
+    }
+
+    @Test
+    void canNotBuildeWithoutSpanFactory() {
+        TracingHandlerEnhancerDefinition.Builder builder = TracingHandlerEnhancerDefinition.builder();
+        assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     private class MyEvent {

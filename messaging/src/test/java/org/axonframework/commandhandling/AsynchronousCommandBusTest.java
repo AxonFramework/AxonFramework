@@ -75,10 +75,10 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
 
-        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
-        spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+        spanFactory.verifySpanCompleted("AsynchronousCommandBus.dispatch");
+        spanFactory.verifySpanPropagated("AsynchronousCommandBus.dispatch", command);
 
-        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        spanFactory.verifySpanCompleted("AsynchronousCommandBus.handle");
 
         InOrder inOrder = inOrder(mockCallback,
                                   executorService,
@@ -105,11 +105,11 @@ class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, NoOpCallback.INSTANCE);
 
-        spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
-        spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+        spanFactory.verifySpanCompleted("AsynchronousCommandBus.dispatch");
+        spanFactory.verifySpanPropagated("AsynchronousCommandBus.dispatch", command);
 
 
-        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        spanFactory.verifySpanCompleted("AsynchronousCommandBus.handle");
 
         InOrder inOrder = inOrder(executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
@@ -139,7 +139,7 @@ class AsynchronousCommandBusTest {
         assertTrue(commandResultMessageCaptor.getValue().isExceptional());
         assertEquals(NoHandlerForCommandException.class,
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
-        spanFactory.verifySpanHasException("SimpleCommandBus.dispatch", NoHandlerForCommandException.class);
+        spanFactory.verifySpanHasException("AsynchronousCommandBus.dispatch", NoHandlerForCommandException.class);
     }
 
     @Test

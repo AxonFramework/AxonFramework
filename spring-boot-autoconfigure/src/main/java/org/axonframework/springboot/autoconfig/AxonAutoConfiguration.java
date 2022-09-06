@@ -395,7 +395,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
                              ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
-                             .spanFactory(axonConfiguration.getComponent(SpanFactory.class))
+                             .spanFactory(axonConfiguration.spanFactory())
                              .build();
     }
 

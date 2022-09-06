@@ -234,7 +234,9 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
         invokedMessages.forEach(e -> {
-            spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e);
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e);
+            });
         });
     }
 

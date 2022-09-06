@@ -114,8 +114,6 @@ public abstract class AbstractDeadlineManagerTestSuite {
         return this.deadlineManager;
     }
 
-    ;
-
     @AfterEach
     void tearDown() {
         configuration.shutdown();

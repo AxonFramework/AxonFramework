@@ -60,7 +60,9 @@ public class AxonTracingAutoConfiguration {
     @Bean
     public HandlerEnhancerDefinition tracingHandlerEnhancerDefinition(SpanFactory spanFactory,
                                                                       TracingProperties properties) {
-        return new TracingHandlerEnhancerDefinition(spanFactory, properties.isShowEventSourcingHandlers());
+        return TracingHandlerEnhancerDefinition.builder().spanFactory(spanFactory)
+                                               .showEventSourcingHandlers(properties.isShowEventSourcingHandlers())
+                                               .build();
     }
 
     @Bean

@@ -413,7 +413,7 @@ public class DefaultConfigurer implements Configurer {
                                                     DuplicateCommandHandlerResolver.class,
                                                     LoggingDuplicateCommandHandlerResolver::instance
                                             ))
-                                            .spanFactory(config.getComponent(SpanFactory.class))
+                                            .spanFactory(config.spanFactory())
                                             .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                             .build();
                     commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
@@ -549,7 +549,7 @@ public class DefaultConfigurer implements Configurer {
                                                .aggregateFactories(aggregateFactories)
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
-                                               .spanFactory(config.getComponent(SpanFactory.class))
+                                               .spanFactory(config.spanFactory())
                                                .handlerDefinition(retrieveHandlerDefinition(config,
                                                                                             aggregateConfigurations))
                                                .build();

@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
