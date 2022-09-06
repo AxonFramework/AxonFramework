@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                          .serializer(TestSerializer.xStreamSerializer())
+                                         .spanFactory(configuration.spanFactory())
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;

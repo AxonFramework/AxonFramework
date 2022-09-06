@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -80,9 +82,11 @@ class PooledStreamingEventProcessorTest {
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         stubMessageSource = new InMemoryMessageSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
@@ -109,6 +113,7 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder processorBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
+                                             .spanFactory(spanFactory)
                                              .eventHandlerInvoker(stubEventHandler)
                                              .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .errorHandler(PropagatingErrorHandler.instance())
@@ -205,6 +210,34 @@ class PooledStreamingEventProcessorTest {
             assertEquals(8, nonNullTokens);
         });
         assertEquals(8, testSubject.processingStatus().size());
+    }
+
+    @Test
+    void handlingEventsAreCorrectlyTraced() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(8);
+        List<Message<?>> invokedMessages = new CopyOnWriteArrayList<>();
+        mockEventHandlerInvoker();
+        doAnswer(
+                answer -> {
+                    EventMessage message = answer.getArgument(0, EventMessage.class);
+                    invokedMessages.add(message);
+                    spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
+                    countDownLatch.countDown();
+                    return null;
+                }
+        ).when(stubEventHandler).handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 8)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+        testSubject.start();
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+        invokedMessages.forEach(e -> {
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e);
+            });
+        });
     }
 
     @Test
@@ -750,7 +783,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens();
@@ -775,7 +810,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(expectedContext);
@@ -801,7 +838,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken);
@@ -827,7 +866,9 @@ class PooledStreamingEventProcessorTest {
 
         // Start and stop the processor to initialize the tracking tokens
         testSubject.start();
-        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
+        assertWithin(2,
+                     TimeUnit.SECONDS,
+                     () -> assertEquals(tokenStore.fetchSegments(PROCESSOR_NAME).length, expectedSegmentCount));
         testSubject.shutDown();
 
         testSubject.resetTokens(StreamableMessageSource::createTailToken, expectedContext);
@@ -876,6 +917,13 @@ class PooledStreamingEventProcessorTest {
                                 .getPayload()
                                 .equals(answer.getArgument(1, Segment.class).getSegmentId())
         );
+    }
+
+    @Test
+    void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
+        PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
     }
 
     @Test

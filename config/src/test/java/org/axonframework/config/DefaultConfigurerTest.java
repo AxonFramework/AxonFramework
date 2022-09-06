@@ -61,6 +61,8 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
@@ -86,7 +88,6 @@ import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -600,6 +601,27 @@ class DefaultConfigurerTest {
                                  .deadlineManager();
 
         assertTrue(result instanceof QuartzDeadlineManager);
+    }
+
+    @Test
+    void defaultConfiguredSpanFactory() {
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                                              .buildConfiguration()
+                                              .spanFactory();
+
+        assertTrue(result instanceof NoOpSpanFactory);
+    }
+
+    @Test
+    void customConfiguredSpanFactory() {
+        SpanFactory custom = mock(SpanFactory.class);
+
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                        .configureSpanFactory((config) -> custom)
+                                 .buildConfiguration()
+                                 .spanFactory();
+
+        assertSame(custom, result);
     }
 
     @Test

@@ -29,6 +29,8 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
@@ -50,11 +52,13 @@ class LockingRepositoryTest {
     private EventBus eventBus;
     private LockFactory lockFactory;
     private Lock lock;
+    private TestSpanFactory spanFactory;
 
     private InMemoryLockingRepository testSubject;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         eventBus = spy(SimpleEventBus.builder().build());
         lockFactory = spy(PessimisticLockFactory.usingDefaults());
         when(lockFactory.obtainLock(anyString()))
@@ -63,6 +67,7 @@ class LockingRepositoryTest {
         testSubject = InMemoryLockingRepository.builder()
                                                .lockFactory(lockFactory)
                                                .eventBus(eventBus)
+                                               .spanFactory(spanFactory)
                                                .build();
         testSubject = spy(testSubject);
 
@@ -89,6 +94,47 @@ class LockingRepositoryTest {
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         verify(eventBus).publish(isA(EventMessage.class));
     }
+
+    @Test
+    void lockingIsTracedDuringCreation() throws Exception {
+        startAndGetUnitOfWork();
+        StubAggregate aggregate = new StubAggregate();
+        when(lockFactory.obtainLock(anyString()))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanActive("LockingRepository.obtainLock");
+                    return lock = spy((Lock) invocation.callRealMethod());
+                });
+        testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
+        spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+        CurrentUnitOfWork.commit();
+    }
+
+    @Test
+    void lockingIsTracedDuringLoad() throws Exception {
+        startAndGetUnitOfWork();
+        StubAggregate aggregate = new StubAggregate();
+        testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
+        CurrentUnitOfWork.commit();
+        reset(lockFactory);
+        spanFactory.reset();
+
+        // Now, for the real work
+        when(lockFactory.obtainLock(anyString()))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanActive("LockingRepository.obtainLock");
+                    return lock = spy((Lock) invocation.callRealMethod());
+                });
+        startAndGetUnitOfWork();
+        Aggregate<StubAggregate> loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
+        spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+        spanFactory.verifySpanCompleted(testSubject.getClass().getSimpleName() + ".load " + aggregate.getIdentifier());
+        //noinspection resource
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
+
+        loadedAggregate.execute(StubAggregate::doSomething);
+        CurrentUnitOfWork.commit();
+    }
+
 
     /**
      * The aggregate identifier could not be set because command and event handling decided not to store the event. In
@@ -283,6 +329,12 @@ class LockingRepositoryTest {
             @Override
             public Builder lockFactory(LockFactory lockFactory) {
                 super.lockFactory(lockFactory);
+                return this;
+            }
+
+            @Override
+            public Builder spanFactory(SpanFactory spanFactory) {
+                super.spanFactory(spanFactory);
                 return this;
             }
 

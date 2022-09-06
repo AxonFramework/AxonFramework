@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +113,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
      * The following configurable fields have defaults:
      * <ul>
      * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
+     * <li>The {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
      * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
@@ -474,6 +476,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
      * The following configurable fields have defaults:
      * <ul>
      * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
+     * <li>The {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
      * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
@@ -510,6 +513,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

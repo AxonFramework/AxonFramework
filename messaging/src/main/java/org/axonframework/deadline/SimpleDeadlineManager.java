@@ -31,6 +31,9 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +58,8 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
  * triggering mechanism.
  * <p>
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost then the JVM is shut down, unless special
- * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
- * org.axonframework.deadline.quartz.QuartzDeadlineManager}.
+ * measures have been taken to prevent that. For more flexible and powerful scheduling options, see
+ * {@link org.axonframework.deadline.quartz.QuartzDeadlineManager}.
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -70,6 +73,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
     private final ScopeAwareProvider scopeAwareProvider;
     private final ScheduledExecutorService scheduledExecutorService;
     private final TransactionManager transactionManager;
+    private final SpanFactory spanFactory;
 
     private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
@@ -77,9 +81,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * Instantiate a Builder to be able to create a {@link SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
-     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
-     * provided.
+     * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}, and the {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}. The
+     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SimpleDeadlineManager}
      */
@@ -101,6 +105,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         this.scopeAwareProvider = builder.scopeAwareProvider;
         this.scheduledExecutorService = builder.scheduledExecutorService;
         this.transactionManager = builder.transactionManager;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -111,7 +116,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         String deadlineMessageId = deadlineMessage.getIdentifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
-        runOnPrepareCommitOrNow(() -> {
+        Span span = spanFactory.createDispatchSpan(() -> "SimpleDeadlineManager.schedule(" + deadlineName + ")",
+                                                   deadlineMessage);
+        runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineId, interceptedDeadlineMessage);
             Duration triggerDuration = Duration.between(Instant.now(), triggerDateTime);
@@ -121,38 +128,43 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
                     TimeUnit.MILLISECONDS
             );
             scheduledTasks.put(deadlineId, scheduledFuture);
-        });
+        }));
 
         return deadlineMessageId;
     }
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        runOnPrepareCommitOrNow(
+        Span span = spanFactory.createInternalSpan(
+                () -> "SimpleDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
                                             && scheduledTaskId.getDeadlineId().equals(scheduleId))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        runOnPrepareCommitOrNow(
+        Span span = spanFactory.createInternalSpan(() -> "SimpleDeadlineManager.cancelAll(" + deadlineName + ")");
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        runOnPrepareCommitOrNow(
+        Span span = spanFactory.createInternalSpan(
+                () -> "SimpleDeadlineManager.cancelAllWithinScope(" + deadlineName + ")");
+        runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
                                     .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName)
                                             && scheduledTaskId.getDeadlineScope().equals(scope))
                                     .forEach(this::cancelSchedule)
-        );
+        ));
     }
 
     private void cancelSchedule(DeadlineId deadlineId) {
@@ -230,9 +242,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
      * Builder class to instantiate a {@link SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
-     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
-     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
-     * provided.
+     * which contains an {@link AxonThreadFactory}, the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
+     * {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -240,14 +252,15 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         private ScheduledExecutorService scheduledExecutorService =
                 Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(THREAD_FACTORY_GROUP_NAME));
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
-         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of {@link
-         * org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the right
-         * Scope to trigger a deadline in.
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
+         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * right Scope to trigger a deadline in.
          *
-         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right {@link
-         *                           org.axonframework.messaging.Scope} to trigger a deadline in
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
+         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(@Nonnull ScopeAwareProvider scopeAwareProvider) {
@@ -257,8 +270,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a {@link
-         * Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
+         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a
+         * {@link Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
          *
          * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
          *                                 deadlines
@@ -280,6 +293,19 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
@@ -321,11 +347,14 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
             }
 
             try {
+                Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
                 Instant triggerInstant = GenericEventMessage.clock.instant();
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),
                         deadlineMessage,
                         () -> triggerInstant));
+                unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+                unitOfWork.onCleanup(uow -> span.end());
                 unitOfWork.attachTransaction(transactionManager);
                 InterceptorChain chain =
                         new DefaultInterceptorChain<>(unitOfWork,

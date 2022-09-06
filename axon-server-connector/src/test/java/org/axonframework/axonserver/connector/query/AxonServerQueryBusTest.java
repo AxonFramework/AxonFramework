@@ -57,6 +57,7 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import reactor.core.publisher.Flux;
@@ -106,6 +107,7 @@ class AxonServerQueryBusTest {
 
     private AxonServerConnectionManager axonServerConnectionManager;
     private QueryChannel mockQueryChannel;
+    private TestSpanFactory spanFactory;
 
     private AxonServerQueryBus testSubject;
     private AxonServerConfiguration configuration;
@@ -114,6 +116,8 @@ class AxonServerQueryBusTest {
     void setup() {
         configuration = new AxonServerConfiguration();
         configuration.setContext(CONTEXT);
+
+        spanFactory = new TestSpanFactory();
 
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
 
@@ -125,6 +129,7 @@ class AxonServerQueryBusTest {
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
+                                        .spanFactory(spanFactory)
                                         .build();
 
         AxonServerConnection mockConnection = mock(AxonServerConnection.class);
@@ -184,6 +189,8 @@ class AxonServerQueryBusTest {
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.query", testQuery);
     }
 
     @Test
@@ -204,6 +211,8 @@ class AxonServerQueryBusTest {
         }
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", AxonServerQueryDispatchException.class);
     }
 
     @Test
@@ -226,6 +235,8 @@ class AxonServerQueryBusTest {
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
     }
 
     @Test
@@ -250,6 +261,8 @@ class AxonServerQueryBusTest {
                      remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
     }
 
     @Test
@@ -291,6 +304,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
     }
 
     @Test
@@ -315,6 +330,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
     }
 
     @Test
@@ -333,6 +350,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
     }
 
     @Test

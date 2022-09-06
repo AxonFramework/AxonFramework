@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -64,9 +65,11 @@ class EmbeddedEventStoreTest {
     private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         storageEngine = spy(new InMemoryEventStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
@@ -84,6 +87,7 @@ class EmbeddedEventStoreTest {
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
                                         .optimizeEventConsumption(optimizeEventConsumption)
+                                        .spanFactory(spanFactory)
                                         .build();
     }
 
@@ -310,6 +314,23 @@ class EmbeddedEventStoreTest {
         unitOfWork.rollback();
 
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test
+    void appendEventsCreatesCorrectSpans() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events);
+        events.forEach(e -> {
+            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
+            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
+            spanFactory.verifySpanHasType("EmbeddedEventStore.publish", TestSpanFactory.TestSpanType.INTERNAL);
+        });
+        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+
+        CurrentUnitOfWork.commit();
+        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
+        spanFactory.verifySpanHasType("EmbeddedEventStore.commit", TestSpanFactory.TestSpanType.INTERNAL);
     }
 
     @Test

@@ -34,6 +34,7 @@
         <module>disruptor</module>
         <module>metrics</module>
         <module>metrics-micrometer</module>
+        <module>tracing-opentelemetry</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>

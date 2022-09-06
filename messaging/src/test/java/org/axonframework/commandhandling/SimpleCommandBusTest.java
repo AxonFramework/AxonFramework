@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -43,11 +44,13 @@ import static org.mockito.Mockito.*;
  */
 class SimpleCommandBusTest {
 
+    private TestSpanFactory spanFactory;
     private SimpleCommandBus testSubject;
 
     @BeforeEach
     void setUp() {
-        this.testSubject = SimpleCommandBus.builder().build();
+        this.spanFactory = new TestSpanFactory();
+        this.testSubject = SimpleCommandBus.builder().spanFactory(spanFactory).build();
     }
 
     @AfterEach
@@ -69,6 +72,34 @@ class SimpleCommandBusTest {
                                  }
                                  assertEquals("Say hi!", commandResultMessage.getPayload().getPayload());
                              });
+    }
+
+    @Test
+    void dispatchIsCorrectlyTraced() {
+        testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
+        testSubject.dispatch(asCommandMessage("Say hi!"),
+                             (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
+                                 spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+                                 spanFactory.verifySpanActive("SimpleCommandBus.handle");
+                             });
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+    }
+
+    @Test
+    void dispatchIsCorrectlyTracedDuringException() {
+        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
+        testSubject.subscribe(String.class.getName(), command -> {
+            throw new RuntimeException("Some exception");
+        });
+        testSubject.dispatch(asCommandMessage("Say hi!"),
+                             (CommandCallback<String, CommandMessage<String>>) (command, commandResultMessage) -> {
+                                 spanFactory.verifySpanCompleted("SimpleCommandBus.dispatch");
+                                 spanFactory.verifySpanPropagated("SimpleCommandBus.dispatch", command);
+                                 spanFactory.verifySpanActive("SimpleCommandBus.handle");
+                             });
+        spanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+        spanFactory.verifySpanHasException("SimpleCommandBus.dispatch", RuntimeException.class);
     }
 
     @Test
@@ -96,7 +127,7 @@ class SimpleCommandBusTest {
 
     @Test
     void fireAndForgetUsesDefaultCallback() {
-        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        CommandCallback<Object, Object> mockCallback = createCallbackMock();
         testSubject = SimpleCommandBus.builder()
                                       .defaultCommandCallback(mockCallback).build();
 
@@ -155,7 +186,7 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandNoHandlerSubscribed() {
         CommandMessage<Object> command = asCommandMessage("test");
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback callback = createCallbackMock();
         testSubject.dispatch(command, callback);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -165,6 +196,12 @@ class SimpleCommandBusTest {
                      commandResultMessageCaptor.getValue().exceptionResult().getClass());
     }
 
+    private CommandCallback createCallbackMock() {
+        CommandCallback mock = mock(CommandCallback.class);
+        when(mock.wrap(any())).thenCallRealMethod();
+        return mock;
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void dispatchCommandHandlerUnsubscribed() {
@@ -172,7 +209,7 @@ class SimpleCommandBusTest {
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();
         CommandMessage<Object> command = asCommandMessage("Say hi!");
-        CommandCallback callback = mock(CommandCallback.class);
+        CommandCallback callback = createCallbackMock();
         testSubject.dispatch(command, callback);
         ArgumentCaptor<CommandResultMessage> commandResultMessageCaptor =
                 ArgumentCaptor.forClass(CommandResultMessage.class);
@@ -206,7 +243,7 @@ class SimpleCommandBusTest {
         testSubject = SimpleCommandBus.builder().messageMonitor(messageMonitor).build();
 
         try {
-            testSubject.dispatch(asCommandMessage("test"), mock(CommandCallback.class));
+            testSubject.dispatch(asCommandMessage("test"), createCallbackMock());
         } catch (NoHandlerForCommandException expected) {
             // ignore
         }

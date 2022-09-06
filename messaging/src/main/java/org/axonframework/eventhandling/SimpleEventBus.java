@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 
 import javax.annotation.Nonnull;
 
@@ -33,8 +34,8 @@ public class SimpleEventBus extends AbstractEventBus {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleEventBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@code queueCapacity} to
-     * {@link Integer#MAX_VALUE}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}, the {@code queueCapacity} to
+     * {@link Integer#MAX_VALUE} and the {@link SpanFactory} to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleEventBus}
      */
@@ -54,13 +55,20 @@ public class SimpleEventBus extends AbstractEventBus {
     /**
      * Builder class to instantiate a {@link SimpleEventBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defaulted
+     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      */
     public static class Builder extends AbstractEventBus.Builder {
 
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

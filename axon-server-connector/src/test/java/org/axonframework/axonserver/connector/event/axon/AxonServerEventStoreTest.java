@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
@@ -37,11 +37,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.upcasting.ContextAwareSingleEntryUpcaster;
 import org.axonframework.serialization.upcasting.event.ContextAwareSingleEventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -76,11 +75,13 @@ class AxonServerEventStoreTest {
     private AxonServerConfiguration config;
     private AxonServerConnectionManager axonServerConnectionManager;
     private EventUpcaster upcasterChain;
+    private TestSpanFactory testSpanFactory;
 
     private AxonServerEventStore testSubject;
 
     @BeforeEach
     void setUp() throws Exception {
+        testSpanFactory = new TestSpanFactory();
         int freePort = TcpUtil.findFreePort();
         eventStore = spy(new EventStoreImpl());
         server = new StubServer(freePort, new PlatformService(freePort), eventStore);
@@ -105,6 +106,7 @@ class AxonServerEventStoreTest {
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
                                           .snapshotSerializer(TestSerializer.xStreamSerializer())
                                           .snapshotFilter(SnapshotFilter.allowAll())
+                                          .spanFactory(testSpanFactory)
                                           .build();
     }
 
@@ -117,10 +119,16 @@ class AxonServerEventStoreTest {
     @Test
     void publishAndConsumeEvents() throws Exception {
         UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
-        testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
-                            GenericEventMessage.asEventMessage("Test2"),
-                            GenericEventMessage.asEventMessage("Test3"));
+        EventMessage<?>[] eventMessages = {GenericEventMessage.asEventMessage("Test1"),
+                GenericEventMessage.asEventMessage("Test2"),
+                GenericEventMessage.asEventMessage("Test3")};
+        testSubject.publish(eventMessages);
+        Arrays.stream(eventMessages).forEach(e -> {
+            testSpanFactory.verifySpanCompleted("AxonServerEventStore.publish", e);
+        });
+        testSpanFactory.verifyNotStarted("AxonServerEventStore.commit");
         uow.commit();
+        testSpanFactory.verifySpanCompleted("AxonServerEventStore.commit");
 
         TrackingEventStream stream = testSubject.openStream(null);
 

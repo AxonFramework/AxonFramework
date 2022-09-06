@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.Optional;
 import java.util.Set;
@@ -65,7 +66,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}.
+     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -175,7 +177,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}.
+     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -241,8 +245,15 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
             return this;
         }
 
+        @Override
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
         /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this repository.
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this
+         * repository.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager}
          *                              instance for this repository

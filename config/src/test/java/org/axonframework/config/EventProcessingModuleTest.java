@@ -53,6 +53,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -73,6 +74,7 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
+import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -361,6 +363,28 @@ class EventProcessingModuleTest {
             assertEquals(1, subscribingMonitor.getMessages().size());
             assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
             assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    void configureSpanFactory() throws Exception {
+        TestSpanFactory spanFactory = new TestSpanFactory();
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
+        configurer.configureSpanFactory(c -> spanFactory);
+        Configuration config = configurer.start();
+
+        try {
+            GenericEventMessage<Object> message = new GenericEventMessage<>("test");
+            config.eventBus().publish(message);
+
+            spanFactory.verifySpanCompleted("SubscribingEventProcessor[subscribing].process");
+            assertWithin(2, TimeUnit.SECONDS, () -> {
+                spanFactory.verifySpanCompleted("TrackingEventProcessor[tracking].process");
+            });
         } finally {
             config.shutdown();
         }
@@ -792,8 +816,10 @@ class EventProcessingModuleTest {
     void configurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
         String testName = "pooled-streaming";
         TokenStore testTokenStore = new InMemoryTokenStore();
+        TestSpanFactory testSpanFactory = new TestSpanFactory();
 
         configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .configureSpanFactory(c -> testSpanFactory)
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -817,6 +843,7 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
+        assertEquals(testSpanFactory, getField(AbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,8 +30,10 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
+import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -75,10 +77,12 @@ class SimpleQueryBusTest {
     private MessageMonitor<QueryMessage<?, ?>> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
     private MessageMonitor.MonitorCallback monitorCallback;
+    private TestSpanFactory spanFactory;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         messageMonitor = mock(MessageMonitor.class);
         errorHandler = mock(QueryInvocationErrorHandler.class);
         monitorCallback = mock(MessageMonitor.MonitorCallback.class);
@@ -87,6 +91,10 @@ class SimpleQueryBusTest {
         testSubject = SimpleQueryBus.builder()
                                     .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
+                                    .spanFactory(spanFactory)
+                                    .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
+                                                                                .spanFactory(spanFactory)
+                                                                                .build())
                                     .build();
 
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
@@ -252,12 +260,47 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    void querySingleIsTraced() throws ExecutionException, InterruptedException {
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse);
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.query", testQueryMessage);
+            return q.getPayload() + "1234";
+        });
+
+        testSubject.query(testQueryMessage).get();
+
+        spanFactory.verifySpanCompleted("SimpleQueryBus.query", testQueryMessage);
+    }
+
+    @Test
+    void ScatterGatherIsTraced() {
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello",
+                                                                                        multipleStringResponse);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(0)", testQueryMessage);
+            return q.getPayload() + "1234";
+        });
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {
+            spanFactory.verifySpanActive("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+            return q.getPayload() + "12345678";
+        });
+
+        testSubject.scatterGather(testQueryMessage, 500, TimeUnit.MILLISECONDS).collect(Collectors.toList());
+
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(0)", testQueryMessage);
+        spanFactory.verifySpanCompleted("SimpleQueryBus.scatterGather(1)", testQueryMessage);
+    }
+
+
+    @Test
     void queryListWithSingleHandlerReturnsSingleAsList() throws Exception {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
-        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello",
+                                                                                        multipleStringResponse);
         CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
-                                                      .thenApply(QueryResponseMessage::getPayload);
+                                                            .thenApply(QueryResponseMessage::getPayload);
 
         assertEquals(1, result.get().size());
         assertEquals("hello1234", result.get().get(0));
@@ -271,7 +314,8 @@ class SimpleQueryBusTest {
                 q.getPayload() + "1234", q.getPayload() + "5678"
         ));
 
-        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello", multipleStringResponse);
+        QueryMessage<String, List<String>> testQueryMessage = new GenericQueryMessage<>("hello",
+                                                                                        multipleStringResponse);
         CompletableFuture<List<String>> result = testSubject.query(testQueryMessage)
                                                             .thenApply(QueryResponseMessage::getPayload);
 
@@ -428,6 +472,7 @@ class SimpleQueryBusTest {
         } catch (ExecutionException e) {
             assertEquals(NoHandlerForQueryException.class, e.getCause().getClass());
         }
+        spanFactory.verifySpanHasException("SimpleQueryBus.query", NoHandlerForQueryException.class);
     }
 
     @Test
@@ -669,22 +714,22 @@ class SimpleQueryBusTest {
         final AtomicLong value = new AtomicLong();
         testSubject.subscribe("queryName", Long.class, q -> value.get());
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
-        Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
-            .doOnNext(next -> {
-                if (next == 10L) {
-                    ten.countDown();
-                }
-                if (next == 100L) {
-                    hundred.countDown();
-                }
-                if (next == 1000L) {
-                    thousand.countDown();
-                }
-                value.set(next);
-                updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
-            })
-            .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
-            .subscribe();
+        Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
+                                    .doOnNext(next -> {
+                                        if (next == 10L) {
+                                            ten.countDown();
+                                        }
+                                        if (next == 100L) {
+                                            hundred.countDown();
+                                        }
+                                        if (next == 1000L) {
+                                            thousand.countDown();
+                                        }
+                                        value.set(next);
+                                        updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+                                    })
+                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+                                    .subscribe();
 
 
         SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
@@ -701,6 +746,36 @@ class SimpleQueryBusTest {
         Long anotherInitialResult = Objects.requireNonNull(initialResult.block()).getPayload();
         assertTrue(fistUpdate <= firstInitialResult + 1);
         assertTrue(firstInitialResult <= anotherInitialResult);
+        disposable.dispose();
+    }
+
+    @Test
+    void subscriptionQueryIsTraced() throws InterruptedException {
+        CountDownLatch updatedLatch = new CountDownLatch(2);
+        final AtomicLong value = new AtomicLong();
+        testSubject.subscribe("queryName", Long.class, q -> value.get());
+        QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
+        Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(20))
+                                    .doOnNext(next -> {
+                                        updatedLatch.countDown();
+                                        updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+                                    })
+                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+                                    .subscribe();
+
+
+        SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result = testSubject
+                .subscriptionQuery(new GenericSubscriptionQueryMessage<>("test",
+                                                                         "queryName",
+                                                                         ResponseTypes.instanceOf(Long.class),
+                                                                         ResponseTypes.instanceOf(Long.class)));
+        Mono<QueryResponseMessage<Long>> initialResult = result.initialResult();
+        Objects.requireNonNull(initialResult.block()).getPayload();
+        spanFactory.verifySpanCompleted("SimpleQueryBus.query");
+        updatedLatch.await();
+        Objects.requireNonNull(result.updates().next().block()).getPayload();
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emit queryName");
+        disposable.dispose();
     }
 
     @Test

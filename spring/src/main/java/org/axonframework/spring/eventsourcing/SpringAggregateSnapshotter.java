@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -69,18 +70,17 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * Instantiate a Builder to be able to create a {@link SpringAggregateSnapshotter}. The {@link AggregateFactory}
      * instances are lazily retrieved by the {@link ApplicationContext}.
      * <p>
-     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE} and the
-     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
-     * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
-     * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
-     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
-     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
-     * fields.
+     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
+     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager} and
+     * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
+     * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
+     * based on instances of these available on the classpath in case these are not provided (respectively
+     * {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon instantiation
+     * of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
      * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SpringAggregateSnapshotter}
-     *
      * @see org.axonframework.messaging.annotation.ClasspathParameterResolverFactory
      * @see org.axonframework.messaging.annotation.ClasspathHandlerDefinition
      */
@@ -121,16 +121,16 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
     }
 
     /**
-     * Builder class to instantiate a {@link SpringAggregateSnapshotter}. The {@link AggregateFactory}
-     * instances are lazily retrieved by the {@link ApplicationContext}.
+     * Builder class to instantiate a {@link SpringAggregateSnapshotter}. The {@link AggregateFactory} instances are
+     * lazily retrieved by the {@link ApplicationContext}.
      * <p>
-     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE} and the
-     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
-     * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
-     * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
-     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
-     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
-     * fields.
+     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
+     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager} and
+     * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
+     * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
+     * based on instances of these available on the classpath in case these are not provided (respectively
+     * {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon instantiation
+     * of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
      * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
@@ -176,6 +176,12 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         @Override
         public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

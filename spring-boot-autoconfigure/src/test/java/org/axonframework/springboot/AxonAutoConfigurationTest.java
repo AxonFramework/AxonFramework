@@ -49,6 +49,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
+import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +90,7 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(CommandGateway.class));
                     assertNotNull(applicationContext.getBean(EventGateway.class));
                     assertNotNull(applicationContext.getBean(Serializer.class));
+                    assertNotNull(applicationContext.getBean(SpanFactory.class));
                     assertEquals(MultiParameterResolverFactory.class,
                                  applicationContext.getBean(ParameterResolverFactory.class).getClass());
                     assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
