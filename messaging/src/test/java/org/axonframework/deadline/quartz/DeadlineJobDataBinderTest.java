@@ -83,7 +83,7 @@ class DeadlineJobDataBinderTest {
 
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    void testToJobData(
+    void toJobDataTest(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
@@ -111,7 +111,7 @@ class DeadlineJobDataBinderTest {
     @SuppressWarnings("unchecked")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    void testRetrievingDeadlineMessage(
+    void retrievingDeadlineMessage(
             Serializer serializer,
             Function<Class, String> expectedSerializedClassType,
             Predicate<Object> revisionMatcher
@@ -157,7 +157,7 @@ class DeadlineJobDataBinderTest {
 
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
-    void testRetrievingDeadlineScope(Serializer serializer) {
+    void retrievingDeadlineScope(Serializer serializer) {
         JobDataMap testJobDataMap = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
         ScopeDescriptor result = deadlineScope(serializer, testJobDataMap);

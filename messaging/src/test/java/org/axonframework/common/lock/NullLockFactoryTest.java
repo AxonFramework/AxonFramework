@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NullLockFactoryTest {
 
     @Test
-    void testObtainLockReturnsNoOpLockInstance() {
+    void obtainLockReturnsNoOpLockInstance() {
         LockFactory testSubject = NullLockFactory.INSTANCE;
 
         assertEquals(NoOpLock.INSTANCE, testSubject.obtainLock(null));

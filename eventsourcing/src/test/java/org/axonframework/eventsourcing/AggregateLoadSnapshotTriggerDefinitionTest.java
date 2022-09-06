@@ -82,7 +82,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testSnapshotterTriggeredOnUnitOfWorkCleanup() {
+    void snapshotterTriggeredOnUnitOfWorkCleanup() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         GenericDomainEventMessage<String> msg = new GenericDomainEventMessage<>(
                 "type", aggregateIdentifier, 0, "Mock contents", MetaData.emptyInstance()
@@ -100,7 +100,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testSnapshotterTriggeredOnUnitOfWorkCommit() {
+    void snapshotterTriggeredOnUnitOfWorkCommit() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
@@ -116,7 +116,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testSnapshotterIsNotTriggeredOnUnitOfWorkRollbackIfEventsHandledAfterInitialization() {
+    void snapshotterIsNotTriggeredOnUnitOfWorkRollbackIfEventsHandledAfterInitialization() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
@@ -132,7 +132,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testSnapshotterTriggeredOnUnitOfWorkRollbackWhenEventsHandledBeforeInitialization() {
+    void snapshotterTriggeredOnUnitOfWorkRollbackWhenEventsHandledBeforeInitialization() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
@@ -148,7 +148,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testSnapshotterNotTriggered() {
+    void snapshotterNotTriggered() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1000), ZoneId.of("UTC"));
 
@@ -163,7 +163,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testThresholdDoesNotResetWhenSerialized() throws IOException, ClassNotFoundException {
+    void thresholdDoesNotResetWhenSerialized() throws IOException, ClassNotFoundException {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
@@ -186,7 +186,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     }
 
     @Test
-    void testScheduleANewSnapshotAfterCommitTrigger() {
+    void scheduleANewSnapshotAfterCommitTrigger() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 

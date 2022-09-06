@@ -57,7 +57,7 @@ class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    void testLoadedFromUnitOfWorkAfterCreate() {
+    void loadedFromUnitOfWorkAfterCreate() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -72,7 +72,7 @@ class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    void testLoadedFromNestedUnitOfWorkAfterCreate() throws Exception {
+    void loadedFromNestedUnitOfWorkAfterCreate() throws Exception {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -88,7 +88,7 @@ class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() {
+    void loadedFromNestedUnitOfWorkAfterCreateAndStore() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -108,7 +108,7 @@ class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    void testLoadedFromUnitOfWorkAfterPreviousLoad() {
+    void loadedFromUnitOfWorkAfterPreviousLoad() {
         Saga<Object> preparedSaga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         currentUnitOfWork.commit();
@@ -131,7 +131,7 @@ class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    void testSagaAssociationsVisibleInOtherThreadsBeforeSagaIsCommitted() throws Exception {
+    void sagaAssociationsVisibleInOtherThreadsBeforeSagaIsCommitted() throws Exception {
         String sagaId = "sagaId";
         AssociationValue associationValue = new AssociationValue("test", "value");
 

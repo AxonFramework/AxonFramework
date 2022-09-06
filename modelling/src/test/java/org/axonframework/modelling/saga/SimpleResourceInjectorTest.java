@@ -35,7 +35,7 @@ class SimpleResourceInjectorTest {
     private SimpleResourceInjector testSubject;
 
     @Test
-    void testInjectFieldResource() {
+    void injectFieldResource() {
         SomeFieldResource expectedFieldResource = new SomeFieldResource();
         testSubject = new SimpleResourceInjector(expectedFieldResource);
         final StubSaga saga = new StubSaga();
@@ -46,7 +46,7 @@ class SimpleResourceInjectorTest {
     }
 
     @Test
-    void testInjectMethodResource() {
+    void injectMethodResource() {
         final SomeMethodResource expectedMethodResource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(expectedMethodResource);
         final StubSaga saga = new StubSaga();
@@ -57,7 +57,7 @@ class SimpleResourceInjectorTest {
     }
 
     @Test
-    void testInjectFieldAndMethodResources() {
+    void injectFieldAndMethodResources() {
         final SomeFieldResource expectedFieldResource = new SomeFieldResource();
         final SomeMethodResource expectedMethodResource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(expectedFieldResource, expectedMethodResource);
@@ -70,7 +70,7 @@ class SimpleResourceInjectorTest {
     }
 
     @Test
-    void testInjectResource_ExceptionsIgnored() {
+    void injectResource_ExceptionsIgnored() {
         final SomeMethodResource resource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(resource, new SomeWeirdResource());
         final StubSaga saga = new StubSaga();

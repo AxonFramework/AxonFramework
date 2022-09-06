@@ -78,7 +78,7 @@ class AggregateStereotypeAutoConfigurationTest {
     }
 
     @Test
-    void testAggregateStereotypeConfiguration() {
+    void aggregateStereotypeConfiguration() {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
             CommandGateway commandGateway = context.getBean(DefaultCommandGateway.class);
@@ -111,7 +111,7 @@ class AggregateStereotypeAutoConfigurationTest {
      * the {@code Repository}.
      */
     @Test
-    void testAggregateStereotypeWithCustomizedRepository() {
+    void aggregateStereotypeWithCustomizedRepository() {
         testApplicationContext.run(context -> {
             // Publish the first command to create the TestAggregate
             CommandGateway commandGateway = context.getBean(DefaultCommandGateway.class);

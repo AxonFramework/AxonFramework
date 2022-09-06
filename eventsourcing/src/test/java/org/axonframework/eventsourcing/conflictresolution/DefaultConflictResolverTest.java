@@ -42,7 +42,7 @@ class DefaultConflictResolverTest {
     }
 
     @Test
-    void testDetectConflicts() {
+    void detectConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         assertThrows(
                 ConflictingModificationException.class,
@@ -50,32 +50,32 @@ class DefaultConflictResolverTest {
     }
 
     @Test
-    void testDetectNoConflictsWhenPredicateDoesNotMatch() {
+    void detectNoConflictsWhenPredicateDoesNotMatch() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadTypeOf(Long.class));
     }
 
     @Test
-    void testDetectNoConflictsWithoutUnseenEvents() {
+    void detectNoConflictsWithoutUnseenEvents() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 5);
         subject.detectConflicts(Conflicts.payloadTypeOf(String.class));
     }
 
     @Test
-    void testEnsureConflictsResolvedThrowsExceptionWithoutRegisteredConflicts() {
+    void ensureConflictsResolvedThrowsExceptionWithoutRegisteredConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         assertThrows(ConflictingModificationException.class, subject::ensureConflictsResolved);
     }
 
     @Test
-    void testEnsureConflictsResolvedDoesNothingWithRegisteredConflicts() {
+    void ensureConflictsResolvedDoesNothingWithRegisteredConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadMatching(Long.class::isInstance));
         subject.ensureConflictsResolved();
     }
 
     @Test
-    void testConflictingEventsAreAvailableInExceptionBuilder() {
+    void conflictingEventsAreAvailableInExceptionBuilder() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         try {
             subject.detectConflicts(Conflicts.payloadTypeOf(String.class),
@@ -87,7 +87,7 @@ class DefaultConflictResolverTest {
     }
 
     @Test
-    void testConflictResolverProvidingNullExceptionIgnoresConflict() {
+    void conflictResolverProvidingNullExceptionIgnoresConflict() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadTypeOf(String.class), c -> null);
     }

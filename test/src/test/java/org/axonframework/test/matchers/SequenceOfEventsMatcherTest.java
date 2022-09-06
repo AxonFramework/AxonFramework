@@ -63,7 +63,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_FullMatch() {
+    void match_FullMatch() {
         assertTrue(testSubject.matches(Arrays.asList(stubEvent1, stubEvent2, stubEvent3,
                                                      stubEvent4, stubEvent5)));
 
@@ -87,7 +87,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_FullMatchWithGaps() {
+    void match_FullMatchWithGaps() {
         reset(mockMatcher2);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(stubEvent5)).thenReturn(true);
@@ -116,7 +116,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_OnlyOneEventMatches() {
+    void match_OnlyOneEventMatches() {
         when(mockMatcher1.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher2.matches(stubEvent1)).thenReturn(false);
         when(mockMatcher3.matches(stubEvent1)).thenReturn(false);
@@ -135,7 +135,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testMatch_NoMatches() {
+    void match_NoMatches() {
         when(mockMatcher1.matches(any())).thenReturn(false);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);
@@ -151,7 +151,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testDescribe() {
+    void describe() {
         testSubject.matches(Arrays.asList(stubEvent1, stubEvent2));
 
         doAnswer(new DescribingAnswer("A")).when(mockMatcher1).describeTo(isA(Description.class));
@@ -164,7 +164,7 @@ public class SequenceOfEventsMatcherTest {
     }
 
     @Test
-    void testDescribe_OneMatcherFailed() {
+    void describe_OneMatcherFailed() {
         when(mockMatcher1.matches(any())).thenReturn(true);
         when(mockMatcher2.matches(any())).thenReturn(false);
         when(mockMatcher3.matches(any())).thenReturn(false);

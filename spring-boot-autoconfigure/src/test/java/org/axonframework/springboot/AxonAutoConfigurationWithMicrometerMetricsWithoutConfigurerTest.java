@@ -62,7 +62,7 @@ class AxonAutoConfigurationWithMicrometerMetricsWithoutConfigurerTest {
     private org.axonframework.metrics.MetricsConfigurerModule metricsModuleMetricsConfigurerModule;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(meterRegistry);

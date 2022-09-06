@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 class EventUpcasterChainTest {
 
     @Test
-    void testCreateChainAndUpcast() {
+    void createChainAndUpcast() {
         EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(new SomeEventUpcaster(),
                                                                        new SomeOtherEventUpcaster());
         IntermediateEventRepresentation mockRepresentation = mock(IntermediateEventRepresentation.class);

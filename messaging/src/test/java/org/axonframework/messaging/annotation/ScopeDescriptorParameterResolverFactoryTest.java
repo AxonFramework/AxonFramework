@@ -31,12 +31,12 @@ class ScopeDescriptorParameterResolverFactoryTest {
     }
 
     @Test
-    void testParameterResolverIsNullForScopeDescriptorLessMethod() {
+    void parameterResolverIsNullForScopeDescriptorLessMethod() {
         assertNull(testSubject.createInstance(scopeDescriptorLessMethod, scopeDescriptorLessMethod.getParameters(), 0));
     }
 
     @Test
-    void testResolvesNoScopeDescriptor() {
+    void resolvesNoScopeDescriptor() {
         ParameterResolver<ScopeDescriptor> resolver =
                 testSubject.createInstance(scopeDescriptorUsingMethod, scopeDescriptorUsingMethod.getParameters(), 0);
 

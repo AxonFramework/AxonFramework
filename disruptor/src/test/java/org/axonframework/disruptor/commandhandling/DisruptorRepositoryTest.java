@@ -39,7 +39,7 @@ class DisruptorRepositoryTest {
     private final EventStore eventStore = mock(EventStore.class);
 
     @Test
-    void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
+    void disruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
         DisruptorCommandBus commandBus = DisruptorCommandBus.builder().build();
         Repository<TestAggregate> repository = commandBus
                 .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));

@@ -50,7 +50,7 @@ class InitialEventRepresentationTest {
 
     @ParameterizedTest
     @MethodSource(SOURCE_METHOD_NAME)
-    void testContentType(Serializer serializer) {
+    void contentType(Serializer serializer) {
         GenericDomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<>(
                 "test", "aggregateId", 0, new StubDomainEvent("some-name"), MetaData.emptyInstance()
         );

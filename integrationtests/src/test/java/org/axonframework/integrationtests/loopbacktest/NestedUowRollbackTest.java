@@ -31,7 +31,7 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 class NestedUowRollbackTest {
 
     @Test
-    void testDispatchCommand() {
+    void dispatchCommand() {
         Configuration c = DefaultConfigurer.defaultConfiguration()
                                            .configureAggregate(TestAggregate.class)
                                            .registerCommandHandler(x -> new Handler())

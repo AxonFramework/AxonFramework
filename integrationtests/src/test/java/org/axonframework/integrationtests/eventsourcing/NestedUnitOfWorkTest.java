@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class NestedUnitOfWorkTest {
     @Test
-    void testStagedEventsLoadInCorrectOrder() {
+    void stagedEventsLoadInCorrectOrder() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(TestAggregate.class)
                                                 .registerCommandHandler(x -> new Handler())

@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class MultiMessageMonitorTest {
 
     @Test
-    void test_onMessageIngested_SingleMessageMonitor_failure() {
+    void onMessageIngested_SingleMessageMonitor_failure() {
         MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
@@ -43,7 +43,7 @@ class MultiMessageMonitorTest {
     }
 
     @Test
-    void test_onMessageIngested_SingleMessageMonitor_success() {
+    void onMessageIngested_SingleMessageMonitor_success() {
         MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
@@ -58,7 +58,7 @@ class MultiMessageMonitorTest {
     }
 
     @Test
-    void test_onMessageIngested_MultipleMessageMonitors() {
+    void onMessageIngested_MultipleMessageMonitors() {
         MessageMonitor<Message<?>> messageMonitorMock1 = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback1 = mock(MessageMonitor.MonitorCallback.class);
         MessageMonitor<Message<?>> messageMonitorMock2 = mock(MessageMonitor.class);

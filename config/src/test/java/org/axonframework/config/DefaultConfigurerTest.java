@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,22 +57,17 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
+import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
+import org.junit.jupiter.api.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerContext;
 import org.quartz.SchedulerException;
 
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,25 +75,20 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.axonframework.config.utils.AssertUtils.assertRetryingWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating several {@link DefaultConfigurer} operations.
@@ -292,7 +282,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(
                 () -> em, transactionManager).configureCommandBus(c -> {
@@ -324,7 +314,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
+    void jpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config =
                 DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
@@ -350,7 +340,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testMissingEntityManagerProviderIsReported() {
+    void missingEntityManagerProviderIsReported() {
         Configuration config =
                 DefaultConfigurer.defaultConfiguration()
                                  .configureCommandBus(c -> {
@@ -373,7 +363,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testJpaConfigurationWithJpaRepository() throws Exception {
+    void jpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em).registerComponent(
                 TransactionManager.class, c -> transactionManager
@@ -429,7 +419,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testRegisterSeveralModules() {
+    void registerSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureAggregate(Object.class)
@@ -443,7 +433,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
+    void queryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
         QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
@@ -472,7 +462,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfiguredSnapshotterDefaultsToAggregateSnapshotter() {
+    void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter =
                 DefaultConfigurer.jpaConfiguration(() -> em)
                                  .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
@@ -483,7 +473,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigureSnapshotterSetsCustomSnapshotter() {
+    void configureSnapshotterSetsCustomSnapshotter() {
         Snapshotter expectedSnapshotter = mock(Snapshotter.class);
 
         AggregateConfigurer<StubAggregate> aggregateConfigurer = defaultConfiguration(StubAggregate.class)
@@ -505,7 +495,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testConfigurationSnapshotFilterContainsConfiguredSnapshotFilters() {
+    void configurationSnapshotFilterContainsConfiguredSnapshotFilters() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -537,7 +527,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testAggregateSnapshotFilterIsAddedToTheEventStore() {
+    void aggregateSnapshotFilterIsAddedToTheEventStore() {
         AtomicBoolean filteredFirst = new AtomicBoolean(false);
         SnapshotFilter testFilterOne = snapshotData -> {
             filteredFirst.set(true);
@@ -586,7 +576,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testDefaultConfiguredDeadlineManager() {
+    void defaultConfiguredDeadlineManager() {
         DeadlineManager result = DefaultConfigurer.defaultConfiguration()
                                                   .buildConfiguration()
                                                   .deadlineManager();
@@ -595,7 +585,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testCustomConfiguredDeadlineManager() throws SchedulerException {
+    void customConfiguredDeadlineManager() throws SchedulerException {
         Scheduler mockScheduler = mock(Scheduler.class);
         when(mockScheduler.getContext()).thenReturn(mock(SchedulerContext.class));
 
@@ -614,12 +604,53 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void testDefaultConfiguredScopeAwareProvider() {
+    void defaultConfiguredSpanFactory() {
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                                              .buildConfiguration()
+                                              .spanFactory();
+
+        assertTrue(result instanceof NoOpSpanFactory);
+    }
+
+    @Test
+    void customConfiguredSpanFactory() {
+        SpanFactory custom = mock(SpanFactory.class);
+
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                        .configureSpanFactory((config) -> custom)
+                                 .buildConfiguration()
+                                 .spanFactory();
+
+        assertSame(custom, result);
+    }
+
+    @Test
+    void defaultConfiguredScopeAwareProvider() {
         ScopeAwareProvider result = DefaultConfigurer.defaultConfiguration()
                                                      .buildConfiguration()
                                                      .scopeAwareProvider();
 
         assertTrue(result instanceof ConfigurationScopeAwareProvider);
+    }
+
+    @Test
+    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubAggregate());
+
+        verify(configurer, times(1)).registerCommandHandler(any());
+        verify(configurer, times(1)).eventProcessing();
+        verify(configurer, never()).registerQueryHandler(any());
+    }
+
+    @Test
+    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
+        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+        configurer.registerMessageHandler(c -> new StubQueryHandler());
+
+        verify(configurer, never()).registerCommandHandler(any());
+        verify(configurer, never()).eventProcessing();
+        verify(configurer, times(1)).registerQueryHandler(any());
     }
 
     @SuppressWarnings("unused")
@@ -647,6 +678,14 @@ class DefaultConfigurerTest {
         @EventSourcingHandler
         protected void on(String event) {
             this.id = event;
+        }
+    }
+
+    private static class StubQueryHandler {
+
+        @QueryHandler
+        public String handle(String query) {
+            return "foo";
         }
     }
 

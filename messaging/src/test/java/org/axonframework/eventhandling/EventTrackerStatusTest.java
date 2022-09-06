@@ -40,26 +40,26 @@ class EventTrackerStatusTest {
     }
 
     @Test
-    void testIsDifferentReturnsFalseForIdenticalObjects() {
+    void isDifferentReturnsFalseForIdenticalObjects() {
         assertFalse(thisStatus.isDifferent(thisStatus, DO_NOT_VALIDATE_POSITIONS));
         assertFalse(thisStatus.isDifferent(thisStatus));
     }
 
     @Test
-    void testIsDifferentReturnsTrueForDifferentEventTrackerStatusImplementations() {
+    void isDifferentReturnsTrueForDifferentEventTrackerStatusImplementations() {
         AddedTrackerStatus otherStatus = new AddedTrackerStatus(thatStatus);
         assertTrue(thisStatus.isDifferent(otherStatus, DO_NOT_VALIDATE_POSITIONS));
         assertTrue(thisStatus.isDifferent(otherStatus));
     }
 
     @Test
-    void testIsDifferentReturnsFalseForSimilarStatusObjects() {
+    void isDifferentReturnsFalseForSimilarStatusObjects() {
         assertFalse(thisStatus.isDifferent(thatStatus, DO_NOT_VALIDATE_POSITIONS));
         assertFalse(thisStatus.isDifferent(thatStatus, VALIDATE_POSITIONS));
     }
 
     @Test
-    void testIsDifferentReturnsFalseForSimilarStatusObjectsWhenDisregardingPositions() {
+    void isDifferentReturnsFalseForSimilarStatusObjectsWhenDisregardingPositions() {
         assertFalse(thisStatus.isDifferent(thatStatus, DO_NOT_VALIDATE_POSITIONS));
         assertFalse(thisStatus.isDifferent(thatStatus, VALIDATE_POSITIONS));
 
@@ -76,7 +76,7 @@ class EventTrackerStatusTest {
     }
 
     @Test
-    void testMatchStates() {
+    void matchStates() {
         assertTrue(thisStatus.matchStates(thatStatus));
 
         thisStatus.setSegment(Segment.ROOT_SEGMENT);
@@ -99,7 +99,7 @@ class EventTrackerStatusTest {
     }
 
     @Test
-    void testMatchPositions() {
+    void matchPositions() {
         assertTrue(thisStatus.matchPositions(thatStatus));
 
         thisStatus.setCurrentPosition(10L);
@@ -114,12 +114,12 @@ class EventTrackerStatusTest {
     }
 
     @Test
-    void testTrackerAdded() {
+    void trackerAdded() {
         assertFalse(thisStatus.trackerAdded());
     }
 
     @Test
-    void testTrackerRemoved() {
+    void trackerRemoved() {
         assertFalse(thisStatus.trackerRemoved());
     }
 }

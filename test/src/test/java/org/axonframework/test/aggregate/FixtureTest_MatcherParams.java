@@ -49,7 +49,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFirstFixture() {
+    void firstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -58,7 +58,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatch() {
+    void payloadsMatch() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -67,7 +67,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatchExact() {
+    void payloadsMatchExact() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -76,7 +76,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testPayloadsMatchPredicate() {
+    void payloadsMatchPredicate() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
@@ -85,7 +85,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_UnexpectedException() {
+    void fixture_UnexpectedException() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -103,7 +103,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_UnexpectedReturnValue() {
+    void fixture_UnexpectedReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -121,7 +121,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_WrongReturnValue() {
+    void fixture_WrongReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -137,7 +137,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_WrongExceptionType() {
+    void fixture_WrongExceptionType() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -154,7 +154,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_ExpectedPublishedSameAsStored() {
+    void fixture_ExpectedPublishedSameAsStored() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -175,7 +175,7 @@ class FixtureTest_MatcherParams {
 
     @Test
     @SuppressWarnings("unchecked")
-    void testFixture_DispatchMetaDataInCommand() throws Exception {
+    void fixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -194,7 +194,7 @@ class FixtureTest_MatcherParams {
     }
 
     @Test
-    void testFixture_EventDoesNotMatch() {
+    void fixture_EventDoesNotMatch() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));

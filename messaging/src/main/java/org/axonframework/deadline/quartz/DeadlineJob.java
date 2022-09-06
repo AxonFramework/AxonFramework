@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -79,6 +81,11 @@ public class DeadlineJob implements Job {
     public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
     /**
+     * The key under which the {@link SpanFactory} is stored within the {@link SchedulerContext}.
+     */
+    public static final String SPAN_FACTORY = SpanFactory.class.getName();
+
+    /**
      * The key under which the {@link MessageHandlerInterceptor}s are stored within the {@link SchedulerContext}.
      */
     public static final String HANDLER_INTERCEPTORS = MessageHandlerInterceptor.class.getName();
@@ -111,6 +118,7 @@ public class DeadlineJob implements Job {
         Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
         TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
         ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
+        SpanFactory spanFactory = (SpanFactory) schedulerContext.get(SPAN_FACTORY);
         @SuppressWarnings("unchecked")
         List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
                 (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
@@ -119,8 +127,11 @@ public class DeadlineJob implements Job {
         DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
+        Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
         DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
         unitOfWork.attachTransaction(transactionManager);
+        unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+        unitOfWork.onCleanup(uow -> span.end());
         InterceptorChain chain =
                 new DefaultInterceptorChain<>(unitOfWork,
                                               handlerInterceptors,

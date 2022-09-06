@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ class AxonServerAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
+                    AxonTracingAutoConfiguration.class,
                     AxonAutoConfiguration.class,
                     EventProcessingAutoConfiguration.class,
                     InfraConfiguration.class,
@@ -84,19 +85,19 @@ class AxonServerAutoConfigurationTest {
     private QueryUpdateEmitter updateEmitter;
 
     @Test
-    void testAxonServerQueryBusConfiguration() {
+    void axonServerQueryBusConfiguration() {
         assertTrue(queryBus instanceof AxonServerQueryBus);
         assertSame(updateEmitter, queryBus.queryUpdateEmitter());
     }
 
     @Test
-    void testAxonServerCommandBusBeanTypesConfiguration() {
+    void axonServerCommandBusBeanTypesConfiguration() {
         assertTrue(commandBus instanceof AxonServerCommandBus);
         assertTrue(localSegment instanceof SimpleCommandBus);
     }
 
     @Test
-    void testAxonServerDefaultCommandBusConfiguration() {
+    void axonServerDefaultCommandBusConfiguration() {
         this.contextRunner
                 .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
                 .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
@@ -111,7 +112,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerDefaultConfiguration_AxonServerDisabled() {
+    void axonServerDefaultConfiguration_AxonServerDisabled() {
         this.contextRunner.withPropertyValues("axon.axonserver.enabled=false")
                           .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
                           .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
@@ -126,7 +127,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerUserDefinedCommandBusConfiguration() {
+    void axonServerUserDefinedCommandBusConfiguration() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .withUserConfiguration(ExplicitUserCommandBusConfiguration.class)
                           .run(context -> {
@@ -138,7 +139,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerUserDefinedLocalSegmentConfiguration() {
+    void axonServerUserDefinedLocalSegmentConfiguration() {
         this.contextRunner
                 .withConfiguration(AutoConfigurations.of(AxonServerBusAutoConfiguration.class))
                 .withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
@@ -154,7 +155,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerWrongUserDefinedLocalSegmentConfiguration() {
+    void axonServerWrongUserDefinedLocalSegmentConfiguration() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .withUserConfiguration(ExplicitWrongUserLocalSegmentConfiguration.class)
                           .run(context -> {
@@ -166,7 +167,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testNonAxonServerCommandBusConfiguration() {
+    void nonAxonServerCommandBusConfiguration() {
         this.contextRunner.run(context -> {
             assertThat(context).getBeanNames(CommandBus.class)
                                .hasSize(1);
@@ -176,7 +177,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testDefaultTargetContextResolverIsNoOp() {
+    void defaultTargetContextResolverIsNoOp() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .run(context -> {
                               assertThat(context).getBeanNames(TargetContextResolver.class)
@@ -187,7 +188,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testCustomTargetContextResolverIsConfigured() {
+    void customTargetContextResolverIsConfigured() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .withUserConfiguration(TargetContextResolverConfiguration.class)
                           .run(context -> {
@@ -199,7 +200,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerEventSchedulerIsConfigured() {
+    void axonServerEventSchedulerIsConfigured() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .run(context -> {
                               assertThat(context).getBeanNames(EventScheduler.class)
@@ -210,7 +211,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void testCustomManagedChannelCustomizerIsConfigured() {
+    void customManagedChannelCustomizerIsConfigured() {
         this.contextRunner.withConfiguration(AutoConfigurations.of(AxonServerAutoConfiguration.class))
                           .withUserConfiguration(ManagedChannelCustomizerConfiguration.class)
                           .run(context -> {

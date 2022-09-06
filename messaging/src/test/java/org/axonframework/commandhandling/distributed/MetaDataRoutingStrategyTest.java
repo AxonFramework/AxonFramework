@@ -33,7 +33,7 @@ class MetaDataRoutingStrategyTest {
     }
 
     @Test
-    void testResolvesRoutingKeyFromMetaData() {
+    void resolvesRoutingKeyFromMetaData() {
         String expectedRoutingKey = "some-routing-key";
 
         MetaData testMetaData = MetaData.from(Collections.singletonMap(META_DATA_KEY, expectedRoutingKey));
@@ -44,7 +44,7 @@ class MetaDataRoutingStrategyTest {
     }
 
     @Test
-    void testResolvesRoutingKeyFromFallbackStrategy() {
+    void resolvesRoutingKeyFromFallbackStrategy() {
         String expectedRoutingKey = "some-routing-key";
         when(fallbackRoutingStrategy.getRoutingKey(any())).thenReturn(expectedRoutingKey);
 
@@ -55,19 +55,19 @@ class MetaDataRoutingStrategyTest {
     }
 
     @Test
-    void testBuildMetaDataRoutingStrategyFailsForNullFallbackRoutingStrategy() {
+    void buildMetaDataRoutingStrategyFailsForNullFallbackRoutingStrategy() {
         MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
     }
 
     @Test
-    void testBuildMetaDataRoutingStrategyFailsForNullMetaDataKey() {
+    void buildMetaDataRoutingStrategyFailsForNullMetaDataKey() {
         MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(null));
     }
 
     @Test
-    void testBuildMetaDataRoutingStrategyFailsForEmptyMetaDataKey() {
+    void buildMetaDataRoutingStrategyFailsForEmptyMetaDataKey() {
         MetaDataRoutingStrategy.Builder builderTestSubject = MetaDataRoutingStrategy.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.metaDataKey(""));
     }

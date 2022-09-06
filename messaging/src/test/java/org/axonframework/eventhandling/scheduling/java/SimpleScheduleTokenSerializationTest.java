@@ -21,7 +21,7 @@ class SimpleScheduleTokenSerializationTest {
 
     @MethodSource("serializers")
     @ParameterizedTest
-    void testTokenShouldBeSerializable(TestSerializer serializer) {
+    void tokenShouldBeSerializable(TestSerializer serializer) {
         SimpleScheduleToken tokenToTest = new SimpleScheduleToken("28bda08d-2dd5-4420-98cb-75ca073446b4");
         assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
     }

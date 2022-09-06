@@ -85,7 +85,7 @@ public class SpringBeanResolverFactoryTest {
     }
 
     @Test
-    void testMethodsAreProperlyInjected() throws Exception {
+    void methodsAreProperlyInjected() throws Exception {
         assertNotNull(annotatedHandler);
         new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver).handle(asEventMessage("Hello"));
         // make sure the invocation actually happened
@@ -93,7 +93,7 @@ public class SpringBeanResolverFactoryTest {
     }
 
     @Test
-    void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
+    void newInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
         Object handler = applicationContext.getBean("prototypeResourceHandler");
         AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
                 handler, applicationContext.getBean(ParameterResolverFactory.class)
@@ -104,7 +104,7 @@ public class SpringBeanResolverFactoryTest {
     }
 
     @Test
-    void testMethodsAreProperlyInjected_ErrorOnMissingParameterType() {
+    void methodsAreProperlyInjected_ErrorOnMissingParameterType() {
         // this should generate an error
         Object bean = applicationContext.getBean("missingResourceHandler");
         assertThrows(
@@ -113,7 +113,7 @@ public class SpringBeanResolverFactoryTest {
     }
 
     @Test
-    void testMethodsAreProperlyInjected_NullableParameterType() throws Exception {
+    void methodsAreProperlyInjected_NullableParameterType() throws Exception {
         new AnnotationEventHandlerAdapter(applicationContext.getBean("nullableResourceHandler"),
                                           parameterResolver).handle(asEventMessage("Hi there"));
 
@@ -121,7 +121,7 @@ public class SpringBeanResolverFactoryTest {
     }
 
     @Test
-    void testMethodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
+    void methodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
         // this should generate an error
         Object bean = applicationContext.getBean("duplicateResourceHandler");
         assertThrows(
@@ -131,7 +131,7 @@ public class SpringBeanResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    void testMethodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() throws Exception {
+    void methodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() throws Exception {
         // this should generate an error
         new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithPrimary"),
                                           parameterResolver).handle(asEventMessage("Hi there"));
@@ -141,7 +141,7 @@ public class SpringBeanResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    void testMethodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() throws Exception {
+    void methodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() throws Exception {
         new AnnotationEventHandlerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifier"),
                                           parameterResolver).handle(asEventMessage("Hi there"));
 
@@ -150,7 +150,7 @@ public class SpringBeanResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    void testMethodsAreProperlyInjected_QualifierPrecedesPrimary() throws Exception {
+    void methodsAreProperlyInjected_QualifierPrecedesPrimary() throws Exception {
         new AnnotationEventHandlerAdapter(
                 applicationContext.getBean("duplicateResourceHandlerWithQualifierAndPrimary"),
                 parameterResolver
@@ -161,7 +161,7 @@ public class SpringBeanResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    void testMethodsAreProperlyInjected_DuplicateParameterWithAutowired() {
+    void methodsAreProperlyInjected_DuplicateParameterWithAutowired() {
         Object handler = applicationContext.getBean("duplicateResourceHandlerWithAutowired");
         AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
                 handler, applicationContext.getBean(ParameterResolverFactory.class)
@@ -172,7 +172,7 @@ public class SpringBeanResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    void testMethodsAreProperlyInjectedForDuplicateResourceHandlerWithAutowiredAndQualifier() throws Exception {
+    void methodsAreProperlyInjectedForDuplicateResourceHandlerWithAutowiredAndQualifier() throws Exception {
         new AnnotationEventHandlerAdapter(
                 applicationContext.getBean("duplicateResourceHandlerWithAutowiredAndQualifier"),
                 parameterResolver).handle(asEventMessage("Hi there")

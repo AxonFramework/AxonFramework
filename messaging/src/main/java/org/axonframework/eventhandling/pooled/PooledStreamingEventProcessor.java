@@ -41,6 +41,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,6 +153,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .build();
+
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
+                .createLinkedHandlerSpan(
+                        () -> "PooledStreamingEventProcessor[" + builder.name() + "] ",
+                        unitOfWork.getMessage())
+                .runCallable(interceptorChain::proceed));
     }
 
     /**
@@ -169,6 +176,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
+     *     <li>The {@link SpanFactory} defaults to {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -405,6 +413,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
+     *     <li>The {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -463,6 +472,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

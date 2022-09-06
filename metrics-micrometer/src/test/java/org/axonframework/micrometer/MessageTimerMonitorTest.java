@@ -64,7 +64,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testMessagesWithoutTags() {
+    void messagesWithoutTags() {
         MessageTimerMonitor testSubject = testSubjectBuilder.build();
 
         EventMessage<Object> foo = asEventMessage(1);
@@ -91,7 +91,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testMessagesWithPayloadTypeAsCustomTag() {
+    void messagesWithPayloadTypeAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
                 message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
         ).build();
@@ -144,7 +144,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testMessagesWithMetadataAsCustomTag() {
+    void messagesWithMetadataAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
                 message -> Tags.of("myMetaData", message.getMetaData().get("myMetadataKey").toString())
         ).build();
@@ -200,7 +200,7 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testTimeCustomization() {
+    void timeCustomization() {
         MessageTimerMonitor customTimerTestSubject =
                 testSubjectBuilder.timerCustomization(
                         timerBuilder -> timerBuilder.publishPercentiles(0.5, 0.75, 0.95)
@@ -233,51 +233,51 @@ class MessageTimerMonitorTest {
     }
 
     @Test
-    void testBuildWithNullMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithNullMeterNamePrefixThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterNamePrefix(null));
     }
 
     @Test
-    void testBuildWithEmptyMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithEmptyMeterNamePrefixThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterNamePrefix(""));
     }
 
     @Test
-    void testBuildWithoutMeterNamePrefixThrowsAxonConfigurationException() {
+    void buildWithoutMeterNamePrefixThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder()
                                                                      .meterRegistry(meterRegistry);
         assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 
     @Test
-    void testBuildWithNullMeterRegistryThrowsAxonConfigurationException() {
+    void buildWithNullMeterRegistryThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.meterRegistry(null));
     }
 
     @Test
-    void testBuildWithoutMeterRegistryThrowsAxonConfigurationException() {
+    void buildWithoutMeterRegistryThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder()
                                                                      .meterNamePrefix(METER_NAME_PREFIX);
         assertThrows(AxonConfigurationException.class, testSubject::build);
     }
 
     @Test
-    void testBuildWithNullClockThrowsAxonConfigurationException() {
+    void buildWithNullClockThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.clock(null));
     }
 
     @Test
-    void testBuildWithNullTagsBuilderThrowsAxonConfigurationException() {
+    void buildWithNullTagsBuilderThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.tagsBuilder(null));
     }
 
     @Test
-    void testBuildWithNullTimerCustomizationThrowsAxonConfigurationException() {
+    void buildWithNullTimerCustomizationThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.timerCustomization(null));
     }

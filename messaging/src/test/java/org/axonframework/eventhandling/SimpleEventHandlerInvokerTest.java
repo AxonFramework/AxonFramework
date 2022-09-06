@@ -52,7 +52,7 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testSingleEventPublication() throws Exception {
+    void singleEventPublication() throws Exception {
         EventMessage<?> event = createEvent();
 
         testSubject.handle(event, Segment.ROOT_SEGMENT);
@@ -64,7 +64,7 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testRepeatedEventPublication() throws Exception {
+    void repeatedEventPublication() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
 
         for (EventMessage<?> event : events) {
@@ -80,7 +80,7 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformReset() {
+    void performReset() {
         testSubject.performReset();
 
         verify(mockHandler1).prepareReset(NO_RESET_PAYLOAD);
@@ -88,7 +88,7 @@ class SimpleEventHandlerInvokerTest {
     }
 
     @Test
-    void testPerformResetWithResetContext() {
+    void performResetWithResetContext() {
         String resetContext = "reset-context";
 
         testSubject.performReset(resetContext);

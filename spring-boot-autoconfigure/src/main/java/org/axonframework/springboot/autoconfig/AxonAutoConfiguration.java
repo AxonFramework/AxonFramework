@@ -71,6 +71,7 @@ import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -222,6 +223,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return EmbeddedEventStore.builder()
                                  .storageEngine(storageEngine)
                                  .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                                 .spanFactory(configuration.spanFactory())
                                  .build();
     }
 
@@ -242,6 +244,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public SimpleEventBus eventBus(Configuration configuration) {
         return SimpleEventBus.builder()
                              .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                             .spanFactory(configuration.spanFactory())
                              .build();
     }
 
@@ -258,13 +261,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                            HandlerDefinition handlerDefinition,
                                                            ParameterResolverFactory parameterResolverFactory,
                                                            EventStore eventStore,
-                                                           TransactionManager transactionManager) {
+                                                           TransactionManager transactionManager,
+                                                           SpanFactory spanFactory) {
         return SpringAggregateSnapshotter.builder()
                                          .repositoryProvider(configuration::repository)
                                          .transactionManager(transactionManager)
                                          .eventStore(eventStore)
                                          .parameterResolverFactory(parameterResolverFactory)
                                          .handlerDefinition(handlerDefinition)
+                                         .spanFactory(spanFactory)
                                          .build();
     }
 
@@ -369,6 +374,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 SimpleCommandBus.builder()
                                 .transactionManager(txManager)
                                 .duplicateCommandHandlerResolver(duplicateCommandHandlerResolver)
+                                .spanFactory(axonConfiguration.spanFactory())
                                 .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
                                 .build();
         commandBus.registerHandlerInterceptor(
@@ -389,6 +395,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                      () -> LoggingQueryInvocationErrorHandler.builder().build()
                              ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .spanFactory(axonConfiguration.spanFactory())
                              .build();
     }
 
@@ -398,6 +405,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        .updateMessageMonitor(configuration.messageMonitor(
                                                QueryUpdateEmitter.class, "queryUpdateEmitter"
                                        ))
+                                       .spanFactory(configuration.spanFactory())
                                        .build();
     }
 

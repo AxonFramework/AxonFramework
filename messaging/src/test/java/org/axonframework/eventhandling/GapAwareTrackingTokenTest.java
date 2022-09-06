@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GapAwareTrackingTokenTest {
 
     @Test
-    void testGapAwareTokenConcurrency() throws InterruptedException {
+    void gapAwareTokenConcurrency() throws InterruptedException {
         AtomicLong counter = new AtomicLong();
         AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1, emptySortedSet()));
 
@@ -71,14 +71,14 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testInitializationWithNullGaps() {
+    void initializationWithNullGaps() {
         GapAwareTrackingToken token = new GapAwareTrackingToken(10, null);
         assertNotNull(token.getGaps());
         assertEquals(0, token.getGaps().size());
     }
 
     @Test
-    void testAdvanceToWithoutGaps() {
+    void advanceToWithoutGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(0L, Collections.emptyList());
         subject = subject.advanceTo(1L, 10);
         assertEquals(1L, subject.getIndex());
@@ -86,7 +86,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testAdvanceToWithInitialGaps() {
+    void advanceToWithInitialGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(10L, asList(1L, 5L, 6L));
         subject = subject.advanceTo(5L, 10);
         assertEquals(10L, subject.getIndex());
@@ -94,7 +94,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testAdvanceToWithNewGaps() {
+    void advanceToWithNewGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(10L, Collections.emptyList());
         subject = subject.advanceTo(13L, 10);
         assertEquals(13L, subject.getIndex());
@@ -102,7 +102,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testAdvanceToGapClearsOldGaps() {
+    void advanceToGapClearsOldGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
         subject = subject.advanceTo(12L, 10);
         assertEquals(15L, subject.getIndex());
@@ -110,7 +110,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testAdvanceToHigherSequenceClearsOldGaps() {
+    void advanceToHigherSequenceClearsOldGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
         subject = subject.advanceTo(16L, 10);
         assertEquals(16L, subject.getIndex());
@@ -118,18 +118,18 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testAdvanceToLowerSequenceThatIsNotAGapNotAllowed() {
+    void advanceToLowerSequenceThatIsNotAGapNotAllowed() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, asList(1L, 5L, 12L));
         assertThrows(Exception.class, () -> subject.advanceTo(4L, 10));
     }
 
     @Test
-    void testNewInstanceWithGapHigherThanSequenceNotAllowed() {
+    void newInstanceWithGapHigherThanSequenceNotAllowed() {
         assertThrows(Exception.class, () -> GapAwareTrackingToken.newInstance(9L, asList(1L, 5L, 12L)));
     }
 
     @Test
-    void testTokenCoversOther() {
+    void tokenCoversOther() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
         GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(4L, singleton(2L));
         GapAwareTrackingToken token3 = GapAwareTrackingToken.newInstance(2L, asList(0L, 1L));
@@ -157,13 +157,13 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testOccurrenceOfInconsistentRangeException() {
+    void occurrenceOfInconsistentRangeException() {
         // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
         GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L)).advanceTo(0L, 5).covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test
-    void testLowerBound() {
+    void lowerBound() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
         GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(4L, singleton(2L));
         GapAwareTrackingToken token3 = GapAwareTrackingToken.newInstance(2L, asList(0L, 1L));
@@ -180,7 +180,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testUpperBound() {
+    void upperBound() {
         GapAwareTrackingToken token0 = GapAwareTrackingToken.newInstance(9, emptyList());
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(10, singleton(9L));
         GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(10, asList(9L, 8L));
@@ -197,7 +197,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testGapTruncationRetainsEquality() {
+    void gapTruncationRetainsEquality() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
 
         assertEquals(token1, token1.withGapsTruncatedAt(8L));
@@ -207,7 +207,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testTruncateGaps() {
+    void truncateGaps() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
 
         assertSame(token1, token1.withGapsTruncatedAt(7));
@@ -219,7 +219,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testGapTruncatedTokenCoveredByOriginal() {
+    void gapTruncatedTokenCoveredByOriginal() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
 
         assertTrue(token1.covers(token1.withGapsTruncatedAt(10)));
@@ -227,7 +227,7 @@ class GapAwareTrackingTokenTest {
     }
 
     @Test
-    void testPosition() {
+    void position() {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(15, asList(14L, 9L, 8L));
 
         assertEquals(15L, token.position().getAsLong());

@@ -53,7 +53,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testRegisterParameterResolverFactory() {
+    void registerParameterResolverFactory() {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .given(new MyEvent(TEST_AGGREGATE_IDENTIFIER, 42))
                    .when(new ResolveParameterCommand(TEST_AGGREGATE_IDENTIFIER))
@@ -66,7 +66,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testCreateHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
+    void createHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
         AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerDefinition(new TestHandlerDefinition(handlerDefinitionReached))
@@ -80,7 +80,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testWrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
+    void wrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
         AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))

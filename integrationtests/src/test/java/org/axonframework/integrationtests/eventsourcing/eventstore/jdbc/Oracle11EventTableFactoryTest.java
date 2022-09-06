@@ -67,7 +67,7 @@ class Oracle11EventTableFactoryTest {
     }
 
     @Test
-    void testCreateDomainEventTable() throws Exception {
+    void createDomainEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createDomainEventTable(connection, eventSchema)
                    .execute();
@@ -81,7 +81,7 @@ class Oracle11EventTableFactoryTest {
     }
 
     @Test
-    void testCreateSnapshotEventTable() throws Exception {
+    void createSnapshotEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createSnapshotEventTable(connection, eventSchema)
                    .execute();

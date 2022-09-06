@@ -59,7 +59,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeRequest(CommandSerializer testSubject) {
+    void serializeRequest(CommandSerializer testSubject) {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -77,7 +77,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeResponse(CommandSerializer testSubject) {
+    void serializeResponse(CommandSerializer testSubject) {
         CommandResultMessage response = new GenericCommandResultMessage<>("response",
                                                                           MetaData.with("test", "testValue"));
         CommandResponse outbound = testSubject.serialize(response, "requestIdentifier");
@@ -92,7 +92,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeExceptionalResponse(CommandSerializer testSubject) {
+    void serializeExceptionalResponse(CommandSerializer testSubject) {
         RuntimeException exception = new RuntimeException("oops");
         CommandResultMessage response = new GenericCommandResultMessage<>(exception,
                                                                           MetaData.with("test", "testValue"));
@@ -108,7 +108,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
+    void serializeExceptionalResponseWithDetails(CommandSerializer testSubject) {
         Exception exception = new CommandExecutionException("oops", null, "Details");
         CommandResultMessage<?> response = new GenericCommandResultMessage<>(exception,
                                                                              MetaData.with("test", "testValue"));
@@ -128,7 +128,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeNonTransientExceptionalResponse(CommandSerializer testSubject) {
+    void serializeNonTransientExceptionalResponse(CommandSerializer testSubject) {
         SerializationException nonTransientExceptionCause = new SerializationException(
                 "Serialization non recoverable problem");
         Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, null);
@@ -142,7 +142,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testSerializeDeserializeNonTransientExceptionalResponseWithDetails(CommandSerializer testSubject) {
+    void serializeDeserializeNonTransientExceptionalResponseWithDetails(CommandSerializer testSubject) {
         SerializationException nonTransientExceptionCause = new SerializationException(
                 "Serialization non recoverable problem");
         Exception exception = new CommandExecutionException("oops", nonTransientExceptionCause, "Details");
@@ -165,7 +165,7 @@ class CommandSerializerTest {
 
     @MethodSource("data")
     @ParameterizedTest
-    void testDeserializeResponseWithoutPayload(CommandSerializer testSubject) {
+    void deserializeResponseWithoutPayload(CommandSerializer testSubject) {
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setRequestIdentifier("requestId")
                                                   .putAllMetaData(Collections.singletonMap("meta-key",

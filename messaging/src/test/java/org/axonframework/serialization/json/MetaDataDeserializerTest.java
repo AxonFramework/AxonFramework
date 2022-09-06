@@ -59,7 +59,7 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void testMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+    void metaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
         MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
         String serializedString = objectMapper.writeValueAsString(metaData);
 
@@ -70,7 +70,7 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void testEmptyMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+    void emptyMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
         MetaData metaData1 = new MetaData(new HashMap<>());
         String emptySerializedString = objectMapper.writeValueAsString(metaData1);
 
@@ -82,7 +82,7 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void testMetaDataContainerWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+    void metaDataContainerWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
         MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
 
         Container container = new Container("a", metaData, 1);
@@ -96,7 +96,7 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void testMetaDataContainerWithDataInDataWithDefaultTyping(ObjectMapper objectMapper, ObjectMapper.DefaultTyping defaultTyping) throws IOException {
+    void metaDataContainerWithDataInDataWithDefaultTyping(ObjectMapper objectMapper, ObjectMapper.DefaultTyping defaultTyping) throws IOException {
         MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
 
         Map<String, Object> map2 = new HashMap<>();

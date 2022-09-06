@@ -46,7 +46,7 @@ class AxonServerHealthIndicatorTest {
     }
 
     @Test
-    void testDoHealthCheckStatusReturnsUp() {
+    void doHealthCheckStatusReturnsUp() {
         String testContextOne = "context-one";
         String testContextTwo = "context-two";
         String expectedDetailsContextOne = testContextOne + ".connection.active";
@@ -76,7 +76,7 @@ class AxonServerHealthIndicatorTest {
     }
 
     @Test
-    void testDoHealthCheckStatusReturnsWarning() {
+    void doHealthCheckStatusReturnsWarning() {
         String testContextOne = "context-one";
         String testContextTwo = "context-two";
         String expectedDetailsContextOne = testContextOne + ".connection.active";
@@ -106,7 +106,7 @@ class AxonServerHealthIndicatorTest {
     }
 
     @Test
-    void testDoHealthCheckStatusReturnsDown() {
+    void doHealthCheckStatusReturnsDown() {
         String testContextOne = "context-one";
         String testContextTwo = "context-two";
         String expectedDetailsContextOne = testContextOne + ".connection.active";

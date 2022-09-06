@@ -41,7 +41,7 @@ class SagaScopeDescriptorTest {
     private static final String SAGA_ID = "saga-id";
 
     @Test
-    void testXStreamSerializationOfOldSagaScopeDescriptor() {
+    void xStreamSerializationOfOldSagaScopeDescriptor() {
         XStreamSerializer serializer = TestSerializer.xStreamSerializer();
 
         String xmlSerializedScopeDescriptor =
@@ -59,7 +59,7 @@ class SagaScopeDescriptorTest {
     }
 
     @Test
-    void testJacksonSerializationOfOldSagaScopeDescriptor() {
+    void jacksonSerializationOfOldSagaScopeDescriptor() {
         JacksonSerializer serializer = JacksonSerializer.defaultSerializer();
 
         String jacksonSerializedScopeDescriptor =

@@ -64,7 +64,7 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void testConstructorWithCustomLogger() throws Exception {
+    void constructorWithCustomLogger() throws Exception {
         testSubject = new LoggingInterceptor<>("my.custom.logger");
 
         Field field = testSubject.getClass().getDeclaredField("logger");
@@ -75,7 +75,7 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void testHandlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
+    void handlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -89,7 +89,7 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void testHandlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
+    void handlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -103,7 +103,7 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void testHandlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
+    void handlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
@@ -118,7 +118,7 @@ class LoggingInterceptorTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    void testHandlerInterceptorWithFailedExecution() throws Exception {
+    void handlerInterceptorWithFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
         when(interceptorChain.proceed()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);
@@ -138,7 +138,7 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void testDispatchInterceptorLogging() {
+    void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         testSubject.handle(new GenericMessage<Object>(new StubMessage()));

@@ -45,12 +45,12 @@ class CurrentUnitOfWorkTest {
     }
 
     @Test
-    void testGetSession_NoCurrentSession() {
+    void getSession_NoCurrentSession() {
         assertThrows(IllegalStateException.class, CurrentUnitOfWork::get);
     }
 
     @Test
-    void testSetSession() {
+    void setSession() {
         UnitOfWork<?> mockUnitOfWork = mock(UnitOfWork.class);
         CurrentUnitOfWork.set(mockUnitOfWork);
         assertSame(mockUnitOfWork, CurrentUnitOfWork.get());
@@ -60,7 +60,7 @@ class CurrentUnitOfWorkTest {
     }
 
     @Test
-    void testNotCurrentUnitOfWorkCommitted() {
+    void notCurrentUnitOfWorkCommitted() {
         DefaultUnitOfWork<?> outerUoW = new DefaultUnitOfWork<>(null);
         outerUoW.start();
         new DefaultUnitOfWork<>(null).start();

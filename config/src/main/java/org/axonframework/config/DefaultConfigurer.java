@@ -75,6 +75,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +106,7 @@ import javax.annotation.Nonnull;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.util.HandlerTypeResolver.*;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -127,7 +130,8 @@ public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final Runnable NOTHING = () -> {};
+    private static final Runnable NOTHING = () -> {
+    };
 
     private final Configuration config = new ConfigurationImpl();
 
@@ -190,6 +194,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventGateway.class, new Component<>(config, "eventGateway", this::defaultEventGateway));
         components.put(TagsConfiguration.class, new Component<>(config, "tags", c -> new TagsConfiguration()));
         components.put(Snapshotter.class, new Component<>(config, "snapshotter", this::defaultSnapshotter));
+        components.put(SpanFactory.class, new Component<>(config, "spanFactory", this::defaultSpanFactory));
     }
 
     /**
@@ -329,7 +334,8 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
                     QueryBus queryBus = SimpleQueryBus.builder()
-                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
+                                                                                            "queryBus"))
                                                       .transactionManager(config.getComponent(
                                                               TransactionManager.class, NoTransactionManager::instance
                                                       ))
@@ -338,6 +344,7 @@ public class DefaultConfigurer implements Configurer {
                                                               () -> LoggingQueryInvocationErrorHandler.builder().build()
                                                       ))
                                                       .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                                      .spanFactory(config.spanFactory())
                                                       .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
@@ -358,6 +365,7 @@ public class DefaultConfigurer implements Configurer {
                             config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
                     return SimpleQueryUpdateEmitter.builder()
                                                    .updateMessageMonitor(updateMessageMonitor)
+                                                   .spanFactory(config.spanFactory())
                                                    .build();
                 });
     }
@@ -370,7 +378,8 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return defaultComponent(ParameterResolverFactory.class, config)
-                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
+                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(
+                                                                               getClass()),
                                                                        new ConfigurationParameterResolverFactory(config)));
     }
 
@@ -404,6 +413,7 @@ public class DefaultConfigurer implements Configurer {
                                                     DuplicateCommandHandlerResolver.class,
                                                     LoggingDuplicateCommandHandlerResolver::instance
                                             ))
+                                            .spanFactory(config.spanFactory())
                                             .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
                                             .build();
                     commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
@@ -447,7 +457,8 @@ public class DefaultConfigurer implements Configurer {
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
         return defaultComponent(DeadlineManager.class, config)
                 .orElseGet(() -> SimpleDeadlineManager.builder()
-                                                      .scopeAwareProvider(config.scopeAwareProvider()).build());
+                                                      .scopeAwareProvider(config.scopeAwareProvider())
+                                                      .spanFactory(config.spanFactory()).build());
     }
 
     /**
@@ -460,6 +471,7 @@ public class DefaultConfigurer implements Configurer {
         return defaultComponent(EventBus.class, config)
                 .orElseGet(() -> SimpleEventBus.builder()
                                                .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
+                                               .spanFactory(config.spanFactory())
                                                .build());
     }
 
@@ -472,6 +484,17 @@ public class DefaultConfigurer implements Configurer {
     protected EventGateway defaultEventGateway(Configuration config) {
         return defaultComponent(EventGateway.class, config)
                 .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
+    }
+
+    /**
+     * Returns the default {@link SpanFactory}, or a {@link NoOpSpanFactory} if none it set.
+     *
+     * @param config The configuration that supplies the span factory.
+     * @return The default {@link SpanFactory}.
+     */
+    protected SpanFactory defaultSpanFactory(Configuration config) {
+        return defaultComponent(SpanFactory.class, config)
+                .orElseGet(NoOpSpanFactory::new);
     }
 
     /**
@@ -526,7 +549,9 @@ public class DefaultConfigurer implements Configurer {
                                                .aggregateFactories(aggregateFactories)
                                                .repositoryProvider(config::repository)
                                                .parameterResolverFactory(config.parameterResolverFactory())
-                                               .handlerDefinition(retrieveHandlerDefinition(config, aggregateConfigurations))
+                                               .spanFactory(config.spanFactory())
+                                               .handlerDefinition(retrieveHandlerDefinition(config,
+                                                                                            aggregateConfigurations))
                                                .build();
                 });
     }
@@ -657,9 +682,16 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
-        registerCommandHandler(c -> messageHandler.get());
-        eventProcessing().registerEventHandler(c -> messageHandler.get());
-        registerQueryHandler(c -> messageHandler.get());
+        Class<?> handlerClass = messageHandler.get().getClass();
+        if (isCommandHandler(handlerClass)){
+            registerCommandHandler(c -> messageHandler.get());
+        }
+        if (isEventHandler(handlerClass)){
+            eventProcessing().registerEventHandler(c -> messageHandler.get());
+        }
+        if (isQueryHandler(handlerClass)){
+            registerQueryHandler(c -> messageHandler.get());
+        }
         return this;
     }
 

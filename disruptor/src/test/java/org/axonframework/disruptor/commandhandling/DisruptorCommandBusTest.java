@@ -137,7 +137,7 @@ class DisruptorCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Exception {
+    void callbackInvokedBeforeUnitOfWorkCleanup() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockHandlerInterceptor = mock(MessageHandlerInterceptor.class);
         MessageDispatchInterceptor<CommandMessage<?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Parameter(0));
@@ -188,7 +188,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testPublishUnsupportedCommand() {
+    void publishUnsupportedCommand() {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         //noinspection unchecked
         CommandCallback<Object, Object> callback = mock(CommandCallback.class);
@@ -214,7 +214,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testEventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
+    void eventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
@@ -266,7 +266,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testEventPublicationExecutedWithinTransaction() throws Exception {
+    void eventPublicationExecutedWithinTransaction() throws Exception {
         //noinspection unchecked
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -287,7 +287,7 @@ class DisruptorCommandBusTest {
 
     @Test
     @Timeout(value = 10)
-    void testAggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Exception {
+    void aggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Exception {
         //noinspection unchecked
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -309,7 +309,7 @@ class DisruptorCommandBusTest {
 
     @Test
     @Timeout(value = 10)
-    void testAggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Exception {
+    void aggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Exception {
         //noinspection unchecked
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -378,7 +378,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCreateAggregate() {
+    void createAggregate() {
         eventStore.storedEvents.clear();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
@@ -406,7 +406,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCreateOrUpdateAggregateWithPreviousAggregate() {
+    void createOrUpdateAggregateWithPreviousAggregate() {
         eventStore.storedEvents.clear();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
@@ -436,7 +436,7 @@ class DisruptorCommandBusTest {
 
 
     @Test
-    void testCreateOrUpdateAggregateWithoutPreviousAggregate() {
+    void createOrUpdateAggregateWithoutPreviousAggregate() {
         eventStore.storedEvents.clear();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
@@ -463,7 +463,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCommandReturnsAValue() {
+    void commandReturnsAValue() {
         eventStore.storedEvents.clear();
         testSubject = DisruptorCommandBus.builder()
                                          .bufferSize(8)
@@ -486,7 +486,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testMessageMonitoring() {
+    void messageMonitoring() {
         eventStore.storedEvents.clear();
         final AtomicLong successCounter = new AtomicLong();
         final AtomicLong failureCounter = new AtomicLong();
@@ -550,7 +550,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCommandRejectedAfterShutdown() {
+    void commandRejectedAfterShutdown() {
         testSubject = DisruptorCommandBus.builder().build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(
@@ -563,7 +563,7 @@ class DisruptorCommandBusTest {
 
     @Test
     @Timeout(value = 10)
-    void testCommandProcessedAndEventsStored() throws InterruptedException {
+    void commandProcessedAndEventsStored() throws InterruptedException {
         testSubject = DisruptorCommandBus.builder().build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(
@@ -582,7 +582,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+    void canResolveReturnsTrueForMatchingAggregateDescriptor() {
         testSubject = DisruptorCommandBus.builder().build();
         Repository<StubAggregate> testRepository = testSubject.createRepository(
                 eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
@@ -594,7 +594,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+    void canResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
         testSubject = DisruptorCommandBus.builder().build();
         Repository<StubAggregate> testRepository = testSubject.createRepository(
                 eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
@@ -604,7 +604,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+    void canResolveReturnsFalseForNonMatchingAggregateType() {
         testSubject = DisruptorCommandBus.builder().build();
         Repository<StubAggregate> testRepository = testSubject.createRepository(
                 eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
@@ -616,7 +616,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
+    void sendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         DeadlineMessage<DeadlinePayload> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
@@ -633,7 +633,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testSendThrowsMessageHandlerInvocationExceptionIfHandleFails() {
+    void sendThrowsMessageHandlerInvocationExceptionIfHandleFails() {
         DeadlineMessage<FailingEvent> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingEvent(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
@@ -648,7 +648,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
+    void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
         DeadlineMessage<DeadlinePayload> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());
         AggregateScopeDescriptor testDescriptor =
@@ -665,7 +665,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testDuplicateCommandHandlerResolverSetsTheExpectedHandler() throws Exception {
+    void duplicateCommandHandlerResolverSetsTheExpectedHandler() throws Exception {
         DuplicateCommandHandlerResolver testDuplicateCommandHandlerResolver =
                 DuplicateCommandHandlerResolution.silentOverride();
 
@@ -692,7 +692,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCreateRepository() {
+    void createRepository() {
         assertDoesNotThrow(() -> testSubject.createRepository(
                 eventStore, new GenericAggregateFactory<>(StubAggregate.class), (RepositoryProvider) null
         ));
@@ -705,7 +705,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCommandIsRescheduledForCorruptAggregateState() throws Exception {
+    void commandIsRescheduledForCorruptAggregateState() throws Exception {
         int expectedNumberOfInvocations = 1;
         AtomicInteger invocationCounter = new AtomicInteger(0);
 
@@ -731,7 +731,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testCommandIsNotRescheduledForCorruptAggregateState() throws Exception {
+    void commandIsNotRescheduledForCorruptAggregateState() throws Exception {
         int expectedNumberOfInvocations = 1;
         AtomicInteger invocationCounter = new AtomicInteger(0);
 
@@ -757,7 +757,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testPublisherInterceptors() throws Exception {
+    void publisherInterceptors() throws Exception {
         int expectedNumberOfInvocations = 1;
         AtomicInteger invocationCounter = new AtomicInteger(0);
 
@@ -783,7 +783,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testBuildWithZeroOrNegativeCoolingDownPeriodThrowsAxonConfigurationException() {
+    void buildWithZeroOrNegativeCoolingDownPeriodThrowsAxonConfigurationException() {
         DisruptorCommandBus.Builder builderTestSubject = DisruptorCommandBus.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.coolingDownPeriod(0));
@@ -792,7 +792,7 @@ class DisruptorCommandBusTest {
     }
 
     @Test
-    void testBuildWithNullCommandTargetResolverThrowsAxonConfigurationException() {
+    void buildWithNullCommandTargetResolverThrowsAxonConfigurationException() {
         DisruptorCommandBus.Builder builderTestSubject = DisruptorCommandBus.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.commandTargetResolver(null));

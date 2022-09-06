@@ -52,7 +52,7 @@ class HandlerEnhancerDefinitionConfigurationTest {
     }
 
     @Test
-    void testHandlerEnhancerDefinitionWrapsEventHandler() {
+    void handlerEnhancerDefinitionWrapsEventHandler() {
         new ApplicationContextRunner()
                 .withUserConfiguration(ContextWithHandlers.class)
                 .withPropertyValues("axon.axonserver.enabled=false")
@@ -65,7 +65,7 @@ class HandlerEnhancerDefinitionConfigurationTest {
     }
 
     @Test
-    void testHandlerEnhancerDefinitionDoesNotWrapInAbsenceOfMessageHandlers() {
+    void handlerEnhancerDefinitionDoesNotWrapInAbsenceOfMessageHandlers() {
         new ApplicationContextRunner()
                 .withUserConfiguration(ContextWithoutHandlers.class)
                 .withPropertyValues("axon.axonserver.enabled=false")

@@ -28,6 +28,8 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
@@ -54,11 +56,16 @@ class AbstractSnapshotterTest {
     private EventStore mockEventStore;
     private Logger logger;
     private Logger originalLogger;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
-        testSubject = TestSnapshotter.builder().eventStore(mockEventStore).build();
+        spanFactory = new TestSpanFactory();
+        testSubject = TestSnapshotter.builder()
+                                     .eventStore(mockEventStore)
+                                     .spanFactory(spanFactory)
+                                     .build();
         logger = mock(Logger.class);
         originalLogger = replaceLogger(logger);
     }
@@ -74,7 +81,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot() {
+    void scheduleSnapshot() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(DomainEventStream.of(createEvents(2)));
@@ -83,7 +90,24 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
+    void snapshotTracing() {
+        String aggregateIdentifier = "aggregateIdentifier";
+        when(mockEventStore.readEvents(aggregateIdentifier))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object)");
+                    spanFactory.verifySpanActive("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
+                    return DomainEventStream.of(createEvents(2));
+                });
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
+        verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object)");
+        spanFactory.verifySpanCompleted("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)");
+        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object)", TestSpanFactory.TestSpanType.ROOT);
+        spanFactory.verifySpanHasType("TestSnapshotter.createSnapshot(Object,aggregateIdentifier)", TestSpanFactory.TestSpanType.INTERNAL);
+    }
+
+    @Test
+    void scheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
@@ -97,7 +121,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshotOnlyOnce() {
+    void scheduleSnapshotOnlyOnce() {
         DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
@@ -115,7 +139,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
+    void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
@@ -131,7 +155,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_SnapshotIsNull() {
+    void scheduleSnapshot_SnapshotIsNull() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -139,7 +163,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_SnapshotReplacesOneEvent() {
+    void scheduleSnapshot_SnapshotReplacesOneEvent() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -148,7 +172,7 @@ class AbstractSnapshotterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testScheduleSnapshot_WithTransaction() {
+    void scheduleSnapshot_WithTransaction() {
         Transaction mockTransaction = mock(Transaction.class);
         TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
         when(txManager.startTransaction()).thenReturn(mockTransaction);
@@ -158,7 +182,7 @@ class AbstractSnapshotterTest {
                                      .transactionManager(txManager)
                                      .build();
 
-        testScheduleSnapshot();
+        scheduleSnapshot();
 
         InOrder inOrder = inOrder(mockEventStore, txManager, mockTransaction);
         inOrder.verify(txManager).startTransaction();
@@ -168,7 +192,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_IgnoredWhenSnapshotAlreadyScheduled() {
+    void scheduleSnapshot_IgnoredWhenSnapshotAlreadyScheduled() {
         StubExecutor executor = new StubExecutor();
         testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
 
@@ -185,7 +209,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
-    void testScheduleSnapshot_AcceptedWhenOtherSnapshotIsScheduled() {
+    void scheduleSnapshot_AcceptedWhenOtherSnapshotIsScheduled() {
         StubExecutor executor = new StubExecutor();
         testSubject = TestSnapshotter.builder().eventStore(mockEventStore).executor(executor).build();
 
@@ -264,6 +288,12 @@ class AbstractSnapshotterTest {
             @Override
             public Builder transactionManager(TransactionManager transactionManager) {
                 super.transactionManager(transactionManager);
+                return this;
+            }
+
+            @Override
+            public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+                super.spanFactory(spanFactory);
                 return this;
             }
 

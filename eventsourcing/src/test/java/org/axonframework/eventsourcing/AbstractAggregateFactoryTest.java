@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 class AbstractAggregateFactoryTest {
 
     @Test
-    void testPolymorphicFactoryConstructorBuildsAnticipatedAggregateModel() {
+    void polymorphicFactoryConstructorBuildsAnticipatedAggregateModel() {
         //noinspection unchecked
         Set<Class<? extends RootAggregate>> subTypes = Sets.newSet(LeafOneAggregate.class, LeafTwoAggregate.class);
 

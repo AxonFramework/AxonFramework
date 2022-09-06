@@ -40,7 +40,7 @@ class DomainEventEntryTest {
     private final Serializer serializer = TestSerializer.xStreamSerializer();
 
     @Test
-    void testDomainEventEntryWrapEventsCorrectly() {
+    void domainEventEntryWrapEventsCorrectly() {
         Instant testTimestamp = Instant.now();
 
         String expectedType = "type";

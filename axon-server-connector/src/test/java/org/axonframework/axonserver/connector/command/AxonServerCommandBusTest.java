@@ -37,9 +37,11 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -85,9 +87,11 @@ class AxonServerCommandBusTest {
 
     private AxonServerConnection mockConnection;
     private CommandChannel mockCommandChannel;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setup() throws Exception {
+        spanFactory = new TestSpanFactory();
         dummyMessagePlatformServer = new DummyMessagePlatformServer();
         dummyMessagePlatformServer.start();
 
@@ -117,6 +121,7 @@ class AxonServerCommandBusTest {
                                           .routingStrategy(command -> "RoutingKey")
                                           .targetContextResolver(targetContextResolver)
                                           .loadFactorProvider(command -> 36)
+                                          .spanFactory(spanFactory)
                                           .build();
     }
 
@@ -135,6 +140,7 @@ class AxonServerCommandBusTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
 
         testSubject.dispatch(commandMessage, (CommandCallback<String, String>) (cm, result) -> {
+            spanFactory.verifySpanActive("AxonServerCommandBus.dispatch", commandMessage);
             if (result.isExceptional()) {
                 failure.set(result.exceptionResult());
             } else {
@@ -149,6 +155,8 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
+        spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch", commandMessage);
+        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage);
     }
 
     @Test
@@ -269,6 +277,7 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
+        spanFactory.verifySpanHasException("AxonServerCommandBus.dispatch", RuntimeException.class);
     }
 
     @Test
@@ -292,6 +301,7 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
+        spanFactory.verifySpanHasException("AxonServerCommandBus.dispatch", EventStoreException.class);
     }
 
     @Test
@@ -392,12 +402,12 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testLocalSegmentReturnsLocalCommandBus() {
+    void localSegmentReturnsLocalCommandBus() {
         assertEquals(localSegment, testSubject.localSegment());
     }
 
     @Test
-    void testDisconnectUnsubscribesAllRegisteredCommands() {
+    void disconnectUnsubscribesAllRegisteredCommands() {
         String testCommandOne = "testCommandOne";
         String testCommandTwo = "testCommandTwo";
         testSubject.subscribe(testCommandOne, command -> "Done");
@@ -410,7 +420,7 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
         testSubject.shutdownDispatching();
 
         GenericCommandMessage<String> command = new GenericCommandMessage<>("some-command");
@@ -421,7 +431,7 @@ class AxonServerCommandBusTest {
     }
 
     @Test
-    void testShutdownDispatchingWaitsForCommandsInTransitToComplete() {
+    void shutdownDispatchingWaitsForCommandsInTransitToComplete() {
         AtomicBoolean commandHandled = new AtomicBoolean(false);
         // Commands containing "blocking" will sleep for 500 millis
         GenericCommandMessage<String> testCommand = new GenericCommandMessage<>("some-blocking-command");

@@ -44,7 +44,7 @@ class JpaEventStoreAutoConfigurationWithAxonServerTest {
     private EventStore eventStore;
 
     @Test
-    void testEventStore() {
+    void eventStore() {
         assertTrue(eventStore instanceof AxonServerEventStore);
     }
 }

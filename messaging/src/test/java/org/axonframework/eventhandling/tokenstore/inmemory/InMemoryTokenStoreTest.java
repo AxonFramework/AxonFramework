@@ -38,7 +38,7 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testInitializeTokens() {
+    void initializeTokens() {
         testSubject.initializeTokenSegments("test1", 7);
 
         int[] actual = testSubject.fetchSegments("test1");
@@ -47,12 +47,12 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testIdentifierIsPresent() {
+    void identifierIsPresent() {
         assertTrue(testSubject.retrieveStorageIdentifier().isPresent());
     }
 
     @Test
-    void testInitializeTokensAtGivenPosition() {
+    void initializeTokensAtGivenPosition() {
         testSubject.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
 
         int[] actual = testSubject.fetchSegments("test1");
@@ -65,7 +65,7 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testUpdateToken() {
+    void updateToken() {
         testSubject.initializeTokenSegments("test1", 1);
         testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0);
 
@@ -73,7 +73,7 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testInitializeAtGivenToken() {
+    void initializeAtGivenToken() {
         testSubject.initializeTokenSegments("test1", 2, new GlobalSequenceTrackingToken(1));
 
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
@@ -81,12 +81,12 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testInitializeTokensWhileAlreadyPresent() {
+    void initializeTokensWhileAlreadyPresent() {
         assertThrows(UnableToClaimTokenException.class, () -> testSubject.fetchToken("test1", 1));
     }
 
     @Test
-    void testQuerySegments() {
+    void querySegments() {
         testSubject.initializeTokenSegments("test", 1);
 
         assertNull(testSubject.fetchToken("test", 0));
@@ -110,7 +110,7 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
-    void testQueryAvailableSegments() {
+    void queryAvailableSegments() {
         testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
         testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
         testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);

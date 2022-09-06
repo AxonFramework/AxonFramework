@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SQLErrorCodesResolverTest {
 
     @Test
-    void testIsDuplicateKey() {
+    void isDuplicateKey() {
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(new ArrayList<>());
 
         boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
@@ -50,7 +50,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() {
+    void isDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() {
         List<Integer> errorCodes = new ArrayList<>();
         errorCodes.add(-104);
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(errorCodes);
@@ -65,7 +65,7 @@ class SQLErrorCodesResolverTest {
 
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingDataSource() throws Exception {
+    void isDuplicateKey_isDuplicateKey_usingDataSource() throws Exception {
         String databaseProductName = "HSQL Database Engine";
         DataSource dataSource = createMockDataSource(databaseProductName);
 
@@ -80,7 +80,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingAS400DataSource() throws Exception {
+    void isDuplicateKey_isDuplicateKey_usingAS400DataSource() throws Exception {
         String databaseProductName = "DB2 UDB for AS/400";
         DataSource dataSource = createMockDataSource(databaseProductName);
 
@@ -95,7 +95,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingDB2LinuxDataSource() throws Exception {
+    void isDuplicateKey_isDuplicateKey_usingDB2LinuxDataSource() throws Exception {
         String databaseProductName = "DB2/LINUXX8664";
         DataSource dataSource = createMockDataSource(databaseProductName);
 
@@ -110,7 +110,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingRandomDb2DataSource() throws Exception {
+    void isDuplicateKey_isDuplicateKey_usingRandomDb2DataSource() throws Exception {
         String databaseProductName = "DB2 Completely unexpected value";
         DataSource dataSource = createMockDataSource(databaseProductName);
 
@@ -125,7 +125,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingProductName() {
+    void isDuplicateKey_isDuplicateKey_usingProductName() {
         String databaseProductName = "HSQL Database Engine";
 
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(databaseProductName);
@@ -139,7 +139,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingCustomProperties() throws Exception {
+    void isDuplicateKey_isDuplicateKey_usingCustomProperties() throws Exception {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 
@@ -157,14 +157,14 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testInitialization_UnknownProductName() throws Exception {
+    void initialization_UnknownProductName() throws Exception {
         DataSource dataSource = createMockDataSource("Some weird unknown DB type");
         assertThrows(AxonConfigurationException.class, () -> new SQLErrorCodesResolver(dataSource))
         ;
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingSqlState() {
+    void isDuplicateKey_isDuplicateKey_usingSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 
@@ -181,7 +181,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingNonIntSqlState() {
+    void isDuplicateKey_isDuplicateKey_usingNonIntSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 
@@ -198,7 +198,7 @@ class SQLErrorCodesResolverTest {
     }
 
     @Test
-    void testIsDuplicateKey_isDuplicateKey_usingNonNullSqlState() {
+    void isDuplicateKey_isDuplicateKey_usingNonNullSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 

@@ -159,7 +159,7 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testStreamingFluxQuery(boolean supportsStreaming) {
+    void streamingFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<FluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new FluxQuery(), String.class);
 
@@ -170,7 +170,7 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testConcurrentStreamingQueries(boolean supportsStreaming) {
+    void concurrentStreamingQueries(boolean supportsStreaming) {
         int count = 100;
 
         StepVerifier.create(Flux.range(0, count)
@@ -181,7 +181,7 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testStreamingErrorFluxQuery(boolean supportsStreaming) {
+    void streamingErrorFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ErrorFluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new ErrorFluxQuery(), String.class);
 
@@ -192,7 +192,7 @@ class StreamingQueryEndToEndTest {
     }
 
     @Test
-    void testStreamingHandlerErrorFluxQuery() {
+    void streamingHandlerErrorFluxQuery() {
         StreamingQueryMessage<HandlerErrorFluxQuery, String> query =
                 new GenericStreamingQueryMessage<>(new HandlerErrorFluxQuery(), String.class);
 
@@ -204,7 +204,7 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testStreamingListQuery(boolean supportsStreaming) {
+    void streamingListQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ListQuery, String> query =
                 new GenericStreamingQueryMessage<>(new ListQuery(), String.class);
 
@@ -215,7 +215,7 @@ class StreamingQueryEndToEndTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testListQuery(boolean supportsStreaming) throws ExecutionException, InterruptedException {
+    void listQuery(boolean supportsStreaming) throws ExecutionException, InterruptedException {
         QueryMessage<ListQuery, List<String>> query = new GenericQueryMessage<>(new ListQuery(),
                                                                                 multipleInstancesOf(String.class));
 

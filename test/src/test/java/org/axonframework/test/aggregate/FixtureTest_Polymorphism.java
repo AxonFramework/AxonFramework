@@ -57,7 +57,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest(name = "[{index}] {1}")
     @MethodSource("provideForCreationalTest")
-    void testCreationOfAggregate(Function<String, Object> commandBuilder, String aggregateType) {
+    void creationOfAggregate(Function<String, Object> commandBuilder, String aggregateType) {
         String id = "id";
         fixture.givenNoPriorActivity()
                .when(commandBuilder.apply(id))
@@ -71,7 +71,7 @@ class FixtureTest_Polymorphism {
 
     @ParameterizedTest
     @ValueSource(strings = {"AggregateB", "AggregateC"})
-    void testCommonCommandOnAggregate(String aggregateType) {
+    void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
         DomainEventMessage<CreatedEvent> creationalEvent = new GenericDomainEventMessage<>(aggregateType,
                                                                                            id,
@@ -83,7 +83,7 @@ class FixtureTest_Polymorphism {
     }
 
     @Test
-    void testCreatingNewPolymorphicAggregate() {
+    void creatingNewPolymorphicAggregate() {
         AggregateTestFixture<AggregateD> fixture = new AggregateTestFixture<>(AggregateD.class);
         String id = "id";
         fixture.givenNoPriorActivity()

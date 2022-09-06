@@ -33,7 +33,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void testStartRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
+    void startRecordingCallbackIsInvokedOnWhenPublishingAnEvent() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
@@ -43,7 +43,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void testStartRecordingCallbackIsInvokedOnWhenTimeAdvances() {
+    void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
@@ -53,7 +53,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void testStartRecordingCallbackIsInvokedOnWhenTimeElapses() {
+    void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
         assertThat(startRecordingCount.get(), equalTo(0));
@@ -63,7 +63,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void testCustomListenerInvocationErrorHandlerIsUsed() {
+    void customListenerInvocationErrorHandlerIsUsed() {
         SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
 
         ListenerInvocationErrorHandler testSubject = (exception, event, eventHandler) ->
@@ -75,7 +75,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void testRegisteredResourceInjectorIsCalledUponFirstEventPublication() {
+    void registeredResourceInjectorIsCalledUponFirstEventPublication() {
         AtomicBoolean assertion = new AtomicBoolean(false);
         testSubject.registerResourceInjector(saga -> assertion.set(true))
                    // Publishing a single event should trigger the creation and injection of resources

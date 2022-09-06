@@ -98,7 +98,7 @@ class SpawningNewAggregateTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testSpawningNewAggregate() throws Exception {
+    void spawningNewAggregate() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")));
 
@@ -115,7 +115,7 @@ class SpawningNewAggregateTest {
 
     @MockitoSettings(strictness = Strictness.LENIENT)
     @Test
-    void testSpawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
+    void spawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
@@ -134,7 +134,7 @@ class SpawningNewAggregateTest {
 
     @MockitoSettings(strictness = Strictness.LENIENT)
     @Test
-    void testSpawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
+    void spawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
         initializeAggregate1Repository(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
                             (commandMessage, commandResultMessage) -> {

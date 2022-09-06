@@ -77,7 +77,7 @@ class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    void testStealingFromOtherThreadFailsWithRowLock() throws Exception {
+    void stealingFromOtherThreadFailsWithRowLock() throws Exception {
         jpaTokenStore.initializeTokenSegments("processor", 1);
 
         ExecutorService executor1 = Executors.newSingleThreadExecutor();

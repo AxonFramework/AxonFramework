@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class AxonServerSubscriptionQueryResultTest {
     }
 
     @Test
-    void testSubscriptionQueryClosesUpdateFluxWithErrorOnErrorInResultStream() {
+    void subscriptionQueryClosesUpdateFluxWithErrorOnErrorInResultStream() {
         executorService.schedule(() -> {
             subscriptionQueryUpdateBuffer.onError(new RuntimeException("Test"));
         }, 10, TimeUnit.MILLISECONDS);
@@ -89,7 +89,7 @@ class AxonServerSubscriptionQueryResultTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesUpdateFluxOnCompletedResultStream() {
+    void subscriptionQueryCompletesUpdateFluxOnCompletedResultStream() {
         executorService.schedule(() -> {
             subscriptionQueryUpdateBuffer.onCompleted();
         }, 10, TimeUnit.MILLISECONDS);

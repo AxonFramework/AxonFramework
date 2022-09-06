@@ -38,7 +38,7 @@ class StubDeadlineManagerTest {
     }
 
     @Test
-    void testMessagesCarryTriggerTimestamp() throws Exception {
+    void messagesCarryTriggerTimestamp() throws Exception {
         Instant triggerTime = Instant.now().plusSeconds(60);
         MockScope.execute(() ->
                                   testSubject.schedule(triggerTime, "gone")

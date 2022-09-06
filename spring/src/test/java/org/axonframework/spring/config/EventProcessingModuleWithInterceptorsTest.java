@@ -56,7 +56,7 @@ public class EventProcessingModuleWithInterceptorsTest {
     private Context.MyEventHandler myEventHandler;
 
     @Test
-    void testInterceptorRegistration() {
+    void interceptorRegistration() {
         eventBus.publish(GenericEventMessage.asEventMessage("myEvent"));
         assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
     }

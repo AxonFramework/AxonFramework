@@ -56,7 +56,7 @@ class JpaAutoConfigurationTest {
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertTrue(entityManagerProvider instanceof ContainerManagedEntityManagerProvider);
         assertTrue(tokenStore instanceof JpaTokenStore);
         assertTrue(sagaStore instanceof JpaSagaStore);

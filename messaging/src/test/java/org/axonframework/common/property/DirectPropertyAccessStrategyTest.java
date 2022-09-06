@@ -23,24 +23,24 @@ import static org.junit.jupiter.api.Assertions.*;
 class DirectPropertyAccessStrategyTest {
 
 	@Test
-	void testGetValue() {
+	void getValue() {
 		final Property<TestMessage> actualProperty = getProperty(regularPropertyName());
 		assertNotNull(actualProperty);
 		assertNotNull(actualProperty.<String>getValue(propertyHoldingInstance()));
 	}
 
 	@Test
-	void testGetValue_BogusProperty() {
+	void getValue_BogusProperty() {
 		assertNull(getProperty(unknownPropertyName()));
 	}
 
 	@Test
-	void testGetValue_NullForPrivateProperty() {
+	void getValue_NullForPrivateProperty() {
 		assertNull(getProperty(privatePropertyName()));
 	}
 
 	@Test
-	void testOverriddenPropertyValue() {
+	void overriddenPropertyValue() {
 		assertEquals("realValue", getProperty(overriddenPropertyName()).getValue(propertyHoldingInstance()));
 	}
 

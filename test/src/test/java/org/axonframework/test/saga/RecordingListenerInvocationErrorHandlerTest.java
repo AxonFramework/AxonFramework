@@ -27,26 +27,26 @@ import static org.mockito.Mockito.*;
 class RecordingListenerInvocationErrorHandlerTest {
 
     @Test
-    void testEmptyOnCreation() {
+    void emptyOnCreation() {
         RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
 
         assertFalse(testSubject.getException().isPresent());
     }
 
     @Test
-    void testWrappedHandlerCannotBeNull() {
+    void wrappedHandlerCannotBeNull() {
         assertThrows(IllegalArgumentException.class, () -> new RecordingListenerInvocationErrorHandler(null));
     }
 
     @Test
-    void testCannotSetWrappedHanlderToNull() {
+    void cannotSetWrappedHanlderToNull() {
         RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
 
         assertThrows(IllegalArgumentException.class, () -> testSubject.setListenerInvocationErrorHandler(null));
     }
 
     @Test
-    void testLogExceptionOnError() throws Exception {
+    void logExceptionOnError() throws Exception {
         RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
@@ -59,7 +59,7 @@ class RecordingListenerInvocationErrorHandlerTest {
     }
 
     @Test
-    void testClearExceptionOnStartRecording() throws Exception {
+    void clearExceptionOnStartRecording() throws Exception {
         RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();

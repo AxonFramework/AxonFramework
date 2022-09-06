@@ -72,7 +72,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingFluxResults() {
+    void streamingFluxResults() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "fluxQuery", String.class);
 
@@ -82,7 +82,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testSwitchHandlerOnError() {
+    void switchHandlerOnError() {
         handlersInvoked.removeIf(n -> true);
         errorQueryHandlerAdapter.subscribe(queryBus);
 
@@ -98,7 +98,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testOptionalResults() {
+    void optionalResults() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "optionalResultQuery", String.class);
 
@@ -108,7 +108,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testEmptyOptionalResults() {
+    void emptyOptionalResults() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "emptyOptionalResultQuery", String.class);
 
@@ -118,7 +118,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingListResults() {
+    void streamingListResults() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "listQuery", String.class);
 
@@ -128,7 +128,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingStreamResults() {
+    void streamingStreamResults() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "streamQuery", String.class);
 
@@ -138,7 +138,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingSingleResult() {
+    void streamingSingleResult() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "singleResultQuery", String.class);
 
@@ -148,7 +148,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingCompletableFutureResult() {
+    void streamingCompletableFutureResult() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "completableFutureQuery", String.class);
 
@@ -158,7 +158,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingFluxAfterHandlerCompletes() {
+    void streamingFluxAfterHandlerCompletes() {
         StreamingQueryMessage<String, Long> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria",
                                                    "streamingAfterHandlerCompletesQuery",
@@ -170,7 +170,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingMonoResult() {
+    void streamingMonoResult() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "monoQuery", String.class);
 
@@ -180,7 +180,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testStreamingNullResult() {
+    void streamingNullResult() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "nullQuery", String.class);
 
@@ -190,7 +190,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testErrorResult() {
+    void errorResult() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "exceptionQuery", String.class);
 
@@ -201,7 +201,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testThrottledFluxQuery() {
+    void throttledFluxQuery() {
         StreamingQueryMessage<String, Long> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria",
                                                    "throttledFluxQuery",
@@ -213,7 +213,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testBackpressureFluxQuery() {
+    void backpressureFluxQuery() {
         StreamingQueryMessage<String, Long> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria",
                                                    "backPressure",
@@ -228,7 +228,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testDispatchInterceptor() {
+    void dispatchInterceptor() {
         AtomicBoolean hasBeenCalled = new AtomicBoolean();
 
         queryBus.registerDispatchInterceptor(messages -> {
@@ -247,7 +247,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testHandlerInterceptor() {
+    void handlerInterceptor() {
         queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) ->
                                                     ((Flux) interceptorChain.proceed()).map(it -> "a"));
 
@@ -260,7 +260,7 @@ class StreamingQueryTest {
     }
 
     @Test
-    void testErrorStream() {
+    void errorStream() {
         StreamingQueryMessage<String, String> queryMessage =
                 new GenericStreamingQueryMessage<>("criteria", "errorStream", String.class);
 

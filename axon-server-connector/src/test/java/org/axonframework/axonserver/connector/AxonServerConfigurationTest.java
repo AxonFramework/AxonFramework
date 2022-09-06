@@ -14,7 +14,7 @@ class AxonServerConfigurationTest {
 
 
     @Test
-    void testEventsFlowControl() {
+    void eventsFlowControl() {
 
         AxonServerConfiguration axonServerConfiguration = builder().eventFlowControl(10, 20, 30).build();
 
@@ -28,7 +28,7 @@ class AxonServerConfigurationTest {
     }
 
     @Test
-    void testCommandFlowControl() {
+    void commandFlowControl() {
 
         AxonServerConfiguration axonServerConfiguration = builder().commandFlowControl(10, 20, 30).build();
 
@@ -42,7 +42,7 @@ class AxonServerConfigurationTest {
     }
 
     @Test
-    void testQueryFlowControl() {
+    void queryFlowControl() {
 
         AxonServerConfiguration axonServerConfiguration = builder().queryFlowControl(10, 20, 30).build();
 

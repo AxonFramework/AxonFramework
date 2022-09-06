@@ -51,7 +51,7 @@ class AggregateScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testJavaSerializationCorrectlySetsIdentifierField() throws Exception {
+    void javaSerializationCorrectlySetsIdentifierField() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
         objectOutputStream.writeObject(testSubject);
@@ -66,7 +66,7 @@ class AggregateScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testXStreamSerializationWorksAsExpected() {
+    void xStreamSerializationWorksAsExpected() {
         XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
         xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
 
@@ -79,7 +79,7 @@ class AggregateScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testJacksonSerializationWorksAsExpected() {
+    void jacksonSerializationWorksAsExpected() {
         JacksonSerializer jacksonSerializer = JacksonSerializer.defaultSerializer();
 
 
@@ -91,7 +91,7 @@ class AggregateScopeDescriptorSerializationTest {
     }
 
     @Test
-    void testResponseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() {
+    void responseTypeShouldBeSerializableWithJacksonUsingConstructorProperties() {
         ObjectMapper objectMapper = OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper());
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().objectMapper(objectMapper).build();
 
