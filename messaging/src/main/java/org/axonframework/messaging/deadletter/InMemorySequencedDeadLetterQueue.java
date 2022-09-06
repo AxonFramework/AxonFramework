@@ -106,21 +106,21 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     @Override
     public void enqueue(@Nonnull Object sequenceIdentifier,
                         @Nonnull DeadLetter<? extends M> letter) throws DeadLetterQueueOverflowException {
+        if (isFull(sequenceIdentifier)) {
+            throw new DeadLetterQueueOverflowException(sequenceIdentifier);
+        }
+
+        if (logger.isDebugEnabled()) {
+            Optional<Cause> optionalCause = letter.cause();
+            if (optionalCause.isPresent()) {
+                logger.debug("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
+            } else {
+                logger.debug("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
+                             letter.message(), sequenceIdentifier);
+            }
+        }
+
         synchronized (deadLetters) {
-            if (isFull(sequenceIdentifier)) {
-                throw new DeadLetterQueueOverflowException(sequenceIdentifier);
-            }
-
-            if (logger.isDebugEnabled()) {
-                Optional<Cause> optionalCause = letter.cause();
-                if (optionalCause.isPresent()) {
-                    logger.debug("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
-                } else {
-                    logger.debug("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
-                                 letter.message(), sequenceIdentifier);
-                }
-            }
-
             deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier), id -> new ConcurrentLinkedDeque<>())
                        .addLast(letter);
         }
@@ -128,14 +128,14 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
 
     @Override
     public void evict(DeadLetter<? extends M> letter) {
-        synchronized (deadLetters) {
-            Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
-                    deadLetters.entrySet()
-                               .stream()
-                               .filter(sequence -> sequence.getValue().remove(letter))
-                               .findFirst();
+        Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
+                deadLetters.entrySet()
+                           .stream()
+                           .filter(sequence -> sequence.getValue().remove(letter))
+                           .findFirst();
 
-            if (optionalSequence.isPresent()) {
+        if (optionalSequence.isPresent()) {
+            synchronized (deadLetters) {
                 String sequenceId = optionalSequence.get().getKey();
                 if (deadLetters.get(sequenceId).isEmpty()) {
                     logger.trace("Sequence [{}] is empty and will be removed.", sequenceId);
@@ -144,9 +144,9 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                 if (logger.isTraceEnabled()) {
                     logger.trace("Evicted letter [{}] for sequence [{}].", letter, sequenceId);
                 }
-            } else if (logger.isDebugEnabled()) {
-                logger.debug("Cannot evict [{}] as it could not be found in this queue.", letter);
             }
+        } else if (logger.isDebugEnabled()) {
+            logger.debug("Cannot evict [{}] as it could not be found in this queue.", letter);
         }
     }
 
@@ -155,25 +155,25 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
             @Nonnull DeadLetter<? extends M> letter,
             @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater
     ) throws NoSuchDeadLetterException {
-        synchronized (deadLetters) {
-            Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
-                    deadLetters.entrySet()
-                               .stream()
-                               .filter(sequence -> sequence.getValue().remove(letter))
-                               .findFirst();
+        Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
+                deadLetters.entrySet()
+                           .stream()
+                           .filter(sequence -> sequence.getValue().remove(letter))
+                           .findFirst();
 
-            if (optionalSequence.isPresent()) {
+        if (optionalSequence.isPresent()) {
+            synchronized (deadLetters) {
                 String sequenceId = optionalSequence.get().getKey();
                 deadLetters.get(sequenceId)
                            .addFirst(letterUpdater.apply(letter.markTouched()));
                 if (logger.isTraceEnabled()) {
                     logger.trace("Requeued letter [{}] for sequence [{}].", letter, sequenceId);
                 }
-            } else {
-                throw new NoSuchDeadLetterException(
-                        "Cannot requeue [" + letter + "] since there is not matching entry in this queue."
-                );
             }
+        } else {
+            throw new NoSuchDeadLetterException(
+                    "Cannot requeue [" + letter + "] since there is not matching entry in this queue."
+            );
         }
     }
 
@@ -244,27 +244,25 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     @Override
     public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                            @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
-        synchronized (deadLetters) {
-            if (deadLetters.isEmpty()) {
-                logger.debug("Received a request to process dead-letters but there are none.");
-                return false;
-            }
-            logger.debug("Received a request to process matching dead-letters.");
+        if (deadLetters.isEmpty()) {
+            logger.debug("Received a request to process dead-letters but there are none.");
+            return false;
+        }
+        logger.debug("Received a request to process matching dead-letters.");
 
-            Map<String, DeadLetter<? extends M>> sequenceIdsToLetter =
-                    deadLetters.entrySet()
-                               .stream()
-                               .filter(entry -> !takenSequences.contains(entry.getKey()))
-                               .filter(sequence -> sequenceFilter.test(sequence.getValue().getFirst()))
-                               .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirst()));
+        Map<String, DeadLetter<? extends M>> sequenceIdsToLetter =
+                deadLetters.entrySet()
+                           .stream()
+                           .filter(entry -> !takenSequences.contains(entry.getKey()))
+                           .filter(sequence -> sequenceFilter.test(sequence.getValue().getFirst()))
+                           .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirst()));
 
-            if (sequenceIdsToLetter.isEmpty()) {
-                logger.debug(
-                        "Received a request to process dead-letters but there are no sequences matching the filter.");
-                return false;
-            }
+        if (sequenceIdsToLetter.isEmpty()) {
+            logger.debug("Received a request to process dead-letters but there are no sequences matching the filter.");
+            return false;
+        }
 
-            String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
+        String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
             boolean freshlyTaken = takenSequences.add(sequenceId);
             while (sequenceId != null && !freshlyTaken) {
                 sequenceIdsToLetter.remove(sequenceId);
@@ -272,28 +270,26 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                 freshlyTaken = takenSequences.add(sequenceId);
             }
 
-            if (StringUtils.emptyOrNull(sequenceId)) {
-                logger.debug("Received a request to process dead-letters but there are none left to process.");
-                return false;
-            }
+        if (StringUtils.emptyOrNull(sequenceId)) {
+            logger.debug("Received a request to process dead-letters but there are none left to process.");
+            return false;
+        }
 
-            try {
-                while (deadLetters.get(sequenceId) != null && !deadLetters.get(sequenceId).isEmpty()) {
-                    DeadLetter<? extends M> letter = deadLetters.get(sequenceId).getFirst();
-                    EnqueueDecision<M> decision = processingTask.apply(letter);
+        try {
+            while (deadLetters.get(sequenceId) != null && !deadLetters.get(sequenceId).isEmpty()) {
+                DeadLetter<? extends M> letter = deadLetters.get(sequenceId).getFirst();
+                EnqueueDecision<M> decision = processingTask.apply(letter);
 
-                    if (decision.shouldEnqueue()) {
-                        requeue(letter,
-                                l -> decision.withDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
-                        return false;
-                    } else {
-                        evict(letter);
-                    }
+                if (decision.shouldEnqueue()) {
+                    requeue(letter, l -> decision.withDiagnostics(l).withCause(decision.enqueueCause().orElse(null)));
+                    return false;
+                } else {
+                    evict(letter);
                 }
-                return true;
-            } finally {
-                takenSequences.remove(sequenceId);
             }
+            return true;
+        } finally {
+            takenSequences.remove(sequenceId);
         }
     }
 
