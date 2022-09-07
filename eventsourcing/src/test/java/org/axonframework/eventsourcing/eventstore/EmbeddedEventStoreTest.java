@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -64,9 +65,11 @@ class EmbeddedEventStoreTest {
     private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         storageEngine = spy(new InMemoryEventStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
@@ -84,6 +87,7 @@ class EmbeddedEventStoreTest {
                                         .cleanupDelay(cleanupDelay)
                                         .threadFactory(threadFactory)
                                         .optimizeEventConsumption(optimizeEventConsumption)
+                                        .spanFactory(spanFactory)
                                         .build();
     }
 
@@ -93,7 +97,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testExistingEventIsPassedToReader() throws Exception {
+    void existingEventIsPassedToReader() throws Exception {
         DomainEventMessage<?> expected = createEvent();
         testSubject.publish(expected);
         TrackingEventStream stream = testSubject.openStream(null);
@@ -107,7 +111,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = FETCH_DELAY / 10, unit = MILLISECONDS)
-    void testEventPublishedAfterOpeningStreamIsPassedToReaderImmediately() throws Exception {
+    void eventPublishedAfterOpeningStreamIsPassedToReaderImmediately() throws Exception {
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
         DomainEventMessage<?> expected = createEvent();
@@ -125,7 +129,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testReadingIsBlockedWhenStoreIsEmpty() throws Exception {
+    void readingIsBlockedWhenStoreIsEmpty() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
         TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
@@ -138,7 +142,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testReadingIsBlockedWhenEndOfStreamIsReached() throws Exception {
+    void readingIsBlockedWhenEndOfStreamIsReached() throws Exception {
         testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
         TrackingEventStream stream = testSubject.openStream(null);
@@ -153,7 +157,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testReadingCanBeContinuedUsingLastToken() throws Exception {
+    void readingCanBeContinuedUsingLastToken() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         testSubject.publish(events);
         TrackedEventMessage<?> first = testSubject.openStream(null).nextAvailable();
@@ -165,7 +169,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
+    void eventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
         Thread t = new Thread(() -> testSubject.openStream(null).asStream().limit(2).forEach(event -> {
@@ -183,7 +187,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testPeriodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
+    void periodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
         TrackingEventStream stream = testSubject.openStream(null);
         CountDownLatch lock = new CountDownLatch(1);
@@ -197,7 +201,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testConsumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
+    void consumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20, OPTIMIZE_EVENT_CONSUMPTION);
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
@@ -215,7 +219,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testLoadWithoutSnapshot() {
+    void loadWithoutSnapshot() {
         testSubject.publish(createEvents(110));
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
@@ -223,7 +227,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testLoadWithSnapshot() {
+    void loadWithSnapshot() {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
@@ -234,7 +238,7 @@ class EmbeddedEventStoreTest {
 
     /* Reproduces issue reported in https://github.com/AxonFramework/AxonFramework/issues/485 */
     @Test
-    void testStreamEventsShouldNotReturnDuplicateTokens() throws InterruptedException {
+    void streamEventsShouldNotReturnDuplicateTokens() throws InterruptedException {
         newTestSubject(0, 1000, 1000, OPTIMIZE_EVENT_CONSUMPTION);
         //noinspection rawtypes
         Stream mockStream = mock(Stream.class);
@@ -257,7 +261,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testLoadWithFailingSnapshot() {
+    void loadWithFailingSnapshot() {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
         when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
@@ -268,7 +272,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testLoadEventsAfterPublishingInSameUnitOfWork() {
+    void loadEventsAfterPublishingInSameUnitOfWork() {
         List<DomainEventMessage<?>> events = createEvents(10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork.startAndGet(null)
@@ -281,7 +285,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testLoadEventsWithOffsetAfterPublishingInSameUnitOfWork() {
+    void loadEventsWithOffsetAfterPublishingInSameUnitOfWork() {
         List<DomainEventMessage<?>> events = createEvents(10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork.startAndGet(null)
@@ -294,7 +298,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testEventsAppendedInvisibleUntilUnitOfWorkIsCommitted() {
+    void eventsAppendedInvisibleUntilUnitOfWorkIsCommitted() {
         List<DomainEventMessage<?>> events = createEvents(10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
@@ -313,7 +317,24 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testStagedEventsNotDuplicatedAfterCommit() {
+    void appendEventsCreatesCorrectSpans() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events);
+        events.forEach(e -> {
+            spanFactory.verifySpanCompleted("EmbeddedEventStore.publish", e);
+            spanFactory.verifySpanPropagated("EmbeddedEventStore.publish", e);
+            spanFactory.verifySpanHasType("EmbeddedEventStore.publish", TestSpanFactory.TestSpanType.INTERNAL);
+        });
+        spanFactory.verifyNotStarted("EmbeddedEventStore.commit");
+
+        CurrentUnitOfWork.commit();
+        spanFactory.verifySpanCompleted("EmbeddedEventStore.commit");
+        spanFactory.verifySpanHasType("EmbeddedEventStore.commit", TestSpanFactory.TestSpanType.INTERNAL);
+    }
+
+    @Test
+    void stagedEventsNotDuplicatedAfterCommit() {
         List<DomainEventMessage<?>> events = createEvents(10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork<Message<?>> outerUoW = DefaultUnitOfWork.startAndGet(null);
@@ -337,7 +358,7 @@ class EmbeddedEventStoreTest {
 
     @Test
     @Timeout(value = 5)
-    void testCustomThreadFactoryIsUsed() throws Exception {
+    void customThreadFactoryIsUsed() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
         TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
@@ -351,7 +372,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testOpenStreamReadsEventsFromAnEventProducedByVerifyThreadFactoryOperation()
+    void openStreamReadsEventsFromAnEventProducedByVerifyThreadFactoryOperation()
             throws InterruptedException {
         TrackingEventStream eventStream = testSubject.openStream(null);
 
@@ -372,7 +393,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testTailingConsumptionThreadIsNeverCreatedIfEventConsumptionOptimizationIsSwitchedOff()
+    void tailingConsumptionThreadIsNeverCreatedIfEventConsumptionOptimizationIsSwitchedOff()
             throws InterruptedException {
         boolean doNotOptimizeEventConsumption = false;
         //noinspection ConstantConditions
@@ -391,7 +412,7 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void testEventStreamKeepsReturningEventsIfEventConsumptionOptimizationIsSwitchedOff()
+    void eventStreamKeepsReturningEventsIfEventConsumptionOptimizationIsSwitchedOff()
             throws InterruptedException {
         boolean doNotOptimizeEventConsumption = false;
         //noinspection ConstantConditions

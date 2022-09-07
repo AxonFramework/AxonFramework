@@ -51,7 +51,7 @@ class ReplayContextParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolvesIfMatching() throws Exception {
+    void resolvesIfMatching() throws Exception {
         GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken,
                                                                                           asEventMessage(1L));
         GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken,

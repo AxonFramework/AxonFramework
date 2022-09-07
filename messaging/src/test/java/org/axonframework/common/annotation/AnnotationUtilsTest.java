@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnnotationUtilsTest {
 
     @Test
-    void testFindAttributesOnDirectAnnotation() throws NoSuchMethodException {
+    void findAttributesOnDirectAnnotation() throws NoSuchMethodException {
         Optional<Map<String, Object>> optionalResult =
                 findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class);
         assertTrue(optionalResult.isPresent());
@@ -56,7 +56,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testFindAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
+    void findAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
         Optional<Map<String, Object>> optionalResult =
                 findAnnotationAttributes(getClass().getDeclaredMethod("staticallyOverridden"), TheTarget.class);
         assertTrue(optionalResult.isPresent());
@@ -66,7 +66,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testFindAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
+    void findAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
         Optional<Map<String, Object>> optionalResult =
                 findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class);
         assertTrue(optionalResult.isPresent());
@@ -77,7 +77,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testFindAttributesOnDynamicMetaAnnotationUsingAnnotationName() throws NoSuchMethodException {
+    void findAttributesOnDynamicMetaAnnotationUsingAnnotationName() throws NoSuchMethodException {
         Optional<Map<String, Object>> optionalResult = findAnnotationAttributes(
                 getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class.getName()
         );
@@ -90,14 +90,14 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testFindAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
+    void findAttributesOnNonExistentAnnotation() throws NoSuchMethodException {
         Optional<Map<String, Object>> result =
                 findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), RoutingKey.class);
         assertFalse(result.isPresent(), "Didn't expect attributes to be found for non-existent annotation");
     }
 
     @Test
-    void testFindAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForClassAnnotation()
+    void findAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForClassAnnotation()
             throws NoSuchMethodException {
         Method annotatedElement = getClass().getDeclaredMethod("dynamicallyOverridden");
 
@@ -113,7 +113,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testFindAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForStringAnnotation()
+    void findAnnotationAttributesOnlyReturnsTargetAttributesAndOverridesForStringAnnotation()
             throws NoSuchMethodException {
         Method annotatedElement = getClass().getDeclaredMethod("someAnnotatedMethod");
 
@@ -129,7 +129,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testIsAnnotatedWithReturnsTrue() {
+    void isAnnotatedWithReturnsTrue() {
         Set<Class<? extends Annotation>> expectedAnnotatedWithSubject = new HashSet<>();
         expectedAnnotatedWithSubject.add(DynamicOverrideAnnotated.class);
         expectedAnnotatedWithSubject.add(AnotherMetaAnnotation.class);
@@ -153,7 +153,7 @@ class AnnotationUtilsTest {
     }
 
     @Test
-    void testIsAnnotatedWithReturnsFalse() {
+    void isAnnotatedWithReturnsFalse() {
         Set<Class<? extends Annotation>> expectedAnnotatedWithSubject = Collections.emptySet();
         Set<Class<? extends Annotation>> expectedVisited = new HashSet<>();
         expectedVisited.add(NotMetaAnnotated.class);

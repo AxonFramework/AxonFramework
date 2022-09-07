@@ -598,7 +598,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     /**
      * A "claimed sequence" in this case means that a process task for a given "sequence identifier" is still processing
      * the sequence. Furthermore, if it's the sole sequence, the processing task will not be invoked. This approach
-     * ensure the events for a given sequence identifier are handled in the order they've been dead-lettered (a.k.a., in
+     * ensure the events for a given sequence identifier are handled in the order they've been dead lettered (a.k.a., in
      * sequence).
      */
     @Test
@@ -786,7 +786,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     /**
      * A "claimed sequence" in this case means that a process task for a given "sequence identifier" is still processing
      * the sequence. Furthermore, if it's the sole sequence, the processing task will not be invoked. This approach
-     * ensure the events for a given sequence identifier are handled in the order they've been dead-lettered (a.k.a., in
+     * ensure the events for a given sequence identifier are handled in the order they've been dead lettered (a.k.a., in
      * sequence).
      */
     @Test
@@ -888,7 +888,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     }
 
     /**
-     * Generate an initial {@link DeadLetter} implementation expected by the test subject. This means the dead-letter is
+     * Generate an initial {@link DeadLetter} implementation expected by the test subject. This means the dead letter is
      * the first in a potential sequence of letters.
      *
      * @return A {@link DeadLetter} implementation expected by the test subject.
@@ -897,7 +897,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     /**
      * Generate a follow-up {@link DeadLetter} implementation expected by the test subject with the given
-     * {@code sequenceIdentifier}. This means the dead-letter is part of a sequence of letters.
+     * {@code sequenceIdentifier}. This means the dead letter is part of a sequence of letters.
      *
      * @return A follow-up {@link DeadLetter} implementation expected by the test subject with the given
      * {@code sequenceIdentifier}.
@@ -922,7 +922,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * that's requeued. The result is expected to have an adjusted {@link DeadLetter#lastTouched()} and
      * {@link DeadLetter#cause()}. The latter should resemble the given {@code requeueCause}.
      *
-     * @param original     The original {@link DeadLetter} to base the requeued dead-letter on.
+     * @param original     The original {@link DeadLetter} to base the requeued dead letter on.
      * @param requeueCause The cause for requeueing the {@code original}.
      * @return A {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
      * that's requeued.
@@ -939,7 +939,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * {@link DeadLetter#cause()}. The former should resemble the given {@code lastTouched} and the latter the given
      * {@code requeueCause}.
      *
-     * @param original     The original {@link DeadLetter} to base the requeued dead-letter on.
+     * @param original     The original {@link DeadLetter} to base the requeued dead letter on.
      * @param lastTouched  The {@link DeadLetter#lastTouched()} of the generated {@link DeadLetter} implementation.
      * @param requeueCause The cause for requeueing the {@code original}.
      * @param diagnostics  The diagnostics {@link MetaData} added to the requeued letter for monitoring.

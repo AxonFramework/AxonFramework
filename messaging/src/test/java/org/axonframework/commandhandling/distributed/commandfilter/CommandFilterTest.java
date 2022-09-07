@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CommandFilterTest {
 
     @Test
-    void testAcceptAll() {
+    void acceptAll() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new Object());
 
         assertTrue(AcceptAll.INSTANCE.matches(testCommand));
@@ -42,7 +42,7 @@ class CommandFilterTest {
     }
 
     @Test
-    void testDenyAll() {
+    void denyAll() {
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(new Object());
 
         assertFalse(DenyAll.INSTANCE.matches(testCommand));
@@ -52,7 +52,7 @@ class CommandFilterTest {
     }
 
     @Test
-    void testCommandNameFilter() {
+    void commandNameFilter() {
         CommandMessage<Object> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 
@@ -82,7 +82,7 @@ class CommandFilterTest {
     }
 
     @Test
-    void testDenyCommandNameFilter() {
+    void denyCommandNameFilter() {
         CommandMessage<Object> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(new Object()), "acceptable");
 

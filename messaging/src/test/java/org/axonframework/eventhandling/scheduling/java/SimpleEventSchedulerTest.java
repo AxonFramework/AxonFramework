@@ -71,7 +71,7 @@ class SimpleEventSchedulerTest {
     }
 
     @Test
-    void testScheduleJob() throws InterruptedException {
+    void scheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -83,7 +83,7 @@ class SimpleEventSchedulerTest {
     }
 
     @Test
-    void testScheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
+    void scheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
         ScheduleToken token = testSubject.schedule(Duration.ZERO, new Object());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -95,7 +95,7 @@ class SimpleEventSchedulerTest {
     }
 
     @Test
-    void testCancelJob() throws InterruptedException {
+    void cancelJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -117,7 +117,7 @@ class SimpleEventSchedulerTest {
     }
 
     @Test
-    void testShutdownInvokesExecutorServiceShutdown(@Mock ScheduledExecutorService scheduledExecutorService) {
+    void shutdownInvokesExecutorServiceShutdown(@Mock ScheduledExecutorService scheduledExecutorService) {
         SimpleEventScheduler testSubject = SimpleEventScheduler.builder()
                                                                .scheduledExecutorService(scheduledExecutorService)
                                                                .eventBus(eventBus)

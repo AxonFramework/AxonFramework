@@ -90,7 +90,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testStartRecording() throws Exception {
+    void startRecording() throws Exception {
         RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
@@ -121,7 +121,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testStartRecording_ClearsEventsAndCommands() throws Exception {
+    void startRecording_ClearsEventsAndCommands() throws Exception {
         RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
@@ -140,7 +140,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectPublishedEvents_WrongCount() {
+    void expectPublishedEvents_WrongCount() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
@@ -152,7 +152,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectPublishedEvents_WrongType() {
+    void expectPublishedEvents_WrongType() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
@@ -162,7 +162,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectPublishedEvents_FailedMatcher() {
+    void expectPublishedEvents_FailedMatcher() {
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaEndEvent(identifier)));
 
         assertThrows(
@@ -171,7 +171,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands_FailedCount() {
+    void expectDispatchedCommands_FailedCount() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
@@ -181,7 +181,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands_FailedType() {
+    void expectDispatchedCommands_FailedType() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
@@ -189,7 +189,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands() {
+    void expectDispatchedCommands() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
@@ -197,7 +197,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
+    void expectDispatchedCommands_ObjectsNotImplementingEquals() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
@@ -205,7 +205,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
+    void expectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
@@ -217,7 +217,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
+    void expectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
@@ -229,43 +229,43 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectNoDispatchedCommands_Failed() {
+    void expectNoDispatchedCommands_Failed() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         assertThrows(AxonAssertionError.class, testSubject::expectNoDispatchedCommands);
     }
 
     @Test
-    void testExpectNoDispatchedCommands() {
+    void expectNoDispatchedCommands() {
         testSubject.expectNoDispatchedCommands();
     }
 
     @Test
-    void testExpectDispatchedCommands_FailedMatcher() {
+    void expectDispatchedCommands_FailedMatcher() {
         assertThrows(
                 AxonAssertionError.class, () -> testSubject.expectDispatchedCommands(new FailingMatcher<String>())
         );
     }
 
     @Test
-    void testExpectNoScheduledEvents_EventIsScheduled() {
+    void expectNoScheduledEvents_EventIsScheduled() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         assertThrows(AxonAssertionError.class, testSubject::expectNoScheduledEvents);
     }
 
     @Test
-    void testExpectNoScheduledEvents_NoEventScheduled() {
+    void expectNoScheduledEvents_NoEventScheduled() {
         testSubject.expectNoScheduledEvents();
     }
 
     @Test
-    void testExpectNoScheduledEvents_ScheduledEventIsTriggered() {
+    void expectNoScheduledEvents_ScheduledEventIsTriggered() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceToNextTrigger();
         testSubject.expectNoScheduledEvents();
     }
 
     @Test
-    void testExpectScheduledEvent_WrongDateTime() {
+    void expectScheduledEvent_WrongDateTime() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
@@ -276,7 +276,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectScheduledEvent_WrongClass() {
+    void expectScheduledEvent_WrongClass() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
@@ -287,7 +287,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectScheduledEvent_WrongEvent() {
+    void expectScheduledEvent_WrongEvent() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
@@ -300,7 +300,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectScheduledEvent_FailedMatcher() {
+    void expectScheduledEvent_FailedMatcher() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
@@ -311,7 +311,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectScheduledEvent_Found() {
+    void expectScheduledEvent_Found() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
         });
@@ -319,7 +319,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectScheduledEvent_FoundInMultipleCandidates() {
+    void expectScheduledEvent_FoundInMultipleCandidates() {
         eventScheduler.schedule(
                 Duration.ofSeconds(1), new GenericEventMessage<>(new TimerTriggeredEvent("unexpected1"))
         );
@@ -331,7 +331,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testAssociationWith_WrongValue() {
+    void associationWith_WrongValue() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -340,7 +340,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testAssociationWith_WrongKey() {
+    void associationWith_WrongKey() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -349,7 +349,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testAssociationWith_Present() {
+    void associationWith_Present() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -358,7 +358,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testNoAssociationWith_WrongValue() {
+    void noAssociationWith_WrongValue() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -367,7 +367,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testNoAssociationWith_WrongKey() {
+    void noAssociationWith_WrongKey() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -376,7 +376,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testNoAssociationWith_Present() {
+    void noAssociationWith_Present() {
         sagaStore.insertSaga(
                 StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value"))
         );
@@ -385,14 +385,14 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testExpectActiveSagas_WrongCount() {
+    void expectActiveSagas_WrongCount() {
         sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
 
         assertThrows(AxonAssertionError.class, () -> testSubject.expectActiveSagas(2));
     }
 
     @Test
-    void testExpectActiveSagas_CorrectCount() {
+    void expectActiveSagas_CorrectCount() {
         sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
         sagaStore.deleteSaga(StubSaga.class, "test", Collections.emptySet());
         sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), Collections.emptySet());
@@ -401,7 +401,7 @@ class FixtureExecutionResultImplTest {
     }
 
     @Test
-    void testStartRecordingCallback() {
+    void startRecordingCallback() {
         AtomicInteger startRecordingCallbackInvocations = new AtomicInteger();
         testSubject.registerStartRecordingCallback(startRecordingCallbackInvocations::incrementAndGet);
         testSubject.startRecording();

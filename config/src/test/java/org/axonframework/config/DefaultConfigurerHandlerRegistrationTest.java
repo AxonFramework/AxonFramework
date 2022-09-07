@@ -52,7 +52,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterCommandHandler() {
+    void registerCommandHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
         Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
@@ -65,7 +65,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterQueryHandler() {
+    void registerQueryHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
         Configuration config = baseConfigurer.registerQueryHandler(c -> new QueryHandlingComponent(handled))
@@ -78,7 +78,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterMessageHandler() {
+    void registerMessageHandler() {
         AtomicReference<MessageHandlingComponent> commandHandled = new AtomicReference<>();
         AtomicReference<MessageHandlingComponent> eventHandled = new AtomicReference<>();
         AtomicReference<MessageHandlingComponent> queryHandled = new AtomicReference<>();

@@ -902,6 +902,7 @@ public class EventProcessingModule
                                         .messageSource(messageSource)
                                         .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
                                         .transactionManager(transactionManager(name))
+                                        .spanFactory(configuration.spanFactory())
                                         .build();
     }
 
@@ -928,6 +929,7 @@ public class EventProcessingModule
                                      .tokenStore(tokenStore(name))
                                      .transactionManager(transactionManager(name))
                                      .trackingEventProcessorConfiguration(config)
+                                     .spanFactory(configuration.spanFactory())
                                      .build();
     }
 
@@ -969,7 +971,8 @@ public class EventProcessingModule
                                                          defaultExecutor(4, "WorkPackage[" + processorName + "]");
                                                  config.onShutdown(workerExecutor::shutdown);
                                                  return workerExecutor;
-                                             });
+                                             })
+                                             .spanFactory(config.spanFactory());
         return defaultPooledStreamingProcessorConfiguration.andThen(psepConfigs.getOrDefault(name, noOp()))
                                                            .andThen(processorConfiguration)
                                                            .apply(config, builder)

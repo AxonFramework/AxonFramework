@@ -66,7 +66,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testHandlerDispatching_VoidReturnType() throws Exception {
+    void handlerDispatching_VoidReturnType() throws Exception {
         Object actualReturnValue = testSubject.handle(GenericCommandMessage.asCommandMessage(""));
         assertNull(actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
@@ -74,7 +74,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testHandlerDispatching_WithReturnType() throws Exception {
+    void handlerDispatching_WithReturnType() throws Exception {
         Object actualReturnValue = testSubject.handle(GenericCommandMessage.asCommandMessage(1L));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -82,7 +82,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testHandlerDispatching_WithCustomCommandName() throws Exception {
+    void handlerDispatching_WithCustomCommandName() throws Exception {
         Object actualReturnValue = testSubject.handle(new GenericCommandMessage<>(new GenericMessage<>(1L), "almostLong"));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -91,7 +91,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testHandlerDispatching_ThrowingException() {
+    void handlerDispatching_ThrowingException() {
         try {
             testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet()));
             fail("Expected exception");
@@ -103,7 +103,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testSubscribe() {
+    void subscribe() {
         testSubject.subscribe(mockBus);
 
         verify(mockBus).subscribe(Long.class.getName(), testSubject);
@@ -115,7 +115,7 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void testHandle_NoHandlerForCommand() throws Exception {
+    void handle_NoHandlerForCommand() throws Exception {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage(new LinkedList<>());
 
         assertThrows(NoHandlerForCommandException.class, () -> testSubject.handle(command));

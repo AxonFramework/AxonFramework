@@ -102,7 +102,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
+    void loopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(PessimisticLockFactory.usingDefaults());
         EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -146,7 +146,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
+    void loopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() {
         initializeRepository(PessimisticLockFactory.usingDefaults());
         EventMessageHandler eventHandler = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;

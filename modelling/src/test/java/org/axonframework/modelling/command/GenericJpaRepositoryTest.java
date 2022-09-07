@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
@@ -60,9 +61,11 @@ class GenericJpaRepositoryTest {
     private StubJpaAggregate aggregate;
     private Function<String, ?> identifierConverter;
     private EventBus eventBus;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
@@ -72,6 +75,7 @@ class GenericJpaRepositoryTest {
                                           .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                                           .eventBus(eventBus)
                                           .identifierConverter(identifierConverter)
+                                          .spanFactory(spanFactory)
                                           .build();
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
@@ -88,7 +92,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateStoredBeforeEventsPublished() throws Exception {
+    void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
         Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
         eventBus.subscribe(mockConsumer);
@@ -102,20 +106,32 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate() {
+    void loadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testLoadAggregateWithConverter() {
+    void loadAggregateTracing() {
+        when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class)))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+                    spanFactory.verifySpanActive("GenericJpaRepository.load 123");
+                    return aggregate;
+                });
+        testSubject.load(aggregateId);
+        spanFactory.verifySpanCompleted("GenericJpaRepository.load 123");
+    }
+
+    @Test
+    void loadAggregateWithConverter() {
         when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
         Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
+    void aggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -158,7 +174,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
+    void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -189,7 +205,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_NotFound() {
+    void loadAggregate_NotFound() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         try {
             testSubject.load(aggregateIdentifier);
@@ -200,7 +216,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_WrongVersion() {
+    void loadAggregate_WrongVersion() {
         try {
             testSubject.load(aggregateId, 2L);
             fail("Expected ConflictingAggregateVersionException");
@@ -211,14 +227,14 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_DefaultFlushMode() {
+    void persistAggregate_DefaultFlushMode() {
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOn() {
+    void persistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -226,7 +242,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOff() {
+    void persistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -234,7 +250,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypesThrowsAxonConfigurationException() {
+    void buildWithNullSubtypesThrowsAxonConfigurationException() {
         GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
                                     .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
@@ -244,7 +260,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testBuildWithNullSubtypeThrowsAxonConfigurationException() {
+    void buildWithNullSubtypeThrowsAxonConfigurationException() {
         GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
                                     .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))

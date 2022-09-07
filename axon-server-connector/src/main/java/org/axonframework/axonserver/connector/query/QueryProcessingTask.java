@@ -31,6 +31,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
+import org.axonframework.tracing.SpanFactory;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     private final boolean supportsStreaming;
 
     private final Supplier<Boolean> reactorOnClassPath;
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiates a query processing task.
@@ -87,18 +89,21 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
      * @param serializer      The serializer used to serialize items.
      * @param clientId        The identifier of the client.
+     * @param spanFactory     The {@link SpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
-                        String clientId) {
+                        String clientId,
+                        SpanFactory spanFactory) {
         this(localSegment,
              queryRequest,
              responseHandler,
              serializer,
              clientId,
-             ClasspathResolver::projectReactorOnClasspath);
+             ClasspathResolver::projectReactorOnClasspath,
+             spanFactory);
     }
 
     /**
@@ -111,13 +116,15 @@ class QueryProcessingTask implements Runnable, FlowControl {
      * @param serializer         The serializer used to serialize items.
      * @param clientId           The identifier of the client.
      * @param reactorOnClassPath Indicates whether Project Reactor is on the classpath.
+     * @param spanFactory        The {@link SpanFactory} implementation to use to provide tracing capabilities.
      */
     QueryProcessingTask(QueryBus localSegment,
                         QueryRequest queryRequest,
                         ReplyChannel<QueryResponse> responseHandler,
                         QuerySerializer serializer,
                         String clientId,
-                        Supplier<Boolean> reactorOnClassPath) {
+                        Supplier<Boolean> reactorOnClassPath,
+                        SpanFactory spanFactory) {
         this.localSegment = localSegment;
         this.queryRequest = queryRequest;
         this.responseHandler = responseHandler;
@@ -125,6 +132,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         this.clientId = clientId;
         this.supportsStreaming = supportsStreaming(queryRequest);
         this.reactorOnClassPath = reactorOnClassPath;
+        this.spanFactory = spanFactory;
     }
 
     @Override
@@ -132,15 +140,17 @@ class QueryProcessingTask implements Runnable, FlowControl {
         try {
             logger.debug("Will process query [{}]", queryRequest.getQuery());
             QueryMessage<Object, Object> queryMessage = serializer.deserializeRequest(queryRequest);
-            if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
-                if (supportsStreaming && reactorOnClassPath.get()) {
-                    streamingQuery(queryMessage);
+            spanFactory.createChildHandlerSpan(() -> "QueryProcessingTask", queryMessage).run(() -> {
+                if (numberOfResults(queryRequest.getProcessingInstructionsList()) == DIRECT_QUERY_NUMBER_OF_RESULTS) {
+                    if (supportsStreaming && reactorOnClassPath.get()) {
+                        streamingQuery(queryMessage);
+                    } else {
+                        directQuery(queryMessage);
+                    }
                 } else {
-                    directQuery(queryMessage);
+                    scatterGather(queryMessage);
                 }
-            } else {
-                scatterGather(queryMessage);
-            }
+            });
         } catch (RuntimeException | OutOfDirectMemoryError e) {
             sendError(e);
             logger.warn("Query Processor had an exception when processing query [{}]", queryRequest.getQuery(), e);

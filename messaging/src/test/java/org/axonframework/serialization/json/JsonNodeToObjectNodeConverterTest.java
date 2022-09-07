@@ -35,17 +35,17 @@ class JsonNodeToObjectNodeConverterTest {
     private final JsonNodeToObjectNodeConverter testSubject = new JsonNodeToObjectNodeConverter();
 
     @Test
-    void testExpectedSourceType() {
+    void expectedSourceType() {
         assertEquals(JsonNode.class, testSubject.expectedSourceType());
     }
 
     @Test
-    void testTargetType() {
+    void targetType() {
         assertEquals(ObjectNode.class, testSubject.targetType());
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         JsonNode expectedJsonNode = new ObjectNode(JsonNodeFactory.instance);
 
         ObjectNode result = testSubject.convert(expectedJsonNode);
@@ -54,7 +54,7 @@ class JsonNodeToObjectNodeConverterTest {
     }
 
     @Test
-    void testConvertThrowsException() {
+    void convertThrowsException() {
         JsonNode testJsonNode = new TextNode("some-text");
 
         assertThrows(SerializationException.class, () -> testSubject.convert(testJsonNode));

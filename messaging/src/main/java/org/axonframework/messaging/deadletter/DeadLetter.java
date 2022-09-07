@@ -25,7 +25,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * Interface describing a dead-lettered {@link Message} implementation of generic type {@code M}.
+ * Interface describing a dead lettered {@link Message} implementation of generic type {@code M}.
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
  * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator)} or
@@ -47,18 +47,18 @@ public interface DeadLetter<M extends Message<?>> {
     M message();
 
     /**
-     * The {@link Cause cause} for the {@link #message()} to be dead-lettered. Can be an {@link Optional#empty()} in
+     * The {@link Cause cause} for the {@link #message()} to be dead lettered. Can be an {@link Optional#empty()} in
      * case this letter is enqueued without a causal error. For instance, when another letter already present in the
      * queue was blocking it being handled.
      *
-     * @return The {@link Cause cause} for the {@link #message()} to be dead-lettered.
+     * @return The {@link Cause cause} for the {@link #message()} to be dead lettered.
      */
     Optional<Cause> cause();
 
     /**
-     * The moment in time when the {@link #message()} was entered in a dead-letter queue.
+     * The moment in time when the {@link #message()} was entered in a dead letter queue.
      *
-     * @return The moment in time when the {@link #message()} was entered in a dead-letter queue.
+     * @return The moment in time when the {@link #message()} was entered in a dead letter queue.
      */
     Instant enqueuedAt();
 

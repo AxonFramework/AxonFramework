@@ -45,7 +45,7 @@ class LockFactoryTest {
     }
 
     @Test
-    void testObtainLock() {
+    void obtainLock() {
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         LockUnlock[] attempts = new LockUnlock[ATTEMPTS];
         for (int t = 0; t < ATTEMPTS; t++) {

@@ -43,7 +43,7 @@ class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    void testNextAndExtract_EmptyResultSet() throws Exception {
+    void nextAndExtract_EmptyResultSet() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(false);
@@ -59,7 +59,7 @@ class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    void testNextAndExtract_NullValue() throws Exception {
+    void nextAndExtract_NullValue() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
@@ -76,7 +76,7 @@ class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    void testNextAndExtract_NonNullValue() throws Exception {
+    void nextAndExtract_NonNullValue() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);
@@ -97,7 +97,7 @@ class JdbcUtilsTest {
      * @see JdbcUtils#extract(ResultSet, int, Class)
      */
     @Test
-    void testNextAndExtract_NonNullValue_WasNull() throws Exception {
+    void nextAndExtract_NonNullValue_WasNull() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
 
         when(resultSet.next()).thenReturn(true);

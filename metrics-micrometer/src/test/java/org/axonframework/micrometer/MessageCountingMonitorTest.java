@@ -40,7 +40,7 @@ class MessageCountingMonitorTest {
     private static final String PROCESSOR_NAME = "processorName";
 
     @Test
-    void testMessagesWithoutTags() {
+    void messagesWithoutTags() {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME,
                                                                                  meterRegistry);
@@ -67,7 +67,7 @@ class MessageCountingMonitorTest {
     }
 
     @Test
-    void testMessagesWithPayloadTypeAsCustomTag() {
+    void messagesWithPayloadTypeAsCustomTag() {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME,
                                                                                  meterRegistry,
@@ -138,7 +138,7 @@ class MessageCountingMonitorTest {
     }
 
     @Test
-    void testMessagesWithMetadataAsCustomTag() {
+    void messagesWithMetadataAsCustomTag() {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME,
                                                                                  meterRegistry,

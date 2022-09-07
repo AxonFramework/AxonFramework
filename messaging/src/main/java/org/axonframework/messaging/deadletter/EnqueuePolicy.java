@@ -3,11 +3,11 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.Message;
 
 /**
- * A functional interface constructing an {@link EnqueueDecision} based on a {@link DeadLetter dead-letter} and
- * {@link Throwable cause}. Should be used by components that insert dead-letters into and processes dead-letters from a
+ * A functional interface constructing an {@link EnqueueDecision} based on a {@link DeadLetter dead letter} and
+ * {@link Throwable cause}. Should be used by components that insert dead letters into and processes dead letters from a
  * {@link SequencedDeadLetterQueue}.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that will be decided
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that will be decided
  *            on.
  * @author Steven van Beelen
  * @see Decisions
@@ -23,7 +23,7 @@ public interface EnqueuePolicy<M extends Message<?>> {
      * Implementers of this operation can use {@link Decisions} to construct the basic types of
      * {@code EnqueueDecision}.
      *
-     * @param letter The {@link DeadLetter dead-letter} implementation to make a decision on.
+     * @param letter The {@link DeadLetter dead letter} implementation to make a decision on.
      * @param cause  The {@link Throwable} causing the given {@code letter} to be decided on.
      * @return The decision used to decide what to do with the given {@code letter}.
      */

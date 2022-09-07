@@ -41,40 +41,40 @@ class EqualFieldsMatcherTest {
     }
 
     @Test
-    void testMatches_SameInstance() {
+    void matches_SameInstance() {
         assertTrue(testSubject.matches(expectedEvent));
     }
 
     @Test
-    void testMatches_EqualInstance() {
+    void matches_EqualInstance() {
         assertTrue(testSubject.matches(new MyEvent(aggregateId, 1)));
     }
 
     @Test
-    void testMatches_WrongEventType() {
+    void matches_WrongEventType() {
         assertFalse(testSubject.matches(new MyOtherEvent()));
     }
 
     @Test
-    void testMatches_WrongFieldValue() {
+    void matches_WrongFieldValue() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 2)));
         assertEquals("someValue", testSubject.getFailedField().getName());
     }
 
     @Test
-    void testMatches_WrongFieldValueInIgnoredField() {
+    void matches_WrongFieldValueInIgnoredField() {
         testSubject = Matchers.equalTo(expectedEvent, field -> !field.getName().equals("someValue"));
         assertTrue(testSubject.matches(new MyEvent(aggregateId, 2)));
     }
 
     @Test
-    void testMatches_WrongFieldValueInArray() {
+    void matches_WrongFieldValueInArray() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 1, new byte[]{1, 2})));
         assertEquals("someBytes", testSubject.getFailedField().getName());
     }
 
     @Test
-    void testDescription_AfterSuccess() {
+    void description_AfterSuccess() {
         testSubject.matches(expectedEvent);
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
@@ -82,7 +82,7 @@ class EqualFieldsMatcherTest {
     }
 
     @Test
-    void testDescription_AfterMatchWithWrongType() {
+    void description_AfterMatchWithWrongType() {
         testSubject.matches(new MyOtherEvent());
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
@@ -90,7 +90,7 @@ class EqualFieldsMatcherTest {
     }
 
     @Test
-    void testDescription_AfterMatchWithWrongFieldValue() {
+    void description_AfterMatchWithWrongFieldValue() {
         testSubject.matches(new MyEvent(aggregateId, 2));
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);

@@ -58,7 +58,7 @@ public class AggregatePolymorphismTest {
     private CommandGateway commandGateway;
 
     @Test
-    void testConfig() {
+    void config() {
         List<AggregateConfigurer> configurers = configuration.findModules(AggregateConfigurer.class);
         assertEquals(3, configurers.size());
 

@@ -46,14 +46,14 @@ class LifecycleHandlerInspectorTest {
     public static final int TEST_PHASE = 1;
 
     @Test
-    void testNothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
+    void nothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
         LifecycleHandlerInspector.registerLifecycleHandlers(configuration, null);
 
         verifyNoInteractions(configuration);
     }
 
     @Test
-    void testAxonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
+    void axonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
             @Mock Configuration configuration) {
         assertThrows(
                 AxonConfigurationException.class,
@@ -64,7 +64,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(@Mock Configuration config)
+    void lifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(@Mock Configuration config)
             throws ExecutionException, InterruptedException {
         String asyncShutdownResult = "some result";
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(asyncShutdownResult);
@@ -93,7 +93,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
+    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
         AtomicBoolean started = new AtomicBoolean(false);
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(started);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
@@ -107,7 +107,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void testLifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(@Mock Configuration config)
+    void lifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(@Mock Configuration config)
             throws InterruptedException {
         ComponentWithFailingLifecycleHandler testComponent = new ComponentWithFailingLifecycleHandler();
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);

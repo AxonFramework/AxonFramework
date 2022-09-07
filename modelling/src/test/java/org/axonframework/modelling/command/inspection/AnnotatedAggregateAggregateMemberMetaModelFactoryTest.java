@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnnotatedAggregateAggregateMemberMetaModelFactoryTest {
 
     @Test
-    void testInterfaceAggregateMemberThrowsAxonConfigurationException() {
+    void interfaceAggregateMemberThrowsAxonConfigurationException() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TestAggregate.class)
@@ -28,7 +28,7 @@ class AnnotatedAggregateAggregateMemberMetaModelFactoryTest {
     }
 
     @Test
-    void testInterfaceAggregateMemberCollectionThrowsAxonConfigurationException() {
+    void interfaceAggregateMemberCollectionThrowsAxonConfigurationException() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TestCollectionAggregate.class)
@@ -36,7 +36,7 @@ class AnnotatedAggregateAggregateMemberMetaModelFactoryTest {
     }
 
     @Test
-    void testInterfaceAggregateMemberMapThrowsAxonConfigurationException() {
+    void interfaceAggregateMemberMapThrowsAxonConfigurationException() {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> AnnotatedAggregateMetaModelFactory.inspectAggregate(TestMapAggregate.class)

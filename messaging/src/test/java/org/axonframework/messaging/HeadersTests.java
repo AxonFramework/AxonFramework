@@ -54,47 +54,47 @@ class HeadersTests {
     }
 
     @Test
-    void testMessageIdText() {
+    void messageIdText() {
         assertThat(MESSAGE_ID, is("axon-message-id"));
     }
 
     @Test
-    void testMessageTypeText() {
+    void messageTypeText() {
         assertThat(MESSAGE_TYPE, is("axon-message-type"));
     }
 
     @Test
-    void testMessageRevisionText() {
+    void messageRevisionText() {
         assertThat(MESSAGE_REVISION, is("axon-message-revision"));
     }
 
     @Test
-    void testMessageTimeStampText() {
+    void messageTimeStampText() {
         assertThat(MESSAGE_TIMESTAMP, is("axon-message-timestamp"));
     }
 
     @Test
-    void testMessageAggregateIdText() {
+    void messageAggregateIdText() {
         assertThat(AGGREGATE_ID, is("axon-message-aggregate-id"));
     }
 
     @Test
-    void testMessageAggregateSeqText() {
+    void messageAggregateSeqText() {
         assertThat(AGGREGATE_SEQ, is("axon-message-aggregate-seq"));
     }
 
     @Test
-    void testMessageAggregateTypeText() {
+    void messageAggregateTypeText() {
         assertThat(AGGREGATE_TYPE, is("axon-message-aggregate-type"));
     }
 
     @Test
-    void testMessageMetadataText() {
+    void messageMetadataText() {
         assertThat(MESSAGE_METADATA, is("axon-metadata"));
     }
 
     @Test
-    void testGeneratingDefaultMessagingHeaders() {
+    void generatingDefaultMessagingHeaders() {
         EventMessage<Object> message = asEventMessage("foo");
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
         Map<String, Object> expected = new HashMap<String, Object>() {{
@@ -108,13 +108,13 @@ class HeadersTests {
     }
 
     @Test
-    void testGeneratingDefaultMessagingHeaders_InvalidSerializedObject() {
+    void generatingDefaultMessagingHeaders_InvalidSerializedObject() {
         EventMessage<Object> message = asEventMessage("foo");
         assertThrows(IllegalArgumentException.class, () -> defaultHeaders(message, null));
     }
 
     @Test
-    void testGeneratingDomainMessagingHeaders() {
+    void generatingDomainMessagingHeaders() {
         DomainEventMessage<String> message = domainMessage();
         SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
 

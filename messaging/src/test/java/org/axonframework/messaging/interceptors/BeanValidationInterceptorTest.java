@@ -52,7 +52,7 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void testValidateSimpleObject() throws Exception {
+    void validateSimpleObject() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>("Simple instance"));
 
         testSubject.handle(uow, interceptorChain);
@@ -61,7 +61,7 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void testValidateAnnotatedObject_IllegalNullValue() throws Exception {
+    void validateAnnotatedObject_IllegalNullValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance(null)));
         try {
             testSubject.handle(uow, interceptorChain);
@@ -73,7 +73,7 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void testValidateAnnotatedObject_LegalValue() throws Exception {
+    void validateAnnotatedObject_LegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(new JSR303AnnotatedInstance("abc")));
 
         testSubject.handle(uow, interceptorChain);
@@ -82,7 +82,7 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void testValidateAnnotatedObject_IllegalValue() throws Exception {
+    void validateAnnotatedObject_IllegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("bea")));
 
         try {
@@ -96,7 +96,7 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void testCustomValidatorFactory() throws Exception {
+    void customValidatorFactory() throws Exception {
         uow.transformMessage(m -> new GenericMessage<Object>(new JSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);

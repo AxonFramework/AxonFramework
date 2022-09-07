@@ -32,20 +32,20 @@ class MatchAllFieldFilterTest {
     private String field;
 
     @Test
-    void testAcceptWhenEmpty() throws Exception {
+    void acceptWhenEmpty() throws Exception {
         assertTrue(new MatchAllFieldFilter(Collections.emptyList())
                            .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));
     }
 
     @Test
-    void testAcceptWhenAllAccept() throws Exception {
+    void acceptWhenAllAccept() throws Exception {
         assertTrue(new MatchAllFieldFilter(Arrays.asList(AllFieldsFilter.instance(),
                                                          AllFieldsFilter.instance()))
                            .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));
     }
 
     @Test
-    void testRejectWhenOneRejects() throws Exception {
+    void rejectWhenOneRejects() throws Exception {
         assertFalse(new MatchAllFieldFilter(Arrays.asList(AllFieldsFilter.instance(),
                                                           field -> false))
                             .accept(MatchAllFieldFilterTest.class.getDeclaredField("field")));

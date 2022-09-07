@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -76,7 +77,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
      * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
+     * {@link DirectEventProcessingStrategy}, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link TransactionManager} defaults to the
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      *
@@ -164,8 +166,9 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      * <p>
      * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
      * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
+     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}, the
+     * {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to
+     * a {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
      * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
      * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
      */
@@ -209,6 +212,12 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

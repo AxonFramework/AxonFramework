@@ -113,7 +113,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
+    void loadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -132,7 +132,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testLoadFromRepositoryLoadsFromCache() throws Exception {
+    void loadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -151,7 +151,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testAddToRepositoryAddsInCache() throws Exception {
+    void addToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -170,7 +170,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testCacheEntryInvalidatedOnRecoveryEntry() {
+    void cacheEntryInvalidatedOnRecoveryEntry() {
         commandHandlingEntry.resetAsRecoverEntry(aggregateIdentifier);
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
@@ -179,7 +179,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
+    void createRepositoryReturnsSameInstanceOnSecondInvocation() {
         final Repository<StubAggregate> repository1 = testSubject
                 .createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                   snapshotTriggerDefinition,
@@ -193,7 +193,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+    void canResolveReturnsTrueForMatchingAggregateDescriptor() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -206,7 +206,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+    void canResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -217,7 +217,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+    void canResolveReturnsFalseForNonMatchingAggregateType() {
         Repository<StubAggregate> testRepository =
                 testSubject.createRepository(mockEventStore,
                                              new GenericAggregateFactory<>(StubAggregate.class),
@@ -230,7 +230,7 @@ class CommandHandlerInvokerTest {
     }
 
     @Test
-    void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
+    void sendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         String testAggregateId = "some-identifier";
         DeadlineMessage<DeadlinePayload> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload(), Instant.now());

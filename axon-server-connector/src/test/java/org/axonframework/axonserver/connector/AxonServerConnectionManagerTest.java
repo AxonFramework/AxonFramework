@@ -75,7 +75,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testWhetherConnectionPreferenceIsSent() {
+    void whetherConnectionPreferenceIsSent() {
         TagsConfiguration testTags = new TagsConfiguration(Collections.singletonMap("key", "value"));
 
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
@@ -106,7 +106,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testConnectionTimeout() throws IOException, InterruptedException {
+    void connectionTimeout() throws IOException, InterruptedException {
         stubServer.shutdown();
         stubServer = new StubServer(TcpUtil.findFreePort(), new PlatformService(TcpUtil.findFreePort()) {
             @Override
@@ -138,7 +138,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
+    void enablingHeartbeatsEnsuresHeartbeatMessagesAreSent() {
         testConfig.getHeartbeat().setEnabled(true);
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
@@ -155,7 +155,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testEnablingHeartbeatsEnsuresHeartbeatMessagesAreSentOnOtherContexts() {
+    void enablingHeartbeatsEnsuresHeartbeatMessagesAreSentOnOtherContexts() {
         testConfig.getHeartbeat().setEnabled(true);
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
@@ -176,7 +176,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testDisablingHeartbeatsEnsuresNoHeartbeatMessagesAreSent() {
+    void disablingHeartbeatsEnsuresNoHeartbeatMessagesAreSent() {
         testConfig.getHeartbeat().setEnabled(false);
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
@@ -193,7 +193,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testChannelCustomization() {
+    void channelCustomization() {
         AtomicBoolean interceptorCalled = new AtomicBoolean();
         AxonServerConnectionManager testSubject =
                 AxonServerConnectionManager.builder()
@@ -218,7 +218,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testIsConnected() {
+    void isConnected() {
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
                                                                              .build();
@@ -232,7 +232,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testShutdownClosesAllConnections() {
+    void shutdownClosesAllConnections() {
         AxonServerConnectionManager testSubject =
                 AxonServerConnectionManager.builder()
                                            .axonServerConfiguration(testConfig)
@@ -258,7 +258,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testDisconnectClosesAllConnections() {
+    void disconnectClosesAllConnections() {
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
                                                                              .build();
@@ -283,7 +283,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testDisconnectSingleConnection() {
+    void disconnectSingleConnection() {
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
                                                                              .build();
@@ -308,7 +308,7 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testConnectionsReturnsConnectionStatus() {
+    void connectionsReturnsConnectionStatus() {
         AxonServerConnectionManager testSubject = AxonServerConnectionManager.builder()
                                                                              .axonServerConfiguration(testConfig)
                                                                              .build();
@@ -333,19 +333,19 @@ class AxonServerConnectionManagerTest {
     }
 
     @Test
-    void testBuildWithNullAxonServerConfigurationThrowsAxonConfigurationException() {
+    void buildWithNullAxonServerConfigurationThrowsAxonConfigurationException() {
         AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.axonServerConfiguration(null));
     }
 
     @Test
-    void testBuildWithNullTagsConfigurationThrowsAxonConfigurationException() {
+    void buildWithNullTagsConfigurationThrowsAxonConfigurationException() {
         AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.tagsConfiguration(null));
     }
 
     @Test
-    void testBuildWithoutAxonServerConfigurationThrowsAxonConfigurationException() {
+    void buildWithoutAxonServerConfigurationThrowsAxonConfigurationException() {
         AxonServerConnectionManager.Builder builderTestSubject = AxonServerConnectionManager.builder();
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }

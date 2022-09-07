@@ -35,6 +35,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,16 +178,22 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             }
             return interceptorChain.proceed();
         });
+
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
+                .createLinkedHandlerSpan(() -> "TrackingEventProcessor[" + builder.name + "] ",
+                                         unitOfWork.getMessage())
+                .runCallable(interceptorChain::proceed));
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the {@link
-     * ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a {@link
-     * NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a {@link
-     * TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name}, {@link
-     * EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor}, the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call, and the {@link SpanFactory} to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}. The Event Processor {@code name}, {@link EventHandlerInvoker},
+     * {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link TrackingEventProcessor}
@@ -875,11 +882,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     /**
      * Builder class to instantiate a {@link TrackingEventProcessor}.
      * <p>
-     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the {@link
-     * ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a {@link
-     * NoOpMessageMonitor} and the {@link TrackingEventProcessorConfiguration} to a {@link
-     * TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name}, {@link
-     * EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager} are
+     * The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}, the
+     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
+     * {@link NoOpMessageMonitor}, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory} and the {@link TrackingEventProcessorConfiguration} to a
+     * {@link TrackingEventProcessorConfiguration#forSingleThreadedProcessing()} call. The Event Processor {@code name},
+     * {@link EventHandlerInvoker}, {@link StreamableMessageSource}, {@link TokenStore} and {@link TransactionManager}
+     * are
      * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder extends AbstractEventProcessor.Builder {
@@ -928,12 +937,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
             return this;
         }
 
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
         /**
          * Sets the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link EventProcessor} will
          * track.
          *
-         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this {@link
-         *                      EventProcessor} will track
+         * @param messageSource the {@link StreamableMessageSource} (e.g. the {@link EventBus}) which this
+         *                      {@link EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {

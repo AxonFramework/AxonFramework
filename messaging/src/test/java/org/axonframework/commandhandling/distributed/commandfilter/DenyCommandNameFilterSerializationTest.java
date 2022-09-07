@@ -25,7 +25,7 @@ class DenyCommandNameFilterSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testDenyCommandNameFilterShouldBeSerializable(TestSerializer serializer) {
+    void denyCommandNameFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

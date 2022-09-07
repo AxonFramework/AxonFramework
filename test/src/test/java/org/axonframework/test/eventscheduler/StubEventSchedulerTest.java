@@ -41,13 +41,13 @@ class StubEventSchedulerTest {
     }
 
     @Test
-    void testScheduleEvent() {
+    void scheduleEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
     }
 
     @Test
-    void testEventContainsTimestampOfScheduledTime() {
+    void eventContainsTimestampOfScheduledTime() {
         Instant triggerTime = Instant.now().plusSeconds(60);
         testSubject.schedule(triggerTime, "gone");
         List<EventMessage<?>> triggered = new ArrayList<>();
@@ -58,7 +58,7 @@ class StubEventSchedulerTest {
     }
 
     @Test
-    void testInitializeAtDateTimeAfterSchedulingEvent() {
+    void initializeAtDateTimeAfterSchedulingEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
 
         assertThrows(IllegalStateException.class, () ->

@@ -38,7 +38,7 @@ class RecordingCommandBusTest {
     }
 
     @Test
-    void testPublishCommand() {
+    void publishCommand() {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
                              (commandMessage, commandResultMessage) -> {
@@ -55,7 +55,7 @@ class RecordingCommandBusTest {
     }
 
     @Test
-    void testPublishCommandWithCallbackBehavior() {
+    void publishCommandWithCallbackBehavior() {
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"),
@@ -72,7 +72,7 @@ class RecordingCommandBusTest {
     }
 
     @Test
-    void testRegisterHandler() {
+    void registerHandler() {
         MessageHandler<? super CommandMessage<?>> handler = command -> {
             fail("Did not expect handler to be invoked");
             return null;

@@ -64,7 +64,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testResolversQueriedInOrderProvided() throws Exception {
+    void resolversQueriedInOrderProvided() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertFalse(factory.matches(null));
@@ -83,7 +83,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testFirstMatchingResolverMayReturnValue() throws Exception {
+    void firstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
@@ -101,7 +101,7 @@ class MultiParameterResolverFactoryTest {
     }
 
     @Test
-    void testNestedParameterResolversAreOrdered() {
+    void nestedParameterResolversAreOrdered() {
         final LowPrioParameterResolverFactory lowPrio = new LowPrioParameterResolverFactory();
         final HighPrioParameterResolverFactory highPrio = new HighPrioParameterResolverFactory();
         testSubject = MultiParameterResolverFactory.ordered(mockFactory1,

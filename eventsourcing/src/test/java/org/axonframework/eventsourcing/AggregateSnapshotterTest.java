@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventsourcing.utils.StubDomainEvent;
-import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.modelling.command.AggregateIdentifier;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -55,7 +55,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot() {
+    void createSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
@@ -72,7 +72,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
+    void createSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
@@ -94,7 +94,7 @@ public class AggregateSnapshotterTest {
 
     @Test
     @SuppressWarnings({"unchecked"})
-    void testCreateSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
+    void createSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());

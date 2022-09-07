@@ -69,26 +69,26 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testCreationPolicy_NoneExists() throws Exception {
+    void creationPolicy_NoneExists() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
-    void testCreationPolicy_OneAlreadyExists() throws Exception {
+    void creationPolicy_OneAlreadyExists() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
-    void testHandleUnrelatedEvent() throws Exception {
+    void handleUnrelatedEvent() throws Exception {
         handle(new GenericEventMessage<>("Unrelated"));
         verify(sagaRepository, never()).find(isNull());
     }
 
     @Test
-    void testCreationPolicy_CreationForced() throws Exception {
+    void creationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
         handle(new GenericEventMessage<>(startingEvent));
         handle(new GenericEventMessage<>(new ForcingStartEvent("123")));
@@ -103,13 +103,13 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testCreationPolicy_SagaNotCreated() throws Exception {
+    void creationPolicy_SagaNotCreated() throws Exception {
         handle(new GenericEventMessage<>(new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
-    void testMostSpecificHandlerEvaluatedFirst() throws Exception {
+    void mostSpecificHandlerEvaluatedFirst() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StartingEvent("23")));
         assertEquals(1, repositoryContents("12").size());
@@ -122,14 +122,14 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testNullAssociationValueIsIgnored() throws Exception {
+    void nullAssociationValueIsIgnored() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent(null)));
 
         verify(sagaRepository, never()).find(null);
     }
 
     @Test
-    void testLifecycle_DestroyedOnEnd() throws Exception {
+    void lifecycle_DestroyedOnEnd() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StartingEvent("23")));
         handle(new GenericEventMessage<>(new MiddleEvent("12")));
@@ -148,12 +148,12 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testNullAssociationValueDoesNotThrowNullPointer() throws Exception {
+    void nullAssociationValueDoesNotThrowNullPointer() throws Exception {
         handle(asEventMessage(new StartingEvent(null)));
     }
 
     @Test
-    void testLifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
+    void lifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
@@ -161,13 +161,13 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testLifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
+    void lifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
         handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
 
     @Test
-    void testPerformResetThrowsResetNotSupportedException() {
+    void performResetThrowsResetNotSupportedException() {
         AnnotatedSagaManager<MyTestSaga> spiedTestSubject = spy(testSubject);
 
         assertThrows(ResetNotSupportedException.class, spiedTestSubject::performReset);
@@ -176,7 +176,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    void testPerformResetWithResetInfoThrowsResetNotSupportedException() {
+    void performResetWithResetInfoThrowsResetNotSupportedException() {
         assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset("reset-info"));
     }
 

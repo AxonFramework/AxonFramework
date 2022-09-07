@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SimpleCorrelationDataProviderTest {
 
     @Test
-    void testResolveCorrelationData() {
+    void resolveCorrelationData() {
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");

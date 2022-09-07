@@ -40,7 +40,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testGetRoutingKeyFromField() {
+    void getRoutingKeyFromField() {
         CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(new SomeFieldAnnotatedCommand());
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
@@ -50,7 +50,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testGetRoutingKeyFromMethod() {
+    void getRoutingKeyFromMethod() {
         CommandMessage<SomeMethodAnnotatedCommand> testCommand =
                 new GenericCommandMessage<>(new SomeMethodAnnotatedCommand());
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
@@ -61,7 +61,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testNullRoutingKeyOnFieldThrowsCommandDispatchException() {
+    void nullRoutingKeyOnFieldThrowsCommandDispatchException() {
         AnnotationRoutingStrategy errorFallbackRoutingStrategy =
                 AnnotationRoutingStrategy.builder()
                                          .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
@@ -74,7 +74,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testNullRoutingKeyOnMethodThrowsCommandDispatchException() {
+    void nullRoutingKeyOnMethodThrowsCommandDispatchException() {
         AnnotationRoutingStrategy errorFallbackRoutingStrategy =
                 AnnotationRoutingStrategy.builder()
                                          .fallbackRoutingStrategy(UnresolvedRoutingKeyPolicy.ERROR)
@@ -87,7 +87,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testResolvesRoutingKeyFromAnnotationDoesNotInvokeFallbackStrategy() {
+    void resolvesRoutingKeyFromAnnotationDoesNotInvokeFallbackStrategy() {
         RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
 
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
@@ -103,7 +103,7 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testResolvesRoutingKeyFromFallbackStrategy() {
+    void resolvesRoutingKeyFromFallbackStrategy() {
         String expectedRoutingKey = "some-routing-key";
         RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
         when(fallbackRoutingStrategy.getRoutingKey(any())).thenReturn(expectedRoutingKey);
@@ -121,13 +121,13 @@ class AnnotationRoutingStrategyTest {
     }
 
     @Test
-    void testBuildAnnotationRoutingStrategyFailsForNullFallbackRoutingStrategy() {
+    void buildAnnotationRoutingStrategyFailsForNullFallbackRoutingStrategy() {
         AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.fallbackRoutingStrategy(null));
     }
 
     @Test
-    void testBuildAnnotationRoutingStrategyFailsForNullAnnotationType() {
+    void buildAnnotationRoutingStrategyFailsForNullAnnotationType() {
         AnnotationRoutingStrategy.Builder builderTestSubject = AnnotationRoutingStrategy.builder();
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.annotationType(null));
     }

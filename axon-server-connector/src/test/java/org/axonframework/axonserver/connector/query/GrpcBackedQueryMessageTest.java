@@ -50,7 +50,7 @@ class GrpcBackedQueryMessageTest {
             new QuerySerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void testGetQueryNameReturnsTheNameOfTheQueryAsSpecifiedInTheQueryRequest() {
+    void getQueryNameReturnsTheNameOfTheQueryAsSpecifiedInTheQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
@@ -61,7 +61,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testGetResponseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
+    void getResponseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(TEST_QUERY, expectedResponseType);
         QueryRequest testQueryRequest =
@@ -75,7 +75,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryRequest() {
+    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
@@ -86,7 +86,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
+    void getMetaDataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         QueryMessage<TestQuery, String> testQueryMessage = new
                 GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE).withMetaData(expectedMetaData);
@@ -99,7 +99,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
+    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
         TestQuery expectedQuery = TEST_QUERY;
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(expectedQuery, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
@@ -111,7 +111,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testGetPayloadTypeReturnsTheTypeOfTheInsertedQueryRequest() {
+    void getPayloadTypeReturnsTheTypeOfTheInsertedQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
@@ -122,7 +122,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
+    void withMetaDataCompletelyReplacesTheInitialMetaDataMap() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         QueryMessage<TestQuery, String> testQueryMessage = new
                 GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE).withMetaData(testMetaData);
@@ -140,7 +140,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void testAndMetaDataAppendsToTheExistingMetaData() {
+    void andMetaDataAppendsToTheExistingMetaData() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         QueryMessage<TestQuery, String> testQueryMessage = new
                 GenericQueryMessage<>(TEST_QUERY, RESPONSE_TYPE).withMetaData(testMetaData);

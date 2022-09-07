@@ -44,7 +44,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_NoEventsInStore() {
+    void fixture_NoEventsInStore() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
                 .given()
@@ -53,7 +53,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFirstFixture() {
+    void firstFixture() {
         ResultValidator<StandardAggregate> validator = fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                       fixture.getEventBus()))
@@ -64,7 +64,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFirstFixtureMatchingCommandResultMessage() {
+    void firstFixtureMatchingCommandResultMessage() {
         ResultValidator<StandardAggregate> validator = fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                       fixture.getEventBus()))
@@ -75,7 +75,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testExpectEventsIgnoresFilteredField() {
+    void expectEventsIgnoresFilteredField() {
         ResultValidator<StandardAggregate> validator = fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                       fixture.getEventBus()))
@@ -87,7 +87,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_SetterInjection() {
+    void fixture_SetterInjection() {
         MyCommandHandler commandHandler = new MyCommandHandler();
         commandHandler.setRepository(fixture.getRepository());
         fixture.registerAnnotatedCommandHandler(commandHandler)
@@ -99,7 +99,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_GivenAList() {
+    void fixture_GivenAList() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -113,7 +113,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_ExplicitValue() {
+    void fixtureDetectsStateChangeOutsideOfHandler_ExplicitValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -129,7 +129,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureIgnoredStateChangeInFilteredField() {
+    void fixtureIgnoredStateChangeInFilteredField() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -141,7 +141,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_NullValue() {
+    void fixtureDetectsStateChangeOutsideOfHandler_NullValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -156,7 +156,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_Ignored() {
+    void fixtureDetectsStateChangeOutsideOfHandler_Ignored() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -168,7 +168,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_AggregateGeneratesIdentifier() {
+    void fixtureDetectsStateChangeOutsideOfHandler_AggregateGeneratesIdentifier() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
                 .given()
@@ -176,7 +176,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
+    void fixtureDetectsStateChangeOutsideOfHandler_AggregateDeleted() {
         TestExecutor<StandardAggregate> exec = fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                                          fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 5));
@@ -187,7 +187,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_AggregateDeleted() {
+    void fixture_AggregateDeleted() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 5))
@@ -196,7 +196,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixtureGivenCommands() {
+    void fixtureGivenCommands() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                      fixture.getEventBus()))
                 .givenCommands(new CreateAggregateCommand("aggregateId"),
@@ -208,7 +208,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_CommandHandlerDispatchesNonDomainEvents() {
+    void fixture_CommandHandlerDispatchesNonDomainEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -224,7 +224,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_ReportWrongNumberOfEvents() {
+    void fixture_ReportWrongNumberOfEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -241,7 +241,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_ReportWrongEvents() {
+    void fixture_ReportWrongEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -259,7 +259,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_UnexpectedException() {
+    void fixture_UnexpectedException() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -276,7 +276,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_UnexpectedReturnValue() {
+    void fixture_UnexpectedReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -295,7 +295,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_WrongReturnValue() {
+    void fixture_WrongReturnValue() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -310,7 +310,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_WrongExceptionType() {
+    void fixture_WrongExceptionType() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -327,7 +327,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_WrongEventContents() {
+    void fixture_WrongEventContents() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -348,7 +348,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_WrongEventContents_WithNullValues() {
+    void fixture_WrongEventContents_WithNullValues() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -368,7 +368,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
-    void testFixture_ExpectedPublishedSameAsStored() {
+    void fixture_ExpectedPublishedSameAsStored() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));

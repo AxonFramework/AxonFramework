@@ -64,7 +64,7 @@ class AnnotatedHandlerInspectorTest {
     }
 
     @Test
-    void testComplexHandlerHierarchy() throws NoSuchMethodException {
+    void complexHandlerHierarchy() throws NoSuchMethodException {
         AnnotatedMessageHandlingMember<pA> paHandle = new AnnotatedMessageHandlingMember<>(pA.class.getMethod(
                 "paHandle", String.class), CommandMessage.class, String.class, parameterResolverFactory);
         AnnotatedMessageHandlingMember<A> aHandle = new AnnotatedMessageHandlingMember<>(A.class.getMethod(
@@ -120,7 +120,7 @@ class AnnotatedHandlerInspectorTest {
     }
 
     @Test
-    void testDoesNotRegisterAbstractHandlersTwice() {
+    void doesNotRegisterAbstractHandlersTwice() {
         AnnotatedHandlerInspector<AB> aaInspector = AnnotatedHandlerInspector.inspectType(AB.class,
                                                                                           parameterResolverFactory);
 
@@ -138,7 +138,7 @@ class AnnotatedHandlerInspectorTest {
     }
 
     @Test
-    void testInterceptors() throws Exception {
+    void interceptors() throws Exception {
         D testTarget = new D();
         EventMessage<Object> testEvent = asEventMessage("Hello");
         EventMessage<Object> testEventTwo = asEventMessage(1);
@@ -161,7 +161,7 @@ class AnnotatedHandlerInspectorTest {
     }
 
     @Test
-    void testGetAllInspectedTypes() {
+    void getAllInspectedTypes() {
         Set<Class<?>> expectedInspectedTypes = Sets.newSet(pA.class, A.class, B.class, C.class, D.class);
 
         Set<Class<?>> resultInspectedTypes = inspector.getAllInspectedTypes();

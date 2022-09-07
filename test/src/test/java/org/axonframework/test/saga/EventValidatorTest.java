@@ -20,31 +20,31 @@ class EventValidatorTest {
     }
 
     @Test
-    void testAssertPublishedEventsWithNoEventsMatcherIfNoEventWasPublished() {
+    void assertPublishedEventsWithNoEventsMatcherIfNoEventWasPublished() {
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
     @Test
-    void testAssertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
+    void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
         testSubject.handle(GenericEventMessage.asEventMessage(new MyOtherEvent()));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
     }
 
     @Test
-    void testAssertPublishedEventsIfNoEventWasPublished() {
+    void assertPublishedEventsIfNoEventWasPublished() {
         testSubject.assertPublishedEvents();
     }
 
     @Test
-    void testAssertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
+    void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
         testSubject.handle(GenericEventMessage.asEventMessage(new MyOtherEvent()));
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
     }
 
     @Test
-    void testAssertPublishedEventsForEventMessages() {
+    void assertPublishedEventsForEventMessages() {
         EventMessage<MyOtherEvent> testEventMessage = GenericEventMessage.asEventMessage(new MyOtherEvent());
         testSubject.handle(testEventMessage);
 

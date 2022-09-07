@@ -35,8 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
- * A {@link Function} dedicated to processing a single {@link DeadLetter dead-letter} of an {@link EventMessage}. Used
- * by the {@link DeadLetteringEventHandlerInvoker} to ensure the dead-letter is passed to the same set of
+ * A {@link Function} dedicated to processing a single {@link DeadLetter dead letter} of an {@link EventMessage}. Used
+ * by the {@link DeadLetteringEventHandlerInvoker} to ensure the dead letter is passed to the same set of
  * {@link EventMessageHandler event handling components}.
  *
  * @author Steven van Beelen
@@ -73,12 +73,12 @@ class DeadLetteredEventProcessingTask
      * {@code letter} on successful handling. On unsuccessful event handling the configured {@link EnqueuePolicy} is
      * used to decide what to do with the {@code letter}.
      *
-     * @param letter The {@link DeadLetter dead-letter} to process.
+     * @param letter The {@link DeadLetter dead letter} to process.
      * @return An {@link EnqueueDecision} describing what to do after processing the given {@code letter}.
      */
     public EnqueueDecision<EventMessage<?>> process(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Start evaluation of dead-letter [{}].", letter);
+            logger.debug("Start evaluation of dead letter [{}].", letter);
         }
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
@@ -103,14 +103,14 @@ class DeadLetteredEventProcessingTask
 
     private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead-letter [{}] was successful.", letter);
+            logger.info("Processing dead letter [{}] was successful.", letter);
         }
         return Decisions.evict();
     }
 
     private EnqueueDecision<EventMessage<?>> onRollback(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
         if (logger.isWarnEnabled()) {
-            logger.warn("Processing dead-letter [{}] failed.", letter, cause);
+            logger.warn("Processing dead letter [{}] failed.", letter, cause);
         }
         return enqueuePolicy.decide(letter, cause);
     }

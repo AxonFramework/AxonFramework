@@ -66,7 +66,7 @@ class SpringDataSourceConnectionProviderTest {
     @DirtiesContext
     @Transactional
     @Test
-    void testConnectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
+    void connectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
         when(dataSource.getConnection()).thenAnswer(invocation -> {
             fail("Should be using an already existing connection.");
             return null;
@@ -81,7 +81,7 @@ class SpringDataSourceConnectionProviderTest {
     }
 
     @Test
-    void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
+    void connectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;

@@ -70,7 +70,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testUpdateNullToken() {
+    void updateNullToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
         jpaTokenStore.fetchToken("test", 0);
         jpaTokenStore.storeToken(null, "test", 0);
@@ -85,7 +85,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testUpdateAndLoadNullToken() {
+    void updateAndLoadNullToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
         jpaTokenStore.fetchToken("test", 0);
         entityManager.flush();
@@ -97,7 +97,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testIdentifierInitializedOnDemand() {
+    void identifierInitializedOnDemand() {
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
         assertTrue(id1.isPresent());
         Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
@@ -106,7 +106,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testIdentifierReadIfAvailable() {
+    void identifierReadIfAvailable() {
         entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")), jpaTokenStore.serializer()));
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
         assertTrue(id1.isPresent());
@@ -118,7 +118,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testCustomLockMode() {
+    void customLockMode() {
         EntityManager spyEntityManager = mock(EntityManager.class);
 
         JpaTokenStore testSubject = JpaTokenStore.builder()
@@ -137,7 +137,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testInitializeTokens() {
+    void initializeTokens() {
         jpaTokenStore.initializeTokenSegments("test1", 7);
 
         int[] actual = jpaTokenStore.fetchSegments("test1");
@@ -147,7 +147,7 @@ class JpaTokenStoreTest {
 
     @SuppressWarnings("Duplicates")
     @Test
-    void testInitializeTokensAtGivenPosition() {
+    void initializeTokensAtGivenPosition() {
         jpaTokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
 
         int[] actual = jpaTokenStore.fetchSegments("test1");
@@ -160,12 +160,12 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testInitializeTokensWhileAlreadyPresent() {
+    void initializeTokensWhileAlreadyPresent() {
         assertThrows(UnableToClaimTokenException.class, () -> jpaTokenStore.fetchToken("test1", 1));
     }
 
     @Test
-    void testDeleteTokenRejectedIfNotClaimedOrNotInitialized() {
+    void deleteTokenRejectedIfNotClaimedOrNotInitialized() {
         jpaTokenStore.initializeTokenSegments("test", 2);
 
         try {
@@ -184,7 +184,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testDeleteToken() {
+    void deleteToken() {
         jpaTokenStore.initializeSegment(null, "delete", 0);
         jpaTokenStore.fetchToken("delete", 0);
 
@@ -198,7 +198,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testClaimAndUpdateToken() {
+    void claimAndUpdateToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
 
         assertNull(jpaTokenStore.fetchToken("test", 0));
@@ -221,7 +221,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegment() {
+    void fetchTokenBySegment() {
         jpaTokenStore.initializeTokenSegments("test", 2);
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
@@ -229,7 +229,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegmentSegment0() {
+    void fetchTokenBySegmentSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 1);
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
@@ -237,7 +237,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegmentFailsDuringMerge() {
+    void fetchTokenBySegmentFailsDuringMerge() {
         jpaTokenStore.initializeTokenSegments("test", 1);
         //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
@@ -248,7 +248,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegmentFailsDuringMergeSegment0() {
+    void fetchTokenBySegmentFailsDuringMergeSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 1);
         Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
 
@@ -258,7 +258,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegmentFailsDuringSplit() {
+    void fetchTokenBySegmentFailsDuringSplit() {
         jpaTokenStore.initializeTokenSegments("test", 4);
         //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
@@ -269,7 +269,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testFetchTokenBySegmentFailsDuringSplitSegment0() {
+    void fetchTokenBySegmentFailsDuringSplitSegment0() {
         jpaTokenStore.initializeTokenSegments("test", 2);
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
@@ -279,7 +279,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testQuerySegments() {
+    void querySegments() {
         prepareTokenStore();
 
         {
@@ -300,7 +300,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testQueryAvailableSegments() {
+    void queryAvailableSegments() {
         prepareTokenStore();
 
         {
@@ -343,7 +343,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testClaimTokenConcurrently() {
+    void claimTokenConcurrently() {
         jpaTokenStore.initializeTokenSegments("concurrent", 1);
         jpaTokenStore.fetchToken("concurrent", 0);
         try {
@@ -355,7 +355,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testStealToken() {
+    void stealToken() {
         jpaTokenStore.initializeTokenSegments("stealing", 1);
 
         jpaTokenStore.fetchToken("stealing", 0);
@@ -373,7 +373,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testExtendingLostClaimFails() {
+    void extendingLostClaimFails() {
         jpaTokenStore.initializeTokenSegments("processor", 1);
         jpaTokenStore.fetchToken("processor", 0);
 
@@ -386,7 +386,7 @@ class JpaTokenStoreTest {
     }
 
     @Test
-    void testStoreAndLoadAcrossTransactions() {
+    void storeAndLoadAcrossTransactions() {
 
         jpaTokenStore.initializeTokenSegments("multi", 1);
         newTransAction();

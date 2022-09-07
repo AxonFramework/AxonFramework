@@ -26,14 +26,14 @@ import javax.annotation.Nonnull;
 
 /**
  * Interface describing the required functionality for a dead letter queue. Contains several FIFO-ordered sequences of
- * dead-letters.
+ * dead letters.
  * <p>
  * The contained sequences are uniquely identifiable through the "sequence identifier." Dead-letters are kept in the
  * form of a {@link DeadLetter}. It is highly recommended to use the {@link #process(Function) process operation} (or
  * any of its variants) to consume letters from the queue for retrying. This method ensure sequences cannot be
  * concurrently accessed, thus protecting the user against handling messages out of order.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Steven van Beelen
  * @author Allard Buijze
  * @author Milan Savic
@@ -44,9 +44,9 @@ import javax.annotation.Nonnull;
 public interface SequencedDeadLetterQueue<M extends Message<?>> {
 
     /**
-     * Enqueues a {@link DeadLetter dead-letter} containing an implementation of {@code M} to this queue.
+     * Enqueues a {@link DeadLetter dead letter} containing an implementation of {@code M} to this queue.
      * <p>
-     * The {@code dead-letter} will be appended to a sequence depending on the {@code sequenceIdentifier}. If there is
+     * The {@code dead letter} will be appended to a sequence depending on the {@code sequenceIdentifier}. If there is
      * no sequence yet, it will construct one.
      *
      * @param sequenceIdentifier The identifier of the sequence the {@code letter} belongs to.
@@ -58,12 +58,12 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
 
     /**
      * Enqueue the result of the given {@code letterBuilder} only if there already are other
-     * {@link DeadLetter dead-letters} with the same {@code sequenceIdentifier} present in this queue.
+     * {@link DeadLetter dead letters} with the same {@code sequenceIdentifier} present in this queue.
      *
      * @param sequenceIdentifier The identifier of the sequence to store the result of the {@code letterBuilder} in.
      * @param letterBuilder      The {@link DeadLetter} builder constructing the letter to enqueue. Only invoked if the
      *                           given {@code sequenceIdentifier} is contained.
-     * @return A {@code true} if there are {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier} and
+     * @return A {@code true} if there are {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} and
      * thus the {@code letterBuilder's} outcome is inserted. Otherwise {@code false} is returned.
      * @throws DeadLetterQueueOverflowException Thrown when this queue is {@link #isFull(Object)} for the given
      *                                          {@code sequenceIdentifier}.
@@ -80,10 +80,10 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     }
 
     /**
-     * Evict the given {@code letter} from this queue. Nothing happens if the {@link DeadLetter dead-letter} does not
+     * Evict the given {@code letter} from this queue. Nothing happens if the {@link DeadLetter dead letter} does not
      * exist in this queue.
      *
-     * @param letter The {@link DeadLetter dead-letter} to evict from this queue.
+     * @param letter The {@link DeadLetter dead letter} to evict from this queue.
      */
     void evict(DeadLetter<? extends M> letter);
 
@@ -94,7 +94,7 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
      * This operation adjusts the {@link DeadLetter#lastTouched()}. It may adjust the {@link DeadLetter#cause()} and
      * {@link DeadLetter#diagnostics()}, depending on the given {@code letterUpdater}.
      *
-     * @param letter        The {@link DeadLetter dead-letter} to reenter in this queue.
+     * @param letter        The {@link DeadLetter dead letter} to reenter in this queue.
      * @param letterUpdater A {@link UnaryOperator lambda} taking in the given {@code letter} and updating the entry for
      *                      requeueing. This may adjust the {@link DeadLetter#cause()} and
      *                      {@link DeadLetter#diagnostics()}, for example.
@@ -104,28 +104,28 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
                  @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) throws NoSuchDeadLetterException;
 
     /**
-     * Check whether there's a sequence of {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier}.
+     * Check whether there's a sequence of {@link DeadLetter dead letters} for the given {@code sequenceIdentifier}.
      *
-     * @param sequenceIdentifier The identifier used to validate for contained {@link DeadLetter dead-letters}
+     * @param sequenceIdentifier The identifier used to validate for contained {@link DeadLetter dead letters}
      *                           instances.
-     * @return {@code true} if there are {@link DeadLetter dead-letters} present for the given
+     * @return {@code true} if there are {@link DeadLetter dead letters} present for the given
      * {@code sequenceIdentifier}, {@code false} otherwise.
      */
     boolean contains(@Nonnull Object sequenceIdentifier);
 
     /**
-     * Return all the {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier} in insert order.
+     * Return all the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
      *
-     * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead-letters }to return.
-     * @return All the {@link DeadLetter dead-letters} for the given {@code sequenceIdentifier} in insert order.
+     * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead letters}to return.
+     * @return All the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
      */
     Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier);
 
     /**
-     * Return all {@link DeadLetter dead-letter} sequences held by this queue. The sequences are not necessarily
+     * Return all {@link DeadLetter dead letter} sequences held by this queue. The sequences are not necessarily
      * returned in insert order.
      *
-     * @return All {@link DeadLetter dead-letter} sequences held by this queue.
+     * @return All {@link DeadLetter dead letter} sequences held by this queue.
      */
     Iterable<Iterable<DeadLetter<? extends M>>> deadLetters();
 
@@ -141,21 +141,21 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     boolean isFull(@Nonnull Object sequenceIdentifier);
 
     /**
-     * Returns the number of dead-letters contained in this queue.
+     * Returns the number of dead letters contained in this queue.
      *
-     * @return The number of dead-letters contained in this queue.
+     * @return The number of dead letters contained in this queue.
      */
     long size();
 
     /**
-     * Returns the number of dead-letters for the sequence matching the given {@code sequenceIdentifier} contained in
+     * Returns the number of dead letters for the sequence matching the given {@code sequenceIdentifier} contained in
      * this queue.
      * <p>
      * Note that there's a window of opportunity where the size might exceed the maximum sequence size to accompany
      * concurrent usage.
      *
      * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
-     * @return The number of dead-letters for the sequence matching the given {@code sequenceIdentifier}.
+     * @return The number of dead letters for the sequence matching the given {@code sequenceIdentifier}.
      */
     long sequenceSize(@Nonnull Object sequenceIdentifier);
 
@@ -170,55 +170,55 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     long amountOfSequences();
 
     /**
-     * Process a sequence of enqueued {@link DeadLetter dead-letters} through the given {@code processingTask} matching
+     * Process a sequence of enqueued {@link DeadLetter dead letters} through the given {@code processingTask} matching
      * the {@code sequenceFilter}. Will pick the oldest available sequence based on the {@link DeadLetter#lastTouched()}
      * field from every sequence's first entry.
      * <p>
-     * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead-letter is
+     * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead letter is
      * validated, because it is the blocker for the processing of the rest of the sequence.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} a dead-letter from the selected
+     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} a dead letter from the selected
      * sequence. The {@code processingTask} is invoked as long as letters are present in the selected sequence and the
      * result of processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means
-     * the dead-letter should be evicted.
+     * the dead letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence.
      * Doing so ensure enqueued messages are handled in order.
      *
      * @param sequenceFilter A {@link Predicate lambda} selecting the sequences within this queue to process with the
      *                       {@code processingTask}.
-     * @param processingTask A function processing a {@link DeadLetter dead-letter} implementation. Returns a
-     *                       {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter)} or
-     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter.
-     * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
-     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
+     * @param processingTask A function processing a {@link DeadLetter dead letter}. Returns a {@link EnqueueDecision}
+     *                       used to deduce whether to {@link #evict(DeadLetter)} or
+     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead letter.
+     * @return {@code true} if an entire sequence of {@link DeadLetter dead letters} was processed successfully,
+     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
      * sequence and the outcome was to evict each instance.
      */
     boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                     @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask);
 
     /**
-     * Process a sequence of enqueued {@link DeadLetter dead-letters} with the given {@code processingTask}. Will pick
+     * Process a sequence of enqueued {@link DeadLetter dead letters} with the given {@code processingTask}. Will pick
      * the oldest available sequence based on the {@link DeadLetter#lastTouched()} field from every sequence's first
      * entry.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed!
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter. The
+     * {@link #evict(DeadLetter)} or {@link #requeue(DeadLetter, UnaryOperator)} the dead letter. The
      * {@code processingTask} is invoked as long as letters are present in the selected sequence and the result of
-     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the
-     * dead-letter should be evicted.
+     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the dead
+     * letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence. *
      * Doing so ensure enqueued messages are handled in order.
      *
-     * @param processingTask A function processing a {@link DeadLetter dead-letter} implementation. Returns a
-     *                       {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter)} or
-     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead-letter.
-     * @return {@code true} if an entire sequence of {@link DeadLetter dead-letters} was processed successfully,
-     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead-letters} of a
+     * @param processingTask A function processing a {@link DeadLetter dead letter}. Returns a {@link EnqueueDecision}
+     *                       used to deduce whether to {@link #evict(DeadLetter)} or
+     *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead letter.
+     * @return {@code true} if an entire sequence of {@link DeadLetter dead letters} was processed successfully,
+     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
      * sequence and the outcome was to evict each instance.
      */
     default boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
@@ -226,7 +226,7 @@ public interface SequencedDeadLetterQueue<M extends Message<?>> {
     }
 
     /**
-     * Clears out all {@link DeadLetter dead-letters} present in this queue.
+     * Clears out all {@link DeadLetter dead letters} present in this queue.
      */
     void clear();
 }

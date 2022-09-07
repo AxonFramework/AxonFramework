@@ -101,7 +101,7 @@ class EventBufferTest {
 
     @Test
     @Timeout(value = 450, unit = TimeUnit.MILLISECONDS)
-    void testDataUpcastAndDeserialized() {
+    void dataUpcastAndDeserialized() {
         assertFalse(testSubject.hasNextAvailable());
         eventStream.onNext(TEST_EVENT_WITH_TOKEN);
         assertTrue(testSubject.hasNextAvailable());
@@ -122,7 +122,7 @@ class EventBufferTest {
     }
 
     @Test
-    void testHasNextAvailableThrowsAxonServerExceptionWhenStreamFailed() {
+    void hasNextAvailableThrowsAxonServerExceptionWhenStreamFailed() {
         TestException testException = new TestException();
         eventStream.onError(testException);
 
