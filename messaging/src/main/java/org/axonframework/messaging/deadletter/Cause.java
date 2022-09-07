@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 /**
- * Contract describing the cause for {@link DeadLetter dead-lettering} a {@link org.axonframework.messaging.Message}.
+ * Contract describing the cause for {@link DeadLetter dead lettering} a {@link org.axonframework.messaging.Message}.
  * These objects typically reflects a {@link Throwable}.
  *
  * @author Steven van Beelen
@@ -27,18 +27,18 @@ package org.axonframework.messaging.deadletter;
 public interface Cause {
 
     /**
-     * Returns the type of dead-lettering cause. The {@code type} can, for example, reflect the fully qualified class
+     * Returns the type of dead lettering cause. The {@code type} can, for example, reflect the fully qualified class
      * name of a {@link Throwable}.
      *
-     * @return The type of this dead-lettering cause.
+     * @return The type of this dead lettering cause.
      */
     String type();
 
     /**
-     * A message describing a cause for dead-lettering. The {@code message()} can, for example, reflect the message of a
+     * A message describing a cause for dead lettering. The {@code message()} can, for example, reflect the message of a
      * {@link Throwable}.
      *
-     * @return The message describing this cause's reason for dead-lettering.
+     * @return The message describing this cause's reason for dead lettering.
      */
     String message();
 }

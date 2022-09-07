@@ -5,15 +5,15 @@ import org.axonframework.messaging.Message;
 import java.util.Optional;
 
 /**
- * A contract towards describing a decision among a {@link DeadLetter dead-letter} containing a message of type
+ * A contract towards describing a decision among a {@link DeadLetter dead letter} containing a message of type
  * {@code M}.
  * <p>
  * Describes that the letter should be {@link #shouldEnqueue() enqueued} or evicted. If the letter should be enqueued
  * the {@link #enqueueCause()} may contain a {@link Throwable}. Furthermore, {@link #withDiagnostics(DeadLetter)} may add
- * {@link DeadLetter#diagnostics() diagnostic} information to the dead-letter that should be taken into account when
+ * {@link DeadLetter#diagnostics() diagnostic} information to the dead letter that should be taken into account when
  * enqueueing the letter.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that's been made a
  *            decision on.
  * @author Steven van Beelen
  * @see Decisions
@@ -22,20 +22,20 @@ import java.util.Optional;
 public interface EnqueueDecision<M extends Message<?>> {
 
     /**
-     * The decision whether the {@link DeadLetter dead-letter} should be enqueued in a queue. When {@code false} the
-     * dead-letter should be evicted.
+     * The decision whether the {@link DeadLetter dead letter} should be enqueued in a queue. When {@code false} the
+     * dead letter should be evicted.
      *
-     * @return {@code true} if the {@link DeadLetter dead-letter} should be enqueued, {@code false} if the dead-letter
+     * @return {@code true} if the {@link DeadLetter dead letter} should be enqueued, {@code false} if the dead letter
      * should be evicted.
      */
     boolean shouldEnqueue();
 
     /**
-     * A {@link Throwable} {@link Optional} that was part of deciding to enqueue the {@link DeadLetter dead-letter} in a
-     * queue. Empty if the {@code dead-letter} should be evicted or when there is no failure cause used for deciding to
+     * A {@link Throwable} {@link Optional} that was part of deciding to enqueue the {@link DeadLetter dead letter} in a
+     * queue. Empty if the {@code dead letter} should be evicted or when there is no failure cause used for deciding to
      * enqueue.
      *
-     * @return The deciding failure for enqueueing a {@link DeadLetter dead-letter}, when present.
+     * @return The deciding failure for enqueueing a {@link DeadLetter dead letter}, when present.
      */
     Optional<Throwable> enqueueCause();
 
@@ -46,7 +46,7 @@ public interface EnqueueDecision<M extends Message<?>> {
      * <p>
      * By default, the {@code letter} is returned as is.
      *
-     * @param letter The {@link DeadLetter dead-letter} to add {@link DeadLetter#diagnostics() diagnostic}
+     * @param letter The {@link DeadLetter dead letter} to add {@link DeadLetter#diagnostics() diagnostic}
      *               {@link org.axonframework.messaging.MetaData} to.
      * @return A copy of the given {@code letter} when {@link DeadLetter#diagnostics() diagnostic}
      * {@link org.axonframework.messaging.MetaData} was added.

@@ -46,10 +46,10 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * <p>
  * Maintains a {@link Deque} per unique "sequence identifier." The maximum amount of {@code Deques} contained by this
  * {@code SequencedDeadLetterQueue} is {@code 1024} (configurable through {@link Builder#maxSequences(int)}). The
- * maximum amount of {@link DeadLetter dead-letters} per sequence also defaults to {@code 1024} (configurable through
+ * maximum amount of {@link DeadLetter dead letters} per sequence also defaults to {@code 1024} (configurable through
  * {@link Builder#maxSequenceSize(int)}).
  *
- * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead-letter} of this
+ * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
  *            {@link SequencedDeadLetterQueue}.
  * @author Steven van Beelen
  * @since 4.6.0
@@ -78,10 +78,10 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     /**
      * Instantiate a builder to construct an {@link InMemorySequencedDeadLetterQueue}.
      * <p>
-     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead-letters inside a sequence
+     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead letters inside a sequence
      * defaults to {@code 1024}.
      *
-     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead-letter} of this
+     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      * @return A Builder that can construct an {@link InMemorySequencedDeadLetterQueue}.
      */
@@ -92,10 +92,10 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     /**
      * Construct a default {@link InMemorySequencedDeadLetterQueue}.
      * <p>
-     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead-letters inside a sequence
+     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead letters inside a sequence
      * defaults to {@code 1024}.
      *
-     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead-letter} of this
+     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      * @return A default {@link InMemorySequencedDeadLetterQueue}.
      */
@@ -245,10 +245,10 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
     public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                            @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         if (deadLetters.isEmpty()) {
-            logger.debug("Received a request to process dead-letters but there are none.");
+            logger.debug("Received a request to process dead letters but there are none.");
             return false;
         }
-        logger.debug("Received a request to process matching dead-letters.");
+        logger.debug("Received a request to process matching dead letters.");
 
         Map<String, DeadLetter<? extends M>> sequenceIdsToLetter =
                 deadLetters.entrySet()
@@ -258,7 +258,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFirst()));
 
         if (sequenceIdsToLetter.isEmpty()) {
-            logger.debug("Received a request to process dead-letters but there are no sequences matching the filter.");
+            logger.debug("Received a request to process dead letters but there are no sequences matching the filter.");
             return false;
         }
 
@@ -271,7 +271,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         }
 
         if (StringUtils.emptyOrNull(sequenceId)) {
-            logger.debug("Received a request to process dead-letters but there are none left to process.");
+            logger.debug("Received a request to process dead letters but there are none left to process.");
             return false;
         }
 
@@ -317,17 +317,17 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         sequencesToClear.forEach(sequenceId -> {
             deadLetters.get(sequenceId).clear();
             deadLetters.remove(sequenceId);
-            logger.info("Cleared out all dead-letters for sequence [{}].", sequenceId);
+            logger.info("Cleared out all dead letters for sequence [{}].", sequenceId);
         });
     }
 
     /**
      * Builder class to instantiate an {@link InMemorySequencedDeadLetterQueue}.
      * <p>
-     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead-letters inside a sequence
+     * The maximum number of sequences defaults to {@code 1024} and the maximum amount of dead letters inside a sequence
      * defaults to {@code 1024}.
      *
-     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead-letter} of this
+     * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      */
     public static class Builder<M extends Message<?>> {
@@ -351,18 +351,18 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         }
 
         /**
-         * Sets the maximum amount of {@link DeadLetter dead-letters} per sequence this {@link SequencedDeadLetterQueue}
+         * Sets the maximum amount of {@link DeadLetter dead letters} per sequence this {@link SequencedDeadLetterQueue}
          * can store.
          * <p>
          * The given {@code maxSequenceSize} is required to be a strictly positive number. It defaults to {@code 1024}.
          *
-         * @param maxSequenceSize The maximum amount of {@link DeadLetter dead-letters} per sequence.
+         * @param maxSequenceSize The maximum amount of {@link DeadLetter dead letters} per sequence.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<M> maxSequenceSize(int maxSequenceSize) {
             assertStrictPositive(
                     maxSequenceSize,
-                    "The maximum number of dead-letters in a sequence should be a strictly positive number"
+                    "The maximum number of dead letters in a sequence should be a strictly positive number"
             );
             this.maxSequenceSize = maxSequenceSize;
             return this;

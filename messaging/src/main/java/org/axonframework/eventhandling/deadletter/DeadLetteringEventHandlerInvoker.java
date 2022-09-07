@@ -54,9 +54,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * event ordering is maintained in face of failures.
  * <p>
  * This dead lettering invoker provides several operations to {@link #processAny() process}
- * {@link DeadLetter dead-letters} it has enqueued. It will ensure the same set of Event Handling Components is invoked
- * as with regular event handling when processing a dead-letter. These methods will try to process an entire sequence of
- * dead-letters. Furthermore, these are exposed through the {@link SequencedDeadLetterProcessor} contract.
+ * {@link DeadLetter dead letters} it has enqueued. It will ensure the same set of Event Handling Components is invoked
+ * as with regular event handling when processing a dead letter. These methods will try to process an entire sequence of
+ * dead letters. Furthermore, these are exposed through the {@link SequencedDeadLetterProcessor} contract.
  *
  * @author Steven van Beelen
  * @since 4.6.0
@@ -74,7 +74,7 @@ public class DeadLetteringEventHandlerInvoker
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
-     * {@link SequencedDeadLetterQueue} to maintain and retrieve dead-letters from.
+     * {@link SequencedDeadLetterQueue} to maintain and retrieve dead letters from.
      *
      * @param builder The {@link Builder} used to instantiate a {@link DeadLetteringEventHandlerInvoker} instance.
      */
@@ -128,7 +128,7 @@ public class DeadLetteringEventHandlerInvoker
                 if (decision.shouldEnqueue()) {
                     queue.enqueue(sequenceIdentifier, decision.withDiagnostics(letter));
                 } else if (logger.isInfoEnabled()) {
-                    logger.info("The enqueue policy decided not to dead-letter event [{}].", message.getIdentifier());
+                    logger.info("The enqueue policy decided not to dead letter event [{}].", message.getIdentifier());
                 }
             }
         }
@@ -178,14 +178,14 @@ public class DeadLetteringEventHandlerInvoker
 
         private Builder() {
             // The parent's error handler defaults to propagating the error.
-            // Otherwise, faulty events would not be dead-lettered.
+            // Otherwise, faulty events would not be dead lettered.
             super.listenerInvocationErrorHandler(PropagatingErrorHandler.instance());
         }
 
         /**
-         * Sets the {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters with.
+         * Sets the {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead letters with.
          *
-         * @param queue The {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead-letters
+         * @param queue The {@link SequencedDeadLetterQueue} this {@link EventHandlerInvoker} maintains dead letters
          *              with.
          * @return The current Builder instance for fluent interfacing.
          */
@@ -197,11 +197,11 @@ public class DeadLetteringEventHandlerInvoker
 
         /**
          * Sets the {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
-         * {@link DeadLetter dead-letter} should be added to the {@link SequencedDeadLetterQueue}. Defaults to returning
-         * {@link Decisions#enqueue(Throwable)} when invoked for any dead-letter.
+         * {@link DeadLetter dead letter} should be added to the {@link SequencedDeadLetterQueue}. Defaults to returning
+         * {@link Decisions#enqueue(Throwable)} when invoked for any dead letter.
          *
          * @param enqueuePolicy The {@link EnqueuePolicy} this {@link EventHandlerInvoker} uses to decide whether a
-         *                      {@link DeadLetter dead-letter} should be added to the {@link SequencedDeadLetterQueue}.
+         *                      {@link DeadLetter dead letter} should be added to the {@link SequencedDeadLetterQueue}.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder enqueuePolicy(EnqueuePolicy<EventMessage<?>> enqueuePolicy) {

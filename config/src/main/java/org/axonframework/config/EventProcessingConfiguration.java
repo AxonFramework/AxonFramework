@@ -234,7 +234,7 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Returns the {@link EnqueuePolicy dead-letter policy} tied to the given {@code processingGroup} in an
+     * Returns the {@link EnqueuePolicy dead letter policy} tied to the given {@code processingGroup} in an
      * {@link Optional}. May return an {@link Optional} containing the
      * {@link EventProcessingConfigurer#registerDefaultDeadLetterPolicy(Function) default policy} if present.
      *

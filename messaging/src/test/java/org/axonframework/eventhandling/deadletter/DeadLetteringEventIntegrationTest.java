@@ -168,7 +168,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     /**
-     * Process any sequence of {@link DeadLetter dead-letters}. Uses the
+     * Process any sequence of {@link DeadLetter dead letters}. Uses the
      * {@link DeadLetteringEventHandlerInvoker#processAny()} operation for this.
      */
     protected void processAnyDeadLetter() {
@@ -176,7 +176,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     /**
-     * Process any sequence of {@link DeadLetter dead-letters} at set intervals of 5ms. Uses the
+     * Process any sequence of {@link DeadLetter dead letters} at set intervals of 5ms. Uses the
      * {@link DeadLetteringEventHandlerInvoker#processAny()} operation for this.
      */
     protected void processAnyDeadLettersPeriodically() {
@@ -566,7 +566,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 firstTrySuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 firstTryFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
-                throw new RuntimeException("Initial handling failed. Let's dead-letter event [" + sequenceId + "].");
+                throw new RuntimeException("Initial handling failed. Let's dead letter event [" + sequenceId + "].");
             }
         }
 
@@ -575,7 +575,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 evaluationSuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 evaluationFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
-                throw new RuntimeException("Evaluation failed. Let's dead-letter event [" + sequenceId + "].");
+                throw new RuntimeException("Evaluation failed. Let's dead letter event [" + sequenceId + "].");
             }
         }
 

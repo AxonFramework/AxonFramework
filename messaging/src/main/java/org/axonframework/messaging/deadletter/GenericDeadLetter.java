@@ -34,7 +34,7 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier} and {@code message}. The
-     * {@link #cause()} is left empty in this case. This method is typically used to construct a dead-letter that's part
+     * {@link #cause()} is left empty in this case. This method is typically used to construct a dead letter that's part
      * of a sequence.
      *
      * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
@@ -46,12 +46,12 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier}, {@code message}, and
-     * {@code cause}. This method is typically used to construct the first dead-letter entry for the given
+     * {@code cause}. This method is typically used to construct the first dead letter entry for the given
      * {@code queueIdentifier}.
      *
      * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
-     * @param cause              The cause for the {@code message} to be dead-lettered.
+     * @param cause              The cause for the {@code message} to be dead lettered.
      */
     public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause) {
         this(sequenceIdentifier,
@@ -104,10 +104,10 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
      *
      * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
-     * @param cause              The cause for the {@code message} to be dead-lettered.
-     * @param enqueuedAt         The moment this dead-letter is enqueued.
-     * @param lastTouched        The last time this dead-letter was touched.
-     * @param diagnostics        The diagnostic {@link MetaData} of this dead-letter.
+     * @param cause              The cause for the {@code message} to be dead lettered.
+     * @param enqueuedAt         The moment this dead letter is enqueued.
+     * @param lastTouched        The last time this dead letter was touched.
+     * @param diagnostics        The diagnostic {@link MetaData} of this dead letter.
      */
     public GenericDeadLetter(Object sequenceIdentifier,
                              M message,

@@ -44,6 +44,6 @@ public class DeadLetterQueueOverflowException extends AxonException {
      */
     public DeadLetterQueueOverflowException(Object identifier) {
         super("Unable to enqueue letter in sequence [" + identifier + "]. "
-                      + "The maximum capacity of dead-letters has been reached.");
+                      + "The maximum capacity of dead letters has been reached.");
     }
 }

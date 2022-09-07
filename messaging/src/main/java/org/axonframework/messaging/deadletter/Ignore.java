@@ -5,10 +5,10 @@ import org.axonframework.messaging.Message;
 import java.util.Optional;
 
 /**
- * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should be ignored. This typically means that a
- * dead-letter remains in the queue.
+ * An {@link EnqueueDecision} stating a {@link DeadLetter dead letter} should be ignored. This typically means that a
+ * dead letter remains in the queue.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that's been made a
  *            decision on.
  * @author Steven van Beelen
  * @since 4.6.0

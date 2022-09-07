@@ -689,15 +689,15 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Register a default {@link EnqueuePolicy dead-letter policy} for any processing group using a
-     * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
+     * Register a default {@link EnqueuePolicy dead letter policy} for any processing group using a
+     * {@link #registerDeadLetterQueue(String, Function) dead letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
      * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
      * <p>
-     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
      * queue.
      *
-     * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy dead-letter policy}.
+     * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy dead letter policy}.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
     default EventProcessingConfigurer registerDefaultDeadLetterPolicy(
@@ -707,16 +707,16 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Register a {@link EnqueuePolicy dead-letter policy} for the given {@code processingGroup} using a
-     * {@link #registerDeadLetterQueue(String, Function) dead-letter queue}. The processing group uses the policy to
+     * Register a {@link EnqueuePolicy dead letter policy} for the given {@code processingGroup} using a
+     * {@link #registerDeadLetterQueue(String, Function) dead letter queue}. The processing group uses the policy to
      * deduce whether a failed {@link EventMessage} should be
      * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
      * <p>
-     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
      * queue.
      *
      * @param processingGroup The name of the processing group to build an {@link EnqueuePolicy} for.
-     * @param policyBuilder   A builder method to construct a {@link EnqueuePolicy dead-letter policy} for the given
+     * @param policyBuilder   A builder method to construct a {@link EnqueuePolicy dead letter policy} for the given
      *                        {@code processingGroup}.
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
@@ -733,7 +733,7 @@ public interface EventProcessingConfigurer {
      * {@link DeadLetteringEventHandlerInvoker dead lettering processing group} through its
      * {@link DeadLetteringEventHandlerInvoker.Builder builder}.
      * <p>
-     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead-letter
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
      * queue.
      *
      * @param processingGroup The name of the processing group to attach additional configuration too.

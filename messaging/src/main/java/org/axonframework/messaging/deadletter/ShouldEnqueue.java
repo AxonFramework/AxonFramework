@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * An {@link EnqueueDecision} stating a {@link DeadLetter dead-letter} should be enqueued.
+ * An {@link EnqueueDecision} stating a {@link DeadLetter dead letter} should be enqueued.
  *
- * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letter} that's been made a
+ * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that's been made a
  *            decision on.
  * @author Steven van Beelen
  * @since 4.6.0
