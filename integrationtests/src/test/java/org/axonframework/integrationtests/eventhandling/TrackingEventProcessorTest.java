@@ -45,9 +45,12 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.SerializationException;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -111,6 +114,7 @@ class TrackingEventProcessorTest {
     private List<Long> sleepInstructions;
     private TransactionManager mockTransactionManager;
     private Transaction mockTransaction;
+    private TestSpanFactory spanFactory;
 
     private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return trackingEventStreamOf(iterator, c -> {
@@ -169,6 +173,7 @@ class TrackingEventProcessorTest {
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         tokenStore = spy(new InMemoryTokenStore());
         mockHandler = mock(EventMessageHandler.class);
         when(mockHandler.canHandle(any())).thenReturn(true);
@@ -193,7 +198,10 @@ class TrackingEventProcessorTest {
             r.run();
             return null;
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
-        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventBus = EmbeddedEventStore.builder()
+                                     .storageEngine(new InMemoryEventStorageEngine())
+                                     .spanFactory(spanFactory)
+                                     .build();
         sleepInstructions = new CopyOnWriteArrayList<>();
 
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
@@ -213,7 +221,8 @@ class TrackingEventProcessorTest {
                                       .messageSource(eventBus)
                                       .trackingEventProcessorConfiguration(config)
                                       .tokenStore(tokenStore)
-                                      .transactionManager(mockTransactionManager);
+                                      .transactionManager(mockTransactionManager)
+                                      .spanFactory(spanFactory);
         testSubject = new TrackingEventProcessor(customization.apply(eventProcessorBuilder)) {
             @Override
             protected void doSleepFor(long millisToSleep) {
@@ -282,6 +291,22 @@ class TrackingEventProcessorTest {
     void publishedEventsGetPassedToHandler() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
+            countDownLatch.countDown();
+            return null;
+        }).when(mockHandler).handle(any());
+        testSubject.start();
+        // Give it a bit of time to start
+        Thread.sleep(200);
+        eventBus.publish(createEvents(2));
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
+    }
+
+    @Test
+    void handlersAreTraced() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            Message<?> message = invocation.getArgument(0, Message.class);
+            spanFactory.verifySpanActive("TrackingEventProcessor[test] ", message);
             countDownLatch.countDown();
             return null;
         }).when(mockHandler).handle(any());
@@ -1939,6 +1964,11 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 1000)
     void isReplayingWhenNotCaughtUp() throws Exception {
+        initProcessor(
+                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                   .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE)
+        );
         when(mockHandler.supportsReset()).thenReturn(true);
 
         final List<String> handled = new CopyOnWriteArrayList<>();

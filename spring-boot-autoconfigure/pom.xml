@@ -47,6 +47,13 @@
 
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-tracing-opentelemetry</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-micrometer</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>

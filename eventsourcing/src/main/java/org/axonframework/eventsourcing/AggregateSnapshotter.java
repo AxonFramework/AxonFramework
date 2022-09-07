@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.modelling.command.ApplyMore;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -32,6 +28,11 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.ApplyMore;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -63,7 +65,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * Instantiate a {@link AggregateSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EventStore}, {@link ParameterResolverFactory} and {@link HandlerDefinition} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}. The
+     * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AggregateSnapshotter} instance
      */
@@ -151,13 +154,13 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     /**
      * Builder class to instantiate a {@link AggregateSnapshotter}.
      * <p>
-     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE} and the
-     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
-     * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
-     * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
-     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
-     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
-     * fields.
+     * The {@link Executor} is defaulted to an {@link org.axonframework.common.DirectExecutor#INSTANCE}, the
+     * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager} and
+     * the {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}. Additionally, this
+     * Builder has convenience functions to default the {@link ParameterResolverFactory} and {@link HandlerDefinition}
+     * based on instances of these available on the classpath in case these are not provided (respectively
+     * {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon instantiation
+     * of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
      * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
@@ -186,6 +189,12 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         @Override
         public Builder transactionManager(TransactionManager transactionManager) {
             super.transactionManager(transactionManager);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

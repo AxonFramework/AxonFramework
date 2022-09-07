@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -240,6 +241,27 @@ public class AggregateConfigurerTest {
     }
 
     @Test
+    void configureSpanFactoryForEventSourcedAggregate() {
+        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
+
+        TestSpanFactory testSpanFactory = new TestSpanFactory();
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureSpanFactory(c -> testSpanFactory)
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+
+        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+
+        config.shutdown();
+    }
+
+    @Test
     void configureLockFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
         PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
@@ -258,7 +280,32 @@ public class AggregateConfigurerTest {
         CommandGateway commandGateway = config.commandGateway();
         String testAggregateIdentifier = "123";
         commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
-        verify(lockFactory).obtainLock(testAggregateIdentifier);
+
+        config.shutdown();
+    }
+
+    @Test
+    void configureSpanFactoryForStateStoredAggregateWithConfiguredEntityManagerProviderComponent() {
+        PessimisticLockFactory lockFactory = spy(PessimisticLockFactory.usingDefaults());
+        AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
+                                                                        .configureLockFactory(config -> lockFactory);
+
+        TestSpanFactory testSpanFactory = new TestSpanFactory();
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .registerComponent(
+                                                        EntityManagerProvider.class,
+                                                        c -> new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                                )
+                                                .configureSpanFactory(c -> testSpanFactory)
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
 
         config.shutdown();
     }
@@ -285,6 +332,31 @@ public class AggregateConfigurerTest {
 
         config.shutdown();
     }
+
+    @Test
+    void configureSpanFactoryForStateStoredAggregate() {
+        AggregateConfigurer<A> aggregateConfigurer =
+                AggregateConfigurer.jpaMappedConfiguration(
+                        A.class, new SimpleEntityManagerProvider(mock(EntityManager.class))
+                );
+
+        TestSpanFactory testSpanFactory = new TestSpanFactory();
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureAggregate(aggregateConfigurer)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureSpanFactory(c -> testSpanFactory)
+                                                .buildConfiguration();
+        config.start();
+
+        CommandGateway commandGateway = config.commandGateway();
+        String testAggregateIdentifier = "123";
+        commandGateway.sendAndWait(new CreateACommand(testAggregateIdentifier));
+
+        testSpanFactory.verifySpanCompleted("SimpleCommandBus.handle");
+
+        config.shutdown();
+    }
+
     @Test
     void nullRevisionEventAndNullRevisionAggregateAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
@@ -304,7 +376,7 @@ public class AggregateConfigurerTest {
     }
 
     @Test
-    void nonNullEventRevisionAndNullAggregateRevisionNotAllowed(){
+    void nonNullEventRevisionAndNullAggregateRevisionNotAllowed() {
         DomainEventMessage<TestAggregate> snapshotEvent = new GenericDomainEventMessage<>(
                 TestAggregate.class.getSimpleName(), "some-aggregate-id", 0, new TestAggregate()
         );
@@ -325,7 +397,6 @@ public class AggregateConfigurerTest {
         assertTrue(result instanceof RevisionSnapshotFilter);
         assertFalse(result.allow(testDomainEventData));
     }
-
 
 
     private static class TestAggregate {
