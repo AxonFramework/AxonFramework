@@ -17,12 +17,10 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ReplayToken;
@@ -35,12 +33,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,7 +75,7 @@ class PooledStreamingEventProcessorTest {
 
     private PooledStreamingEventProcessor testSubject;
     private EventHandlerInvoker stubEventHandler;
-    private InMemoryMessageSource stubMessageSource;
+    private InMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -86,12 +83,12 @@ class PooledStreamingEventProcessorTest {
 
     @BeforeEach
     void setUp() {
-        spanFactory = new TestSpanFactory();
-        stubMessageSource = new InMemoryMessageSource();
+        stubMessageSource = new InMemoryStreamableEventSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = Executors.newScheduledThreadPool(2);
         workerExecutor = Executors.newScheduledThreadPool(8);
+        spanFactory = new TestSpanFactory();
 
         setTestSubject(createTestSubject());
 
@@ -113,7 +110,6 @@ class PooledStreamingEventProcessorTest {
         PooledStreamingEventProcessor.Builder processorBuilder =
                 PooledStreamingEventProcessor.builder()
                                              .name(PROCESSOR_NAME)
-                                             .spanFactory(spanFactory)
                                              .eventHandlerInvoker(stubEventHandler)
                                              .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                              .errorHandler(PropagatingErrorHandler.instance())
@@ -123,7 +119,8 @@ class PooledStreamingEventProcessorTest {
                                              .coordinatorExecutor(coordinatorExecutor)
                                              .workerExecutor(workerExecutor)
                                              .initialSegmentCount(8)
-                                             .claimExtensionThreshold(1000);
+                                             .claimExtensionThreshold(1000)
+                                             .spanFactory(spanFactory);
         return customization.apply(processorBuilder).build();
     }
 
@@ -219,7 +216,7 @@ class PooledStreamingEventProcessorTest {
         mockEventHandlerInvoker();
         doAnswer(
                 answer -> {
-                    EventMessage message = answer.getArgument(0, EventMessage.class);
+                    EventMessage<?> message = answer.getArgument(0, EventMessage.class);
                     invokedMessages.add(message);
                     spanFactory.verifySpanActive("PooledStreamingEventProcessor[test].process", message);
                     countDownLatch.countDown();
@@ -233,11 +230,12 @@ class PooledStreamingEventProcessorTest {
         events.forEach(stubMessageSource::publishMessage);
         testSubject.start();
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
-        invokedMessages.forEach(e -> {
-            assertWithin(1, TimeUnit.SECONDS, () -> {
-                spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e);
-            });
-        });
+        invokedMessages.forEach(
+                e -> assertWithin(
+                        1, TimeUnit.SECONDS,
+                        () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
+                )
+        );
     }
 
     @Test
@@ -246,13 +244,15 @@ class PooledStreamingEventProcessorTest {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName())).thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+        when(tokenStore.fetchAvailableSegments(testSubject.getName()))
+                .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
         testSubject.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
-        verify(tokenStore, never()).fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+        verify(tokenStore, never())
+                .fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
     @Test
@@ -349,7 +349,7 @@ class PooledStreamingEventProcessorTest {
     void workPackageIsAbortedWhenExtendingClaimFails() {
         InMemoryTokenStore spy = spy(tokenStore);
         setTestSubject(createTestSubject(b -> b.tokenStore(spy)
-                                               .messageSource(new InMemoryMessageSource(true))
+                                               .messageSource(new InMemoryStreamableEventSource(true))
                                                .claimExtensionThreshold(10)));
 
         doThrow(new MockException("Simulated failure")).when(spy)
@@ -393,9 +393,7 @@ class PooledStreamingEventProcessorTest {
 
         testSubject.start();
 
-        assertWithin(1, TimeUnit.SECONDS, () -> {
-            assertEquals(2, testSubject.processingStatus().size());
-        });
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, testSubject.processingStatus().size()));
     }
 
     @Test
@@ -403,7 +401,7 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(builder -> builder.initialSegmentCount(1)));
 
         // The custom ArgumentMatcher, for some reason, first runs the assertion with null, failing the current check.
-        // Hence a null check is added to the matcher.
+        // Hence, a null check is added to the matcher.
         when(stubEventHandler.canHandle(
                 argThat(argument -> argument != null && Integer.class.equals(argument.getPayloadType())), any()
         )).thenReturn(false);
@@ -474,8 +472,7 @@ class PooledStreamingEventProcessorTest {
     @Test
     void coordinationIsTriggeredThroughEventAvailabilityCallback() {
         boolean streamCallbackSupported = true;
-        //noinspection ConstantConditions
-        InMemoryMessageSource testMessageSource = new InMemoryMessageSource(streamCallbackSupported);
+        InMemoryStreamableEventSource testMessageSource = new InMemoryStreamableEventSource(streamCallbackSupported);
         setTestSubject(createTestSubject(builder -> builder.messageSource(testMessageSource)));
         mockEventHandlerInvoker();
 
@@ -583,7 +580,7 @@ class PooledStreamingEventProcessorTest {
 
         assertFalse(testSubject.isError());
 
-        stubMessageSource.publishMessage(InMemoryMessageSource.FAIL_EVENT);
+        stubMessageSource.publishMessage(InMemoryStreamableEventSource.FAIL_EVENT);
 
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.isError()));
 
@@ -596,7 +593,7 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void isErrorWhenOpeningTheStreamFails() {
-        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryMessageSource());
+        StreamableMessageSource<TrackedEventMessage<?>> spiedMessageSource = spy(new InMemoryStreamableEventSource());
         when(spiedMessageSource.openStream(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
                                                   .thenCallRealMethod();
         setTestSubject(createTestSubject(builder -> builder.messageSource(spiedMessageSource)));
@@ -923,6 +920,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullSpanFactoryThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.spanFactory(null));
     }
 
@@ -930,6 +928,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullMessageSourceThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.messageSource(null));
     }
 
@@ -947,6 +946,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullTokenStoreThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.tokenStore(null));
     }
 
@@ -966,6 +966,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.transactionManager(null));
     }
 
@@ -985,6 +986,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullCoordinatorExecutorThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(
                 AxonConfigurationException.class,
                 () -> builderTestSubject.coordinatorExecutor((ScheduledExecutorService) null)
@@ -995,6 +997,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullCoordinatorExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(
                 AxonConfigurationException.class,
                 () -> builderTestSubject.coordinatorExecutor((Function<String, ScheduledExecutorService>) null)
@@ -1018,6 +1021,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullWorkerExecutorThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(
                 AxonConfigurationException.class,
                 () -> builderTestSubject.workerExecutor((ScheduledExecutorService) null)
@@ -1028,6 +1032,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullWorkerExecutorBuilderThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(
                 AxonConfigurationException.class,
                 () -> builderTestSubject.workerExecutor((Function<String, ScheduledExecutorService>) null)
@@ -1060,6 +1065,7 @@ class PooledStreamingEventProcessorTest {
     void buildWithNullInitialTokenThrowsAxonConfigurationException() {
         PooledStreamingEventProcessor.Builder builderTestSubject = PooledStreamingEventProcessor.builder();
 
+        //noinspection ConstantConditions
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.initialToken(null));
     }
 
@@ -1131,117 +1137,5 @@ class PooledStreamingEventProcessorTest {
                     assertFalse(testSubject.isReplaying());
                 }
         );
-    }
-
-    private static class InMemoryMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
-
-        private static final String FAIL_PAYLOAD = "FAIL";
-        private static final EventMessage<String> FAIL_EVENT = GenericEventMessage.asEventMessage(FAIL_PAYLOAD);
-
-        private List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
-        private final boolean streamCallbackSupported;
-        private final List<TrackedEventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
-        private Runnable onAvailableCallback = null;
-
-        private InMemoryMessageSource() {
-            this(false);
-        }
-
-        private InMemoryMessageSource(boolean streamCallbackSupported) {
-            this.streamCallbackSupported = streamCallbackSupported;
-        }
-
-        @Override
-        public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
-            return new BlockingStream<TrackedEventMessage<?>>() {
-
-                private int lastToken;
-
-                @Override
-                public Optional<TrackedEventMessage<?>> peek() {
-                    if (messages.size() > lastToken) {
-                        return Optional.of(messages.get(lastToken));
-                    }
-                    return Optional.empty();
-                }
-
-                @Override
-                public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-                    return peek().isPresent();
-                }
-
-                @Override
-                public TrackedEventMessage<?> nextAvailable() {
-                    TrackedEventMessage<?> next = peek().orElseThrow(
-                            () -> new RuntimeException("The processor should never perform a blocking call")
-                    );
-                    this.lastToken = (int) next.trackingToken()
-                                               .position()
-                                               .orElseThrow(() -> new UnsupportedOperationException("Not supported"));
-
-                    if (next.getPayload().equals(FAIL_PAYLOAD)) {
-                        throw new IllegalStateException("Cannot retrieve event at position [" + lastToken + "].");
-                    }
-
-                    return next;
-                }
-
-                @Override
-                public void close() {
-                    clearAllMessages();
-                }
-
-                @Override
-                public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredEvent) {
-                    ignoredEvents.add(ignoredEvent);
-                }
-
-                @Override
-                public boolean setOnAvailableCallback(Runnable callback) {
-                    onAvailableCallback = callback;
-                    return streamCallbackSupported;
-                }
-            };
-        }
-
-        @Override
-        public TrackingToken createTailToken() {
-            return null;
-        }
-
-        @Override
-        public TrackingToken createHeadToken() {
-            if (messages.isEmpty()) {
-                return null;
-            }
-            return messages.get(messages.size() - 1).trackingToken();
-        }
-
-        @Override
-        public TrackingToken createTokenAt(Instant dateTime) {
-            throw new UnsupportedOperationException("Not supported for InMemoryMessageSource");
-        }
-
-        @Override
-        public TrackingToken createTokenSince(Duration duration) {
-            throw new UnsupportedOperationException("Not supported for InMemoryMessageSource");
-        }
-
-        private synchronized void publishMessage(EventMessage<?> message) {
-            int nextToken = messages.size();
-            messages.add(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(nextToken + 1), message));
-        }
-
-        private synchronized void clearAllMessages() {
-            messages = new CopyOnWriteArrayList<>();
-        }
-
-        public List<TrackedEventMessage<?>> getIgnoredEvents() {
-            return ignoredEvents;
-        }
-
-        private void runOnAvailableCallback() {
-            onAvailableCallback.run();
-        }
     }
 }
