@@ -152,7 +152,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public void registerTagProvider(SpanAttributesProvider provider) {
+    public void registerSpanAttributeProvider(SpanAttributesProvider provider) {
         spanAttributesProviders.add(provider);
     }
 

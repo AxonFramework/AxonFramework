@@ -64,7 +64,7 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public void registerTagProvider(SpanAttributesProvider supplier) {
+    public void registerSpanAttributeProvider(SpanAttributesProvider supplier) {
         // Do nothing
     }
 
