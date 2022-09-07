@@ -89,6 +89,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     private final Serializer serializer;
     private final Duration claimDuration;
 
+    /**
+     * Instantiate a JPA {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
+     *
+     * @param builder The {@link Builder} used to instantiate a {@link JpaSequencedDeadLetterQueue} instance.
+     */
     protected <T extends EventMessage<?>> JpaSequencedDeadLetterQueue(Builder<T> builder) {
         builder.validate();
         this.processingGroup = builder.processingGroup;

@@ -39,7 +39,7 @@ import javax.persistence.Table;
  * Default DeadLetter JPA entity implementation of dead letters. Used by the {@link JpaSequencedDeadLetterQueue} to
  * store these into the database to be retried later.
  * <p>
- * The original messages is embedded as a {@link DeadLetterEventEntry}. This is mapped, upon both storage and retrieval,
+ * The original message is embedded as a {@link DeadLetterEventEntry}. This is mapped, upon both storage and retrieval,
  * by one of the configured {@link DeadLetterJpaConverter converters}.
  *
  * @author Mitchell Herrijgers
@@ -175,9 +175,9 @@ public class DeadLetterEntry {
     }
 
     /**
-     * The time the messages was enqueued.
+     * The time the message was enqueued.
      *
-     * @return The time the messages was enqueued.
+     * @return The time the message was enqueued.
      */
     public Instant getEnqueuedAt() {
         return enqueuedAt;
