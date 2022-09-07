@@ -22,25 +22,26 @@ import org.axonframework.serialization.Serializer;
 /**
  * Converter that can convert a {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
  *
+ * @param <M> The type of the event message this converter will convert.
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
 
     /**
-     * Converts an {@link EventMessage} to a {@link DeadLetterEventEntry}.
+     * Converts an {@link EventMessage} implementation to a {@link DeadLetterEventEntry}.
      *
      * @param message    The message to convert.
-     * @param serializer The {@link Serializer} to use for payload and metadata.
+     * @param serializer The {@link Serializer} to use for serialization of payload and metadata.
      * @return The created {@link DeadLetterEventEntry}
      */
     DeadLetterEventEntry convert(M message, Serializer serializer);
 
     /**
-     * Converts a {@link DeadLetterEventEntry} to a {@link EventMessage}.
+     * Converts a {@link DeadLetterEventEntry} to a {@link EventMessage} implementation.
      *
      * @param entry      The database entry to convert to a {@link EventMessage}
-     * @param serializer The {@link Serializer} to use for payload and metadata.
+     * @param serializer The {@link Serializer} to use for deserialization of payload and metadata.
      * @return The created {@link DeadLetterEventEntry}
      */
     M convert(DeadLetterEventEntry entry, Serializer serializer);
@@ -59,5 +60,5 @@ public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
      * @param message The message to check support for.
      * @return Whether the provided message is supported by this converter.
      */
-    boolean canConvert(EventMessage<?> message);
+    boolean canConvert(M message);
 }

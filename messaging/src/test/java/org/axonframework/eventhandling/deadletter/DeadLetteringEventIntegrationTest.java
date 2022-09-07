@@ -18,11 +18,10 @@ package org.axonframework.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -86,7 +85,6 @@ public abstract class DeadLetteringEventIntegrationTest {
     private static final boolean FAIL = false;
     private static final boolean FAIL_RETRY = false;
 
-
     private ProblematicEventHandlingComponent eventHandlingComponent;
     private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
@@ -103,10 +101,13 @@ public abstract class DeadLetteringEventIntegrationTest {
      */
     protected abstract SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue();
 
+    protected TransactionManager getTransactionManager() {
+        return new NoOpTransactionManager();
+    }
+
     @BeforeEach
     void setUp() {
-
-        transactionManager = NoTransactionManager.instance();
+        transactionManager = getTransactionManager();
         eventHandlingComponent = new ProblematicEventHandlingComponent();
         deadLetterQueue = buildDeadLetterQueue();
 
@@ -177,12 +178,7 @@ public abstract class DeadLetteringEventIntegrationTest {
      * {@link DeadLetteringEventHandlerInvoker#processAny()} operation for this.
      */
     protected void processAnyDeadLetter() {
-        try {
-            deadLetteringInvoker.processAny();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        deadLetteringInvoker.processAny();
     }
 
     /**
@@ -393,6 +389,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // Starting both is sufficient since both Processor and DeadLettering Invoker have their own thread pool.
         startProcessingEvent();
+        processAnyDeadLettersPeriodically();
 
         // Three events in sequence "aggregateId" succeed
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
@@ -413,7 +410,6 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertTrue(optionalPosition.isPresent());
             assertTrue(optionalPosition.getAsLong() >= 6);
         });
-        processAnyDeadLettersPeriodically();
 
         assertTrue(eventHandlingComponent.initialHandlingWasSuccessful(aggregateId));
         assertEquals(expectedSuccessfulInitialHandlingCount,
@@ -468,17 +464,16 @@ public abstract class DeadLetteringEventIntegrationTest {
         });
 
         startProcessingEvent();
+        processAnyDeadLettersPeriodically();
+
+        publishingThread.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        publishingThread.start();
-        assertWithin(10, TimeUnit.SECONDS, () -> {
-            EventTrackerStatus eventTrackerStatus = streamingProcessor.processingStatus().get(0);
-            assertNotNull(eventTrackerStatus);
-            OptionalLong optionalPosition = eventTrackerStatus.getCurrentPosition();
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
             assertTrue(optionalPosition.isPresent());
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());
         });
-        processAnyDeadLettersPeriodically();
 
         for (String aggregateId : aggregateIds) {
             if (validatedAggregateIds.contains(aggregateId)) {
@@ -501,7 +496,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
             // Validate evaluation event handling...
             // Successful...
-            assertWithin(3, TimeUnit.SECONDS, () -> assertTrue(
+            assertWithin(15, TimeUnit.SECONDS, () -> assertTrue(
                     eventHandlingComponent.evaluationWasSuccessful(aggregateId)
             ));
             assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(

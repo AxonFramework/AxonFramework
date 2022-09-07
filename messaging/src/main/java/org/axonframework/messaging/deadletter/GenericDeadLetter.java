@@ -163,9 +163,9 @@ public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
     }
 
     /**
-     * Gets the sequence identifier of the sequence this message belongs to.
+     * Returns the sequence identifier of the sequence this {@link #message()} belongs to.
      *
-     * @return The sequence identifier
+     * @return The sequence identifier of the sequence this {@link #message()} belongs to.
      */
     public Object getSequenceIdentifier() {
         return sequenceIdentifier;

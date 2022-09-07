@@ -263,12 +263,12 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         }
 
         String sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
-            boolean freshlyTaken = takenSequences.add(sequenceId);
-            while (sequenceId != null && !freshlyTaken) {
-                sequenceIdsToLetter.remove(sequenceId);
-                sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
-                freshlyTaken = takenSequences.add(sequenceId);
-            }
+        boolean freshlyTaken = takenSequences.add(sequenceId);
+        while (sequenceId != null && !freshlyTaken) {
+            sequenceIdsToLetter.remove(sequenceId);
+            sequenceId = getLastTouchedSequence(sequenceIdsToLetter);
+            freshlyTaken = takenSequences.add(sequenceId);
+        }
 
         if (StringUtils.emptyOrNull(sequenceId)) {
             logger.debug("Received a request to process dead letters but there are none left to process.");

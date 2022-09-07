@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
@@ -111,6 +111,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
                                                                  MetaData diagnostics) {
+        setAndGetTime(lastTouched);
         return original.withCause(requeueCause).withDiagnostics(diagnostics).markTouched();
     }
 
@@ -150,10 +151,10 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Test
-    void buildWithValueLowerThanMinimumMaxQueuesThrowsAxonConfigurationException() {
+    void buildWithZeroMaxQueuesThrowsAxonConfigurationException() {
         JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
     }
 
     @Test
@@ -164,10 +165,10 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Test
-    void buildWithValueLowerThanMinimumMaxQueueSizeThrowsAxonConfigurationException() {
+    void buildWithZeroMaxQueueSizeThrowsAxonConfigurationException() {
         JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
     }
 
     @Test
@@ -250,26 +251,5 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .serializer(TestSerializer.JACKSON.getSerializer());
 
         assertThrows(AxonConfigurationException.class, builder::build);
-    }
-
-    /**
-     * A non-final {@link TransactionManager} implementation, so that it can be spied upon through Mockito.
-     */
-    private static class NoOpTransactionManager implements TransactionManager {
-
-        @Override
-        public Transaction startTransaction() {
-            return new Transaction() {
-                @Override
-                public void commit() {
-                    // No-op
-                }
-
-                @Override
-                public void rollback() {
-                    // No-op
-                }
-            };
-        }
     }
 }

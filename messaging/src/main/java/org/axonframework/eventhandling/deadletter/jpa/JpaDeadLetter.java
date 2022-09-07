@@ -136,7 +136,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
     }
 
     /**
-     * The index of the dead letter in this sequence identified by the {@code sequenceIdentifier}. Will ensure the
+     * The index of the dead letter within its sequence identified by the {@code sequenceIdentifier}. Will ensure the
      * events are kept in the original order.
      *
      * @return The index of this {@link JpaDeadLetter}.

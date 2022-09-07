@@ -24,6 +24,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Objects;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -288,5 +289,22 @@ public class DeadLetterEntry {
     @Override
     public int hashCode() {
         return deadLetterId != null ? deadLetterId.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "DeadLetterEntry{" +
+                "deadLetterId='" + deadLetterId + '\'' +
+                ", processingGroup='" + processingGroup + '\'' +
+                ", sequenceIdentifier='" + sequenceIdentifier + '\'' +
+                ", index=" + index +
+                ", message=" + message +
+                ", enqueuedAt=" + enqueuedAt +
+                ", lastTouched=" + lastTouched +
+                ", processingStarted=" + processingStarted +
+                ", causeType='" + causeType + '\'' +
+                ", causeMessage='" + causeMessage + '\'' +
+                ", diagnostics=" + Arrays.toString(diagnostics) +
+                '}';
     }
 }

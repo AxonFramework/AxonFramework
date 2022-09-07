@@ -30,9 +30,8 @@
                       value="jdbc:hsqldb:mem:tokens"/>
         </properties>
     </persistence-unit>
-    <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+    <persistence-unit name="jpatest" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.common.jpa.TestJpaEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.dialect"
@@ -44,7 +43,7 @@
             <property name="hibernate.connection.username" value="sa"/>
             <property name="hibernate.connection.password" value=""/>
             <property name="hibernate.connection.url"
-                      value="jdbc:hsqldb:mem:dlq"/>
+                      value="jdbc:hsqldb:mem:jpa"/>
         </properties>
     </persistence-unit>
 </persistence>
