@@ -29,16 +29,17 @@ import static org.mockito.Mockito.*;
 
 class MultiSpanFactoryTest {
 
-    SpanFactory spanFactory1 = mock(SpanFactory.class);
-    Span mockSpan1 = mock(Span.class);
-    SpanFactory spanFactory2 = mock(SpanFactory.class);
-    Span mockSpan2 = mock(Span.class);
-    SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
-    GenericEventMessage<?> message = new GenericEventMessage<>("payload");
-    Supplier<String> stringSupplier = () -> "Trace";
+    private final SpanFactory spanFactory1 = mock(SpanFactory.class);
+    private final Span mockSpan1 = mock(Span.class);
+    private final SpanFactory spanFactory2 = mock(SpanFactory.class);
+    private final Span mockSpan2 = mock(Span.class);
+    private final SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
+
+    private final GenericEventMessage<?> message = new GenericEventMessage<>("payload");
+    private final Supplier<String> stringSupplier = () -> "Trace";
 
     @Test
-    void rootTracesCreatedWillDelegateToBothFactories() {
+    void rootTracesCreatedWillDelegateToAllFactories() {
         when(spanFactory1.createRootTrace(any())).thenReturn(mockSpan1);
         when(spanFactory2.createRootTrace(any())).thenReturn(mockSpan2);
 
@@ -60,7 +61,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void handlerSpansCreatedWillDelegateToBothFactories() {
+    void handlerSpansCreatedWillDelegateToAllFactories() {
         multiSpanFactory.createHandlerSpan(stringSupplier, message, false);
 
         Mockito.verify(spanFactory1).createHandlerSpan(stringSupplier, message, false);
@@ -68,7 +69,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void dispatchSpansCreatedWillDelegateToBothFactories() {
+    void dispatchSpansCreatedWillDelegateToAllFactories() {
         multiSpanFactory.createDispatchSpan(stringSupplier, message);
 
         Mockito.verify(spanFactory1).createDispatchSpan(stringSupplier, message);
@@ -76,7 +77,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void internalSpansCreatedWillDelegateToBothFactories() {
+    void internalSpansCreatedWillDelegateToAllFactories() {
         multiSpanFactory.createInternalSpan(stringSupplier);
 
         Mockito.verify(spanFactory1).createInternalSpan(stringSupplier);
@@ -84,7 +85,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void internalSpansWithMessageCreatedWillDelegateToBothFactories() {
+    void internalSpansWithMessageCreatedWillDelegateToAllFactories() {
         multiSpanFactory.createInternalSpan(stringSupplier, message);
 
         Mockito.verify(spanFactory1).createInternalSpan(stringSupplier, message);
@@ -92,7 +93,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void registerSpanAttributeProviderWillDelegate() {
+    void registerSpanAttributeProviderWillDelegateToAllFactories() {
         SpanAttributesProvider provider = mock(SpanAttributesProvider.class);
         multiSpanFactory.registerSpanAttributeProvider(provider);
 
@@ -101,7 +102,7 @@ class MultiSpanFactoryTest {
     }
 
     @Test
-    void propagateContextCallsBoth() {
+    void propagateContextDelegateToAllFactories() {
         Message original = mock(Message.class);
         Message modifiedFirst = mock(Message.class);
         Message modifiedSecond = mock(Message.class);

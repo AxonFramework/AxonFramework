@@ -73,10 +73,12 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanCanBeStartedAndEnded() {
-        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
     }
 
     @Test
@@ -84,37 +86,45 @@ class LoggingSpanFactoryTest {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
-        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
-        uow.commit();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+            uow.commit();
+        });
     }
 
     @Test
     void handlingSpanCanBeStartedAndEnded() {
         GenericEventMessage message = new GenericEventMessage("payload");
-        Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", message, true);
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createHandlerSpan(() -> "Trace", message, true);
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
     }
 
     @Test
     void rootSpanCanBeStartedAndEnded() {
-        Span trace = LoggingSpanFactory.INSTANCE.createRootTrace(() -> "Trace");
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createRootTrace(() -> "Trace");
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
     }
 
     @Test
     void dispatchSpanCanBeStartedAndEnded() {
         CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("My command");
-        Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
     }
 
     @Test
@@ -123,20 +133,24 @@ class LoggingSpanFactoryTest {
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         GenericEventMessage message = new GenericEventMessage("payload");
-        Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", message);
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", message);
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
         uow.commit();
     }
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEnded() {
         GenericEventMessage message = new GenericEventMessage("payload");
-        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
     }
 
     @Test
@@ -145,10 +159,12 @@ class LoggingSpanFactoryTest {
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         GenericEventMessage message = new GenericEventMessage("payload");
-        Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
-        trace.start()
-             .recordException(new RuntimeException("My test exception"))
-             .end();
+        assertDoesNotThrow(() -> {
+            Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", message);
+            trace.start()
+                 .recordException(new RuntimeException("My test exception"))
+                 .end();
+        });
         uow.commit();
     }
 }

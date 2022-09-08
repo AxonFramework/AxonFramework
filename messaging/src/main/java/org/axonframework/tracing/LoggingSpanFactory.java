@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * Implementation of a {@link SpanFactory} that requires no java agent or APM system, only logging. Will log tracing
  * information to info level, with the following identifying prefix: {@code {spanId}{spanName}}.
  * <p>
- * When traces are related to a message, the message type and identifier is logged as well. If a message is dispatched
+ * When traces are related to a message, the message type and identifier are logged as well. If a message is dispatched
  * while currently handling a message in the {@link org.axonframework.messaging.unitofwork.UnitOfWork}, it will log the
  * information regarding the message being handled as well.
  *
@@ -36,6 +36,7 @@ import java.util.function.Supplier;
  * @since 4.6.0
  */
 public class LoggingSpanFactory implements SpanFactory {
+
     /**
      * Singleton instance of the {@link LoggingSpanFactory}.
      */
@@ -48,100 +49,54 @@ public class LoggingSpanFactory implements SpanFactory {
 
     @Override
     public Span createRootTrace(Supplier<String> operationNameSupplier) {
-        return new Slf4jSpan(operationNameSupplier.get()) {
-            @Override
-            public void doStart() {
-                logger.info("[{}][{}] Root trace starting", identifier, name);
-            }
-        };
+        return new Slf4jSpan(operationNameSupplier, () -> "Root trace started");
     }
 
     @Override
     public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
                                   boolean isChildTrace, Message<?>... linkedParents) {
-        return new Slf4jSpan(operationNameSupplier.get()) {
-            @Override
-            public void doStart() {
-                logger.info("[{}][{}] Handler span starting for message of type [{}] and identifier [{}]",
-                            identifier,
-                            name,
-                            parentMessage.getClass().getSimpleName(),
-                            parentMessage.getIdentifier());
-            }
-        };
+        return new Slf4jSpan(operationNameSupplier,
+                             () -> String.format("Handler span started for message of type [%s] and identifier [%s]",
+                                                 parentMessage.getClass().getSimpleName(),
+                                                 parentMessage.getIdentifier()));
     }
 
     @Override
     public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
                                    Message<?>... linkedSiblings) {
-        return new Slf4jSpan(operationNameSupplier.get()) {
-            @Override
-            public void doStart() {
-                if (CurrentUnitOfWork.isStarted()) {
-                    Message<?> handlingMessage = CurrentUnitOfWork.get().getMessage();
-                    logger.info(
-                            "[{}][{}] Dispatch span started for message of type [{}] and identifier [{}] while handling message of type [{}] and identifier [{}]",
-                            identifier,
-                            name,
-                            parentMessage.getClass().getSimpleName(),
-                            parentMessage.getIdentifier(),
-                            handlingMessage.getClass().getSimpleName(),
-                            handlingMessage.getIdentifier());
-                } else {
-                    logger.info("[{}][{}] Dispatch span started for message of type [{}] and identifier [{}]",
-                                identifier,
-                                name,
-                                parentMessage.getClass().getSimpleName(),
-                                parentMessage.getIdentifier());
-                }
-            }
-        };
+        return new Slf4jSpan(operationNameSupplier, () -> getSpanMessage("Dispatch", parentMessage));
+    }
+
+    private String getSpanMessage(String spanType, Message<?> parentMessage) {
+        return CurrentUnitOfWork
+                .map(uow -> String.format(
+                        "%s span started for message of type [%s] and identifier [%s] while handling message of type [%s] and identifier [%s]",
+                        spanType,
+                        parentMessage.getClass().getSimpleName(),
+                        parentMessage.getIdentifier(),
+                        uow.getMessage().getClass().getSimpleName(),
+                        uow.getMessage().getIdentifier()))
+                .orElseGet(() -> String.format(
+                        "%s span started for message of type [%s] and identifier [%s]",
+                        spanType,
+                        parentMessage.getClass().getSimpleName(),
+                        parentMessage.getIdentifier()));
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier) {
-        return new Slf4jSpan(operationNameSupplier.get()) {
-            @Override
-            public void doStart() {
-                if (CurrentUnitOfWork.isStarted()) {
-                    Message<?> handlingMessage = CurrentUnitOfWork.get().getMessage();
-                    logger.info(
-                            "[{}][{}] Internal span starting while handling message of type [{}] and identifier [{}]",
-                            identifier,
-                            name,
-                            handlingMessage.getClass().getSimpleName(),
-                            handlingMessage.getIdentifier());
-                } else {
-                    logger.info("[{}][{}] Internal span starting", identifier, name);
-                }
-            }
-        };
+        return new Slf4jSpan(operationNameSupplier,
+                             () -> CurrentUnitOfWork
+                                     .map(uow -> String.format(
+                                             "Internal span started while handling message of type [%s] and identifier [%s]",
+                                             uow.getMessage().getClass().getSimpleName(),
+                                             uow.getMessage().getIdentifier()))
+                                     .orElseGet(() -> "Internal span started"));
     }
 
     @Override
     public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
-        return new Slf4jSpan(operationNameSupplier.get()) {
-            @Override
-            public void doStart() {
-                if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().getMessage() != message) {
-                    Message<?> handlingMessage = CurrentUnitOfWork.get().getMessage();
-                    logger.info(
-                            "[{}][{}] Internal span starting for message of type [{}] and identifier [{}] while handling message of type [{}] and identifier [{}]",
-                            identifier,
-                            name,
-                            handlingMessage.getClass().getSimpleName(),
-                            handlingMessage.getIdentifier(),
-                            message.getClass().getSimpleName(),
-                            message.getIdentifier());
-                } else {
-                    logger.info("[{}][{}] Internal span starting for message of type [{}] and identifier [{}]",
-                                identifier,
-                                name,
-                                message.getClass().getSimpleName(),
-                                message.getIdentifier());
-                }
-            }
-        };
+        return new Slf4jSpan(operationNameSupplier, () -> getSpanMessage("Internal", message));
     }
 
     @Override
@@ -154,21 +109,21 @@ public class LoggingSpanFactory implements SpanFactory {
         return message;
     }
 
-    private abstract static class Slf4jSpan implements Span {
+    private static class Slf4jSpan implements Span {
 
         protected final String identifier;
         protected final String name;
+        protected final Supplier<String> startLog;
 
-        private Slf4jSpan(String name) {
+        private Slf4jSpan(Supplier<String> nameSupplier, Supplier<String> startLog) {
+            this.startLog = startLog;
             this.identifier = IdentifierFactory.getInstance().generateIdentifier();
-            this.name = name;
+            this.name = nameSupplier.get();
         }
-
-        abstract void doStart();
 
         @Override
         public Span start() {
-            doStart();
+            logger.info("[{}][{}] {}", identifier, name, startLog.get());
             return this;
         }
 

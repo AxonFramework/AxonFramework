@@ -23,8 +23,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of a {@link SpanFactory} that can delegates calls to multiple other factories. This can be useful if
- * you want the {@link LoggingSpanFactory} to be used in conjunction with another.
+ * Implementation of a {@link SpanFactory} that delegates calls to multiple other factories. Because only a single
+ * {@code SpanFactory} can be configured, this is useful when you need to combine several {@code SpanFactory}
+ * implementations to be used as a single factory.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
