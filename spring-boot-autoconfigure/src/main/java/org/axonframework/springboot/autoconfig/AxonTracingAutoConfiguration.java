@@ -28,12 +28,15 @@ import org.axonframework.tracing.attributes.MessageNameSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MetadataSpanAttributesProvider;
 import org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * Configures common tracing components for Axon Framework. Defaults to the {@link NoOpSpanFactory} if no other
@@ -60,9 +63,15 @@ public class AxonTracingAutoConfiguration {
     @Bean
     public HandlerEnhancerDefinition tracingHandlerEnhancerDefinition(SpanFactory spanFactory,
                                                                       TracingProperties properties) {
-        return TracingHandlerEnhancerDefinition.builder().spanFactory(spanFactory)
+        return TracingHandlerEnhancerDefinition.builder()
+                                               .spanFactory(spanFactory)
                                                .showEventSourcingHandlers(properties.isShowEventSourcingHandlers())
                                                .build();
+    }
+
+    @Autowired
+    public void configureSpanAttributeProviders(SpanFactory spanFactory, List<SpanAttributesProvider> spanAttributesProviders) {
+        spanAttributesProviders.forEach(spanFactory::registerSpanAttributeProvider);
     }
 
     @Bean

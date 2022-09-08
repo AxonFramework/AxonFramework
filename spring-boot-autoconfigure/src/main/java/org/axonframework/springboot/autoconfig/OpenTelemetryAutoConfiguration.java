@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -24,8 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 /**
  * Automatically configured the {@link OpenTelemetrySpanFactory} as the method of providing tracing in Axon Framework.
@@ -41,9 +38,8 @@ public class OpenTelemetryAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(SpanFactory.class)
-    public SpanFactory spanFactory(List<SpanAttributesProvider> attributesProviders) {
+    public SpanFactory spanFactory() {
         return OpenTelemetrySpanFactory.builder()
-                                       .addSpanAttributeProviders(attributesProviders)
                                        .build();
     }
 }
