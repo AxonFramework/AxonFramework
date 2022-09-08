@@ -79,6 +79,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final String SAGA_ENDED = "saga-ended";
     private static final boolean LIVE = false;
     private static final boolean CLOSED = true;
+    // This ensures we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
 
     protected Configuration configuration;
     protected TestSpanFactory spanFactory;
@@ -93,7 +95,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                                                       .storageEngine(new InMemoryEventStorageEngine())
                                                       .spanFactory(spanFactory)
                                                       .build());
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        Configurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerSaga(MySaga.class);

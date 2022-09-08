@@ -17,14 +17,14 @@
 package org.axonframework.integrationtests.eventsourcing;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.modelling.command.EntityId;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.command.EntityId;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,19 +32,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class NestedUnitOfWorkTest {
+
+    // This ensures we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
+
     @Test
     void stagedEventsLoadInCorrectOrder() {
-        Configuration config = DefaultConfigurer.defaultConfiguration()
+        Configuration config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                                 .configureAggregate(TestAggregate.class)
                                                 .registerCommandHandler(x -> new Handler())
                                                 .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
                                                 .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
                                                 .buildConfiguration();
-
 
         config.start();
         CommandGateway gw = config.commandGateway();

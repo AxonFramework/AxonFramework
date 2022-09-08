@@ -606,6 +606,10 @@ class TrackingEventProcessorTest {
 
     @Test
     void tokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing().
+                                                         andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                      builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE));
+
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
@@ -1558,7 +1562,8 @@ class TrackingEventProcessorTest {
                                                        .collect(toList());
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
-        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2),
+                      builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE));
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
@@ -1926,7 +1931,8 @@ class TrackingEventProcessorTest {
                 };
             }
         };
-        initProcessor(tepConfiguration, builder -> builder.messageSource(enhancedEventStore));
+        initProcessor(tepConfiguration, builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE)
+                                                          .messageSource(enhancedEventStore));
         testSubject.start();
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(hasNextInvoked.get()));
