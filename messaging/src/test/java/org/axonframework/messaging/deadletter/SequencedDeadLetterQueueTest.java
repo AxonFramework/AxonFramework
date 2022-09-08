@@ -25,15 +25,18 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,21 +61,21 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      *
      * @return A {@link SequencedDeadLetterQueue} implementation under test.
      */
-    abstract SequencedDeadLetterQueue<M> buildTestSubject();
+    protected abstract SequencedDeadLetterQueue<M> buildTestSubject();
 
     /**
      * Return the configured maximum amount of sequences for the {@link #buildTestSubject() test subject}.
      *
      * @return The configured maximum amount of sequences for the {@link #buildTestSubject() test subject}.
      */
-    abstract long maxSequences();
+    protected abstract long maxSequences();
 
     /**
      * Return the configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
      *
      * @return The configured maximum size of a sequence for the {@link #buildTestSubject() test subject}.
      */
-    abstract long maxSequenceSize();
+    protected abstract long maxSequenceSize();
 
     @Test
     void enqueueAddsDeadLetter() {
@@ -184,15 +187,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(testSubject.contains(testId));
         Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultLetters.hasNext());
-        assertEquals(testLetter, resultLetters.next());
+        assertLetter(testLetter, resultLetters.next());
         assertFalse(resultLetters.hasNext());
 
-        testSubject.evict(generateInitialLetter());
+        testSubject.evict(mapToQueueImplementation(generateInitialLetter()));
 
         assertTrue(testSubject.contains(testId));
         resultLetters = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultLetters.hasNext());
-        assertEquals(testLetter, resultLetters.next());
+        assertLetter(testLetter, resultLetters.next());
         assertFalse(resultLetters.hasNext());
     }
 
@@ -205,15 +208,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertTrue(testSubject.contains(testId));
         Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultLetters.hasNext());
-        assertEquals(testLetter, resultLetters.next());
+        assertLetter(testLetter, resultLetters.next());
         assertFalse(resultLetters.hasNext());
 
-        testSubject.evict(generateInitialLetter());
+        testSubject.evict(mapToQueueImplementation(generateInitialLetter()));
 
         assertTrue(testSubject.contains(testId));
         resultLetters = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultLetters.hasNext());
-        assertEquals(testLetter, resultLetters.next());
+        assertLetter(testLetter, resultLetters.next());
         assertFalse(resultLetters.hasNext());
     }
 
@@ -241,7 +244,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     void requeueThrowsNoSuchDeadLetterExceptionForNonExistentSequenceIdentifier() {
         DeadLetter<M> testLetter = generateInitialLetter();
 
-        assertThrows(NoSuchDeadLetterException.class, () -> testSubject.requeue(testLetter, l -> l));
+        assertThrows(NoSuchDeadLetterException.class,
+                     () -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l));
     }
 
     @Test
@@ -252,7 +256,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
         testSubject.enqueue(testId, testLetter);
 
-        assertThrows(NoSuchDeadLetterException.class, () -> testSubject.requeue(otherTestLetter, l -> l));
+        assertThrows(NoSuchDeadLetterException.class,
+                     () -> testSubject.requeue(mapToQueueImplementation(otherTestLetter), l -> l));
     }
 
     @Test
@@ -306,7 +311,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
         resultIterator = testSubject.deadLetterSequence(testId).iterator();
         assertTrue(resultIterator.hasNext());
-        assertEquals(expected, resultIterator.next());
+        assertLetter(expected, resultIterator.next());
         assertFalse(resultIterator.hasNext());
     }
 
@@ -334,15 +339,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
             Iterator<DeadLetter<? extends M>> resultLetters = result.next().iterator();
             while (resultLetters.hasNext()) {
                 DeadLetter<? extends M> resultLetter = resultLetters.next();
-                if (resultLetter.equals(thisFirstExpected)) {
-                    assertEquals(thisFirstExpected, resultLetter);
+                if (equals(thisFirstExpected).test(resultLetter)) {
+                    assertLetter(thisFirstExpected, resultLetter);
                     assertTrue(resultLetters.hasNext());
-                    assertEquals(thisSecondExpected, resultLetters.next());
+                    assertLetter(thisSecondExpected, resultLetters.next());
                     assertFalse(resultLetters.hasNext());
                 } else {
-                    assertEquals(thatFirstExpected, resultLetter);
+                    assertLetter(thatFirstExpected, resultLetter);
                     assertTrue(resultLetters.hasNext());
-                    assertEquals(thatSecondExpected, resultLetters.next());
+                    assertLetter(thatSecondExpected, resultLetters.next());
                     assertFalse(resultLetters.hasNext());
                 }
             }
@@ -503,7 +508,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         testSubject.enqueue(testThisId, testThisLetter);
 
         // Move time to impose changes to enqueuedAt and lastTouched.
-        setAndGetTime();
+        setAndGetTime(Instant.now().plus(5, ChronoUnit.SECONDS));
         Object testThatId = generateId();
         DeadLetter<? extends M> testThatLetter = generateInitialLetter();
         testSubject.enqueue(testThatId, testThatLetter);
@@ -555,6 +560,41 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         assertLetter(thirdTestLetter, resultSequence.pollFirst());
     }
 
+    @Test
+    void processHandlesMassiveAmountOfLettersInSequence() {
+        AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
+        Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
+            Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
+            if (sequence == null) {
+                sequence = new LinkedList<>();
+            }
+            sequence.addLast(letter);
+            resultLetters.set(sequence);
+            return Decisions.evict();
+        };
+
+        Object testId = generateId();
+        DeadLetter<? extends M> firstTestLetter = generateInitialLetter();
+        testSubject.enqueue(testId, firstTestLetter);
+
+        List<DeadLetter<M>> expectedOrderList = new LinkedList<>();
+        long loopSize = maxSequences() - 5;
+        for (int i = 0; i < loopSize; i++) {
+            DeadLetter<M> deadLetter = generateFollowUpLetter();
+            expectedOrderList.add(deadLetter);
+            testSubject.enqueueIfPresent(testId, () -> deadLetter);
+        }
+
+        boolean result = testSubject.process(testTask);
+        assertTrue(result);
+        Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
+
+        assertLetter(firstTestLetter, resultSequence.pollFirst());
+        for (int i = 0; i < loopSize; i++) {
+            assertLetter(expectedOrderList.get(i), resultSequence.pollFirst());
+        }
+    }
+
     /**
      * A "claimed sequence" in this case means that a process task for a given "sequence identifier" is still processing
      * the sequence. Furthermore, if it's the sole sequence, the processing task will not be invoked. This approach
@@ -590,7 +630,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
         Thread blockingProcess = new Thread(() -> testSubject.process(blockingTask));
         blockingProcess.start();
-        assertTrue(isBlocking.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(isBlocking.await(100, TimeUnit.MILLISECONDS));
 
         boolean result = testSubject.process(nonBlockingTask);
         assertFalse(result);
@@ -633,13 +673,17 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         DeadLetter<? extends M> testThatLetter = generateInitialLetter();
         testSubject.enqueue(testThatId, testThatLetter);
 
-        boolean result = testSubject.process(letter -> letter.message().equals(testThisLetter.message()), testTask);
+        boolean result = testSubject.process(equals(testThisLetter), testTask);
         assertTrue(result);
         assertLetter(testThisLetter, resultLetter.get());
 
-        result = testSubject.process(letter -> letter.message().equals(testThatLetter.message()), testTask);
+        result = testSubject.process(equals(testThatLetter), testTask);
         assertTrue(result);
         assertLetter(testThatLetter, resultLetter.get());
+    }
+
+    private Predicate<DeadLetter<? extends M>> equals(DeadLetter<? extends M> expected) {
+        return actual -> expected.message().getIdentifier().equals(actual.message().getIdentifier());
     }
 
     @Test
@@ -657,7 +701,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         // Add non-matching-id letter
         testSubject.enqueue(nonMatchingId, generateInitialLetter());
 
-        boolean result = testSubject.process(letter -> letter.message().equals(testLetter.message()), testTask);
+        boolean result = testSubject.process(letter -> letter.message().getPayload()
+                                                             .equals(testLetter.message().getPayload()), testTask);
         assertTrue(result);
         assertLetter(testLetter, resultLetter.get());
 
@@ -668,6 +713,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
     @Test
     void processWithLetterPredicateReturnsFalseAndRequeuesTheLetter() {
+        setAndGetTime();
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
         MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
@@ -687,7 +733,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         DeadLetter<M> expectedRequeuedLetter =
                 generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
 
-        boolean result = testSubject.process(letter -> letter.message().equals(testLetter.message()), testTask);
+        boolean result = testSubject.process(equals(testLetter), testTask);
         assertFalse(result);
         assertLetter(testLetter, resultLetter.get());
 
@@ -701,6 +747,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
     @SuppressWarnings("ConstantConditions")
     @Test
     void processWithLetterPredicateHandlesAllLettersInSequence() {
+        setAndGetTime();
         AtomicReference<Deque<DeadLetter<? extends M>>> resultLetters = new AtomicReference<>();
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             Deque<DeadLetter<? extends M>> sequence = resultLetters.get();
@@ -727,7 +774,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         // Add another letter in a different sequence that we do not expect to receive.
         testSubject.enqueue(generateId(), generateInitialLetter());
 
-        boolean result = testSubject.process(letter -> letter.equals(firstTestLetter), testTask);
+        boolean result = testSubject.process(equals(firstTestLetter), testTask);
         assertTrue(result);
         Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
@@ -773,13 +820,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
         testSubject.enqueue(nonMatchingId, generateInitialLetter());
 
         Thread blockingProcess = new Thread(() -> testSubject.process(
-                letter -> letter.message().equals(testLetter.message()),
+                equals(testLetter),
                 blockingTask
         ));
         blockingProcess.start();
-        assertTrue(isBlocking.await(10, TimeUnit.MILLISECONDS));
+        assertTrue(isBlocking.await(100, TimeUnit.MILLISECONDS));
 
-        boolean result = testSubject.process(letter -> letter.message().equals(testLetter.message()), nonBlockingTask);
+        boolean result = testSubject.process(equals(testLetter), nonBlockingTask);
         assertFalse(result);
         assertFalse(invoked.get());
 
@@ -846,7 +893,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      *
      * @return A {@link DeadLetter} implementation expected by the test subject.
      */
-    abstract DeadLetter<M> generateInitialLetter();
+    protected abstract DeadLetter<M> generateInitialLetter();
 
     /**
      * Generate a follow-up {@link DeadLetter} implementation expected by the test subject with the given
@@ -855,7 +902,20 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return A follow-up {@link DeadLetter} implementation expected by the test subject with the given
      * {@code sequenceIdentifier}.
      */
-    abstract DeadLetter<M> generateFollowUpLetter();
+    protected abstract DeadLetter<M> generateFollowUpLetter();
+
+    /**
+     * Generates a {@link DeadLetter} implementation specific to the {@link SequencedDeadLetterQueue} tested. Should use
+     * the original properties set on the provided {@code deadLetter}.
+     * <p>
+     * By default, it keeps the original the way it is.
+     *
+     * @param deadLetter The dead letter to convert.
+     * @return The converted dead letter.
+     */
+    protected DeadLetter<M> mapToQueueImplementation(DeadLetter<M> deadLetter) {
+        return deadLetter;
+    }
 
     /**
      * Generate a {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
@@ -886,10 +946,10 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return A {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
      * that's requeued.
      */
-    abstract DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
-                                                  Instant lastTouched,
-                                                  Throwable requeueCause,
-                                                  MetaData diagnostics);
+    protected abstract DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
+                                                            Instant lastTouched,
+                                                            Throwable requeueCause,
+                                                            MetaData diagnostics);
 
     /**
      * Set the current time for testing to {@link Instant#now()} and return this {@code Instant}.
@@ -917,7 +977,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      *
      * @param clock The clock to use during testing.
      */
-    abstract void setClock(Clock clock);
+    protected abstract void setClock(Clock clock);
 
     /**
      * Assert whether the {@code expected} {@link DeadLetter} matches the {@code actual} {@code DeadLetter} of type

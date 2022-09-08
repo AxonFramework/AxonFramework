@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author Mitchel Herrijgers
  * @since 4.6.0
  */
-class ThrowableCause implements Cause {
+public class ThrowableCause implements Cause {
 
     private final String type;
     private final String message;
