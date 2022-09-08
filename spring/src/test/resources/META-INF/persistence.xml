@@ -21,6 +21,8 @@
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
         <properties>
             <property name="hibernate.archive.autodetection" value="class"/>
         </properties>

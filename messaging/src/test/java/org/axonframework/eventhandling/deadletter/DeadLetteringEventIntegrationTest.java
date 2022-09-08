@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling.deadletter;
 
-import org.axonframework.common.transaction.NoTransactionManager;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -77,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class DeadLetteringEventIntegrationTest {
 
-    private static final String PROCESSING_GROUP = "problematicProcessingGroup";
+    protected static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;
@@ -88,6 +90,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
     private InMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
+    protected TransactionManager transactionManager;
 
     private ScheduledExecutorService executor;
 
@@ -96,12 +99,15 @@ public abstract class DeadLetteringEventIntegrationTest {
      *
      * @return A {@link SequencedDeadLetterQueue} implementation used during the integration test.
      */
-    abstract SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue();
+    protected abstract SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue();
+
+    protected TransactionManager getTransactionManager() {
+        return new NoOpTransactionManager();
+    }
 
     @BeforeEach
     void setUp() {
-        TransactionManager transactionManager = NoTransactionManager.instance();
-
+        transactionManager = getTransactionManager();
         eventHandlingComponent = new ProblematicEventHandlingComponent();
         deadLetterQueue = buildDeadLetterQueue();
 
@@ -243,15 +249,17 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
 
         assertTrue(deadLetterQueue.contains(aggregateId));
-        Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
-                                                                                  .iterator();
-        assertTrue(sequence.hasNext());
-        assertEquals(firstDeadLetter, sequence.next().message().getPayload());
-        assertTrue(sequence.hasNext());
-        assertEquals(secondDeadLetter, sequence.next().message().getPayload());
-        assertTrue(sequence.hasNext());
-        assertEquals(thirdDeadLetter, sequence.next().message().getPayload());
-        assertFalse(sequence.hasNext());
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
+                                                                                      .iterator();
+            assertTrue(sequence.hasNext());
+            assertEquals(firstDeadLetter, sequence.next().message().getPayload());
+            assertTrue(sequence.hasNext());
+            assertEquals(secondDeadLetter, sequence.next().message().getPayload());
+            assertTrue(sequence.hasNext());
+            assertEquals(thirdDeadLetter, sequence.next().message().getPayload());
+            assertFalse(sequence.hasNext());
+        });
     }
 
     @Test
@@ -488,7 +496,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
             // Validate evaluation event handling...
             // Successful...
-            assertWithin(3, TimeUnit.SECONDS, () -> assertTrue(
+            assertWithin(15, TimeUnit.SECONDS, () -> assertTrue(
                     eventHandlingComponent.evaluationWasSuccessful(aggregateId)
             ));
             assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(
@@ -562,7 +570,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
 
         private void processInitialHandlingOf(DeadLetterableEvent event, String sequenceId) {
-            if (event.shouldSucceedOnFirstTry()) {
+            if (event.isShouldSucceed()) {
                 firstTrySuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 firstTryFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
@@ -571,7 +579,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
 
         private void processEvaluationOf(DeadLetterableEvent event, String sequenceId) {
-            if (event.shouldSucceedOnEvaluation()) {
+            if (event.isShouldSucceedOnEvaluation()) {
                 evaluationSuccesses.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             } else {
                 evaluationFailures.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
@@ -627,9 +635,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             this(aggregateIdentifier, shouldSucceed, true);
         }
 
-        private DeadLetterableEvent(String aggregateIdentifier,
-                                    boolean shouldSucceed,
-                                    boolean shouldSucceedOnEvaluation) {
+        @JsonCreator
+        public DeadLetterableEvent(@JsonProperty("aggregateIdentifier") String aggregateIdentifier,
+                                   @JsonProperty("shouldSucceed") boolean shouldSucceed,
+                                   @JsonProperty("shouldSucceedOnEvaluation") boolean shouldSucceedOnEvaluation) {
             this.aggregateIdentifier = aggregateIdentifier;
             this.shouldSucceed = shouldSucceed;
             this.shouldSucceedOnEvaluation = shouldSucceedOnEvaluation;
@@ -639,11 +648,11 @@ public abstract class DeadLetteringEventIntegrationTest {
             return aggregateIdentifier;
         }
 
-        public boolean shouldSucceedOnFirstTry() {
+        public boolean isShouldSucceed() {
             return shouldSucceed;
         }
 
-        public boolean shouldSucceedOnEvaluation() {
+        public boolean isShouldSucceedOnEvaluation() {
             return shouldSucceedOnEvaluation;
         }
 

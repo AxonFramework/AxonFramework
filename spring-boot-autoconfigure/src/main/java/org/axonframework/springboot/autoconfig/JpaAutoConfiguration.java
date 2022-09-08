@@ -46,7 +46,8 @@ import javax.sql.DataSource;
 @ConditionalOnBean(EntityManagerFactory.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",
-        "org.axonframework.modelling.saga.repository.jpa"
+        "org.axonframework.eventhandling.deadletter.jpa",
+        "org.axonframework.modelling.saga.repository.jpa",
 })
 public class JpaAutoConfiguration {
 
