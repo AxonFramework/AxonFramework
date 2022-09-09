@@ -57,7 +57,7 @@ public class TestSpanFactory implements SpanFactory {
         this.createdSpans.clear();
         this.propagatedContexts.clear();
         this.spanParents.clear();
-        logger.info("SpanFactory cleared");
+        logger.debug("SpanFactory cleared");
     }
 
     /**
@@ -288,7 +288,7 @@ public class TestSpanFactory implements SpanFactory {
             synchronized (activeSpan) {
                 activeSpan.addFirst(this);
             }
-            logger.info("+ {}", name);
+            logger.debug("+ {}", name);
             return this;
         }
 
@@ -298,12 +298,12 @@ public class TestSpanFactory implements SpanFactory {
             synchronized (activeSpan) {
                 activeSpan.remove(this);
             }
-            logger.info("- {}", name);
+            logger.debug("- {}", name);
         }
 
         @Override
         public Span recordException(Throwable t) {
-            logger.info("Recorded exception for span with name {}", name, t);
+            logger.debug("Recorded exception for span with name {}", name, t);
             this.exception = t;
             return this;
         }
