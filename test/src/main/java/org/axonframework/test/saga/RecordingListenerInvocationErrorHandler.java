@@ -24,8 +24,9 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
- * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements {@link ListenerInvocationErrorHandler}. Any Exception encountered
- * will be stored, after which the rest of the error handling will be handed off to the wrapped ListenerInvocationErrorHandler.
+ * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements
+ * {@link ListenerInvocationErrorHandler}. Any Exception encountered will be stored, after which the rest of the error
+ * handling will be handed off to the wrapped ListenerInvocationErrorHandler.
  *
  * @author Christian Vermorken
  * @since 4.6.0
@@ -34,12 +35,15 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
 
     private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
+    private boolean started = false;
     private Exception exception;
+    private boolean proceed = false;
 
     /**
      * Create a new instance of this class, wrapping another {@link ListenerInvocationErrorHandler}.
      *
-     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error handling, cannot be null.
+     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error
+     *                                       handling, cannot be null.
      */
     public RecordingListenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         if (listenerInvocationErrorHandler == null) {
@@ -51,21 +55,26 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     @Override
     public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
                         @Nonnull EventMessageHandler eventHandler) throws Exception {
+        if (!started && !proceed) {
+            throw exception;
+        }
         this.exception = exception;
         listenerInvocationErrorHandler.onError(exception, event, eventHandler);
     }
 
     /**
-     * Clear any current Exception.
+     * Start recording by clearing any current {@link Exception}.
      */
     public void startRecording() {
+        started = true;
         exception = null;
     }
 
     /**
      * Sets a new wrapped {@link ListenerInvocationErrorHandler}.
      *
-     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error handling, cannot be null.
+     * @param listenerInvocationErrorHandler The {@link ListenerInvocationErrorHandler} to invoke for the error
+     *                                       handling, cannot be null.
      */
     public void setListenerInvocationErrorHandler(ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         if (listenerInvocationErrorHandler == null) {
@@ -75,11 +84,24 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     }
 
     /**
-     * Return the last encountered Exception after the startRecording method has been invoked, or an empty Optional of no Exception occurred.
+     * Return the last encountered Exception after the startRecording method has been invoked, or an empty Optional of
+     * no Exception occurred.
      *
      * @return an Optional of the last encountered Exception
      */
     public Optional<Exception> getException() {
         return Optional.ofNullable(exception);
+    }
+
+    /**
+     * Configure whether this error handler should proceed when it catches an exception while it's not started yet.
+     * <p>
+     * When set to {@code false} will rethrow the exception, regardless of the configured
+     * {@link ListenerInvocationErrorHandler}. Defaults to {@code false}.
+     *
+     * @param proceed A {@code boolean} dictating whether to proceed if this recorder is not started.
+     */
+    public void proceedWhenNotStarted(boolean proceed) {
+        this.proceed = proceed;
     }
 }

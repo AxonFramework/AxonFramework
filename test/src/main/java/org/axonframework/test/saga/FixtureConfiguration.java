@@ -210,6 +210,24 @@ public interface FixtureConfiguration {
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
 
     /**
+     * Configure whether the fixture should proceed when exceptions are thrown during the given-phase. When
+     * {@code proceed} is {@code true}, the fixture moves on to the when-phase regardless of any exceptions thrown
+     * during the given-phase.
+     * <p>
+     * Note that setting this to {@code false} means the
+     * {@link #registerListenerInvocationErrorHandler(ListenerInvocationErrorHandler) registered}
+     * {@link ListenerInvocationErrorHandler} is not invoked during exception in the given-phase. Defaults to fail
+     * during given-phase exceptions.
+     *
+     * @param proceed A {@code boolean} describing whether the fixture should proceed on failures during the
+     *                given-phase.
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    default FixtureConfiguration proceedOnGivenPhaseExceptions(boolean proceed) {
+        return this;
+    }
+
+    /**
      * Registers a {@link ResourceInjector} within this fixture. This approach can be used if a custom {@code
      * ResourceInjector} has been built for a project which the user wants to take into account when testing it's
      * sagas.
