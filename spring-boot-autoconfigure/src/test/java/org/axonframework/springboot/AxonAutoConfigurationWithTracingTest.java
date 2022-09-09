@@ -29,6 +29,7 @@ import org.axonframework.tracing.attributes.MessageTypeSpanAttributesProvider;
 import org.axonframework.tracing.attributes.MetadataSpanAttributesProvider;
 import org.axonframework.tracing.attributes.PayloadTypeSpanAttributesProvider;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -43,6 +44,7 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 
 class AxonAutoConfigurationWithTracingTest {
 
@@ -214,6 +216,21 @@ class AxonAutoConfigurationWithTracingTest {
                     assertFalse(context.containsBean("payloadTypeSpanAttributesProvider"));
                     assertThrows(NoSuchBeanDefinitionException.class,
                                  () -> context.getBean(PayloadTypeSpanAttributesProvider.class));
+                });
+    }
+
+    @Test
+    void setsSpanAttributeProviderOnTracer() {
+        SpanFactory spanFactory = Mockito.mock(SpanFactory.class);
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(SpanFactory.class, () -> spanFactory)
+                .run(context -> {
+                    assertNotNull(context);
+                    assertSame(spanFactory, context.getBean(SpanFactory.class));
+
+                    int numberOfProviders = context.getBeansOfType(SpanAttributesProvider.class).size();
+                    Mockito.verify(spanFactory, Mockito.times(numberOfProviders)).registerSpanAttributeProvider(any());
                 });
     }
 
