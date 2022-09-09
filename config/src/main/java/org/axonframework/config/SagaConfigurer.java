@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,13 +224,14 @@ public class SagaConfigurer<T> {
                 managerBuilder = c -> {
                     EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();
                     return AnnotatedSagaManager.<S>builder()
-                            .sagaType(configurer.type)
-                            .sagaRepository(repository.get())
-                            .parameterResolverFactory(c.parameterResolverFactory())
-                            .handlerDefinition(c.handlerDefinition(configurer.type))
-                            .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
-                                    processingGroup()))
-                            .build();
+                                               .sagaType(configurer.type)
+                                               .sagaRepository(repository.get())
+                                               .parameterResolverFactory(c.parameterResolverFactory())
+                                               .handlerDefinition(c.handlerDefinition(configurer.type))
+                                               .listenerInvocationErrorHandler(eventProcessingConfiguration.listenerInvocationErrorHandler(
+                                                       processingGroup()))
+                                               .spanFactory(configuration.spanFactory())
+                                               .build();
                 };
             }
             manager = new Component<>(configuration, managerName, managerBuilder);

@@ -41,6 +41,7 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -193,6 +194,15 @@ public interface Configuration extends LifecycleOperations {
      */
     default TagsConfiguration tags() {
         return getComponent(TagsConfiguration.class);
+    }
+
+    /**
+     * Returns the {@link SpanFactory} defined in this configuration.
+     *
+     * @return the {@link SpanFactory} defined in this configuration.
+     */
+    default SpanFactory spanFactory() {
+        return getComponent(SpanFactory.class);
     }
 
     /**

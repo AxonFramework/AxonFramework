@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 class AddedTrackerStatusTest {
 
     @Test
-    void testGetSegment() {
+    void getSegment() {
         Segment expectedSegment = Segment.ROOT_SEGMENT;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getSegment()).thenReturn(expectedSegment);
@@ -43,7 +43,7 @@ class AddedTrackerStatusTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void testIsCaughtUp() {
+    void isCaughtUp() {
         boolean expectedIsCaughtUp = true;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.isCaughtUp()).thenReturn(expectedIsCaughtUp);
@@ -55,7 +55,7 @@ class AddedTrackerStatusTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void testIsReplaying() {
+    void isReplaying() {
         boolean expectedIsReplaying = true;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.isReplaying()).thenReturn(expectedIsReplaying);
@@ -67,7 +67,7 @@ class AddedTrackerStatusTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void testIsMerging() {
+    void isMerging() {
         boolean expectedIsMerging = true;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.isMerging()).thenReturn(expectedIsMerging);
@@ -78,7 +78,7 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testGetTrackingToken() {
+    void getTrackingToken() {
         TrackingToken expectedTrackingToken = new GlobalSequenceTrackingToken(0);
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getTrackingToken()).thenReturn(expectedTrackingToken);
@@ -90,7 +90,7 @@ class AddedTrackerStatusTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void testIsErrorState() {
+    void isErrorState() {
         boolean expectedIsErrorState = true;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.isErrorState()).thenReturn(expectedIsErrorState);
@@ -101,7 +101,7 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testGetError() {
+    void getError() {
         Exception expectedException = new IllegalArgumentException("some-exception");
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getError()).thenReturn(expectedException);
@@ -112,7 +112,7 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testGetCurrentPosition() {
+    void getCurrentPosition() {
         long expectedCurrentPosition = 0L;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getCurrentPosition()).thenReturn(OptionalLong.of(expectedCurrentPosition));
@@ -125,7 +125,7 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testGetResetPosition() {
+    void getResetPosition() {
         long expectedResetPosition = 0L;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.getResetPosition()).thenReturn(OptionalLong.of(expectedResetPosition));
@@ -138,7 +138,7 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testMergeCompletedPosition() {
+    void mergeCompletedPosition() {
         long expectedMergeCompletedPosition = 0L;
         EventTrackerStatus delegate = mock(EventTrackerStatus.class);
         when(delegate.mergeCompletedPosition()).thenReturn(OptionalLong.of(expectedMergeCompletedPosition));
@@ -151,14 +151,14 @@ class AddedTrackerStatusTest {
     }
 
     @Test
-    void testTrackerAdded() {
+    void trackerAdded() {
         AddedTrackerStatus testSubject = new AddedTrackerStatus(mock(EventTrackerStatus.class));
 
         assertTrue(testSubject.trackerAdded());
     }
 
     @Test
-    void testTrackerRemoved() {
+    void trackerRemoved() {
         AddedTrackerStatus testSubject = new AddedTrackerStatus(mock(EventTrackerStatus.class));
 
         assertFalse(testSubject.trackerRemoved());

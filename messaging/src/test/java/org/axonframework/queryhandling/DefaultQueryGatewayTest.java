@@ -64,7 +64,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQuery() throws Exception {
+    void pointToPointQuery() throws Exception {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         CompletableFuture<String> queryResponse = testSubject.query("query", String.class);
@@ -85,7 +85,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQuerySpecifyingQueryName() throws Exception {
+    void pointToPointQuerySpecifyingQueryName() throws Exception {
         String expectedQueryName = "myQueryName";
 
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
@@ -108,7 +108,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWithMetaData() throws Exception {
+    void pointToPointQueryWithMetaData() throws Exception {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
@@ -137,7 +137,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWhenQueryBusReportsAnError() throws Exception {
+    void pointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<>(String.class, expected)));
@@ -150,7 +150,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPointToPointQueryWhenQueryBusThrowsException() throws Exception {
+    void pointToPointQueryWhenQueryBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
         CompletableFuture<QueryResponseMessage<String>> queryResponseCompletableFuture = new CompletableFuture<>();
         queryResponseCompletableFuture.completeExceptionally(expected);
@@ -164,7 +164,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQuery() {
+    void scatterGatherQuery() {
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
 
@@ -192,7 +192,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQuerySpecifyingQueryName() {
+    void scatterGatherQuerySpecifyingQueryName() {
         String expectedQueryName = "myQueryName";
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
@@ -222,7 +222,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testScatterGatherQueryWithMetaData() {
+    void scatterGatherQueryWithMetaData() {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
         long expectedTimeout = 1L;
@@ -257,7 +257,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQuery() {
+    void subscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
@@ -281,7 +281,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQuerySpecifyingQueryName() {
+    void subscriptionQuerySpecifyingQueryName() {
         String expectedQueryName = "myQueryName";
 
         when(mockBus.subscriptionQuery(any(), anyInt()))
@@ -307,7 +307,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testSubscriptionQueryWithMetaData() {
+    void subscriptionQueryWithMetaData() {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
@@ -339,7 +339,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testDispatchInterceptor() {
+    void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
         testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
                 "dispatch-" + queryMessage.getPayload(),
@@ -354,7 +354,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testExceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+    void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, new MockException())),
@@ -372,7 +372,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testNullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+    void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.just(new GenericQueryResponseMessage<>(String.class, (String) null)),
@@ -387,7 +387,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testNullUpdatesOfSubscriptionQuerySkipped() {
+    void nullUpdatesOfSubscriptionQuerySkipped() {
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(
                         Mono.empty(),
@@ -403,7 +403,7 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void testPayloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
+    void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(completedFuture(new GenericQueryResponseMessage<String>("test") {
                     @Override

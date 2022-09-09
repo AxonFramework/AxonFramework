@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ReflectionUtilsTest {
 
     @Test
-    void testFindFieldsInClass() {
+    void findFieldsInClass() {
         Iterable<Field> actualFields = ReflectionUtils.fieldsOf(SomeSubType.class);
         int t = 0;
         for (Field actual : actualFields) {
@@ -61,7 +61,7 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testNonRecursivelyFindFieldsInClass() {
+    void nonRecursivelyFindFieldsInClass() {
         Iterable<Field> actualFields = ReflectionUtils.fieldsOf(SomeSubType.class, NOT_RECURSIVE);
         int t = 0;
         for (Field actual : actualFields) {
@@ -76,7 +76,7 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testFindMethodsInClass() {
+    void findMethodsInClass() {
         Iterable<Method> actualMethods = ReflectionUtils.methodsOf(SomeSubType.class);
         int t = 0;
         for (Method actual : actualMethods) {
@@ -107,7 +107,7 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testNonRecursivelyFindMethodsInClass() {
+    void nonRecursivelyFindMethodsInClass() {
         Iterable<Method> actualMethods = ReflectionUtils.methodsOf(SomeSubType.class, NOT_RECURSIVE);
         int t = 0;
         for (Method actual : actualMethods) {
@@ -129,13 +129,13 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetFieldValue() throws NoSuchFieldException {
+    void getFieldValue() throws NoSuchFieldException {
         Object value = ReflectionUtils.getFieldValue(SomeType.class.getDeclaredField("field1"), new SomeSubType());
         assertEquals("field1", value);
     }
 
     @Test
-    void testSetFieldValue() throws Exception {
+    void setFieldValue() throws Exception {
         int expectedFieldValue = 4;
         SomeSubType testObject = new SomeSubType();
         ReflectionUtils.setFieldValue(SomeSubType.class.getDeclaredField("field3"), testObject, expectedFieldValue);
@@ -143,7 +143,7 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testIsAccessible() throws NoSuchFieldException {
+    void isAccessible() throws NoSuchFieldException {
         Field field1 = SomeType.class.getDeclaredField("field1");
         Field field2 = SomeType.class.getDeclaredField("field2");
         Field field3 = SomeSubType.class.getDeclaredField("field3");
@@ -153,14 +153,14 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testExplicitlyUnequal_NullValues() {
+    void explicitlyUnequal_NullValues() {
         assertFalse(explicitlyUnequal(null, null));
         assertTrue(explicitlyUnequal(null, ""));
         assertTrue(explicitlyUnequal("", null));
     }
 
     @Test
-    void testHasEqualsMethod() {
+    void hasEqualsMethodTest() {
         assertTrue(hasEqualsMethod(String.class));
         assertTrue(hasEqualsMethod(ArrayList.class));
         assertFalse(hasEqualsMethod(SomeType.class));
@@ -168,35 +168,35 @@ class ReflectionUtilsTest {
 
     @SuppressWarnings("StringOperationCanBeSimplified")
     @Test
-    void testExplicitlyUnequal_ComparableValues() {
+    void explicitlyUnequal_ComparableValues() {
         assertFalse(explicitlyUnequal("value", new String("value")));
         assertTrue(explicitlyUnequal("value1", "value2"));
     }
 
     @Test
-    void testExplicitlyUnequal_OverridesEqualsMethod() {
+    void explicitlyUnequal_OverridesEqualsMethod() {
         assertFalse(explicitlyUnequal(Collections.singletonList("value"), Collections.singletonList("value")));
         assertTrue(explicitlyUnequal(Collections.singletonList("value1"), Collections.singletonList("value")));
     }
 
     @Test
-    void testExplicitlyUnequal_NoEqualsOrComparable() {
+    void explicitlyUnequal_NoEqualsOrComparable() {
         assertFalse(explicitlyUnequal(new SomeType(), new SomeType()));
     }
 
     @Test
-    void testResolvePrimitiveWrapperTypeForLong() {
+    void resolvePrimitiveWrapperTypeForLong() {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
     @Test
-    void testGetMemberValueFromField() throws NoSuchFieldException {
+    void getMemberValueFromField() throws NoSuchFieldException {
         assertEquals("field1",
                      ReflectionUtils.getMemberValue(SomeType.class.getDeclaredField("field1"), new SomeSubType()));
     }
 
     @Test
-    void testGetMemberValueFromMethod() throws NoSuchMethodException {
+    void getMemberValueFromMethod() throws NoSuchMethodException {
         assertEquals("field1",
                      ReflectionUtils.getMemberValue(SomeType.class.getDeclaredMethod("getField1"), new SomeSubType()));
         assertEquals("someMethodResult",
@@ -204,7 +204,7 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueFromVoidMethod() throws NoSuchMethodException {
+    void getMemberValueFromVoidMethod() throws NoSuchMethodException {
         SomeTypeWithMethods testObject = new SomeTypeWithMethods();
         Object voidReturnValue = getMemberValue(SomeTypeWithMethods.class.getDeclaredMethod("someVoidMethod"),
                                                 testObject);
@@ -213,20 +213,20 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueFromConstructor() throws NoSuchMethodException {
+    void getMemberValueFromConstructor() throws NoSuchMethodException {
         Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
         SomeSubType testTarget = new SomeSubType();
         assertThrows(IllegalStateException.class, () -> ReflectionUtils.getMemberValue(testConstructor, testTarget));
     }
 
     @Test
-    void testGetMemberValueTypeFromField() throws NoSuchFieldException {
+    void getMemberValueTypeFromField() throws NoSuchFieldException {
         Class<?> fieldType = getMemberValueType(SomeType.class.getDeclaredField("field1"));
         assertEquals(String.class, fieldType);
     }
 
     @Test
-    void testGetMemberValueTypeFromMethod() throws NoSuchMethodException {
+    void getMemberValueTypeFromMethod() throws NoSuchMethodException {
         Class<?> methodValueType = getMemberValueType(SomeSubType.class.getDeclaredMethod("getField3"));
         assertEquals(int.class, methodValueType);
         Class<?> voidResultType = getMemberValueType(SomeTypeWithMethods.class.getDeclaredMethod("someVoidMethod"));
@@ -234,13 +234,13 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testGetMemberValueTypeFromConstructor() throws NoSuchMethodException {
+    void getMemberValueTypeFromConstructor() throws NoSuchMethodException {
         Constructor<SomeType> testConstructor = SomeType.class.getDeclaredConstructor();
         assertThrows(IllegalStateException.class, () -> getMemberValueType(testConstructor));
     }
 
     @Test
-    void testInvokeAndGetMethodValue() throws NoSuchMethodException {
+    void invokeAndGetMethodValueTest() throws NoSuchMethodException {
         assertEquals("field1",
                      invokeAndGetMethodValue(SomeTypeWithMethods.class.getDeclaredMethod("getField1"), new SomeTypeWithMethods()));
         assertEquals("someMethodResult",
@@ -254,44 +254,59 @@ class ReflectionUtilsTest {
     }
 
     @Test
-    void testMemberGenericTypeFromField() throws NoSuchFieldException {
+    void memberGenericTypeFromField() throws NoSuchFieldException {
         Field field = SomeType.class.getDeclaredField("field1");
         Type memberGenericType = getMemberGenericType(field);
         assertEquals(field.getGenericType(), memberGenericType);
     }
 
     @Test
-    void testMemberGenericTypeFromMethod() throws NoSuchMethodException {
+    void memberGenericTypeFromMethod() throws NoSuchMethodException {
         Method method = SomeTypeWithMethods.class.getDeclaredMethod("someMethod");
         Type memberGenericType = getMemberGenericType(method);
         assertEquals(method.getGenericReturnType(), memberGenericType);
     }
 
     @Test
-    void testMemberGenericTypeFromConstructor() throws NoSuchMethodException {
+    void memberGenericTypeFromConstructor() throws NoSuchMethodException {
         Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
         assertThrows(IllegalStateException.class, () -> getMemberGenericType(constructor));
     }
 
     @Test
-    void testMemberGenericStringFromField() throws NoSuchFieldException {
+    void memberGenericStringFromField() throws NoSuchFieldException {
         Field field = SomeType.class.getDeclaredField("field1");
         String memberGenericString = getMemberGenericString(field);
         assertEquals(field.toGenericString(), memberGenericString);
     }
 
     @Test
-    void testMemberGenericStringFromMethod() throws NoSuchMethodException {
+    void memberGenericStringFromMethod() throws NoSuchMethodException {
         Method method = SomeTypeWithMethods.class.getDeclaredMethod("someMethod");
         String memberGenericString = getMemberGenericString(method);
         assertEquals(method.toGenericString(), memberGenericString);
     }
 
     @Test
-    void testMemberGenericStringFromConstructor() throws NoSuchMethodException {
+    void memberGenericStringFromConstructor() throws NoSuchMethodException {
         Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
         String memberGenericString = getMemberGenericString(constructor);
         assertEquals(constructor.toGenericString(), memberGenericString);
+    }
+
+
+    @Test
+    void toDiscernableSignatureOfConstructor() throws NoSuchMethodException {
+        Constructor<SomeTypeWithMethods> constructor = SomeTypeWithMethods.class.getDeclaredConstructor();
+        String memberGenericString = toDiscernibleSignature(constructor);
+        assertEquals("org.axonframework.common.ReflectionUtilsTest$SomeTypeWithMethods()", memberGenericString);
+    }
+
+    @Test
+    void toDiscernableSignatureOfMethod() throws NoSuchMethodException {
+        Method method = SomeTypeWithMethods.class.getMethod("someMethodWithParameters", String.class, Integer.class, Object.class);
+        String memberGenericString = toDiscernibleSignature(method);
+        assertEquals("someMethodWithParameters(java.lang.String,java.lang.Integer,java.lang.Object)", memberGenericString);
     }
 
     @SuppressWarnings("FieldCanBeLocal")
@@ -346,6 +361,10 @@ class ReflectionUtilsTest {
 
         public void someVoidMethod() {
             voidMethodInvocations.incrementAndGet();
+        }
+
+        public String someMethodWithParameters(String parameterOne, Integer parameterTwo, Object parameter3) {
+            return "someMethodWithParametersResult";
         }
     }
 }

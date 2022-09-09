@@ -62,47 +62,47 @@ class ConsistentHashTest {
     }
 
     @Test
-    void testConsistentHashChangesVersionWhenModified() {
+    void consistentHashChangesVersionWhenModified() {
         assertEquals(3, testSubject.version());
         assertEquals(4, testSubject.without(member1).version());
         assertEquals(4, testSubject.without(member1).without(member1).version());
     }
 
     @Test
-    void testMessageRoutedToFirstEligibleMember() {
+    void messageRoutedToFirstEligibleMember() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name1"));
         assertTrue(actual.isPresent());
         assertEquals("member1", actual.get().name());
     }
 
     @Test
-    void testMessageRoutedToNextEligibleMemberIfFirstChoiceIsRemoved() {
+    void messageRoutedToNextEligibleMemberIfFirstChoiceIsRemoved() {
         Optional<Member> actual = testSubject.without(member1).getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name1"));
         assertTrue(actual.isPresent());
         assertEquals("member2", actual.get().name());
     }
 
     @Test
-    void testNonEligibleMembersIgnored() {
+    void nonEligibleMembersIgnored() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "name3"));
         assertTrue(actual.isPresent());
         assertEquals("member3", actual.get().name());
     }
 
     @Test
-    void testNoMemberReturnedWhenNoEligibleMembers() {
+    void noMemberReturnedWhenNoEligibleMembers() {
         Optional<Member> actual = testSubject.getMember("routingKey", new GenericCommandMessage<>(new GenericMessage<>("test"), "unknown"));
         assertFalse(actual.isPresent());
     }
 
     @Test
-    void testEligibleMembersCorrectlyOrdered() {
+    void eligibleMembersCorrectlyOrdered() {
         Collection<ConsistentHash.ConsistentHashMember> actual = testSubject.getEligibleMembers("someOtherKey");
         assertEquals(asList("member2", "member1", "member3"), actual.stream().map(ConsistentHash.ConsistentHashMember::name).collect(Collectors.toList()));
     }
 
     @Test
-    void testConflictingHashesDoNotImpactMembership() {
+    void conflictingHashesDoNotImpactMembership() {
         ConsistentHash consistentHash = new ConsistentHash(s -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
         ConsistentHash consistentHashModified = consistentHash
                                                             .with(member2, 1, AcceptAll.INSTANCE)
@@ -112,7 +112,7 @@ class ConsistentHashTest {
     }
 
     @Test
-    void testNotEqualsForModifiedInstanceWithDefaultInstance() throws Exception {
+    void notEqualsForModifiedInstanceWithDefaultInstance() throws Exception {
         ConsistentHash consistentHash = new ConsistentHash(s -> "fixed").with(member1, 1, AcceptAll.INSTANCE);
         assertNotEquals(consistentHash, new ConsistentHash());
     }

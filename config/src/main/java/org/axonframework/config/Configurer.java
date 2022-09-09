@@ -33,6 +33,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -496,6 +497,18 @@ public interface Configurer extends LifecycleOperations {
     default Configurer configureDeadlineManager(
             @Nonnull Function<Configuration, DeadlineManager> deadlineManagerBuilder) {
         return registerComponent(DeadlineManager.class, deadlineManagerBuilder);
+    }
+
+    /**
+     * Registers a {@link SpanFactory} instance with this {@link Configurer}. Defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory} implementation.
+     *
+     * @param spanFactory a builder function for the {@link SpanFactory}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureSpanFactory(
+            @Nonnull Function<Configuration, SpanFactory> spanFactory) {
+        return registerComponent(SpanFactory.class, spanFactory);
     }
 
     /**

@@ -19,10 +19,17 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
+import org.axonframework.messaging.responsetypes.OptionalResponseType;
+import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.EmitterProcessor;
@@ -58,6 +65,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
+    private final SpanFactory spanFactory;
 
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
@@ -72,12 +80,14 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     protected SimpleQueryUpdateEmitter(Builder builder) {
         builder.validate();
         this.updateMessageMonitor = builder.updateMessageMonitor;
+        this.spanFactory = builder.spanFactory;
     }
 
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} is defauled
+     * to a {@link NoOpSpanFactory}.
      *
      * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
      */
@@ -140,7 +150,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          @Nonnull SubscriptionQueryUpdateMessage<U> update) {
-        runOnAfterCommitOrNow(() -> doEmit(filter, intercept(update)));
+        SubscriptionQueryUpdateMessage<U> updateMessage = spanFactory.propagateContext(update);
+        Span span = spanFactory.createInternalSpan(() -> "SimpleQueryUpdateEmitter.emit", updateMessage);
+        runOnAfterCommitOrNow(span.wrapRunnable(() -> doEmit(filter, intercept(updateMessage))));
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
@@ -176,26 +188,47 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                             SubscriptionQueryUpdateMessage<U> update) {
         updateHandlers.keySet()
                       .stream()
+      				  .filter(payloadMatchesQueryResponseType(update.getPayloadType()))
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
+    private Predicate<SubscriptionQueryMessage<?,?,?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
+		return sqm -> {
+			if(sqm.getUpdateResponseType() instanceof MultipleInstancesResponseType) {
+				return payloadType.isArray() ||	Iterable.class.isAssignableFrom(payloadType);
+			}
+			if(sqm.getUpdateResponseType() instanceof OptionalResponseType) {
+				return Optional.class.isAssignableFrom(payloadType);
+			}
+			if(sqm.getUpdateResponseType() instanceof PublisherResponseType) {
+				return Publisher.class.isAssignableFrom(payloadType);
+			}
+			return sqm.getUpdateResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
+		};
+	}
+
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
-        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
-        try {
-            ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
-            monitorCallback.reportSuccess();
-        } catch (Exception e) {
-            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString());
-            monitorCallback.reportFailure(e);
-            updateHandlers.remove(query);
-            emitError(query, e, updateHandler);
-        }
+        spanFactory
+                .createDispatchSpan(() -> "QueryUpdateEmitter.emit " + query.getQueryName(), update, query)
+                .run(() -> {
+                    SubscriptionQueryUpdateMessage<U> message = spanFactory.propagateContext(update);
+                    MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(message);
+                    try {
+                        ((SinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(message);
+                        monitorCallback.reportSuccess();
+                    } catch (Exception e) {
+                        logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                            "The subscription will be cancelled. Exception summary: {}",
+                                    query.getQueryName(), e.toString());
+                        monitorCallback.reportFailure(e);
+                        updateHandlers.remove(query);
+                        emitError(query, e, updateHandler);
+                    }
+                });
     }
 
     private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
@@ -279,12 +312,14 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     /**
      * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a
+     * {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
         private MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
                 NoOpMessageMonitor.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
@@ -298,6 +333,20 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                 @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
             assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
             this.updateMessageMonitor = updateMessageMonitor;
+            return this;
+        }
+
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 

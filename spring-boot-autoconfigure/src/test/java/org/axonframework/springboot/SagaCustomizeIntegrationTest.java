@@ -89,7 +89,7 @@ public class SagaCustomizeIntegrationTest {
     private EventProcessingModule eventProcessingModule;
 
     @Test
-    public void testPublishSomeEvents() throws InterruptedException {
+    public void publishSomeEvents() throws InterruptedException {
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertTrue(ep.isRunning()));

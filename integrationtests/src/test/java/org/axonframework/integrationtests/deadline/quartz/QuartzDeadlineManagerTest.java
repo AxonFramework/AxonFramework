@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                                          .scheduler(scheduler)
                                          .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                          .serializer(TestSerializer.xStreamSerializer())
+                                         .spanFactory(configuration.spanFactory())
                                          .build();
             scheduler.start();
             return quartzDeadlineManager;
@@ -57,7 +58,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testShutdownInvokesSchedulerShutdown(@Mock ScopeAwareProvider scopeAwareProvider) throws SchedulerException {
+    void shutdownInvokesSchedulerShutdown(@Mock ScopeAwareProvider scopeAwareProvider) throws SchedulerException {
         Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
         QuartzDeadlineManager testSubject = QuartzDeadlineManager.builder()
                                                                  .scopeAwareProvider(scopeAwareProvider)
@@ -71,7 +72,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testShutdownFailureResultsInDeadlineException(@Mock ScopeAwareProvider scopeAwareProvider)
+    void shutdownFailureResultsInDeadlineException(@Mock ScopeAwareProvider scopeAwareProvider)
             throws SchedulerException {
         Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
         doAnswer(invocation -> {
@@ -87,7 +88,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+    void buildWithoutSchedulerThrowsAxonConfigurationException() {
         ScopeAwareProvider scopeAwareProvider = mock(ScopeAwareProvider.class);
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()
@@ -98,7 +99,7 @@ class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void testBuildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
+    void buildWithoutScopeAwareProviderThrowsAxonConfigurationException() {
         Scheduler scheduler = mock(Scheduler.class);
         QuartzDeadlineManager.Builder builderTestSubject =
                 QuartzDeadlineManager.builder()

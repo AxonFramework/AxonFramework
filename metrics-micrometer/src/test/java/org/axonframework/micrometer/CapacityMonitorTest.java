@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CapacityMonitorTest {
 
     @Test
-    void testCapacityWithoutTags() {
+    void capacityWithoutTags() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",
@@ -62,7 +62,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testCapacityWithPayloadTypeAsCustomTag() {
+    void capacityWithPayloadTypeAsCustomTag() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",
@@ -94,7 +94,7 @@ class CapacityMonitorTest {
     }
 
     @Test
-    void testCapacityWithMetadataAsCustomTag() {
+    void capacityWithMetadataAsCustomTag() {
         MockClock testClock = new MockClock();
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         CapacityMonitor testSubject = CapacityMonitor.buildMonitor("1",

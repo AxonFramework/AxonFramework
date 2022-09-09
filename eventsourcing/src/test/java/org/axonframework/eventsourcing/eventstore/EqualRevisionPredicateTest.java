@@ -39,27 +39,27 @@ class EqualRevisionPredicateTest {
     }
 
     @Test
-    void testSameRevisionForAggregateAndPayload() {
+    void sameRevisionForAggregateAndPayload() {
         assertTrue(testSubject.test(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
 
     @Test
-    void testDifferentRevisionsForAggregateAndPayload() {
+    void differentRevisionsForAggregateAndPayload() {
         assertFalse(testSubject.test(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST-DIFFERENT")));
     }
 
     @Test
-    void testNoRevisionForAggregateAndPayload() {
+    void noRevisionForAggregateAndPayload() {
         assertTrue(testSubject.test(createEntry(WithoutAnnotationAggregate.class.getName())));
     }
 
     @Test
-    void testNoRevisionForPayload() {
+    void noRevisionForPayload() {
         assertFalse(testSubject.test(createEntry(WithAnnotationAggregate.class.getName())));
     }
 
     @Test
-    void testNoRevisionForAggregate() {
+    void noRevisionForAggregate() {
         assertFalse(testSubject.test(createEntry(WithoutAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
 

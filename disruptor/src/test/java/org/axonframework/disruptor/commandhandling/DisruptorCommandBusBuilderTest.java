@@ -29,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DisruptorCommandBusBuilderTest {
 
     @Test
-    void testSetIllegalPublisherThreadCount() {
+    void setIllegalPublisherThreadCount() {
         assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().publisherThreadCount(0));
     }
 
     @Test
-    void testSetIllegalInvokerThreadCount() {
+    void setIllegalInvokerThreadCount() {
         assertThrows(AxonConfigurationException.class, () -> DisruptorCommandBus.builder().invokerThreadCount(0));
     }
 }

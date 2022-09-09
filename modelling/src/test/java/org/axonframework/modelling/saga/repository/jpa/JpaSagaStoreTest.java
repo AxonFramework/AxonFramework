@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga.repository.jpa;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -29,21 +30,12 @@ import org.axonframework.modelling.saga.repository.StubSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.Set;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
 
 import static org.axonframework.modelling.utils.TestSerializer.xStreamSerializer;
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,25 +45,19 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-@ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(locations = "/META-INF/spring/saga-repository-test.xml")
-@Transactional
-public class JpaSagaStoreTest {
+class JpaSagaStoreTest {
 
     private AnnotatedSagaRepository<StubSaga> repository;
 
-    @Autowired
-    private PlatformTransactionManager txManager;
-
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("eventStore");
+    private final EntityManager entityManager = entityManagerFactory.createEntityManager();
+    private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private DefaultUnitOfWork<Message<?>> unitOfWork;
 
     @BeforeEach
     void setUp() {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
-                                             .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                             .entityManagerProvider(entityManagerProvider)
                                              .serializer(xStreamSerializer())
                                              .build();
         repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
@@ -79,11 +65,14 @@ public class JpaSagaStoreTest {
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
 
         // the serialized form of the Saga exceeds the default length of a blob.
         // So we must alter the table to prevent data truncation
         entityManager.createNativeQuery("ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
                      .executeUpdate();
+        transaction.commit();
 
         startUnitOfWork();
     }
@@ -92,9 +81,10 @@ public class JpaSagaStoreTest {
         Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(),
                       () -> "Cannot start unit of work. There is one still active.");
         unitOfWork = DefaultUnitOfWork.startAndGet(null);
-        TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
-        unitOfWork.onRollback(u -> txManager.rollback(tx));
-        unitOfWork.onCommit(u -> txManager.commit(tx));
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        unitOfWork.onRollback(u -> transaction.rollback());
+        unitOfWork.onCommit(u -> transaction.commit());
     }
 
     @AfterEach
@@ -105,8 +95,7 @@ public class JpaSagaStoreTest {
     }
 
     @Test
-    @DirtiesContext
-    void testAddingAnInactiveSagaDoesntStoreIt() {
+    void addingAnInactiveSagaDoesntStoreIt() {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -117,7 +106,6 @@ public class JpaSagaStoreTest {
             return null;
         });
 
-        entityManager.flush();
         entityManager.clear();
 
         long result = entityManager.createQuery("select count(*) from SagaEntry", Long.class).getSingleResult();
@@ -126,8 +114,7 @@ public class JpaSagaStoreTest {
 
 
     @Test
-    @DirtiesContext
-    void testAddAndLoadSaga_ByIdentifier() {
+    void addAndLoadSaga_ByIdentifier() {
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
                                       .getPayload();
@@ -141,8 +128,7 @@ public class JpaSagaStoreTest {
     }
 
     @Test
-    @DirtiesContext
-    void testAddAndLoadSaga_ByAssociationValue() {
+    void addAndLoadSaga_ByAssociationValue() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -161,15 +147,13 @@ public class JpaSagaStoreTest {
     }
 
     @Test
-    @DirtiesContext
-    public void testLoadSaga_NotFound() {
+    void loadSaga_NotFound() {
         unitOfWork.execute(() -> assertNull(repository.load("123456")));
     }
 
 
     @Test
-    @DirtiesContext
-    void testLoadSaga_AssociationValueRemoved() {
+    void loadSaga_AssociationValueRemoved() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -190,8 +174,7 @@ public class JpaSagaStoreTest {
     }
 
     @Test
-    @DirtiesContext
-    void testEndSaga() {
+    void endSaga() {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
                                                             StubSaga::new);
@@ -214,8 +197,7 @@ public class JpaSagaStoreTest {
     }
 
     @Test
-    @DirtiesContext
-    void testStoreSagaWithCustomEntity() {
+    void storeSagaWithCustomEntity() {
         JpaSagaStore sagaStore = new JpaSagaStore(
                 JpaSagaStore.builder()
                             .serializer(xStreamSerializer())

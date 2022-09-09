@@ -85,7 +85,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     }
 
     @Test
-    void testSnapshotterAndSnapshotTriggerDefinitionAreInvoked() {
+    void snapshotterAndSnapshotTriggerDefinitionAreInvoked() {
         SnapshotTriggerDefinition snapshotTriggerDefinition =
                 applicationContext.getBean(SnapshotTriggerDefinition.class);
         assertNotNull(snapshotTriggerDefinition);
@@ -101,7 +101,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     }
 
     @Test
-    void testSnapshotFilterIsInvoked() {
+    void snapshotFilterIsInvoked() {
         SnapshotFilter snapshotFilter = applicationContext.getBean(SnapshotFilter.class);
         assertNotNull(snapshotFilter);
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));

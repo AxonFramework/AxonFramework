@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericQueryMessageTest {
 
     @Test
-    void testQueryNameResemblesPayloadClassName() {
+    void queryNameResemblesPayloadClassName() {
         String testPayload = "payload";
 
         String result = QueryMessage.queryName(testPayload);
@@ -40,7 +40,7 @@ class GenericQueryMessageTest {
     }
 
     @Test
-    void testQueryNameResemblesMessagePayloadTypeClassName() {
+    void queryNameResemblesMessagePayloadTypeClassName() {
         String testPayload = "payload";
         Message<?> testMessage = GenericMessage.asMessage(testPayload);
 
@@ -50,7 +50,7 @@ class GenericQueryMessageTest {
     }
 
     @Test
-    void testQueryNameResemblesQueryMessageQueryName() {
+    void queryNameResemblesQueryMessageQueryName() {
         String expectedQueryName = "myQueryName";
         QueryMessage<String, String> testMessage =
                 new GenericQueryMessage<>("payload", expectedQueryName, ResponseTypes.instanceOf(String.class));

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MessageCountingMonitorTest {
 
     @Test
-    void testMessages(){
+    void messages(){
         MessageCountingMonitor testSubject = new MessageCountingMonitor();
         EventMessage<Object> foo = asEventMessage("foo");
         EventMessage<Object> bar = asEventMessage("bar");

@@ -47,7 +47,7 @@ class LazyDeserializingObjectTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testLazilyDeserialized() {
+    void lazilyDeserialized() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockObject, mockSerializer);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
         assertEquals(String.class, testSubject.getType());
@@ -58,17 +58,17 @@ class LazyDeserializingObjectTest {
     }
 
     @Test
-    void testLazilyDeserialized_NullObject() {
+    void lazilyDeserialized_NullObject() {
         assertThrows(Exception.class, () -> new LazyDeserializingObject<>(null, mockSerializer));
     }
 
     @Test
-    void testLazilyDeserialized_NullSerializer() {
+    void lazilyDeserialized_NullSerializer() {
         assertThrows(IllegalArgumentException.class, () -> new LazyDeserializingObject<>(mockObject, null));
     }
 
     @Test
-    void testWithProvidedDeserializedInstance() {
+    void withProvidedDeserializedInstance() {
         LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockDeserializedObject);
         assertEquals(mockDeserializedObject.getClass(), testSubject.getType());
         assertSame(mockDeserializedObject, testSubject.getObject());
@@ -76,7 +76,7 @@ class LazyDeserializingObjectTest {
     }
 
     @Test
-    void testWithProvidedDeserializedNullInstance() {
+    void withProvidedDeserializedNullInstance() {
         assertThrows(IllegalArgumentException.class, () -> new LazyDeserializingObject<>(null));
     }
 }

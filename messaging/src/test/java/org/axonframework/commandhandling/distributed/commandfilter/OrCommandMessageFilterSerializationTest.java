@@ -25,7 +25,7 @@ class OrCommandMessageFilterSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testOrCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
+    void orCommandMessageFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

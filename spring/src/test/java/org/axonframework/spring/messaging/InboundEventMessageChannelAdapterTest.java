@@ -40,7 +40,7 @@ class InboundEventMessageChannelAdapterTest {
     }
 
     @Test
-    void testMessagePayloadIsPublished() {
+    void messagePayloadIsPublished() {
         testSubject = new InboundEventMessageChannelAdapter();
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handleMessage(new GenericMessage<Object>(event));

@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EventProcessorConfigurationTest {
 
     @Test
-    void testProcessorConfigurationWithCustomPolicy() {
+    void processorConfigurationWithCustomPolicy() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
@@ -93,7 +93,7 @@ class EventProcessorConfigurationTest {
     }
 
     @Test
-    void testTokenClaimIntervalCanBeSetViaSpringConfiguration() {
+    void tokenClaimIntervalCanBeSetViaSpringConfiguration() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
@@ -123,7 +123,7 @@ class EventProcessorConfigurationTest {
     }
 
     @Test
-    void testConfigurePooledStreamingEventProcessor() {
+    void configurePooledStreamingEventProcessor() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withPropertyValues(
@@ -148,11 +148,6 @@ class EventProcessorConfigurationTest {
                     EventProcessor pooledProcessor = processors.get("second");
                     assertNotNull(pooledProcessor);
                     assertEquals(PooledStreamingEventProcessor.class, pooledProcessor.getClass());
-
-                    int resultInitialSegmentCount = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("initialSegmentCount"), pooledProcessor
-                    );
-                    assertEquals(12, resultInitialSegmentCount);
 
                     long resultTokenClaimInterval = ReflectionUtils.getFieldValue(
                             PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), pooledProcessor

@@ -38,7 +38,7 @@ class MessageHandlerRegistrarTest {
     private static final Registration TEST_REGISTRATION_IMPLEMENTATION = () -> false;
 
     @Test
-    void testStartThrowsAxonConfigurationExceptionForCreatingNullMessageHandler(@Mock Configuration config) {
+    void startThrowsAxonConfigurationExceptionForCreatingNullMessageHandler(@Mock Configuration config) {
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
                 () -> config, c -> null, (c, msgHandler) -> TEST_REGISTRATION_IMPLEMENTATION
         );
@@ -47,7 +47,7 @@ class MessageHandlerRegistrarTest {
     }
 
     @Test
-    void testStartRegistersCreatedMessageHandler(@Mock Configuration config) {
+    void startRegistersCreatedMessageHandler(@Mock Configuration config) {
         AtomicBoolean isCreated = new AtomicBoolean(false);
         AtomicBoolean isRegistered = new AtomicBoolean(false);
 
@@ -70,7 +70,7 @@ class MessageHandlerRegistrarTest {
      * since the {@link MessageHandlerRegistrar#shutdown()} will be wrapped in a {@link LifecycleHandler}.
      */
     @Test
-    void testShutdownThrowsNullPointerExceptionIfRegistrationDidNotHappen(@Mock Configuration config) {
+    void shutdownThrowsNullPointerExceptionIfRegistrationDidNotHappen(@Mock Configuration config) {
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
                 () -> config, c -> new SomeMessageHandler(),
                 (c, msgHandler) -> TEST_REGISTRATION_IMPLEMENTATION
@@ -80,7 +80,7 @@ class MessageHandlerRegistrarTest {
     }
 
     @Test
-    void testShutdownCancelsMessageHandlerRegistration(@Mock Configuration config) {
+    void shutdownCancelsMessageHandlerRegistration(@Mock Configuration config) {
         AtomicBoolean isCanceled = new AtomicBoolean(false);
 
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(

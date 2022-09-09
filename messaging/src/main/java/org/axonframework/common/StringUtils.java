@@ -29,6 +29,18 @@ public abstract class StringUtils {
     }
 
     /**
+     * Validate whether the given {@link String} {@code s} is {@code null} or not empty (where empty is defined as
+     * {@code ""}).
+     *
+     * @param s The {@link String} to validate whether it is {@code null} or empty.
+     * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
+     * otherwise.
+     */
+    public static boolean emptyOrNull(String s) {
+        return Objects.isNull(s) || EMPTY_STRING.equals(s);
+    }
+
+    /**
      * Validate whether the given {@link String} {@code s} not empty (where empty is defined as
      * {@code ""}.
      *

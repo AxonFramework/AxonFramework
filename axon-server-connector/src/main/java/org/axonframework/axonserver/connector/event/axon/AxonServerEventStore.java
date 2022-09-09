@@ -57,6 +57,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +103,8 @@ public class AxonServerEventStore extends AbstractEventStore {
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
      * <p>
-     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster}.
+     * The {@link EventUpcaster} is defaulted to a {@link NoOpEventUpcaster} and the {@link SpanFactory} is defaulted
+     * to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and {@link
      * AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
@@ -162,7 +164,7 @@ public class AxonServerEventStore extends AbstractEventStore {
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier) {
-        if (Objects.equals(storageEngine().eventSerializer, storageEngine().snapshotSerializer)) {
+        if (!storageEngine().snapshotFilterSet && Objects.equals(storageEngine().eventSerializer, storageEngine().snapshotSerializer)) {
             return storageEngine().readEventsWithAutoSnapshot(aggregateIdentifier, storageEngine().eventSerializer);
         }
         return super.readEvents(aggregateIdentifier);
@@ -200,6 +202,12 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

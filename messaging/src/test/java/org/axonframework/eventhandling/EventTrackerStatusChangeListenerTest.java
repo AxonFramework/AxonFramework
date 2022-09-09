@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EventTrackerStatusChangeListenerTest {
 
     @Test
-    void testValidatePositionReturnsFalse() {
+    void validatePositionReturnsFalse() {
         assertFalse(EventTrackerStatusChangeListener.noOp().validatePositions());
     }
 }

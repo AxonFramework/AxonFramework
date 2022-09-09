@@ -78,7 +78,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
      */
     @Test
     @Timeout(value = 10)// bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
-    void testCommandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
+    void commandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
                                               .retryScheduler(retryScheduler)
@@ -129,7 +129,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
     @SuppressWarnings("unchecked")
     @Test
     @Timeout(value = 10)
-    void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
+    void commandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway =
                 DefaultCommandGateway.builder()
@@ -167,7 +167,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
      */
     @Test
     @Timeout(value = 10)
-    void testCommandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
+    void commandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)

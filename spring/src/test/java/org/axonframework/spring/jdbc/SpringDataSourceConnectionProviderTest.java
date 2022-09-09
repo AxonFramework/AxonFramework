@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = SpringDataSourceConnectionProviderTest.Context.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class SpringDataSourceConnectionProviderTest {
+class SpringDataSourceConnectionProviderTest {
 
     private Connection mockConnection;
 
@@ -66,7 +66,7 @@ public class SpringDataSourceConnectionProviderTest {
     @DirtiesContext
     @Transactional
     @Test
-    public void testConnectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
+    void connectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
         when(dataSource.getConnection()).thenAnswer(invocation -> {
             fail("Should be using an already existing connection.");
             return null;
@@ -81,12 +81,12 @@ public class SpringDataSourceConnectionProviderTest {
     }
 
     @Test
-    void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
+    void connectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;
             return spy;
-        }).when(dataSource).getConnection();
+        }).when(dataSource).getConnection("sa", "");
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Transaction transaction = springTransactionManager.startTransaction();

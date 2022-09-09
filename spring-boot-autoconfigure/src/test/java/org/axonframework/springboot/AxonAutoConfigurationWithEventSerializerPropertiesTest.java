@@ -73,7 +73,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
     private EntityManager entityManager;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
@@ -95,11 +95,11 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
         assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
-        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(6, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
     @Test
-    void testEventStorageEngineUsesSerializerBean() {
+    void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final Serializer messageSerializer = applicationContext.getBean("messageSerializer", Serializer.class);
@@ -111,7 +111,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
     }
 
     @Test
-    void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefinedObjectMapperBean() {
+    void eventSerializerIsOfTypeJacksonSerializerAndUsesDefinedObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final ObjectMapper objectMapper = applicationContext.getBean("testObjectMapper", ObjectMapper.class);

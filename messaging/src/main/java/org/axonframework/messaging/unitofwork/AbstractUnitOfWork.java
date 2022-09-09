@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,11 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -161,9 +165,19 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
         }
         Map<String, Object> result = new HashMap<>();
         for (CorrelationDataProvider correlationDataProvider : correlationDataProviders) {
-            final Map<String, ?> extraData = correlationDataProvider.correlationDataFor(getMessage());
-            if (extraData != null) {
-                result.putAll(extraData);
+            try {
+                final Map<String, ?> extraData = correlationDataProvider.correlationDataFor(getMessage());
+                if (extraData != null) {
+                    result.putAll(extraData);
+                }
+            } catch (Exception e) {
+                logger.warn(
+                        "Encountered exception creating correlation data for message with id: '{}' "
+                                + "using correlation provider with class: '{}'"
+                                + "will continue without as this might otherwise prevent a rollback.",
+                        getMessage().getIdentifier(),
+                        correlationDataProvider.getClass(),
+                        e);
             }
         }
         return MetaData.from(result);

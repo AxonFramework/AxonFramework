@@ -55,7 +55,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectScheduledDeadline() {
+    void expectScheduledDeadline() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -65,7 +65,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectScheduledDeadlineOfType() {
+    void expectScheduledDeadlineOfType() {
         fixture.givenNoPriorActivity()
                .whenAggregate(AGGREGATE_ID)
                .publishes(START_SAGA_EVENT)
@@ -75,7 +75,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectScheduledDeadlineWithName() {
+    void expectScheduledDeadlineWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenAggregate(AGGREGATE_ID)
@@ -84,7 +84,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectNoScheduledDeadline() {
+    void expectNoScheduledDeadline() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -94,7 +94,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectNoScheduledDeadlineOfType() {
+    void expectNoScheduledDeadlineOfType() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -104,7 +104,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testExpectNoScheduledDeadlineWithName() {
+    void expectNoScheduledDeadlineWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -114,7 +114,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineMetMatching() {
+    void deadlineMetMatching() {
         //noinspection deprecation
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
@@ -125,7 +125,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesMatching() {
+    void triggeredDeadlinesMatching() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -135,7 +135,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineMet() {
+    void deadlineMet() {
         //noinspection deprecation
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
@@ -146,7 +146,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlines() {
+    void triggeredDeadlines() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -156,7 +156,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesFailsForIncorrectDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -172,7 +172,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -186,7 +186,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithName() {
+    void triggeredDeadlinesWithName() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -196,7 +196,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -211,7 +211,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -225,7 +225,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfType() {
+    void triggeredDeadlinesOfType() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -235,7 +235,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
+    void triggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -251,7 +251,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testTriggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
+    void triggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
         FixtureExecutionResult given = fixture.givenAggregate(AGGREGATE_ID)
                                               .published(START_SAGA_EVENT)
                                               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
@@ -265,7 +265,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineCancelled() {
+    void deadlineCancelled() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetTriggerEvent(AGGREGATE_ID))
@@ -275,7 +275,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineWhichCancelsAll() {
+    void deadlineWhichCancelsAll() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenPublishingA(new ResetAllTriggeredEvent(AGGREGATE_ID))
@@ -285,7 +285,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineDispatchInterceptor() {
+    void deadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp())
         )
@@ -298,7 +298,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineHandlerInterceptor() {
+    void deadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(
                     deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.getTimestamp())
@@ -314,7 +314,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    void testDeadlineHandlerEndsSagaLifecycle() {
+    void deadlineHandlerEndsSagaLifecycle() {
         fixture.givenAggregate(AGGREGATE_ID)
                .published(new TriggerSagaStartEvent(AGGREGATE_ID, "sagaEndingDeadline"))
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
@@ -37,10 +37,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.upcasting.ContextAwareSingleEntryUpcaster;
 import org.axonframework.serialization.upcasting.event.ContextAwareSingleEventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -48,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -75,11 +75,13 @@ class AxonServerEventStoreTest {
     private AxonServerConfiguration config;
     private AxonServerConnectionManager axonServerConnectionManager;
     private EventUpcaster upcasterChain;
+    private TestSpanFactory testSpanFactory;
 
     private AxonServerEventStore testSubject;
 
     @BeforeEach
     void setUp() throws Exception {
+        testSpanFactory = new TestSpanFactory();
         int freePort = TcpUtil.findFreePort();
         eventStore = spy(new EventStoreImpl());
         server = new StubServer(freePort, new PlatformService(freePort), eventStore);
@@ -104,6 +106,7 @@ class AxonServerEventStoreTest {
                                           .eventSerializer(JacksonSerializer.defaultSerializer())
                                           .snapshotSerializer(TestSerializer.xStreamSerializer())
                                           .snapshotFilter(SnapshotFilter.allowAll())
+                                          .spanFactory(testSpanFactory)
                                           .build();
     }
 
@@ -114,12 +117,18 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testPublishAndConsumeEvents() throws Exception {
+    void publishAndConsumeEvents() throws Exception {
         UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
-        testSubject.publish(GenericEventMessage.asEventMessage("Test1"),
-                            GenericEventMessage.asEventMessage("Test2"),
-                            GenericEventMessage.asEventMessage("Test3"));
+        EventMessage<?>[] eventMessages = {GenericEventMessage.asEventMessage("Test1"),
+                GenericEventMessage.asEventMessage("Test2"),
+                GenericEventMessage.asEventMessage("Test3")};
+        testSubject.publish(eventMessages);
+        Arrays.stream(eventMessages).forEach(e -> {
+            testSpanFactory.verifySpanCompleted("AxonServerEventStore.publish", e);
+        });
+        testSpanFactory.verifyNotStarted("AxonServerEventStore.commit");
         uow.commit();
+        testSpanFactory.verifySpanCompleted("AxonServerEventStore.commit");
 
         TrackingEventStream stream = testSubject.openStream(null);
 
@@ -133,7 +142,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testQueryEvents() throws Exception {
+    void queryEvents() throws Exception {
         String queryAll = "";
         boolean noLiveUpdates = false;
 
@@ -150,7 +159,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLoadEventsWithMultiUpcaster() {
+    void loadEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -172,7 +181,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLoadSnapshotAndEventsWithMultiUpcaster() {
+    void loadSnapshotAndEventsWithMultiUpcaster() {
         reset(upcasterChain);
         when(upcasterChain.upcast(any())).thenAnswer(invocation -> {
             Stream<IntermediateEventRepresentation> si = invocation.getArgument(0);
@@ -199,7 +208,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLoadEventsWithContextAwareUpcaster() {
+    void loadEventsWithContextAwareUpcaster() {
         reset(upcasterChain);
         ContextAwareSingleEventUpcaster<AtomicInteger> upcaster = new ContextAwareSingleEventUpcaster<AtomicInteger>() {
             @Override
@@ -231,17 +240,17 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testLastSequenceNumberFor() {
+    void lastSequenceNumberFor() {
         assertThrows(EventStoreException.class, () -> testSubject.lastSequenceNumberFor("Agg1"));
     }
 
     @Test
-    void testCreateStreamableMessageSourceForContext() {
+    void createStreamableMessageSourceForContext() {
         assertNotNull(testSubject.createStreamableMessageSourceForContext("some-context"));
     }
 
     @Test
-    void testUsingLocalEventStoreOnOpeningStream() {
+    void usingLocalEventStoreOnOpeningStream() {
         testSubject.publish(new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1"));
         testSubject.openStream(null);
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, eventStore.getEventsRequests().size()));
@@ -250,7 +259,7 @@ class AxonServerEventStoreTest {
 
     @Disabled("No supported in new connector, yet.")
     @Test
-    void testUsingLocalEventStoreOnQueryingEvents() {
+    void usingLocalEventStoreOnQueryingEvents() {
         testSubject.publish(new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1"));
         testSubject.query("", true);
         assertWithin(1, TimeUnit.SECONDS,
@@ -259,7 +268,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testReadEventsReturnsSnapshotsAndEventsWithMetaData() {
+    void readEventsReturnsSnapshotsAndEventsWithMetaData() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         testSubject.storeSnapshot(
                 new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Snapshot1", testMetaData)
@@ -293,7 +302,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testReadEventsWithSequenceNumberIgnoresSnapshots() {
+    void readEventsWithSequenceNumberIgnoresSnapshots() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         testSubject.storeSnapshot(
                 new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Snapshot1", testMetaData)
@@ -333,7 +342,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testReadEventsWithMagicSequenceNumberAndNoSnapshotFilterIncludesSnapshots() {
+    void readEventsWithMagicSequenceNumberAndNoSnapshotFilterIncludesSnapshots() {
         JacksonSerializer eventSerializer = JacksonSerializer.defaultSerializer();
         AxonServerEventStore testSubjectWithoutSnapshotFilter =
                 AxonServerEventStore.builder()
@@ -379,7 +388,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testReadEventsWithMagicSequenceNumberAndSnapshotFilterSetIgnoresSnapshots() {
+    void readEventsWithMagicSequenceNumberAndSnapshotFilterSetIgnoresSnapshots() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         testSubject.storeSnapshot(
                 new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Snapshot1", testMetaData)
@@ -419,7 +428,50 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testRethrowStatusRuntimeExceptionAsEventStoreExceptionIfNotOfTypeUnknown() {
+    void readEventsWithSnapshotFilterAndSameSerializerSetReadsSnapshot() {
+        XStreamSerializer serializer = TestSerializer.xStreamSerializer();
+        testSubject = AxonServerEventStore.builder()
+                                          .configuration(config)
+                                          .platformConnectionManager(axonServerConnectionManager)
+                                          .upcasterChain(upcasterChain)
+                                          .eventSerializer(serializer)
+                                          .snapshotSerializer(serializer)
+                                          .snapshotFilter(SnapshotFilter.allowAll())
+                                          .build();
+
+        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
+        testSubject.storeSnapshot(
+                new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Snapshot1", testMetaData)
+        );
+        testSubject.publish(new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1", testMetaData),
+                            new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Test2", testMetaData),
+                            new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 2, "Test3", testMetaData));
+
+        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
+        assertWithin(2, TimeUnit.SECONDS, () -> {
+            DomainEventStream snapshotValidationStream = testSubject.readEvents(AGGREGATE_ID);
+            assertTrue(snapshotValidationStream.hasNext());
+            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+        });
+
+        DomainEventStream resultStream = testSubject.readEvents(AGGREGATE_ID);
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> firstResultEvent = resultStream.next();
+        assertEquals("Snapshot1", firstResultEvent.getPayload());
+        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
+        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+
+        assertTrue(resultStream.hasNext());
+        DomainEventMessage<?> thirdResultEvent = resultStream.next();
+        assertEquals("Test3", thirdResultEvent.getPayload());
+        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
+        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+
+        assertFalse(resultStream.hasNext());
+    }
+    @Test
+    void rethrowStatusRuntimeExceptionAsEventStoreExceptionIfNotOfTypeUnknown() {
         String testAggregateId = AGGREGATE_ID;
         Status expectedCode = Status.ABORTED;
 
@@ -434,7 +486,7 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void testSnapReadingExceptionProceedsWithReadingEvents() {
+    void snapReadingExceptionProceedsWithReadingEvents() {
         String testPayloadOne = "Test1";
         String testPayloadTwo = "Test2";
         String testPayloadThree = "Test3";

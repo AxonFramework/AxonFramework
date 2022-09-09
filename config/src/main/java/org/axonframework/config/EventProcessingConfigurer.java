@@ -29,12 +29,16 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
@@ -43,6 +47,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 /**
  * Defines a contract for configuring event processing.
@@ -259,6 +264,25 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingPooledStreamingEventProcessors();
+
+    /**
+     * Defaults Event Processors builders to construct a {@link PooledStreamingEventProcessor} using the
+     * {@code configuration} to configure them.
+     * <p>
+     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the
+     * {@code EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be
+     * used to force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
+     *
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing every
+     *                                              {@link PooledStreamingEventProcessor}
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer usingPooledStreamingEventProcessors(
+            PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
+    ) {
+        return usingPooledStreamingEventProcessors()
+                .registerPooledStreamingEventProcessorConfiguration(pooledStreamingProcessorConfiguration);
+    }
 
     /**
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
@@ -646,6 +670,84 @@ public interface EventProcessingConfigurer {
     );
 
     /**
+     * Register a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}. The
+     * {@code SequencedDeadLetterQueue} will automatically enqueue failed events and evaluate them per the queue's
+     * configuration.
+     *
+     * @param processingGroup A {@link String} specifying the name of the processing group to register the given
+     *                        {@link SequencedDeadLetterQueue} for.
+     * @param queueBuilder    A builder method returning a {@link SequencedDeadLetterQueue} based on a
+     *                        {@link Configuration}. The outcome is used by the given {@code processingGroup} to enqueue
+     *                        and evaluate failed events in.
+     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     */
+    default EventProcessingConfigurer registerDeadLetterQueue(
+            @Nonnull String processingGroup,
+            @Nonnull Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
+    ) {
+        return this;
+    }
+
+    /**
+     * Register a default {@link EnqueuePolicy dead letter policy} for any processing group using a
+     * {@link #registerDeadLetterQueue(String, Function) dead letter queue}. The processing group uses the policy to
+     * deduce whether a failed {@link EventMessage} should be
+     * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
+     * <p>
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
+     * queue.
+     *
+     * @param policyBuilder A builder method to construct a default {@link EnqueuePolicy dead letter policy}.
+     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     */
+    default EventProcessingConfigurer registerDefaultDeadLetterPolicy(
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+    ) {
+        return this;
+    }
+
+    /**
+     * Register a {@link EnqueuePolicy dead letter policy} for the given {@code processingGroup} using a
+     * {@link #registerDeadLetterQueue(String, Function) dead letter queue}. The processing group uses the policy to
+     * deduce whether a failed {@link EventMessage} should be
+     * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued} for later evaluation.
+     * <p>
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
+     * queue.
+     *
+     * @param processingGroup The name of the processing group to build an {@link EnqueuePolicy} for.
+     * @param policyBuilder   A builder method to construct a {@link EnqueuePolicy dead letter policy} for the given
+     *                        {@code processingGroup}.
+     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     */
+    default EventProcessingConfigurer registerDeadLetterPolicy(
+            @Nonnull String processingGroup,
+            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+    ) {
+        return this;
+    }
+
+    /**
+     * Register a {@link DeadLetteringInvokerConfiguration} for the given {@code processingGroup}. This configuration
+     * object allows for fine-grained customization of a
+     * {@link DeadLetteringEventHandlerInvoker dead lettering processing group} through its
+     * {@link DeadLetteringEventHandlerInvoker.Builder builder}.
+     * <p>
+     * Note that the configured component will not be used if the processing group <em>does not</em> have a dead letter
+     * queue.
+     *
+     * @param processingGroup The name of the processing group to attach additional configuration too.
+     * @param configuration   The additional configuration for the dead lettering processing group.
+     * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
+     */
+    default EventProcessingConfigurer registerDeadLetteringEventHandlerInvokerConfiguration(
+            @Nonnull String processingGroup,
+            @Nonnull DeadLetteringInvokerConfiguration configuration
+    ) {
+        return this;
+    }
+
+    /**
      * Contract which defines how to build an event processor.
      */
     @FunctionalInterface
@@ -689,6 +791,35 @@ public interface EventProcessingConfigurer {
          * @return a {@link PooledStreamingProcessorConfiguration} which does not add any configuration
          */
         static PooledStreamingProcessorConfiguration noOp() {
+            return (config, builder) -> builder;
+        }
+    }
+
+    /**
+     * Contract defining {@link DeadLetteringEventHandlerInvoker.Builder} based configuration when constructing a
+     * {@link DeadLetteringEventHandlerInvoker}.
+     */
+    @FunctionalInterface
+    interface DeadLetteringInvokerConfiguration extends
+            BiFunction<Configuration, DeadLetteringEventHandlerInvoker.Builder, DeadLetteringEventHandlerInvoker.Builder> {
+
+        /**
+         * Returns a configuration that applies the given {@code other} configuration after applying {@code this}. Any
+         * configuration set by the {@code other} will override changes by {@code this} instance.
+         *
+         * @param other The configuration to apply after applying this.
+         * @return A configuration that applies both this and then the other configuration.
+         */
+        default DeadLetteringInvokerConfiguration andThen(DeadLetteringInvokerConfiguration other) {
+            return (config, builder) -> other.apply(config, this.apply(config, builder));
+        }
+
+        /**
+         * A {@link DeadLetteringInvokerConfiguration} which does not add any configuration.
+         *
+         * @return A {@link DeadLetteringInvokerConfiguration} which does not add any configuration.
+         */
+        static DeadLetteringInvokerConfiguration noOp() {
             return (config, builder) -> builder;
         }
     }

@@ -84,7 +84,7 @@ public class AxonAutoConfigurationWithHibernateTest {
     private Snapshotter snapshotter;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
         assertNotNull(snapshotter);
 
@@ -99,12 +99,12 @@ public class AxonAutoConfigurationWithHibernateTest {
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
         assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
-        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(6, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
     @Transactional
     @Test
-    public void testEventStorageEngingeUsesSerializerBean() {
+    public void eventStorageEngingeUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 

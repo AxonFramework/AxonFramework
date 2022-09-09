@@ -38,7 +38,7 @@ class InputStreamToDom4jConverterTest {
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);

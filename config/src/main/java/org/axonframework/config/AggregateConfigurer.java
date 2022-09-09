@@ -139,6 +139,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                .entityManagerProvider(entityManagerProvider)
                                                .eventBus(c.eventBus())
                                                .repositoryProvider(c::repository)
+                                               .spanFactory(c.spanFactory())
                                                .build();
                 });
     }
@@ -164,6 +165,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                          .entityManagerProvider(entityManagerProvider)
                                          .eventBus(c.eventBus())
                                          .repositoryProvider(c::repository)
+                                         .spanFactory(c.spanFactory())
                                          .build()
         );
     }
@@ -240,6 +242,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                    .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
                                                    .aggregateFactory(aggregateFactory.get())
                                                    .repositoryProvider(c::repository)
+                                                   .spanFactory(c.spanFactory())
                                                    .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());

@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandMessageHandler;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -143,9 +144,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     }
 
     /**
-     * Initializes all the handlers. First deduplicates them based on the executable provided. In the case of methods
-     * contains in a parent class (with or without being overridden in subclasses), the method will only be registered
-     * once by deduplication of the Executable
+     * Initializes all the handlers. Handlers are deduplicated based on their signature. The signature includes the name
+     * of the method and all parameter types. This is an effective override in the hierarchy.
      */
     private List<MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         List<MessageHandler<CommandMessage<?>>> handlersFound = new ArrayList<>();
@@ -154,18 +154,21 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                       .values()
                       .stream()
                       .flatMap(List::stream)
-                      .collect(Collectors.groupingBy(
-                              handler -> handler.unwrap(Executable.class)
-                                                .orElseThrow(() -> new IllegalStateException(
-                                                        "A handler is missing an Executable. Please provide an "
-                                                                + "Executable in your MessageHandlingMembers"
-                                                ))
-                      ))
+                      .collect(Collectors.groupingBy(this::getHandlerSignature))
                       .forEach((signature, commandHandlers) -> initializeHandler(
                               aggregateModel, commandHandlers.get(0), handlersFound
                       ));
 
         return handlersFound;
+    }
+
+    private String getHandlerSignature(MessageHandlingMember<? super T> handler) {
+        return handler.unwrap(Executable.class)
+                      .map(ReflectionUtils::toDiscernibleSignature)
+                      .orElseThrow(() -> new IllegalStateException(
+                              "A handler is missing an Executable. Please provide an "
+                                      + "Executable in your MessageHandlingMembers"
+                      ));
     }
 
     private void initializeHandler(AggregateModel<T> aggregateModel,

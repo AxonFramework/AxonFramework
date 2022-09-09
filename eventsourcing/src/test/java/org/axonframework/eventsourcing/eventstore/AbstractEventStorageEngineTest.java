@@ -22,8 +22,6 @@ import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.*;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
 import java.util.List;
@@ -45,24 +43,21 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-@Transactional
 public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
         extends EventStorageEngineTest {
 
     private AbstractEventStorageEngine testSubject;
 
-    @DirtiesContext
     @Test
-    public void testUniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
+    public void uniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0))
         );
     }
 
-    @DirtiesContext
     @Test
-    public void testUniqueKeyConstraintOnEventIdentifier() {
+    public void uniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent("id", AGGREGATE, 1), createEvent("id", "otherAggregate", 1))
@@ -70,8 +65,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    @DirtiesContext
-    public void testStoreAndLoadEventsWithUpcaster() {
+    public void storeAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         //noinspection unchecked
         when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
@@ -95,27 +89,24 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         }
     }
 
-    @DirtiesContext
     @Test
-    public void testStoreDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
+    public void storeDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
                 () -> testSubject.appendEvents(createEvent(0), createEvent(0))
         );
     }
 
-    @DirtiesContext
     @Test
-    public void testStoreDuplicateEventWithExceptionTranslator() {
+    public void storeDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
                 () -> testSubject.appendEvents(createEvent(1), createEvent(1))
         );
     }
 
-    @DirtiesContext
     @Test
-    public void testStoreDuplicateEventWithoutExceptionResolver() {
+    public void storeDuplicateEventWithoutExceptionResolver() {
         //noinspection unchecked
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.persistenceExceptionResolver(e -> false));
         assertThrows(
@@ -125,7 +116,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    public void testSnapshotFilterAllowsSnapshots() {
+    public void snapshotFilterAllowsSnapshots() {
         SnapshotFilter allowAll = SnapshotFilter.allowAll();
 
         //noinspection unchecked
@@ -136,7 +127,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    public void testSnapshotFilterRejectsSnapshots() {
+    public void snapshotFilterRejectsSnapshots() {
         SnapshotFilter rejectAll = SnapshotFilter.rejectAll();
 
         //noinspection unchecked
@@ -147,7 +138,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
-    public void testSnapshotFilterRejectsSnapshotsOnCombinedFilter() {
+    public void snapshotFilterRejectsSnapshotsOnCombinedFilter() {
         SnapshotFilter combinedFilter = SnapshotFilter.allowAll().combine(SnapshotFilter.rejectAll());
 
         //noinspection unchecked

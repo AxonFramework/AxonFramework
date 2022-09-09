@@ -35,12 +35,12 @@ class AnnotationRevisionResolverTest {
     }
 
     @Test
-    void testRevisionOfAnnotatedClass() {
+    void revisionOfAnnotatedClass() {
         assertEquals("2.3-TEST", testSubject.revisionOf(WithAnnotation.class));
     }
 
     @Test
-    void testRevisionOfNonAnnotatedClass() {
+    void revisionOfNonAnnotatedClass() {
         assertNull(testSubject.revisionOf(WithoutAnnotation.class));
     }
 

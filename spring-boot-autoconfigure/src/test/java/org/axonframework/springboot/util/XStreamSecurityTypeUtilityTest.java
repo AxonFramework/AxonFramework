@@ -33,13 +33,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class XStreamSecurityTypeUtilityTest {
 
     @Test
-    void testAutoConfigBasePackages() {
+    void autoConfigBasePackagesTest() {
         // Axon packages are added through the default ApplicationContextRunner that adds Axon's DefaultEntityRegistrar.
         String[] expected = new String[]{
                 "org.axonframework.springboot.util.**",
                 "org.axonframework.eventhandling.tokenstore.**",
+                "org.axonframework.eventhandling.deadletter.jpa.**",
                 "org.axonframework.modelling.saga.repository.jpa.**",
-                "org.axonframework.eventsourcing.eventstore.jpa.**"
+                "org.axonframework.eventsourcing.eventstore.jpa.**",
         };
         new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
                                       .withConfiguration(AutoConfigurations.of(TestContext.class))

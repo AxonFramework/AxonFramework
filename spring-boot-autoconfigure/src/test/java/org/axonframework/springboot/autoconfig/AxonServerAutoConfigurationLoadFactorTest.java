@@ -29,7 +29,7 @@ public class AxonServerAutoConfigurationLoadFactorTest {
     private CommandLoadFactorProvider commandLoadFactorProvider;
 
     @Test
-    public void testLoadFactor() {
+    public void loadFactor() {
         int loadFactor = commandLoadFactorProvider.getFor("anything");
         assertEquals(36, loadFactor);
     }

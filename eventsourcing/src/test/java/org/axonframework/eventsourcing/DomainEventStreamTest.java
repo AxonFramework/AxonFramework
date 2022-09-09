@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DomainEventStreamTest {
 
     @Test
-    void testPeek() {
+    void peek() {
         DomainEventMessage event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
                                                                     "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
@@ -44,7 +44,7 @@ class DomainEventStreamTest {
     }
 
     @Test
-    void testPeek_EmptyStream() {
+    void peek_EmptyStream() {
         DomainEventStream testSubject = DomainEventStream.of();
         assertFalse(testSubject.hasNext());
         try {
@@ -56,7 +56,7 @@ class DomainEventStreamTest {
     }
 
     @Test
-    void testNextAndHasNext() {
+    void nextAndHasNext() {
         DomainEventMessage event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
                                                                     "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
@@ -70,7 +70,7 @@ class DomainEventStreamTest {
     }
 
     @Test
-    void testNext_ReadBeyondEnd() {
+    void next_ReadBeyondEnd() {
         DomainEventMessage event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
                                                                     "Mock contents", MetaData.emptyInstance());
         DomainEventStream testSubject = DomainEventStream.of(event1);

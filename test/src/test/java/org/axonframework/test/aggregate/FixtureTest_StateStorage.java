@@ -56,7 +56,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testCreateStateStoredAggregate() {
+    void createStateStoredAggregate() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
@@ -64,7 +64,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testGivenCommandsForStateStoredAggregate() {
+    void givenCommandsForStateStoredAggregate() {
         fixture.useStateStorage()
                .givenCommands(new InitializeCommand(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
@@ -74,7 +74,7 @@ class FixtureTest_StateStorage {
 
 
     @Test
-    void testCreateStateStoredAggregateWithCommand() {
+    void createStateStoredAggregateWithCommand() {
         fixture.useStateStorage()
                .givenNoPriorActivity()
                .when(new InitializeCommand(AGGREGATE_ID, "message"))
@@ -83,7 +83,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testEmittedEventsFromExpectStateAreNotStored() {
+    void emittedEventsFromExpectStateAreNotStored() {
         fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                .when(new SetMessageCommand(AGGREGATE_ID, "message2"))
                .expectEvents(new StubDomainEvent())
@@ -96,7 +96,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testCreateStateStoredAggregate_ErrorInChanges() {
+    void createStateStoredAggregate_ErrorInChanges() {
         ResultValidator<StateStoredAggregate> result =
                 fixture.givenState(() -> new StateStoredAggregate(AGGREGATE_ID, "message"))
                        .when(new ErrorCommand(AGGREGATE_ID, "message2"))
@@ -114,7 +114,7 @@ class FixtureTest_StateStorage {
      * Follow up on GitHub issue https://github.com/AxonFramework/AxonFramework/issues/1219
      */
     @Test
-    void testStateStoredAggregateCanAttachRegisteredResource() {
+    void stateStoredAggregateCanAttachRegisteredResource() {
         String expectedMessage = "state stored resource injection works";
         HardToCreateResource testResource = spy(new HardToCreateResource());
 
@@ -127,7 +127,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testGivenWithStateStorageException() {
+    void givenWithStateStorageException() {
         fixture.useStateStorage();
 
         assertThrows(
@@ -137,7 +137,7 @@ class FixtureTest_StateStorage {
     }
 
     @Test
-    void testGivenWithEventListAndStateStorageExpectException() {
+    void givenWithEventListAndStateStorageExpectException() {
         fixture.useStateStorage();
 
         assertThrows(

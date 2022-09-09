@@ -12,9 +12,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class StringUtilsTest {
 
     @Test
-    void testNonEmptyOrNull() {
+    void nonEmptyOrNull() {
         assertFalse(StringUtils.nonEmptyOrNull(""));
         assertFalse(StringUtils.nonEmptyOrNull(null));
         assertTrue(StringUtils.nonEmptyOrNull("some-string"));
+    }
+
+    @Test
+    void emptyOrNullReturnsTrueForEmptyAndNullStrings() {
+        assertTrue(StringUtils.emptyOrNull(""));
+        assertTrue(StringUtils.emptyOrNull(null));
+        assertFalse(StringUtils.emptyOrNull("some-string"));
     }
 }

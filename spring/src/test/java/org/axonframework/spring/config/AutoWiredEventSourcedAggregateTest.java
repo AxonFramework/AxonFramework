@@ -52,7 +52,7 @@ public class AutoWiredEventSourcedAggregateTest {
     private Repository<Context.MyAggregate> myAggregateRepository;
 
     @Test
-    void testAggregateIsWiredUsingStateStorage() {
+    void aggregateIsWiredUsingStateStorage() {
         assertEquals(EventSourcingRepository.class, myAggregateRepository.getClass());
     }
 

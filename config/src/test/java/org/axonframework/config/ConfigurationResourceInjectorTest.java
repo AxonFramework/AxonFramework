@@ -42,7 +42,7 @@ public class ConfigurationResourceInjectorTest {
     }
 
     @Test
-    void testInjectorHasResource() {
+    void injectorHasResource() {
         Saga saga = new Saga();
         testSubject.injectResources(saga);
 

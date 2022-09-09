@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
@@ -53,7 +55,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testRegisterParameterResolverFactory() {
+    void registerParameterResolverFactory() {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
                    .published(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
@@ -66,8 +68,19 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    })));
     }
 
+
     @Test
-    void testCreateHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
+    void testRegisterParameterResolverFactoryStillCallsMetadataValue() {
+        testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
+                   .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
+                   .published(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER)).withMetaData(
+                           Collections.singletonMap("extraIdentifier", "myExtraIdentifier")))
+                   .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
+                .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
+    }
+
+    @Test
+    void createHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
         AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerDefinition(new TestHandlerDefinition(handlerDefinitionReached))
@@ -79,7 +92,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
     }
 
     @Test
-    void testWrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
+    void wrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
         AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
 
         testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))

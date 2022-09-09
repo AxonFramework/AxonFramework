@@ -18,8 +18,10 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.actuator.axonserver.AxonServerHealthIndicator;
 import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -42,7 +44,7 @@ class AxonServerActuatorAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerHealthIndicatorIsNotCreatedForAxonServerDisabled() {
+    void axonServerHealthIndicatorIsNotCreatedForAxonServerDisabled() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:false")
                               .run(context -> {
@@ -52,12 +54,22 @@ class AxonServerActuatorAutoConfigurationTest {
     }
 
     @Test
-    void testAxonServerHealthIndicatorIsCreated() {
+    void axonServerHealthIndicatorIsCreated() {
         testApplicationContext.withUserConfiguration(TestContext.class)
                               .withPropertyValues("axon.axonserver.enabled:true")
                               .run(context -> {
                                   assertThat(context).hasSingleBean(AxonServerHealthIndicator.class);
                                   assertThat(context).hasSingleBean(AxonServerStatusAggregator.class);
+                              });
+    }
+
+    @Test
+    void serviceIsIgnoredIfLibraryIsNotPresent() {
+        testApplicationContext.withUserConfiguration(TestContext.class)
+                              .withClassLoader(new FilteredClassLoader(AxonServerConnectionManager.class))
+                              .run(context -> {
+                                  assertThat(context).doesNotHaveBean(AxonServerHealthIndicator.class);
+                                  assertThat(context).doesNotHaveBean(AxonServerStatusAggregator.class);
                               });
     }
 

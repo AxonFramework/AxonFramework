@@ -93,6 +93,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .eventSerializer(c.eventSerializer())
                                    .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -107,6 +108,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 .transactionManager(c.getComponent(
                                         TransactionManager.class, NoTransactionManager::instance
                                 ))
+                                .spanFactory(c.spanFactory())
                                 .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         return AxonServerCommandBus.builder()
@@ -126,6 +128,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                            () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -140,6 +143,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                       () -> LoggingQueryInvocationErrorHandler.builder().build()
                               ))
                               .queryUpdateEmitter(c.queryUpdateEmitter())
+                              .spanFactory(c.spanFactory())
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
@@ -155,6 +159,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                          QueryPriorityCalculator::defaultQueryPriorityCalculator
                                  ))
                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                 .spanFactory(c.spanFactory())
                                  .build();
     }
 

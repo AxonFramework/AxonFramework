@@ -57,6 +57,7 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import reactor.core.publisher.Flux;
@@ -106,6 +107,7 @@ class AxonServerQueryBusTest {
 
     private AxonServerConnectionManager axonServerConnectionManager;
     private QueryChannel mockQueryChannel;
+    private TestSpanFactory spanFactory;
 
     private AxonServerQueryBus testSubject;
     private AxonServerConfiguration configuration;
@@ -114,6 +116,8 @@ class AxonServerQueryBusTest {
     void setup() {
         configuration = new AxonServerConfiguration();
         configuration.setContext(CONTEXT);
+
+        spanFactory = new TestSpanFactory();
 
         axonServerConnectionManager = mock(AxonServerConnectionManager.class);
 
@@ -125,6 +129,7 @@ class AxonServerQueryBusTest {
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
+                                        .spanFactory(spanFactory)
                                         .build();
 
         AxonServerConnection mockConnection = mock(AxonServerConnection.class);
@@ -157,7 +162,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSeveralSubscribeInvocationsUseSameQueryHandlerInstance() {
+    void severalSubscribeInvocationsUseSameQueryHandlerInstance() {
         QueryDefinition firstExpectedQueryDefinition = new QueryDefinition(TEST_QUERY, String.class);
         QueryDefinition secondExpectedQueryDefinition = new QueryDefinition("testIntegerQuery", Integer.class);
 
@@ -184,6 +189,8 @@ class AxonServerQueryBusTest {
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.query", testQuery);
     }
 
     @Test
@@ -204,10 +211,12 @@ class AxonServerQueryBusTest {
         }
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", AxonServerQueryDispatchException.class);
     }
 
     @Test
-    void testQueryReportsCorrectException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectException() throws ExecutionException, InterruptedException {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
         ));
@@ -226,10 +235,12 @@ class AxonServerQueryBusTest {
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
     }
 
     @Test
-    void testQueryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
+    void queryReportsCorrectNonTransientException() throws ExecutionException, InterruptedException {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
                                   "Faking non transient exception result")
@@ -250,6 +261,8 @@ class AxonServerQueryBusTest {
                      remoteQueryHandlingException.getErrorCode());
 
         verify(targetContextResolver).resolveContext(testQuery);
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.query");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.query", QueryExecutionException.class);
     }
 
     @Test
@@ -291,6 +304,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.scatterGather", testQuery);
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.scatterGather", testQuery);
     }
 
     @Test
@@ -315,6 +330,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
+        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
     }
 
     @Test
@@ -333,6 +350,8 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
+        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
+        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
     }
 
     @Test
@@ -395,12 +414,12 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testLocalSegmentReturnsLocalQueryBus() {
+    void localSegmentReturnsLocalQueryBus() {
         assertEquals(localSegment, testSubject.localSegment());
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
@@ -412,7 +431,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testShutdownTakesFinishedQueriesIntoAccount() {
+    void shutdownTakesFinishedQueriesIntoAccount() {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(QueryResponse.newBuilder().build()));
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
@@ -423,7 +442,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
@@ -438,7 +457,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesWithExceptionOnUpdateDeserializationError() {
+    void subscriptionQueryCompletesWithExceptionOnUpdateDeserializationError() {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
@@ -460,7 +479,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testSubscriptionQueryCompletesWithExceptionOnInitialResultDeserializationError() {
+    void subscriptionQueryCompletesWithExceptionOnInitialResultDeserializationError() {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
@@ -482,7 +501,7 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void testAfterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
+    void afterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
         SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
                 new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
 

@@ -30,9 +30,12 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 class NestedUowRollbackTest {
 
+    // This ensures we do not wire Axon Server components
+    private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
+
     @Test
-    void testDispatchCommand() {
-        Configuration c = DefaultConfigurer.defaultConfiguration()
+    void dispatchCommand() {
+        Configuration c = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                            .configureAggregate(TestAggregate.class)
                                            .registerCommandHandler(x -> new Handler())
                                            .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
