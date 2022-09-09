@@ -37,7 +37,7 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
 
     private boolean started = false;
     private Exception exception;
-    private boolean proceed = false;
+    private boolean rethrow = true;
 
     /**
      * Create a new instance of this class, wrapping another {@link ListenerInvocationErrorHandler}.
@@ -55,7 +55,7 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     @Override
     public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
                         @Nonnull EventMessageHandler eventHandler) throws Exception {
-        if (!started && !proceed) {
+        if (!started && rethrow) {
             throw exception;
         }
         this.exception = exception;
@@ -94,14 +94,15 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     }
 
     /**
-     * Configure whether this error handler should proceed when it catches an exception while it's not started yet.
+     * Configure whether this error handler should rethrow exceptions when it catches one while recording has not
+     * {@link #startRecording() started} yet.
      * <p>
-     * When set to {@code false} will rethrow the exception, regardless of the configured
-     * {@link ListenerInvocationErrorHandler}. Defaults to {@code false}.
+     * When set to {@code true} will rethrow the exception, regardless of the configured
+     * {@link ListenerInvocationErrorHandler}. Defaults to {@code true}.
      *
-     * @param proceed A {@code boolean} dictating whether to proceed if this recorder is not started.
+     * @param rethrow A {@code boolean} dictating whether to rethrow if this recorder is not started.
      */
-    public void proceedWhenNotStarted(boolean proceed) {
-        this.proceed = proceed;
+    public void rethrowErrorsWhenNotStarted(boolean rethrow) {
+        this.rethrow = rethrow;
     }
 }

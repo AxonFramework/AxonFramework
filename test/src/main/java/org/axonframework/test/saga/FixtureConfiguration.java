@@ -210,20 +210,19 @@ public interface FixtureConfiguration {
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
 
     /**
-     * Configure whether the fixture should proceed when exceptions are thrown during the given-phase. When
-     * {@code proceed} is {@code true}, the fixture moves on to the when-phase regardless of any exceptions thrown
-     * during the given-phase.
+     * Configure whether the fixture should suppress exceptions thrown during the given-phase. When {@code suppress} is
+     * {@code true}, the fixture moves on to the when-phase regardless of any exceptions thrown during the given-phase.
      * <p>
-     * Note that setting this to {@code false} means the
+     * Note that setting this to {@code true} means the
      * {@link #registerListenerInvocationErrorHandler(ListenerInvocationErrorHandler) registered}
-     * {@link ListenerInvocationErrorHandler} is not invoked during exception in the given-phase. Defaults to fail
-     * during given-phase exceptions.
+     * {@link ListenerInvocationErrorHandler} is not invoked during exception in the given-phase. Defaults to
+     * suppressing during given-phase exceptions.
      *
-     * @param proceed A {@code boolean} describing whether the fixture should proceed on failures during the
-     *                given-phase.
-     * @return the current FixtureConfiguration, for fluent interfacing
+     * @param suppress A {@code boolean} describing whether the fixture should suppress failures during the
+     *                 given-phase.
+     * @return The current fixture, for fluent interfacing.
      */
-    default FixtureConfiguration proceedOnGivenPhaseExceptions(boolean proceed) {
+    default FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
         return this;
     }
 

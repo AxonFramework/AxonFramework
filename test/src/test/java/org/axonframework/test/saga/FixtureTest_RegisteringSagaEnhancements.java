@@ -83,7 +83,7 @@ class FixtureTest_RegisteringSagaEnhancements {
                 assertEquals(testEvent.getException().getMessage(), exception.getMessage());
 
         this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler)
-                        .proceedOnGivenPhaseExceptions(true);
+                        .suppressExceptionInGivenPhase(true);
 
         this.testSubject.givenAPublished(testEvent);
     }

@@ -415,8 +415,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public FixtureConfiguration proceedOnGivenPhaseExceptions(boolean proceed) {
-        recordingListenerInvocationErrorHandler.proceedWhenNotStarted(proceed);
+    public FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        recordingListenerInvocationErrorHandler.rethrowErrorsWhenNotStarted(!suppress);
         return this;
     }
 
