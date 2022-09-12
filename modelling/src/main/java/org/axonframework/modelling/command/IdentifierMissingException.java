@@ -11,7 +11,7 @@ import org.axonframework.common.AxonException;
 public class IdentifierMissingException extends AxonException {
 
     /**
-     * Construct the exception instance from a message.
+     * Construct a {@code IdentifierMissingException} instance from the given {@code message}.
      *
      * @param message The message to pass on to parent exception.
      */
