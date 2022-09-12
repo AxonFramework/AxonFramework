@@ -1,8 +1,10 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,6 +15,7 @@ import static java.time.Instant.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class dedicated to validating custom, saga specific, registered components on {@link SagaTestFixture}.
@@ -63,15 +66,36 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
-    void customListenerInvocationErrorHandlerIsUsed() {
+    void customListenerInvocationErrorHandlerIsUsedInWhenPhase() {
         SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
+                assertEquals(testEvent.getException().getMessage(), exception.getMessage());
+        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
 
-        ListenerInvocationErrorHandler testSubject = (exception, event, eventHandler) ->
+        this.testSubject.givenNoPriorActivity()
+                        .whenPublishingA(testEvent);
+    }
+
+    @Test
+    void customListenerInvocationErrorHandlerIsUsedInGivenPhase() {
+        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
                 assertEquals(testEvent.getException().getMessage(), exception.getMessage());
 
-        this.testSubject.registerListenerInvocationErrorHandler(testSubject);
-        // This will trigger the test subject due to how the event is configured
+        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler)
+                        .suppressExceptionInGivenPhase(true);
+
         this.testSubject.givenAPublished(testEvent);
+    }
+
+    @Test
+    void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
+        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+        ListenerInvocationErrorHandler testErrorHandler = spy(new LoggingErrorHandler());
+
+        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
+
+        assertThrows(FixtureExecutionException.class, () -> this.testSubject.givenAPublished(testEvent));
     }
 
     @Test

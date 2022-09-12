@@ -18,18 +18,44 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.junit.jupiter.api.*;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link RecordingListenerInvocationErrorHandler}.
+ *
+ * @author Christian Vermorken
+ */
 class RecordingListenerInvocationErrorHandlerTest {
+
+    private static final GenericEventMessage<String> TEST_EVENT = new GenericEventMessage<>("test");
+    public static final IllegalArgumentException TEST_EXCEPTION = new IllegalArgumentException(
+            "This argument is illegal");
+
+
+    private ListenerInvocationErrorHandler wrappedErrorHandler;
+    private EventMessageHandler eventHandler;
+
+    private RecordingListenerInvocationErrorHandler testSubject;
+
+    @BeforeEach
+    void setUp() {
+        eventHandler = mock(EventMessageHandler.class);
+        doReturn(StubSaga.class).when(eventHandler)
+                                .getTargetType();
+
+        wrappedErrorHandler = spy(new LoggingErrorHandler());
+        testSubject = new RecordingListenerInvocationErrorHandler(wrappedErrorHandler);
+    }
 
     @Test
     void emptyOnCreation() {
-        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
-
         assertFalse(testSubject.getException().isPresent());
     }
 
@@ -39,35 +65,48 @@ class RecordingListenerInvocationErrorHandlerTest {
     }
 
     @Test
-    void cannotSetWrappedHanlderToNull() {
-        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
-
+    void cannotSetWrappedHandlerToNull() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.setListenerInvocationErrorHandler(null));
     }
 
     @Test
-    void logExceptionOnError() throws Exception {
-        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
-        EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
-        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
-        IllegalArgumentException expectedException = new IllegalArgumentException("This argument is illegal");
+    void delegatesExceptionToWrappedErrorHandler() throws Exception {
+        testSubject.startRecording();
 
-        testSubject.onError(expectedException, new GenericEventMessage<>("test"), eventMessageHandler);
+        testSubject.onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
 
-        assertTrue(testSubject.getException().isPresent());
-        assertEquals(expectedException, testSubject.getException().get());
+        Optional<Exception> result = testSubject.getException();
+        assertTrue(result.isPresent());
+        assertEquals(TEST_EXCEPTION, result.get());
+        verify(wrappedErrorHandler).onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
     }
 
     @Test
     void clearExceptionOnStartRecording() throws Exception {
-        RecordingListenerInvocationErrorHandler testSubject = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
-        EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
-        doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
-        IllegalArgumentException expectedException = new IllegalArgumentException("This argument is illegal");
-
-        testSubject.onError(expectedException, new GenericEventMessage<>("test"), eventMessageHandler);
+        testSubject.startRecording();
+        testSubject.onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
         testSubject.startRecording();
 
         assertFalse(testSubject.getException().isPresent());
+        verify(wrappedErrorHandler).onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
+    }
+
+    @Test
+    void byDefaultRethrowsExceptionsIfRecordingHasNotStartedYet() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> testSubject.onError(TEST_EXCEPTION, TEST_EVENT, eventHandler));
+        verifyNoInteractions(wrappedErrorHandler);
+    }
+
+    @Test
+    void doesNotRethrowExceptionIfRethrowErrorsWhenNotStartedIsDisabled() throws Exception {
+        testSubject.failOnErrorInPreparation(false);
+
+        testSubject.onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
+
+        Optional<Exception> result = testSubject.getException();
+        assertTrue(result.isPresent());
+        assertEquals(TEST_EXCEPTION, result.get());
+        verify(wrappedErrorHandler).onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
     }
 }
