@@ -17,6 +17,7 @@
 package org.axonframework.tracing;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryMessage;
 
@@ -54,6 +55,12 @@ public class SpanUtils {
             if (!Objects.equals(queryName, message.getPayloadType().getName())) {
                 messageName = queryName;
             }
+        }
+        if(message instanceof DeadlineMessage) {
+            if(message.getPayload() != null) {
+                return ((DeadlineMessage<?>) message).getDeadlineName() + "," +message.getPayloadType().getSimpleName();
+            }
+            return ((DeadlineMessage<?>) message).getDeadlineName();
         }
         return messageName;
     }
