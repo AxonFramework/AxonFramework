@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.springboot.TracingProperties;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -34,6 +35,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * Configures common tracing components for Axon Framework. Defaults to the {@link NoOpSpanFactory} if no other
@@ -60,9 +63,18 @@ public class AxonTracingAutoConfiguration {
     @Bean
     public HandlerEnhancerDefinition tracingHandlerEnhancerDefinition(SpanFactory spanFactory,
                                                                       TracingProperties properties) {
-        return TracingHandlerEnhancerDefinition.builder().spanFactory(spanFactory)
+        return TracingHandlerEnhancerDefinition.builder()
+                                               .spanFactory(spanFactory)
                                                .showEventSourcingHandlers(properties.isShowEventSourcingHandlers())
                                                .build();
+    }
+
+    @Bean
+    public ConfigurerModule configurerModuleForTracing(List<SpanAttributesProvider> spanAttributesProviders) {
+        return configurer -> configurer.onInitialize(config -> {
+            SpanFactory spanFactory = config.spanFactory();
+            spanAttributesProviders.forEach(spanFactory::registerSpanAttributeProvider);
+        });
     }
 
     @Bean
