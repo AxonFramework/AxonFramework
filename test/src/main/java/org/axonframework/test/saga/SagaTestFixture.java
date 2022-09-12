@@ -415,6 +415,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        recordingListenerInvocationErrorHandler.failOnErrorInPreparation(!suppress);
+        return this;
+    }
+
+    @Override
     public FixtureConfiguration registerResourceInjector(ResourceInjector resourceInjector) {
         this.resourceInjector = resourceInjector;
         return this;

@@ -91,7 +91,8 @@ class FixtureExecutionResultImplTest {
 
     @Test
     void startRecording() throws Exception {
-        RecordingListenerInvocationErrorHandler errorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
+        RecordingListenerInvocationErrorHandler errorHandler =
+                new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
         EventMessageHandler eventMessageHandler = mock(EventMessageHandler.class);
         doReturn(StubSaga.class).when(eventMessageHandler).getTargetType();
         testSubject = new FixtureExecutionResultImpl<>(
@@ -99,11 +100,17 @@ class FixtureExecutionResultImplTest {
                 AllFieldsFilter.instance(), errorHandler);
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        GenericEventMessage<TriggerSagaStartEvent> firstEventMessage = new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
+        GenericEventMessage<TriggerSagaStartEvent> firstEventMessage =
+                new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
         eventBus.publish(firstEventMessage);
-        errorHandler.onError(new IllegalArgumentException("First"), firstEventMessage, eventMessageHandler);
+        Exception testException = new IllegalArgumentException("First");
+        assertThrows(IllegalArgumentException.class,
+                     () -> errorHandler.onError(testException, firstEventMessage, eventMessageHandler));
+
         testSubject.startRecording();
-        GenericEventMessage<TriggerSagaEndEvent> endEventMessage = new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
+
+        GenericEventMessage<TriggerSagaEndEvent> endEventMessage =
+                new GenericEventMessage<>(new TriggerSagaEndEvent(identifier));
         eventBus.publish(endEventMessage);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
         IllegalArgumentException secondException = new IllegalArgumentException("Second");

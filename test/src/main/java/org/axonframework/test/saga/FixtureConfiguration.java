@@ -210,6 +210,23 @@ public interface FixtureConfiguration {
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
 
     /**
+     * Configure whether the fixture should suppress exceptions thrown during the given-phase. When {@code suppress} is
+     * {@code true}, the fixture moves on to the when-phase regardless of any exceptions thrown during the given-phase.
+     * <p>
+     * Note that setting this to {@code true} means the
+     * {@link #registerListenerInvocationErrorHandler(ListenerInvocationErrorHandler) registered}
+     * {@link ListenerInvocationErrorHandler} is not invoked during exception in the given-phase. Defaults to
+     * suppressing during given-phase exceptions.
+     *
+     * @param suppress A {@code boolean} describing whether the fixture should suppress failures during the
+     *                 given-phase.
+     * @return The current fixture, for fluent interfacing.
+     */
+    default FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        return this;
+    }
+
+    /**
      * Registers a {@link ResourceInjector} within this fixture. This approach can be used if a custom {@code
      * ResourceInjector} has been built for a project which the user wants to take into account when testing it's
      * sagas.
