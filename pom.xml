@@ -89,7 +89,7 @@
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <el-impl.version>2.2</el-impl.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <hibernate-validator.version>6.2.4.Final</hibernate-validator.version>
+        <hibernate-validator.version>8.0.0.Final</hibernate-validator.version>
 
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
