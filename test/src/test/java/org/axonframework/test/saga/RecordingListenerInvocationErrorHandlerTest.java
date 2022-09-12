@@ -100,7 +100,7 @@ class RecordingListenerInvocationErrorHandlerTest {
 
     @Test
     void doesNotRethrowExceptionIfRethrowErrorsWhenNotStartedIsDisabled() throws Exception {
-        testSubject.rethrowErrorsWhenNotStarted(false);
+        testSubject.failOnErrorInPreparation(false);
 
         testSubject.onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
 

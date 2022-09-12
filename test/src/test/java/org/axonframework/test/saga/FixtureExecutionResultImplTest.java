@@ -103,9 +103,9 @@ class FixtureExecutionResultImplTest {
         GenericEventMessage<TriggerSagaStartEvent> firstEventMessage =
                 new GenericEventMessage<>(new TriggerSagaStartEvent(identifier));
         eventBus.publish(firstEventMessage);
-        assertThrows(IllegalArgumentException.class, () -> errorHandler.onError(
-                new IllegalArgumentException("First"), firstEventMessage, eventMessageHandler
-        ));
+        Exception testException = new IllegalArgumentException("First");
+        assertThrows(IllegalArgumentException.class,
+                     () -> errorHandler.onError(testException, firstEventMessage, eventMessageHandler));
 
         testSubject.startRecording();
 
