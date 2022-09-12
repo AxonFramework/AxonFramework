@@ -123,4 +123,22 @@ class SerializedMessageTest {
         verify(serializer, atLeast(0)).getConverter();
         verifyNoMoreInteractions(serializer);
     }
+
+    @Test
+    void testRethrowSerializationException() {
+        SerializationException serializationException = new SerializationException("test message");
+        when(serializer.deserialize(serializedMetaData)).thenThrow(serializationException);
+        when(serializer.deserialize(serializedPayload)).thenThrow(serializationException);
+
+        SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
+                                                                          serializedMetaData, serializer);
+
+        SerializationException thrown1 = assertThrows(SerializationException.class, message::getPayload);
+        assertEquals("Error while deserializing payload of message " + eventId, thrown1.getMessage());
+        assertSame(serializationException, thrown1.getCause());
+
+        SerializationException thrown2 = assertThrows(SerializationException.class, message::getMetaData);
+        assertEquals("Error while deserializing meta data of message " + eventId, thrown2.getMessage());
+        assertSame(serializationException, thrown2.getCause());
+    }
 }
