@@ -205,7 +205,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerCreatesAlwaysAggregateInstance() throws Exception {
+    void commandHandlerCreatesAlwaysAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
         commandBus.dispatch(message, callback);
@@ -217,13 +217,13 @@ class AggregateAnnotationCommandHandlerTest {
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
-        verify(creationPolicyFactory).create(eq("id"));
+        verify(creationPolicyFactory).create("id");
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq("id"));
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create("id");
     }
 
     @Test
-    void testCommandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
+    void commandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
         commandBus.dispatch(message, callback);
@@ -235,13 +235,13 @@ class AggregateAnnotationCommandHandlerTest {
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
-        verify(creationPolicyFactory).create(eq(null));
+        verify(creationPolicyFactory).create(null);
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq(null));
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
     }
 
     @Test
-    public void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
+    void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
 
@@ -261,11 +261,11 @@ class AggregateAnnotationCommandHandlerTest {
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
         verifyNoInteractions(creationPolicyFactory);
         factoryCaptor.getValue().call();
-        verify(creationPolicyFactory).create(eq("id"));
+        verify(creationPolicyFactory).create("id");
     }
 
     @Test
-    public void testCommandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
+    void commandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
 
@@ -282,9 +282,9 @@ class AggregateAnnotationCommandHandlerTest {
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
 
-        verify(creationPolicyFactory).create(eq(null));
+        verify(creationPolicyFactory).create(null);
         newInstanceCallableFactoryCaptor.getValue().call();
-        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(eq(null));
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
     }
 
     @Test

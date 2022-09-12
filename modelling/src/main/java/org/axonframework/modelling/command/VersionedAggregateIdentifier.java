@@ -37,6 +37,8 @@ public class VersionedAggregateIdentifier {
      *
      * @param identifier The non-null string identifier of the targeted aggregate.
      * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant.
+     * @deprecated In favor of {@link VersionedAggregateIdentifier#VersionedAggregateIdentifier(Object, Long)}, since
+     * the {@code identifier} can be a non-{@link String}.
      */
     @Deprecated
     public VersionedAggregateIdentifier(String identifier, Long version) {

@@ -19,7 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.AxonException;
 
 /**
- * Exception mean to indicate that a required identifier is missing in the processed message.
+ * Exception indicating that a required identifier is missing in the processed message.
  *
  * @author Stefan Andjelkovic
  * @since 4.6.0
