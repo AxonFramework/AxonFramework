@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2022. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
@@ -16,10 +32,10 @@ import java.util.function.Function;
 public abstract class Decisions {
 
     /**
-     * Construct a {@link Ignore} defining that a {@link DeadLetter dead letter} should remain in the queue.
+     * Construct an {@link Ignore} defining that a {@link DeadLetter dead letter} should remain in the queue.
      *
-     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
-     * @return A {@link Ignore} defining that a {@link DeadLetter dead letter} should remain in the queue.
+     * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
+     * @return An {@link Ignore} defining that a {@link DeadLetter dead letter} should remain in the queue.
      */
     public static <M extends Message<?>> Ignore<M> ignore() {
         return new Ignore<>();
@@ -28,7 +44,7 @@ public abstract class Decisions {
     /**
      * Construct a {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should not be enqueued at all.
      *
-     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should not be enqueued at all.
      */
     public static <M extends Message<?>> DoNotEnqueue<M> doNotEnqueue() {
@@ -39,7 +55,7 @@ public abstract class Decisions {
      * Construct a {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should be evicted from the
      * queue.
      *
-     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should be evicted from the queue.
      */
     public static <M extends Message<?>> DoNotEnqueue<M> evict() {
@@ -49,7 +65,7 @@ public abstract class Decisions {
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued.
      *
-     * @param <M> The type of message contained in  the {@link DeadLetter} that's been made a decision on.
+     * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued.
      */
     public static <M extends Message<?>> ShouldEnqueue<M> enqueue() {
@@ -61,7 +77,7 @@ public abstract class Decisions {
      * the given {@code enqueueCause}.
      *
      * @param enqueueCause The reason for enqueueing a {@link DeadLetter dead letter}.
-     * @param <M>          The type of message contained in  the {@link DeadLetter} that's been made a decision on.
+     * @param <M>          The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
@@ -76,7 +92,7 @@ public abstract class Decisions {
      *
      * @param enqueueCause       The reason for enqueueing a {@link DeadLetter dead letter}.
      * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
-     * @param <M>                The type of message contained in  the {@link DeadLetter} that's been made a decision
+     * @param <M>                The type of message contained in the {@link DeadLetter} that's been made a decision
      *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of the
      * given {@code enqueueCause}.
@@ -93,7 +109,7 @@ public abstract class Decisions {
      * the given {@code requeueCause}.
      *
      * @param requeueCause The reason for requeueing a {@link DeadLetter dead letter}.
-     * @param <M>          The type of message contained in  the {@link DeadLetter} that's been made a decision on.
+     * @param <M>          The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of the
      * given {@code requeueCause}.
      */
@@ -108,7 +124,7 @@ public abstract class Decisions {
      *
      * @param requeueCause       The reason for requeueing a {@link DeadLetter dead letter}.
      * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
-     * @param <M>                The type of message contained in  the {@link DeadLetter} that's been made a decision
+     * @param <M>                The type of message contained in the {@link DeadLetter} that's been made a decision
      *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of the
      * given {@code requeueCause}.
