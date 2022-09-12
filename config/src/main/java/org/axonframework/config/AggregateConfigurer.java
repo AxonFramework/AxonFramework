@@ -254,13 +254,15 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         creationPolicyAggregateFactory = new Component<>(
                 () -> parent, name("creationPolicyAggregateFactory"),
                 c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
-        commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
-                                         c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                                               .repository(repository.get())
-                                                                               .commandTargetResolver(commandTargetResolver.get())
-                                                                               .aggregateModel(metaModel.get())
-                                                                               .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
-                                                                               .build());
+        commandHandler = new Component<>(
+                () -> parent, name("aggregateCommandHandler"),
+                c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                      .repository(repository.get())
+                                                      .commandTargetResolver(commandTargetResolver.get())
+                                                      .aggregateModel(metaModel.get())
+                                                      .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
+                                                      .build()
+        );
     }
 
     private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
@@ -309,14 +311,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the factory to create new Aggregates instances of the type under configuration when initializing
-     * those instances from non constructor Command handlers annotated with {@link org.axonframework.modelling.command.CreationPolicy}.
+     * Defines the factory to create new Aggregates instances of the type under configuration when initializing those
+     * instances from non constructor Command handlers annotated with
+     * {@link org.axonframework.modelling.command.CreationPolicy}.
      *
      * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
-            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder) {
+            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder
+    ) {
         creationPolicyAggregateFactory.update(creationPolicyAggregateFactoryBuilder);
         return this;
     }

@@ -24,7 +24,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -32,12 +31,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
- * CommandTargetResolver that uses annotations on the command to identify the methods that provide the
- * Aggregate Identifier of the targeted Aggregate and optionally the expected version of the aggregate.
+ * CommandTargetResolver that uses annotations on the command to identify the methods that provide the Aggregate
+ * Identifier of the targeted Aggregate and optionally the expected version of the aggregate.
  * <p/>
  * This implementation expects at least one method (without parameters) or field in the command to be annotated with
- * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will used as
- * Aggregate Identifier. If on a field, the value held in that field is used.
+ * {@link TargetAggregateIdentifier}. If on a method, the result of the invocation of that method will use as Aggregate
+ * Identifier. If on a field, the value held in that field is used.
  * <p/>
  * Similarly, the expected aggregate version may be provided by annotating a method (without parameters) or field with
  * {@link TargetAggregateVersion}. The return value of the method or value held in the field is used as the expected
@@ -59,7 +58,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
      *
      * @return a Builder to be able to create a{@link AnnotationCommandTargetResolver}
      */
-    public static final Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -102,11 +101,12 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
             throw new IllegalArgumentException("The value provided for the version is not a number.", e);
         }
         if (aggregateIdentifier == null) {
-            throw new IdentifierMissingException(
-                    format("Invalid command. It does not identify the target aggregate. "
-                                   + "Make sure at least one of the fields or methods in the [%s] class contains the "
-                                   + "@TargetAggregateIdentifier annotation and that it returns a non-null value.",
-                           command.getPayloadType().getSimpleName()));
+            throw new IdentifierMissingException(format(
+                    "Invalid command. It does not identify the target aggregate. "
+                            + "Make sure at least one of the fields or methods in the [%s] class contains the "
+                            + "@TargetAggregateIdentifier annotation and that it returns a non-null value.",
+                    command.getPayloadType().getSimpleName()
+            ));
         }
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
@@ -119,7 +119,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return asLong(invokeAnnotated(command, versionAnnotation));
     }
 
-    private static Object invokeAnnotated(Message<?> command, Class<? extends Annotation> annotation) throws InvocationTargetException, IllegalAccessException {
+    private static Object invokeAnnotated(
+            Message<?> command, Class<? extends Annotation> annotation
+    ) throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.getPayloadType())) {
             if (AnnotationUtils.isAnnotationPresent(m, annotation)) {
                 ensureAccessible(m);
@@ -137,7 +139,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     private Long asLong(Object fieldValue) {
         if (fieldValue == null) {
             return null;
-        } else if (Number.class.isInstance(fieldValue)) {
+        } else if (fieldValue instanceof Number) {
             return ((Number) fieldValue).longValue();
         } else {
             return Long.parseLong(fieldValue.toString());
@@ -169,10 +171,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * <p>
          * Defaults to {@link TargetAggregateIdentifier}.<br>
          * <p>
-         * Use this method if you use an other annotation to mark the field or method
-         * that identifies the target aggregate
-         * and it is not possible to put @{@link TargetAggregateIdentifier}
-         * into that annotation (to use it as meta-annotation).
+         * Use this method if you use another annotation to mark the field or method that identifies the target
+         * aggregate, and it is not possible to put @{@link TargetAggregateIdentifier} into that annotation (to use it
+         * as meta-annotation).
          *
          * @param annotation {@link Class} of type {@link Annotation}.
          * @return the current {@link Builder} instance, for fluent interfacing
@@ -188,10 +189,9 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
          * <p>
          * Defaults to {@link TargetAggregateVersion}.
          * <p>
-         * Use this method if you use an other annotation to mark the field or method
-         * that identifies the version of the aggregate
-         * and it is not possible to put @{@link TargetAggregateVersion}
-         * into that annotation (to use it as meta-annotation).
+         * Use this method if you use another annotation to mark the field or method that identifies the version of the
+         * aggregate, and it is not possible to put @{@link TargetAggregateVersion} into that annotation (to use it as
+         * meta-annotation).
          *
          * @param annotation {@link Class} of type {@link Annotation}.
          * @return the current {@link Builder} instance, for fluent interfacing

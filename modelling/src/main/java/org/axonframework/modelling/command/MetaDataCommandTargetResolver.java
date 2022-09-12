@@ -17,7 +17,6 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Assert;
 
 import javax.annotation.Nonnull;
 
@@ -37,28 +36,28 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     private final String versionKey;
 
     /**
-     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData
-     * key to the aggregate identifier, and a {@code null} (ignored) version.
+     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData key to the
+     * aggregate identifier, and a {@code null} (ignored) version.
      * <p/>
-     * When the given {@code identifierKey} is not present in a command's MetaData, {@link
-     * #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
+     * When the given {@code identifierKey} is not present in a command's MetaData,
+     * {@link #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
      *
-     * @param identifierKey The key of the meta data field containing the aggregate identifier
+     * @param identifierKey The key of the metadata field containing the aggregate identifier
      */
     public MetaDataCommandTargetResolver(String identifierKey) {
         this(identifierKey, null);
     }
 
     /**
-     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData
-     * key to the aggregate identifier, and the given {@code versionKey} as key to the (optional) version entry.
+     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData key to the
+     * aggregate identifier, and the given {@code versionKey} as key to the (optional) version entry.
      * <p/>
-     * When the given {@code identifierKey} is not present in a command's MetaData, {@link
-     * #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
+     * When the given {@code identifierKey} is not present in a command's MetaData,
+     * {@link #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
      *
-     * @param identifierKey The key of the meta data field containing the aggregate identifier
-     * @param versionKey    The key of the meta data field containing the expected aggregate version. A
-     *                      {@code null} value may be provided to ignore the version
+     * @param identifierKey The key of the metadata field containing the aggregate identifier
+     * @param versionKey    The key of the metadata field containing the expected aggregate version. A {@code null}
+     *                      value may be provided to ignore the version
      */
     public MetaDataCommandTargetResolver(String identifierKey, String versionKey) {
         this.versionKey = versionKey;
@@ -69,7 +68,9 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     public VersionedAggregateIdentifier resolveTarget(@Nonnull CommandMessage<?> command) {
         Object identifier = command.getMetaData().get(identifierKey);
         if (identifier == null) {
-            throw new IdentifierMissingException("The MetaData for the command does not exist or contains a null value");
+            throw new IdentifierMissingException(
+                    "The MetaData for the command does not contain an identifier under key [" + identifierKey + "]"
+            );
         }
         Long version = (Long) (versionKey == null ? null : command.getMetaData().get(versionKey));
         return new VersionedAggregateIdentifier(identifier, version);

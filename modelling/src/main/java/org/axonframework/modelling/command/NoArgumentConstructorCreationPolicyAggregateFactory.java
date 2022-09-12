@@ -20,11 +20,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Default implementation of {@link CreationPolicyAggregateFactory} that invokes the default, No-Arguments
- * constructor of the class.
+ * Default implementation of {@link CreationPolicyAggregateFactory} that invokes the default, no-arguments constructor
+ * of the aggregate class {@code A}.
+ *
+ * @param <A> The aggregate type this factory constructs.
  * @author Stefan Andjelkovic
  * @since 4.6.0
- * @param <A> aggregate type
  */
 public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements CreationPolicyAggregateFactory<A> {
 
@@ -32,17 +33,19 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
 
     /**
      * Construct an instance of the {@link NoArgumentConstructorCreationPolicyAggregateFactory} for the given type.
-     * @param aggregateClass aggregate type
+     *
+     * @param aggregateClass The aggregate type.
      */
     public NoArgumentConstructorCreationPolicyAggregateFactory(@Nonnull Class<? extends A> aggregateClass) {
         this.aggregateClass = aggregateClass;
     }
 
     /**
-     * Creates the aggregate instance based on the previously provided type. Invokes the default,
-     * no-argument constructor of the class.
-     * @param identifier ignored identifier
-     * @return Aggregate instance
+     * Creates the aggregate instance based on the previously provided type. Invokes the default, no-argument
+     * constructor of the class.
+     *
+     * @param identifier The identifier to create the aggregate with. Not used by this factory.
+     * @return An aggregate instance.
      */
     @Nonnull
     @Override
@@ -52,5 +55,5 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    };
+    }
 }

@@ -53,10 +53,10 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
 
 /**
- * Command handler that registers a set of {@link CommandHandler} based on annotations of an aggregate. Those annotations
- * may appear on methods, in which case a specific aggregate instance needs to be targeted by the command, or on the
- * constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
- *
+ * Command handler that registers a set of {@link CommandHandler} based on annotations of an aggregate. Those
+ * annotations may appear on methods, in which case a specific aggregate instance needs to be targeted by the command,
+ * or on the constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
+ * <p>
  * Despite being an {@link CommandMessageHandler} it does not actually handle the commands. During registration to the
  * {@link CommandBus} it registers the {@link CommandMessageHandler}s directly instead of itself so duplicate command
  * handlers can be detected and handled correctly.
@@ -77,12 +77,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}.
-     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
-     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
-     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}. The
+     * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
+     * is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
+     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
+     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
      * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
@@ -111,17 +111,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         this.supportedCommandNames = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
-        this.creationPolicyAggregateFactory = initializeAggregateFactory(aggregateModel,
-                                                                         builder.creationPolicyAggregateFactory);
+        this.creationPolicyAggregateFactory =
+                initializeAggregateFactory(aggregateModel.entityClass(), builder.creationPolicyAggregateFactory);
         this.handlers = initializeHandlers(aggregateModel);
     }
 
-    private CreationPolicyAggregateFactory<T> initializeAggregateFactory(AggregateModel<T> aggregateModel,
-                                                           CreationPolicyAggregateFactory<T> configuredAggregateFactory) {
-        if (configuredAggregateFactory != null) {
-            return configuredAggregateFactory;
-        }
-        return new NoArgumentConstructorCreationPolicyAggregateFactory<T>(aggregateModel.entityClass());
+    private CreationPolicyAggregateFactory<T> initializeAggregateFactory(Class<? extends T> aggregateClass,
+                                                                         CreationPolicyAggregateFactory<T> configuredAggregateFactory) {
+        return configuredAggregateFactory != null
+                ? configuredAggregateFactory
+                : new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateClass);
     }
 
     /**
@@ -190,14 +189,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
             } else {
                 switch (policy.orElse(NEVER)) {
                     case ALWAYS:
-                        messageHandler = new AlwaysCreateAggregateCommandHandler(
-                                handler, creationPolicyAggregateFactory
-                        );
+                        messageHandler =
+                                new AlwaysCreateAggregateCommandHandler(handler, creationPolicyAggregateFactory);
                         break;
                     case CREATE_IF_MISSING:
-                        messageHandler = new AggregateCreateOrUpdateCommandHandler(
-                                handler, creationPolicyAggregateFactory
-                        );
+                        messageHandler =
+                                new AggregateCreateOrUpdateCommandHandler(handler, creationPolicyAggregateFactory);
                         break;
                     case NEVER:
                         messageHandler = new AggregateCommandHandler(handler);
@@ -252,7 +249,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
      * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
      * is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
      * AggregateModel, either an AggregateModel can be provided directly or an {@code aggregateType} of type
-     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel
+     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel
      * <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
@@ -359,7 +357,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
          * @param creationPolicyAggregateFactory that returns the aggregate instance based on the identifier
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> creationPolicyAggregateFactory(CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory) {
+        public Builder<T> creationPolicyAggregateFactory(
+                CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory
+        ) {
             assertNonNull(creationPolicyAggregateFactory, "CreationPolicyAggregateFactory may not be null");
             this.creationPolicyAggregateFactory = creationPolicyAggregateFactory;
             return this;
@@ -457,30 +457,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            return handleNewInstanceCreation(command, factoryMethod, handler,
-                                             resolveNullableVersionedAggregateIdentifier(command));
+            return handleNewInstanceCreation(command, factoryMethod, handler, resolveNullableAggregateId(command));
         }
 
         @Override
         public boolean canHandle(CommandMessage<?> message) {
             return handler.canHandle(message);
         }
-    }
-
-    private VersionedAggregateIdentifier resolveNullableVersionedAggregateIdentifier(
-            CommandMessage<?> command) {
-        try {
-            return commandTargetResolver.resolveTarget(command);
-        } catch (IdentifierMissingException exception) {
-            return null;
-        }
-    }
-
-    private static <T> boolean handlerHasVoidReturnType(MessageHandlingMember<? super T> handler) {
-        return handler.unwrap(Method.class)
-                      .map(Method::getReturnType)
-                      .filter(void.class::equals)
-                      .isPresent();
     }
 
     private class AggregateCreateOrUpdateCommandHandler implements MessageHandler<CommandMessage<?>> {
@@ -496,17 +479,19 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
-            VersionedAggregateIdentifier versionedAggregateIdentifier = resolveNullableVersionedAggregateIdentifier(
-                    command);
+            VersionedAggregateIdentifier versionedAggregateIdentifier = resolveNullableAggregateId(command);
 
             Object result;
             if (versionedAggregateIdentifier != null) {
-                Aggregate<T> instance = repository.loadOrCreate(versionedAggregateIdentifier.getIdentifier(),
-                                                                () -> factoryMethod.create(versionedAggregateIdentifier.getIdentifierValue()));
+                Aggregate<T> instance = repository.loadOrCreate(
+                        versionedAggregateIdentifier.getIdentifier(),
+                        () -> factoryMethod.create(versionedAggregateIdentifier.getIdentifierValue())
+                );
                 result = instance.handle(command);
             } else {
-                result = handleNewInstanceCreation(command, factoryMethod, handler,
-                                                   resolveNullableVersionedAggregateIdentifier(command));
+                result = handleNewInstanceCreation(
+                        command, factoryMethod, handler, resolveNullableAggregateId(command)
+                );
             }
             return result;
         }
@@ -514,6 +499,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
         @Override
         public boolean canHandle(CommandMessage<?> message) {
             return handler.canHandle(message);
+        }
+    }
+
+    private VersionedAggregateIdentifier resolveNullableAggregateId(CommandMessage<?> command) {
+        try {
+            return commandTargetResolver.resolveTarget(command);
+        } catch (IdentifierMissingException exception) {
+            // Couldn't find identifier in given command, so defaulting to null.
+            // Assuming it will be set in the command handler.
+            return null;
         }
     }
 
@@ -527,14 +522,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                                                    .map(VersionedAggregateIdentifier::getIdentifierValue)
                                                    .orElse(null);
 
-        Aggregate<T> aggregate = repository.newInstance(() -> factoryMethod.create(commandMessageAggregateId),
-                                                         agg -> {
-                                                            try {
-                                                                response.set(agg.handle(command));
-                                                            } catch (Exception e) {
-                                                                exceptionDuringInit.set(e);
-                                                            }
-                                                        });
+        Aggregate<T> aggregate = repository.newInstance(
+                () -> factoryMethod.create(commandMessageAggregateId),
+                a -> {
+                    try {
+                        response.set(a.handle(command));
+                    } catch (Exception e) {
+                        exceptionDuringInit.set(e);
+                    }
+                }
+        );
 
         if (exceptionDuringInit.get() != null) {
             throw exceptionDuringInit.get();
@@ -542,6 +539,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
 
         return handlerHasVoidReturnType(handler) ? resolveReturnValue(command, aggregate) : response.get();
     }
+
+    private static <T> boolean handlerHasVoidReturnType(MessageHandlingMember<? super T> handler) {
+        return handler.unwrap(Method.class)
+                      .map(Method::getReturnType)
+                      .filter(void.class::equals)
+                      .isPresent();
+    }
+
     private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;

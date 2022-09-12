@@ -30,7 +30,9 @@ public class StubAggregateForCreation {
     String identifier;
     AggregateCreationPolicy aggregateCreationPolicy;
 
-    public StubAggregateForCreation() {}
+    @SuppressWarnings("unused")
+    public StubAggregateForCreation() {
+    }
 
     public StubAggregateForCreation(String identifier) {
         this.identifier = identifier;
@@ -74,6 +76,7 @@ public class StubAggregateForCreation {
     }
 
     public static class CreateAlwaysCommand {
+
         @TargetAggregateIdentifier
         private final String aggregateId;
 
@@ -100,6 +103,7 @@ public class StubAggregateForCreation {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class CreatedEvent {
 
         private final String aggregateIdentifier;
@@ -114,11 +118,9 @@ public class StubAggregateForCreation {
             return aggregateIdentifier;
         }
 
-
         public AggregateCreationPolicy getAggregateCreationPolicy() {
             return aggregateCreationPolicy;
         }
     }
-
 }
 

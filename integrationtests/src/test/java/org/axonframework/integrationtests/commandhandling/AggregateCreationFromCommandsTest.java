@@ -37,8 +37,9 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.mockito.Mockito.*;
 
 /**
- * Tests various ways to create aggregates based on incoming Commands.
- * Some cases will use aggregate class's constructors while others might use regular or static methods
+ * Tests various ways to create aggregates based on incoming Commands. Some cases will use aggregate class's
+ * constructors while others might use regular or static methods
+ *
  * @author Stefan Andjelkovic
  */
 class AggregateCreationFromCommandsTest {
@@ -154,6 +155,7 @@ class AggregateCreationFromCommandsTest {
                 .aggregateType(StubAggregateForCreation.class)
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
+        //noinspection resource
         ch.subscribe(commandBus);
     }
 
@@ -162,12 +164,13 @@ class AggregateCreationFromCommandsTest {
                 .<StubAggregateForCreation>builder()
                 .repository(repository)
                 .aggregateType(StubAggregateForCreation.class)
-                .creationPolicyAggregateFactory(id ->  {
+                .creationPolicyAggregateFactory(id -> {
                     factoryInvocationCounter.incrementAndGet();
-                    return new StubAggregateForCreation(id.toString());
+                    return new StubAggregateForCreation(id != null ? id.toString() : "null");
                 })
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
+        //noinspection resource
         ch.subscribe(commandBus);
     }
 }
