@@ -41,7 +41,9 @@ import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -76,6 +78,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Repository<A>> repository;
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
+    private final Component<CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactory;
     private final Component<LockFactory> lockFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<SnapshotFilter> snapshotFilter;
@@ -248,12 +251,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     }
                     return builder.build();
                 });
-        commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
-                                         c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                 .repository(repository.get())
-                                                 .commandTargetResolver(commandTargetResolver.get())
-                                                 .aggregateModel(metaModel.get())
-                                                 .build());
+        creationPolicyAggregateFactory = new Component<>(
+                () -> parent, name("creationPolicyAggregateFactory"),
+                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
+        commandHandler = new Component<>(
+                () -> parent, name("aggregateCommandHandler"),
+                c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                      .repository(repository.get())
+                                                      .commandTargetResolver(commandTargetResolver.get())
+                                                      .aggregateModel(metaModel.get())
+                                                      .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
+                                                      .build()
+        );
     }
 
     private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
@@ -298,6 +307,21 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureAggregateFactory(
             Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
+        return this;
+    }
+
+    /**
+     * Defines the factory to create new Aggregates instances of the type under configuration when initializing those
+     * instances from non constructor Command handlers annotated with
+     * {@link org.axonframework.modelling.command.CreationPolicy}.
+     *
+     * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
+            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder
+    ) {
+        creationPolicyAggregateFactory.update(creationPolicyAggregateFactoryBuilder);
         return this;
     }
 
@@ -408,8 +432,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * configuration should filter out events with non-matching types. This may be used to support installations where
      * multiple Aggregate types share overlapping Aggregate IDs.
      * <p>
-     * Note that this configuration is ignored if a custom repository instance is configured, and that {@link
-     * #configureEventStreamFilter(Function)} overrides this.
+     * Note that this configuration is ignored if a custom repository instance is configured, and that
+     * {@link #configureEventStreamFilter(Function)} overrides this.
      *
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
@@ -479,5 +503,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> withSubtypes(Collection<Class<? extends A>> subtypes) {
         this.subtypes.addAll(subtypes);
         return this;
+    }
+
+    /**
+     * Returns the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     *
+     * @return the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     */
+    public CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory() {
+        return creationPolicyAggregateFactory.get();
     }
 }

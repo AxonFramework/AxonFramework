@@ -39,7 +39,10 @@ import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.CreationPolicy;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
@@ -56,6 +59,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.persistence.EntityManager;
 
 import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
@@ -398,6 +402,31 @@ public class AggregateConfigurerTest {
         assertFalse(result.allow(testDomainEventData));
     }
 
+    @Test
+    void configuredCreationPolicyAggregateFactoryIsUsedDuringAggregateConstruction() {
+        AtomicBoolean counter = new AtomicBoolean(false);
+
+        CreationPolicyAggregateFactory<A> testFactory = identifier -> {
+            counter.set(true);
+            return new A(identifier != null ? identifier.toString() : "null");
+        };
+
+        AggregateConfigurer<A> testAggregateConfigurer =
+                AggregateConfigurer.defaultConfiguration(A.class)
+                                   .configureCreationPolicyAggregateFactory(c -> testFactory);
+
+        Configuration testConfig = DefaultConfigurer.defaultConfiguration()
+                                                    .configureAggregate(testAggregateConfigurer)
+                                                    .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                    .start();
+
+        CreationPolicyAggregateFactory<A> resultFactory = testAggregateConfigurer.creationPolicyAggregateFactory();
+        assertEquals(testFactory, resultFactory);
+
+        testConfig.commandGateway()
+                  .sendAndWait(new AlwaysCreationPolicyCommand("some-id"));
+        assertTrue(counter.get());
+    }
 
     private static class TestAggregate {
 
@@ -424,6 +453,16 @@ public class AggregateConfigurerTest {
 
         public String getId() {
             return id;
+        }
+    }
+
+    private static class AlwaysCreationPolicyCommand {
+
+        @TargetAggregateIdentifier
+        private final String id;
+
+        private AlwaysCreationPolicyCommand(String id) {
+            this.id = id;
         }
     }
 
@@ -498,6 +537,12 @@ public class AggregateConfigurerTest {
             apply(new ACreatedEvent(id));
         }
 
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        @CommandHandler
+        public void handle(AlwaysCreationPolicyCommand command) {
+            apply(new ACreatedEvent(id));
+        }
+
         @EventSourcingHandler
         public void on(ACreatedEvent evt) {
             this.id = evt.getId();
@@ -506,6 +551,10 @@ public class AggregateConfigurerTest {
         @CommandHandler
         public String handle(DoSomethingCommand cmd) {
             return this.getClass().getSimpleName() + cmd.getId();
+        }
+
+        public String getId() {
+            return id;
         }
     }
 
