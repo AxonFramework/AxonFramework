@@ -17,6 +17,7 @@
 package org.axonframework.tracing;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -66,5 +67,17 @@ class SpanUtilsTest {
         GenericCommandMessage<String> message = new GenericCommandMessage<>(new GenericCommandMessage<>("MyPayload"),
                                                                             "SuperCommand");
         assertEquals("SuperCommand", SpanUtils.determineMessageName(message));
+    }
+
+    @Test
+    void determineMessageNameForDeadlineWithoutPayload() {
+        GenericDeadlineMessage<String> message = new GenericDeadlineMessage<>("myDeadlineName");
+        assertEquals("myDeadlineName", SpanUtils.determineMessageName(message));
+    }
+
+    @Test
+    void determineMessageNameForDeadlineWithPayload() {
+        GenericDeadlineMessage<String> message = new GenericDeadlineMessage<>("myDeadlineName", "MyPayload");
+        assertEquals("myDeadlineName,String", SpanUtils.determineMessageName(message));
     }
 }
