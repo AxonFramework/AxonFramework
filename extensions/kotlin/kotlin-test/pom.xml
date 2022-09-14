@@ -8,7 +8,7 @@
   <parent>
     <artifactId>axon-kotlin-parent</artifactId>
     <groupId>org.axonframework.extensions.kotlin</groupId>
-    <version>4.6.0</version>
+    <version>4.6.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>axon-kotlin-test</artifactId>
