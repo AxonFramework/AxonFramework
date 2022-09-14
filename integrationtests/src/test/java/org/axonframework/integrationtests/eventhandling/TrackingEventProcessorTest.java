@@ -1486,7 +1486,7 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    @Timeout(value = 10)
+    @Timeout(value = 20)
     void mergeSegmentsDuringReplay() throws Exception {
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
