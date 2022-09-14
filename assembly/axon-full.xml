@@ -29,8 +29,10 @@
             </includes>
             <excludes>
                 <exclude>*:axon-integrationtests</exclude>
+                <exclude>*:axon-integrationtests-jakarta</exclude>
                 <exclude>*:axon-spring-boot-starter</exclude>
                 <exclude>*:axon-spring-boot-starter-jgroups</exclude>
+                <exclude>*:axon-reactorless-test</exclude>
             </excludes>
             <binaries>
                 <outputDirectory>dist</outputDirectory>
