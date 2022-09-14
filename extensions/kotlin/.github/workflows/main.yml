@@ -11,6 +11,8 @@ jobs:
   build:
     name: Test and Build on JDK ${{ matrix.java-version }}
     runs-on: ubuntu-latest
+    continue-on-error: true # do not fail the whole job if one of the steps fails
+
     strategy:
       matrix:
         include:
@@ -36,17 +38,17 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-            ./mvnw -B -U clean verify
+          ./mvnw -B -U -Dstyle.color=always clean verify
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-            ./mvnw -B -U -Dcoverage clean verify
+          ./mvnw -B -U -Dstyle.color=always -Dcoverage clean verify
 
       - name: Sonar Analysis
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B sonar:sonar \
+          ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_extension-kotlin \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
@@ -55,9 +57,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to Sonatype
-        if: success()
+        if: success() && ${{ matrix.deploy-enabled }}
         run: |
-          ./mvnw -B -U deploy -DskipTests=true
+          ./mvnw -B -U -Dstyle.color=always deploy -DskipTests=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}
