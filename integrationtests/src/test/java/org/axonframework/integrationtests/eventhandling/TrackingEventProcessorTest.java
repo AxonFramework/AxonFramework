@@ -99,9 +99,16 @@ import static org.mockito.Mockito.*;
  * Test class validating the {@link TrackingEventProcessor}. This test class is part of the {@code integrationtests}
  * module as it relies on both the {@code messaging} (where the {@code TrackingEventProcessor} resides) and
  * {@code eventsourcing} modules.
+ * <p>
+ * This test class suppresses the "BusyWait" warning that occurs through the {@link Thread#sleep(long)} operations used
+ * throughout this test class. Although not ideal, the effort to solve this needs to wait a little for future effort.
+ * What would be ideal, is if there's a form of abstract {@link org.axonframework.eventhandling.StreamingEventProcessor}
+ * test suite, that's used by all implementations. Using the current
+ * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor} test for this as a base is suggested.
  *
  * @author Rene de Waele
  */
+@SuppressWarnings("BusyWait")
 class TrackingEventProcessorTest {
 
     private static final Object NO_RESET_PAYLOAD = null;
@@ -200,16 +207,26 @@ class TrackingEventProcessorTest {
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
         eventBus = EmbeddedEventStore.builder()
                                      .storageEngine(new InMemoryEventStorageEngine())
-                                     .spanFactory(spanFactory)
+                                     .spanFactory(NoOpSpanFactory.INSTANCE)
                                      .build();
         sleepInstructions = new CopyOnWriteArrayList<>();
 
+        initDefaultProcessor();
+    }
+
+    private void initDefaultProcessor() {
         initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
                                                          .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS));
     }
 
     private void initProcessor(TrackingEventProcessorConfiguration config) {
         initProcessor(config, UnaryOperator.identity());
+    }
+
+    private void initProcessor(UnaryOperator<TrackingEventProcessor.Builder> customization) {
+        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                         .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
+                      customization);
     }
 
     private void initProcessor(TrackingEventProcessorConfiguration config,
@@ -222,7 +239,7 @@ class TrackingEventProcessorTest {
                                       .trackingEventProcessorConfiguration(config)
                                       .tokenStore(tokenStore)
                                       .transactionManager(mockTransactionManager)
-                                      .spanFactory(spanFactory);
+                                      .spanFactory(NoOpSpanFactory.INSTANCE);
         testSubject = new TrackingEventProcessor(customization.apply(eventProcessorBuilder)) {
             @Override
             protected void doSleepFor(long millisToSleep) {
@@ -250,12 +267,7 @@ class TrackingEventProcessorTest {
                                                                 .storageEngine(sequenceEventStorageEngine)
                                                                 .build();
 
-        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                         .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
-                      b -> {
-                          b.messageSource(sequenceEventBus);
-                          return b;
-                      });
+        initProcessor(builder -> builder.messageSource(sequenceEventBus));
 
         historic.appendEvents(createEvent(AGGREGATE, 1L, "message1"), createEvent(AGGREGATE, 2L, "message2"));
         // to make sure tracking tokens match, we need to offset the InMemoryEventStorageEngine
@@ -303,6 +315,8 @@ class TrackingEventProcessorTest {
 
     @Test
     void handlersAreTraced() throws Exception {
+        initProcessor(builder -> builder.spanFactory(spanFactory));
+
         CountDownLatch countDownLatch = new CountDownLatch(2);
         doAnswer(invocation -> {
             Message<?> message = invocation.getArgument(0, Message.class);
@@ -438,6 +452,7 @@ class TrackingEventProcessorTest {
     @Test
     void tokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -464,6 +479,7 @@ class TrackingEventProcessorTest {
             }
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -507,6 +523,7 @@ class TrackingEventProcessorTest {
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -550,6 +567,7 @@ class TrackingEventProcessorTest {
             return i.callRealMethod();
         }).when(tokenStore).extendClaim(anyString(), anyInt());
 
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -584,6 +602,7 @@ class TrackingEventProcessorTest {
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
         CountDownLatch countDownLatch = new CountDownLatch(2);
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             Thread.sleep(50);
@@ -606,17 +625,15 @@ class TrackingEventProcessorTest {
 
     @Test
     void tokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
-        initProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing().
-                                                         andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
-                      builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE));
-
         CountDownLatch countDownLatch = new CountDownLatch(1);
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 throw new MockException();
             });
             return interceptorChain.proceed();
         }));
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -635,6 +652,7 @@ class TrackingEventProcessorTest {
     void continueFromPreviousToken() throws Exception {
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
+        //noinspection resource
         TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
         tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
         assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(testSubject.getName(), 0));
@@ -731,6 +749,7 @@ class TrackingEventProcessorTest {
         Thread.sleep(200);
         assertTrue(countDownLatch.await(10, TimeUnit.SECONDS), "Expected 5 invocations on Event Handler by now");
         assertEquals(5, acknowledgedEvents.size());
+        //noinspection resource
         verify(eventBus, times(2)).openStream(any());
     }
 
@@ -785,6 +804,7 @@ class TrackingEventProcessorTest {
     void firstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
@@ -793,6 +813,7 @@ class TrackingEventProcessorTest {
             });
             return interceptorChain.proceed();
         }));
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -825,7 +846,7 @@ class TrackingEventProcessorTest {
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();
 
-        //noinspection Duplicates
+        //noinspection Duplicates,resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
@@ -837,6 +858,7 @@ class TrackingEventProcessorTest {
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
 
+        //noinspection resource
         testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
@@ -1184,42 +1206,6 @@ class TrackingEventProcessorTest {
         assertEquals(resetContext, ReplayToken.replayContext(test, String.class).orElse(null));
     }
 
-    private static class MyResetContext {
-
-        private String property;
-
-        private MyResetContext(String property) {
-            this.property = property;
-        }
-
-        public String getProperty() {
-            return property;
-        }
-
-        public void setProperty(String property) {
-            this.property = property;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            MyResetContext that = (MyResetContext) o;
-
-            return Objects.equals(property, that.property);
-        }
-
-        @Override
-        public int hashCode() {
-            return property != null ? property.hashCode() : 0;
-        }
-    }
-
     @Test
     void whenFailureDuringInit() throws InterruptedException {
         doThrow(new RuntimeException("Faking issue during fetchSegments"))
@@ -1562,8 +1548,7 @@ class TrackingEventProcessorTest {
                                                        .collect(toList());
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
-        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2),
-                      builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE));
+        initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         when(mockHandler.handle(any())).thenAnswer(i -> {
             TrackedEventMessage<?> message = i.getArgument(0);
             if (ReplayToken.isReplay(message)) {
@@ -1654,7 +1639,8 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow-up from issue https://github.com/AxonIQ/axon-server-se/issues/135
+     * This test is a follow-up from issue
+     * <a href="https://github.com/AxonIQ/axon-server-se/issues/135">#135</a>.
      */
     @Test
     @Timeout(value = 10)
@@ -1671,7 +1657,8 @@ class TrackingEventProcessorTest {
     }
 
     /**
-     * This test is a follow-up from issue https://github.com/AxonFramework/AxonFramework/issues/1212
+     * This test is a follow-up from issue
+     * <a href="https://github.com/AxonFramework/AxonFramework/issues/1212">#1212</a>.
      */
     @Test
     void thrownErrorBubblesUp() {
@@ -1913,7 +1900,7 @@ class TrackingEventProcessorTest {
                         hasNextInvoked.set(true);
                         boolean result = trackingEventStream.hasNextAvailable(timeout, unit);
                         hasNextAvailableTimedOut.set(false);
-                        // Add sleep to ensure switching hasNextAvailableTimedOut and it's assertion has precedence
+                        // Add sleep to ensure switching hasNextAvailableTimedOut, and it's assertion has precedence
                         // over regular execution of the TrackingEventProcessor.
                         Thread.sleep(5);
                         return result;
@@ -1931,8 +1918,7 @@ class TrackingEventProcessorTest {
                 };
             }
         };
-        initProcessor(tepConfiguration, builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE)
-                                                          .messageSource(enhancedEventStore));
+        initProcessor(tepConfiguration, builder -> builder.messageSource(enhancedEventStore));
         testSubject.start();
 
         assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(hasNextInvoked.get()));
@@ -1970,11 +1956,6 @@ class TrackingEventProcessorTest {
     @Test
     @Timeout(value = 1000)
     void isReplayingWhenNotCaughtUp() throws Exception {
-        initProcessor(
-                TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
-                                                   .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS),
-                builder -> builder.spanFactory(NoOpSpanFactory.INSTANCE)
-        );
         when(mockHandler.supportsReset()).thenReturn(true);
 
         final List<String> handled = new CopyOnWriteArrayList<>();
@@ -2006,7 +1987,7 @@ class TrackingEventProcessorTest {
         testSubject.resetTokens();
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
 
-        // set a processing delay to ensure we see some of the redelivery events first
+        // Set a processing delay to ensure we see some redelivery events first.
         delay.set(10);
 
         testSubject.start();
@@ -2066,7 +2047,9 @@ class TrackingEventProcessorTest {
                                                              createdThreads.add(thread);
                                                              return thread;
                                                          })
-                                                         .andWorkerTerminationTimeout(testWorkerTerminationTimeout)
+                                                         .andWorkerTerminationTimeout(
+                                                                 testWorkerTerminationTimeout, TimeUnit.MILLISECONDS
+                                                         )
                                                          .andEventAvailabilityTimeout(20, TimeUnit.SECONDS));
 
         testSubject.start();
@@ -2175,5 +2158,42 @@ class TrackingEventProcessorTest {
     private static class TestError extends Error {
 
         private static final long serialVersionUID = -5579826202840099704L;
+    }
+
+    @SuppressWarnings("unused")
+    private static class MyResetContext {
+
+        private String property;
+
+        private MyResetContext(String property) {
+            this.property = property;
+        }
+
+        public String getProperty() {
+            return property;
+        }
+
+        public void setProperty(String property) {
+            this.property = property;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            MyResetContext that = (MyResetContext) o;
+
+            return Objects.equals(property, that.property);
+        }
+
+        @Override
+        public int hashCode() {
+            return property != null ? property.hashCode() : 0;
+        }
     }
 }
