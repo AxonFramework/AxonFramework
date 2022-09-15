@@ -12,7 +12,7 @@ updates:
   reviewers:
     - "sandjelkovic" # Main
     - "Morlack"
-  milestone: 3
+  milestone: 4
 - package-ecosystem: maven
   directory: "/"
   schedule:
@@ -25,4 +25,4 @@ updates:
   reviewers:
     - "sandjelkovic" # Main
     - "Morlack"
-  milestone: 3
+  milestone: 4
