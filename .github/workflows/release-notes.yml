@@ -31,3 +31,10 @@ jobs:
         release_name:  Axon Framework v${{ env.VERSION }}
         body_path: ${{ env.RELEASE_NOTES_FILE }}
         draft: true
+    - name: Create a Discuss notification for the Release
+      id: create-discuss-notification
+      uses: ./.github/workflows/discuss-notification.yml
+      with:
+        release_name: Axon Framework - Release ${{ env.VERSION }}
+        release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
+        release_date: ${{ github.event.milestone.closedAt }}
