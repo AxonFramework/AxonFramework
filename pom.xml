@@ -68,7 +68,7 @@
         <!-- dependency versions -->
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
-        <spring.version>5.3.22</spring.version>
+        <spring.version>5.3.23</spring.version>
         <spring-security.version>5.4.10</spring-security.version>
         <spring.boot.version>2.4.13</spring.boot.version>
         <mockito.version>3.8.0</mockito.version>
