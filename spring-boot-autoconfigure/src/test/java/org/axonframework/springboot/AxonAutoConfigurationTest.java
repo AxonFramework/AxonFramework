@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -43,6 +44,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
@@ -97,6 +99,8 @@ class AxonAutoConfigurationTest {
                     assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
                     assertNotNull(applicationContext.getBean(Context.MySaga.class));
                     assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
+                    assertNotNull(applicationContext.getBean(Repository.class));
+                    assertNotNull(applicationContext.getBean(AggregateFactory.class));
                     assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
                     assertEquals(2,
