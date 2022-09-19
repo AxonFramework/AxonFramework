@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.DomainEventData;
@@ -31,7 +30,6 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -366,9 +364,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                         + " without specifying the security context"
                         )
                 );
-                snapshotSerializer = () -> XStreamSerializer.builder()
-                                                            .xStream(new XStream(new CompactDriver()))
-                                                            .build();
+                snapshotSerializer = () -> XStreamSerializer.builder().build();
             }
             if (eventSerializer == null) {
                 logger.warn(
@@ -379,9 +375,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                         + " without specifying the security context"
                         )
                 );
-                eventSerializer = () -> XStreamSerializer.builder()
-                                                         .xStream(new XStream(new CompactDriver()))
-                                                         .build();
+                eventSerializer = () -> XStreamSerializer.builder().build();
             }
         }
     }

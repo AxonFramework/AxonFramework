@@ -279,7 +279,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      */
     public abstract static class Builder {
 
-        private XStream xStream;
+        protected XStream xStream;
         private Charset charset = StandardCharsets.UTF_8;
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private Converter converter = new ChainingConverter();

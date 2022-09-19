@@ -6,15 +6,18 @@ on:
       types: [ published ]
 
 jobs:
-  slackNotification:
-    name: Slack Notification
+  my-job:
+    name: Slack notification
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      with:
-        release-name: ${{ github.event.release.name }}
-        release-body: ${{ github.event.release.body }}
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Send release notification data to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.22.0
+        with:
+          payload: |
+            {
+              "release-name": "${{ github.event.release.name }}",
+              "release-url" : "${{ github.event.release.html_url }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
