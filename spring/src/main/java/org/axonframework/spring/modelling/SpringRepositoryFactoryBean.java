@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.eventsourcing;
+package org.axonframework.spring.modelling;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
