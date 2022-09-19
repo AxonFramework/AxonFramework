@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeepEqualsMatcherTest {
 
     @Test
-    void testMatchesReturnsFalseForNoneMatchingTypes() {
+    void matchesReturnsFalseForNoneMatchingTypes() {
         Description description = new StringDescription();
 
         DeepEqualsMatcher<String> testSubject = new DeepEqualsMatcher<>("foo");
@@ -47,7 +47,7 @@ class DeepEqualsMatcherTest {
     }
 
     @Test
-    void testMatchesReturnsFalseForNoneMatchingEquals() {
+    void matchesReturnsFalseForNoneMatchingEquals() {
         Description description = new StringDescription();
 
         DeepEqualsMatcher<String> testSubject = new DeepEqualsMatcher<>("foo");
@@ -60,7 +60,7 @@ class DeepEqualsMatcherTest {
     }
 
     @Test
-    void testMatchesReturnsFalseForNoneMatchingFields() {
+    void matchesReturnsFalseForNoneMatchingFields() {
         Description description = new StringDescription();
 
         DeepEqualsMatcher<ObjectNotOverridingEquals> testSubject =
@@ -74,18 +74,18 @@ class DeepEqualsMatcherTest {
     }
 
     @Test
-    void testMatchesReturnsTrue() {
+    void matchesReturnsTrue() {
         assertTrue(new DeepEqualsMatcher<>("foo").matches("foo"));
     }
 
     @Test
-    void testMatchesIsNullSafe() {
+    void matchesIsNullSafe() {
         assertFalse(new DeepEqualsMatcher<>("foo").matches(null));
         assertThrows(AxonConfigurationException.class, () -> new DeepEqualsMatcher<>(null).matches("foo"));
     }
 
     @Test
-    void testIgnoredFieldOnEvent() {
+    void ignoredFieldOnEvent() {
         DeepEqualsMatcher<SomeEvent> testSubject = new DeepEqualsMatcher<>(
                 new SomeEvent("someField"),
                 new MatchAllFieldFilter(Collections.singletonList((new IgnoreField(SomeEvent.class, "someField"))))

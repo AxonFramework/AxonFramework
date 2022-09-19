@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,14 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +59,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -84,7 +85,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Steven van Beelen
  * @since 4.5
  */
-public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor {
+public class PooledStreamingEventProcessor extends AbstractEventProcessor implements StreamingEventProcessor, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -103,38 +104,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
     private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
-
-    /**
-     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
-     * <p>
-     * Upon initialization of this builder, the following fields are defaulted:
-     * <ul>
-     *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
-     *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
-     *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
-     *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
-     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
-     *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
-     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
-     *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
-     * </ul>
-     * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
-     * <ul>
-     *     <li>The name of this {@link EventProcessor}.</li>
-     *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
-     *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
-     *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
-     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
-     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
-     * </ul>
-     *
-     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
 
     /**
      * Instantiate a {@link PooledStreamingEventProcessor} based on the fields contained in the {@link Builder}.
@@ -184,9 +153,53 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
                                       .initialSegmentCount(builder.initialSegmentCount)
                                       .initialToken(initialToken)
                                       .build();
+
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> spanFactory
+                .createLinkedHandlerSpan(
+                        () -> "PooledStreamingEventProcessor[" + builder.name() + "] ",
+                        unitOfWork.getMessage())
+                .runCallable(interceptorChain::proceed));
     }
 
-    @StartHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
+    /**
+     * Instantiate a Builder to be able to create a {@link PooledStreamingEventProcessor}.
+     * <p>
+     * Upon initialization of this builder, the following fields are defaulted:
+     * <ul>
+     *     <li>The {@link RollbackConfigurationType} defaults to a {@link RollbackConfigurationType#ANY_THROWABLE}.</li>
+     *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
+     *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
+     *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
+     *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code maxCapacity} (used by {@link #maxCapacity()}) defaults to {@link Short#MAX_VALUE}.</li>
+     *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code batchSize} defaults to {@code 1}.</li>
+     *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
+     *     <li>The {@link SpanFactory} defaults to {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
+     * </ul>
+     * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
+     * <ul>
+     *     <li>The name of this {@link EventProcessor}.</li>
+     *     <li>An {@link EventHandlerInvoker} which will be given the events handled by this processor</li>
+     *     <li>A {@link StreamableMessageSource} used to retrieve events.</li>
+     *     <li>A {@link TokenStore} to store the progress of this processor in.</li>
+     *     <li>A {@link ScheduledExecutorService} to coordinate events and segment operations.</li>
+     *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
+     * </ul>
+     *
+     * @return a Builder to be able to create a {@link PooledStreamingEventProcessor}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
+        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
+    }
+
     @Override
     public void start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
@@ -198,7 +211,6 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         shutdownAsync().join();
     }
 
-    @ShutdownHandler(phase = Phase.INBOUND_EVENT_CONNECTORS)
     @Override
     public CompletableFuture<Void> shutdownAsync() {
         logger.info("Stopping processor [{}]", name);
@@ -281,26 +293,26 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
 
     @Override
     public void resetTokens(
-            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier
     ) {
         resetTokens(initialTrackingTokenSupplier.apply(messageSource));
     }
 
     @Override
     public <R> void resetTokens(
-            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenSupplier,
             R resetContext
     ) {
         resetTokens(initialTrackingTokenSupplier.apply(messageSource), resetContext);
     }
 
     @Override
-    public void resetTokens(TrackingToken startPosition) {
+    public void resetTokens(@Nonnull TrackingToken startPosition) {
         resetTokens(startPosition, null);
     }
 
     @Override
-    public <R> void resetTokens(TrackingToken startPosition, R resetContext) {
+    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
@@ -315,7 +327,9 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
             // Update all tokens towards ReplayTokens
             IntStream.range(0, tokens.length)
                      .forEach(i -> tokenStore.storeToken(
-                             ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]
+                             ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
+                             getName(),
+                             segments[i]
                      ));
         });
     }
@@ -362,6 +376,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      * @param segmentId     the {@link Segment} identifier for which the {@link TrackerStatus} should be updated
      * @param initialStatus the initial {@link TrackerStatus} if there's no {@code TrackerStatus} for the given {@code
      *                      segmentId}
+     *
      * @return a {@link Consumer} of a {@link TrackerStatus} update method
      */
     private Consumer<UnaryOperator<TrackerStatus>> singleStatusUpdater(int segmentId, TrackerStatus initialStatus) {
@@ -398,6 +413,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
      *     <li>The {@link Clock} defaults to {@link GenericEventMessage#clock}.</li>
+     *     <li>The {@link SpanFactory} defaults to a {@link org.axonframework.tracing.NoOpSpanFactory}.</li>
      * </ul>
      * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
      * <ul>
@@ -430,32 +446,38 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
         }
 
         @Override
-        public Builder name(String name) {
+        public Builder name(@Nonnull String name) {
             super.name(name);
             return this;
         }
 
         @Override
-        public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             super.eventHandlerInvoker(eventHandlerInvoker);
             return this;
         }
 
         @Override
-        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
             super.rollbackConfiguration(rollbackConfiguration);
             return this;
         }
 
         @Override
-        public Builder errorHandler(ErrorHandler errorHandler) {
+        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
             super.errorHandler(errorHandler);
             return this;
         }
 
         @Override
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 
@@ -467,7 +489,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *                      EventProcessor} will track
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageSource(StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+        public Builder messageSource(@Nonnull StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
             assertNonNull(messageSource, "StreamableMessageSource may not be null");
             this.messageSource = messageSource;
             return this;
@@ -479,9 +501,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param tokenStore the {@link TokenStore} used to store and fetch event tokens that enable this {@link
          *                   EventProcessor} to track its progress
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tokenStore(TokenStore tokenStore) {
+        public Builder tokenStore(@Nonnull TokenStore tokenStore) {
             assertNonNull(tokenStore, "TokenStore may not be null");
             this.tokenStore = tokenStore;
             return this;
@@ -491,9 +514,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
          *
          * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(TransactionManager transactionManager) {
+        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -505,9 +529,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param coordinatorExecutor the {@link ScheduledExecutorService} to be used by the the coordinator of this
          *                            {@link PooledStreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(ScheduledExecutorService coordinatorExecutor) {
+        public Builder coordinatorExecutor(@Nonnull ScheduledExecutorService coordinatorExecutor) {
             assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
             this.coordinatorExecutorBuilder = ignored -> coordinatorExecutor;
             return this;
@@ -519,9 +544,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param coordinatorExecutorBuilder a builder function to construct a {@link ScheduledExecutorService},
          *                                   providing the {@link PooledStreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder coordinatorExecutor(Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
+        public Builder coordinatorExecutor(
+                @Nonnull Function<String, ScheduledExecutorService> coordinatorExecutorBuilder) {
             assertNonNull(coordinatorExecutorBuilder,
                           "The Coordinator's ScheduledExecutorService builder may not be null");
             this.coordinatorExecutorBuilder = coordinatorExecutorBuilder;
@@ -534,11 +561,12 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          * @deprecated in favor of {@link #workerExecutor(ScheduledExecutorService)}
          */
         @Deprecated
-        public Builder workerExecutorService(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutorService(@Nonnull ScheduledExecutorService workerExecutor) {
             return workerExecutor(workerExecutor);
         }
 
@@ -548,9 +576,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param workerExecutor the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created
          *                       by this {@link PooledStreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(ScheduledExecutorService workerExecutor) {
+        public Builder workerExecutor(@Nonnull ScheduledExecutorService workerExecutor) {
             assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
             this.workerExecutorBuilder = ignored -> workerExecutor;
             return this;
@@ -562,9 +591,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param workerExecutorBuilder a builder function to construct a {@link ScheduledExecutorService}, providing
          *                              the {@link PooledStreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder workerExecutor(Function<String, ScheduledExecutorService> workerExecutorBuilder) {
+        public Builder workerExecutor(@Nonnull Function<String, ScheduledExecutorService> workerExecutorBuilder) {
             assertNonNull(workerExecutorBuilder, "The Worker's ScheduledExecutorService builder may not be null");
             this.workerExecutorBuilder = workerExecutorBuilder;
             return this;
@@ -577,6 +607,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param initialSegmentCount an {@code int} specifying the initial segment count used to create segments on
          *                            start up
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialSegmentCount(int initialSegmentCount) {
@@ -592,10 +623,11 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given {@link
          *                     StreamableMessageSource}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder initialToken(
-                Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
+                @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialToken
         ) {
             assertNonNull(initialToken, "The initial token builder Function may not be null");
             this.initialToken = initialToken;
@@ -609,6 +641,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param tokenClaimInterval the time in milliseconds the processor's coordinator should wait after a failed
          *                           attempt to claim any segments for processing
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder tokenClaimInterval(long tokenClaimInterval) {
@@ -622,6 +655,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Short#MAX_VALUE}.
          *
          * @param maxClaimedSegments the maximum number fo claimed segments for this {@link StreamingEventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxClaimedSegments(int maxClaimedSegments) {
@@ -637,6 +671,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          *
          * @param claimExtensionThreshold a time in milliseconds the work packages of this processor should extend the
          *                                claim on a {@link TrackingToken}.
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder claimExtensionThreshold(long claimExtensionThreshold) {
@@ -655,6 +690,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * operations performed during event handling can be rolled back.
          *
          * @param batchSize the number of events to be processed inside a single transaction
+         *
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder batchSize(int batchSize) {
@@ -670,9 +706,10 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * GenericEventMessage#clock}.
          *
          * @param clock the {@link Clock} used for time dependent operation by this {@link EventProcessor}
+         *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder clock(Clock clock) {
+        public Builder clock(@Nonnull Clock clock) {
             assertNonNull(clock, "Clock may not be null");
             this.clock = clock;
             return this;

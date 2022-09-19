@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.Assert;
+
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * Structure that holds an Aggregate Identifier and an expected version of an aggregate.
@@ -26,26 +29,53 @@ import java.util.Objects;
  */
 public class VersionedAggregateIdentifier {
 
-    private final String identifier;
+    private final Object identifier;
     private final Long version;
 
     /**
      * Initializes a VersionedAggregateIdentifier with the given {@code identifier} and {@code version}.
      *
-     * @param identifier The identifier of the targeted aggregate
-     * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
+     * @param identifier The non-null string identifier of the targeted aggregate.
+     * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant.
+     * @deprecated In favor of {@link VersionedAggregateIdentifier#VersionedAggregateIdentifier(Object, Long)}, since
+     * the {@code identifier} can be a non-{@link String}.
      */
+    @Deprecated
     public VersionedAggregateIdentifier(String identifier, Long version) {
+        Assert.notNull(identifier, () -> "Identifier must not be null");
         this.identifier = identifier;
         this.version = version;
     }
 
     /**
-     * Returns the identifier of the targeted Aggregate. May never return {@code null}.
+     * Initializes a VersionedAggregateIdentifier with the given {@code identifier} and {@code version}.
      *
-     * @return the identifier of the targeted Aggregate
+     * @param identifier The non-null identifier of the targeted aggregate.
+     * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant.
      */
+    public VersionedAggregateIdentifier(@Nonnull Object identifier, Long version) {
+        Assert.notNull(identifier, () -> "Identifier must not be null");
+        this.identifier = identifier;
+        this.version = version;
+    }
+
+    /**
+     * Returns the string representation of the identifier of the targeted Aggregate. May never return {@code null}.
+     *
+     * @return the string representation of identifier of the targeted Aggregate
+     */
+    @Nonnull
     public String getIdentifier() {
+        return identifier.toString();
+    }
+
+    /**
+     * Returns the object representation of the identifier of the targeted Aggregate. May never return {@code null}.
+     *
+     * @return the object representation of the identifier of the targeted Aggregate
+     */
+    @Nonnull
+    public Object getIdentifierValue() {
         return identifier;
     }
 

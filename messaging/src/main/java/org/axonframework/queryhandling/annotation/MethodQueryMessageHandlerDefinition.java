@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,8 @@ import java.lang.reflect.WildcardType;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Future;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
@@ -45,7 +47,8 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+    public @Nonnull
+    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.annotationAttributes(QueryHandler.class)
                        .map(attr -> (MessageHandlingMember<T>)
                                new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember<>(
@@ -86,7 +89,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handle(Message<?> message, T target) throws Exception {
+        public Object handle(@Nonnull Message<?> message, @Nullable T target) throws Exception {
             Object result = super.handle(message, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
@@ -119,7 +122,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message) {
             return super.canHandle(message)
                     && message instanceof QueryMessage
                     && queryName.equals(((QueryMessage<?, ?>) message).getQueryName())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,16 +199,32 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerStartRecordingCallback(Runnable onStartRecordingCallback);
 
     /**
-     * Registers a {@link ListenerInvocationErrorHandler} to be set for the Saga to deal with exceptions being thrown
-     * from within Saga Event Handlers. Will be given to the {@link org.axonframework.modelling.saga.AnnotatedSagaManager}
-     * for the defined Saga type. Defaults to a {@link org.axonframework.eventhandling.LoggingErrorHandler}.
+     * Registers a {@link ListenerInvocationErrorHandler} to be set for the Saga to deal with exceptions being thrown from within Saga Event Handlers. Will be
+     * given to the {@link org.axonframework.modelling.saga.AnnotatedSagaManager} for the defined Saga type. Defaults to a {@link
+     * org.axonframework.eventhandling.LoggingErrorHandler} wrapped inside a {@link RecordingListenerInvocationErrorHandler}.
      *
-     * @param listenerInvocationErrorHandler to be set for the Saga to deal with exceptions being thrown from within
-     *                                       Saga Event Handlers
+     * @param listenerInvocationErrorHandler to be set for the Saga to deal with exceptions being thrown from within Saga Event Handlers
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler);
+
+    /**
+     * Configure whether the fixture should suppress exceptions thrown during the given-phase. When {@code suppress} is
+     * {@code true}, the fixture moves on to the when-phase regardless of any exceptions thrown during the given-phase.
+     * <p>
+     * Note that setting this to {@code true} means the
+     * {@link #registerListenerInvocationErrorHandler(ListenerInvocationErrorHandler) registered}
+     * {@link ListenerInvocationErrorHandler} is not invoked during exception in the given-phase. Defaults to
+     * suppressing during given-phase exceptions.
+     *
+     * @param suppress A {@code boolean} describing whether the fixture should suppress failures during the
+     *                 given-phase.
+     * @return The current fixture, for fluent interfacing.
+     */
+    default FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        return this;
+    }
 
     /**
      * Registers a {@link ResourceInjector} within this fixture. This approach can be used if a custom {@code

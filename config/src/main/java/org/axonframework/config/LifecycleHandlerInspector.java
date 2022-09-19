@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.lifecycle.StartHandler;
@@ -29,8 +30,10 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
 
 /**
  * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link Configuration}. A {@link
@@ -55,10 +58,14 @@ public abstract class LifecycleHandlerInspector {
     }
 
     /**
-     * Resolve any {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle handlers in the given {@code
-     * component}. If present, they will be registered on the given {@code configuration} through the {@link
-     * Configuration#onStart(int, LifecycleHandler)} and {@link Configuration#onShutdown(int, LifecycleHandler)}
-     * methods. If the given {@code component} is {@code null} it will be ignored.
+     * Register any lifecycle handlers found on given {@code component} with given {@code configuration}.
+     * <p>
+     * If given {@code component} implements {@link Lifecycle}, will allow it to register lifecycle handlers with
+     * the configuration. Otherwise, will resolve {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle
+     * handlers in the given {@code component}. If present, they will be registered on the given {@code configuration}
+     * through the {@link Configuration#onStart(int, LifecycleHandler)} and
+     * {@link Configuration#onShutdown(int, LifecycleHandler)} methods. If the given {@code component} is {@code null}
+     * it will be ignored.
      *
      * @param configuration the {@link Configuration} to register resolved lifecycle handlers to
      * @param component     the object to resolve lifecycle handlers for
@@ -68,8 +75,22 @@ public abstract class LifecycleHandlerInspector {
             logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
         }
-        registerLifecycleHandlers(configuration, component, StartHandler.class, Configuration::onStart);
-        registerLifecycleHandlers(configuration, component, ShutdownHandler.class, Configuration::onShutdown);
+        if (component instanceof Lifecycle) {
+            ((Lifecycle) component).registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
+                @Override
+                public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
+                    configuration.onStart(phase, action::run);
+                }
+
+                @Override
+                public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
+                    configuration.onShutdown(phase, action::run);
+                }
+            });
+        } else {
+            registerLifecycleHandlers(configuration, component, StartHandler.class, Configuration::onStart);
+            registerLifecycleHandlers(configuration, component, ShutdownHandler.class, Configuration::onShutdown);
+        }
     }
 
     private static void registerLifecycleHandlers(Configuration configuration,
@@ -86,7 +107,6 @@ public abstract class LifecycleHandlerInspector {
                                            lifecycleAnnotation.getSimpleName(), method
                                    ));
                                }
-                               method.setAccessible(true);
                                int phase = (int) lifecycleAnnotationAttributes.get(LIFECYCLE_PHASE_ATTRIBUTE_NAME);
                                LifecycleHandler lifecycleHandler = () -> invokeAndReturn(
                                        component, method, lifecycleAnnotation.getSimpleName(), phase
@@ -118,11 +138,11 @@ public abstract class LifecycleHandlerInspector {
                     handlerType, lifecycleComponent.getClass().getSimpleName(), phase
             );
 
-            Object result = lifecycleHandler.invoke(lifecycleComponent);
+            Object result = invokeAndGetMethodValue(lifecycleHandler, lifecycleComponent);
 
             return result instanceof CompletableFuture
-                    ? (CompletableFuture<?>) result
-                    : CompletableFuture.completedFuture(null);
+                   ? (CompletableFuture<?>) result
+                   : CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             CompletableFuture<Void> exceptionallyCompletedFuture = new CompletableFuture<>();
             exceptionallyCompletedFuture.completeExceptionally(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 /**
  * Abstract implementation of a {@link MessageHandlingMember} that delegates to a wrapped MessageHandlingMember. Extend
@@ -54,23 +55,23 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(Message<?> message) {
+    public boolean canHandle(@Nonnull Message<?> message) {
         return delegate.canHandle(message);
     }
 
     @Override
-    public Object handle(Message<?> message, T target) throws Exception {
+    public Object handle(@Nonnull Message<?> message, T target) throws Exception {
         return delegate.handle(message, target);
     }
 
     @Override
-    public boolean canHandleType(Class<?> payloadType) {
+    public boolean canHandleType(@Nonnull Class<?> payloadType) {
         return delegate.canHandleType(payloadType);
     }
 
     @Override
     @SuppressWarnings("rawtypes")
-    public boolean canHandleMessageType(Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return delegate.canHandleMessageType(messageType);
     }
 

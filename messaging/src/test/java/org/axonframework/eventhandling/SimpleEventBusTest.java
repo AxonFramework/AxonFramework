@@ -44,7 +44,7 @@ class SimpleEventBusTest {
     }
 
     @Test
-    void testEventIsDispatchedToSubscribedListeners() throws Exception {
+    void eventIsDispatchedToSubscribedListeners() throws Exception {
         testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference

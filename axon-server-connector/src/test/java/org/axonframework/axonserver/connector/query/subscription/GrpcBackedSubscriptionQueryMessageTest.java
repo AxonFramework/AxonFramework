@@ -47,7 +47,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void testGetUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void getUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedUpdateResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType);
@@ -62,7 +62,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetQueryNameReturnsTheNameOfTheQueryAsSpecifiedInTheSubscriptionQuery() {
+    void getQueryNameReturnsTheNameOfTheQueryAsSpecifiedInTheSubscriptionQuery() {
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE);
         SubscriptionQuery testSubscriptionQuery = subscriptionMessageSerializer.serialize(testSubscriptionQueryMessage);
@@ -73,7 +73,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void getResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, expectedResponseType, RESPONSE_TYPE);
@@ -87,7 +87,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetIdentifierReturnsTheSameIdentifierAsSpecifiedInTheSubscriptionQuery() {
+    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheSubscriptionQuery() {
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE);
         SubscriptionQuery testSubscriptionQuery = subscriptionMessageSerializer.serialize(testSubscriptionQueryMessage);
@@ -98,7 +98,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetMetaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
+    void getMetaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE)
@@ -111,7 +111,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetPayloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
+    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
         TestQuery expectedQuery = TEST_QUERY;
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(expectedQuery, RESPONSE_TYPE, RESPONSE_TYPE);
@@ -123,7 +123,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testGetPayloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
+    void getPayloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE);
         SubscriptionQuery testSubscriptionQuery = subscriptionMessageSerializer.serialize(testSubscriptionQueryMessage);
@@ -134,7 +134,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testWithMetaDataCompletelyReplacesTheInitialMetaDataMap() {
+    void withMetaDataCompletelyReplacesTheInitialMetaDataMap() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE)
@@ -152,7 +152,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void testAndMetaDataAppendsToTheExistingMetaData() {
+    void andMetaDataAppendsToTheExistingMetaData() {
         MetaData testMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage testSubscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE)

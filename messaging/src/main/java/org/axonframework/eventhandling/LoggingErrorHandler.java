@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package org.axonframework.eventhandling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 /**
- * Implementation of a {@link ListenerInvocationErrorHandler} that logs exceptions as errors but otherwise does nothing to
- * prevent event handling from continuing.
+ * Implementation of a {@link ListenerInvocationErrorHandler} that logs exceptions as errors but otherwise does nothing
+ * to prevent event handling from continuing.
  *
  * @author Rene de Waele
  */
@@ -46,7 +48,8 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
     }
 
     @Override
-    public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                        @Nonnull EventMessageHandler eventHandler) {
         logger.error("EventListener [{}] failed to handle event [{}] ({}). " +
                              "Continuing processing with next listener",
                      eventHandler.getTargetType().getSimpleName(),

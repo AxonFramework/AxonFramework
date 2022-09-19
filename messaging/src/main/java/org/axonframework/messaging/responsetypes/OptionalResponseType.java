@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,8 @@ package org.axonframework.messaging.responsetypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.ReflectionUtils;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -26,15 +28,14 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 
 /**
- * A {@link ResponseType} implementation that will match with query
- * handlers which return a single instance of the expected response type, but returns that as an Optional containing
- * the result. If matching succeeds, the
- * {@link ResponseType#convert(Object)} function will be called, which will wrap the query handler's response into an
+ * A {@link ResponseType} implementation that will match with query handlers which return a single instance of the
+ * expected response type, but returns that as an Optional containing the result. If matching succeeds, the {@link
+ * ResponseType#convert(Object)} function will be called, which will wrap the query handler's response into an
  * Optional.
  * <p>
- * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the
- * {@code ResponseType} returned by {@link InstanceResponseType}. The difference is that the result provided by this
- * {@code ResponseType} is wrapped in an {@link Optional}.
+ * Note that this {@code ResponseType} will declare the same expectations on the Query Result as the {@code
+ * ResponseType} returned by {@link InstanceResponseType}. The difference is that the result provided by this {@code
+ * ResponseType} is wrapped in an {@link Optional}.
  *
  * @param <R> The response type which will be matched against and converted to
  * @author Allard Buijze
@@ -43,9 +44,8 @@ import java.util.concurrent.Future;
 public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
 
     /**
-     * Instantiate a {@link OptionalResponseType} with the given
-     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
-     * converted to.
+     * Instantiate a {@link OptionalResponseType} with the given {@code expectedResponseType} as the type to be matched
+     * against and to which the query response should be converted to.
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
@@ -56,9 +56,8 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
     }
 
     /**
-     * Match the query handler its response {@link Type} with this implementation its responseType
-     * {@code R}.
-     * Will return true if the expected type is assignable to the response type, taking generic types into account.
+     * Match the query handler its response {@link Type} with this implementation its responseType {@code R}. Will
+     * return true if the expected type is assignable to the response type, taking generic types into account.
      *
      * @param responseType the response {@link Type} of the query handler which is matched against
      * @return true if the response type is assignable to the expected type, taking generic types into account
@@ -74,6 +73,12 @@ public class OptionalResponseType<R> extends AbstractResponseType<Optional<R>> {
     public Optional<R> convert(Object response) {
         if (response instanceof Optional) {
             return (Optional<R>) response;
+        } else if (response != null && projectReactorOnClassPath()) {
+            if (Mono.class.isAssignableFrom(response.getClass())) {
+                return Optional.ofNullable((R) ((Mono) response).block());
+            } else if (Publisher.class.isAssignableFrom(response.getClass())) {
+                return Optional.ofNullable((R) Mono.from((Publisher) response).block());
+            }
         }
         return Optional.ofNullable((R) expectedResponseType.cast(response));
     }

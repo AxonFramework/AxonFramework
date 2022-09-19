@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.DomainEventSequenceAware;
@@ -24,6 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
@@ -36,6 +38,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.LockModeType;
@@ -46,6 +49,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Test class validating the {@link GenericJpaRepository}.
+ *
  * @author Allard Buijze
  */
 class GenericJpaRepositoryTest {
@@ -56,9 +61,11 @@ class GenericJpaRepositoryTest {
     private StubJpaAggregate aggregate;
     private Function<String, ?> identifierConverter;
     private EventBus eventBus;
+    private TestSpanFactory spanFactory;
 
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
@@ -68,6 +75,7 @@ class GenericJpaRepositoryTest {
                                           .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                                           .eventBus(eventBus)
                                           .identifierConverter(identifierConverter)
+                                          .spanFactory(spanFactory)
                                           .build();
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
@@ -84,7 +92,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateStoredBeforeEventsPublished() throws Exception {
+    void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
         Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
         eventBus.subscribe(mockConsumer);
@@ -98,20 +106,32 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate() {
+    void loadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testLoadAggregateWithConverter() {
+    void loadAggregateTracing() {
+        when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class)))
+                .thenAnswer(invocation -> {
+                    spanFactory.verifySpanCompleted("LockingRepository.obtainLock");
+                    spanFactory.verifySpanActive("GenericJpaRepository.load 123");
+                    return aggregate;
+                });
+        testSubject.load(aggregateId);
+        spanFactory.verifySpanCompleted("GenericJpaRepository.load 123");
+    }
+
+    @Test
+    void loadAggregateWithConverter() {
         when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
         Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test
-    void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
+    void aggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -154,7 +174,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testAggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
+    void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
         testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -185,7 +205,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_NotFound() {
+    void loadAggregate_NotFound() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         try {
             testSubject.load(aggregateIdentifier);
@@ -196,7 +216,7 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testLoadAggregate_WrongVersion() {
+    void loadAggregate_WrongVersion() {
         try {
             testSubject.load(aggregateId, 2L);
             fail("Expected ConflictingAggregateVersionException");
@@ -207,14 +227,14 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_DefaultFlushMode() {
+    void persistAggregate_DefaultFlushMode() {
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOn() {
+    void persistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
@@ -222,11 +242,31 @@ class GenericJpaRepositoryTest {
     }
 
     @Test
-    void testPersistAggregate_ExplicitFlushModeOff() {
+    void persistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
         testSubject.doSave(testSubject.load(aggregateId));
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
+    }
+
+    @Test
+    void buildWithNullSubtypesThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
+    }
+
+    @Test
+    void buildWithNullSubtypeThrowsAxonConfigurationException() {
+        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                GenericJpaRepository.builder(StubJpaAggregate.class)
+                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                    .eventBus(eventBus);
+
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }
 
     private class StubJpaAggregate {
@@ -269,7 +309,7 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void publish(List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
             super.publish(events);
         }

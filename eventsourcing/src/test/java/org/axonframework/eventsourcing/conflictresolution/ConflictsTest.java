@@ -35,14 +35,14 @@ class ConflictsTest {
                                                                 .collect(toList());
 
     @Test
-    void testPayload() {
+    void payload() {
         assertTrue(Conflicts.payloadMatching(payload -> Objects.equals(payload, PAYLOAD + 2)).test(events));
         assertTrue(Conflicts.payloadMatching(String.class, payload -> Objects.equals(payload, PAYLOAD + 5)).test(events));
         assertFalse(Conflicts.payloadMatching(payload -> Objects.equals(payload, PAYLOAD + 11)).test(events));
     }
 
     @Test
-    void testPayloadType() {
+    void payloadType() {
         assertTrue(Conflicts.payloadTypeOf(String.class).test(events));
         assertTrue(Conflicts.payloadTypeOf(Object.class).test(events));
         assertFalse(Conflicts.payloadTypeOf(Long.class).test(events));

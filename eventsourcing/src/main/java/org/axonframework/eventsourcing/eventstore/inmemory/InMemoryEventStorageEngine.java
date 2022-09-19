@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 
@@ -77,7 +78,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void appendEvents(List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().onPrepareCommit(uow -> storeEvents(events));
         } else {
@@ -99,7 +100,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void storeSnapshot(DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         snapshots.compute(snapshot.getAggregateIdentifier(), (aggregateId, snapshotsSoFar) -> {
             if (snapshotsSoFar == null) {
                 CopyOnWriteArrayList<DomainEventMessage<?>> newSnapshots = new CopyOnWriteArrayList<>();
@@ -122,7 +123,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
         AtomicReference<Long> sequenceNumber = new AtomicReference<>();
         Stream<? extends DomainEventMessage<?>> stream =
                 events.values().stream().filter(event -> event instanceof DomainEventMessage<?>)
@@ -134,7 +135,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
+    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
         return snapshots.getOrDefault(aggregateIdentifier, Collections.emptyList())
                         .stream()
                         .max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
@@ -158,7 +159,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(Instant dateTime) {
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         return events.values()
                      .stream()
                      .filter(event -> event.getTimestamp().equals(dateTime) || event.getTimestamp().isAfter(dateTime))

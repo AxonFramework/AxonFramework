@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+
+import javax.annotation.Nonnull;
 
 /**
  * Workflow interface that allows for customized message handler invocation chains. A MessageHandlerInterceptor can add
@@ -46,5 +48,6 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      *
      * @throws Exception any exception that occurs while handling the message
      */
-    Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception;
+    Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+            throws Exception;
 }

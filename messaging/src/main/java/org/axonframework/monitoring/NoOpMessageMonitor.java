@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.monitoring;
 
 import org.axonframework.messaging.Message;
+
+import javax.annotation.Nonnull;
 
 /**
  * A message monitor that returns a NoOp message callback
@@ -43,7 +45,7 @@ public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
         return NoOpMessageMonitorCallback.INSTANCE;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@ import javax.sql.DataSource;
 @ConditionalOnBean(EntityManagerFactory.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",
-        "org.axonframework.modelling.saga.repository.jpa"
+        "org.axonframework.eventhandling.deadletter.jpa",
+        "org.axonframework.modelling.saga.repository.jpa",
 })
 public class JpaAutoConfiguration {
 

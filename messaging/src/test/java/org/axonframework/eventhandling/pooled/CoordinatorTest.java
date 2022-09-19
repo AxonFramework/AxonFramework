@@ -31,6 +31,8 @@ import org.mockito.*;
 import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +63,7 @@ class CoordinatorTest {
     private final Segment SEGMENT_ZERO = computeSegment(0);
     private final int SEGMENT_ID = 0;
     private final int[] SEGMENT_IDS = {SEGMENT_ID};
+    private final Segment SEGMENT_ONE = Segment.computeSegment(SEGMENT_ID, SEGMENT_IDS);
     private final int[] EMPTY_SEGMENT_IDS = {};
 
     private final TokenStore tokenStore = mock(TokenStore.class);
@@ -85,7 +88,7 @@ class CoordinatorTest {
     }
 
     @Test
-    void testIfCoordinationTaskRescheduledAfterTokenReleaseClaimFails() {
+    void ifCoordinationTaskRescheduledAfterTokenReleaseClaimFails() {
         //arrange
         final RuntimeException streamOpenException = new RuntimeException("Some exception during event stream open");
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
@@ -94,6 +97,7 @@ class CoordinatorTest {
         doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
         doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
+        //noinspection resource
         doThrow(streamOpenException).when(messageSource).openStream(any());
         doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
@@ -109,7 +113,7 @@ class CoordinatorTest {
     }
 
     @Test
-    void testIfCoordinationTaskInitializesTokenStoreWhenNeeded() {
+    void ifCoordinationTaskInitializesTokenStoreWhenNeeded() {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
@@ -128,7 +132,7 @@ class CoordinatorTest {
 
     @SuppressWarnings("rawtypes") // Mockito cannot deal with the wildcard generics of the TrackedEventMessage
     @Test
-    void testIfCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
+    void ifCoordinationTaskSchedulesEventsWithTheSameTokenTogether() throws InterruptedException {
         TrackingToken testToken = new GlobalSequenceTrackingToken(0);
         TrackedEventMessage testEventOne =
                 new GenericTrackedEventMessage<>(testToken, GenericEventMessage.asEventMessage("this-event"));
@@ -158,12 +162,14 @@ class CoordinatorTest {
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testToken);
+        when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(Collections.singletonList(SEGMENT_ONE));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(testToken);
         when(messageSource.openStream(testToken)).thenReturn(testStream);
 
         testSubject.start();
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ID));
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ONE));
+        //noinspection resource
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(messageSource).openStream(testToken));
 
         //noinspection unchecked

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Message which holds incremental update of an subscription query.
@@ -30,8 +31,8 @@ import java.util.Map;
 public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
-    SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);
+    SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, ?> metaData);
 
     @Override
-    SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
+    SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, ?> metaData);
 }

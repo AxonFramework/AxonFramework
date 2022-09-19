@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.gateway.IntervalRetryScheduler;
 import org.axonframework.commandhandling.gateway.RetryingCallback;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.modelling.command.ConcurrencyException;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="https://github.com/davispw">Peter Davis</a>
@@ -78,7 +78,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
      */
     @Test
     @Timeout(value = 10)// bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
-    void testCommandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
+    void commandDispatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)
                                               .retryScheduler(retryScheduler)
@@ -93,9 +93,10 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
         // yes, this should be configured on the gateway instead of the command bus, but still...
         final Thread testThread = Thread.currentThread();
         commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
+            @Nonnull
             @Override
             public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
-                    List<? extends CommandMessage<?>> messages) {
+                    @Nonnull List<? extends CommandMessage<?>> messages) {
                 return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
                         return message; // ok
@@ -128,7 +129,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
     @SuppressWarnings("unchecked")
     @Test
     @Timeout(value = 10)
-    void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
+    void commandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway =
                 DefaultCommandGateway.builder()
@@ -166,7 +167,7 @@ class CommandRetryAndDispatchInterceptorIntegrationTest {
      */
     @Test
     @Timeout(value = 10)
-    void testCommandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
+    void commandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
         commandGateway = DefaultCommandGateway.builder()
                                               .commandBus(commandBus)

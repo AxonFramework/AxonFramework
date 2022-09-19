@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -38,7 +41,9 @@ import org.axonframework.messaging.Distributed;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.NoArgumentConstructorCreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -50,7 +55,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -59,10 +63,10 @@ import static java.lang.String.format;
 import static org.axonframework.common.Assert.state;
 
 /**
- * Axon Configuration API extension that allows the definition of an Aggregate. This component will automatically setup
+ * Axon Configuration API extension that allows the definition of an Aggregate. This component will automatically set up
  * all components required for the Aggregate to operate.
  *
- * @param <A> The type of Aggregate configured
+ * @param <A> the type of Aggregate configured
  * @author Allard Buijze
  * @since 3.0
  */
@@ -74,6 +78,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Repository<A>> repository;
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
+    private final Component<CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactory;
+    private final Component<LockFactory> lockFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<SnapshotFilter> snapshotFilter;
     private final Component<CommandTargetResolver> commandTargetResolver;
@@ -112,7 +118,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return An AggregateConfigurer instance for further configuration of the Aggregate
      */
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType) {
-        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
+        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
+                .configureLockFactory(config -> NullLockFactory.INSTANCE);
         return configurer.configureRepository(
                 c -> {
                     EntityManagerProvider entityManagerProvider = c.getComponent(
@@ -128,9 +135,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                             });
                     return GenericJpaRepository.builder(aggregateType)
                                                .aggregateModel(configurer.metaModel.get())
+                                               .lockFactory(configurer.lockFactory.get())
                                                .entityManagerProvider(entityManagerProvider)
                                                .eventBus(c.eventBus())
                                                .repositoryProvider(c::repository)
+                                               .spanFactory(c.spanFactory())
                                                .build();
                 });
     }
@@ -147,13 +156,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      */
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
                                                                     EntityManagerProvider entityManagerProvider) {
-        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
+        AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
+                .configureLockFactory(config -> NullLockFactory.INSTANCE);
         return configurer.configureRepository(
                 c -> GenericJpaRepository.builder(aggregateType)
                                          .aggregateModel(configurer.metaModel.get())
+                                         .lockFactory(configurer.lockFactory.get())
                                          .entityManagerProvider(entityManagerProvider)
                                          .eventBus(c.eventBus())
                                          .repositoryProvider(c::repository)
+                                         .spanFactory(c.spanFactory())
                                          .build()
         );
     }
@@ -180,25 +192,23 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                         () -> AnnotationCommandTargetResolver.builder().build()
                 )
         );
+        lockFactory = new Component<>(() -> parent, name("lockFactory"), c -> PessimisticLockFactory.usingDefaults());
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         snapshotFilter = new Component<>(() -> parent, name("snapshotFilter"), c -> {
-            Optional<String> revisionValue =
-                    AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision");
-            if (revisionValue.isPresent()) {
-                String declaredAggregateType =
-                        metaModel.get()
-                                 .declaredType(aggregate)
-                                 .orElseThrow(() -> new AxonConfigurationException(
-                                         "No declared type found for Aggregate [" + aggregate + "]"
-                                 ));
-                return RevisionSnapshotFilter.builder()
-                                             .type(declaredAggregateType)
-                                             .revision(revisionValue.get())
-                                             .build();
-            } else {
-                return SnapshotFilter.allowAll();
-            }
+            final String revisionValue =
+                    (String) AnnotationUtils.findAnnotationAttribute(aggregate, Revision.class, "revision")
+                                            .orElse(null);
+            final String declaredAggregateType =
+                    metaModel.get()
+                             .declaredType(aggregate)
+                             .orElseThrow(() -> new AxonConfigurationException(
+                                     "No declared type found for Aggregate [" + aggregate + "]"
+                             ));
+            return RevisionSnapshotFilter.builder()
+                                         .type(declaredAggregateType)
+                                         .revision(revisionValue)
+                                         .build();
         });
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
                                            c -> new GenericAggregateFactory<>(metaModel.get()));
@@ -227,11 +237,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     EventSourcingRepository.Builder<A> builder =
                             EventSourcingRepository.builder(aggregate)
                                                    .aggregateModel(metaModel.get())
-                                                   .aggregateFactory(aggregateFactory.get())
+                                                   .lockFactory(lockFactory.get())
                                                    .eventStore(c.eventStore())
                                                    .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                                                   .cache(cache.get())
-                                                   .repositoryProvider(c::repository);
+                                                   .aggregateFactory(aggregateFactory.get())
+                                                   .repositoryProvider(c::repository)
+                                                   .spanFactory(c.spanFactory())
+                                                   .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());
                     } else if (filterEventsByType.get()) {
@@ -239,12 +251,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                     }
                     return builder.build();
                 });
-        commandHandler = new Component<>(() -> parent, name("aggregateCommandHandler"),
-                                         c -> AggregateAnnotationCommandHandler.<A>builder()
-                                                 .repository(repository.get())
-                                                 .commandTargetResolver(commandTargetResolver.get())
-                                                 .aggregateModel(metaModel.get())
-                                                 .build());
+        creationPolicyAggregateFactory = new Component<>(
+                () -> parent, name("creationPolicyAggregateFactory"),
+                c -> new NoArgumentConstructorCreationPolicyAggregateFactory<>(aggregateType()));
+        commandHandler = new Component<>(
+                () -> parent, name("aggregateCommandHandler"),
+                c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                      .repository(repository.get())
+                                                      .commandTargetResolver(commandTargetResolver.get())
+                                                      .aggregateModel(metaModel.get())
+                                                      .creationPolicyAggregateFactory(creationPolicyAggregateFactory.get())
+                                                      .build()
+        );
     }
 
     private boolean commandBusHasDisruptorLocalSegment(CommandBus commandBus) {
@@ -281,7 +299,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the factory to use to to create new Aggregates instances of the type under configuration.
+     * Defines the factory to use to create new Aggregates instances of the type under configuration.
      *
      * @param aggregateFactoryBuilder The builder function for the AggregateFactory
      * @return this configurer instance for chaining
@@ -289,6 +307,34 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureAggregateFactory(
             Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
+        return this;
+    }
+
+    /**
+     * Defines the factory to create new Aggregates instances of the type under configuration when initializing those
+     * instances from non constructor Command handlers annotated with
+     * {@link org.axonframework.modelling.command.CreationPolicy}.
+     *
+     * @param creationPolicyAggregateFactoryBuilder The builder function for the CreationPolicyAggregateFactory
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
+            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder
+    ) {
+        creationPolicyAggregateFactory.update(creationPolicyAggregateFactoryBuilder);
+        return this;
+    }
+
+    /**
+     * Defines the {@link LockFactory} to use in the {@link Repository} for the aggregate under configuration. Defaults
+     * to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and {@link NullLockFactory} for a
+     * {@link GenericJpaRepository}.
+     *
+     * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the {@link Configuration}
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureLockFactory(Function<Configuration, LockFactory> lockFactory) {
+        this.lockFactory.update(lockFactory);
         return this;
     }
 
@@ -386,8 +432,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * configuration should filter out events with non-matching types. This may be used to support installations where
      * multiple Aggregate types share overlapping Aggregate IDs.
      * <p>
-     * Note that this configuration is ignored if a custom repository instance is configured, and that {@link
-     * #configureEventStreamFilter(Function)} overrides this.
+     * Note that this configuration is ignored if a custom repository instance is configured, and that
+     * {@link #configureEventStreamFilter(Function)} overrides this.
      *
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
@@ -457,5 +503,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> withSubtypes(Collection<Class<? extends A>> subtypes) {
         this.subtypes.addAll(subtypes);
         return this;
+    }
+
+    /**
+     * Returns the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     *
+     * @return the {@link CreationPolicyAggregateFactory} defined in this configuration.
+     */
+    public CreationPolicyAggregateFactory<A> creationPolicyAggregateFactory() {
+        return creationPolicyAggregateFactory.get();
     }
 }

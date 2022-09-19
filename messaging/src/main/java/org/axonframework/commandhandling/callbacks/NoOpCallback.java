@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 
+import javax.annotation.Nonnull;
+
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
- * obtained using {@code NoOpCallback.INSTANCE}. A generics-compatible alternative is provided by
- * {@code NoOpCallback.&lt;C&gt;instance()}.
+ * obtained using {@code NoOpCallback.INSTANCE}. A generics-compatible alternative is provided by {@code
+ * NoOpCallback.&lt;C&gt;instance()}.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -41,7 +43,8 @@ public final class NoOpCallback implements CommandCallback<Object, Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onResult(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+    public void onResult(@Nonnull CommandMessage<?> commandMessage,
+                         @Nonnull CommandResultMessage<?> commandResultMessage) {
         // No-op
     }
 }

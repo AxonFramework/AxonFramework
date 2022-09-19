@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
-    private ListenerInvocationErrorHandler listenerInvocationErrorHandler;
+    private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore;
@@ -121,7 +121,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(sagaType));
         registeredHandlerDefinitions.add(ClasspathHandlerDefinition.forClass(sagaType));
         registeredHandlerEnhancerDefinitions.add(ClasspathHandlerEnhancerDefinition.forClass(sagaType));
-        listenerInvocationErrorHandler = new LoggingErrorHandler();
+        recordingListenerInvocationErrorHandler = new RecordingListenerInvocationErrorHandler(new LoggingErrorHandler());
 
         this.sagaType = sagaType;
         sagaStore = new InMemorySagaStore();
@@ -133,8 +133,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
-                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters
-        );
+                sagaStore, eventScheduler, deadlineManager, eventBus, commandBus, sagaType, fieldFilters, recordingListenerInvocationErrorHandler);
     }
 
     /**
@@ -188,7 +187,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     .sagaType(sagaType)
                     .parameterResolverFactory(getParameterResolverFactory())
                     .handlerDefinition(getHandlerDefinition())
-                    .listenerInvocationErrorHandler(listenerInvocationErrorHandler)
+                    .listenerInvocationErrorHandler(recordingListenerInvocationErrorHandler)
                     .build();
             resourcesInitialized = true;
         }
@@ -411,7 +410,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerListenerInvocationErrorHandler(
             ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+        recordingListenerInvocationErrorHandler.setListenerInvocationErrorHandler(listenerInvocationErrorHandler);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        recordingListenerInvocationErrorHandler.failOnErrorInPreparation(!suppress);
         return this;
     }
 

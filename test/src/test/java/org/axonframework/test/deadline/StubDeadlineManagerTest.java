@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,15 +19,14 @@ package org.axonframework.test.deadline;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class StubDeadlineManagerTest {
 
@@ -39,7 +38,7 @@ class StubDeadlineManagerTest {
     }
 
     @Test
-    void testMessagesCarryTriggerTimestamp() throws Exception {
+    void messagesCarryTriggerTimestamp() throws Exception {
         Instant triggerTime = Instant.now().plusSeconds(60);
         MockScope.execute(() ->
                                   testSubject.schedule(triggerTime, "gone")

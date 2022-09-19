@@ -32,12 +32,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericAggregateFactoryTest {
 
     @Test
-    void testInitializeRepository_NoSuitableConstructor() {
+    void initializeRepository_NoSuitableConstructor() {
         assertThrows(IncompatibleAggregateException.class, () -> new GenericAggregateFactory<>(UnsuitableAggregate.class));
     }
 
     @Test
-    void testInitializeRepository_ConstructorNotCallable() {
+    void initializeRepository_ConstructorNotCallable() {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
@@ -49,7 +49,7 @@ class GenericAggregateFactoryTest {
     }
 
     @Test
-    void testInitializeFromAggregateSnapshot() {
+    void initializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type", aggregate.getIdentifier(),
                                                                                             2, aggregate);
@@ -61,7 +61,7 @@ class GenericAggregateFactoryTest {
      * Verify that {@link GenericAggregateFactory#doCreateAggregate} is not called unnecessarily.
      */
     @Test
-    void testInitializeFromAggregateSnapshot_AvoidCallingDoCreateAggregate() {
+    void initializeFromAggregateSnapshot_AvoidCallingDoCreateAggregate() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type",
                 aggregate.getIdentifier(),

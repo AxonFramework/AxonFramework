@@ -26,26 +26,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public abstract class AbstractPropertyAccessStrategyTest<T> {
 
     @Test
-    void testGetValue() {
+    void getValue() {
         final Property<T> actualProperty = getProperty(regularPropertyName());
         assertNotNull(actualProperty);
         assertNotNull(actualProperty.<String>getValue(propertyHoldingInstance()));
     }
 
     @Test
-    void testGetValue_BogusProperty() {
+    void getValue_BogusProperty() {
         assertNull(getProperty(unknownPropertyName()));
     }
 
     @Test
-    void testGetValue_ExceptionOnAccess() {
+    void getValue_ExceptionOnAccess() {
         Property<T> property = getProperty(exceptionPropertyName());
 
         assertThrows(PropertyAccessException.class, () -> property.getValue(propertyHoldingInstance()));
     }
 
     @Test
-    void testVoidReturnTypeRejected() {
+    void voidReturnTypeRejected() {
         Property property = getProperty(voidPropertyName());
         assertNull(property, "void methods should not be accepted as property");
     }

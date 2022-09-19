@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.util.Arrays.asList;
 
@@ -46,7 +48,7 @@ public interface EventStorageEngine {
      *
      * @param events Events to append to the event storage
      */
-    default void appendEvents(EventMessage<?>... events) {
+    default void appendEvents(@Nonnull EventMessage<?>... events) {
         appendEvents(asList(events));
     }
 
@@ -58,7 +60,7 @@ public interface EventStorageEngine {
      *
      * @param events Events to append to the event storage
      */
-    void appendEvents(List<? extends EventMessage<?>> events);
+    void appendEvents(@Nonnull List<? extends EventMessage<?>> events);
 
     /**
      * Store an event that contains a snapshot of an aggregate. If the event storage already contains a snapshot for the
@@ -66,7 +68,7 @@ public interface EventStorageEngine {
      *
      * @param snapshot The snapshot event of the aggregate that is to be stored
      */
-    void storeSnapshot(DomainEventMessage<?> snapshot);
+    void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot);
 
     /**
      * Open an event stream containing all events stored since given tracking token. The returned stream is comprised of
@@ -82,7 +84,7 @@ public interface EventStorageEngine {
      *                      messages if the end of the stream is reached.
      * @return A stream containing all tracked event messages stored since the given tracking token
      */
-    Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock);
+    Stream<? extends TrackedEventMessage<?>> readEvents(@Nullable TrackingToken trackingToken, boolean mayBlock);
 
     /**
      * Get a {@link DomainEventStream} containing all events published by the aggregate with given {@code
@@ -95,7 +97,7 @@ public interface EventStorageEngine {
      * @param aggregateIdentifier The identifier of the aggregate to return an event stream for
      * @return A non-blocking DomainEventStream of the given aggregate
      */
-    default DomainEventStream readEvents(String aggregateIdentifier) {
+    default DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
         return readEvents(aggregateIdentifier, 0L);
     }
 
@@ -111,7 +113,7 @@ public interface EventStorageEngine {
      * @param firstSequenceNumber The expected sequence number of the first event in the returned stream
      * @return A non-blocking DomainEventStream of the given aggregate
      */
-    DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber);
+    DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber);
 
     /**
      * Try to load a snapshot event of the aggregate with given {@code aggregateIdentifier}. If the storage engine has
@@ -120,7 +122,7 @@ public interface EventStorageEngine {
      * @param aggregateIdentifier The identifier of the aggregate
      * @return An optional with a snapshot of the aggregate
      */
-    Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier);
+    Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier);
 
     /**
      * Returns the last known sequence number for the given {@code aggregateIdentifier}.
@@ -133,8 +135,9 @@ public interface EventStorageEngine {
      * @return an optional with the highest sequence number, or an empty optional if the aggregate identifier wasn't
      * found
      */
-    default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
-        return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber).max(Long::compareTo);
+    default Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
+        return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber)
+                                              .max(Long::compareTo);
     }
 
     /**
@@ -164,7 +167,7 @@ public interface EventStorageEngine {
      * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
      * null} is returned
      */
-    default TrackingToken createTokenAt(Instant dateTime) {
+    default TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         throw new UnsupportedOperationException("Creation of Time based Token not supported by this EventStorageEngine");
     }
 }

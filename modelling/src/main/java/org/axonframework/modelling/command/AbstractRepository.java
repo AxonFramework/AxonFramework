@@ -27,15 +27,19 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -57,6 +61,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
+    protected final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
@@ -73,17 +78,17 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected AbstractRepository(Builder<T> builder) {
         builder.validate();
         this.aggregateModel = builder.buildAggregateModel();
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
-    public A newInstance(Callable<T> factoryMethod) throws Exception {
-        return newInstance(factoryMethod, a -> {
-        });
+    public A newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
+        return newInstance(factoryMethod, a -> {});
     }
 
     @Override
-    public A newInstance(Callable<T> factoryMethod, Consumer<Aggregate<T>> initMethod)
-            throws Exception {
+    public A newInstance(@Nonnull Callable<T> factoryMethod,
+                         @Nonnull Consumer<Aggregate<T>> initMethod) throws Exception {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
@@ -126,21 +131,26 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @throws RuntimeException           any exception thrown by implementing classes
      */
     @Override
-    public A load(String aggregateIdentifier, Long expectedVersion) {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
-        Map<String, A> aggregates = managedAggregates(uow);
-        A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
-                                                 s -> doLoad(aggregateIdentifier, expectedVersion));
-        uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
-        validateOnLoad(aggregate, expectedVersion);
-        prepareForCommit(aggregate);
+    public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
+        return spanFactory
+                .createInternalSpan(() -> this.getClass().getSimpleName() + ".load " + aggregateIdentifier)
+                .runSupplier(() -> {
+                    UnitOfWork<?> uow = CurrentUnitOfWork.get();
+                    Map<String, A> aggregates = managedAggregates(uow);
+                    A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
+                                                             s -> doLoad(aggregateIdentifier,
+                                                                         expectedVersion));
+                    uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
+                    validateOnLoad(aggregate, expectedVersion);
+                    prepareForCommit(aggregate);
 
-        return aggregate;
+                    return aggregate;
+                });
     }
 
 
     @Override
-    public Aggregate<T> loadOrCreate(String aggregateIdentifier, Callable<T> factoryMethod) {
+    public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
@@ -175,7 +185,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public A load(String aggregateIdentifier) {
+    public A load(@Nonnull String aggregateIdentifier) {
         return load(aggregateIdentifier, null);
     }
 
@@ -338,7 +348,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+    public void send(@Nonnull Message<?> message, @Nonnull ScopeDescriptor scopeDescription) throws Exception {
         if (canResolve(scopeDescription)) {
             String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
             try {
@@ -351,28 +361,32 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public boolean canResolve(ScopeDescriptor scopeDescription) {
+    public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof AggregateScopeDescriptor
-                && Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
+                && aggregateModel.types().anyMatch(t -> t.getName().contains (((AggregateScopeDescriptor) scopeDescription).getType()));
     }
 
     /**
      * Abstract Builder class to instantiate {@link AbstractRepository} implementations.
      * <p>
-     * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate
-     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
-     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
-     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
-     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate type
+     * to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate
+     * this AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of
+     * type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * <p>
+     * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */
     public static abstract class Builder<T> {
 
         protected final Class<T> aggregateType;
+        protected Set<Class<? extends T>> subtypes = new HashSet<>();
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -392,21 +406,21 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *                                 handlers contained in the Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
             this.parameterResolverFactory = parameterResolverFactory;
             return this;
         }
 
         /**
-         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
-         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}. Only
+         * used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
-         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
-         *                          {@code aggregateType}.
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given {@code
+         *                          aggregateType}.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
             return this;
@@ -416,13 +430,59 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate this
          * {@link Repository} will store.
          *
-         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
-         *                       {@link Repository} will store
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this {@link
+         *                       Repository} will store
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
             assertNonNull(aggregateModel, "AggregateModel may not be null");
             this.aggregateModel = aggregateModel;
+            return this;
+        }
+
+        /**
+         * Sets the subtypes of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
+         * Defining subtypes indicates this {@code Repository} supports polymorphic aggregate structure.
+         * <p>
+         * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set. Defaults to
+         * an empty {@link Set}.
+         *
+         * @param subtypes The subtypes of the {@link #getAggregateType() aggregate type} represented by this
+         *                 {@link Repository}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            assertNonNull(subtypes, "Subtypes of the aggregate may not be null");
+            this.subtypes = new HashSet<>(subtypes);
+            return this;
+        }
+
+        /**
+         * Sets a subtype of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
+         * Defining a subtype indicates this {@code Repository} supports a polymorphic aggregate structure.
+         * <p>
+         * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set.
+         *
+         * @param subtype A subtypes of the {@link #getAggregateType() aggregate type} represented by this
+         *                {@link Repository}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            assertNonNull(subtype, "A subtype of the aggregate may not be null");
+            this.subtypes.add(subtype);
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 
@@ -443,12 +503,12 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         private AggregateModel<T> inspectAggregateModel() {
             if (parameterResolverFactory == null && handlerDefinition == null) {
-                return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+                return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, subtypes);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {
                 handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
             }
             return AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                    aggregateType, parameterResolverFactory, handlerDefinition
+                    aggregateType, parameterResolverFactory, handlerDefinition, subtypes
             );
         }
 

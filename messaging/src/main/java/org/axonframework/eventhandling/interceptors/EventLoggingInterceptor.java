@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Message Dispatch Interceptor that logs published events to a SLF4J logger. It does not alter or reject events.
@@ -66,10 +67,14 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
         this.logger = LoggerFactory.getLogger(loggerName);
     }
 
+    @Nonnull
     @Override
-    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(List<? extends EventMessage<?>> messages) {
+    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(
+            @Nonnull List<? extends EventMessage<?>> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
-                                                           messages.stream().map(m -> m.getPayloadType().getSimpleName()).collect(Collectors.joining(", "))));
+                                                           messages.stream()
+                                                                   .map(m -> m.getPayloadType().getSimpleName())
+                                                                   .collect(Collectors.joining(", "))));
         CurrentUnitOfWork.ifStarted(unitOfWork -> {
             Message<?> message = unitOfWork.getMessage();
             if (message == null) {

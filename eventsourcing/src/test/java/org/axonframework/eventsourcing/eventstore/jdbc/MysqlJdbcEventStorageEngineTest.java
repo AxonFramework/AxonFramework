@@ -63,7 +63,7 @@ class MysqlJdbcEventStorageEngineTest {
      * aggregate that does not exist. This test replicates this problem.
      */
     @Test
-    void testLoadLastSequenceNumber() {
+    void loadLastSequenceNumber() {
         final String aggregateId = UUID.randomUUID().toString();
         testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));

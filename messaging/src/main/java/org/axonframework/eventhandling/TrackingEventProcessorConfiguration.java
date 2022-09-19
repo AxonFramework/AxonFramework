@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
 
@@ -111,7 +112,8 @@ public class TrackingEventProcessorConfiguration {
      * @param threadFactory The factory to create threads with
      * @return {@code this} for method chaining
      */
-    public TrackingEventProcessorConfiguration andThreadFactory(Function<String, ThreadFactory> threadFactory) {
+    public TrackingEventProcessorConfiguration andThreadFactory(
+            @Nonnull Function<String, ThreadFactory> threadFactory) {
         this.threadFactory = threadFactory;
         return this;
     }
@@ -153,7 +155,7 @@ public class TrackingEventProcessorConfiguration {
      * @return {@code this} for method chaining
      */
     public TrackingEventProcessorConfiguration andInitialTrackingToken(
-            Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder) {
+            @Nonnull Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> initialTrackingTokenBuilder) {
         this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
         return this;
     }
@@ -165,8 +167,26 @@ public class TrackingEventProcessorConfiguration {
      * @param timeUnit           The unit of time
      * @return {@code this} for method chaining
      */
-    public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval, TimeUnit timeUnit) {
+    public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval,
+                                                                     @Nonnull TimeUnit timeUnit) {
         this.tokenClaimInterval = timeUnit.toMillis(tokenClaimInterval);
+        return this;
+    }
+
+    /**
+     * Whether to automatically start the processor when event processing is initialized. If set to {@code false}, the
+     * application must explicitly start the processor. This can be useful if the application needs to perform its own
+     * initialization before it begins processing new events.
+     * <p>
+     * The autostart setting does not impact the shutdown process of the processor. It will always be triggered when the
+     * framework receives a signal to shut down.
+     *
+     * @param autoStart {@code true} to automatically start the processor (the default), {@code false} if the
+     *                  application will start the processor itself.
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andAutoStart(boolean autoStart) {
+        this.autoStart = autoStart;
         return this;
     }
 
@@ -178,7 +198,7 @@ public class TrackingEventProcessorConfiguration {
      * @return {@code this} for method chaining
      */
     public TrackingEventProcessorConfiguration andEventTrackerStatusChangeListener(
-            EventTrackerStatusChangeListener eventTrackerStatusChangeListener
+            @Nonnull EventTrackerStatusChangeListener eventTrackerStatusChangeListener
     ) {
         assertNonNull(eventTrackerStatusChangeListener, "EventTrackerStatusChangeListener may not be null");
         this.eventTrackerStatusChangeListener = eventTrackerStatusChangeListener;
@@ -270,6 +290,13 @@ public class TrackingEventProcessorConfiguration {
      */
     public long getTokenClaimInterval() {
         return tokenClaimInterval;
+    }
+
+    /**
+     * @return {@code} true if the processor should be started automatically by the framework.
+     */
+    public boolean isAutoStart() {
+        return autoStart;
     }
 
     /**

@@ -43,6 +43,7 @@ import org.axonframework.modelling.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
+import org.mockito.internal.verification.*;
 import org.mockito.junit.jupiter.*;
 import org.mockito.quality.*;
 
@@ -79,45 +80,52 @@ class AggregateAnnotationCommandHandlerTest {
     private SimpleCommandBus commandBus;
     private Repository<StubCommandAnnotatedAggregate> mockRepository;
     private AggregateModel<StubCommandAnnotatedAggregate> aggregateModel;
+    private CreationPolicyAggregateFactory<StubCommandAnnotatedAggregate> creationPolicyFactory;
+    private ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> newInstanceCallableFactoryCaptor;
 
     @BeforeEach
     void setUp() throws Exception {
         commandBus = SimpleCommandBus.builder().build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
-        when(mockRepository.newInstance(any())).thenAnswer(
-                invocation -> AnnotatedAggregate.initialize(
+        newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture()))
+                .thenAnswer(invocation -> AnnotatedAggregate.initialize(
                         (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                         aggregateModel,
                         mock(EventBus.class)
                 ));
-        when(mockRepository.newInstance(any(), any())).thenAnswer(
-                invocation -> {
-                    AnnotatedAggregate<StubCommandAnnotatedAggregate> aggregate = AnnotatedAggregate.initialize(
-                            (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
-                            aggregateModel,
-                            mock(EventBus.class)
-                    );
-                    Consumer<Aggregate<?>> consumer = (Consumer<Aggregate<?>>) invocation.getArguments()[1];
-                    consumer.accept(aggregate);
-                    return aggregate;
-                });
+        when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture(), any())).thenAnswer(invocation -> {
+            AnnotatedAggregate<StubCommandAnnotatedAggregate> aggregate = AnnotatedAggregate.initialize(
+                    (Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                    aggregateModel,
+                    mock(EventBus.class)
+            );
+            Consumer<Aggregate<?>> consumer = (Consumer<Aggregate<?>>) invocation.getArguments()[1];
+            consumer.accept(aggregate);
+            return aggregate;
+        });
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
                 new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
+        creationPolicyFactory =
+                spy(new NoArgumentConstructorCreationPolicyAggregateFactory<>(StubCommandAnnotatedAggregate.class));
+
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
-                .aggregateType(StubCommandAnnotatedAggregate.class)
-                .parameterResolverFactory(parameterResolverFactory)
-                .repository(mockRepository)
-                .build();
+                                                       .aggregateType(StubCommandAnnotatedAggregate.class)
+                                                       .parameterResolverFactory(parameterResolverFactory)
+                                                       .repository(mockRepository)
+                                                       .creationPolicyAggregateFactory(creationPolicyFactory)
+                                                       .build();
+        //noinspection resource
         testSubject.subscribe(commandBus);
     }
 
     @Test
-    void testAggregateConstructorThrowsException() {
+    void aggregateConstructorThrowsException() {
         commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")),
                             (CommandCallback<FailingCreateCommand, Object>) (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
@@ -129,7 +137,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testAggregateCommandHandlerThrowsException() {
+    void aggregateCommandHandlerThrowsException() {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(eq(aggregateIdentifier), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
@@ -145,7 +153,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testSupportedCommands() {
+    void supportedCommands() {
         Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
@@ -163,23 +171,26 @@ class AggregateAnnotationCommandHandlerTest {
                 UpdateNestedEntityStateCommand.class.getName(),
                 UpdateEntityStateCommand.class.getName(),
                 UpdateEntityFromCollectionStateCommand.class.getName(),
-                UpdateEntityFromMapStateCommand.class.getName()));
+                UpdateEntityFromMapStateCommand.class.getName(),
+                UpdateAbstractEntityFromCollectionStateCommand.class.getName()));
 
         assertEquals(expected, actual);
     }
 
     @Test
-    void testCommandHandlerSubscribesToCommands() {
+    void commandHandlerSubscribesToCommands() {
+        //noinspection resource
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
                                      any(MessageHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
         // DuplicateCommandHandlerResolver
+        //noinspection resource
         verify(commandBus, times(2)).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
-                                     any(MessageHandler.class));
+                                               any(MessageHandler.class));
     }
 
     @Test
-    void testCommandHandlerCreatesAggregateInstance() throws Exception {
+    void commandHandlerCreatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
@@ -194,12 +205,49 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
+    void commandHandlerCreatesAlwaysAggregateInstance() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        // make sure the identifier was invoked in the callback
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+        verify(creationPolicyFactory).create("id");
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create("id");
+    }
+
+    @Test
+    void commandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        // make sure the identifier was invoked in the callback
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
+        assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
+        verify(creationPolicyFactory).create(null);
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
+    }
+
+    @Test
+    void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
 
         AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
-        when(mockRepository.loadOrCreate(anyString(), any()))
+        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> factoryCaptor = ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.loadOrCreate(anyString(), factoryCaptor.capture()))
                 .thenReturn(spyAggregate);
 
         commandBus.dispatch(message, callback);
@@ -211,13 +259,20 @@ class AggregateAnnotationCommandHandlerTest {
         verify(spyAggregate).handle(message);
         assertEquals(message, commandCaptor.getValue());
         assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+        verifyNoInteractions(creationPolicyFactory);
+        factoryCaptor.getValue().call();
+        verify(creationPolicyFactory).create("id");
     }
 
     @Test
-    public void testCommandHandlerAlwaysCreatesAggregateInstance() throws Exception {
+    void commandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
 
+        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> loadOrCreateFactoryCaptor =
+                ArgumentCaptor.forClass(Callable.class);
+        when(mockRepository.loadOrCreate(anyString(), loadOrCreateFactoryCaptor.capture()))
+                .thenThrow(new IllegalArgumentException("This is not supposed to be invoked"));
         commandBus.dispatch(message, callback);
         verify(mockRepository).newInstance(any(), any());
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
@@ -225,11 +280,30 @@ class AggregateAnnotationCommandHandlerTest {
                 .forClass(CommandResultMessage.class);
         verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
+        assertEquals("Create or update works fine", responseCaptor.getValue().getPayload());
+
+        verify(creationPolicyFactory).create(null);
+        newInstanceCallableFactoryCaptor.getValue().call();
+        verify(creationPolicyFactory, VerificationModeFactory.times(2)).create(null);
+    }
+
+    @Test
+    public void commandHandlerAlwaysCreatesAggregateInstance() throws Exception {
+        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any(), any());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
+        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(message, commandCaptor.getValue());
         assertEquals("Always create works fine", responseCaptor.getValue().getPayload());
     }
 
     @Test
-    void testCommandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
+    void commandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
         final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
@@ -244,10 +318,9 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
@@ -263,12 +336,10 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
+        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -292,12 +363,10 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
+    void commandHandlerUpdatesAggregateInstanceWithNullVersionAnnotatedMethod() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -312,10 +381,9 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceAnnotatedField() {
+    void commandHandlerUpdatesAggregateInstanceAnnotatedField() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
@@ -331,12 +399,10 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedField() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
+        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -351,12 +417,10 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
+    void commandHandlerUpdatesAggregateInstanceWithCorrectVersionAnnotatedIntegerField() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
+        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -372,12 +436,10 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandForEntityRejectedWhenNoInstanceIsAvailable() {
+    void commandForEntityRejectedWhenNoInstanceIsAvailable() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), any()))
-                .thenAnswer(i -> createAggregate(aggregateIdentifier));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityStateCommand("abc123")),
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregateIdentifier));
+        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     Throwable cause = commandResultMessage.exceptionResult();
@@ -394,13 +456,12 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntity() {
+    void commandHandledByEntity() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         aggregate.initializeEntity("1");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregate));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityStateCommand("abc123")),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityStateCommand("abc123")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -416,15 +477,14 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollection() {
+    void commandHandledByEntityFromCollection() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         root.initializeEntity("2");
         root.initializeEntity("3");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromCollectionStateCommand("abc123", "2")),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -439,13 +499,12 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollectionNoEntityAvailable() {
+    void commandHandledByEntityFromCollectionNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromCollectionStateCommand("abc123", "2")),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     Throwable cause = commandResultMessage.exceptionResult();
@@ -460,13 +519,12 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromCollectionNullIdInCommand() {
+    void commandHandledByEntityFromCollectionNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromCollectionStateCommand("abc123", null)),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromCollectionStateCommand("abc123", null)),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     Throwable cause = commandResultMessage.exceptionResult();
@@ -481,7 +539,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByNestedEntity() {
+    void commandHandledByNestedEntity() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -503,25 +561,26 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
-            @Mock Repository<CollectionFieldWithoutGenerics> mockRepo) {
-        AggregateAnnotationCommandHandler.Builder<CollectionFieldWithoutGenerics> repoBuilder = AggregateAnnotationCommandHandler.<CollectionFieldWithoutGenerics>builder()
-                .aggregateType(CollectionFieldWithoutGenerics.class)
-                .repository(mockRepo);
+    void annotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
+            @Mock Repository<CollectionFieldWithoutGenerics> mockRepo
+    ) {
+        AggregateAnnotationCommandHandler.Builder<CollectionFieldWithoutGenerics> repoBuilder =
+                AggregateAnnotationCommandHandler.<CollectionFieldWithoutGenerics>builder()
+                                                 .aggregateType(CollectionFieldWithoutGenerics.class)
+                                                 .repository(mockRepo);
 
         assertThrows(AxonConfigurationException.class, repoBuilder::build);
     }
 
     @Test
-    void testCommandHandledByEntityFromMap() {
+    void commandHandledByEntityFromMap() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         root.initializeEntity("2");
         root.initializeEntity("3");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromMapStateCommand("abc123", "2")),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     commandResultMessage.optionalExceptionResult()
@@ -536,13 +595,12 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromMapNoEntityAvailable() {
+    void commandHandledByEntityFromMapNoEntityAvailable() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromMapStateCommand("abc123", "2")),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", "2")),
                             (commandMessage, commandResultMessage) -> {
                                 if (commandResultMessage.isExceptional()) {
                                     Throwable cause = commandResultMessage.exceptionResult();
@@ -557,7 +615,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testCommandHandledByEntityFromMapNullIdInCommand() {
+    void commandHandledByEntityFromMapNullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
@@ -577,30 +635,64 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    void testUsesDuplicateCommandHandlerResolver() throws Exception {
+    void usesDuplicateCommandHandlerResolver() {
         commandBus = SimpleCommandBus.builder()
                                      .duplicateCommandHandlerResolver(rejectDuplicates())
                                      .build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
 
-        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
-                new CustomParameterResolverFactory());
-        aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
-                                                                             parameterResolverFactory);
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
                                                        .repository(mockRepository)
                                                        .build();
 
-        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> {
-            testSubject.subscribe(commandBus);
-        });
+        //noinspection resource
+        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> testSubject.subscribe(commandBus));
     }
 
     @Test
-    void testDuplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
+    void commandHandlerByAbstractEntityWithTheSameCommandType() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        root.initializeEntity("1");
+        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+        commandBus.dispatch(
+                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_b")),
+                (commandMessage, commandResultMessage) -> {
+                    if (commandResultMessage.isExceptional()) {
+                        commandResultMessage.optionalExceptionResult()
+                                            .ifPresent(Throwable::printStackTrace);
+                        fail("Did not expect exception");
+                    }
+                    assertEquals("handled by 1_b", commandResultMessage.getPayload());
+                }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test
+    void commandHandlerByAbstractEntityWithNoAvailableEntity() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        root.initializeEntity("1");
+        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
+        commandBus.dispatch(
+                asCommandMessage(new UpdateAbstractEntityFromCollectionStateCommand(aggregateIdentifier, "1_c")),
+                (commandMessage, commandResultMessage) -> {
+                    if (commandResultMessage.isExceptional()) {
+                        Throwable cause = commandResultMessage.exceptionResult();
+                        assertTrue(cause instanceof AggregateEntityNotFoundException);
+                    } else {
+                        fail("Expected exception");
+                    }
+                }
+        );
+    }
+
+    @Test
+    void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
         commandBus = SimpleCommandBus.builder()
                                      .duplicateCommandHandlerResolver(rejectDuplicates())
                                      .build();
@@ -659,6 +751,12 @@ class AggregateAnnotationCommandHandlerTest {
 
         @AggregateMember(type = StubCommandAnnotatedMapEntity.class)
         private Map<String, StubCommandAnnotatedMapEntity> entityMap;
+
+        @AggregateMember
+        private List<StubCommandAnnotatedAbstractEntityA> absEntitiesA;
+
+        @AggregateMember
+        private List<StubCommandAnnotatedAbstractEntityB> absEntitiesB;
 
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
@@ -756,6 +854,13 @@ class AggregateAnnotationCommandHandlerTest {
                 this.entityMap = new HashMap<>();
             }
             this.entityMap.put(id, new StubCommandAnnotatedMapEntity(id));
+            if (absEntitiesA == null && absEntitiesB == null) {
+                this.absEntitiesA = new ArrayList<>();
+                this.absEntitiesB = new ArrayList<>();
+            }
+            //noinspection ConstantConditions - absEntitiesA is configured in previous if-block.
+            this.absEntitiesA.add(new StubCommandAnnotatedAbstractEntityA(id + "_a"));
+            this.absEntitiesB.add(new StubCommandAnnotatedAbstractEntityB(id + "_b"));
         }
     }
 
@@ -836,6 +941,54 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
+    private static abstract class StubCommandAbstractEntity {
+
+        @EntityId
+        public String abstractId;
+    }
+
+    @SuppressWarnings("unused")
+    private static class StubCommandAnnotatedAbstractEntityA extends StubCommandAbstractEntity {
+
+        public StubCommandAnnotatedAbstractEntityA() {
+        }
+
+        public StubCommandAnnotatedAbstractEntityA(String abstractId) {
+            super();
+            this.abstractId = abstractId;
+        }
+
+        @CommandHandler
+        public String handle(UpdateAbstractEntityFromCollectionStateCommand command) {
+            return "handled by " + getAbstractId();
+        }
+
+        public String getAbstractId() {
+            return abstractId;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class StubCommandAnnotatedAbstractEntityB extends StubCommandAbstractEntity {
+
+        public StubCommandAnnotatedAbstractEntityB() {
+        }
+
+        public StubCommandAnnotatedAbstractEntityB(String abstractId) {
+            super();
+            this.abstractId = abstractId;
+        }
+
+        @CommandHandler
+        public String handle(UpdateAbstractEntityFromCollectionStateCommand command) {
+            return "handled by " + getAbstractId();
+        }
+
+        public String getAbstractId() {
+            return abstractId;
+        }
+    }
+
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private static class UpdateNestedEntityStateCommand {
 
@@ -887,6 +1040,7 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class AlwaysCreateCommand {
 
         @TargetAggregateIdentifier
@@ -1118,7 +1272,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @SuppressWarnings("unused")
-    abstract class RootAggregate {
+    abstract static class RootAggregate {
 
         @CommandHandler
         public String handle(String command) {
@@ -1126,7 +1280,7 @@ class AggregateAnnotationCommandHandlerTest {
         }
     }
 
-    class ChildAggregate extends RootAggregate {
+    static class ChildAggregate extends RootAggregate {
 
         @CommandHandler
         @Override

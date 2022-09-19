@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,17 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
-import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
+import org.axonframework.modelling.saga.metamodel.SagaModel;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -48,16 +50,17 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Instantiate a {@link AnnotatedSagaManager} based on the fields contained in the {@link Builder}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
+     * {@link SagaInstantiationException} if it fails, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link ListenerInvocationErrorHandler} is defaulted to
      * a {@link LoggingErrorHandler}. The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and
      * as such should be provided.
      * <p>
      * Will assert that the {@link SagaRepository}, {@code sagaType}, {@code sagaFactory} and
      * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an
-     * {@link org.axonframework.common.AxonConfigurationException} if any of them is {@code null}.
-     * Additionally, the provided Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as
-     * the Saga type to be stored or derive it based on the given {@code sagaType}.
-     * All Sagas managed by this Saga manager must be {@code instanceOf} this Saga type.
+     * {@link org.axonframework.common.AxonConfigurationException} if any of them is {@code null}. Additionally, the
+     * provided Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as the Saga type to
+     * be stored or derive it based on the given {@code sagaType}. All Sagas managed by this Saga manager must be
+     * {@code instanceOf} this Saga type.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotatedSagaManager} instance
      */
@@ -70,8 +73,9 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Instantiate a Builder to be able to create a {@link AnnotatedSagaManager}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
-     * a {@link LoggingErrorHandler}.
+     * {@link SagaInstantiationException} if it fails, the {@link ListenerInvocationErrorHandler} is defaulted to a
+     * {@link LoggingErrorHandler} and the {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * <p>
      * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
      * one based of the required {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the
@@ -88,7 +92,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
 
     @Override
-    public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
         // The segment is used to filter Saga instances, so all events match when there's a handler
         return sagaMetaModel.hasHandlerMethod(eventMessage);
     }
@@ -122,7 +126,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Builder class to instantiate a {@link AnnotatedSagaManager}.
      * <p>
      * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
-     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
+     * {@link SagaInstantiationException} if it fails, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and the {@link ListenerInvocationErrorHandler} is defaulted to
      * a {@link LoggingErrorHandler}.
      * <p>
      * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
@@ -161,6 +166,12 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         public Builder<T> listenerInvocationErrorHandler(
                 ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
             super.listenerInvocationErrorHandler(listenerInvocationErrorHandler);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
             return this;
         }
 

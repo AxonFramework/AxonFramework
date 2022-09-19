@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,9 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
-import org.axonframework.lifecycle.StartHandler;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -48,7 +49,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marc Gathier
  * @since 4.0
  */
-public class AxonServerConnectionManager {
+public class AxonServerConnectionManager implements Lifecycle, ConnectionManager {
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
@@ -86,12 +87,17 @@ public class AxonServerConnectionManager {
         return new Builder();
     }
 
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
+        lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
+    }
+
     /**
      * Starts the {@link AxonServerConnectionManager}. Will enable heartbeat messages to be send to the connected Axon
      * Server instance in the {@link Phase#INSTRUCTION_COMPONENTS} phase, if this has been enabled through the {@link
      * AxonServerConfiguration.HeartbeatConfiguration#isEnabled()}.
      */
-    @StartHandler(phase = Phase.INSTRUCTION_COMPONENTS)
     public void start() {
         if (heartbeatEnabled) {
             // for backwards compatibility. Starting the ConnectionManager with heartbeat enabled should eagerly create
@@ -147,7 +153,6 @@ public class AxonServerConnectionManager {
      * Stops the Connection Manager, closing any active connections and preventing new connections from being created.
      * This shutdown operation is performed in the {@link Phase#EXTERNAL_CONNECTIONS} phase.
      */
-    @ShutdownHandler(phase = Phase.EXTERNAL_CONNECTIONS)
     public void shutdown() {
         connectionFactory.shutdown();
         disconnect();
@@ -191,6 +196,13 @@ public class AxonServerConnectionManager {
     @Deprecated
     public Channel getChannel(String context) {
         return ((ContextConnection) getConnection(context)).getManagedChannel();
+    }
+
+    @Override
+    public Map<String, Boolean> connections() {
+        return connections.entrySet()
+                          .stream()
+                          .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().isConnected()));
     }
 
     /**

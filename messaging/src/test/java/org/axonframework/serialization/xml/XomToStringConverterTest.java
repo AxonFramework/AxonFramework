@@ -36,13 +36,13 @@ class XomToStringConverterTest {
     }
 
     @Test
-    void testCanConvert() {
+    void canConvert() {
         assertEquals(Document.class, testSubject.expectedSourceType());
         assertEquals(String.class, testSubject.targetType());
     }
 
     @Test
-    void testConvert() {
+    void convert() {
         Document doc = new Document(new Element("rootElement"));
 
         String actual = testSubject.convert(doc);

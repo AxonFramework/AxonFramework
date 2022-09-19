@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +37,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import javax.annotation.Nonnull;
 
+import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -54,12 +59,13 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
+    private final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStore} is not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if it is {@code null}.
+     * Will assert that the {@link EventStore} is not {@code null}, and will throw an {@link AxonConfigurationException}
+     * if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSnapshotter} instance
      */
@@ -68,10 +74,11 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         this.eventStore = builder.eventStore;
         this.executor = builder.executor;
         this.transactionManager = builder.transactionManager;
+        this.spanFactory = builder.builderSpanFactory;
     }
 
     @Override
-    public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
+    public void scheduleSnapshot(@Nonnull Class<?> aggregateType, @Nonnull String aggregateIdentifier) {
         if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(UnitOfWork.Phase.COMMIT)) {
             CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
         } else {
@@ -91,15 +98,44 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             }
         }
         if (snapshotsInProgress.add(typeAndId)) {
+            Span span = spanFactory.createRootTrace(() -> traceName(aggregateType)).start();
             try {
-                executor.execute(
-                        silently(() -> transactionManager.executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier)))
-                                .andFinally(() -> snapshotsInProgress.remove(typeAndId)));
+                Span internalSpan = spanFactory.createInternalSpan(() -> getInnerTraceName(aggregateType,
+                                                                                           aggregateIdentifier));
+                executor.execute(silently(internalSpan.wrapRunnable(
+                        () -> transactionManager.executeInTransaction(
+                                createSnapshotterTask(aggregateType, aggregateIdentifier)))
+                ).andFinally(() -> snapshotsInProgress.remove(typeAndId)));
             } catch (Exception e) {
                 snapshotsInProgress.remove(typeAndId);
+                span.recordException(e);
                 throw e;
+            } finally {
+                span.end();
             }
         }
+    }
+
+    /**
+     * Create name of the outer trace. This is separated from the inner for two reasons:
+     * <ul>
+     *     <li>Measuring the delay between scheduling and making</li>
+     *     <li>To have a more generic name for trace grouping and a more specific name for the span with aggId</li>
+     * </ul>
+     */
+    private String getInnerTraceName(Class<?> aggregateType, String aggregateIdentifier) {
+        return format("%s.createSnapshot(%s,%s)",
+                      getClass().getSimpleName(),
+                      aggregateType.getSimpleName(),
+                      aggregateIdentifier);
+    }
+
+    /**
+     * Create name of the inner trace. See {@link #getInnerTraceName(Class, String)} for more information on why the
+     * inner and outer are separate.
+     */
+    private String traceName(Class<?> aggregateType) {
+        return format("%s.createSnapshot(%s)", getClass().getSimpleName(), aggregateType.getSimpleName());
     }
 
     private SilentTask silently(Runnable r) {
@@ -111,7 +147,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @param aggregateType       The type of the aggregate to create a snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
-     *
      * @return the task containing snapshot creation logic
      */
     protected Runnable createSnapshotterTask(Class<?> aggregateType, String aggregateIdentifier) {
@@ -149,6 +184,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     private static class AggregateTypeId {
+
         private final Class<?> aggregateType;
         private final String aggregateIdentifier;
 
@@ -179,15 +215,16 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     /**
      * Abstract Builder class to instantiate {@link AbstractSnapshotter} implementations.
      * <p>
-     * The {@link Executor} is defaulted to an {@link DirectExecutor#INSTANCE} and the {@link TransactionManager}
-     * defaults to a {@link NoTransactionManager}. The {@link EventStore} is a <b>hard requirement</b> and as such
-     * should be provided.
+     * The {@link Executor} is defaulted to an {@link DirectExecutor#INSTANCE}, the {@link TransactionManager} defaults
+     * to a {@link NoTransactionManager}, and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The
+     * {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
         private EventStore eventStore;
         private Executor executor = DirectExecutor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private SpanFactory builderSpanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
@@ -213,6 +250,19 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public Builder executor(Executor executor) {
             assertNonNull(executor, "Executor may not be null");
             this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.builderSpanFactory = spanFactory;
             return this;
         }
 
@@ -268,10 +318,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public Runnable andFinally(Runnable r) {
             return new RunnableAndFinally(this, r);
         }
-
     }
 
     private static class RunnableAndFinally implements Runnable {
+
         private final Runnable first;
 
         private final Runnable then;
@@ -289,7 +339,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 then.run();
             }
         }
-
     }
 
     private final class CreateSnapshotTask implements Runnable {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,11 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -57,7 +58,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class})
+        AxonServerBusAutoConfiguration.class,
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
+})
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 public class AxonAutoConfigurationWithEventSerializerTest {
 
@@ -68,7 +72,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
     private EntityManager entityManager;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
@@ -76,7 +80,8 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
-        AxonConfiguration axonConfiguration = applicationContext.getBean(AxonConfiguration.class);
+        org.axonframework.config.Configuration axonConfiguration =
+                applicationContext.getBean(org.axonframework.config.Configuration.class);
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
@@ -85,11 +90,11 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
         assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
-        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(6, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
     @Test
-    void testEventStorageEngineUsesSerializerBean() {
+    void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("myEventSerializer", Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);

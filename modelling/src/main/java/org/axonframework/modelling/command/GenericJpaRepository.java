@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
@@ -25,12 +23,17 @@ import org.axonframework.eventhandling.DomainEventSequenceAware;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.tracing.SpanFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -63,7 +66,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}.
+     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -173,7 +177,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}.
+     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -204,19 +210,19 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }
 
         @Override
-        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
@@ -227,8 +233,27 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
             return this;
         }
 
+        @Override
+        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+            super.subtypes(subtypes);
+            return this;
+        }
+
+        @Override
+        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+            super.subtype(subtype);
+            return this;
+        }
+
+        @Override
+        public Builder<T> spanFactory(SpanFactory spanFactory) {
+            super.spanFactory(spanFactory);
+            return this;
+        }
+
         /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this repository.
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} instance for this
+         * repository.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager}
          *                              instance for this repository

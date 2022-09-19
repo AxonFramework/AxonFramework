@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,10 @@ package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
@@ -33,32 +36,31 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.axonframework.tracing.SpanFactory;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
-import org.springframework.context.ApplicationContext;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -69,61 +71,104 @@ import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class AxonAutoConfigurationTest {
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    @Autowired
-    private Configurer configurer;
-
-    @Autowired
-    private AxonConfiguration configuration;
-
-    @Autowired
-    private Serializer serializer;
-
-    @Autowired
-    private Snapshotter snapshotter;
+class AxonAutoConfigurationTest {
 
     @Test
-    void testContextInitialization() {
-        assertNotNull(applicationContext);
-        assertNotNull(configurer);
-        assertNotNull(snapshotter);
+    void contextInitialization() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(AxonAutoConfigurationTest.Context.class)
+                .withPropertyValues("axon.axonserver.enabled=false")
+                .run(applicationContext -> {
+                    assertNotNull(applicationContext);
+                    assertNotNull(applicationContext.getBean(Configurer.class));
+                    assertNotNull(applicationContext.getBean(Snapshotter.class));
 
-        assertNotNull(applicationContext.getBean(CommandBus.class));
-        assertNotNull(applicationContext.getBean(EventBus.class));
-        assertNotNull(applicationContext.getBean(QueryBus.class));
-        assertNotNull(applicationContext.getBean(EventStore.class));
-        assertNotNull(applicationContext.getBean(CommandGateway.class));
-        assertNotNull(applicationContext.getBean(EventGateway.class));
-        assertNotNull(applicationContext.getBean(Serializer.class));
-        assertEquals(MultiParameterResolverFactory.class,
-                     applicationContext.getBean(ParameterResolverFactory.class).getClass());
-        assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
-        assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
-        assertNotNull(applicationContext.getBean(Context.MySaga.class));
-        assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
-        assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
+                    assertNotNull(applicationContext.getBean(CommandBus.class));
+                    assertNotNull(applicationContext.getBean(EventBus.class));
+                    assertNotNull(applicationContext.getBean(QueryBus.class));
+                    assertNotNull(applicationContext.getBean(EventStore.class));
+                    assertNotNull(applicationContext.getBean(CommandGateway.class));
+                    assertNotNull(applicationContext.getBean(EventGateway.class));
+                    assertNotNull(applicationContext.getBean(Serializer.class));
+                    assertNotNull(applicationContext.getBean(SpanFactory.class));
+                    assertEquals(MultiParameterResolverFactory.class,
+                                 applicationContext.getBean(ParameterResolverFactory.class).getClass());
+                    assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
+                    assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
+                    assertNotNull(applicationContext.getBean(Context.MySaga.class));
+                    assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
+                    assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
-        assertEquals(2, configuration.correlationDataProviders().size());
+                    assertEquals(2,
+                                 applicationContext.getBean(org.axonframework.config.Configuration.class)
+                                                   .correlationDataProviders().size());
 
-        Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
-        assertEquals(0, someComponent.invocations.size());
-        applicationContext.getBean(EventBus.class).publish(asEventMessage("testing"));
-        assertEquals(1, someComponent.invocations.size());
+                    Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
+                    assertEquals(0, someComponent.invocations.size());
+                    applicationContext.getBean(EventBus.class).publish(asEventMessage("testing"));
+                    assertEquals(1, someComponent.invocations.size());
 
-        assertTrue(serializer instanceof XStreamSerializer);
-        assertSame(applicationContext.getBean("eventSerializer"), applicationContext.getBean("messageSerializer"));
-        assertSame(applicationContext.getBean("serializer"), applicationContext.getBean("messageSerializer"));
+                    assertTrue(applicationContext.getBean(Serializer.class) instanceof XStreamSerializer);
+                    assertSame(applicationContext.getBean("eventSerializer"),
+                               applicationContext.getBean("messageSerializer"));
+                    assertSame(applicationContext.getBean("serializer"),
+                               applicationContext.getBean("messageSerializer"));
+                });
     }
 
+    @Test
+    void ambiguousComponentsThrowExceptionWhenRequestedFromConfiguration() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
+                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build())
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
+            applicationContextRunner
+                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+        });
+        assertTrue(actual.getMessage().contains("CommandGateway"));
+        assertTrue(actual.getMessage().contains("gatewayOne"));
+        assertTrue(actual.getMessage().contains("gatewayTwo"));
+
+    }
+
+    @Test
+    void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
+                .withBean("gatewayTwo", CommandGateway.class, () -> DefaultCommandGateway.builder().commandBus(SimpleCommandBus.builder().build()).build(), beanDefinition -> beanDefinition.setPrimary(true))
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
+            applicationContextRunner
+                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+        });
+        assertTrue(actual.getMessage().contains("CommandGateway"));
+        assertTrue(actual.getMessage().contains("gatewayOne"));
+        assertTrue(actual.getMessage().contains("gatewayTwo"));
+    }
+
+    @Test
+    void ambiguousBeanDependenciesThrowException() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("gatewayOne", CommandBus.class, () -> SimpleCommandBus.builder().build())
+                .withBean("gatewayTwo", CommandBus.class, () -> SimpleCommandBus.builder().build())
+                .withPropertyValues("axon.axonserver.enabled=false")
+                .run(ctx -> {
+                    Throwable startupFailure = ctx.getStartupFailure();
+                    assertTrue(startupFailure instanceof UnsatisfiedDependencyException);
+                    assertTrue(startupFailure.getMessage().contains("CommandBus"), "Expected mention of 'CommandBus' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayOne"), "Expected mention of 'gatewayOne' in: " + startupFailure.getMessage());
+                    assertTrue(startupFailure.getMessage().contains("gatewayTwo"), "Expected mention of 'gatewayTwo' in: " + startupFailure.getMessage());
+                });
+    }
+
+    @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     @Configuration
     public static class Context {
 
@@ -216,7 +261,11 @@ public class AxonAutoConfigurationTest {
         @Component
         public static class SomeComponent {
 
-            private List<String> invocations = new ArrayList<>();
+            private final List<String> invocations = new ArrayList<>();
+
+            public SomeComponent(org.axonframework.config.Configuration axonConfig) {
+                // just to see if wiring the configuration causes circular dependencies.
+            }
 
             @EventHandler
             public void handle(String event, SomeOtherComponent test, Integer testing) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.commandhandling;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing a callback that is invoked when command handler execution has finished.
@@ -33,5 +35,25 @@ public interface CommandCallback<C, R> {
      * @param commandMessage       the {@link CommandMessage} that was dispatched
      * @param commandResultMessage the {@link CommandResultMessage} of the command handling execution
      */
-    void onResult(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage);
+    void onResult(@Nonnull CommandMessage<? extends C> commandMessage,
+                  @Nonnull CommandResultMessage<? extends R> commandResultMessage);
+
+    /**
+     * Wraps the command callback with another using a {@link WrappedCommandCallback}. If provided with a null
+     * callback this method will not wrap it, keeping the original callback instead.
+     * <p>
+     * In effect, the given callback will be executed first, and then the original will be executed second. You can wrap
+     * callback as many times as you'd like.
+     *
+     * @param wrappingCallback The command callback that should wrap the current instance
+     * @return The {@link WrappedCommandCallback} representing the execution of both callbacks
+     * @since 4.6.0
+     * @author Mitchell Herrijgers
+     */
+    default CommandCallback<C, R> wrap(CommandCallback<C, R> wrappingCallback) {
+        if (wrappingCallback == null) {
+            return this;
+        }
+        return new WrappedCommandCallback<>(wrappingCallback, this);
+    }
 }

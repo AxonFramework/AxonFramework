@@ -39,11 +39,11 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
 @Testcontainers
 class Oracle11EventTableFactoryTest {
 
-    private static final String USERNAME = "system";
-    private static final String PASSWORD = "oracle";
+    private static final String USERNAME = "test";
+    private static final String PASSWORD = "test";
 
     @Container
-    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gautamsaggar/oracle11g:v2");
+    private static final OracleContainer ORACLE_CONTAINER = new OracleContainer("gvenzl/oracle-xe");
 
     private Oracle11EventTableFactory testSubject;
     private Connection connection;
@@ -54,8 +54,8 @@ class Oracle11EventTableFactoryTest {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         Properties properties = new Properties();
-        properties.getProperty("user", USERNAME);
-        properties.getProperty("password", PASSWORD);
+        properties.setProperty("user", USERNAME);
+        properties.setProperty("password", PASSWORD);
         //Disable oracle.jdbc.timezoneAsRegion as when on true GHA fails to run this test due to missing region-info
         properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
         connection = DriverManager.getConnection(ORACLE_CONTAINER.getJdbcUrl(), properties);
@@ -67,7 +67,7 @@ class Oracle11EventTableFactoryTest {
     }
 
     @Test
-    void testCreateDomainEventTable() throws Exception {
+    void createDomainEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createDomainEventTable(connection, eventSchema)
                    .execute();
@@ -81,7 +81,7 @@ class Oracle11EventTableFactoryTest {
     }
 
     @Test
-    void testCreateSnapshotEventTable() throws Exception {
+    void createSnapshotEventTable() throws Exception {
         // test passes if no exception is thrown
         testSubject.createSnapshotEventTable(connection, eventSchema)
                    .execute();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.io.Serializable;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands, Events and
@@ -82,7 +83,7 @@ public interface Message<T> extends Serializable {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
-    Message<T> withMetaData(Map<String, ?> metaData);
+    Message<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload remains
@@ -91,7 +92,7 @@ public interface Message<T> extends Serializable {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
-    Message<T> andMetaData(Map<String, ?> metaData);
+    Message<T> andMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This

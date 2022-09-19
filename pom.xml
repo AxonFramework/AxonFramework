@@ -19,22 +19,29 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>4.5.16-SNAPSHOT</version>
+    <version>4.6.1-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
+        <module>messaging-jakarta</module>
         <module>modelling</module>
+        <module>modelling-jakarta</module>
         <module>eventsourcing</module>
+        <module>eventsourcing-jakarta</module>
         <module>config</module>
+        <module>config-jakarta</module>
         <module>test</module>
         <module>axon-server-connector</module>
         <module>disruptor</module>
         <module>metrics</module>
         <module>metrics-micrometer</module>
+        <module>tracing-opentelemetry</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
         <module>integrationtests</module>
+        <module>integrationtests-jakarta</module>
         <module>legacy</module>
+        <module>reactorless-test</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -47,40 +54,37 @@
     </description>
 
     <inceptionYear>2010</inceptionYear>
-    <url>http://www.axonframework.org</url>
+    <url>https://axoniq.io/</url>
     <licenses>
         <license>
             <name>Apache 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
     <issueManagement>
         <system>GitHub</system>
-        <url>http://issues.axonframework.org</url>
+        <url>https://github.com/AxonFramework/AxonFramework/issues</url>
     </issueManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/integrationtests/target/site/jacoco-aggregate/jacoco.xml
+            ${project.basedir}/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
 
         <!-- dependency versions -->
-        <slf4j.version>1.7.36</slf4j.version>
-        <log4j.version>2.17.2</log4j.version>
+
+        <slf4j.version>2.0.0</slf4j.version>
+        <log4j.version>2.18.0</log4j.version>
         <spring.version>5.3.23</spring.version>
-        <spring-security.version>5.4.10</spring-security.version>
-        <spring.boot.version>2.4.13</spring.boot.version>
-        <mockito.version>3.8.0</mockito.version>
+        <spring-security.version>5.7.3</spring-security.version>
+        <spring.boot.version>2.7.2</spring.boot.version>
+        <mockito.version>4.8.0</mockito.version>
         <projectreactor.version>3.4.23</projectreactor.version>
-        <micrometer.version>1.6.13</micrometer.version>
-        <dropwizard.metrics.version>4.1.32</dropwizard.metrics.version>
-        <jackson.version>2.12.7</jackson.version>
-        <!--
-            Please note that there are dependencies between the gRPC and Netty TcNative versions.
-            gRPC is quite specific about the version of Netty TcNative, so check the dependencies on
-            https://github.com/grpc/grpc-java/blob/master/SECURITY.md
-        -->
+        <micrometer.version>1.9.3</micrometer.version>
+        <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
+        <jackson.version>2.13.3</jackson.version>
 
         <!-- Validation -->
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
@@ -99,25 +103,40 @@
         <quartz.version>2.3.2</quartz.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
-        <hibernate-entitymanager.version>5.4.33.Final</hibernate-entitymanager.version>
-        <byte-buddy.version>1.10.22</byte-buddy.version>
+        <hibernate-core.version>5.6.10.Final</hibernate-core.version>
+        <byte-buddy.version>1.12.13</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <commons-io.version>2.8.0</commons-io.version>
-        <javassist.version>3.27.0-GA</javassist.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <javassist.version>3.29.0-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <postgresql.version>42.2.25</postgresql.version>
+        <postgresql.version>42.5.0</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.7.2</junit.jupiter.version>
-        <axonserver-connector-java.version>4.5.7</axonserver-connector-java.version>
+        <junit.jupiter.version>5.9.0</junit.jupiter.version>
+        <axonserver-connector-java.version>4.6.1</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.15.3</testcontainers.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
         <xstream.version>1.4.19</xstream.version>
-
+        <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.4</felix.maven-bundle-plugin.version>
+        <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
+        <maven-assembly-plugin.version>3.4.0</maven-assembly-plugin.version>
+        <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+
+        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
+        <jakarta.el.version>4.0.0</jakarta.el.version>
+        <jakarta.inject.version>2.0.1</jakarta.inject.version>
+        <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
+        <jakarta.validation.version>3.0.2</jakarta.validation.version>
+
+        <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
+        <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
+
+        <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
+
     </properties>
 
     <dependencies>
@@ -145,7 +164,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-slf4j18-impl</artifactId>
             <version>${log4j.version}</version>
             <scope>test</scope>
         </dependency>
@@ -181,7 +200,7 @@
         </dependency>
 
         <dependency>
-            <!-- Not pat of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
+            <!-- Not part of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
             <scope>test</scope>
@@ -212,6 +231,20 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-configuration-processor</artifactId>
                 <version>${spring.boot.version}</version>
@@ -225,6 +258,11 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>${reactive.streams.spec.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.projectreactor</groupId>
@@ -284,8 +322,13 @@
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-entitymanager</artifactId>
-                <version>${hibernate-entitymanager.version}</version>
+                <artifactId>hibernate-core</artifactId>
+                <version>${hibernate-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core-jakarta</artifactId>
+                <version>${hibernate-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>c3p0</groupId>
@@ -333,6 +376,11 @@
                 <version>${javax.annotation-api.version}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>${jakarta.annotation.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
                 <version>${javax.cache-api.version}</version>
@@ -345,14 +393,29 @@
                 <version>${javax.validation-api.version}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${jakarta.validation.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.el</groupId>
                 <artifactId>javax.el-api</artifactId>
                 <version>${javax.el-api.version}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.el</groupId>
+                <artifactId>jakarta.el-api</artifactId>
+                <version>${jakarta.el.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish.web</groupId>
                 <artifactId>el-impl</artifactId>
                 <version>${el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>${jakarta.el.implementation.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
@@ -366,9 +429,19 @@
                 <version>${javax.inject.version}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>${jakarta.inject.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.persistence</groupId>
                 <artifactId>javax.persistence-api</artifactId>
                 <version>${javax.persistence-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${jakarta.persistence.version}</version>
             </dependency>
 
             <dependency>
@@ -382,11 +455,6 @@
                 <version>${junit4.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${junit.jupiter.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.version}</version>
@@ -396,42 +464,75 @@
                 <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
     <build>
+        <defaultGoal>clean package</defaultGoal>
+
         <pluginManagement>
             <plugins>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>3.0.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.1.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.22.2</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.eclipse.transformer</groupId>
+                    <artifactId>transformer-maven-plugin</artifactId>
+                    <version>${eclipse.transformer-maven-plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <rules>
+                            <jakartaDefaults>true</jakartaDefaults>
+                        </rules>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
+
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.8.2</version>
+                <version>${maven-deploy-plugin.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -443,7 +544,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>${maven-assembly-plugin.version}</version>
                 <configuration>
                     <descriptorSourceDirectory>assembly</descriptorSourceDirectory>
                     <archiverConfig>
@@ -463,19 +564,29 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
                 <configuration>
+                    <argLine>-Djava.awt.headless=true</argLine>
+                    <systemPropertyVariables>
+                        <slf4j.version>${slf4j.version}</slf4j.version>
+                        <log4j.version>${log4j.version}</log4j.version>
+                    </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                         <include>**/*Test_*.java</include>
                         <include>**/*Tests_*.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*IntegrationTests.java</exclude>
+                        <exclude>**/*IntegrationTest_*.java</exclude>
+                        <exclude>**/*IntegrationTests_*.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadoc</id>
@@ -573,7 +684,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -591,27 +702,42 @@
 
         <profile>
             <id>coverage</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
+
+            <modules>
+                <module>coverage-report</module>
+            </modules>
+
             <build>
                 <plugins>
                     <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${jacoco-maven-plugin.version}</version>
 
                         <executions>
                             <execution>
-                                <id>prepare-agent</id>
+                                <id>prepare-agent-for-unit-tests</id>
                                 <phase>initialize</phase>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                            </execution>
-                            <execution>
-                                <id>report</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
+                                <configuration>
+                                    <propertyName>surefireArgLine</propertyName>
+                                    <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -635,7 +761,68 @@
                     </releases>
                 </repository>
             </repositories>
+        </profile>
 
+        <profile>
+            <id>integration-test</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
+
+            <build>
+                <defaultGoal>verify</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>run-integration-tests</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <!--suppress MavenModelInspection -->
+                                    <argLine>-Djava.awt.headless=true ${failsafeArgLine}</argLine>
+                                    <includes>
+                                        <include>**/*IntegrationTest.java</include>
+                                        <include>**/*IntegrationTests.java</include>
+                                        <include>**/*IntegrationTest_*.java</include>
+                                        <include>**/*IntegrationTests_*.java</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*Test.java</exclude>
+                                        <exclude>**/*Tests.java</exclude>
+                                        <exclude>**/*Test_*.java</exclude>
+                                        <exclude>**/*Tests_*.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent-for-integration-test</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <propertyName>failsafeArgLine</propertyName>
+                                    <destFile>${project.build.directory}/jacoco-it.exec</destFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

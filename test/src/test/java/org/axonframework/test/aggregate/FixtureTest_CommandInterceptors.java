@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.test.aggregate.FixtureTest_CommandInterceptors.InterceptorAggregate.AGGREGATE_IDENTIFIER;
@@ -77,7 +78,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorsAreInvoked() {
+    void registeredCommandDispatchInterceptorsAreInvoked() {
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
         fixture.registerCommandDispatchInterceptor(firstMockCommandDispatchInterceptor);
@@ -105,7 +106,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
+    void registeredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -121,7 +122,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
+    void registeredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
         MetaData expectedValues =
@@ -133,7 +134,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorsAreInvoked() throws Exception {
+    void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
         when(mockCommandHandlerInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class)))
@@ -159,7 +160,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
+    void registeredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -175,7 +176,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
+    void registeredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
         Map<String, Object> expectedMetaDataMap = new HashMap<>();
@@ -187,7 +188,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
+    void registeredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -207,7 +208,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
+    void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandHandlerInterceptor((unitOfWork, interceptorChain) -> {
             invocations.incrementAndGet();
@@ -224,7 +225,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    void testRegisteredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
+    void registeredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
         fixture.registerCommandDispatchInterceptor(messages -> (i, command) -> {
             invocations.incrementAndGet();
@@ -303,9 +304,10 @@ class FixtureTest_CommandInterceptors {
 
     private static class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
+        @Nonnull
         @Override
         public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
-                List<? extends CommandMessage<?>> messages
+                @Nonnull List<? extends CommandMessage<?>> messages
         ) {
             return (index, message) -> {
                 Map<String, Object> testMetaDataMap = new HashMap<>();
@@ -317,10 +319,9 @@ class FixtureTest_CommandInterceptors {
     }
 
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
-
         @Override
-        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                             InterceptorChain interceptorChain) throws Exception {
+        public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                             @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceed();
         }

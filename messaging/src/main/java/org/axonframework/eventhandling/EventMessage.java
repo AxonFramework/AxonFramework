@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a Message wrapping an Event, which is represented by its payload. An Event is a representation of an
@@ -64,15 +65,15 @@ public interface EventMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> withMetaData(Map<String, ?> metaData);
+    EventMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload,
-     * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
+     * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload, {@link
+     * #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
      *
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
     @Override
-    EventMessage<T> andMetaData(Map<String, ?> metaData);
+    EventMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
 }

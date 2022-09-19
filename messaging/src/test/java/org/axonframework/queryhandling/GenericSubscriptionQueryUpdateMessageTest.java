@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericSubscriptionQueryUpdateMessageTest {
 
     @Test
-    void testMessageCreation() {
+    void messageCreation() {
         String payload = "payload";
 
         SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(payload);
@@ -45,7 +45,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testMessageCreationWithNullPayload() {
+    void messageCreationWithNullPayload() {
         String payload = null;
 
         GenericSubscriptionQueryUpdateMessage<String> result =
@@ -55,7 +55,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
                 new GenericMessage<>("payload", metaData));
@@ -71,7 +71,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
                 new GenericMessage<>("payload", metaData));
@@ -85,7 +85,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testMessageCreationBasedOnExistingMessage() {
+    void messageCreationBasedOnExistingMessage() {
         GenericSubscriptionQueryUpdateMessage<String> original = new GenericSubscriptionQueryUpdateMessage<>("payload");
 
         SubscriptionQueryUpdateMessage<Object> result = GenericSubscriptionQueryUpdateMessage.asUpdateMessage(original);
@@ -94,7 +94,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testMessageCreationBasedOnResultMessage() {
+    void messageCreationBasedOnResultMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
                 new GenericResultMessage<>("result", metaData));
@@ -107,7 +107,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testMessageCreationBasedOnExceptionalResultMessage() {
+    void messageCreationBasedOnExceptionalResultMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         RuntimeException exception = new RuntimeException();
         CommandResultMessage<String> resultMessage = GenericCommandResultMessage.asCommandResultMessage(
@@ -122,7 +122,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     }
 
     @Test
-    void testMessageCreationBasedOnAnyMessage() {
+    void messageCreationBasedOnAnyMessage() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v1");
         GenericMessage<String> message = new GenericMessage<>("payload", metaData);
 

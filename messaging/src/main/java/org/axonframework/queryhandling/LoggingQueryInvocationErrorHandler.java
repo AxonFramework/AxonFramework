@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -56,7 +58,8 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
     }
 
     @Override
-    public void onError(Throwable error, QueryMessage<?, ?> queryMessage, MessageHandler messageHandler) {
+    public void onError(@Nonnull Throwable error, @Nonnull QueryMessage<?, ?> queryMessage,
+                        @Nonnull MessageHandler messageHandler) {
         logger.warn("An error occurred while processing query message [{}]", queryMessage.getQueryName(), error);
     }
 
@@ -101,7 +104,7 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            // Method kept for overriding
         }
     }
 }

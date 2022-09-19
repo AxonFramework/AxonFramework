@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@master
+      uses: actions/checkout@v3
     - name: Create Release Notes Markdown
-      uses: docker://decathlon/release-notes-generator-action:2.1.0
+      uses: docker://decathlon/release-notes-generator-action:3.1.5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         OUTPUT_FOLDER: temp_release_notes
@@ -31,3 +31,9 @@ jobs:
         release_name:  Axon Framework v${{ env.VERSION }}
         body_path: ${{ env.RELEASE_NOTES_FILE }}
         draft: true
+  create-discuss-notification:
+    uses: ./.github/workflows/discuss-notification.yml
+    with:
+      release_name:  Axon Framework - Release ${{ env.VERSION }}
+      release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
+      release_date: ${{ github.event.milestone.closedAt }}

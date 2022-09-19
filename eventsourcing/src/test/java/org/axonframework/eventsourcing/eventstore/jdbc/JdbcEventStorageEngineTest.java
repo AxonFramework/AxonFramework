@@ -27,11 +27,14 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
+import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -51,8 +54,19 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.AGGREGATE;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test class validating the {@link JdbcEventStorageEngine}.
@@ -66,23 +80,52 @@ class JdbcEventStorageEngineTest
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
     private JdbcEventStorageEngine testSubject;
+    private ReadEventDataForAggregateStatementBuilder readForAggregateStatementBuilder;
 
     @BeforeEach
     void setUp() throws SQLException {
         dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-        setTestSubject(testSubject = createEngine());
+        //noinspection Convert2Lambda,Anonymous2MethodRef
+        readForAggregateStatementBuilder = spy(new ReadEventDataForAggregateStatementBuilder() {
+            @Override
+            public PreparedStatement build(Connection connection, EventSchema schema, String identifier, long firstSequenceNumber, int batchSize) throws SQLException {
+                return JdbcEventStorageEngineStatements.readEventDataForAggregate(connection, schema, identifier, firstSequenceNumber, batchSize);
+            }
+        });
+        setTestSubject(testSubject = createEngine(b -> b.readEventDataForAggregate(readForAggregateStatementBuilder)));
     }
 
     @Test
-    void testStoreTwoExactSameSnapshots() {
+    void testLoadLargeAmountOfEventsFromAggregateStream() {
+        super.loadLargeAmountOfEventsFromAggregateStream();
+
+        try {
+            verify(readForAggregateStatementBuilder, times(6)).build(any(), any(), eq(AGGREGATE), anyLong(), anyInt());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void loadLargeAmountOfEventsFromAggregateStream_WithCustomFinalBatchPredicate() throws SQLException {
+        setTestSubject(testSubject = createEngine(b -> b.finalAggregateBatchPredicate(l -> l.size() < 50)
+                                                        .readEventDataForAggregate(readForAggregateStatementBuilder)));
+
+        super.loadLargeAmountOfEventsFromAggregateStream();
+
+        verify(readForAggregateStatementBuilder, times(4)).build(any(), any(), eq(AGGREGATE), anyLong(), anyInt());
+    }
+
+    @Test
+    void storeTwoExactSameSnapshots() {
         testSubject.storeSnapshot(createEvent(1));
         testSubject.storeSnapshot(createEvent(1));
     }
 
     @Test
-    void testLoadLastSequenceNumber() {
+    void loadLastSequenceNumber() {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
@@ -91,7 +134,7 @@ class JdbcEventStorageEngineTest
 
     @Test
     @DirtiesContext
-    void testCustomSchemaConfig() {
+    void customSchemaConfig() {
         EventSchema testSchema = EventSchema.builder()
                                             .eventTable("CustomDomainEvent")
                                             .payloadColumn("eventData")
@@ -106,23 +149,23 @@ class JdbcEventStorageEngineTest
                 }
         ));
 
-        testStoreAndLoadEvents();
+        storeAndLoadEvents();
     }
 
     @Test
     @DirtiesContext
-    void testCustomSchemaConfigTimestampColumn() {
+    void customSchemaConfigTimestampColumn() {
         setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
             @Override
             protected String timestampType() {
                 return "timestamp";
             }
         }));
-        testStoreAndLoadEvents();
+        storeAndLoadEvents();
     }
 
     @Test
-    void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
+    void gapsForVeryOldEventsAreNotIncluded() throws SQLException {
         GenericEventMessage.clock =
                 Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-1), createEvent(0));
@@ -149,7 +192,7 @@ class JdbcEventStorageEngineTest
 
     @DirtiesContext
     @Test
-    void testOldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
+    void oldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
         testSubject = createEngine(engineBuilder -> engineBuilder.gapTimeout(50001).gapCleaningThreshold(50));
 
         Instant now = Clock.systemUTC().instant();
@@ -177,7 +220,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testEventsWithUnknownPayloadTypeDoNotResultInError() throws SQLException, InterruptedException {
+    void eventsWithUnknownPayloadTypeDoNotResultInError() throws SQLException, InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
 
@@ -210,7 +253,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testStreamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+    void streamCrossesConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
         testSubject.appendEvents(createEvents(100));
@@ -226,7 +269,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testStreamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
+    void streamDoesNotCrossExtendedGapWhenDisabled() throws SQLException {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize)
                                                                  .extendedGapCheckEnabled(false));
@@ -253,7 +296,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testStreamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
+    void streamCrossesInitialConsecutiveGapsOfMoreThanBatchSuccessfully() throws SQLException {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
@@ -270,7 +313,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testReadEventsForAggregateReturnsTheCompleteStream() {
+    void readEventsForAggregateReturnsTheCompleteStream() {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
@@ -294,7 +337,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testReadEventsForAggregateWithGapsReturnsTheCompleteStream() {
+    void readEventsForAggregateWithGapsReturnsTheCompleteStream() {
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
@@ -317,7 +360,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testReadEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
+    void readEventsForAggregateWithEventsExceedingOneBatchReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
@@ -351,7 +394,7 @@ class JdbcEventStorageEngineTest
     }
 
     @Test
-    void testReadEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
+    void readEventsForAggregateWithEventsExceedingOneBatchAndGapsReturnsTheCompleteStream() {
         // Set batch size to 5, so that the number of events exceeds at least one batch
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));

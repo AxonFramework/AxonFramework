@@ -35,7 +35,7 @@ class JavaSerializerTest {
     }
 
     @Test
-    void testSerializeAndDeserialize() {
+    void serializeAndDeserialize() {
         SerializedObject<byte[]> serializedObject = testSubject.serialize(new MySerializableObject("hello"),
                                                                           byte[].class);
         assertEquals(MySerializableObject.class.getName(), serializedObject.getType().getName());
@@ -47,14 +47,14 @@ class JavaSerializerTest {
     }
 
     @Test
-    void testClassForType() {
+    void classForType() {
         Class actual = testSubject.classForType(new SimpleSerializedType(MySerializableObject.class.getName(),
                                                                          "2166108932776672373"));
         assertEquals(MySerializableObject.class, actual);
     }
 
     @Test
-    void testClassForType_CustomRevisionResolver() {
+    void classForType_CustomRevisionResolver() {
         testSubject = JavaSerializer.builder()
                                     .revisionResolver(new FixedValueRevisionResolver("fixed"))
                                     .build();
@@ -64,12 +64,12 @@ class JavaSerializerTest {
     }
 
     @Test
-    void testClassForType_UnknownClass() {
+    void classForType_UnknownClass() {
         assertEquals(UnknownSerializedType.class, testSubject.classForType(new SimpleSerializedType("unknown", "0")));
     }
 
     @Test
-    void testDeserializeNullValue() {
+    void deserializeNullValue() {
         SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
         SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(
                 serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class)
@@ -79,7 +79,7 @@ class JavaSerializerTest {
     }
 
     @Test
-    void testDeserializeEmptyBytes() {
+    void deserializeEmptyBytes() {
         assertEquals(Void.class, testSubject.classForType(SerializedType.emptyType()));
         assertNull(testSubject.deserialize(new SimpleSerializedObject<>(new byte[0], byte[].class, SerializedType.emptyType())));
     }

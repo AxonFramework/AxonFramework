@@ -25,7 +25,7 @@ class CommandNameFilterSerializationTest {
 
     @ParameterizedTest
     @MethodSource("testSerializers")
-    void testCommandNameFilterShouldBeSerializable(TestSerializer serializer) {
+    void commandNameFilterShouldBeSerializable(TestSerializer serializer) {
         assertEquals(testSubject, serializer.serializeDeserialize(testSubject));
     }
 }

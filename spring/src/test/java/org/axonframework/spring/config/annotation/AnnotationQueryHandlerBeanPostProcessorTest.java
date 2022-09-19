@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,12 +17,11 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.FactoryBean;
 
@@ -31,14 +30,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class AnnotationQueryHandlerBeanPostProcessorTest {
 
@@ -51,7 +45,7 @@ class AnnotationQueryHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testQueryHandlerCallsRedirectToAdapter() throws Exception {
+    void queryHandlerCallsRedirectToAdapter() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedQueryHandler(), "beanName");
@@ -70,7 +64,7 @@ class AnnotationQueryHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    void testQueryHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
+    void queryHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new CustomAnnotatedQueryHandler(), "beanName");
@@ -88,7 +82,7 @@ class AnnotationQueryHandlerBeanPostProcessorTest {
     }
 
     @Test
-    void testProcessorIgnoresFactoryBeans() {
+    void processorIgnoresFactoryBeans() {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         when(mockBeanFactory.containsBean("beanName")).thenReturn(true);
         FactoryBean mockFactoryBean = mock(FactoryBean.class);

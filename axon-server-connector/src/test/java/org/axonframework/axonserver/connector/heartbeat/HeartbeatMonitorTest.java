@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class HeartbeatMonitorTest {
 
     @Test
-    void testConnectionAlive() {
+    void connectionAlive() {
         FakeScheduler fakeScheduler = new FakeScheduler();
         AtomicBoolean reconnect = new AtomicBoolean(false);
         HeartbeatMonitor monitor = new HeartbeatMonitor(() -> reconnect.set(true),
@@ -32,7 +32,7 @@ class HeartbeatMonitorTest {
     }
 
     @Test
-    void testDisconnection() {
+    void disconnection() {
         FakeScheduler fakeScheduler = new FakeScheduler();
         AtomicBoolean reconnect = new AtomicBoolean(false);
         HeartbeatMonitor monitor = new HeartbeatMonitor(() -> reconnect.set(true),

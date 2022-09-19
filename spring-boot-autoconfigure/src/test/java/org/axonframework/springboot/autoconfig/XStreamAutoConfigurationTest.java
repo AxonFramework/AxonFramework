@@ -43,7 +43,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationConstructsXStreamInstanceWhenGeneralSerializerPropertyIsXStream() {
+    void xStreamAutoConfigurationConstructsXStreamInstanceWhenGeneralSerializerPropertyIsXStream() {
         testApplicationContext.withUserConfiguration(DefaultContext.class)
                               .withPropertyValues("axon.serializer.general:xstream")
                               .run(context -> {
@@ -54,7 +54,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationConstructsXStreamInstanceWhenGeneralSerializerPropertyIsDefault() {
+    void xStreamAutoConfigurationConstructsXStreamInstanceWhenGeneralSerializerPropertyIsDefault() {
         testApplicationContext.withUserConfiguration(DefaultContext.class)
                               .withPropertyValues("axon.serializer.general:default")
                               .run(context -> {
@@ -65,7 +65,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationConstructsXStreamInstanceWhenMessagesSerializerPropertyIsXStream() {
+    void xStreamAutoConfigurationConstructsXStreamInstanceWhenMessagesSerializerPropertyIsXStream() {
         testApplicationContext.withUserConfiguration(DefaultContext.class)
                               .withPropertyValues("axon.serializer.messages:xstream")
                               .run(context -> {
@@ -76,7 +76,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationConstructsXStreamInstanceWhenEventsSerializerPropertyIsXStream() {
+    void xStreamAutoConfigurationConstructsXStreamInstanceWhenEventsSerializerPropertyIsXStream() {
         testApplicationContext.withUserConfiguration(DefaultContext.class)
                               .withPropertyValues("axon.serializer.events:xstream")
                               .run(context -> {
@@ -87,7 +87,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationDoesNotConstructXStreamInstanceWhenNoPropertyIsXStream() {
+    void xStreamAutoConfigurationDoesNotConstructXStreamInstanceWhenNoPropertyIsXStream() {
         testApplicationContext.withUserConfiguration(DefaultContext.class)
                               .withPropertyValues(
                                       "axon.serializer.general:jackson",
@@ -98,7 +98,7 @@ class XStreamAutoConfigurationTest {
     }
 
     @Test
-    void testXStreamAutoConfigurationDoesNotConstructXStreamInstanceForExistingBean() {
+    void xStreamAutoConfigurationDoesNotConstructXStreamInstanceForExistingBean() {
         testApplicationContext.withUserConfiguration(ContextWithXStreamInstance.class)
                               .run(context -> {
                                   assertThat(context).hasSingleBean(XStream.class);

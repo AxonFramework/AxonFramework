@@ -195,6 +195,25 @@ public class Reporter {
     }
 
     /**
+     * Report an error due to a difference in exception details.
+     *
+     * @param details       The actual details
+     * @param description   A description describing the expected value
+     */
+    public void reportWrongExceptionDetails(Object details, Description description) {
+        throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
+                                             + NEWLINE +
+                                             NEWLINE +
+                                             "Expected <" + //NOSONAR
+                                             description.toString() +
+                                             "> but got <details [" +
+                                             details +
+                                             "]>." +
+                                             NEWLINE +
+                                             NEWLINE);
+    }
+
+    /**
      * Report an error due to a difference between the message payloads.
      *
      * @param messageType The (runtime) type of the message the difference was found in.

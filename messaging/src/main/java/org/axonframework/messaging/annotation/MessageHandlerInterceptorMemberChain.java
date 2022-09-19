@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
 
+import javax.annotation.Nonnull;
+
 /**
- * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were
- * used to build up this chain. Unlike regular handlers, interceptors have the ability to act on messages on their
- * way to the regular handler, and have the ability to block these messages.
+ * Interface to interact with a MessageHandlingMember instance through a chain of interceptors, which were used to build
+ * up this chain. Unlike regular handlers, interceptors have the ability to act on messages on their way to the regular
+ * handler, and have the ability to block these messages.
  *
  * @param <T> The type that declares the handlers in this chain
  * @author Allard Buijze
@@ -41,5 +43,6 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @return the result as returned by the handlers or interceptors
      * @throws Exception any exception thrown by the handler or any of the interceptors
      */
-    Object handle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception;
+    Object handle(@Nonnull Message<?> message, @Nonnull T target, @Nonnull MessageHandlingMember<? super T> handler)
+            throws Exception;
 }

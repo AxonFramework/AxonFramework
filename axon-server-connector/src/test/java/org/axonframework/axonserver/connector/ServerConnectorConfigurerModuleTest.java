@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ServerConnectorConfigurerModuleTest {
 
     @Test
-    void testAxonServerConfiguredInDefaultConfiguration() {
+    void axonServerConfiguredInDefaultConfiguration() {
         Configuration testSubject = DefaultConfigurer.defaultConfiguration()
                                                      .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                                      .buildConfiguration();
@@ -70,7 +70,7 @@ class ServerConnectorConfigurerModuleTest {
     }
 
     @Test
-    void testQueryUpdateEmitterIsTakenFromConfiguration() {
+    void queryUpdateEmitterIsTakenFromConfiguration() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                                        .buildConfiguration();
@@ -82,7 +82,7 @@ class ServerConnectorConfigurerModuleTest {
     }
 
     @Test
-    void testCustomCommandLoadFactorProvider() throws NoSuchFieldException {
+    void customCommandLoadFactorProvider() throws NoSuchFieldException {
         CommandLoadFactorProvider expected = command -> 5000;
         Configuration config =
                 DefaultConfigurer.defaultConfiguration()

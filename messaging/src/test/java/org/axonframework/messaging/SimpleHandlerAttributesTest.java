@@ -19,14 +19,14 @@ class SimpleHandlerAttributesTest {
     private static final int ATTRIBUTE = 42;
 
     @Test
-    void testConstructEmptyHandlerAttributes() {
+    void constructEmptyHandlerAttributes() {
         SimpleHandlerAttributes testSubject = new SimpleHandlerAttributes(Collections.emptyMap());
 
         assertTrue(testSubject.isEmpty());
     }
 
     @Test
-    void testConstructNonEmptyHandlerAttributes() {
+    void constructNonEmptyHandlerAttributes() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
@@ -38,7 +38,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testGet() {
+    void get() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
@@ -48,7 +48,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testGetAll() {
+    void getAll() {
         Map<String, Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
@@ -58,7 +58,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testContains() {
+    void contains() {
         Map<String, Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
@@ -69,7 +69,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testMergedWith() {
+    void mergedWith() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
         Map<String, Object> testOtherAttributes = new HashMap<>();
@@ -88,7 +88,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testMergedWithReturnsThis() {
+    void mergedWithReturnsThis() {
         Map<String, Object> testAttributes = new HashMap<>();
         testAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
 
@@ -98,7 +98,7 @@ class SimpleHandlerAttributesTest {
     }
 
     @Test
-    void testMergedWithReturnsAdditionalAttributes() {
+    void mergedWithReturnsAdditionalAttributes() {
         Map<String, Object> testOtherAttributes = new HashMap<>();
         testOtherAttributes.put(ATTRIBUTE_KEY, ATTRIBUTE);
         SimpleHandlerAttributes testOther = new SimpleHandlerAttributes(testOtherAttributes);

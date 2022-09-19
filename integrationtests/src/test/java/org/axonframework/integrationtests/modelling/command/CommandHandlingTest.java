@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,7 +57,7 @@ class CommandHandlingTest {
     }
 
     @Test
-    void testCommandHandlerLoadsSameAggregateTwice() throws Exception {
+    void commandHandlerLoadsSameAggregateTwice() throws Exception {
         DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
@@ -89,7 +90,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String identifier) {
+        public DomainEventStream readEvents(@Nonnull String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
@@ -105,7 +106,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
         }
 
         @Override
@@ -114,7 +115,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

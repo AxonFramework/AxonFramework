@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,33 +95,72 @@ public class QuerySerializer {
                                                 int nrResults,
                                                 long timeout,
                                                 int priority) {
+        return serializeRequest(queryMessage, nrResults, timeout, priority, false);
+    }
+
+    /**
+     * Convert a {@link QueryMessage} into a {@link QueryRequest}. The provided {@code nrResults}, {@code timeout} and
+     * {@code priority} are all set on the QueryRequest to respectively define the number of results, after which time
+     * the query should be aborted and the priority of the query amont others.
+     *
+     * @param queryMessage the {@link QueryMessage} to convert into a {@link QueryRequest}
+     * @param nrResults    an {@code int} denoting the number of expected results
+     * @param timeout      a {@code long} specifying the timeout in milliseconds of the created {@link QueryRequest}
+     * @param priority     a {@code int} defining the priority among other {@link QueryRequest}s
+     * @param stream       indicates whether results of this query should be streamed or not
+     * @param <Q>          a generic specifying the payload type of the given {@code queryMessage}
+     * @param <R>          a generic specifying the response type of the given {@code queryMessage}
+     * @return a {@link QueryRequest} based on the provided {@code queryMessage}
+     */
+    public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage, int nrResults, long timeout,
+                                                int priority, boolean stream) {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
                            .setMessageIdentifier(queryMessage.getIdentifier())
                            .setQuery(queryMessage.getQueryName())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(
-                                   queryMessage.getResponseType().forSerialization()
-                           ))
+                           .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()
+                                                                                     .forSerialization()))
                            .setPayload(payloadSerializer.apply(queryMessage))
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.NR_OF_RESULTS)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(nrResults))
-                           )
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.TIMEOUT)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(timeout))
-                           )
-                           .addProcessingInstructions(
-                                   ProcessingInstruction.newBuilder()
-                                                        .setKey(ProcessingKey.PRIORITY)
-                                                        .setValue(MetaDataValue.newBuilder().setNumberValue(priority))
-                           )
+                           .addProcessingInstructions(nrOfResults(nrResults))
+                           .addProcessingInstructions(timeout(timeout))
+                           .addProcessingInstructions(priority(priority))
+                           .addProcessingInstructions(supportsStreaming(stream))
                            .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()))
                            .build();
+    }
+
+    private ProcessingInstruction nrOfResults(int nrOfResults) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.NR_OF_RESULTS)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(nrOfResults))
+                                    .build();
+    }
+
+    private ProcessingInstruction timeout(long timeout) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.TIMEOUT)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(timeout))
+                                    .build();
+    }
+
+    private ProcessingInstruction priority(int priority) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.PRIORITY)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setNumberValue(priority))
+                                    .build();
+    }
+
+    private ProcessingInstruction supportsStreaming(boolean supportsStreaming) {
+        return ProcessingInstruction.newBuilder()
+                                    .setKey(ProcessingKey.CLIENT_SUPPORTS_STREAMING)
+                                    .setValue(MetaDataValue.newBuilder()
+                                                           .setBooleanValue(supportsStreaming))
+                                    .build();
     }
 
     /**
@@ -136,7 +175,7 @@ public class QuerySerializer {
 
         if (queryResponse.isExceptional()) {
             Throwable exceptionResult = queryResponse.exceptionResult();
-            responseBuilder.setErrorCode(ErrorCode.QUERY_EXECUTION_ERROR.errorCode());
+            responseBuilder.setErrorCode(ErrorCode.getQueryExecutionErrorCode(exceptionResult).errorCode());
             responseBuilder.setErrorMessage(
                     ExceptionSerializer.serialize(configuration.getClientId(), exceptionResult)
             );
@@ -176,5 +215,16 @@ public class QuerySerializer {
         return new ConvertingResponseMessage<>(
                 expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer)
         );
+    }
+
+    /**
+     * Converts a {@link QueryResponse} into a {@link QueryResponseMessage}. It does not assume the type of the
+     * payload.
+     *
+     * @param queryResponse a {@link QueryResponse} to convert into a {@link QueryResponseMessage}
+     * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
+     */
+    public QueryResponseMessage<?> deserializeResponse(QueryResponse queryResponse) {
+        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import java.util.List;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing a strategy for the processing of a batch of events. This is used by the {@link
@@ -37,6 +38,7 @@ public interface EventProcessingStrategy {
      * @param events    Events to be processed
      * @param processor Callback method on the processor that carries out the actual processing of events
      */
-    void handle(List<? extends EventMessage<?>> events, Consumer<List<? extends EventMessage<?>>> processor);
+    void handle(@Nonnull List<? extends EventMessage<?>> events,
+                @Nonnull Consumer<List<? extends EventMessage<?>>> processor);
 
 }

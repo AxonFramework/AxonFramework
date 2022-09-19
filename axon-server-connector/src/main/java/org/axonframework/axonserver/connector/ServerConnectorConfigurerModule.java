@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 /**
  * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets sensible
  * default to use when the AxonServer connector is available on the classpath.
@@ -56,7 +58,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectorConfigurerModule.class);
 
     @Override
-    public void configureModule(Configurer configurer) {
+    public void configureModule(@Nonnull Configurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.registerComponent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
@@ -91,6 +93,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .eventSerializer(c.eventSerializer())
                                    .snapshotFilter(c.snapshotFilter())
                                    .upcasterChain(c.upcasterChain())
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -105,6 +108,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                 .transactionManager(c.getComponent(
                                         TransactionManager.class, NoTransactionManager::instance
                                 ))
+                                .spanFactory(c.spanFactory())
                                 .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
         return AxonServerCommandBus.builder()
@@ -124,6 +128,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                            () -> command -> CommandLoadFactorProvider.DEFAULT_VALUE
                                    ))
                                    .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                   .spanFactory(c.spanFactory())
                                    .build();
     }
 
@@ -138,6 +143,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                       () -> LoggingQueryInvocationErrorHandler.builder().build()
                               ))
                               .queryUpdateEmitter(c.queryUpdateEmitter())
+                              .spanFactory(c.spanFactory())
                               .messageMonitor(c.messageMonitor(QueryBus.class, "localQueryBus"))
                               .build();
         //noinspection unchecked - supresses `c.getComponent(TargetContextResolver.class)`
@@ -153,6 +159,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                          QueryPriorityCalculator::defaultQueryPriorityCalculator
                                  ))
                                  .targetContextResolver(c.getComponent(TargetContextResolver.class))
+                                 .spanFactory(c.spanFactory())
                                  .build();
     }
 

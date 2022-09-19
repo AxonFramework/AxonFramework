@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 
@@ -53,7 +54,7 @@ import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessag
 public class StubDeadlineManager implements DeadlineManager {
 
     private final NavigableSet<ScheduledDeadlineInfo> scheduledDeadlines = new TreeSet<>();
-    private final List<ScheduledDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
+    private final List<ScheduledDeadlineInfo> triggeredDeadlines = new CopyOnWriteArrayList<>();
     private final AtomicInteger deadlineCounter = new AtomicInteger(0);
     private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
@@ -91,11 +92,12 @@ public class StubDeadlineManager implements DeadlineManager {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
+    @Nonnull
     @Override
-    public String schedule(Instant triggerDateTime,
-                           String deadlineName,
+    public String schedule(@Nonnull Instant triggerDateTime,
+                           @Nonnull String deadlineName,
                            Object payloadOrMessage,
-                           ScopeDescriptor deadlineScope) {
+                           @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<?> scheduledMessage =
                 processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage, triggerDateTime));
 
@@ -108,16 +110,17 @@ public class StubDeadlineManager implements DeadlineManager {
         return scheduledMessage.getIdentifier();
     }
 
+    @Nonnull
     @Override
-    public String schedule(Duration triggerDuration,
-                           String deadlineName,
+    public String schedule(@Nonnull Duration triggerDuration,
+                           @Nonnull String deadlineName,
                            Object payloadOrMessage,
-                           ScopeDescriptor deadlineScope) {
+                           @Nonnull ScopeDescriptor deadlineScope) {
         return schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(String deadlineName, String scheduleId) {
+    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getScheduleId().equals(scheduleId)
@@ -125,12 +128,12 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public void cancelAll(String deadlineName) {
+    public void cancelAll(@Nonnull String deadlineName) {
         scheduledDeadlines.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName));
     }
 
     @Override
-    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getDeadlineScope().equals(scope)
@@ -150,9 +153,20 @@ public class StubDeadlineManager implements DeadlineManager {
      * Return all deadlines which have been met.
      *
      * @return all deadlines which have been met
+     * @deprecated in favor of {@link #getTriggeredDeadlines()}
      */
+    @Deprecated
     public List<ScheduledDeadlineInfo> getDeadlinesMet() {
-        return Collections.unmodifiableList(deadlinesMet);
+        return Collections.unmodifiableList(triggeredDeadlines);
+    }
+
+    /**
+     * Return all triggered deadlines.
+     *
+     * @return all triggered deadlines
+     */
+    public List<ScheduledDeadlineInfo> getTriggeredDeadlines() {
+        return Collections.unmodifiableList(triggeredDeadlines);
     }
 
     /**
@@ -178,7 +192,7 @@ public class StubDeadlineManager implements DeadlineManager {
         if (nextItem.getScheduleTime().isAfter(currentDateTime)) {
             currentDateTime = nextItem.getScheduleTime();
         }
-        deadlinesMet.add(nextItem);
+        triggeredDeadlines.add(nextItem);
         return nextItem;
     }
 
@@ -193,8 +207,8 @@ public class StubDeadlineManager implements DeadlineManager {
         while (!scheduledDeadlines.isEmpty() && !scheduledDeadlines.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduledDeadlineInfo scheduledDeadlineInfo = advanceToNextTrigger();
             DeadlineMessage<?> consumedMessage = consumeDeadline(deadlineConsumer, scheduledDeadlineInfo);
-            deadlinesMet.remove(scheduledDeadlineInfo);
-            deadlinesMet.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
+            triggeredDeadlines.remove(scheduledDeadlineInfo);
+            triggeredDeadlines.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;
@@ -213,15 +227,17 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
+    public @Nonnull
+    Registration registerDispatchInterceptor(
+            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
+    @Nonnull
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super DeadlineMessage<?>> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }

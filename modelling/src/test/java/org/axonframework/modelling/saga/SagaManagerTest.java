@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.modelling.utils.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -24,6 +23,9 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.utils.MockException;
+import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -32,10 +34,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
 class SagaManagerTest {
@@ -47,10 +50,12 @@ class SagaManagerTest {
     private Saga<Object> mockSaga2;
     private Saga<Object> mockSaga3;
     private AssociationValue associationValue;
+    private TestSpanFactory spanFactory;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        spanFactory = new TestSpanFactory();
         mockSagaRepository = mock(SagaRepository.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
@@ -82,11 +87,12 @@ class SagaManagerTest {
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
                                                  .associationValue(associationValue)
+                                                 .spanFactory(spanFactory)
                                                  .build();
     }
 
     @Test
-    void testSagasLoaded() throws Exception {
+    void sagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
@@ -100,7 +106,38 @@ class SagaManagerTest {
     }
 
     @Test
-    void testExceptionPropagated() throws Exception {
+    void sagaIsTraced() throws Exception {
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        unitOfWork.executeWithResult(() -> {
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
+        spanFactory.verifySpanCompleted("SagaManager[Object].invokeSaga saga1");
+        spanFactory.verifySpanCompleted("SagaManager[Object].invokeSaga saga2");
+    }
+
+    @Test
+    void sagaIsTracedForCreation() throws Exception {
+        testSubject = TestableAbstractSagaManager.builder()
+                                                 .sagaRepository(mockSagaRepository)
+                                                 .listenerInvocationErrorHandler(mockErrorHandler)
+                                                 .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
+                                                 .associationValue(new AssociationValue("someKey", "someValue"))
+                .spanFactory(spanFactory)
+                                                 .build();
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
+        when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
+
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
+        spanFactory.verifySpanCompleted("SagaManager[Object].startNewSaga");
+        spanFactory.verifySpanCompleted("SagaManager[Object].invokeSaga saga1");
+    }
+
+    @Test
+    void exceptionPropagated() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
@@ -122,7 +159,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagaIsCreatedInRootSegment() throws Exception {
+    void sagaIsCreatedInRootSegment() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -139,7 +176,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
+    void sagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
         testSubject = TestableAbstractSagaManager.builder()
                                                  .sagaRepository(mockSagaRepository)
                                                  .listenerInvocationErrorHandler(mockErrorHandler)
@@ -167,22 +204,22 @@ class SagaManagerTest {
                            "Saga ID doesn't match segment that should have created it: " + sagaId) );
         createdSaga.getAllValues()
                    .forEach(sagaId -> assertFalse(otherSegment.matches(sagaId),
-                           "Saga ID matched against the wrong segment: " + sagaId));
+                                                  "Saga ID matched against the wrong segment: " + sagaId));
     }
 
     @Test
-    void testSagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
+    void sagaIsNotCreatedIfAssociationValueAndSagaIdMatchDifferentSegments() throws Exception {
         AssociationValue associationValue = new AssociationValue("someKey", "someValue");
         testSubject = TestableAbstractSagaManager.builder()
-                .sagaRepository(mockSagaRepository)
-                .listenerInvocationErrorHandler(mockErrorHandler)
-                .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
-                .associationValue(associationValue)
-                .build();
+                                                 .sagaRepository(mockSagaRepository)
+                                                 .listenerInvocationErrorHandler(mockErrorHandler)
+                                                 .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
+                                                 .associationValue(associationValue)
+                                                 .build();
 
         // Test won't work if the saga ID and association value map to the same minimum-sized segment.
         assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
-                (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
+                           (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
 
         EventMessage<?> event = new GenericEventMessage<>(new Object());
 
@@ -205,7 +242,7 @@ class SagaManagerTest {
     }
 
     @Test
-    void testExceptionSuppressed() throws Exception {
+    void exceptionSuppressed() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handle(event);
@@ -237,7 +274,7 @@ class SagaManagerTest {
         }
 
         @Override
-        public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull Segment segment) {
             return true;
         }
 
@@ -293,6 +330,11 @@ class SagaManagerTest {
 
             private Builder associationValue(AssociationValue associationValue) {
                 this.associationValue = associationValue;
+                return this;
+            }
+
+            public Builder spanFactory(SpanFactory spanFactory) {
+                super.spanFactory(spanFactory);
                 return this;
             }
 

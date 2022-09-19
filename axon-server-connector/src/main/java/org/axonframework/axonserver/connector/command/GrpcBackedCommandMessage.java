@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Wrapper that allows clients to access a gRPC {@link Command} as a {@link CommandMessage}.
@@ -88,12 +89,12 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
     }
 
     @Override
-    public GrpcBackedCommandMessage<C> withMetaData(Map<String, ?> metaData) {
+    public GrpcBackedCommandMessage<C> withMetaData(@Nonnull Map<String, ?> metaData) {
         return new GrpcBackedCommandMessage<>(command, serializedPayload, () -> MetaData.from(metaData));
     }
 
     @Override
-    public GrpcBackedCommandMessage<C> andMetaData(Map<String, ?> metaData) {
+    public GrpcBackedCommandMessage<C> andMetaData(@Nonnull Map<String, ?> metaData) {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 }

@@ -31,7 +31,7 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 class FixtureTest_Hierarchy {
 
     @Test
-    void testFixtureSetupWithAggregateHierarchy() {
+    void fixtureSetupWithAggregateHierarchy() {
         new AggregateTestFixture<>(AbstractAggregate.class)
                 .registerAggregateFactory(new AggregateFactory<AbstractAggregate>() {
                     @Override

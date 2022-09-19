@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.utils.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
+import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
+import org.axonframework.utils.MockException;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +74,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testHandlersForCurrentPhaseAreExecuted() {
+    void handlersForCurrentPhaseAreExecuted() {
         AtomicBoolean prepareCommit = new AtomicBoolean();
         AtomicBoolean commit = new AtomicBoolean();
         AtomicBoolean afterCommit = new AtomicBoolean();
@@ -94,7 +94,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testExecuteTask() {
+    void executeTask() {
         Runnable task = mock(Runnable.class);
         doNothing().when(task).run();
         subject.execute(task);
@@ -106,7 +106,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testExecuteFailingTask() {
+    void executeFailingTask() {
         Runnable task = mock(Runnable.class);
         MockException mockException = new MockException();
         doThrow(mockException).when(task).run();
@@ -125,7 +125,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testExecuteTaskWithResult() throws Exception {
+    void executeTaskWithResult() throws Exception {
         Object taskResult = new Object();
         Callable<Object> task = mock(Callable.class);
         when(task.call()).thenReturn(taskResult);
@@ -141,7 +141,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testExecuteTaskReturnsResultMessage() throws Exception {
+    void executeTaskReturnsResultMessage() throws Exception {
         ResultMessage<Object> resultMessage = asResultMessage(new Object());
         Callable<ResultMessage<Object>> task = mock(Callable.class);
         when(task.call()).thenReturn(resultMessage);
@@ -150,7 +150,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testAttachedTransactionCommittedOnUnitOfWorkCommit() {
+    void attachedTransactionCommittedOnUnitOfWorkCommit() {
         TransactionManager transactionManager = mock(TransactionManager.class);
         Transaction transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);
@@ -163,7 +163,7 @@ class AbstractUnitOfWorkTest {
     }
 
     @Test
-    void testAttachedTransactionRolledBackOnUnitOfWorkRollBack() {
+    void attachedTransactionRolledBackOnUnitOfWorkRollBack() {
         TransactionManager transactionManager = mock(TransactionManager.class);
         Transaction transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);
@@ -192,6 +192,12 @@ class AbstractUnitOfWorkTest {
         verify(subject).rollback(isA(MockException.class));
     }
 
+    @Test
+    void whenGettingCorrelationMetaThrows_thenCatchExceptions() {
+        subject.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
+        MetaData correlationData = subject.getCorrelationData();
+        assertNotNull(correlationData);
+    }
 
     private static class PhaseTransition {
 

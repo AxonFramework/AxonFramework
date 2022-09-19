@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,14 +27,11 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
+import org.mockito.quality.*;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -43,7 +40,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -101,7 +98,7 @@ class SpawningNewAggregateTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testSpawningNewAggregate() throws Exception {
+    void spawningNewAggregate() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")));
 
@@ -118,7 +115,7 @@ class SpawningNewAggregateTest {
 
     @MockitoSettings(strictness = Strictness.LENIENT)
     @Test
-    void testSpawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
+    void spawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
@@ -137,7 +134,7 @@ class SpawningNewAggregateTest {
 
     @MockitoSettings(strictness = Strictness.LENIENT)
     @Test
-    void testSpawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
+    void spawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
         initializeAggregate1Repository(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
                             (commandMessage, commandResultMessage) -> {

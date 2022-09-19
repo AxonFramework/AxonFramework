@@ -45,7 +45,7 @@ class EventStreamUtilsTest {
     }
 
     @Test
-    void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntry() {
+    void domainEventStream_lastSequenceNumberEqualToLastProcessedEntry() {
         DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   NoOpEventUpcaster.INSTANCE);
@@ -55,7 +55,7 @@ class EventStreamUtilsTest {
     }
 
     @Test
-    void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterIgnoringLastEntry() {
+    void domainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterIgnoringLastEntry() {
         DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1), createEntry(2), createEntry(3)), serializer,
                                                   new EventUpcasterChain(e -> e
@@ -68,7 +68,7 @@ class EventStreamUtilsTest {
     }
 
     @Test
-    void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() {
+    void domainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() {
         DomainEventStream eventStream = EventStreamUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   new EventUpcasterChain(s -> s.filter(e -> false)));
@@ -79,7 +79,7 @@ class EventStreamUtilsTest {
     }
 
     @Test
-    void testDomainEventStream_nullPointerExceptionOnEmptyEventStream() {
+    void domainEventStream_nullPointerExceptionOnEmptyEventStream() {
         DomainEventStream eventStream = EventStreamUtils.upcastAndDeserializeDomainEvents(Stream.empty(),
             serializer, NoOpEventUpcaster.INSTANCE);
         assertNull(eventStream.getLastSequenceNumber());

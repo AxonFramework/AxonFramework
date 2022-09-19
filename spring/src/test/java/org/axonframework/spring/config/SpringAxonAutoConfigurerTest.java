@@ -16,6 +16,19 @@
 
 package org.axonframework.spring.config;
 
+import com.thoughtworks.xstream.XStream;
+import java.lang.reflect.Executable;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
@@ -23,6 +36,8 @@ import org.axonframework.commandhandling.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
@@ -34,7 +49,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
+import org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -72,12 +87,22 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.serialization.xml.CompactDriver;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.spring.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.internal.util.collections.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.internal.util.collections.Sets;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerContext;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -93,23 +118,23 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.test.StepVerifier;
 
-import java.lang.reflect.Executable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link SpringAxonAutoConfigurer}.
@@ -180,6 +205,22 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired
     private TagsConfiguration tagsConfiguration;
 
+    @Autowired
+    @Qualifier("myLockFactory")
+    private LockFactory myLockFactory;
+
+    @Autowired
+    private QuartzEventScheduler quartzEventScheduler;
+
+    @Autowired
+    @Qualifier("eventSerializer")
+    private Serializer eventSerializer;
+
+    @AfterEach
+    void tearDown() {
+        reset(primaryCommandTargetResolver);
+    }
+
     @Test
     void contextWiresMainComponents() {
         assertNotNull(axonConfig);
@@ -196,6 +237,7 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(tagsConfiguration);
         assertEquals(tagsConfiguration, axonConfig.tags());
         assertNotNull(axonConfig.eventScheduler());
+        assertNotNull(quartzEventScheduler);
     }
 
     @Test
@@ -235,7 +277,7 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
-        verify(primaryCommandTargetResolver, timeout(100)).resolveTarget(any());
+        verify(primaryCommandTargetResolver, timeout(500)).resolveTarget(any());
     }
 
     @Test
@@ -348,6 +390,27 @@ public class SpringAxonAutoConfigurerTest {
         );
     }
 
+    @Test
+    void testAggregateLockFactory() {
+        String expectedAggregateId = "someIdentifier";
+
+        FutureCallback<Object, Object> commandCallback = new FutureCallback<>();
+        commandBus.dispatch(asCommandMessage(
+                new Context.CreateMyCachedAggregateCommand(expectedAggregateId)), commandCallback
+        );
+        commandCallback.getResult();
+
+        verify(myLockFactory).obtainLock(expectedAggregateId);
+    }
+
+    @Test
+    void testEventSchedulerUsesEventSerializer() {
+        when(eventSerializer.serialize(any(), eq(byte[].class))).thenReturn(new SimpleSerializedObject<>(new byte[1], byte[].class, SerializedType.emptyType()));
+        quartzEventScheduler.schedule(Instant.now(), "deadline");
+        //The below check shows we have serialized both the payload and metadata using this serializer
+        verify(eventSerializer, times(2)).serialize(any(), any());
+    }
+
     @AnnotationDriven
     @Import({SpringAxonAutoConfigurer.ImportSelector.class, AnnotationDrivenRegistrar.class})
     @Scope
@@ -413,14 +476,40 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Bean
-        public EventScheduler eventScheduler() {
-            return mock(EventScheduler.class);
+        public Scheduler scheduler() throws SchedulerException {
+            Scheduler scheduler = mock(Scheduler.class);
+            when(scheduler.getContext()).thenReturn(mock(SchedulerContext.class));
+            return scheduler;
+        }
+
+        @Bean
+        @Primary
+        public Serializer serializer() {
+            return XStreamSerializer.builder()
+                                    .xStream(new XStream(new CompactDriver()))
+                                    .build();
+        }
+
+        @Bean
+        public Serializer eventSerializer() {
+            return mock(Serializer.class);
+        }
+
+        @Bean
+        public QuartzEventSchedulerFactoryBean quartzEventSchedulerFactoryBean() {
+            return new QuartzEventSchedulerFactoryBean();
         }
 
         @Bean
         @Qualifier("myCache")
         public Cache myCache() {
             return mock(Cache.class);
+        }
+
+        @Bean
+        @Qualifier("myLockFactory")
+        public LockFactory myLockFactory() {
+            return spy(PessimisticLockFactory.usingDefaults());
         }
 
         @Aggregate(type = "MyCustomAggregateType", filterEventsByType = true)
@@ -521,7 +610,7 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
-        @Aggregate(cache = "myCache")
+        @Aggregate(cache = "myCache", lockFactory = "myLockFactory")
         public static class MyCachedAggregate {
 
             @AggregateIdentifier
@@ -634,7 +723,8 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventMessageHandler eventHandler) {
+            public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+                                @Nonnull EventMessageHandler eventHandler) {
                 received.add(exception);
             }
         }
@@ -664,12 +754,14 @@ public class SpringAxonAutoConfigurerTest {
             }
 
             @Override
-            public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                                        ParameterResolverFactory parameterResolverFactory) {
+            public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                        @Nonnull Executable executable,
+                                                                        @Nonnull ParameterResolverFactory parameterResolverFactory) {
                 assertNotNull(commandBus);
                 return Optional.empty();
             }
         }
+
     }
 
     public static class SomeEvent {
@@ -701,8 +793,9 @@ public class SpringAxonAutoConfigurerTest {
     private static class MyHandlerDefinition implements HandlerDefinition {
 
         @Override
-        public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                                    ParameterResolverFactory parameterResolverFactory) {
+        public <T> Optional<MessageHandlingMember<T>> createHandler(@Nonnull Class<T> declaringType,
+                                                                    @Nonnull Executable executable,
+                                                                    @Nonnull ParameterResolverFactory parameterResolverFactory) {
             return Optional.empty();
         }
     }
@@ -710,7 +803,8 @@ public class SpringAxonAutoConfigurerTest {
     private static class MyHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
         @Override
-        public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        public @Nonnull
+        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
             return new MethodCommandHandlerDefinition().wrapHandler(original);
         }
     }

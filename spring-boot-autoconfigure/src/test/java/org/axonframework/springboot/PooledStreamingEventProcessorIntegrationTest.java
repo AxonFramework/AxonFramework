@@ -77,7 +77,7 @@ class PooledStreamingEventProcessorIntegrationTest {
     }
 
     @Test
-    void testAllEventsFromMultiUpcasterAreHandled() {
+    void allEventsFromMultiUpcasterAreHandled() {
         testApplicationContext.withPropertyValues("upcaster-test=true").run(context -> {
             EventProcessingConfiguration processingConfig = context.getBean(EventProcessingConfiguration.class);
             Optional<PooledStreamingEventProcessor> optionalProcessor =
@@ -104,7 +104,7 @@ class PooledStreamingEventProcessorIntegrationTest {
     }
 
     @Test
-    void testLastEventIsNotHandledTwice() {
+    void lastEventIsNotHandledTwice() {
         int numberOfEvents = 100;
 
         testApplicationContext.withPropertyValues("once-test=true", "errorCount=2").run(context -> {

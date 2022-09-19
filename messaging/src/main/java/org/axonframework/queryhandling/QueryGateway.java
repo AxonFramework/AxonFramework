@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.queryhandling.QueryMessage.queryName;
 
@@ -50,7 +53,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
-    default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
+    default <R, Q> CompletableFuture<R> query(@Nonnull Q query, @Nonnull Class<R> responseType) {
         return query(queryName(query), query, responseType);
     }
 
@@ -67,7 +70,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
-    default <R, Q> CompletableFuture<R> query(String queryName, Q query, Class<R> responseType) {
+    default <R, Q> CompletableFuture<R> query(@Nonnull String queryName, @Nonnull Q query,
+                                              @Nonnull Class<R> responseType) {
         return query(queryName, query, ResponseTypes.instanceOf(responseType));
     }
 
@@ -83,7 +87,7 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
-    default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
+    default <R, Q> CompletableFuture<R> query(@Nonnull Q query, @Nonnull ResponseType<R> responseType) {
         return query(queryName(query), query, responseType);
     }
 
@@ -100,7 +104,63 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
-    <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType);
+    <R, Q> CompletableFuture<R> query(@Nonnull String queryName, @Nonnull Q query,
+                                      @Nonnull ResponseType<R> responseType);
+
+    /**
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
+     * as {@link org.reactivestreams.Publisher} of {@code responseType}.
+     * Query is sent once {@link org.reactivestreams.Publisher} is subscribed to.
+     * The Streaming query allows a client to stream large result sets.
+     *
+     * Usage of this method requires
+     * <a href="https://projectreactor.io/">Project Reactor</a>
+     * on the class path.
+     *
+     * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason,
+     * for clients that don't have Project Reactor on class path.
+     * Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor Extension</a>
+     * for native Flux type and more.
+     *
+     * Use {@code Flux.from(publisher)} to convert to Flux stream.
+     *
+     * @param query        The {@code query} to be sent
+     * @param responseType A {@link java.lang.Class} describing the desired response type
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
+     * {@code responseType}
+     */
+    default <R, Q> Publisher<R> streamingQuery(Q query, Class<R> responseType) {
+        return streamingQuery(queryName(query), query, responseType);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response
+     * as {@link org.reactivestreams.Publisher} of {@code responseType}.
+     * Query is sent once {@link org.reactivestreams.Publisher} is subscribed to.
+     * The Streaming query allows a client to stream large result sets.
+     *
+     * Usage of this method requires
+     * <a href="https://projectreactor.io/">Project Reactor</a>
+     * on the class path.
+     *
+     * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason,
+     * for clients that don't have Project Reactor on class path.
+     * Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor Extension</a>
+     * for native Flux type and more.
+     *
+     * Use {@code Flux.from(publisher)} to convert to Flux stream.
+     *
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
+     * @param query        The {@code query} to be sent
+     * @param responseType A {@link java.lang.Class} describing the desired response type
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
+     * {@code responseType}.
+     */
+    <R, Q> Publisher<R> streamingQuery(String queryName, Q query,  Class<R> responseType);
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
@@ -116,7 +176,8 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <Q>          The query class
      * @return A stream of results.
      */
-    default <R, Q> Stream<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
+    default <R, Q> Stream<R> scatterGather(@Nonnull Q query, @Nonnull ResponseType<R> responseType, long timeout,
+                                           @Nonnull TimeUnit timeUnit) {
         return scatterGather(queryName(query), query, responseType, timeout, timeUnit);
     }
 
@@ -134,8 +195,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @param <Q>          The query class
      * @return A stream of results.
      */
-    <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
-                                   TimeUnit timeUnit);
+    <R, Q> Stream<R> scatterGather(@Nonnull String queryName, @Nonnull Q query, @Nonnull ResponseType<R> responseType,
+                                   long timeout,
+                                   @Nonnull TimeUnit timeUnit);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
@@ -156,8 +218,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
-                                                                      Class<U> updateResponseType) {
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull Q query,
+                                                                      @Nonnull Class<I> initialResponseType,
+                                                                      @Nonnull Class<U> updateResponseType) {
         return subscriptionQuery(queryName(query), query, initialResponseType, updateResponseType);
     }
 
@@ -181,9 +244,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
-                                                                      Class<I> initialResponseType,
-                                                                      Class<U> updateResponseType) {
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
+                                                                      @Nonnull Q query,
+                                                                      @Nonnull Class<I> initialResponseType,
+                                                                      @Nonnull Class<U> updateResponseType) {
         return subscriptionQuery(queryName,
                                  query,
                                  ResponseTypes.instanceOf(initialResponseType),
@@ -209,8 +273,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
-                                                                      ResponseType<U> updateResponseType) {
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull Q query,
+                                                                      @Nonnull ResponseType<I> initialResponseType,
+                                                                      @Nonnull ResponseType<U> updateResponseType) {
         return subscriptionQuery(queryName(query),
                                  query,
                                  initialResponseType,
@@ -242,10 +307,11 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
-                                                                      ResponseType<I> initialResponseType,
-                                                                      ResponseType<U> updateResponseType,
-                                                                      SubscriptionQueryBackpressure backpressure) {
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
+                                                                      @Nonnull Q query,
+                                                                      @Nonnull ResponseType<I> initialResponseType,
+                                                                      @Nonnull ResponseType<U> updateResponseType,
+                                                                      @Nullable SubscriptionQueryBackpressure backpressure) {
         return subscriptionQuery(queryName,
                                  query,
                                  initialResponseType,
@@ -274,10 +340,10 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
-                                                                      Q query,
-                                                                      ResponseType<I> initialResponseType,
-                                                                      ResponseType<U> updateResponseType) {
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
+                                                                      @Nonnull Q query,
+                                                                      @Nonnull ResponseType<I> initialResponseType,
+                                                                      @Nonnull ResponseType<U> updateResponseType) {
         return subscriptionQuery(queryName, query, initialResponseType, updateResponseType, Queues.SMALL_BUFFER_SIZE);
     }
 
@@ -308,11 +374,11 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * Example: {@code result.updates().onBackpressureBuffer(100)}
      */
     @Deprecated
-    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
-                                                              Q query,
-                                                              ResponseType<I> initialResponseType,
-                                                              ResponseType<U> updateResponseType,
-                                                              SubscriptionQueryBackpressure backpressure,
+    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
+                                                              @Nonnull Q query,
+                                                              @Nonnull ResponseType<I> initialResponseType,
+                                                              @Nonnull ResponseType<U> updateResponseType,
+                                                              @Nullable SubscriptionQueryBackpressure backpressure,
                                                               int updateBufferSize);
 
     /**
@@ -337,9 +403,9 @@ public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMes
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, int)
      */
-    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName,
-                                                              Q query,
-                                                              ResponseType<I> initialResponseType,
-                                                              ResponseType<U> updateResponseType,
+    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull String queryName,
+                                                              @Nonnull Q query,
+                                                              @Nonnull ResponseType<I> initialResponseType,
+                                                              @Nonnull ResponseType<U> updateResponseType,
                                                               int updateBufferSize);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,7 +52,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testSubclassesBeforeSuperclasses() {
+    void subclassesBeforeSuperclasses() {
         assertTrue(testSubject.compare(stringHandler, objectHandler) < 0, "String should appear before Object");
         assertTrue(testSubject.compare(objectHandler, stringHandler) > 0, "String should appear before Object");
 
@@ -66,7 +67,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testHandlersIsEqualWithItself() {
+    void handlersIsEqualWithItself() {
         assertEquals(0, testSubject.compare(stringHandler, stringHandler));
         assertEquals(0, testSubject.compare(objectHandler, objectHandler));
         assertEquals(0, testSubject.compare(longHandler, longHandler));
@@ -82,7 +83,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testHandlersSortedCorrectly() {
+    void handlersSortedCorrectly() {
         List<MessageHandlingMember<?>> members = new ArrayList<>(Arrays.asList(objectHandler, numberHandler, stringHandler, longHandler));
 
         members.sort(this.testSubject);
@@ -91,7 +92,7 @@ class HandlerComparatorTest {
     }
 
     @Test
-    void testNotInSameHierarchyUsesPriorityBasedEvaluation() {
+    void notInSameHierarchyUsesPriorityBasedEvaluation() {
         assertTrue(testSubject.compare(priorityHandler, stringHandler) < 0, "priorityHandler should appear before String based on priority");
         assertTrue(testSubject.compare(stringHandler, priorityHandler) > 0, "priorityHandler should appear before String based on priority");
     }
@@ -118,18 +119,18 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public boolean canHandle(Message<?> message) {
+        public boolean canHandle(@Nonnull Message<?> message) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
         @SuppressWarnings("rawtypes")
-        public boolean canHandleMessageType(Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
             throw new UnsupportedOperationException("Not implemented (yet)");
         }
 
         @Override
-        public Object handle(Message<?> message, Object target) {
+        public Object handle(@Nonnull Message<?> message, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

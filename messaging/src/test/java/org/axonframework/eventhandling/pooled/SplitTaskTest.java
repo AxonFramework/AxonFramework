@@ -45,7 +45,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testRunSplitsSegmentFromWorkPackage() throws ExecutionException, InterruptedException {
+    void runSplitsSegmentFromWorkPackage() throws ExecutionException, InterruptedException {
         Segment testSegmentToSplit = Segment.ROOT_SEGMENT;
         TrackingToken testTokenToSplit = new GlobalSequenceTrackingToken(0);
 
@@ -69,7 +69,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testRunSplitsSegmentAfterClaiming() throws ExecutionException, InterruptedException {
+    void runSplitsSegmentAfterClaiming() throws ExecutionException, InterruptedException {
         int[] testSegmentIds = {SEGMENT_ID};
         Segment testSegmentToSplit = Segment.computeSegment(SEGMENT_ID, testSegmentIds);
         TrackingToken testTokenToSplit = new GlobalSequenceTrackingToken(0);
@@ -92,7 +92,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testRunCompletesExceptionallyThroughUnableToClaimTokenException() {
+    void runCompletesExceptionallyThroughUnableToClaimTokenException() {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(new int[]{SEGMENT_ID});
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
@@ -105,7 +105,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testRunCompletesExceptionallyThroughOtherException() {
+    void runCompletesExceptionallyThroughOtherException() {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
@@ -116,7 +116,7 @@ class SplitTaskTest {
     }
 
     @Test
-    void testDescription() {
+    void description() {
         String result = testSubject.getDescription();
         assertNotNull(result);
         assertTrue(result.contains("Split"));

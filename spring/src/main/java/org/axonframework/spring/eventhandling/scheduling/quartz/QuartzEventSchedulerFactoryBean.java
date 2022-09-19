@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.axonframework.spring.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.quartz.EventJobDataBinder;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
@@ -30,11 +31,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
+import javax.annotation.Nonnull;
+
 /**
  * Spring FactoryBean that creates a QuartzEventScheduler instance using resources found in the Spring Application
- * Context. The
- * QuartzEventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it more suitable
- * for long-term triggers and triggers that must survive a system restart.
+ * Context. The QuartzEventScheduler delegates the actual scheduling and triggering to a Quartz Scheduler, making it
+ * more suitable for long-term triggers and triggers that must survive a system restart.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -46,11 +48,11 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     private QuartzEventScheduler eventScheduler;
     private Scheduler scheduler;
     private EventBus eventBus;
+    private Serializer serializer;
     private String groupIdentifier;
     private EventJobDataBinder eventJobDataBinder;
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition;
-
 
     @Override
     public QuartzEventScheduler getObject() {
@@ -75,9 +77,12 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
         if (scheduler == null) {
             scheduler = applicationContext.getBean(Scheduler.class);
         }
+        if (serializer == null) {
+            serializer = applicationContext.getBean("eventSerializer", Serializer.class);
+        }
 
         QuartzEventScheduler.Builder eventSchedulerBuilder =
-                QuartzEventScheduler.builder().scheduler(scheduler).eventBus(eventBus);
+                QuartzEventScheduler.builder().scheduler(scheduler).eventBus(eventBus).serializer(serializer);
         if (eventJobDataBinder != null) {
             eventSchedulerBuilder.jobDataBinder(eventJobDataBinder);
         }
@@ -95,7 +100,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -156,5 +161,15 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
      */
     public void setTransactionDefinition(TransactionDefinition transactionDefinition) {
         this.transactionDefinition = transactionDefinition;
+    }
+
+    /**
+     * Sets the {@link Serializer} used by the {@link EventJobDataBinder}. The {@code EventJobDataBinder} uses the {@code Serializer} to de-/serialize the
+     * scheduled event.
+     *
+     * @param serializer a {@link Serializer} used by the {@link EventJobDataBinder} when serializing events
+     */
+    public void setSerializer(Serializer serializer) {
+        this.serializer = serializer;
     }
 }

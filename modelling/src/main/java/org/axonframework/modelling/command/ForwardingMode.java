@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.modelling.command.inspection.EntityModel;
 
 import java.lang.reflect.Member;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the required functionality to forward a message. An example implementation is the {@link
@@ -38,7 +39,7 @@ public interface ForwardingMode<T extends Message<?>> {
      *                    check for annotations attributes which might assist in the forwarding process.
      * @param childEntity A {@link EntityModel} constructed from the given {@code field}.
      */
-    default void initialize(Member member, EntityModel childEntity) {
+    default void initialize(@Nonnull Member member, @Nonnull EntityModel childEntity) {
     }
 
     /**
@@ -50,5 +51,5 @@ public interface ForwardingMode<T extends Message<?>> {
      * @param <E>        The type of the {@code candidates}
      * @return a filtered {@link java.util.stream.Stream} of {@code candidates} which will handle the {@code message}.
      */
-    <E> Stream<E> filterCandidates(T message, Stream<E> candidates);
+    <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates);
 }

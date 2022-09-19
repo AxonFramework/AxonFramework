@@ -81,7 +81,7 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testScheduleJob() throws InterruptedException {
+    void scheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -95,7 +95,7 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testScheduleJobTransactionalUnitOfWork() throws InterruptedException {
+    void scheduleJobTransactionalUnitOfWork() throws InterruptedException {
         Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.startTransaction()).thenReturn(mockTransaction);
@@ -125,7 +125,7 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testScheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
+    void scheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
         final TransactionManager transactionManager = mock(TransactionManager.class);
         final CountDownLatch latch = new CountDownLatch(1);
         when(transactionManager.startTransaction()).thenAnswer(i -> {
@@ -154,7 +154,7 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testCancelJob() throws SchedulerException {
+    void cancelJob() throws SchedulerException {
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), buildTestEvent());
         assertEquals(1, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         testSubject.cancelSchedule(token);
@@ -164,14 +164,14 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testShutdownInvokesSchedulerShutdown() throws SchedulerException {
+    void shutdownInvokesSchedulerShutdown() throws SchedulerException {
         testSubject.shutdown();
 
         verify(scheduler).shutdown(true);
     }
 
     @Test
-    void testShutdownFailureResultsInSchedulingException() throws SchedulerException {
+    void shutdownFailureResultsInSchedulingException() throws SchedulerException {
         Scheduler scheduler = spy(new StdSchedulerFactory().getScheduler());
         doAnswer(invocation -> {
             throw new SchedulerException();
@@ -186,21 +186,21 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testBuildWithNullEventJobDataBinderThrowsAxonConfigurationException() {
+    void buildWithNullEventJobDataBinderThrowsAxonConfigurationException() {
         QuartzEventScheduler.Builder builderTestSubject = QuartzEventScheduler.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.jobDataBinder(null));
     }
 
     @Test
-    void testBuildWithNullSerializerThrowsAxonConfigurationException() {
+    void buildWithNullSerializerThrowsAxonConfigurationException() {
         QuartzEventScheduler.Builder builderTestSubject = QuartzEventScheduler.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.serializer(null));
     }
 
     @Test
-    void testBuildWithoutSchedulerThrowsAxonConfigurationException() {
+    void buildWithoutSchedulerThrowsAxonConfigurationException() {
         EventBus eventBus = SimpleEventBus.builder().build();
         QuartzEventScheduler.Builder builderTestSubject =
                 QuartzEventScheduler.builder()
@@ -211,7 +211,7 @@ class QuartzEventSchedulerTest {
     }
 
     @Test
-    void testBuildWithoutEventBusThrowsAxonConfigurationException() {
+    void buildWithoutEventBusThrowsAxonConfigurationException() {
         Scheduler scheduler = mock(Scheduler.class);
         QuartzEventScheduler.Builder builderTestSubject =
                 QuartzEventScheduler.builder()

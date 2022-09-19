@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,9 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
@@ -62,6 +66,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    protected final SpanFactory spanFactory;
 
     /**
      * Instantiate a {@link AbstractEventProcessor} based on the fields contained in the {@link Builder}.
@@ -78,6 +83,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.rollbackConfiguration = builder.rollbackConfiguration;
         this.errorHandler = builder.errorHandler;
         this.messageMonitor = builder.messageMonitor;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -86,7 +92,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+    public Registration registerHandlerInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }
@@ -160,6 +167,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             MessageMonitor.MonitorCallback monitorCallback =
                     messageMonitor.onMessageIngested(unitOfWork.getMessage());
             return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
+                Span span = spanFactory.createInternalSpan(this::getSpanName, m).start();
                 try {
                     for (Segment processingSegment : processingSegments) {
                         eventHandlerInvoker.handle(m, processingSegment);
@@ -168,7 +176,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     return null;
                 } catch (Exception exception) {
                     monitorCallback.reportFailure(exception);
+                    span.recordException(exception);
                     throw exception;
+                } finally {
+                    span.end();
                 }
             }).proceed();
         }, rollbackConfiguration);
@@ -182,6 +193,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                             e.getClass().getName());
             }
         }
+    }
+
+    private String getSpanName() {
+        return getClass().getSimpleName() + "[" + getName() + "].process";
     }
 
     /**
@@ -210,9 +225,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     /**
      * Abstract Builder class to instantiate a {@link AbstractEventProcessor}.
      * <p>
-     * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link MessageMonitor}
-     * defaults to a {@link NoOpMessageMonitor}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
-     * {@link RollbackConfiguration} are <b>hard requirements</b> and as such should be provided.
+     * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults
+     * to a {@link NoOpMessageMonitor} and the {@link SpanFactory} defaults to a {@link NoOpSpanFactory}. The Event
+     * Processor {@code name}, {@link EventHandlerInvoker} and {@link RollbackConfiguration} are <b>hard
+     * requirements</b> and as such should be provided.
      */
     public abstract static class Builder {
 
@@ -221,6 +237,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         private RollbackConfiguration rollbackConfiguration;
         private ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
          * Sets the {@code name} of this {@link EventProcessor} implementation.
@@ -228,7 +245,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          * @param name a {@link String} defining this {@link EventProcessor} implementation
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder name(String name) {
+        public Builder name(@Nonnull String name) {
             assertEventProcessorName(name, "The EventProcessor name may not be null or empty");
             this.name = name;
             return this;
@@ -237,11 +254,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         /**
          * Sets the {@link EventHandlerInvoker} which will handle all the individual {@link EventMessage}s.
          *
-         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual
-         *                            {@link EventMessage}s
+         * @param eventHandlerInvoker the {@link EventHandlerInvoker} which will handle all the individual {@link
+         *                            EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
             assertNonNull(eventHandlerInvoker, "EventHandlerInvoker may not be null");
             this.eventHandlerInvoker = eventHandlerInvoker;
             return this;
@@ -251,11 +268,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link UnitOfWork} while
          * processing a batch of events.
          *
-         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
-         *                              {@link UnitOfWork} while processing a batch of events.
+         * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the {@link
+         *                              UnitOfWork} while processing a batch of events.
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+        public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
             assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
             this.rollbackConfiguration = rollbackConfiguration;
             return this;
@@ -269,7 +286,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          *                     processing
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder errorHandler(ErrorHandler errorHandler) {
+        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
             assertNonNull(errorHandler, "ErrorHandler may not be null");
             this.errorHandler = errorHandler;
             return this;
@@ -283,9 +300,22 @@ public abstract class AbstractEventProcessor implements EventProcessor {
          *                       processed
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
             return this;
         }
 

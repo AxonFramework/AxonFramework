@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Specifies a mechanism to monitor message processing. When a message is supplied to
@@ -37,19 +38,21 @@ import java.util.stream.Collectors;
 public interface MessageMonitor<T extends Message<?>> {
 
     /**
-     * Takes a message and returns a callback that should be used
-     * to inform the message monitor about the result of processing the message
+     * Takes a message and returns a callback that should be used to inform the message monitor about the result of
+     * processing the message
+     *
      * @param message the message to monitor
      * @return the callback
      */
-    MonitorCallback onMessageIngested(T message);
+    MonitorCallback onMessageIngested(@Nonnull T message);
 
     /**
      * Takes a collection of messages and returns a map containing events along with their callbacks
+     *
      * @param messages to monitor
      * @return map where key = event and value = the callback
      */
-    default Map<? super T, MonitorCallback> onMessagesIngested(Collection<? extends T> messages) {
+    default Map<? super T, MonitorCallback> onMessagesIngested(@Nonnull Collection<? extends T> messages) {
         return messages.stream().collect(Collectors.toMap(msg -> msg, this::onMessageIngested));
     }
 

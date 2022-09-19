@@ -52,7 +52,7 @@ class FixtureTest_SpawningNewAggregate {
     }
 
     @Test
-    void testFixtureWithoutRepositoryProviderInjected() {
+    void fixtureWithoutRepositoryProviderInjected() {
         fixture.givenNoPriorActivity()
                .when(new CreateAggregate1Command("id", "aggregate2Id"))
                .expectEvents(new Aggregate2CreatedEvent("aggregate2Id"), new Aggregate1CreatedEvent("id"))
@@ -61,7 +61,7 @@ class FixtureTest_SpawningNewAggregate {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testFixtureWithRepositoryProviderInjected() throws Exception {
+    void fixtureWithRepositoryProviderInjected() throws Exception {
         RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
         Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory

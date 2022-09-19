@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,21 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 /**
  * Defines a contract for accessor methods regarding event processing configuration.
@@ -212,4 +217,46 @@ public interface EventProcessingConfiguration {
      * @return the {@link TransactionManager}belonging to the given {@code processorName}
      */
     TransactionManager transactionManager(String processorName);
+
+    /**
+     * Returns the {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}.
+     * May return an {@link Optional#empty() empty optional} when there's no {@code SequencedDeadLetterQueue} present
+     * for the given {@code processingGroup}.
+     *
+     * @param processingGroup The name of the processing group for which to return a {@link SequencedDeadLetterQueue}.
+     * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}, {@link Optional#empty()}
+     * if there is none.
+     */
+    default Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(
+            @Nonnull String processingGroup
+    ) {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the {@link EnqueuePolicy dead letter policy} tied to the given {@code processingGroup} in an
+     * {@link Optional}. May return an {@link Optional} containing the
+     * {@link EventProcessingConfigurer#registerDefaultDeadLetterPolicy(Function) default policy} if present.
+     *
+     * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
+     * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.
+     */
+    default Optional<EnqueuePolicy<EventMessage<?>>> deadLetterPolicy(@Nonnull String processingGroup) {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the {@link SequencedDeadLetterProcessor} tied to the given {@code processingGroup} in an
+     * {@link Optional}. Returns an {@link Optional#empty() empty optional} when the {@code processingGroup} does not
+     * have a {@link SequencedDeadLetterQueue} attached to it.
+     *
+     * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
+     * @return The {@link SequencedDeadLetterProcessor} tied to the given {@code processingGroup} in an
+     * {@link Optional}, {@link Optional#empty()} if there is none.
+     */
+    default Optional<SequencedDeadLetterProcessor<EventMessage<?>>> sequencedDeadLetterProcessor(
+            @Nonnull String processingGroup
+    ) {
+        return Optional.empty();
+    }
 }

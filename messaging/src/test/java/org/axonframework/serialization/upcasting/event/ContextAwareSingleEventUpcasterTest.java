@@ -68,7 +68,7 @@ class ContextAwareSingleEventUpcasterTest {
     }
 
     @Test
-    void testUpcastsAddsContextValueFromFirstEvent() {
+    void upcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 2;
         String expectedContextEventString = "oldName";
         Integer expectedContextEventNumber = 1;

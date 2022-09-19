@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,16 +37,8 @@ import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -57,8 +49,9 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
@@ -71,43 +64,47 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-@ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
-@Transactional
+
 class JpaEventStorageEngineTest
         extends BatchingEventStorageEngineTest<JpaEventStorageEngine, JpaEventStorageEngine.Builder> {
 
     private JpaEventStorageEngine testSubject;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-    private EntityManagerProvider entityManagerProvider;
-    @Autowired
-    private DataSource dataSource;
-    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
+    private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("eventStore");
+    private final EntityManager entityManager = entityManagerFactory.createEntityManager();
+    private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
+    private EntityTransaction transaction;
+    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
+    void setUp() {
+        String databaseProductName = "HSQL Database Engine";
+        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(databaseProductName);
         setTestSubject(testSubject = createEngine());
 
+        transaction = entityManager.getTransaction();
+        transaction.begin();
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
-        entityManager.flush();
+        transaction.commit();
         entityManager.clear();
+        transaction.begin();
+    }
+
+    @AfterEach
+    public void cleanup(){
+        transaction.commit();
     }
 
     @Test
-    void testStoreAndLoadEventsFromDatastore() {
+    void storeAndLoadEventsFromDatastore() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
-    void testLoadLastSequenceNumber() {
+    void loadLastSequenceNumber() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
@@ -115,7 +112,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testGapsForVeryOldEventsAreNotIncluded() {
+    void gapsForVeryOldEventsAreNotIncluded() {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
 
         GenericEventMessage.clock =
@@ -143,7 +140,7 @@ class JpaEventStorageEngineTest
 
     @DirtiesContext
     @Test
-    void testOldGapsAreRemovedFromProvidedTrackingToken() {
+    void oldGapsAreRemovedFromProvidedTrackingToken() {
         testSubject.setGapCleaningThreshold(50);
         testSubject.setGapTimeout(50001);
         Instant now = Clock.systemUTC().instant();
@@ -192,14 +189,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testStoreTwoExactSameSnapshots() {
-        testSubject.storeSnapshot(createEvent(1));
-        entityManager.clear();
-        testSubject.storeSnapshot(createEvent(1));
-    }
-
-    @Test
-    void testUnknownSerializedTypeCausesException() {
+    void unknownSerializedTypeCausesException() {
         testSubject.appendEvents(createEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
                      .executeUpdate();
@@ -210,7 +200,7 @@ class JpaEventStorageEngineTest
     @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    void testStoreEventsWithCustomEntity() {
+    void storeEventsWithCustomEntity() {
         XStreamSerializer serializer = xStreamSerializer();
         JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
                 JpaEventStorageEngine.builder()
@@ -255,7 +245,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testEventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
+    void eventsWithUnknownPayloadDoNotResultInError() throws InterruptedException {
         String expectedPayloadOne = "Payload3";
         String expectedPayloadTwo = "Payload4";
 
@@ -287,7 +277,7 @@ class JpaEventStorageEngineTest
     }
 
     @Test
-    void testAppendEventsIsPerformedInATransaction() {
+    void appendEventsIsPerformedInATransaction() {
         testSubject.appendEvents(createEvents(2));
 
         verify(transactionManager).executeInTransaction(any());

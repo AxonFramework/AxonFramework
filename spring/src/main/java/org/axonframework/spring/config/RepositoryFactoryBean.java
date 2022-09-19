@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
  package org.axonframework.spring.config;
 
- import org.axonframework.modelling.command.Repository;
  import org.axonframework.config.AggregateConfiguration;
+ import org.axonframework.modelling.command.Repository;
  import org.springframework.beans.factory.FactoryBean;
 
  /**
-  * Spring Factory bean that allows registration of a Repository for an Aggregate in the Spring Application Context
-  * based on a given AggregateConfiguration
+  * Spring Factory bean that allows registration of a Repository for an Aggregate in the Spring Application Context based
+  * on a given AggregateConfiguration
   *
   * @param <T> The type of Aggregate stored by the repository
   * @author Allard Buijze
   * @since 3.3
+  * @deprecated Replaced by the {@link SpringAggregateLookup} and {@link SpringAggregateConfigurer}.
   */
+ @Deprecated
  public class RepositoryFactoryBean<T> implements FactoryBean<Repository<T>> {
 
      private final AggregateConfiguration<T> aggregateConfiguration;

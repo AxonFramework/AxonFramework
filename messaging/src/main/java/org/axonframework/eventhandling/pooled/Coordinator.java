@@ -35,7 +35,6 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +53,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
@@ -65,8 +65,8 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * are scheduled one by one to <em>all</em> work packages coordinated by this service.
  * <p>
  * Coordination tasks will run and be rerun as long as this service is considered to be {@link #isRunning()}.
- * Coordination will continue whenever exceptions occur, albeit with an incremental back off. Due to this, both {@link
- * #isError()} and {@link #isRunning()} can result in {@code true} at the same time.
+ * Coordination will continue whenever exceptions occur, albeit with an incremental back off. Due to this, both
+ * {@link #isError()} and {@link #isRunning()} can result in {@code true} at the same time.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -243,9 +243,9 @@ class Coordinator {
     /**
      * Instructs this coordinator to merge the segment for the given {@code segmentId}.
      * <p>
-     * If this coordinator is currently in charge of the {@code segmentId} and the segment to merge it with, both {@link
-     * WorkPackage}s will be aborted, after which the merge will start. When this coordinator is not in charge of one of
-     * the two segments, it will try to claim either segment's {@link TrackingToken} and perform the merge then.
+     * If this coordinator is currently in charge of the {@code segmentId} and the segment to merge it with, both
+     * {@link WorkPackage}s will be aborted, after which the merge will start. When this coordinator is not in charge of
+     * one of the two segments, it will try to claim either segment's {@link TrackingToken} and perform the merge then.
      * <p>
      * In either approach, this operation will delete one of the segments and release the claim on the other, so that
      * another thread can proceed with processing it.
@@ -279,8 +279,8 @@ class Coordinator {
     }
 
     /**
-     * Status holder for this service. Defines whether it is running, has been started (to ensure double {@link
-     * #start()} invocations do not restart this coordinator) and maintains a shutdown handler to complete
+     * Status holder for this service. Defines whether it is running, has been started (to ensure double
+     * {@link #start()} invocations do not restart this coordinator) and maintains a shutdown handler to complete
      * asynchronously through {@link #stop()}.
      */
     private static class RunState {
@@ -341,8 +341,8 @@ class Coordinator {
     }
 
     /**
-     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all {@link
-     * WorkPackage}s this {@link Coordinator} could ever service.
+     * Functional interface defining a validation if a given {@link TrackedEventMessage} can be handled by all
+     * {@link WorkPackage}s this {@link Coordinator} could ever service.
      */
     @FunctionalInterface
     interface EventFilter {
@@ -452,8 +452,8 @@ class Coordinator {
         }
 
         /**
-         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all {@link
-         * WorkPackage}s.
+         * A {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by all
+         * {@link WorkPackage}s.
          *
          * @param eventFilter a {@link EventFilter} used to check whether {@link TrackedEventMessage} must be ignored by
          *                    all {@link WorkPackage}s
@@ -466,8 +466,8 @@ class Coordinator {
 
 
         /**
-         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all {@link
-         * WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
+         * A {@link Consumer} of {@link TrackedEventMessage} that is invoked when the event is ignored by all
+         * {@link WorkPackage}s this {@link Coordinator} controls. Defaults to a no-op.
          *
          * @param ignoredMessageHandler lambda that is invoked when the event is ignored by all {@link WorkPackage}s
          *                              this {@link Coordinator} controls
@@ -481,8 +481,8 @@ class Coordinator {
         /**
          * Lambda used to update the processing {@link TrackerStatus} per {@link WorkPackage}
          *
-         * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per {@link
-         *                                WorkPackage}
+         * @param processingStatusUpdater lambda used to update the processing {@link TrackerStatus} per
+         *                                {@link WorkPackage}
          * @return the current Builder instance, for fluent interfacing
          */
         Builder processingStatusUpdater(BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater) {
@@ -755,16 +755,17 @@ class Coordinator {
          */
         private Map<Segment, TrackingToken> claimNewSegments() {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
-            int[] segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchSegments(name));
+            List<Segment> segments = transactionManager.fetchInTransaction(() -> tokenStore.fetchAvailableSegments(name));
 
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
-            int[] unClaimedSegments = Arrays.stream(segments)
-                                            .filter(segmentId -> !workPackages.containsKey(segmentId))
-                                            .toArray();
+            List<Segment> unClaimedSegments = segments.stream()
+                                                      .filter(segment -> !workPackages.containsKey(segment.getSegmentId()))
+                                                      .collect(Collectors.toList());
 
             int maxSegmentsToClaim = maxClaimedSegments - workPackages.size();
 
-            for (int segmentId : unClaimedSegments) {
+            for (Segment segment : unClaimedSegments) {
+                int segmentId = segment.getSegmentId();
                 if (isSegmentBlockedFromClaim(segmentId)) {
                     logger.debug("Segment {} is still marked to not be claimed by Processor [{}].", segmentId, name);
                     processingStatusUpdater.accept(segmentId, u -> null);
@@ -773,13 +774,14 @@ class Coordinator {
                 if (newClaims.size() < maxSegmentsToClaim) {
                     try {
                         TrackingToken token = transactionManager.fetchInTransaction(
-                                () -> tokenStore.fetchToken(name, segmentId)
+                                () -> tokenStore.fetchToken(name, segment)
                         );
-                        newClaims.put(Segment.computeSegment(segmentId, segments), token);
+                        newClaims.put(segment, token);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
-                        logger.debug("Unable to claim the token for segment {}. It is owned by another process.",
-                                     segmentId);
+                        logger.debug(
+                                "Unable to claim the token for segment {}. It is owned by another process or has been split/merged concurrently.",
+                                segmentId);
                     }
                 }
             }
@@ -819,14 +821,14 @@ class Coordinator {
         }
 
         /**
-         * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the {@link
-         * StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule these
-         * events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually handle
-         * the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of the
-         * {@code WorkPackage}s can handle the event it will be ignored.
+         * Start coordinating work to the {@link WorkPackage}s. This firstly means retrieving events from the
+         * {@link StreamableMessageSource}, check whether the event can be handled by any of them and if so, schedule
+         * these events to all the {@code WorkPackage}s. The {@code WorkPackage}s will state whether they''ll actually
+         * handle the event through their response on {@link WorkPackage#scheduleEvent(TrackedEventMessage)}. If none of
+         * the {@code WorkPackage}s can handle the event it will be ignored.
          * <p>
-         * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this {@link
-         * Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
+         * Secondly, the {@code WorkPackage}s are checked if they are aborted. If any are aborted, this
+         * {@link Coordinator} will abandon the {@code WorkPackage} and release the claim on the token.
          * <p>
          * Lastly, the {@link WorkPackage#scheduleWorker()} method is invoked. This ensures the {@code WorkPackage}s
          * will keep their claim on their {@link TrackingToken} even if no events have been scheduled.
@@ -932,7 +934,9 @@ class Coordinator {
             abortWorkPackages(cause).whenComplete(
                     (unused, throwable) -> {
                         if (throwable != null) {
-                            logger.warn("An exception occurred during work packages abort on [{}] processor.", name, throwable);
+                            logger.warn("An exception occurred during work packages abort on [{}] processor.",
+                                        name,
+                                        throwable);
                         } else {
                             logger.debug("Work packages have aborted successfully.");
                         }
@@ -957,8 +961,11 @@ class Coordinator {
                                () -> tokenStore.releaseClaim(name, work.segment().getSegmentId())
                        ))
                        .exceptionally(throwable -> {
-                           logger.info("An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
-                                       work.segment().getSegmentId(), name, throwable);
+                           logger.info(
+                                   "An exception occurred during the abort of work package for segment [{}] on [{}] processor.",
+                                   work.segment().getSegmentId(),
+                                   name,
+                                   throwable);
                            return null;
                        });
         }

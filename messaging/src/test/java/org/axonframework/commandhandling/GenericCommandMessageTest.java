@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericCommandMessageTest {
 
     @Test
-    void testConstructor() {
+    void constructor() {
         Object payload = new Object();
         CommandMessage<Object> message1 = asCommandMessage(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
@@ -62,7 +62,7 @@ class GenericCommandMessageTest {
     }
 
     @Test
-    void testWithMetaData() {
+    void withMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -76,7 +76,7 @@ class GenericCommandMessageTest {
     }
 
     @Test
-    void testAndMetaData() {
+    void andMetaData() {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -102,7 +102,7 @@ class GenericCommandMessageTest {
     }
 
     @Test
-    void testAsCommandMessageWrapsPayload() {
+    void asCommandMessageWrapsPayload() {
         String expectedPayload = "some-payload";
 
         CommandMessage<Object> result = asCommandMessage(expectedPayload);
@@ -115,7 +115,7 @@ class GenericCommandMessageTest {
     }
 
     @Test
-    void testAsCommandMessageReturnsCommandMessageAsIs() {
+    void asCommandMessageReturnsCommandMessageAsIs() {
         CommandMessage<String> expected = new GenericCommandMessage<>("some-payload", MetaData.with("key", "value"));
 
         CommandMessage<Object> result = asCommandMessage(expected);
@@ -124,7 +124,7 @@ class GenericCommandMessageTest {
     }
 
     @Test
-    void testAsCommandMessageRetrievesPayloadAndMetaDataFromMessageImplementations() {
+    void asCommandMessageRetrievesPayloadAndMetaDataFromMessageImplementations() {
         String expectedPayload = "some-payload";
         MetaData expectedMetaData = MetaData.with("key", "value");
 

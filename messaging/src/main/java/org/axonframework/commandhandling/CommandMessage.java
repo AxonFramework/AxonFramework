@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.Message;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a Message carrying a command as its payload. These messages carry an intention to change application
@@ -49,7 +50,7 @@ public interface CommandMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    CommandMessage<T> withMetaData(Map<String, ?> metaData);
+    CommandMessage<T> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
      * Returns a copy of this CommandMessage with it MetaData merged with the given {@code metaData}. The payload
@@ -59,5 +60,5 @@ public interface CommandMessage<T> extends Message<T> {
      * @return a copy of this message with the given MetaData
      */
     @Override
-    CommandMessage<T> andMetaData(Map<String, ?> metaData);
+    CommandMessage<T> andMetaData(@Nonnull Map<String, ?> metaData);
 }

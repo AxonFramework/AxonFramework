@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.ExceptionUtils;
 
 import java.beans.ConstructorProperties;
 import java.io.Serializable;
@@ -38,6 +39,7 @@ public class RemoteExceptionDescription implements Serializable {
     private static final String CAUSED_BY = "\nCaused by ";
 
     private final List<String> descriptions;
+    private final boolean persistent;
 
     /**
      * Provide a description as a {@link List} of {@link String}s of all the causes in the given {@code exception}.
@@ -46,7 +48,8 @@ public class RemoteExceptionDescription implements Serializable {
      * @return a {@link List} of {@link String} describing the given {@link Exception}
      */
     public static RemoteExceptionDescription describing(Throwable exception) {
-        return new RemoteExceptionDescription(createDescription(exception, new ArrayList<>()));
+        final boolean isPersistent = ExceptionUtils.isExplicitlyNonTransient(exception);
+        return new RemoteExceptionDescription(createDescription(exception, new ArrayList<>()), isPersistent);
     }
 
     private static List<String> createDescription(Throwable exception, List<String> descriptions) {
@@ -61,10 +64,33 @@ public class RemoteExceptionDescription implements Serializable {
      *
      * @param descriptions a {@link List} of {@link String}s, each describing a single "cause" on the remote end
      */
-    @JsonCreator
-    @ConstructorProperties({"descriptions"})
     public RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions) {
+        this(descriptions, false);
+    }
+
+    /**
+     * Initialize a RemoteExceptionDescription with given {@code descriptions} describing the exception
+     * chain on the remote end of communication. The {@code persistent} indicator defines whether the exception is
+     * considered persistent or transient.
+     *
+     * @param descriptions a {@link List} of {@link String}s, each describing a single "cause" on the remote end
+     * @param persistent an indicator whether the exception is considered persistent or transient
+     */
+    @JsonCreator
+    @ConstructorProperties({"descriptions, persistent"})
+    public RemoteExceptionDescription(@JsonProperty("descriptions") List<String> descriptions,
+                                      @JsonProperty("persistent") boolean persistent) {
+        this.persistent = persistent;
         this.descriptions = new ArrayList<>(descriptions);
+    }
+
+    /**
+     * Returns whether the exception is considered persistent or not.
+     *
+     * @return the persistency indicator
+     */
+    public boolean isPersistent() {
+        return persistent;
     }
 
     /**

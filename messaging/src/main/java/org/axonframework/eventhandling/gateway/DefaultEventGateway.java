@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * Default implementation of the EventGateway interface. It allow configuration of
@@ -60,7 +61,7 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     }
 
     @Override
-    public void publish(List<?> events) {
+    public void publish(@Nonnull List<?> events) {
         events.forEach(this::publish);
     }
 
@@ -73,7 +74,7 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
     public static class Builder extends AbstractEventGateway.Builder {
 
         @Override
-        public Builder eventBus(EventBus eventBus) {
+        public Builder eventBus(@Nonnull EventBus eventBus) {
             super.eventBus(eventBus);
             return this;
         }

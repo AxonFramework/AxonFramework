@@ -1,27 +1,11 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright (c) 2010-2017. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,10 +30,11 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -73,7 +58,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
-        AxonServerAutoConfiguration.class
+        AxonServerBusAutoConfiguration.class,
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
@@ -86,7 +73,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
     private EntityManager entityManager;
 
     @Test
-    void testContextInitialization() {
+    void contextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
@@ -96,7 +83,8 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertNotNull(applicationContext.getBean("messageSerializer", Serializer.class));
         assertNotNull(applicationContext.getBean("eventSerializer", Serializer.class));
-        AxonConfiguration axonConfiguration = applicationContext.getBean(AxonConfiguration.class);
+        org.axonframework.config.Configuration axonConfiguration =
+                applicationContext.getBean(org.axonframework.config.Configuration.class);
         assertSame(axonConfiguration.serializer(), axonConfiguration.eventSerializer());
         assertNotSame(axonConfiguration.serializer(), axonConfiguration.messageSerializer());
         assertNotSame(axonConfiguration.messageSerializer(), axonConfiguration.eventSerializer());
@@ -107,11 +95,11 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
         assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
-        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(6, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
     @Test
-    void testEventStorageEngineUsesSerializerBean() {
+    void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final Serializer messageSerializer = applicationContext.getBean("messageSerializer", Serializer.class);
@@ -123,7 +111,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
     }
 
     @Test
-    void testEventSerializerIsOfTypeJacksonSerializerAndUsesDefinedObjectMapperBean() {
+    void eventSerializerIsOfTypeJacksonSerializerAndUsesDefinedObjectMapperBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final ObjectMapper objectMapper = applicationContext.getBean("testObjectMapper", ObjectMapper.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.lifecycle.ShutdownHandler;
 import org.axonframework.messaging.Distributed;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
@@ -59,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DistributedCommandBus implements CommandBus, Distributed<CommandBus> {
+public class DistributedCommandBus implements CommandBus, Distributed<CommandBus>, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -113,7 +114,6 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * Disconnect the command bus for receiving new commands, by unsubscribing all registered command handlers. This
      * shutdown operation is performed in the {@link Phase#INBOUND_COMMAND_CONNECTOR} phase.
      */
-    @ShutdownHandler(phase = Phase.INBOUND_COMMAND_CONNECTOR)
     public void disconnect() {
         commandRouter.updateMembership(loadFactor, DenyAll.INSTANCE);
     }
@@ -125,13 +125,18 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
-    @ShutdownHandler(phase = Phase.OUTBOUND_COMMAND_CONNECTORS)
     public CompletableFuture<Void> shutdownDispatching() {
         return connector.initiateShutdown();
     }
 
     @Override
-    public <C> void dispatch(CommandMessage<C> command) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onShutdown(Phase.INBOUND_COMMAND_CONNECTOR, this::disconnect);
+        handle.onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS, this::shutdownDispatching);
+    }
+
+    @Override
+    public <C> void dispatch(@Nonnull CommandMessage<C> command) {
         if (defaultCommandCallback != null) {
             dispatch(command, defaultCommandCallback);
             return;
@@ -153,7 +158,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
                 }
             } else {
                 loggingCallback.onResult(interceptedCommand, asCommandResultMessage(new NoHandlerForCommandException(
-                        format("No node known to accept [%s]", interceptedCommand.getCommandName())
+                        format("No node known to accept command [%s].", interceptedCommand.getCommandName())
                 )));
             }
         } else {
@@ -167,7 +172,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
      */
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
+    public <C, R> void dispatch(@Nonnull CommandMessage<C> command,
+                                @Nonnull CommandCallback<? super C, ? super R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Optional<Member> optionalDestination = commandRouter.findDestination(interceptedCommand);
@@ -186,7 +192,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
             }
         } else {
             NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                    format("No node known to accept [%s]", interceptedCommand.getCommandName())
+                    format("No node known to accept command [%s].", interceptedCommand.getCommandName())
             );
             messageMonitorCallback.reportFailure(exception);
             callback.onResult(interceptedCommand, asCommandResultMessage(exception));
@@ -208,7 +214,8 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * In the DistributedCommandBus, the handler is subscribed to the local segment only.
      */
     @Override
-    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>> handler) {
         logger.debug("Subscribing command with name [{}] to this distributed CommandBus. "
                              + "Expect similar logging on the local segment.", commandName);
         Registration reg = connector.subscribe(commandName, handler);
@@ -264,14 +271,14 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * @return handle to unregister the interceptor
      */
     public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return connector.registerHandlerInterceptor(handlerInterceptor);
     }
 

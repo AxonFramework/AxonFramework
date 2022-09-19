@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,6 +157,33 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectException(Matcher<?> matcher);
+
+    /**
+     * Expect the given {@code exceptionDetails} to occur during command handler execution. The actual exception details
+     * should be exactly the same as {@code exceptionDetails}.
+     *
+     * @param exceptionDetails The exception details expected from the command handler execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Object exceptionDetails);
+
+    /**
+     * Expect the given {@code exceptionDetails} type to occur during command handler execution. The actual exception details
+     * should be exactly of that type, subclasses are not accepted.
+     *
+     * @param exceptionDetails The type of exception details expected from the command handler execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Class<?> exceptionDetails);
+
+    /**
+     * Expect exception details to occur during command handler execution that matches with the given {@code
+     * matcher}.
+     *
+     * @param matcher The matcher to validate the actual exception details
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectExceptionDetails(Matcher<?> matcher);
 
     /**
      * Expect a successful execution of the given command handler, regardless of the actual return value.
@@ -391,12 +418,66 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
-     * Asserts that deadlines match given {@code matcher} have been met (which have passed in time) on this aggregate.
+     * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and {@code from} times, where {@code to} and
+     * {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from    the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to      the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param matcher the matcher defining the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
+     * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from     the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to       the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadline the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
+
+    /**
+     * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadlineType the type of the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
+
+    /**
+     * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times, where {@code to}
+     * and {@code from} are inclusive. Can be used to validate if a deadline has never been set or has been canceled within a given timeframe.
+     *
+     * @param from         the time from which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param to           the time until which no deadline equal to the given {@code deadline} should be scheduled (inclusive)
+     * @param deadlineName the name of the deadline which should not be scheduled
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
+
+    /**
+     * Asserts that deadlines matching the given {@code matcher} have been met (which have passed in time) on this aggregate.
      *
      * @param matcher The matcher that defines the expected list of deadlines
      * @return the current ResultValidator, for fluent interfacing
+     * @deprecated in favor of {@link #expectTriggeredDeadlinesMatching(Matcher)}
      */
+    @Deprecated
     ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+
+    /**
+     * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
+     *
+     * @param matcher the matcher that defines the expected list of deadlines
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
 
     /**
      * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
@@ -404,8 +485,39 @@ public interface ResultValidator<T> {
      *
      * @param expected The sequence of deadlines expected to be met
      * @return the current ResultValidator, for fluent interfacing
+     * @deprecated in favor of {@link #expectTriggeredDeadlines(Object...)}
      */
+    @Deprecated
     ResultValidator<T> expectDeadlinesMet(Object... expected);
+
+    /**
+     * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared by their type
+     * and fields using "equals".
+     *
+     * @param expected the sequence of deadlines expected to have been triggered
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectTriggeredDeadlines(Object... expected);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineNames} have been triggered. Matches that the given names are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getDeadlineName()}.
+     *
+     * @param expectedDeadlineNames the sequence of deadline names expected to have been triggered
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+
+    /**
+     * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
+     * complete, in the same order and match the triggered deadlines by validating with {@link
+     * DeadlineMessage#getPayloadType()}.
+     *
+     * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 
     /**
      * Asserts that the Aggregate has been marked for deletion.

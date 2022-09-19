@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +18,12 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.quartz.JobDataMap;
 
 import java.io.ObjectInputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class LegacyAwareJobDataBinderTest {
@@ -37,7 +36,7 @@ class LegacyAwareJobDataBinderTest {
     }
 
     @Test
-    void testReadLegacyInstance() {
+    void readLegacyInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get("org.axonframework.domain.EventMessage")).thenAnswer(
                 i -> {
@@ -57,7 +56,7 @@ class LegacyAwareJobDataBinderTest {
     }
 
     @Test
-    void testReadRecentInstance() {
+    void readRecentInstance() {
         JobDataMap legacyJobDataMap = mock(JobDataMap.class);
         when(legacyJobDataMap.get(EventMessage.class.getName())).thenReturn(new GenericEventMessage<>("new"));
 

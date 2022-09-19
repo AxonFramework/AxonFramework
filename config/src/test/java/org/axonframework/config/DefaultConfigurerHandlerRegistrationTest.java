@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2021. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterCommandHandler() {
+    void registerCommandHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
         Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
@@ -65,7 +65,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterQueryHandler() {
+    void registerQueryHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
         Configuration config = baseConfigurer.registerQueryHandler(c -> new QueryHandlingComponent(handled))
@@ -78,7 +78,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     }
 
     @Test
-    void testRegisterMessageHandler() {
+    void registerMessageHandler() {
         AtomicReference<MessageHandlingComponent> commandHandled = new AtomicReference<>();
         AtomicReference<MessageHandlingComponent> eventHandled = new AtomicReference<>();
         AtomicReference<MessageHandlingComponent> queryHandled = new AtomicReference<>();
@@ -99,7 +99,6 @@ class DefaultConfigurerHandlerRegistrationTest {
 
         assertSame(queryHandled.get(), eventHandled.get());
         assertSame(queryHandled.get(), commandHandled.get());
-
     }
 
     private static class SomeCommand {

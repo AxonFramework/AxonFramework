@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
-import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -42,8 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
     @Test
-    void testEventStore() {
+    void eventStore() {
         new ApplicationContextRunner()
+                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(TestContext.class)
                 .run(context -> {
                     assertThat(context).hasSingleBean(JpaEventStorageEngine.class);
@@ -53,10 +53,10 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
     }
 
     @Test
-    void testEventBusOverridesEventStoreDefinition() {
+    void eventBusOverridesEventStoreDefinition() {
         new ApplicationContextRunner()
-                .withUserConfiguration(EventBusContext.class,
-                                       TestContext.class)
+                .withPropertyValues("axon.axonserver.enabled=false")
+                .withUserConfiguration(EventBusContext.class, TestContext.class)
                 .run(context -> {
                     assertThat(context).hasBean("simpleEventBus");
                     assertThat(context).getBean(EventBus.class).isInstanceOf(SimpleEventBus.class);
@@ -66,7 +66,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
     }
 
     @ContextConfiguration
-    @EnableAutoConfiguration(exclude = {AxonServerAutoConfiguration.class})
+    @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class TestContext {
 

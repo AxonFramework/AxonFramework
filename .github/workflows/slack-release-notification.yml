@@ -1,0 +1,23 @@
+name: Announce release on Slack
+
+on:
+  # Triggers the workflow on new release
+    release:
+      types: [ published ]
+
+jobs:
+  my-job:
+    name: Slack notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send release notification data to Slack workflow
+        id: slack
+        uses: slackapi/slack-github-action@v1.22.0
+        with:
+          payload: |
+            {
+              "release-name": "${{ github.event.release.name }}",
+              "release-url" : "${{ github.event.release.html_url }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

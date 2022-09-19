@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -40,11 +41,12 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -56,7 +58,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 3.0
  */
-public interface Configuration {
+public interface Configuration extends LifecycleOperations {
 
     /**
      * Retrieves the Event Bus defined in this Configuration.
@@ -89,7 +91,7 @@ public interface Configuration {
      * @return configuration modules of {@code moduleType} defined in this configuration
      */
     @SuppressWarnings("unchecked")
-    default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
+    default <T extends ModuleConfiguration> List<T> findModules(@Nonnull Class<T> moduleType) {
         return getModules().stream()
                            .filter(m -> m.isType(moduleType))
                            .map(m -> (T) m.unwrap())
@@ -195,13 +197,22 @@ public interface Configuration {
     }
 
     /**
+     * Returns the {@link SpanFactory} defined in this configuration.
+     *
+     * @return the {@link SpanFactory} defined in this configuration.
+     */
+    default SpanFactory spanFactory() {
+        return getComponent(SpanFactory.class);
+    }
+
+    /**
      * Returns the {@link AggregateConfiguration} for the given {@code aggregateType}.
      *
      * @param aggregateType the aggregate type to find the {@link AggregateConfiguration} for
      * @param <A>           the aggregate type
      * @return the {@link AggregateConfiguration} for the given {@code aggregateType}
      */
-    default <A> AggregateConfiguration<A> aggregateConfiguration(Class<A> aggregateType) {
+    default <A> AggregateConfiguration<A> aggregateConfiguration(@Nonnull Class<A> aggregateType) {
         //noinspection unchecked
         return findModules(AggregateConfiguration.class)
                 .stream()
@@ -220,7 +231,7 @@ public interface Configuration {
      * @param <A>           the aggregate type
      * @return the {@link Repository} from which aggregates of the given {@code aggregateType} can be loaded
      */
-    default <A> Repository<A> repository(Class<A> aggregateType) {
+    default <A> Repository<A> repository(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).repository();
     }
 
@@ -231,7 +242,7 @@ public interface Configuration {
      * @param <A>           the aggregate type
      * @return the {@link AggregateFactory} which constructs aggregate of the given {@code aggregateType}
      */
-    default <A> AggregateFactory<A> aggregateFactory(Class<A> aggregateType) {
+    default <A> AggregateFactory<A> aggregateFactory(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).aggregateFactory();
     }
 
@@ -243,7 +254,7 @@ public interface Configuration {
      * @param <T>           The type of component
      * @return the component registered for the given type, or {@code null} if no such component exists
      */
-    default <T> T getComponent(Class<T> componentType) {
+    default <T> T getComponent(@Nonnull Class<T> componentType) {
         return getComponent(componentType, () -> null);
     }
 
@@ -259,7 +270,7 @@ public interface Configuration {
      * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
      * if no component was registered
      */
-    <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl);
+    <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl);
 
     /**
      * Returns the message monitor configured for a component of given {@code componentType} and {@code componentName}.
@@ -269,7 +280,8 @@ public interface Configuration {
      * @param <M>           The type of message the monitor can deal with
      * @return The monitor to be used for the described component
      */
-    <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName);
+    <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+                                                                    @Nonnull String componentName);
 
     /**
      * Returns the serializer defined in this Configuration
@@ -358,114 +370,20 @@ public interface Configuration {
     }
 
     /**
+     * Returns the {@link ScopeAwareProvider} defined in the Configuration.
+     *
+     * @return the {@link ScopeAwareProvider} defined in the Configuration
+     */
+    default ScopeAwareProvider scopeAwareProvider() {
+        return getComponent(ScopeAwareProvider.class);
+    }
+
+    /**
      * Returns all modules that have been registered with this Configuration.
      *
      * @return all modules that have been registered with this Configuration
      */
     List<ModuleConfiguration> getModules();
-
-    /**
-     * Registers a {@code startHandler} to be executed in the default phase {@code 0} when this Configuration is
-     * started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param startHandler the handler to execute when the configuration is started
-     * @see #start()
-     */
-    default void onStart(Runnable startHandler) {
-        onStart(0, startHandler);
-    }
-
-    /**
-     * Registers a {@code startHandler} to be executed in the given {@code phase} when this Configuration is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to execute when the configuration is started
-     * @see #start()
-     */
-    default void onStart(int phase, Runnable startHandler) {
-        onStart(phase, () -> {
-            try {
-                startHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code startHandler} to be executed in the given {@code phase} when this Configuration
-     * is started.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
-     *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to be executed asynchronously when the configuration is started
-     * @see #start()
-     */
-    void onStart(int phase, LifecycleHandler startHandler);
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the default phase {@code 0} when the Configuration is shut
-     * down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see #shutdown()
-     */
-    default void onShutdown(Runnable shutdownHandler) {
-        onShutdown(0, shutdownHandler);
-    }
-
-    /**
-     * Registers a {@code shutdownHandler} to be executed in the given {@code phase} when the Configuration is shut
-     * down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see #shutdown()
-     */
-    default void onShutdown(int phase, Runnable shutdownHandler) {
-        onShutdown(phase, () -> {
-            try {
-                shutdownHandler.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                CompletableFuture<?> exceptionResult = new CompletableFuture<>();
-                exceptionResult.completeExceptionally(e);
-                return exceptionResult;
-            }
-        });
-    }
-
-    /**
-     * Registers an asynchronous {@code shutdownHandler} to be executed in the given {@code phase} when the
-     * Configuration is shut down.
-     * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
-     *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to be executed asynchronously when the Configuration is shut down
-     * @see #shutdown()
-     */
-    void onShutdown(int phase, LifecycleHandler shutdownHandler);
 
     /**
      * Returns the EventUpcasterChain with all registered upcasters.

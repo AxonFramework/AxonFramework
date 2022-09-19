@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.ResultMessage;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
 
@@ -63,11 +64,13 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public <R> ResultMessage<R> executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
+    public <R> ResultMessage<R> executeWithResult(Callable<R> task,
+                                                  @Nonnull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED,
+                     () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
         ResultMessage<R> resultMessage;
         try {
