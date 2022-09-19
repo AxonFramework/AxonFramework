@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
+import org.axonframework.spring.modelling.SpringRepositoryFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,8 @@ import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
 
 /**
- * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a {@link
- * SpringAggregateConfigurer configurer} for each Aggregate found.
+ * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a
+ * {@link SpringAggregateConfigurer configurer} for each Aggregate found.
  *
  * @author Allard Buijze
  * @since 4.6.0
@@ -186,10 +187,21 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         }
         if (nonEmptyOrNull((String) props.get(REPOSITORY))) {
             beanDefinitionBuilder.addPropertyValue(REPOSITORY, props.get(REPOSITORY));
-        } else if (registry.containsBean(aggregateBeanName + REPOSITORY_BEAN)) {
-            Class<?> type = registry.getType(aggregateBeanName + REPOSITORY_BEAN);
-            if (type == null || Repository.class.isAssignableFrom(type)) {
-                beanDefinitionBuilder.addPropertyReference(REPOSITORY, aggregateBeanName + REPOSITORY_BEAN);
+        } else {
+            String repositoryBeanName = aggregateBeanName + REPOSITORY_BEAN;
+            if (registry.containsBean(repositoryBeanName)) {
+                Class<?> type = registry.getType(repositoryBeanName);
+                if (type == null || Repository.class.isAssignableFrom(type)) {
+                    beanDefinitionBuilder.addPropertyReference(REPOSITORY, repositoryBeanName);
+                }
+            } else {
+                ((BeanDefinitionRegistry) registry).registerBeanDefinition(
+                        repositoryBeanName,
+                        BeanDefinitionBuilder.genericBeanDefinition(SpringRepositoryFactoryBean.class)
+                                             .addConstructorArgValue(aggregateType)
+                                             .addAutowiredProperty("configuration")
+                                             .getBeanDefinition()
+                );
             }
         }
         String aggregateFactory = aggregateBeanName + "AggregateFactory";

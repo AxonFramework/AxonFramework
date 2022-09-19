@@ -25,15 +25,17 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -43,8 +45,7 @@ import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.stereotype.Component;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AxonAutoConfigurationWithDisruptorTest {
 
@@ -66,6 +67,8 @@ class AxonAutoConfigurationWithDisruptorTest {
                     assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
                     assertNotNull(applicationContext.getBean(Context.MySaga.class));
                     assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
+                    assertNotNull(applicationContext.getBean(Repository.class));
+                    assertNotNull(applicationContext.getBean(AggregateFactory.class));
                     org.axonframework.config.Configuration configuration = applicationContext.getBean(org.axonframework.config.Configuration.class);
                     assertEquals(2, configuration.correlationDataProviders().size());
                 });
