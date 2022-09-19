@@ -222,6 +222,9 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
          * @return a {@link XStreamSerializer} as specified through this Builder
          */
         public XStreamSerializer build() {
+            if (xStream == null) {
+                xStream = new XStream(new CompactDriver());
+            }
             return new XStreamSerializer(this);
         }
     }
