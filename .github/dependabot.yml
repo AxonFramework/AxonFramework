@@ -54,4 +54,4 @@ updates:
     - "Morlack"
     - "smcvb" # Main
     - "YvonneCeelie"
-  target-branch: "axon-4.5.x"
+  target-branch: "axon-4.6.x"
