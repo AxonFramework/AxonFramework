@@ -83,7 +83,7 @@
         <mockito.version>4.8.0</mockito.version>
         <projectreactor.version>3.4.23</projectreactor.version>
         <micrometer.version>1.9.3</micrometer.version>
-        <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.2.12</dropwizard.metrics.version>
         <jackson.version>2.13.3</jackson.version>
 
         <!-- Validation -->
