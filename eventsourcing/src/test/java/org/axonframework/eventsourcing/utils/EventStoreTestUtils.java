@@ -66,7 +66,7 @@ public abstract class EventStoreTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(long sequenceNumber) {
-        return createEvent(IdentifierFactory.getInstance().generateIdentifier(), sequenceNumber);
+        return createEvent(AGGREGATE, sequenceNumber);
     }
 
     public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
