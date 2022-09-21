@@ -84,7 +84,7 @@
         <projectreactor.version>3.4.23</projectreactor.version>
         <micrometer.version>1.9.4</micrometer.version>
         <dropwizard.metrics.version>4.2.12</dropwizard.metrics.version>
-        <jackson.version>2.13.3</jackson.version>
+        <jackson.version>2.13.4</jackson.version>
 
         <!-- Validation -->
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
