@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -55,7 +54,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-class EmbeddedEventStoreTest {
+public abstract class EmbeddedEventStoreTest {
 
     private static final int CACHED_EVENTS = 10;
     private static final long FETCH_DELAY = 1000;
@@ -70,10 +69,17 @@ class EmbeddedEventStoreTest {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        storageEngine = spy(new InMemoryEventStorageEngine());
+        storageEngine = spy(createStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
     }
+
+    /**
+     * Create the {@link EventStorageEngine} used during testing.
+     *
+     * @return The {@link EventStorageEngine} used during testing.
+     */
+    public abstract EventStorageEngine createStorageEngine();
 
     private void newTestSubject(int cachedEvents,
                                 long fetchDelay,
@@ -100,6 +106,7 @@ class EmbeddedEventStoreTest {
     void existingEventIsPassedToReader() throws Exception {
         DomainEventMessage<?> expected = createEvent();
         testSubject.publish(expected);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> actual = stream.nextAvailable();
@@ -112,6 +119,7 @@ class EmbeddedEventStoreTest {
     @Test
     @Timeout(value = FETCH_DELAY / 10, unit = MILLISECONDS)
     void eventPublishedAfterOpeningStreamIsPassedToReaderImmediately() throws Exception {
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
         DomainEventMessage<?> expected = createEvent();
@@ -131,6 +139,7 @@ class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void readingIsBlockedWhenStoreIsEmpty() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
@@ -145,12 +154,13 @@ class EmbeddedEventStoreTest {
     void readingIsBlockedWhenEndOfStreamIsReached() throws Exception {
         testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().limit(2).forEach(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
         assertEquals(1, lock.getCount());
-        testSubject.publish(createEvent());
+        testSubject.publish(createEvent("unique-aggregate-id", 0));
         t.join();
         assertEquals(0, lock.getCount());
     }
@@ -160,8 +170,10 @@ class EmbeddedEventStoreTest {
     void readingCanBeContinuedUsingLastToken() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         testSubject.publish(events);
+        //noinspection resource
         TrackedEventMessage<?> first = testSubject.openStream(null).nextAvailable();
         TrackingToken firstToken = first.trackingToken();
+        //noinspection resource
         TrackedEventMessage<?> second = testSubject.openStream(firstToken).nextAvailable();
         assertEquals(events.get(0).getIdentifier(), first.getIdentifier());
         assertEquals(events.get(1).getIdentifier(), second.getIdentifier());
@@ -172,6 +184,7 @@ class EmbeddedEventStoreTest {
     void eventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
+        //noinspection resource
         Thread t = new Thread(() -> testSubject.openStream(null).asStream().limit(2).forEach(event -> {
             lock.countDown();
             events.add(event);
@@ -181,6 +194,7 @@ class EmbeddedEventStoreTest {
         testSubject.publish(createEvents(2));
         t.join();
 
+        //noinspection resource
         TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken()).nextAvailable();
         assertSame(events.get(1), second);
     }
@@ -189,6 +203,7 @@ class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void periodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         CountDownLatch lock = new CountDownLatch(1);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
@@ -203,6 +218,7 @@ class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void consumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20, OPTIMIZE_EVENT_CONSUMPTION);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
         testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
@@ -251,6 +267,7 @@ class EmbeddedEventStoreTest {
                                     .thenAnswer(new SynchronizedBooleanAnswer(true));
         when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1),
                                                                               createEvent()));
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
         testSubject.publish(createEvent());
@@ -360,6 +377,7 @@ class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void customThreadFactoryIsUsed() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
+        //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
@@ -372,8 +390,8 @@ class EmbeddedEventStoreTest {
     }
 
     @Test
-    void openStreamReadsEventsFromAnEventProducedByVerifyThreadFactoryOperation()
-            throws InterruptedException {
+    void openStreamReadsEventsFromAnEventProducedByVerifyThreadFactoryOperation() throws InterruptedException {
+        //noinspection resource
         TrackingEventStream eventStream = testSubject.openStream(null);
 
         assertFalse(eventStream.hasNextAvailable()); // There are no events published yet, so stream will tail
@@ -396,9 +414,9 @@ class EmbeddedEventStoreTest {
     void tailingConsumptionThreadIsNeverCreatedIfEventConsumptionOptimizationIsSwitchedOff()
             throws InterruptedException {
         boolean doNotOptimizeEventConsumption = false;
-        //noinspection ConstantConditions
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, doNotOptimizeEventConsumption);
 
+        //noinspection resource
         TrackingEventStream eventStream = testSubject.openStream(null);
         testSubject.publish(createEvents(5));
 
@@ -415,9 +433,9 @@ class EmbeddedEventStoreTest {
     void eventStreamKeepsReturningEventsIfEventConsumptionOptimizationIsSwitchedOff()
             throws InterruptedException {
         boolean doNotOptimizeEventConsumption = false;
-        //noinspection ConstantConditions
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, doNotOptimizeEventConsumption);
 
+        //noinspection resource
         TrackingEventStream eventStream = testSubject.openStream(null);
 
         assertFalse(eventStream.hasNextAvailable()); // There are no events published yet, so should be false
