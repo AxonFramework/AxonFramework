@@ -37,6 +37,7 @@ import org.mockito.stubbing.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
@@ -236,17 +237,19 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void loadWithoutSnapshot() {
-        testSubject.publish(createEvents(110));
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        String aggregateId = UUID.randomUUID().toString();
+        testSubject.publish(createEvents(() -> aggregateId, 110));
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
     }
 
     @Test
     void loadWithSnapshot() {
-        testSubject.publish(createEvents(110));
-        storageEngine.storeSnapshot(createEvent(30));
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        String aggregateId = UUID.randomUUID().toString();
+        testSubject.publish(createEvents(() -> aggregateId, 110));
+        storageEngine.storeSnapshot(createEvent(aggregateId, 30));
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110 - 30, eventMessages.size());
         assertEquals(30, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -279,10 +282,11 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void loadWithFailingSnapshot() {
-        testSubject.publish(createEvents(110));
-        storageEngine.storeSnapshot(createEvent(30));
-        when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        String aggregateId = UUID.randomUUID().toString();
+        testSubject.publish(createEvents(() -> aggregateId, 110));
+        storageEngine.storeSnapshot(createEvent(aggregateId, 30));
+        when(storageEngine.readSnapshot(aggregateId)).thenThrow(new MockException());
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -290,47 +294,50 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void loadEventsAfterPublishingInSameUnitOfWork() {
-        List<DomainEventMessage<?>> events = createEvents(10);
+        String aggregateId = UUID.randomUUID().toString();
+        List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork.startAndGet(null)
                          .execute(() -> {
-                             assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+                             assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
                              testSubject.publish(events.subList(2, events.size()));
-                             assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+                             assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
                          });
     }
 
     @Test
     void loadEventsWithOffsetAfterPublishingInSameUnitOfWork() {
-        List<DomainEventMessage<?>> events = createEvents(10);
+        String aggregateId = UUID.randomUUID().toString();
+        List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork.startAndGet(null)
                          .execute(() -> {
-                             assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+                             assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
                              testSubject.publish(events.subList(2, events.size()));
-                             assertEquals(8, testSubject.readEvents(AGGREGATE, 2).asStream().count());
+                             assertEquals(8, testSubject.readEvents(aggregateId, 2).asStream().count());
                          });
     }
 
     @Test
     void eventsAppendedInvisibleUntilUnitOfWorkIsCommitted() {
-        List<DomainEventMessage<?>> events = createEvents(10);
+        String aggregateId = UUID.randomUUID().toString();
+        List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, events.size()));
 
         CurrentUnitOfWork.clear(unitOfWork);
         // working outside the context of the UoW now
-        assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+        assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
         CurrentUnitOfWork.set(unitOfWork);
         // Back in the context
-        assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+        assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
         unitOfWork.rollback();
 
-        assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+        assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
     }
 
     @Test
@@ -352,7 +359,8 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void stagedEventsNotDuplicatedAfterCommit() {
-        List<DomainEventMessage<?>> events = createEvents(10);
+        String aggregateId = UUID.randomUUID().toString();
+        List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         DefaultUnitOfWork<Message<?>> outerUoW = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, 4));
@@ -360,7 +368,7 @@ public abstract class EmbeddedEventStoreTest {
         testSubject.publish(events.subList(4, events.size()));
 
         Consumer<UnitOfWork<Message<?>>> assertCorrectEventCount =
-                uow -> assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+                uow -> assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
 
         innerUoW.onPrepareCommit(assertCorrectEventCount);
         innerUoW.afterCommit(assertCorrectEventCount);
