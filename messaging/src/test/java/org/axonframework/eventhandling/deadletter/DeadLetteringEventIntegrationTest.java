@@ -469,7 +469,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         publishingThread.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        assertWithin(2, TimeUnit.SECONDS, () -> {
+        assertWithin(10, TimeUnit.SECONDS, () -> {
             OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
             assertTrue(optionalPosition.isPresent());
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());

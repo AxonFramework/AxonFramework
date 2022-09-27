@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueu
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.utils.PostgresTestContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -41,7 +42,6 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -60,7 +60,6 @@ import javax.sql.DataSource;
 
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(classes = SpringJpaDeadLetteringIntegrationTest.TestContext.class)
 @TestPropertySource("classpath:hsqldb.database.properties")
 class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
@@ -69,6 +68,16 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
     @Autowired
     private EntityManagerProvider entityManagerProvider;
+
+    @BeforeAll
+    public static void start() {
+        PostgresTestContainer.getInstance().start();
+    }
+
+    @AfterAll
+    public static void stop() {
+        PostgresTestContainer.getInstance().stop();
+    }
 
     @BeforeEach
     public void clear() {
