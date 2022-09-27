@@ -16,20 +16,18 @@
 
 package org.axonframework.spring.utils;
 
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.MySQLContainer;
 
-public class PostgresTestContainer extends PostgreSQLContainer<PostgresTestContainer> {
+public class MysqlTestContainer extends MySQLContainer<MysqlTestContainer> {
+    private static MysqlTestContainer container;
 
-    private static final String IMAGE_VERSION = "postgres:11.1";
-    private static PostgresTestContainer container;
-
-    private PostgresTestContainer() {
-        super(IMAGE_VERSION);
+    public MysqlTestContainer() {
+        super("mysql:latest");
     }
 
-    public static PostgresTestContainer getInstance() {
+    public static MysqlTestContainer getInstance() {
         if (container == null) {
-            container = new PostgresTestContainer();
+            container = new MysqlTestContainer();
         }
         return container;
     }

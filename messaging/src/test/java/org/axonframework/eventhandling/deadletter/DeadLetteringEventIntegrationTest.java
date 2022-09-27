@@ -438,7 +438,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     void publishEventsAndProcessDeadLettersConcurrentlyInBulkShouldWorkFine() throws InterruptedException {
         int immediateSuccessesPerAggregate = 5;
         int failFirstAndThenSucceedPerAggregate = 4;
@@ -446,7 +446,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedSuccessfulEvaluationCount = failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate;
         int expectedOverallSuccessfulHandlingCount = immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
 
-        int publishingRuns = 100;
+        int publishingRuns = 40;
         int totalNumberOfEvents =
                 (immediateSuccessesPerAggregate + failFirstAndThenSucceedPerAggregate) * publishingRuns;
 
@@ -469,7 +469,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         publishingThread.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        assertWithin(10, TimeUnit.SECONDS, () -> {
+        assertWithin(15, TimeUnit.SECONDS, () -> {
             OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
             assertTrue(optionalPosition.isPresent());
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());

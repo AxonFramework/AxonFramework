@@ -26,12 +26,11 @@ import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueu
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.spring.utils.PostgresTestContainer;
+import org.axonframework.spring.utils.MysqlTestContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -42,7 +41,6 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -60,7 +58,6 @@ import javax.sql.DataSource;
 
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@TestPropertySource("classpath:hsqldb.database.properties")
 class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Autowired
@@ -71,12 +68,12 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
     @BeforeAll
     public static void start() {
-        PostgresTestContainer.getInstance().start();
+        MysqlTestContainer.getInstance().start();
     }
 
     @AfterAll
     public static void stop() {
-        PostgresTestContainer.getInstance().stop();
+        MysqlTestContainer.getInstance().stop();
     }
 
     @BeforeEach
@@ -117,29 +114,22 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
         }
 
         @Bean
-        public DataSource dataSource(@Value("${jdbc.driverclass}") String driverClass,
-                                     @Value("${jdbc.url}") String url,
-                                     @Value("${jdbc.username}") String username,
-                                     @Value("${jdbc.password}") String password) {
-            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
-            driverManagerDataSource.setDriverClassName(driverClass);
+        public DataSource dataSource() {
+            MysqlTestContainer container = MysqlTestContainer.getInstance();
+            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(container.getJdbcUrl(), container.getUsername(), container.getPassword());
+            driverManagerDataSource.setDriverClassName(container.getDriverClassName());
             return Mockito.spy(driverManagerDataSource);
         }
 
         @Bean("entityManagerFactory")
-        public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-                @Value("${hibernate.sql.dialect}") String dialect,
-                @Value("${hibernate.sql.generateddl}") boolean generateDdl,
-                @Value("${hibernate.sql.show}") boolean showSql,
-                DataSource dataSource) {
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-            jpaVendorAdapter.setDatabasePlatform(dialect);
-            jpaVendorAdapter.setGenerateDdl(generateDdl);
-            jpaVendorAdapter.setShowSql(showSql);
+            jpaVendorAdapter.setGenerateDdl(true);
+            jpaVendorAdapter.setShowSql(false);
             entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
             entityManagerFactoryBean.setDataSource(dataSource);
