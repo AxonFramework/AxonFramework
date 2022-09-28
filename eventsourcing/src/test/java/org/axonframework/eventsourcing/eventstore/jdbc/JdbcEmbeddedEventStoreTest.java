@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
-import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.serialization.Serializer;
@@ -46,7 +45,7 @@ public class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
                                                   .eventSerializer(testSerializer)
                                                   .snapshotSerializer(testSerializer)
                                                   .connectionProvider(dataSource::getConnection)
-                                                  .transactionManager(new NoOpTransactionManager())
+                                                  .transactionManager(transactionManager)
                                                   .build());
     }
 

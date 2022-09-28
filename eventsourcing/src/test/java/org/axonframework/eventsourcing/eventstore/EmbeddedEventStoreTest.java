@@ -17,6 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.transaction.NoOpTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -46,7 +48,8 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -63,6 +66,7 @@ public abstract class EmbeddedEventStoreTest {
     private static final boolean OPTIMIZE_EVENT_CONSUMPTION = true;
 
     private EmbeddedEventStore testSubject;
+    protected TransactionManager transactionManager;
     private EventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
     private TestSpanFactory spanFactory;
@@ -70,6 +74,7 @@ public abstract class EmbeddedEventStoreTest {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
+        transactionManager = getTransactionManager();
         storageEngine = spy(createStorageEngine());
         threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
@@ -81,6 +86,19 @@ public abstract class EmbeddedEventStoreTest {
      * @return The {@link EventStorageEngine} used during testing.
      */
     public abstract EventStorageEngine createStorageEngine();
+
+    /**
+     * Create and get the {@link TransactionManager} used during testing. Defaults to a
+     * {@link org.axonframework.common.transaction.NoOpTransactionManager}.
+     *
+     * @return The {@link TransactionManager} used during testing.
+     */
+    public TransactionManager getTransactionManager() {
+        if (transactionManager == null) {
+            transactionManager = new NoOpTransactionManager();
+        }
+        return transactionManager;
+    }
 
     private void newTestSubject(int cachedEvents,
                                 long fetchDelay,
@@ -153,16 +171,22 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     @Timeout(value = 5)
     void readingIsBlockedWhenEndOfStreamIsReached() throws Exception {
-        testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
+        testSubject.publish(createEvent());
+
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
-        Thread t = new Thread(() -> stream.asStream().limit(2).forEach(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream()
+                                          .limit(2)
+                                          .forEach(event -> lock.countDown()));
         t.start();
+
         assertFalse(lock.await(100, MILLISECONDS));
         assertEquals(1, lock.getCount());
         testSubject.publish(createEvent("unique-aggregate-id", 0));
+
         t.join();
+        assertFalse(t.isAlive());
         assertEquals(0, lock.getCount());
     }
 
@@ -185,18 +209,25 @@ public abstract class EmbeddedEventStoreTest {
     void eventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
+
         //noinspection resource
-        Thread t = new Thread(() -> testSubject.openStream(null).asStream().limit(2).forEach(event -> {
-            lock.countDown();
-            events.add(event);
-        }));
+        Thread t = new Thread(() -> testSubject.openStream(null)
+                                               .asStream()
+                                               .limit(2)
+                                               .forEach(event -> {
+                                                   lock.countDown();
+                                                   events.add(event);
+                                               }));
         t.start();
+
         assertFalse(lock.await(100, MILLISECONDS));
         testSubject.publish(createEvents(2));
         t.join();
+        assertFalse(t.isAlive());
 
         //noinspection resource
-        TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken()).nextAvailable();
+        TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken())
+                                                   .nextAvailable();
         assertSame(events.get(1), second);
     }
 
@@ -204,14 +235,20 @@ public abstract class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void periodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
+        CountDownLatch lock = new CountDownLatch(1);
+
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
-        CountDownLatch lock = new CountDownLatch(1);
-        Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream()
+                                          .findFirst()
+                                          .ifPresent(event -> lock.countDown()));
         t.start();
+
         assertFalse(lock.await(100, MILLISECONDS));
         storageEngine.appendEvents(createEvent());
+
         t.join();
+        assertFalse(t.isAlive());
         assertTrue(lock.await(100, MILLISECONDS));
     }
 
@@ -248,7 +285,7 @@ public abstract class EmbeddedEventStoreTest {
     void loadWithSnapshot() {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.publish(createEvents(() -> aggregateId, 110));
-        storageEngine.storeSnapshot(createEvent(aggregateId, 30));
+        transactionManager.executeInTransaction(() -> storageEngine.storeSnapshot(createEvent(aggregateId, 30)));
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110 - 30, eventMessages.size());
         assertEquals(30, eventMessages.get(0).getSequenceNumber());
@@ -284,7 +321,7 @@ public abstract class EmbeddedEventStoreTest {
     void loadWithFailingSnapshot() {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.publish(createEvents(() -> aggregateId, 110));
-        storageEngine.storeSnapshot(createEvent(aggregateId, 30));
+        transactionManager.executeInTransaction(() -> storageEngine.storeSnapshot(createEvent(aggregateId, 30)));
         when(storageEngine.readSnapshot(aggregateId)).thenThrow(new MockException());
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
@@ -385,13 +422,19 @@ public abstract class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void customThreadFactoryIsUsed() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
+
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
-        Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream()
+                                          .findFirst()
+                                          .ifPresent(event -> lock.countDown()));
         t.start();
+
         assertFalse(lock.await(100, MILLISECONDS));
         testSubject.publish(createEvent());
+
         t.join();
+        assertFalse(t.isAlive());
         assertEquals(0, lock.getCount());
 
         verify(threadFactory, atLeastOnce()).newThread(any(Runnable.class));
