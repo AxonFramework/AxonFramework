@@ -26,16 +26,14 @@ import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueu
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.spring.utils.MysqlTestContainer;
+import org.axonframework.spring.utils.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -50,13 +48,14 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue} with
- * an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
+ * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue}
+ * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Mitchell Herrijgers
  */
 
 @ExtendWith(SpringExtension.class)
+@ExtendWith(MysqlTestContainerExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
@@ -65,16 +64,6 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
     @Autowired
     private EntityManagerProvider entityManagerProvider;
-
-    @BeforeAll
-    public static void start() {
-        MysqlTestContainer.getInstance().start();
-    }
-
-    @AfterAll
-    public static void stop() {
-        MysqlTestContainer.getInstance().stop();
-    }
 
     @BeforeEach
     public void clear() {
@@ -115,10 +104,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
 
         @Bean
         public DataSource dataSource() {
-            MysqlTestContainer container = MysqlTestContainer.getInstance();
-            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(container.getJdbcUrl(), container.getUsername(), container.getPassword());
-            driverManagerDataSource.setDriverClassName(container.getDriverClassName());
-            return Mockito.spy(driverManagerDataSource);
+            return MysqlTestContainerExtension.getInstance().asDataSource();
         }
 
         @Bean("entityManagerFactory")
