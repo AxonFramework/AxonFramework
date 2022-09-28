@@ -54,9 +54,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link EmbeddedEventStore}.
+ * Test suite validating the {@link EmbeddedEventStore}. Expects end users to make a concrete implementation choosing an
+ * {@link EventStorageEngine} implementation to use during testing.
  *
  * @author Rene de Waele
+ * @author Steven van Beelen
  */
 public abstract class EmbeddedEventStoreTest {
 
