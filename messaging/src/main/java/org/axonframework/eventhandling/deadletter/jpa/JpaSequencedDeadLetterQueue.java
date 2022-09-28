@@ -133,10 +133,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
         Optional<Cause> optionalCause = letter.cause();
         if (optionalCause.isPresent()) {
-            logger.info("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
+            logger.info("Adding dead letter with message id [{}] because [{}].", letter.message().getIdentifier(), optionalCause.get());
         } else {
-            logger.info("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
-                        letter.message(), stringSequenceIdentifier);
+            logger.info("Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                        letter.message().getIdentifier(), stringSequenceIdentifier);
         }
 
         DeadLetterEventEntry entry = converters
