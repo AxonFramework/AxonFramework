@@ -56,7 +56,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * {@link EventMessage Eventmessages} durably as a {@link DeadLetterEntry}.
  * <p>
  * Keeps the insertion order intact by saving an incremented index within each unique sequence, backed by the
- * {@link DeadLetterEntry#getIndex()} property. Each sequence is uniquely identified by the sequence identifier, stored
+ * {@link DeadLetterEntry#getSequenceIndex()} property. Each sequence is uniquely identified by the sequence identifier, stored
  * in the {@link DeadLetterEntry#getSequenceIdentifier()} field.
  * <p>
  * When processing an item, single execution across all applications is guaranteed by setting the
@@ -133,10 +133,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
         Optional<Cause> optionalCause = letter.cause();
         if (optionalCause.isPresent()) {
-            logger.info("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
+            logger.info("Adding dead letter with message id [{}] because [{}].", letter.message().getIdentifier(), optionalCause.get());
         } else {
-            logger.info("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
-                        letter.message(), stringSequenceIdentifier);
+            logger.info("Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                        letter.message().getIdentifier(), stringSequenceIdentifier);
         }
 
         DeadLetterEventEntry entry = converters
@@ -402,7 +402,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                         .createQuery(
                                 "select dl from DeadLetterEntry dl "
                                         + "where dl.processingGroup=:processingGroup "
-                                        + "and dl.index = (select min(dl2.index) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
+                                        + "and dl.sequenceIndex = (select min(dl2.sequenceIndex) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
                                         + "and (dl.processingStarted is null or dl.processingStarted < :processingStartedLimit) "
                                         + "order by dl.lastTouched asc ",
                                 DeadLetterEntry.class
@@ -428,8 +428,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                 "select dl from DeadLetterEntry dl "
                                         + "where dl.processingGroup=:processingGroup "
                                         + "and dl.sequenceIdentifier=:sequenceIdentifier "
-                                        + "and dl.index > :previousIndex "
-                                        + "order by dl.index asc ",
+                                        + "and dl.sequenceIndex > :previousIndex "
+                                        + "order by dl.sequenceIndex asc ",
                                 DeadLetterEntry.class
                         )
                         .setParameter("processingGroup", processingGroup)
@@ -550,7 +550,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         return transactionManager.fetchInTransaction(() -> {
             try {
                 return entityManager().createQuery(
-                                              "select max(dl.index) from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:sequenceIdentifier",
+                                              "select max(dl.sequenceIndex) from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:sequenceIdentifier",
                                               Long.class
                                       )
                                       .setParameter("sequenceIdentifier", sequenceIdentifier)

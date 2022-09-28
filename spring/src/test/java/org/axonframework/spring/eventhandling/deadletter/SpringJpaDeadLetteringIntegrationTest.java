@@ -26,23 +26,19 @@ import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueu
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.utils.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -52,16 +48,15 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue} with
- * an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
+ * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue}
+ * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Mitchell Herrijgers
  */
 
 @ExtendWith(SpringExtension.class)
+@ExtendWith(MysqlTestContainerExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@ContextConfiguration(classes = SpringJpaDeadLetteringIntegrationTest.TestContext.class)
-@TestPropertySource("classpath:hsqldb.database.properties")
 class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Autowired
@@ -108,29 +103,19 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
         }
 
         @Bean
-        public DataSource dataSource(@Value("${jdbc.driverclass}") String driverClass,
-                                     @Value("${jdbc.url}") String url,
-                                     @Value("${jdbc.username}") String username,
-                                     @Value("${jdbc.password}") String password) {
-            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
-            driverManagerDataSource.setDriverClassName(driverClass);
-            return Mockito.spy(driverManagerDataSource);
+        public DataSource dataSource() {
+            return MysqlTestContainerExtension.getInstance().asDataSource();
         }
 
         @Bean("entityManagerFactory")
-        public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-                @Value("${hibernate.sql.dialect}") String dialect,
-                @Value("${hibernate.sql.generateddl}") boolean generateDdl,
-                @Value("${hibernate.sql.show}") boolean showSql,
-                DataSource dataSource) {
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-            jpaVendorAdapter.setDatabasePlatform(dialect);
-            jpaVendorAdapter.setGenerateDdl(generateDdl);
-            jpaVendorAdapter.setShowSql(showSql);
+            jpaVendorAdapter.setGenerateDdl(true);
+            jpaVendorAdapter.setShowSql(false);
             entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
             entityManagerFactoryBean.setDataSource(dataSource);

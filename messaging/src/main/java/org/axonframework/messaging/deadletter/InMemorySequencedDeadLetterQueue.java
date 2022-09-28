@@ -113,10 +113,10 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
         if (logger.isDebugEnabled()) {
             Optional<Cause> optionalCause = letter.cause();
             if (optionalCause.isPresent()) {
-                logger.debug("Adding dead letter [{}] because [{}].", letter.message(), optionalCause.get());
+                logger.debug("Adding dead letter with message id [{}] because [{}].", letter.message().getIdentifier(), optionalCause.get());
             } else {
-                logger.debug("Adding dead letter [{}] because the sequence identifier [{}] is already present.",
-                             letter.message(), sequenceIdentifier);
+                logger.debug("Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
+                             letter.message().getIdentifier(), sequenceIdentifier);
             }
         }
 
@@ -138,15 +138,15 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
             synchronized (deadLetters) {
                 String sequenceId = optionalSequence.get().getKey();
                 if (deadLetters.get(sequenceId).isEmpty()) {
-                    logger.trace("Sequence [{}] is empty and will be removed.", sequenceId);
+                    logger.trace("Sequence with id [{}] is empty and will be removed.", sequenceId);
                     deadLetters.remove(sequenceId);
                 }
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Evicted letter [{}] for sequence [{}].", letter, sequenceId);
+                    logger.trace("Evicted letter with message id [{}] for sequence id [{}].", letter.message().getIdentifier(), sequenceId);
                 }
             }
         } else if (logger.isDebugEnabled()) {
-            logger.debug("Cannot evict [{}] as it could not be found in this queue.", letter);
+            logger.debug("Cannot evict letter with message id [{}] as it could not be found in this queue.", letter.message().getIdentifier());
         }
     }
 
@@ -167,12 +167,12 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                 deadLetters.get(sequenceId)
                            .addFirst(letterUpdater.apply(letter.markTouched()));
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Requeued letter [{}] for sequence [{}].", letter, sequenceId);
+                    logger.trace("Requeued letter [{}] for sequence [{}].", letter.message().getIdentifier(), sequenceId);
                 }
             }
         } else {
             throw new NoSuchDeadLetterException(
-                    "Cannot requeue [" + letter + "] since there is not matching entry in this queue."
+                    "Cannot requeue [" + letter.message().getIdentifier() + "] since there is not matching entry in this queue."
             );
         }
     }
