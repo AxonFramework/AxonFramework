@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 
 import java.sql.Connection;
@@ -36,7 +36,7 @@ public class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Override
     public EventStorageEngine createStorageEngine() {
-        Serializer testSerializer = JacksonSerializer.defaultSerializer();
+        Serializer testSerializer = TestSerializer.JACKSON.getSerializer();
         if (dataSource == null) {
             dataSource = new JDBCDataSource();
             dataSource.setUrl("jdbc:hsqldb:mem:test");
