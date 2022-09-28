@@ -57,7 +57,7 @@ public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
      */
     public JpaDeadLetter(DeadLetterEntry entry, MetaData diagnostics, M message) {
         this.id = entry.getDeadLetterId();
-        this.index = entry.getIndex();
+        this.index = entry.getSequenceIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
         this.lastTouched = entry.getLastTouched();
         this.sequenceIdentifier = entry.getSequenceIdentifier();

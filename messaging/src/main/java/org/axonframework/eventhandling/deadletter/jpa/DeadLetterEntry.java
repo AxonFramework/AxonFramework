@@ -49,7 +49,7 @@ import javax.persistence.Table;
 @Table(indexes = {
         @Index(columnList = "processingGroup"),
         @Index(columnList = "processingGroup,sequenceIdentifier"),
-        @Index(columnList = "processingGroup,sequenceIdentifier,index", unique = true),
+        @Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
 })
 public class DeadLetterEntry {
 
@@ -63,7 +63,7 @@ public class DeadLetterEntry {
     private String sequenceIdentifier;
 
     @Basic(optional = false)
-    private long index;
+    private long sequenceIndex;
 
     @Embedded
     private DeadLetterEventEntry message;
@@ -96,7 +96,7 @@ public class DeadLetterEntry {
      *
      * @param processingGroup    The processing group this message belongs to.
      * @param sequenceIdentifier The sequence identifier this message belongs to.
-     * @param index              The index of this message within the sequence.
+     * @param sequenceIndex              The index of this message within the sequence.
      * @param message            An embedded {@link DeadLetterEventEntry} containing all information about the message
      *                           itself.
      * @param enqueuedAt         The time the message was enqueued.
@@ -107,7 +107,7 @@ public class DeadLetterEntry {
      */
     public DeadLetterEntry(String processingGroup,
                            String sequenceIdentifier,
-                           long index,
+                           long sequenceIndex,
                            DeadLetterEventEntry message,
                            Instant enqueuedAt,
                            Instant lastTouched,
@@ -117,7 +117,7 @@ public class DeadLetterEntry {
         this.deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
         this.processingGroup = processingGroup;
         this.sequenceIdentifier = sequenceIdentifier;
-        this.index = index;
+        this.sequenceIndex = sequenceIndex;
         this.message = message;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
@@ -161,8 +161,8 @@ public class DeadLetterEntry {
      *
      * @return The index.
      */
-    public long getIndex() {
-        return index;
+    public long getSequenceIndex() {
+        return sequenceIndex;
     }
 
     /**
@@ -297,7 +297,7 @@ public class DeadLetterEntry {
                 "deadLetterId='" + deadLetterId + '\'' +
                 ", processingGroup='" + processingGroup + '\'' +
                 ", sequenceIdentifier='" + sequenceIdentifier + '\'' +
-                ", index=" + index +
+                ", index=" + sequenceIndex +
                 ", message=" + message +
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +
