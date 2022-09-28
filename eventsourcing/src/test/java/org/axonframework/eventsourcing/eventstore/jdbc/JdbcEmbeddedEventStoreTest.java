@@ -51,8 +51,7 @@ public class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
     private JdbcEventStorageEngine createTables(JdbcEventStorageEngine testEngine) {
-        try {
-            Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
             connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
             testEngine.createSchema(HsqlEventTableFactory.INSTANCE);
