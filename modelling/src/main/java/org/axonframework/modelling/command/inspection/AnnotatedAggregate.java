@@ -421,12 +421,18 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             throw new NoHandlerForCommandException(commandMessage);
         }
 
-        //noinspection unchecked
-        return new DefaultInterceptorChain<>(
-                (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
-                interceptors,
-                m -> suitableHandler(commandMessage, potentialHandlers).handle(commandMessage, aggregateRoot)
-        ).proceed();
+        Object result;
+        if (interceptors.isEmpty()) {
+            result = suitableHandler(commandMessage, potentialHandlers).handle(commandMessage, aggregateRoot);
+        } else {
+            //noinspection unchecked
+            result = new DefaultInterceptorChain<>(
+                    (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                    interceptors,
+                    m -> suitableHandler(commandMessage, potentialHandlers).handle(commandMessage, aggregateRoot)
+            ).proceed();
+        }
+        return result;
     }
 
     private MessageHandlingMember<? super T> suitableHandler(CommandMessage<?> command,
