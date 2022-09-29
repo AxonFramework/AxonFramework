@@ -21,6 +21,7 @@ import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,11 +41,12 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
 public class AxonServerActuatorAutoConfiguration {
 
+    @ConditionalOnMissingBean
     @Bean
     public AxonServerHealthIndicator axonServerHealthIndicator(AxonServerConnectionManager connectionManager) {
         return new AxonServerHealthIndicator(connectionManager);
     }
-
+    @ConditionalOnMissingBean
     @Bean
     public AxonServerStatusAggregator axonServerStatusAggregator() {
         return new AxonServerStatusAggregator();
