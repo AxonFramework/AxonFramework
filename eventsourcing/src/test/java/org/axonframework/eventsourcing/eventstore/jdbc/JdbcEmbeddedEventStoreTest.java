@@ -30,7 +30,7 @@ import java.sql.SQLException;
  *
  * @author Steven van Beelen
  */
-public class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
+class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     private JDBCDataSource dataSource;
 
