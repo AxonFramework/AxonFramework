@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.axonframework.messaging.MetaData;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -35,10 +36,14 @@ public abstract class EventStoreTestUtils {
     private static final MetaData METADATA = MetaData.emptyInstance();
 
     public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
+        return createEvents(() -> AGGREGATE, numberOfEvents);
+    }
+
+    public static List<DomainEventMessage<?>> createEvents(Supplier<String> aggregateId, int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
                         .mapToObj(sequenceNumber -> createEvent(TYPE,
                                                                 IdentifierFactory.getInstance().generateIdentifier(),
-                                                                AGGREGATE,
+                                                                aggregateId.get(),
                                                                 sequenceNumber,
                                                                 PAYLOAD + sequenceNumber,
                                                                 METADATA))
@@ -65,7 +70,8 @@ public abstract class EventStoreTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
-        return new GenericDomainEventMessage<>(TYPE, AGGREGATE, sequenceNumber, PAYLOAD, METADATA,
+        return new GenericDomainEventMessage<>(TYPE, IdentifierFactory.getInstance().generateIdentifier(),
+                                               sequenceNumber, PAYLOAD, METADATA,
                                                IdentifierFactory.getInstance().generateIdentifier(), timestamp);
     }
 
