@@ -96,9 +96,7 @@ public abstract class EmbeddedEventStoreTest {
      * @return The {@link TransactionManager} used during testing.
      */
     public TransactionManager getTransactionManager() {
-        if (transactionManager == null) {
-            transactionManager = new NoOpTransactionManager();
-        }
+        transactionManager = new NoOpTransactionManager();
         return transactionManager;
     }
 

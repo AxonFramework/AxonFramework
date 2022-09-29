@@ -75,7 +75,8 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Override
     public TransactionManager getTransactionManager() {
-        return new SpringTransactionManager(platformTransactionManager);
+        transactionManager = new SpringTransactionManager(platformTransactionManager);
+        return transactionManager;
     }
 
     @Override
