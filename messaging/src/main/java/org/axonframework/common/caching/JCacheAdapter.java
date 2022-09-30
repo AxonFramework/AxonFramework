@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.common.caching;
 import org.axonframework.common.Registration;
 
 import java.io.Serializable;
+import java.util.function.Function;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
@@ -39,6 +40,7 @@ import javax.cache.event.CacheEntryUpdatedListener;
 public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfiguration<Object, Object>> {
 
     private final javax.cache.Cache<Object, Object> jCache;
+    private final Object updateLock = new Object();
 
     /**
      * Initialize the adapter to forward call to the given {@code jCache} instance
@@ -49,9 +51,9 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
         this.jCache = jCache;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <K, V> V get(K key) {
+        //noinspection unchecked
         return (V) jCache.get(key);
     }
 
@@ -71,8 +73,25 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     }
 
     @Override
+    public void removeAll() {
+        jCache.removeAll();
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         return jCache.containsKey(key);
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, Function<V, V> update) {
+        synchronized (updateLock) {
+            Object value = jCache.get(key);
+            if (value == null) {
+                return;
+            }
+            //noinspection unchecked
+            jCache.put(key, update.apply((V) value));
+        }
     }
 
     @Override

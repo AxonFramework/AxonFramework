@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,12 @@ import org.axonframework.common.Registration;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Function;
 
 /**
  * Cache implementation that keeps values in the cache until the garbage collector has removed them. Unlike the
@@ -56,12 +58,12 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <K, V> V get(K key) {
         Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
         final Reference<Object> entry = cache.get(key);
 
+        //noinspection unchecked
         final V returnValue = entry == null ? null : (V) entry.get();
         if (returnValue != null) {
             for (EntryListener adapter : adapters) {
@@ -116,6 +118,17 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
+    public void removeAll() {
+        Set<Object> keys = new HashSet<>(cache.keySet());
+        keys.forEach(key -> {
+            cache.remove(key);
+            for (EntryListener adapter : adapters) {
+                adapter.onEntryRemoved(key);
+            }
+        });
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
@@ -133,6 +146,12 @@ public class WeakReferenceCache implements Cache {
                 }
             }
         }
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, Function<V, V> update) {
+        //noinspection unchecked
+        cache.computeIfPresent(key, (k, v) -> (Entry) update.apply((V) v.get()));
     }
 
     private class Entry extends WeakReference<Object> {

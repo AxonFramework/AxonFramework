@@ -44,6 +44,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -272,6 +273,11 @@ class AggregateStereotypeAutoConfigurationTest {
                 }
 
                 @Override
+                public void removeAll() {
+                    // Do nothing.
+                }
+
+                @Override
                 public boolean containsKey(Object key) {
                     return false;
                 }
@@ -279,6 +285,11 @@ class AggregateStereotypeAutoConfigurationTest {
                 @Override
                 public Registration registerCacheEntryListener(EntryListener cacheEntryListener) {
                     return null;
+                }
+
+                @Override
+                public <V> void computeIfPresent(Object key, Function<V, V> update) {
+                    // Do nothing.
                 }
             };
         }

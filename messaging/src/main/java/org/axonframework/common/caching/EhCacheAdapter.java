@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 import org.axonframework.common.Registration;
 
+import java.util.function.Function;
+
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
  *
@@ -31,6 +33,7 @@ import org.axonframework.common.Registration;
 public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
     private final Ehcache ehCache;
+    private final Object updateLock = new Object();
 
     /**
      * Initialize the adapter to forward all call to the given {@code ehCache} instance
@@ -41,10 +44,10 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         this.ehCache = ehCache;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <K, V> V get(K key) {
         final Element element = ehCache.get(key);
+        //noinspection unchecked
         return element == null ? null : (V) element.getObjectValue();
     }
 
@@ -64,8 +67,30 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
+    public void removeAll() {
+        ehCache.removeAll();
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         return ehCache.isKeyInCache(key);
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, Function<V, V> update) {
+        synchronized (updateLock) {
+            final Element value = ehCache.get(key);
+            if (value == null) {
+                return;
+            }
+            //noinspection unchecked
+            V updatedValue = update.apply((V) value.getObjectValue());
+            if (updatedValue != null) {
+                ehCache.put(new Element(key, updatedValue));
+            } else {
+                ehCache.remove(key);
+            }
+        }
     }
 
     @Override

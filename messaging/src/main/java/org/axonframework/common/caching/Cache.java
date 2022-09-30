@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
+
+import java.util.function.Function;
 
 /**
  * Abstraction for a Caching mechanism. All Axon component rely on this abstraction, so that different providers can be
@@ -65,6 +67,8 @@ public interface Cache {
      */
     boolean remove(Object key);
 
+    void removeAll();
+
     /**
      * Indicates whether there is an item stored under given {@code key}.
      *
@@ -80,6 +84,16 @@ public interface Cache {
      * @return a handle to unregister the listener
      */
     Registration registerCacheEntryListener(EntryListener cacheEntryListener);
+
+    /**
+     * Perform the {@code update} in the value behind the given {@code key}. The {@code update} is only executed if
+     * there's an entry referencing the {@code key}.
+     *
+     * @param key    The key to perform an update for, if not empty.
+     * @param update The update to perform if the {@code key} is present.
+     * @param <V>    The type of the value to execute the {@code update} for.
+     */
+    <V> void computeIfPresent(Object key, Function<V, V> update);
 
     /**
      * Interface describing callback methods, which are invoked when changes are made in the underlying cache.
