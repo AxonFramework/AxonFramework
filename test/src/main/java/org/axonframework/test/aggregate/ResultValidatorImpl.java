@@ -32,6 +32,7 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -117,15 +118,15 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
         if (!matcher.matches(publishedEvents)) {
-            reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
+            final Description expectation = new StringDescription();
+            matcher.describeTo(expectation);
+            
+            final Description mismatch = new StringDescription();
+            matcher.describeMismatch(publishedEvents, mismatch);
+            
+            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
         }
         return this;
-    }
-
-    private StringDescription descriptionOf(Matcher<?> matcher) {
-        StringDescription description = new StringDescription();
-        matcher.describeTo(description);
-        return description;
     }
 
     @Override

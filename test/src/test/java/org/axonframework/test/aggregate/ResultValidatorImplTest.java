@@ -24,7 +24,7 @@ import org.axonframework.test.deadline.ScheduledDeadlineInfo;
 import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.hamcrest.Matchers;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -38,6 +38,8 @@ import java.util.List;
 
 import static java.util.Collections.*;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -349,5 +351,29 @@ class ResultValidatorImplTest {
                                                                                            "payload",
                                                                                            expiryTime);
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
+    }
+
+    @Test
+    void hamcrestMatcherMismatchIsReported() {
+        // this matcher implementation will always fail and return expected strings
+        final DiagnosingMatcher<List<? super EventMessage<?>>> matcher = new DiagnosingMatcher<List<? super EventMessage<?>>>() {
+            @Override
+            protected boolean matches(Object item, Description mismatchDescription) {
+                mismatchDescription.appendText("<MISMATCH TEXT>");
+                return false;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("<EXPECTED DESCRIPTION TEXT>");
+            }
+        };
+        try {
+            validator.expectEventsMatching(matcher);
+            fail("expected expectEventsMatching to throw AxonAssertionError");
+        } catch (AxonAssertionError e) {
+            assertThat(e.getMessage(), containsString("<EXPECTED DESCRIPTION TEXT>"));
+            assertThat(e.getMessage(), containsString("<MISMATCH TEXT>"));
+        }
     }
 }
