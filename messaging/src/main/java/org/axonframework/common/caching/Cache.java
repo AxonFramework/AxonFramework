@@ -67,6 +67,9 @@ public interface Cache {
      */
     boolean remove(Object key);
 
+    /**
+     * Remove all stored entries in this cache.
+     */
     void removeAll();
 
     /**

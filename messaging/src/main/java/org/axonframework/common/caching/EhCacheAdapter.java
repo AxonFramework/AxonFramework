@@ -33,7 +33,6 @@ import java.util.function.Function;
 public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
     private final Ehcache ehCache;
-    private final Object updateLock = new Object();
 
     /**
      * Initialize the adapter to forward all call to the given {@code ehCache} instance
@@ -77,19 +76,17 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
-    public <V> void computeIfPresent(Object key, Function<V, V> update) {
-        synchronized (updateLock) {
-            final Element value = ehCache.get(key);
-            if (value == null) {
-                return;
-            }
-            //noinspection unchecked
-            V updatedValue = update.apply((V) value.getObjectValue());
-            if (updatedValue != null) {
-                ehCache.put(new Element(key, updatedValue));
-            } else {
-                ehCache.remove(key);
-            }
+    public synchronized <V> void computeIfPresent(Object key, Function<V, V> update) {
+        final Element value = ehCache.get(key);
+        if (value == null) {
+            return;
+        }
+        //noinspection unchecked
+        V updatedValue = update.apply((V) value.getObjectValue());
+        if (updatedValue != null) {
+            ehCache.put(new Element(key, updatedValue));
+        } else {
+            ehCache.remove(key);
         }
     }
 

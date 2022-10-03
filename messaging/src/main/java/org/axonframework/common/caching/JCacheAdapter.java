@@ -40,7 +40,6 @@ import javax.cache.event.CacheEntryUpdatedListener;
 public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfiguration<Object, Object>> {
 
     private final javax.cache.Cache<Object, Object> jCache;
-    private final Object updateLock = new Object();
 
     /**
      * Initialize the adapter to forward call to the given {@code jCache} instance
@@ -83,15 +82,13 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     }
 
     @Override
-    public <V> void computeIfPresent(Object key, Function<V, V> update) {
-        synchronized (updateLock) {
-            Object value = jCache.get(key);
-            if (value == null) {
-                return;
-            }
-            //noinspection unchecked
-            jCache.put(key, update.apply((V) value));
+    public synchronized <V> void computeIfPresent(Object key, Function<V, V> update) {
+        Object value = jCache.get(key);
+        if (value == null) {
+            return;
         }
+        //noinspection unchecked
+        jCache.put(key, update.apply((V) value));
     }
 
     @Override
