@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -288,7 +288,7 @@ class AggregateStereotypeAutoConfigurationTest {
                 }
 
                 @Override
-                public <V> void computeIfPresent(Object key, Function<V, V> update) {
+                public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
                     // Do nothing.
                 }
             };

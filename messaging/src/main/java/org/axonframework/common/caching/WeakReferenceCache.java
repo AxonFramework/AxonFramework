@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Cache implementation that keeps values in the cache until the garbage collector has removed them. Unlike the
@@ -149,7 +149,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <V> void computeIfPresent(Object key, Function<V, V> update) {
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
         //noinspection unchecked
         cache.computeIfPresent(key, (k, v) -> new Entry(k, update.apply((V) v.get())));
     }

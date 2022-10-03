@@ -19,7 +19,7 @@ package org.axonframework.common.caching;
 import org.axonframework.common.Registration;
 
 import java.io.Serializable;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
@@ -82,7 +82,7 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     }
 
     @Override
-    public synchronized <V> void computeIfPresent(Object key, Function<V, V> update) {
+    public synchronized <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
         Object value = jCache.get(key);
         if (value == null) {
             return;

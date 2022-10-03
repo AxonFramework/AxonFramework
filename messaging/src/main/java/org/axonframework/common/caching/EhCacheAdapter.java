@@ -22,7 +22,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 import org.axonframework.common.Registration;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
@@ -76,7 +76,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
-    public synchronized <V> void computeIfPresent(Object key, Function<V, V> update) {
+    public synchronized <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
         final Element value = ehCache.get(key);
         if (value == null) {
             return;

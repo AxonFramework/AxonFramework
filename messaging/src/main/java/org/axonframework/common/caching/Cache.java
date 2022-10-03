@@ -18,7 +18,7 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Abstraction for a Caching mechanism. All Axon component rely on this abstraction, so that different providers can be

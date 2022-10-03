@@ -18,7 +18,7 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation for
@@ -72,7 +72,7 @@ public final class NoCache implements Cache {
     }
 
     @Override
-    public <V> void computeIfPresent(Object key, Function<V, V> update) {
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
         // Do nothing
     }
 }
