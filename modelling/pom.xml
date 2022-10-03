@@ -147,14 +147,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>5.1.3</version>
-            <optional>true</optional>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
             <scope>test</scope>
