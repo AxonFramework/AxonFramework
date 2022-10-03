@@ -70,7 +70,9 @@ public interface Cache {
     /**
      * Remove all stored entries in this cache.
      */
-    void removeAll();
+    default void removeAll() {
+        throw new UnsupportedOperationException("Cache#removeAll is currently unsupported by this version");
+    }
 
     /**
      * Indicates whether there is an item stored under given {@code key}.
@@ -96,7 +98,9 @@ public interface Cache {
      * @param update The update to perform if the {@code key} is present.
      * @param <V>    The type of the value to execute the {@code update} for.
      */
-    <V> void computeIfPresent(Object key, Function<V, V> update);
+    default <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        throw new UnsupportedOperationException("Cache#computeIfPresent is currently unsupported by this version");
+    }
 
     /**
      * Interface describing callback methods, which are invoked when changes are made in the underlying cache.
