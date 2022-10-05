@@ -82,13 +82,35 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     }
 
     @Override
-    public synchronized <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
-        Object value = jCache.get(key);
-        if (value == null) {
-            return;
-        }
-        //noinspection unchecked
-        jCache.put(key, update.apply((V) value));
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        Object oldValue;
+        V newValue;
+        do {
+            oldValue = jCache.get(key);
+            if (oldValue == null) {
+                break;
+            }
+            //noinspection unchecked
+            newValue = update.apply((V) oldValue);
+        } while (!replaceOrRemove(key, oldValue, newValue));
+    }
+
+    /**
+     * Replace or remove the element under {@code key}. If the {@code newValue} is not {@code null}, we invoke replace.
+     * If the {@code newValue} is {@code null}, the compute task decided to remove the entry instead. Since an
+     * invocation of {@link javax.cache.Cache#replace(Object, Object)} does not remove an entry if it's value is
+     * {@code null}, we need to do this ourselves.
+     *
+     * @param key      The reference to the value to replace or remove, depending on whether the {@code newValue} is
+     *                 {@code null}.
+     * @param oldValue The old entry to replace with the {@code newValue}, if {@code newValue} is not {@code null}.
+     * @param newValue The new value to replace with the {@code oldValue}, if it is not {@code null}.
+     * @param <V>      The generic type of the value stored under the given {@code key}.
+     * @return A boolean stating whether the {@link javax.cache.Cache#replace(Object, Object)} or
+     * {@link javax.cache.Cache#remove(Object)} task succeeded.
+     */
+    private <V> boolean replaceOrRemove(Object key, Object oldValue, V newValue) {
+        return newValue != null ? jCache.replace(key, oldValue, newValue) : jCache.remove(key);
     }
 
     @Override
