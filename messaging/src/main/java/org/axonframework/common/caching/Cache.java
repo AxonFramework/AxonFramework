@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
+
+import java.util.function.UnaryOperator;
 
 /**
  * Abstraction for a Caching mechanism. All Axon component rely on this abstraction, so that different providers can be
@@ -66,6 +68,13 @@ public interface Cache {
     boolean remove(Object key);
 
     /**
+     * Remove all stored entries in this cache.
+     */
+    default void removeAll() {
+        throw new UnsupportedOperationException("Cache#removeAll is currently unsupported by this version");
+    }
+
+    /**
      * Indicates whether there is an item stored under given {@code key}.
      *
      * @param key The key to check
@@ -80,6 +89,18 @@ public interface Cache {
      * @return a handle to unregister the listener
      */
     Registration registerCacheEntryListener(EntryListener cacheEntryListener);
+
+    /**
+     * Perform the {@code update} in the value behind the given {@code key}. The {@code update} is only executed if
+     * there's an entry referencing the {@code key}.
+     *
+     * @param key    The key to perform an update for, if not empty.
+     * @param update The update to perform if the {@code key} is present.
+     * @param <V>    The type of the value to execute the {@code update} for.
+     */
+    default <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        throw new UnsupportedOperationException("Cache#computeIfPresent is currently unsupported by this version");
+    }
 
     /**
      * Interface describing callback methods, which are invoked when changes are made in the underlying cache.

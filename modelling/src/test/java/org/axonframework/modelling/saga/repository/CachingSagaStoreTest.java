@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package org.axonframework.modelling.saga.repository;
 
-import net.sf.ehcache.CacheManager;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
@@ -31,44 +29,55 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
+ * Abstract test class for validating the {@link CachingSagaStore}. Expects implementations to construct the type of
+ * {@link Cache} used during testing.
+ *
  * @author Allard Buijze
  */
-class CachingSagaStoreTest {
+public abstract class CachingSagaStoreTest {
 
+    private SagaStore<StubSaga> delegate;
+    private Cache sagaCache;
     private Cache associationsCache;
-    private org.axonframework.common.caching.Cache sagaCache;
+
     private CachingSagaStore<StubSaga> testSubject;
-    private CacheManager cacheManager;
-    private net.sf.ehcache.Cache ehCache;
-    private SagaStore<StubSaga> mockSagaStore;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
-        ehCache = new net.sf.ehcache.Cache("test", 100, false, false, 10, 10);
-        cacheManager = CacheManager.create();
-        cacheManager.addCache(ehCache);
-        associationsCache = spy(new EhCacheAdapter(ehCache));
-        sagaCache = spy(new EhCacheAdapter(ehCache));
-
-        SagaStore sagaStore = new InMemorySagaStore();
-        mockSagaStore = spy(sagaStore);
+        //noinspection rawtypes
+        delegate = spy((SagaStore) new InMemorySagaStore());
+        sagaCache = spy(sagaCache());
+        associationsCache = spy(associationCache());
 
         testSubject = CachingSagaStore.<StubSaga>builder()
-                .delegateSagaStore(mockSagaStore)
-                .associationsCache(associationsCache)
-                .sagaCache(sagaCache)
-                .build();
+                                      .delegateSagaStore(delegate)
+                                      .sagaCache(sagaCache)
+                                      .associationsCache(associationsCache)
+                                      .build();
     }
 
-    @AfterEach
-    void tearDown() {
-        cacheManager.shutdown();
+    /**
+     * Retrieve the saga {@link Cache} used for testing.
+     *
+     * @return The saga {@link Cache} used for testing.
+     */
+    abstract Cache sagaCache();
+
+    /**
+     * Retrieve the association value entry {@link Cache} used for testing.
+     *
+     * @return The association value entry {@link Cache} used for testing.
+     */
+    abstract Cache associationCache();
+
+    private void clearCaches() {
+        sagaCache.removeAll();
+        associationsCache.removeAll();
     }
 
     @Test
     void sagaAddedToCacheOnAdd() {
-
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
         verify(sagaCache).put(eq("123"), any());
@@ -81,7 +90,7 @@ class CachingSagaStoreTest {
 
         verify(associationsCache, never()).put(any(), any());
 
-        ehCache.removeAll();
+        clearCaches();
         reset(sagaCache, associationsCache);
 
         final AssociationValue associationValue = new AssociationValue("key", "value");
@@ -89,8 +98,8 @@ class CachingSagaStoreTest {
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(singleton("id"), actual);
         verify(associationsCache, atLeast(1)).get("org.axonframework.modelling.saga.repository.StubSaga/key=value");
-        verify(associationsCache).put("org.axonframework.modelling.saga.repository.StubSaga/key=value",
-                                      Collections.singleton("id"));
+        verify(associationsCache).putIfAbsent("org.axonframework.modelling.saga.repository.StubSaga/key=value",
+                                              Collections.singleton("id"));
     }
 
     @Test
@@ -98,7 +107,7 @@ class CachingSagaStoreTest {
         StubSaga saga = new StubSaga();
         testSubject.insertSaga(StubSaga.class, "id", saga, singleton(new AssociationValue("key", "value")));
 
-        ehCache.removeAll();
+        clearCaches();
         reset(sagaCache, associationsCache);
 
         SagaStore.Entry<StubSaga> actual = testSubject.loadSaga(StubSaga.class, "id");
@@ -111,8 +120,7 @@ class CachingSagaStoreTest {
 
     @Test
     void sagaNotAddedToCacheWhenLoadReturnsNull() {
-
-        ehCache.removeAll();
+        clearCaches();
         reset(sagaCache, associationsCache);
 
         SagaStore.Entry<StubSaga> actual = testSubject.loadSaga(StubSaga.class, "id");
@@ -131,6 +139,23 @@ class CachingSagaStoreTest {
         testSubject.insertSaga(StubSaga.class, "123", saga, singleton(associationValue));
 
         verify(associationsCache, never()).put(any(), any());
-        verify(mockSagaStore).insertSaga(StubSaga.class, "123", saga, singleton(associationValue));
+        verify(delegate).insertSaga(StubSaga.class, "123", saga, singleton(associationValue));
+    }
+
+    @Test
+    void sagaAndAssociationsRemovedFromCacheOnDelete() {
+        String testSagaId = "123";
+        AssociationValue testAssociationValue = new AssociationValue("key", "value");
+        String expectedAssociationKey = "org.axonframework.modelling.saga.repository.StubSaga/key=value";
+
+        testSubject.insertSaga(StubSaga.class, testSagaId, new StubSaga(), singleton(testAssociationValue));
+        assertTrue(sagaCache.containsKey(testSagaId));
+
+        testSubject.findSagas(StubSaga.class, testAssociationValue);
+        assertTrue(associationsCache.containsKey(expectedAssociationKey));
+
+        testSubject.deleteSaga(StubSaga.class, testSagaId, singleton(testAssociationValue));
+        assertFalse(sagaCache.containsKey(testSagaId));
+        assertFalse(associationsCache.containsKey(expectedAssociationKey));
     }
 }

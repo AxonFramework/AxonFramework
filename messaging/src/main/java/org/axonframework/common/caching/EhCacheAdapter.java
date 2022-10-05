@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 import org.axonframework.common.Registration;
 
+import java.util.function.UnaryOperator;
+
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
  *
@@ -41,10 +43,10 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         this.ehCache = ehCache;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <K, V> V get(K key) {
         final Element element = ehCache.get(key);
+        //noinspection unchecked
         return element == null ? null : (V) element.getObjectValue();
     }
 
@@ -64,8 +66,45 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
+    public void removeAll() {
+        ehCache.removeAll();
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         return ehCache.isKeyInCache(key);
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        Element oldValue;
+        V newValue;
+        do {
+            oldValue = ehCache.get(key);
+            if (oldValue == null) {
+                break;
+            }
+            //noinspection unchecked
+            newValue = update.apply((V) oldValue.getObjectValue());
+        } while (!replaceOrRemove(key, oldValue, newValue));
+    }
+
+    /**
+     * Replace or remove the element under {@code key}. If the {@code newValue} is not {@code null}, we invoke replace.
+     * If the {@code newValue} is {@code null}, the compute task decided to remove the entry instead. Since an
+     * invocation of {@link Ehcache#replace(Element, Element)} does not remove an {@link Element} if it's value is
+     * {@code null}, we need to do this ourselves.
+     *
+     * @param key      The reference to the value to replace or remove, depending on whether the {@code newValue} is
+     *                 {@code null}.
+     * @param oldValue The old entry to replace with the {@code newValue}, if {@code newValue} is not {@code null}.
+     * @param newValue The new value to replace with the {@code oldValue}, if it is not {@code null}.
+     * @param <V>      The generic type of the value stored under the given {@code key}.
+     * @return A boolean stating whether the {@link Ehcache#replace(Element, Element)} or {@link Ehcache#remove(Object)}
+     * task succeeded.
+     */
+    private <V> boolean replaceOrRemove(Object key, Element oldValue, V newValue) {
+        return newValue != null ? ehCache.replace(oldValue, new Element(key, newValue)) : ehCache.remove(key);
     }
 
     @Override
