@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -255,7 +254,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         List<String> sequenceIdentifiers = entityManagerProvider
                 .getEntityManager()
                 .createQuery(
-                        "select dl.sequenceIdentifier from DeadLetterEntry dl where dl.processingGroup=:processingGroup order by dl.lastTouched asc",
+                        "select dl.sequenceIdentifier from DeadLetterEntry dl "
+                                + "where dl.processingGroup=:processingGroup "
+                                + "and dl.sequenceIndex = (select min(dl2.sequenceIndex) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
+                                + "order by dl.lastTouched asc ",
                         String.class)
                 .setParameter("processingGroup", processingGroup)
                 .getResultList();
