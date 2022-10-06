@@ -47,7 +47,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 79
+  milestone: 80
   open-pull-requests-limit: 5
   reviewers:
     - "gklijs"
