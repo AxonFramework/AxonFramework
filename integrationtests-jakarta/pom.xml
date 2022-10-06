@@ -281,7 +281,8 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>            <plugin>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <executions>
@@ -296,6 +297,7 @@
                     <excludes>
                         <exclude>**/JpaStorageEngineInsertionReadOrderTest.java</exclude>
                         <exclude>**/GenericJpaRepositoryIntegrationTest.java</exclude>
+                        <exclude>**/JpaEmbeddedEventStoreTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

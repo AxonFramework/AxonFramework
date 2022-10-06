@@ -20,11 +20,13 @@ import org.axonframework.commandhandling.CommandMessageHandlingMember;
 
 /**
  * Interface describing a message handler capable of forwarding a specific command.
+ *
+ * @param <T> The type of entity to which the message handler will delegate the actual handling of the command
  * @author Somrak Monpengpinij
  * @since 4.6.0
- * @param <T> The type of entity to which the message handler will delegate the actual handling of the command
  */
 public interface ForwardingCommandMessageHandlingMember<T> extends CommandMessageHandlingMember<T> {
+
     /**
      * Check if this handler is in a state where it can currently accept the command.
      *

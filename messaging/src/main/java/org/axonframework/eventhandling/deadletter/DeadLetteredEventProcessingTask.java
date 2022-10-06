@@ -78,7 +78,7 @@ class DeadLetteredEventProcessingTask
      */
     public EnqueueDecision<EventMessage<?>> process(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Start evaluation of dead letter [{}].", letter);
+            logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().getIdentifier());
         }
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
@@ -103,14 +103,14 @@ class DeadLetteredEventProcessingTask
 
     private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead letter [{}] was successful.", letter);
+            logger.info("Processing dead letter with message id [{}] was successful.", letter.message().getIdentifier());
         }
         return Decisions.evict();
     }
 
     private EnqueueDecision<EventMessage<?>> onRollback(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
         if (logger.isWarnEnabled()) {
-            logger.warn("Processing dead letter [{}] failed.", letter, cause);
+            logger.warn("Processing dead letter with message id [{}] failed.", letter.message().getIdentifier(), cause);
         }
         return enqueuePolicy.decide(letter, cause);
     }

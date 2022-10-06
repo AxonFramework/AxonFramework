@@ -49,6 +49,13 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class BatchingEventStorageEngine extends AbstractEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
+    /**
+     * The batch optimization is intended to *not* retrieve a second batch of events to cover for potential gaps in the
+     * first batch. This optimization is desirable for aggregate event streams, as these close once the end is reached.
+     * For token-based event reading the stream does not necessarily close once reaching the end, thus the optimization
+     * will block further event retrieval.
+     */
+    private static final boolean BATCH_OPTIMIZATION_DISABLED = false;
 
     private final int batchSize;
     private final Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
@@ -139,7 +146,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
         EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
-                List::isEmpty);
+                batch -> BATCH_OPTIMIZATION_DISABLED
+        );
         return StreamSupport.stream(spliterator, false);
     }
 

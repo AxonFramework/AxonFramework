@@ -104,15 +104,15 @@ public class DeadLetteringEventHandlerInvoker
     @Override
     public void handle(@Nonnull EventMessage<?> message, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
-            logger.trace("Ignoring event [{}] as it is not assigned to segment [{}].", message, segment);
+            logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].", message.getIdentifier(), segment);
             return;
         }
 
         Object sequenceIdentifier = super.sequenceIdentifier(message);
         if (queue.enqueueIfPresent(sequenceIdentifier, () -> new GenericDeadLetter<>(sequenceIdentifier, message))) {
             if (logger.isInfoEnabled()) {
-                logger.info("Event [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
-                            message, sequenceIdentifier);
+                logger.info("Event with id [{}] is added to the dead-letter queue since its queue id [{}] is already present.",
+                            message.getIdentifier(), sequenceIdentifier);
             }
         } else {
             if (logger.isTraceEnabled()) {

@@ -80,6 +80,7 @@ public class JdbcTokenStore implements TokenStore {
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final Class<?> contentType;
+    private static final String COUNT_COLUMN_NAME = "segmentCount";
 
     /**
      * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
@@ -651,8 +652,9 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected PreparedStatement selectSegments(Connection connection, String processorName,
                                                int splitSegmentId, int mergeableSegmentId) throws SQLException {
-        final String sql = "SELECT count(*) as size FROM " +
-                schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND (" + schema.segmentColumn() +
+        final String sql = "SELECT count(*) as " + COUNT_COLUMN_NAME
+                + " FROM " + schema.tokenTable()
+                + " WHERE " + schema.processorNameColumn() + " = ? AND (" + schema.segmentColumn() +
                 " = ? OR " + schema.segmentColumn() + " = ?)";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, processorName);
@@ -672,7 +674,7 @@ public class JdbcTokenStore implements TokenStore {
      */
     private boolean containsOneElement(ResultSet resultSet, String processorName, int segmentId) throws SQLException {
         resultSet.next();
-        int size = resultSet.getInt("size");
+        int size = resultSet.getInt(COUNT_COLUMN_NAME);
         if (size == 0) {
             throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
                                                          processorName, segmentId));

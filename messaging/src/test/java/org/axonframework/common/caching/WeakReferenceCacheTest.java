@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +29,8 @@ import static org.mockito.Mockito.*;
 
 
 /**
- * Tests for cache implementation that keeps values in the cache until the garbage collector has removed them {@link WeakReferenceCache}.
+ * Tests for cache implementation that keeps values in the cache until the garbage collector has removed them
+ * {@link WeakReferenceCache}.
  *
  * @author Steven van Beelen
  * @author Henrique Sena
@@ -87,7 +88,6 @@ class WeakReferenceCacheTest {
 
     @Test
     void entryListenerNotifiedOfCreationUpdateAndDeletion() {
-
         Object value = new Object();
         Object value2 = new Object();
         testSubject.put("test1", value);
@@ -114,5 +114,52 @@ class WeakReferenceCacheTest {
     @Test
     void shouldThrowIllegalArgumentExceptionWhenKeyIsNullOnContainsKey() {
         assertThrows(IllegalArgumentException.class, () -> testSubject.containsKey(null));
+    }
+
+    @Test
+    void removeAllRemovesAllEntries() {
+        testSubject.put("one", new Object());
+        testSubject.put("two", new Object());
+        testSubject.put("three", new Object());
+        testSubject.put("four", new Object());
+
+        assertTrue(testSubject.containsKey("one"));
+        assertTrue(testSubject.containsKey("two"));
+        assertTrue(testSubject.containsKey("three"));
+        assertTrue(testSubject.containsKey("four"));
+
+        testSubject.removeAll();
+
+        assertFalse(testSubject.containsKey("one"));
+        assertFalse(testSubject.containsKey("two"));
+        assertFalse(testSubject.containsKey("three"));
+        assertFalse(testSubject.containsKey("four"));
+    }
+
+    @Test
+    void computeIfPresentDoesNotUpdateNonExistingEntry() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        testSubject.computeIfPresent("some-key", v -> {
+            invoked.set(true);
+            return v;
+        });
+
+        assertFalse(invoked.get());
+    }
+
+    @Test
+    void computeIfPresentUpdatesExistingEntry() {
+        String testKey = "some-key";
+        testSubject.put(testKey, new Object());
+
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        testSubject.computeIfPresent(testKey, v -> {
+            invoked.set(true);
+            return v;
+        });
+
+        assertTrue(invoked.get());
     }
 }

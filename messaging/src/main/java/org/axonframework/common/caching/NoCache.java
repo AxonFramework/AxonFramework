@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
+import java.util.function.UnaryOperator;
+
 /**
- * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation
- * for
+ * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation for
  * the case when caching is disabled.
  *
  * @author Allard Buijze
@@ -29,7 +30,7 @@ import org.axonframework.common.Registration;
 public final class NoCache implements Cache {
 
     /**
-     * Creates a singleton reference the the NoCache implementation.
+     * Creates a singleton reference the NoCache implementation.
      */
     public static final NoCache INSTANCE = new NoCache();
 
@@ -56,6 +57,11 @@ public final class NoCache implements Cache {
     }
 
     @Override
+    public void removeAll() {
+        // Do nothing
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         return false;
     }
@@ -63,5 +69,10 @@ public final class NoCache implements Cache {
     @Override
     public Registration registerCacheEntryListener(EntryListener cacheEntryListener) {
         return () -> true;
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        // Do nothing
     }
 }

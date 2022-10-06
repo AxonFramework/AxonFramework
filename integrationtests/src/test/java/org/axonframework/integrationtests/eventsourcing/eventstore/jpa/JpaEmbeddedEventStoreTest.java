@@ -14,31 +14,34 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.eventhandling.deadletter;
+package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.spring.utils.MysqlTestContainerExtension;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -48,43 +51,43 @@ import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 /**
- * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue}
- * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link JpaEventStorageEngine} during testing.
  *
- * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  */
-
 @ExtendWith(SpringExtension.class)
-@ExtendWith(MysqlTestContainerExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
+@ContextConfiguration(classes = JpaEmbeddedEventStoreTest.TestContext.class)
+@TestPropertySource("classpath:hsqldb.database.properties")
+class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
-
     @Autowired
     private EntityManagerProvider entityManagerProvider;
 
     @BeforeEach
-    public void clear() {
-        getTransactionManager().executeInTransaction(() -> {
-            entityManagerProvider.getEntityManager().createQuery("delete from DeadLetterEntry e").executeUpdate();
-        });
+    public void clearEventStore() {
+        transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
+                                                                           .createQuery("DELETE FROM DomainEventEntry e")
+                                                                           .executeUpdate());
     }
 
     @Override
-    protected TransactionManager getTransactionManager() {
-        return new SpringTransactionManager(platformTransactionManager);
+    public TransactionManager getTransactionManager() {
+        transactionManager = new SpringTransactionManager(platformTransactionManager);
+        return transactionManager;
     }
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
-        return JpaSequencedDeadLetterQueue.builder()
-                                          .processingGroup(PROCESSING_GROUP)
-                                          .transactionManager(getTransactionManager())
-                                          .entityManagerProvider(entityManagerProvider)
-                                          .serializer(TestSerializer.JACKSON.getSerializer())
-                                          .build();
+    public EventStorageEngine createStorageEngine() {
+        Serializer testSerializer = TestSerializer.JACKSON.getSerializer();
+        return JpaEventStorageEngine.builder()
+                                    .eventSerializer(testSerializer)
+                                    .snapshotSerializer(testSerializer)
+                                    .entityManagerProvider(entityManagerProvider)
+                                    .transactionManager(transactionManager)
+                                    .build();
     }
 
     @Configuration
@@ -103,19 +106,30 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
         }
 
         @Bean
-        public DataSource dataSource() {
-            return MysqlTestContainerExtension.getInstance().asDataSource();
+        public DataSource dataSource(@Value("${jdbc.driverclass}") String driverClass,
+                                     @Value("${jdbc.url}") String url,
+                                     @Value("${jdbc.username}") String username,
+                                     @Value("${jdbc.password}") String password) {
+            DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource(url, username, password);
+            driverManagerDataSource.setDriverClassName(driverClass);
+            return Mockito.spy(driverManagerDataSource);
         }
 
         @Bean("entityManagerFactory")
-        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+                @Value("${hibernate.sql.dialect}") String dialect,
+                @Value("${hibernate.sql.generateddl}") boolean generateDdl,
+                @Value("${hibernate.sql.show}") boolean showSql,
+                DataSource dataSource
+        ) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
+            entityManagerFactoryBean.setPersistenceUnitName("eventStore");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-            jpaVendorAdapter.setGenerateDdl(true);
-            jpaVendorAdapter.setShowSql(false);
+            jpaVendorAdapter.setDatabasePlatform(dialect);
+            jpaVendorAdapter.setGenerateDdl(generateDdl);
+            jpaVendorAdapter.setShowSql(showSql);
             entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
             entityManagerFactoryBean.setDataSource(dataSource);
