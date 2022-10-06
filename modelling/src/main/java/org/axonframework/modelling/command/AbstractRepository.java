@@ -359,11 +359,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             }
         }
     }
-
     @Override
     public boolean canResolve(@Nonnull ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof AggregateScopeDescriptor
-                && aggregateModel.types().anyMatch(t -> t.getName().contains (((AggregateScopeDescriptor) scopeDescription).getType()));
+                && aggregateModel.types().anyMatch(t -> t.getName().contentEquals (((AggregateScopeDescriptor) scopeDescription).getType()));
     }
 
     /**
