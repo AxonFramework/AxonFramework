@@ -66,6 +66,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
      * @param beanFactory         The beanFactory containing the definitions of the Aggregates.
      * @param aggregatePrototypes The prototype beans found for each individual type of Aggregate.
      * @param <A>                 The type of Aggregate.
+     *
      * @return A hierarchy model with subtypes for each declared main Aggregate.
      */
     @SuppressWarnings("unchecked")
@@ -192,7 +193,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             if (registry.containsBean(repositoryBeanName)) {
                 Class<?> type = registry.getType(repositoryBeanName);
                 if (type == null || Repository.class.isAssignableFrom(type)) {
-                    beanDefinitionBuilder.addPropertyReference(REPOSITORY, repositoryBeanName);
+                    beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryBeanName);
                 }
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
