@@ -55,7 +55,6 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaSagaStore.class);
 
-
     // Saga Queries, non-final to inject the return type and table name.
     private final String LOAD_SAGA_QUERY =
             "SELECT new " + serializedObjectType().getName() + "(" +
@@ -405,7 +404,7 @@ public class JpaSagaStore implements SagaStore<Object> {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                serializer = () -> XStreamSerializer.defaultSerializer();
+                serializer = XStreamSerializer::defaultSerializer;
             }
         }
     }

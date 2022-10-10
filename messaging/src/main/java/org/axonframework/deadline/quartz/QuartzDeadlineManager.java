@@ -363,7 +363,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                serializer = () -> XStreamSerializer.defaultSerializer();
+                serializer = XStreamSerializer::defaultSerializer;
             }
         }
     }

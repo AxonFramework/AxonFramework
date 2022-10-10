@@ -352,10 +352,10 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private void buildStorageEngine() {
             if (snapshotSerializer == null) {
-                snapshotSerializer = () -> XStreamSerializer.defaultSerializer();
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
             }
             if (eventSerializer == null) {
-                eventSerializer = () -> XStreamSerializer.defaultSerializer();
+                eventSerializer = XStreamSerializer::defaultSerializer;
             }
 
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");

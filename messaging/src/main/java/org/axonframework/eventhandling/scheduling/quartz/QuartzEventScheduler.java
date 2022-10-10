@@ -446,7 +446,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
                 if (serializer == null) {
-                    serializer = () -> XStreamSerializer.defaultSerializer();
+                    serializer = XStreamSerializer::defaultSerializer;
                 }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }
