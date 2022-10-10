@@ -356,26 +356,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         protected void validate() throws AxonConfigurationException {
             if (snapshotSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for events, whereas it is strongly recommended to"
-                                + " configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for events,"
-                                        + " without specifying the security context"
-                        )
-                );
-                snapshotSerializer = () -> XStreamSerializer.builder().build();
+                snapshotSerializer = () -> XStreamSerializer.defaultSerializer();
             }
             if (eventSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for snapshots, whereas it is strongly recommended to "
-                                + "configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for snapshots,"
-                                        + " without specifying the security context"
-                        )
-                );
-                eventSerializer = () -> XStreamSerializer.builder().build();
+                eventSerializer = () -> XStreamSerializer.defaultSerializer();
             }
         }
     }

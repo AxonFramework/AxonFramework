@@ -252,13 +252,6 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         @Deprecated
         public DirectEventJobDataBinder() {
             this(XStreamSerializer.defaultSerializer());
-            logger.warn(
-                    "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                            + " the security context of the XStream instance.",
-                    new AxonConfigurationException(
-                            "A default XStreamSerializer is used, without specifying the security context"
-                    )
-            );
         }
 
         /**
@@ -453,14 +446,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
                 if (serializer == null) {
-                    logger.warn(
-                            "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                    + " the security context of the XStream instance.",
-                            new AxonConfigurationException(
-                                    "A default XStreamSerializer is used, without specifying the security context"
-                            )
-                    );
-                    serializer = () -> XStreamSerializer.builder().build();
+                    serializer = () -> XStreamSerializer.defaultSerializer();
                 }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }

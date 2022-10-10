@@ -363,14 +363,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                + " the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used, without specifying the security context"
-                        )
-                );
-                serializer = () -> XStreamSerializer.builder().build();
+                serializer = () -> XStreamSerializer.defaultSerializer();
             }
         }
     }
