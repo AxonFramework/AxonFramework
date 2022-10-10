@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import com.thoughtworks.xstream.XStream;
 import io.axoniq.axonserver.connector.event.EventChannel;
 import io.axoniq.axonserver.grpc.InstructionAck;
 import io.axoniq.axonserver.grpc.event.Event;
@@ -37,7 +36,6 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -321,9 +319,7 @@ public class AxonServerEventScheduler implements EventScheduler, Lifecycle {
                                 "A default XStreamSerializer is used, without specifying the security context"
                         )
                 );
-                serializer = () -> XStreamSerializer.builder()
-                                                    .xStream(new XStream(new CompactDriver()))
-                                                    .build();
+                serializer = () -> XStreamSerializer.builder().build();
             }
             assertNonNull(axonServerConnectionManager,
                           "The AxonServerConnectionManager is a hard requirement and should be provided");

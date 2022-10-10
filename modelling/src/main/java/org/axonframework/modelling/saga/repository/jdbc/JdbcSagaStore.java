@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga.repository.jdbc;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
@@ -28,7 +27,6 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -402,9 +400,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
                                 "A default XStreamSerializer is used, without specifying the security context"
                         )
                 );
-                serializer = () -> XStreamSerializer.builder()
-                                                    .xStream(new XStream(new CompactDriver()))
-                                                    .build();
+                serializer = () -> XStreamSerializer.builder().build();
             }
         }
     }

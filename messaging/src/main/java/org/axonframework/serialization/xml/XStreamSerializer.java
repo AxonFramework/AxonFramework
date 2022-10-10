@@ -223,6 +223,8 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
          */
         public XStreamSerializer build() {
             if (xStream == null) {
+                logger.warn("An unsecured XStream instance allowing all types is used. "
+                                    + "It is strongly recommended to set the security context yourself instead!");
                 xStream = new XStream(new CompactDriver());
             }
             return new XStreamSerializer(this);
