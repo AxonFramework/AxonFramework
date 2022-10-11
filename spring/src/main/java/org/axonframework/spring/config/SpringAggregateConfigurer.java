@@ -175,6 +175,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
                                                                              .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
                                                                              .eventBus(c.eventBus())
                                                                              .repositoryProvider(c::repository)
+                                                                             .spanFactory(c.spanFactory())
                                                                              .build());
         }
 
