@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.quartz;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -30,7 +29,6 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -365,16 +363,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                + " the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used, without specifying the security context"
-                        )
-                );
-                serializer = () -> XStreamSerializer.builder()
-                                                    .xStream(new XStream(new CompactDriver()))
-                                                    .build();
+                serializer = XStreamSerializer::defaultSerializer;
             }
         }
     }
