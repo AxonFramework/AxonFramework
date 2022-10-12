@@ -104,7 +104,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
         <hibernate-core.version>5.6.12.Final</hibernate-core.version>
-        <byte-buddy.version>1.12.17</byte-buddy.version>
+        <byte-buddy.version>1.12.18</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
         <javassist.version>3.29.2-GA</javassist.version>
