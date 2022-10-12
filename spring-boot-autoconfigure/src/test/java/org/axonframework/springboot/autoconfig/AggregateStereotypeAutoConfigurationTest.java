@@ -32,6 +32,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
@@ -42,6 +43,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
@@ -147,6 +150,28 @@ class AggregateStereotypeAutoConfigurationTest {
         });
     }
 
+    @Test
+    void aggregateWithEntityManagerAnnotationIsAutoconfiguredWitDefaultJpaRepository() {
+        testApplicationContext.run(context -> {
+            String beanName = context.getBeanNamesForType(TestContext.SimpleStateStoredAggregate.class)[0];
+            assertTrue(context.containsBean(beanName + "Repository"));
+            Object actual = context.getBean(beanName + "Repository");
+            assertTrue(actual instanceof GenericJpaRepository, "Expected Jpa repository to have been configured");
+        });
+    }
+
+    @Test
+    void aggregateWithEntityManagerAnnotationIsAutoconfiguredWitExistingJpaRepository() {
+        String beanName = "org.axonframework.springboot.autoconfig.AggregateStereotypeAutoConfigurationTest$TestContext$SimpleStateStoredAggregate";
+        Repository mockRepo = mock(Repository.class);
+        testApplicationContext.withBean(beanName + "Repository", Repository.class, () -> mockRepo)
+                              .run(context -> {
+                                  assertTrue(context.containsBean(beanName + "Repository"));
+                                  Object actual = context.getBean(beanName + "Repository");
+                                  assertSame(mockRepo, actual, "Expected defined repository to have been configured");
+                              });
+    }
+
     @Configuration
     @EnableAutoConfiguration
     static class TestContext {
@@ -225,6 +250,23 @@ class AggregateStereotypeAutoConfigurationTest {
 
             private CustomRepoTestAggregate() {
                 // Required by AggregateFactory
+            }
+        }
+
+        @Entity(name = "simpleAggregate")
+        @Aggregate
+        private static class SimpleStateStoredAggregate {
+
+            @Id
+            private String aggregateId;
+
+            public SimpleStateStoredAggregate() {
+                // required for JPA
+            }
+
+            @CommandHandler
+            public SimpleStateStoredAggregate(CreateStateStoredAggregateCommand command) {
+                this.aggregateId = command.getAggregateId();
             }
         }
 
@@ -320,6 +362,19 @@ class AggregateStereotypeAutoConfigurationTest {
         }
     }
 
+    static class CreateStateStoredAggregateCommand {
+
+        final String aggregateId;
+
+        CreateStateStoredAggregateCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
+        }
+
+        public String getAggregateId() {
+            return aggregateId;
+        }
+    }
+
     static class CreateTestAggregate {
 
         private final String aggregateId;
@@ -353,7 +408,8 @@ class AggregateStereotypeAutoConfigurationTest {
     @SuppressWarnings("unused")
     static class UpdateTestAggregate {
 
-        @TargetAggregateIdentifier private final String aggregateId;
+        @TargetAggregateIdentifier
+        private final String aggregateId;
 
         UpdateTestAggregate() {
             this(AGGREGATE_IDENTIFIER);
@@ -415,7 +471,8 @@ class AggregateStereotypeAutoConfigurationTest {
     @SuppressWarnings("unused")
     static class UpdateCustomRepoTestAggregate {
 
-        @TargetAggregateIdentifier private final String aggregateId;
+        @TargetAggregateIdentifier
+        private final String aggregateId;
 
         UpdateCustomRepoTestAggregate() {
             this(AGGREGATE_IDENTIFIER);
