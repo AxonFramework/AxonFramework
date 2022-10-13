@@ -19,11 +19,22 @@
 - Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
+- A Message Handler is required to define the message name and the desired concrete type it should be handled in.
+  The name will, mostly likely, describe the business concept of the message in question.
+  The concrete type...
 
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
 - Define Message Handling Component configuration (MHC-configuration), without Annotations.
 - Drop default Serializer, to enforce users to think about the Serializer to use.
+- Revamp the configuration to allow a 'higher-level' configuration component,
+   like a "Command Handling Component Configuration" or "Command Center Configuration".
+  Through this, we can have a user define a message handler, appending any type of additional behavior required.
+  Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the Repository?).
+  Instead, we are then able to take the users configuration, 
+   and wrap the behavior of the infrastructure components.
+  Simply put, use the Decorator Pattern.
+- Favor direct component configuration i.o. Service Loader usage.
 
 ## Annotations
 - Define annotation-based Message Handling Component setup, using the MHC-configuration
@@ -33,10 +44,11 @@
 - Messages should not be serialization native. 
   The message buses need to be serialization aware, though. 
   They should, as these know the message handlers, and what the expected type to handle is. 
-  Thus, handlers need to register themselves with the desired payload type.
-- Attach upcasting to the serialization-process / Serializer
+  Thus, handlers need to register themselves with the desired message name.
+- Attach upcasting to the serialization-process / Serializer.
 - Enforce serialized format of internal objects, e.g. tokens.
   This eliminates issues with de-/serialization with different Serializer choices.
+- Serializers are configured on the buses.
 
 ## Snapshotting
 - Snapshot triggering, creation, and usage should be more easily definable by the end user
@@ -55,3 +67,4 @@
 - No static methods on our public APIs!
 - No locks / synchronized keywords!
 - No Thread#sleep!
+- No Exception throwing in the functional-coding style!
