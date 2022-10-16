@@ -156,6 +156,17 @@ public abstract class Matchers {
     }
 
     /**
+     * Returns a Matcher that matches with exact class type defined by the given {@code expected}.
+     *
+     * @param expected The expected event class
+     * @param <T>      The type of event to match against
+     * @return a matcher that matches based on the class
+     */
+    public static <T> ExactClassMatcher<T> exactClassOf(Class<T> expected) {
+        return new ExactClassMatcher<>(expected);
+    }
+
+    /**
      * Matches against each event of the same runtime type that has all field values equal to the fields in the expected
      * event. All fields are compared, except for the aggregate identifier and sequence number, as they are generally
      * not set on the expected event.
