@@ -158,11 +158,11 @@ public abstract class Matchers {
     /**
      * Returns a Matcher that matches with exact class type defined by the given {@code expected}.
      *
-     * @param expected The expected event class
-     * @param <T>      The type of event to match against
+     * @param expected The expected class
+     * @param <T>      The object type to match the given {@code expected} class with.
      * @return a matcher that matches based on the class
      */
-    public static <T> ExactClassMatcher<T> exactClassOf(Class<T> expected) {
+    public static <T> Matcher<T> exactClassOf(Class<T> expected) {
         return new ExactClassMatcher<>(expected);
     }
 
