@@ -108,13 +108,15 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         delegate.deleteSaga(sagaType, sagaIdentifier, associationValues);
     }
 
-    private void removeAssociationValueFromCache(Class<?> sagaType, String sagaIdentifier,
+    private void removeAssociationValueFromCache(Class<?> sagaType,
+                                                 String sagaIdentifier,
                                                  AssociationValue associationValue) {
         String key = cacheKey(associationValue, sagaType);
         associationsCache.computeIfPresent(key, associations -> {
             //noinspection unchecked
             ((Set<String>) associations).remove(sagaIdentifier);
-            return ((Set<?>) associations).isEmpty() ? null : associations;
+            //noinspection unchecked
+            return ((Set<String>) associations).isEmpty() ? null : associations;
         });
     }
 
@@ -131,8 +133,11 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                                          Class<?> sagaType) {
         for (AssociationValue associationValue : associationValues) {
             String key = cacheKey(associationValue, sagaType);
-            //noinspection unchecked
-            associationsCache.computeIfPresent(key, identifiers -> ((Set<String>) identifiers).add(sagaIdentifier));
+            associationsCache.computeIfPresent(key, identifiers -> {
+                //noinspection unchecked
+                ((Set<String>) identifiers).add(sagaIdentifier);
+                return identifiers;
+            });
         }
     }
 

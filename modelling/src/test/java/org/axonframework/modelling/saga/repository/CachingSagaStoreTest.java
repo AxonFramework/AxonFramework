@@ -18,6 +18,7 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.caching.Cache;
 import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.AssociationValuesImpl;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 
@@ -146,14 +147,26 @@ public abstract class CachingSagaStoreTest {
     void sagaAndAssociationsRemovedFromCacheOnDelete() {
         String testSagaId = "123";
         AssociationValue testAssociationValue = new AssociationValue("key", "value");
+        AssociationValuesImpl testUpdatedAssociations = new AssociationValuesImpl();
+        testUpdatedAssociations.add(testAssociationValue);
         String expectedAssociationKey = "org.axonframework.modelling.saga.repository.StubSaga/key=value";
 
+        // Insert a Saga into the store, thus adding it to the cache.
         testSubject.insertSaga(StubSaga.class, testSagaId, new StubSaga(), singleton(testAssociationValue));
         assertTrue(sagaCache.containsKey(testSagaId));
 
+        // Find the Saga, as this will set the association values in the cache.
+        // Insert only adds association values to the cache, if they were already present.
         testSubject.findSagas(StubSaga.class, testAssociationValue);
+        assertTrue(sagaCache.containsKey(testSagaId));
         assertTrue(associationsCache.containsKey(expectedAssociationKey));
 
+        // Update the Saga instance, to ensure updating the Saga and adding "new" associations to the cache works.
+        testSubject.updateSaga(StubSaga.class, testSagaId, new StubSaga(), testUpdatedAssociations);
+        assertTrue(sagaCache.containsKey(testSagaId));
+        assertTrue(associationsCache.containsKey(expectedAssociationKey));
+
+        // Delete the Saga, to ensure it's removed from the cache.
         testSubject.deleteSaga(StubSaga.class, testSagaId, singleton(testAssociationValue));
         assertFalse(sagaCache.containsKey(testSagaId));
         assertFalse(associationsCache.containsKey(expectedAssociationKey));
