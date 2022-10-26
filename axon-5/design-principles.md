@@ -19,9 +19,11 @@
 - Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
-- A Message Handler is required to define the message name and the desired concrete type it should be handled in.
-  The name will, mostly likely, describe the business concept of the message in question.
-  The concrete type...
+- A Message Handler should be capable of defining the business name of the message it handles,
+   and the type it wants to receive it in.
+
+## Event Processing
+- 
 
 ## Configuration
 - Break up Configuration module, to not have one module that depends on all other modules.
@@ -68,3 +70,4 @@
 - No locks / synchronized keywords!
 - No Thread#sleep!
 - No Exception throwing in the functional-coding style!
+- No Schema maintenance!
