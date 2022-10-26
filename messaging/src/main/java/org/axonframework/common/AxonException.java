@@ -17,7 +17,7 @@
 package org.axonframework.common;
 
 /**
- * Base exception of all Axon Framework related exceptions.
+ * Base exception for all Axon Framework related exceptions.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -43,5 +43,16 @@ public abstract class AxonException extends RuntimeException {
      */
     public AxonException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Initializes the exception using the given {@code message}, {@code cause} and {@code writableStackTrace}.
+     *
+     * @param message            The message describing the exception
+     * @param cause              The underlying cause of the exception
+     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
+     */
+    public AxonException(String message, Throwable cause, boolean writableStackTrace) {
+        super(message, cause, true, writableStackTrace);
     }
 }
