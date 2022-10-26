@@ -15,7 +15,6 @@ updates:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
-    - "YvonneCeelie"
 # Updates for `master`.
 - package-ecosystem: maven
   directory: "/"
@@ -34,7 +33,6 @@ updates:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
-    - "YvonneCeelie"
 # Patch and security updates for patch branch.
 - package-ecosystem: maven
   directory: "/"
@@ -53,5 +51,4 @@ updates:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
-    - "YvonneCeelie"
   target-branch: "axon-4.6.x"
