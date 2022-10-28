@@ -37,7 +37,7 @@ public interface MessageHandlerInterceptorSupport<T extends Message<?>> {
      * handled Message on the messaging component that it was registered to, prior to invoking the message's handler.
      *
      * @param handlerInterceptor The interceptor to register
-     * @return a Registration, which may be used to remove the unregister the interceptor
+     * @return A Registration, which may be used to deregister the interceptor.
      */
     Registration registerHandlerInterceptor(@Nonnull MessageHandlerInterceptor<? super T> handlerInterceptor);
 }

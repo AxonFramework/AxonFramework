@@ -268,7 +268,7 @@ public class DistributedCommandBus implements CommandBus, Distributed<CommandBus
      * interceptors at the given order before the command is dispatched toward the command handler.
      *
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
-     * @return handle to unregister the interceptor
+     * @return handle to deregister the interceptor
      */
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {

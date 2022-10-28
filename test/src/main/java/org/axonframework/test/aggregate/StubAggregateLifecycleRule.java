@@ -22,7 +22,7 @@ import org.junit.runners.model.*;
 
 /**
  * Implementation of StubAggregateLifecycle that can be used as an {@link org.junit.Rule} annotated method or field in a
- * test class. In that case, the JUnit lifecycle will automatically register and unregister the {@link
+ * test class. In that case, the JUnit lifecycle will automatically register and deregister the {@link
  * StubAggregateLifecycle}.
  * <p>
  * Usage example:

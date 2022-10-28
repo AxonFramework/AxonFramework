@@ -68,7 +68,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
     /**
      * Removes all strategies registered using the {@link #register(PropertyAccessStrategy)} method.
      *
-     * @param strategy The strategy instance to unregister
+     * @param strategy The strategy instance to deregister.
      */
     public static void unregister(PropertyAccessStrategy strategy) {
         STRATEGIES.remove(strategy);
