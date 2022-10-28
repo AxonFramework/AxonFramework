@@ -302,6 +302,21 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Method returning a default component to use for given {@code type} for given {@code configuration}, or an empty
+     * Optional if no default can be provided.
+     *
+     * @param type          The type of component to find a default for.
+     * @param configuration The configuration the component is configured in.
+     * @param <T>           The type of component.
+     * @return An Optional containing a default component, or empty if none can be provided.
+     */
+    protected <T> List<T> defaultComponents(Class<T> type, Configuration configuration) {
+        List<T> result = new ArrayList<>();
+        defaultComponent(type, configuration).ifPresent(result::add);
+        return result;
+    }
+
+    /**
      * Returns a {@link DefaultCommandGateway} that will use the configuration's {@link CommandBus} to dispatch
      * commands.
      *
@@ -930,6 +945,31 @@ public class DefaultConfigurer implements Configurer {
                                             c -> defaultComponent(componentType, c).orElseGet(defaultImpl))
             ).get();
             return componentType.cast(component);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> List<T> getComponents(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
+            List<T> result = new ArrayList<>();
+            components.forEach(
+                    (t, c) -> {
+                        if (t.isAssignableFrom(componentType)) {
+                            result.add((T) c.get());
+                        }
+                    }
+            );
+            List<T> defaultComponents = defaultComponents(componentType, config);
+            if (defaultComponents.isEmpty()) {
+                Optional.ofNullable(getComponent(componentType, defaultImpl)).ifPresent(result::add);
+            } else {
+                defaultComponents.forEach(d -> components.put(d.getClass(), new Component<>(
+                        config,
+                        d.getClass().getSimpleName(),
+                        c -> d
+                )));
+                return defaultComponents;
+            }
+            return result;
         }
 
         @Override

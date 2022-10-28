@@ -156,6 +156,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
+    public <T> List<T> getComponents(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
+        return config.getComponents(componentType, defaultImpl);
+    }
+
+    @Override
     public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
                                                                            @Nonnull String componentName) {
         return config.messageMonitor(componentType, componentName);

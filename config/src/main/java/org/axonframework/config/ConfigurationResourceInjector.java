@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.modelling.saga.AbstractResourceInjector;
 
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -39,5 +40,10 @@ public class ConfigurationResourceInjector extends AbstractResourceInjector {
     @Override
     protected <R> Optional<R> findResource(Class<R> requiredType) {
         return Optional.ofNullable(configuration.getComponent(requiredType));
+    }
+
+    @Override
+    protected <R> Collection<R> findResources(Class<R> requiredType) {
+        return configuration.getComponents(requiredType);
     }
 }

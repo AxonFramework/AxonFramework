@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,11 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -58,8 +63,26 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
                                .filter(ann -> AnnotationUtils.isAnnotationPresent(field, ann))
                                .forEach(annotatedFields -> {
                                    Class<?> requiredType = field.getType();
-                                   findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
+                                   if (Arrays.asList(requiredType.getInterfaces()).contains(Collection.class)) {
+                                       injectCollection(saga, requiredType, field);
+                                   } else {
+                                       injectSingleton(saga, requiredType, field);
+                                   }
+                                   findResource(requiredType).ifPresent(resource -> injectFieldResource(saga,
+                                                                                                        field,
+                                                                                                        resource));
                                }));
+    }
+
+    private void injectSingleton(Object saga, Class<?> requiredType, Field field) {
+        findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
+    }
+
+    private void injectCollection(Object saga, Class<?> requiredType, Field field) {
+        ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+        Class<?> collectionOf = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+        Collection<?> collection = findResources(collectionOf);
+        injectFieldResource(saga, field, transformCollectionToCorrectType(collection, requiredType));
     }
 
     /**
@@ -71,6 +94,16 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
      * @return an Optional that contains the resource if it was found
      */
     protected abstract <R> Optional<R> findResource(Class<R> requiredType);
+
+    /**
+     * Returns resources of given {@code requiredType} or an empty Collection if the resource is not registered with the
+     * injector.
+     *
+     * @param requiredType the class of the resource to find
+     * @param <R>          the resource type
+     * @return a Collection that contains as many resources as are found
+     */
+    protected abstract <R> Collection<R> findResources(Class<R> requiredType);
 
     private void injectFieldResource(Object saga, Field injectField, Object resource) {
         try {
@@ -87,8 +120,32 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
                                 .filter(a -> AnnotationUtils.isAnnotationPresent(method, a))
                                 .forEach(a -> {
                                     Class<?> requiredType = method.getParameterTypes()[0];
-                                    findResource(requiredType).ifPresent(resource -> injectMethodResource(saga, method, resource));
+                                    if (Arrays.asList(requiredType.getInterfaces()).contains(Collection.class)) {
+                                        injectCollection(saga, requiredType, method);
+                                    } else {
+                                        injectSingleton(saga, requiredType, method);
+                                    }
                                 }));
+    }
+
+    private void injectSingleton(Object saga, Class<?> requiredType, Method method) {
+        findResource(requiredType).ifPresent(resource -> injectMethodResource(saga, method, resource));
+    }
+
+    private void injectCollection(Object saga, Class<?> requiredType, Method method) {
+        ParameterizedType parameterizedType = (ParameterizedType) method.getGenericParameterTypes()[0];
+        Class<?> collectionOf = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+        Collection<?> collection = findResources(collectionOf);
+        injectMethodResource(saga, method, transformCollectionToCorrectType(collection, requiredType));
+    }
+
+    private Collection<?> transformCollectionToCorrectType(Collection<?> collection, Class<?> requiredType) {
+        if (requiredType.isAssignableFrom(List.class)) {
+            return new ArrayList<>(collection);
+        } else {
+            throw new SagaInstantiationException(String.format("don't know how to create instance of %s", requiredType),
+                                                 new RuntimeException("injecting collection failed"));
+        }
     }
 
     private void injectMethodResource(Object saga, Method injectMethod, Object resource) {

@@ -43,7 +43,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.tracing.SpanFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -271,6 +273,36 @@ public interface Configuration extends LifecycleOperations {
      * if no component was registered
      */
     <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl);
+
+    /**
+     * Returns the Components declared under the given {@code componentType}, typically the interface the component
+     * implements.
+     *
+     * @param componentType The type of component
+     * @param <T>           The type of component
+     * @return the component registered for the given type, or {@code null} if no such component exists
+     */
+    default <T> List<T> getComponents(@Nonnull Class<T> componentType) {
+        return getComponents(componentType, () -> null);
+    }
+
+    /**
+     * Returns the Components declared under the given {@code componentType}, typically the interface the component
+     * implements, reverting to the given {@code defaultImpl} if no such component is defined.
+     * <p>
+     * When no component was previously registered, the default is then configured as the component for the given type.
+     *
+     * @param componentType The type of component
+     * @param defaultImpl   The supplier of the default to return if no component was registered
+     * @param <T>           The type of component
+     * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
+     * if no component was registered
+     */
+    default <T> List<T> getComponents(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
+        List<T> result = new ArrayList<>();
+        Optional.ofNullable(getComponent(componentType, defaultImpl)).ifPresent(result::add);
+        return result;
+    }
 
     /**
      * Returns the message monitor configured for a component of given {@code componentType} and {@code componentName}.

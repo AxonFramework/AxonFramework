@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package org.axonframework.modelling.saga;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 /**
  * A resource injector that checks for @Inject annotated fields and setter methods to inject resources. If a field is
- * annotated with @Inject, a Resource of the type of that field is injected into it, if present. If
- * a method is annotated with @Inject, the method is invoked with a Resource of the type of the first parameter, if
- * present.
+ * annotated with @Inject, a Resource of the type of that field is injected into it, if present. If a method is
+ * annotated with @Inject, the method is invoked with a Resource of the type of the first parameter, if present.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -59,8 +59,19 @@ public class SimpleResourceInjector extends AbstractResourceInjector {
     @Override
     protected <R> Optional<R> findResource(Class<R> requiredType) {
         return (Optional<R>) StreamSupport.stream(resources.spliterator(), false)
-                .filter(requiredType::isInstance)
-                .findFirst();
+                                          .filter(requiredType::isInstance)
+                                          .findFirst();
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <R> Collection<R> findResources(Class<R> requiredType) {
+        List<R> result = new ArrayList<>();
+        resources.forEach(i -> {
+            if (requiredType.isInstance(i)) {
+                result.add((R) i);
+            }
+        });
+        return result;
+    }
 }

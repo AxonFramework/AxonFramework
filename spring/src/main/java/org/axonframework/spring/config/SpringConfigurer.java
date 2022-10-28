@@ -21,7 +21,9 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -50,6 +52,11 @@ public class SpringConfigurer extends DefaultConfigurer {
         return locator.findBean(type);
     }
 
+    @Override
+    protected <T> List<T> defaultComponents(Class<T> type, Configuration config) {
+        return locator.findBeans(type);
+    }
+
     private static class ComponentLocator {
 
         private final ConfigurableListableBeanFactory beanFactory;
@@ -68,10 +75,17 @@ public class SpringConfigurer extends DefaultConfigurer {
             } else {
                 Optional<T> primary = findPrimary(componentType, candidates);
                 if (!primary.isPresent()) {
-                    throw new AxonConfigurationException("Expected single candidate for component [" + componentType.getSimpleName() + "]. Found candidates: " + Arrays.deepToString(candidates));
+                    throw new AxonConfigurationException(
+                            "Expected single candidate for component [" + componentType.getSimpleName()
+                                    + "]. Found candidates: " + Arrays.deepToString(candidates));
                 }
                 return primary;
             }
+        }
+
+        public <T> List<T> findBeans(Class<T> componentType) {
+            String[] candidates = beanFactory.getBeanNamesForType(componentType);
+            return findAll(componentType, candidates);
         }
 
         private <T> Optional<T> findPrimary(Class<T> componentType, String[] candidates) {
@@ -90,6 +104,14 @@ public class SpringConfigurer extends DefaultConfigurer {
             } else {
                 return Optional.of(beanFactory.getBean(primary, componentType));
             }
+        }
+
+        private <T> List<T> findAll(Class<T> componentType, String[] candidates) {
+            List<T> result = new ArrayList<>();
+            Arrays.stream(candidates).forEach(
+                    c -> result.add(beanFactory.getBean(c, componentType))
+            );
+            return result;
         }
     }
 }
