@@ -46,7 +46,7 @@ class AnnotationCommandTargetResolverTest {
 
     @Test
     void resolveTarget_CommandWithoutAnnotations() {
-        assertThrows(IdentifierMissingException.class,
+        assertThrows(IllegalArgumentException.class,
                      () -> testSubject.resolveTarget(asCommandMessage("That won't work")));
     }
 
@@ -109,7 +109,7 @@ class AnnotationCommandTargetResolverTest {
             private void getIdentifier() {
             }
         });
-        assertThrows(IdentifierMissingException.class, () -> testSubject.resolveTarget(command));
+        assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(command));
     }
 
     @Test
