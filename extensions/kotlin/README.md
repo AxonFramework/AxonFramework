@@ -24,7 +24,7 @@ For more information on anything Axon, please visit our website, [http://axoniq.
 
 ### Dependencies
 
-For the Kotlin extension itself you can get the version from the [axon-bom use](https://github.com/AxonFramework/axon-bom) or use the following coordinates:
+For the Kotlin extension itself you can get the version from the [axon-bom](https://github.com/AxonFramework/axon-bom) or use the following coordinates:
 
 **Maven**
 
