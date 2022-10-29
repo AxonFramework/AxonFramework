@@ -13,7 +13,7 @@ As such it provides you the necessary building blocks to follow these principles
 Building blocks like Aggregate factories and Repositories, Command, Event and Query Buses and an Event Store.
 The framework provides sensible defaults for all of these components out of the box.
 
-This set up helps you create a well structured application without having to bother with the infrastructure.
+This set up helps you create a well-structured application without having to bother with the infrastructure.
 The main focus can thus become your business functionality.
 
 This repository provides an extension to the Axon Framework: Kotlin. It provides functionality to leverage Kotlin features to be used with Axon Framework.
@@ -24,7 +24,7 @@ For more information on anything Axon, please visit our website, [http://axoniq.
 
 ### Dependencies
 
-For the Kotlin extension itself please use the following coordinates:
+For the Kotlin extension itself you can get the version from the [axon-bom use](https://github.com/AxonFramework/axon-bom) or use the following coordinates:
 
 **Maven**
 
@@ -32,14 +32,14 @@ For the Kotlin extension itself please use the following coordinates:
 <dependency>
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin</artifactId>
-    <version>0.2.0</version>
+    <version>4.6.0</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-implementation("org.axonframework.extensions.kotlin:axon-kotlin:0.2.0")
+implementation("org.axonframework.extensions.kotlin:axon-kotlin:4.6.0")
 ```
 
 For the Kotlin testing extension itself please use the following coordinates:
@@ -50,14 +50,14 @@ For the Kotlin testing extension itself please use the following coordinates:
 <dependency>
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin-test</artifactId>
-    <version>0.2.0</version>
+    <version>4.6.0</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-implementation("org.axonframework.extensions.kotlin:axon-kotlin-test:0.2.0")
+implementation("org.axonframework.extensions.kotlin:axon-kotlin-test:4.6.0")
 ```
 
 
