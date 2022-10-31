@@ -95,6 +95,7 @@ class InfraConfigurationTest {
 
             result.upcast(mockStream);
 
+            // Verify map invocation first and sorted invocation second, as the EventUpcasterChain beans are ordered in that fashion.
             InOrder upcasterOrder = inOrder(mockStream);
             //noinspection ResultOfMethodCallIgnored
             upcasterOrder.verify(mockStream).map(any());
