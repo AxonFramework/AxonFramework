@@ -62,7 +62,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
     }
 
     /**
-     * Pause this Unit of Work by unregistering it with the {@link CurrentUnitOfWork}. This will detach it from the
+     * Pause this Unit of Work by deregistering it with the {@link CurrentUnitOfWork}. This will detach it from the
      * current thread.
      */
     public void pause() {

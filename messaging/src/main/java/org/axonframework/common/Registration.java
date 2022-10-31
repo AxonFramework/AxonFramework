@@ -38,7 +38,7 @@ public interface Registration extends AutoCloseable {
     /**
      * Cancels this Registration. If the Registration was already cancelled, no action is taken.
      *
-     * @return {@code true} if this handler is successfully unregistered, {@code false} if this handler
+     * @return {@code true} if this handler is successfully deregistered, {@code false} if this handler
      * was not currently registered.
      */
     boolean cancel();

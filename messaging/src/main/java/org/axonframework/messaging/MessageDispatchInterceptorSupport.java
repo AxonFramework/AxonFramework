@@ -38,7 +38,7 @@ public interface MessageDispatchInterceptorSupport<T extends Message<?>> {
      * dispatched on the messaging component that it was registered to.
      *
      * @param dispatchInterceptor The interceptor to register
-     * @return a Registration, which may be used to remove the unregister the interceptor
+     * @return A Registration, which may be used to deregister the interceptor.
      */
     Registration registerDispatchInterceptor(@Nonnull MessageDispatchInterceptor<? super T> dispatchInterceptor);
 }
