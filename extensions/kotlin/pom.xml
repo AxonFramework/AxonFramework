@@ -40,7 +40,7 @@
     <junit.jupiter.version>5.9.1</junit.jupiter.version>
     <slf4j.version>2.0.1</slf4j.version>
     <log4j.version>2.13.3</log4j.version>
-    <dokka.version>1.7.10</dokka.version>
+    <dokka.version>1.7.20</dokka.version>
 
     <!--
     Deactivate dokka by default, and make the build faster for all projects.
