@@ -128,7 +128,7 @@ class InfraConfigurationTest {
                                .isNotNull();
             EventProcessingModule eventProcessingModule =
                     context.getBean("eventProcessingModule", EventProcessingModule.class);
-            assertThat(eventProcessingModule.eventProcessor("test").isPresent()).isTrue();
+            assertThat(eventProcessingModule.eventProcessor("test")).isPresent();
 
             assertThat(context).getBean("eventHandlerInvocations", CountDownLatch.class)
                                .isNotNull();
