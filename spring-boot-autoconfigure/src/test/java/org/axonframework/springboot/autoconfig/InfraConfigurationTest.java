@@ -201,7 +201,6 @@ class InfraConfigurationTest {
         }
 
         @Bean
-        @Order(0)
         public EarlyEventHandler earlyEventHandler(CountDownLatch eventHandlerInvocations,
                                                    Set<String> handlingOutcome) {
             return new EarlyEventHandler(eventHandlerInvocations, handlingOutcome);
@@ -231,6 +230,7 @@ class InfraConfigurationTest {
             }
         }
 
+        @Order(0)
         @ProcessingGroup("test")
         static class EarlyEventHandler {
 
