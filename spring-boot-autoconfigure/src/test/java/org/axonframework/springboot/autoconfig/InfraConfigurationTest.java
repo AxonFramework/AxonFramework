@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
@@ -28,6 +29,7 @@ import org.axonframework.spring.config.SpringAggregateLookup;
 import org.axonframework.spring.config.SpringAxonConfiguration;
 import org.axonframework.spring.config.SpringConfigurer;
 import org.axonframework.spring.config.SpringSagaLookup;
+import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -156,6 +158,10 @@ class InfraConfigurationTest {
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     static class DefaultContext {
 
+        @Bean
+        public XStream xStream() {
+            return TestSerializer.xStreamSerializer().getXStream();
+        }
     }
 
     // We're not returning the result of invoking the stream operations as a simplification for adjusting the mock.
