@@ -32,6 +32,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.annotation.OrderUtils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -144,9 +145,9 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
         return found.stream()
                     .collect(Collectors.toMap(
                             beanRef -> beanRef,
-                            beanRef -> ObjectUtils.getOrDefault(
-                                    beanFactory.findAnnotationOnBean(beanRef, Order.class),
-                                    Order::value, Ordered.LOWEST_PRECEDENCE
+                            beanRef -> OrderUtils.getOrder(
+                                    ObjectUtils.getOrDefault(beanFactory.getType(beanRef), Object.class),
+                                    Ordered.LOWEST_PRECEDENCE
                             )
                     ))
                     .entrySet()
