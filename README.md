@@ -68,7 +68,7 @@ When filing bugs:
 When filing a feature or enhancement:
 * Please provide a description of the feature or enhancement at hand. 
   Adding why you think this would be beneficial is also a great help to us.
-* (Pseudo-)Code snippets showing what it might look like help us understand your suggestion better.
+* (Pseudo-)Code snippets showing what it might look like will help us understand your suggestion better.
   Similarly as with bugs, please use Markdown semantics for code snippets, starting and ending with three backticks (```).
 * If you have any thoughts on where to plug this into the framework, that would be very helpful too.
 * Lastly, we value contributions to the framework highly. 
