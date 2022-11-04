@@ -61,7 +61,7 @@ Furthermore, make sure you are adding the issue to the correct repository!
 When filing bugs:
 * A description of your setup and what's happening helps us figure out what the issue might be.
 * Do not forget to provide the versions of Axon's products you're using.
-* Add the language and version of the language you're using.
+* as well as the language and version.
 * If possible, share a stack trace. 
   Please use Markdown semantics by starting and ending the trace with three backticks (```).
 
