@@ -13,7 +13,7 @@ The messaging support for commands, events, and queries is at the core of these 
 It is the messaging basics that enable an evolutionary approach towards microservices through the [location transparency](https://en.wikipedia.org/wiki/Location_transparency) they provide.
 
 Axon will also assist in distributing applications to support scalability or fault tolerance, for example.
-The most accessible and quick road forward would be to use [Axon Server](https://developer.axoniq.io/axon-server/overview) to seamlessly adjust your message buses to distributed implementations.
+The most accessible and quick road forward would be to use [Axon Server](https://developer.axoniq.io/axon-server/overview) to seamlessly adjust message buses to distributed implementations.
 Axon Server provides a distributed command bus, event bus, query bus, and an efficient event store implementation for scalable event sourcing.
 Next to Axon Server, the [Axon Framework organization](https://github.com/AxonFramework) has several extensions that can help in this space too.
 
