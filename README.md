@@ -32,7 +32,7 @@ Furthermore, below are several other helpful resources:
 * We have our very own [academy](https://academy.axoniq.io/)! 
   The introductory courses are free, followed by more in-depth (paid) courses.
 * When ready, you can quickly and easily start your very own Axon Framework based application at https://start.axoniq.io/. 
-  Note that this solution is only feasible if you want to stick to the Spring ecosphere!
+  Note that this solution is only feasible if you want to stick to the Spring ecosphere.
 * The [reference guide](https://docs.axoniq.io) explains all of the components maintained within Axon Framework's products.
 * If the guide doesn't help, our [forum](https://discuss.axoniq.io/) provides a space to ask questions you have during development.
 * The [hotel demo](https://github.com/AxonIQ/hotel-demo) shows a fleshed-out example of using Axon Framework.
