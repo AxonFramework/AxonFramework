@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -138,6 +139,17 @@ class AxonAutoConfigurationTest {
 
     }
 
+    @Test
+    void beansImplementingLifecycleHaveTheirHandlersRegistered() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("lifecycletest", CustomLifecycleBean.class, CustomLifecycleBean::new)
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        applicationContextRunner.run(context -> {
+            assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
+        });
+    }
     @Test
     void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
@@ -285,5 +297,18 @@ class AxonAutoConfigurationTest {
 
     public static class CustomResource {
 
+    }
+
+    private class CustomLifecycleBean implements Lifecycle {
+        private boolean invoked;
+
+        @Override
+        public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+            this.invoked = true;
+        }
+
+        public boolean isInvoked() {
+            return invoked;
+        }
     }
 }
