@@ -72,4 +72,4 @@ When filing a feature or enhancement:
   Similarly as with bugs, please use Markdown semantics for code snippets, starting and ending with three backticks (```).
 * If you have any thoughts on where to plug this into the framework, that would be very helpful too.
 * Lastly, we value contributions to the framework highly. 
-  So please provide a Pull Request as well if you can!
+  So please provide a Pull Request as well!
