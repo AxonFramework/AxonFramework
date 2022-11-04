@@ -25,7 +25,7 @@ For more information on anything Axon, please visit our website, [http://axoniq.
 ## Getting started
 
 Numerous resources can help you on your journey in using Axon Framework.
-A good starting point is [AxonIQ Developer Portal](https://developer.axoniq.io/), which provides links to sources like blogs, videos, and descriptions.
+A good starting point is [AxonIQ Developer Portal](https://developer.axoniq.io/), which provides links to resources like blogs, videos, and descriptions.
 
 For clarity, here are several helpful resources too:
 * The [quickstart page](https://docs.axoniq.io/reference-guide/getting-started/quick-start) of the documentation provides a simplified entry point into the framework with the [quickstart project](https://download.axoniq.io/quickstart/AxonQuickStart.zip).
