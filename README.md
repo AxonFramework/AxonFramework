@@ -17,7 +17,7 @@ The most accessible and quick road forward would be to use [Axon Server](https:/
 Axon Server provides a distributed command bus, event bus, query bus, and an efficient event store implementation for scalable event sourcing.
 Additionally, the [Axon Framework organization](https://github.com/AxonFramework) has several extensions that can help in this space.
 
-The accumulation of all this helps you to create a well-structured application without being bothered with the infrastructure.
+All this helps to create a well-structured application without worrying about the infrastructure.
 Hence, your focus can shift from non-functional requirements to your business functionality.
 
 For more information on anything Axon, please visit our website, [http://axoniq.io](http://axoniq.io).
