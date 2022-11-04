@@ -5,7 +5,7 @@
 
 [Axon Framework](https://developer.axoniq.io/axon-framework/overview) is a framework for building evolutionary, event-driven microservice systems based on the principles of Domain-Driven Design (DDD), Command-Query Responsibility Separation (CQRS), and Event Sourcing.
 
-To that end, it provides you with the necessary building blocks to follow these principles.
+Axon Framework provides you with the necessary building blocks to follow these principles.
 Examples of building blocks are aggregate design handles, aggregate repositories, command buses, saga design handles, event stores, query buses, and more.
 The framework provides sensible defaults for all of these components out of the box.
 
