@@ -131,7 +131,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * Returns the AggregateFactory registered for the given {@code aggregateType}, or {@code null} if no such
      * AggregateFactory is known.
      * <p>
-     * Sublasses may override this method to enhance how AggregateFactories are retrieved. They may choose to
+     * Subclasses may override this method to enhance how AggregateFactories are retrieved. They may choose to
      * {@link #registerAggregateFactory(AggregateFactory)} if it hasn't been found using this implementation.
      *
      * @param aggregateType The type to get the AggregateFactory for

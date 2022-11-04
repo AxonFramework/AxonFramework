@@ -467,7 +467,7 @@ public interface UnitOfWork<T extends Message<?>> {
          * case for phases where cleanup or post-error processing is done. Exceptions in those phases should not trigger
          * exceptions, but to a best-effort attempt to clean up.
          *
-         * @return {@code true} when errors should be suppressed, otherise {@code false}
+         * @return {@code true} when errors should be suppressed, otherwise {@code false}
          */
         public boolean isSuppressHandlerErrors() {
             return suppressHandlerErrors;
