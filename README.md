@@ -59,7 +59,7 @@ Before filing an issue, please verify that it's not already reported by someone 
 Furthermore, make sure you are adding the issue to the correct repository!
 
 When filing bugs:
-* A description of your setup and what's happening helps us to figure out what the issue might be.
+* A description of your setup and what's happening helps us figure out what the issue might be.
 * Do not forget to provide the versions of Axon's products you're using.
 * Add the language and version of the language you're using.
 * If possible, share a stack trace. 
