@@ -48,7 +48,7 @@ There are a couple of things to consider when you're traversing anything Axon:
 * When the reference guide does not cover your predicament, we would greatly appreciate it if you could file an [issue](https://github.com/AxonIQ/reference-guide/issues) for it.
 * Our [forum](https://discuss.axoniq.io/) provides a space to communicate with the Axon community to help you out. 
   AxonIQ developers will help you out on a best-effort basis. 
-  And if you know how to help someone else, know that your contributions are very much appreciated!
+  And if you know how to help someone else, we greatly appreciate your contributions!
 * We also monitor Stack Overflow for any question tagged with [**axon**](https://stackoverflow.com/questions/tagged/axon). 
   Similarly to the forum, AxonIQ developers help out on a best-effort basis.
 
