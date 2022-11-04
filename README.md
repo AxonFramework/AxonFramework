@@ -45,7 +45,7 @@ Know that we want to help you out the best we can!
 There are a couple of things to consider when you're traversing anything Axon:
 
 * Checking the [reference guide](https://docs.axoniq.io) should be your first stop.
-* When the reference guide does not cover your predicament, we would greatly appreciate it if you could file an [issue](https://github.com/AxonIQ/reference-guide/issues) about it for us.
+* When the reference guide does not cover your predicament, we would greatly appreciate it if you could file an [issue](https://github.com/AxonIQ/reference-guide/issues) for it.
 * Our [forum](https://discuss.axoniq.io/) provides a space to communicate with the Axon community to help you out. 
   AxonIQ developers will help you out on a best-effort basis. 
   And if you know how to help someone else, know that your contributions are very much appreciated!
