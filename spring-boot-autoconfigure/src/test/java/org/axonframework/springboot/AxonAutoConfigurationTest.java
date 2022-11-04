@@ -53,7 +53,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.tracing.SpanFactory;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -72,7 +72,11 @@ import java.util.List;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AxonAutoConfigurationTest {
 
@@ -150,6 +154,7 @@ class AxonAutoConfigurationTest {
             assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
         });
     }
+
     @Test
     void ambiguousPrimaryComponentsThrowExceptionWhenRequestedFromConfiguration() {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
