@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
- * Jdbc table factory for Postgress databases.
+ * Jdbc table factory for Postgresql databases.
  *
  * @author Rene de Waele
  * @since 3.0

@@ -83,7 +83,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     /**
      * Instantiates a query processing task.
      *
-     * @param localSegment    Local instance of {@link QueryBus} used to actually execute the query withing this
+     * @param localSegment    Local instance of {@link QueryBus} used to actually execute the query within this
      *                        application instance.
      * @param queryRequest    The request received from Axon Server.
      * @param responseHandler The {@link ReplyChannel} used for sending items to the Axon Server.
@@ -109,7 +109,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
     /**
      * Instantiates a query processing task.
      *
-     * @param localSegment       Local instance of {@link QueryBus} used to actually execute the query withing this
+     * @param localSegment       Local instance of {@link QueryBus} used to actually execute the query within this
      *                           application instance.
      * @param queryRequest       The request received from Axon Server.
      * @param responseHandler    The {@link ReplyChannel} used for sending items to the Axon Server.

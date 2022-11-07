@@ -155,7 +155,7 @@ public interface TestExecutor<T> {
      * Note: As this method is added to the interface as a replacement for the deprecated
      * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
      * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
-     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recomended
+     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recommended
      * approach is to override this implementation.
      *
      * @param elapsedTime a {@link Duration} specifying the amount of time that will elapse
@@ -202,7 +202,7 @@ public interface TestExecutor<T> {
      * Note: As this method is added to the interface as a replacement for the deprecated
      * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
      * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
-     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recomended
+     * breaking changes in the API in case an external implementation of this interface. Nevertheless, the recommended
      * approach is to override this implementation.
      *
      * @param newPointInTime an {@link Instant} specifying the amount of time to advance the clock to

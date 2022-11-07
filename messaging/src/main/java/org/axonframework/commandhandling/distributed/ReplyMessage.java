@@ -80,7 +80,7 @@ public abstract class ReplyMessage implements Serializable {
     }
 
     /**
-     * Returns a {@link CommandResultMessage} containg the result of command processing.
+     * Returns a {@link CommandResultMessage} containing the result of command processing.
      *
      * @param serializer the serializer to deserialize the result with
      * @return a {@link CommandResultMessage} containing the return value of command processing

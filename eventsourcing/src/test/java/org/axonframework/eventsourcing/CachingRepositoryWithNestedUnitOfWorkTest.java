@@ -55,9 +55,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p/>
  * Committing a unit of work may result in additional units of work being created -- typically as part of the 'publish
  * event' phase: <ol> <li>A Command is dispatched. <li>A UOW is created, started. <li>The command completes.
- * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is
+ * Aggregate(s) have been loaded and events have been applied. <li>The UOW is committed: <ol> <li>The aggregate is
  * saved.
- * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified.
+ * <li>Events are published on the event bus. <li>Inner UOWs are committed. <li>AfterCommit listeners are notified.
  * </ol>
  * </ol>
  * <p/>
