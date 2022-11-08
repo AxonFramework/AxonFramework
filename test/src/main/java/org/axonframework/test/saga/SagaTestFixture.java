@@ -389,14 +389,16 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor
+    ) {
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor
+    ) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
