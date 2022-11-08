@@ -9,18 +9,21 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
     - name: Create Release Notes Markdown
       uses: docker://decathlon/release-notes-generator-action:3.1.5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         OUTPUT_FOLDER: temp_release_notes
         USE_MILESTONE_TITLE: "true"
+
     - name: Get the name of the created Release Notes file and extract Version
       run: |
         RELEASE_NOTES_FILE=$(ls temp_release_notes/*.md | head -n 1)
         echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_ENV
         VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+
     - name: Create a Draft Release Notes on GitHub
       id: create_release
       uses: actions/create-release@v1
@@ -31,6 +34,10 @@ jobs:
         release_name:  Axon Framework v${{ env.VERSION }}
         body_path: ${{ env.RELEASE_NOTES_FILE }}
         draft: true
+
+  trigger-discuss-notification:
+    runs-on: ubuntu-latest
+    steps:
     - name: Create a Discuss notification for the Release
       id: create-discuss-notification
       uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
