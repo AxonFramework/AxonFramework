@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -33,7 +32,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -254,13 +252,6 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         @Deprecated
         public DirectEventJobDataBinder() {
             this(XStreamSerializer.defaultSerializer());
-            logger.warn(
-                    "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                            + " the security context of the XStream instance.",
-                    new AxonConfigurationException(
-                            "A default XStreamSerializer is used, without specifying the security context"
-                    )
-            );
         }
 
         /**
@@ -455,16 +446,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             if (jobDataBinderSupplier == null) {
                 if (serializer == null) {
-                    logger.warn(
-                            "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                    + " the security context of the XStream instance.",
-                            new AxonConfigurationException(
-                                    "A default XStreamSerializer is used, without specifying the security context"
-                            )
-                    );
-                    serializer = () -> XStreamSerializer.builder()
-                                                        .xStream(new XStream(new CompactDriver()))
-                                                        .build();
+                    serializer = XStreamSerializer::defaultSerializer;
                 }
                 jobDataBinderSupplier = () -> new DirectEventJobDataBinder(serializer.get());
             }

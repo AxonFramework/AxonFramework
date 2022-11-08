@@ -174,7 +174,8 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor
+    );
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -184,7 +185,8 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor
+    );
 
     /**
      * Registers a callback to be invoked when the fixture execution starts recording. This happens right before

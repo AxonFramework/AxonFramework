@@ -16,8 +16,11 @@
 
 package org.axonframework.spring.config;
 
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.config.AggregateConfigurer;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -25,6 +28,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -38,6 +42,7 @@ import javax.annotation.Nonnull;
  * org.axonframework.config.Configuration}.
  *
  * @param <T> The type of Aggregate to configure
+ *
  * @author Allard Buijze
  * @since 4.6.0
  */
@@ -160,7 +165,20 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
             aggregateConfigurer.configureRepository(
                     c -> applicationContext.getBean(aggregateRepository, Repository.class)
             );
+        } else if (isEntityManagerAnnotationPresent(aggregateType)) {
+            aggregateConfigurer.configureRepository(c -> GenericJpaRepository.builder(aggregateType)
+                                                                             .parameterResolverFactory(c.parameterResolverFactory())
+                                                                             .handlerDefinition(c.handlerDefinition(aggregateType))
+                                                                             .lockFactory(c.getComponent(
+                                                                                     LockFactory.class, () -> NullLockFactory.INSTANCE
+                                                                             ))
+                                                                             .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                                             .eventBus(c.eventBus())
+                                                                             .repositoryProvider(c::repository)
+                                                                             .spanFactory(c.spanFactory())
+                                                                             .build());
         }
+
         if (snapshotTriggerDefinition != null) {
             aggregateConfigurer.configureSnapshotTrigger(
                     c -> applicationContext.getBean(snapshotTriggerDefinition, SnapshotTriggerDefinition.class)
@@ -185,6 +203,11 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
         }
         aggregateConfigurer.configureFilterEventsByType(c -> filterEventsByType);
         configurer.configureAggregate(aggregateConfigurer);
+    }
+
+    private boolean isEntityManagerAnnotationPresent(Class<T> type) {
+        return AnnotationUtils.isAnnotationPresent(type, "javax.persistence.Entity")
+                || AnnotationUtils.isAnnotationPresent(type, "jakarta.persistence.Entity");
     }
 
     @Override

@@ -504,7 +504,7 @@ public class SimpleQueryBus implements QueryBus {
      * The interceptor is invoked separately for each handler instance (in a separate unit of work).
      *
      * @param interceptor the interceptor to invoke before passing a Query to the handler
-     * @return handle to unregister the interceptor
+     * @return handle to deregister the interceptor
      */
     @Override
     public Registration registerHandlerInterceptor(
@@ -518,7 +518,7 @@ public class SimpleQueryBus implements QueryBus {
      * the type of query (point-to-point or scatter-gather) executed.
      *
      * @param interceptor the interceptor to invoke when sending a Query
-     * @return handle to unregister the interceptor
+     * @return handle to deregister the interceptor
      */
     @Override
     public @Nonnull

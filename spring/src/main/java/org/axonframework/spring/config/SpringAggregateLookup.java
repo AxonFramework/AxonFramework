@@ -35,7 +35,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -139,19 +138,18 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         for (Map.Entry<SpringAggregate<? super Object>, Map<Class<? extends Object>, String>> aggregate : hierarchy.entrySet()) {
             Class<?> aggregateType = aggregate.getKey().getClassType();
             String aggregatePrototype = aggregate.getKey().getBeanName();
-            //noinspection TypeParameterExplicitlyExtendsObject
-            Set<Class<? extends Object>> subTypes = aggregate.getValue().keySet();
 
             String registrarBeanName = aggregatePrototype + "$$Registrar";
             if (beanFactory.containsBeanDefinition(registrarBeanName)) {
                 logger.info("Registrar for {} already available. Skipping configuration", aggregatePrototype);
                 break;
             }
+
             BeanDefinition beanDefinition = beanFactory.getBeanDefinition(aggregatePrototype);
             if (beanDefinition.isPrototype() && aggregateType != null) {
                 AnnotationUtils.findAnnotationAttributes(aggregateType, Aggregate.class)
                                .map(props -> buildAggregateBeanDefinition(
-                                       beanFactory, aggregateType, aggregatePrototype, subTypes, props
+                                       beanFactory, aggregateType, aggregatePrototype, aggregate.getValue(), props
                                ))
                                .ifPresent(registrarBeanDefinition -> bdRegistry.registerBeanDefinition(
                                        registrarBeanName, registrarBeanDefinition
@@ -163,13 +161,13 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
     private BeanDefinition buildAggregateBeanDefinition(ConfigurableListableBeanFactory registry,
                                                         Class<?> aggregateType,
                                                         String aggregateBeanName,
-                                                        Set<Class<?>> subTypes,
+                                                        Map<Class<?>, String> subTypes,
                                                         Map<String, Object> props) {
         BeanDefinitionBuilder beanDefinitionBuilder =
                 BeanDefinitionBuilder.genericBeanDefinition(SpringAggregateConfigurer.class)
                                      .setRole(BeanDefinition.ROLE_APPLICATION)
                                      .addConstructorArgValue(aggregateType)
-                                     .addConstructorArgValue(subTypes);
+                                     .addConstructorArgValue(subTypes.keySet());
         if (nonEmptyOrNull((String) props.get(SNAPSHOT_FILTER))) {
             beanDefinitionBuilder.addPropertyValue(SNAPSHOT_FILTER, props.get(SNAPSHOT_FILTER));
         }
@@ -192,7 +190,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             if (registry.containsBean(repositoryBeanName)) {
                 Class<?> type = registry.getType(repositoryBeanName);
                 if (type == null || Repository.class.isAssignableFrom(type)) {
-                    beanDefinitionBuilder.addPropertyReference(REPOSITORY, repositoryBeanName);
+                    beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryBeanName);
                 }
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
@@ -210,6 +208,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                     aggregateFactory,
                     BeanDefinitionBuilder.genericBeanDefinition(SpringPrototypeAggregateFactory.class)
                                          .addConstructorArgValue(aggregateBeanName)
+                                         .addConstructorArgValue(subTypes)
                                          .getBeanDefinition()
             );
         }

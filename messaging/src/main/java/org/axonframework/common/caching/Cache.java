@@ -86,7 +86,7 @@ public interface Cache {
      * Registers the given {@code cacheEntryListener} to listen for Cache changes.
      *
      * @param cacheEntryListener The listener to register
-     * @return a handle to unregister the listener
+     * @return a handle to deregister the listener
      */
     Registration registerCacheEntryListener(EntryListener cacheEntryListener);
 

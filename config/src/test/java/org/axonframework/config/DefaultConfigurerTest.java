@@ -61,6 +61,9 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
@@ -651,6 +654,55 @@ class DefaultConfigurerTest {
         verify(configurer, never()).registerCommandHandler(any());
         verify(configurer, never()).eventProcessing();
         verify(configurer, times(1)).registerQueryHandler(any());
+    }
+
+    @Test
+    void registeringNoUpcastersAndNoUpcasterChainComponentReturnsEmptyUpcasterChain() {
+        //noinspection unchecked
+        Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
+
+        EventUpcasterChain result = DefaultConfigurer.defaultConfiguration()
+                                                     .buildConfiguration()
+                                                     .upcasterChain();
+
+        result.upcast(mockStream);
+        // Since the upcaster chain is empty, the Stream is not interacted with.
+        verifyNoInteractions(mockStream);
+    }
+
+    @Test
+    void registeringUpcastersReturnsUpcasterChainOverRulingRegisteredUpcasterChainComponent() {
+        //noinspection unchecked
+        Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
+
+        AtomicBoolean firstUpcasterInvocation = new AtomicBoolean(false);
+        EventUpcaster firstUpcaster = mock(EventUpcaster.class);
+        when(firstUpcaster.upcast(any())).thenAnswer(it -> {
+            firstUpcasterInvocation.set(true);
+            return it.getArgument(0);
+        });
+        AtomicBoolean secondUpcasterInvocation = new AtomicBoolean(false);
+        EventUpcaster secondUpcaster = mock(EventUpcaster.class);
+        when(secondUpcaster.upcast(any())).thenAnswer(it -> {
+            secondUpcasterInvocation.set(true);
+            return it.getArgument(0);
+        });
+        EventUpcasterChain testUpcasterChain = mock(EventUpcasterChain.class);
+
+        EventUpcasterChain result = DefaultConfigurer.defaultConfiguration()
+                                                     .registerEventUpcaster(c -> firstUpcaster)
+                                                     .registerEventUpcaster(c -> secondUpcaster)
+                                                     .registerComponent(
+                                                             EventUpcasterChain.class, c -> testUpcasterChain
+                                                     )
+                                                     .buildConfiguration()
+                                                     .upcasterChain();
+
+        result.upcast(mockStream);
+
+        assertTrue(firstUpcasterInvocation.get());
+        assertTrue(secondUpcasterInvocation.get());
+        verifyNoInteractions(testUpcasterChain);
     }
 
     @SuppressWarnings("unused")

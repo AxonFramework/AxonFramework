@@ -19,10 +19,12 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.MessageHandlerLookup;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -31,10 +33,13 @@ import org.axonframework.spring.config.SpringConfigurer;
 import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.spring.config.annotation.SpringParameterResolverFactoryBean;
+import org.axonframework.spring.saga.SpringResourceInjector;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -93,6 +98,12 @@ public class InfraConfiguration {
         return configurer;
     }
 
+    @Bean
+    public InitializingBean lifecycleInitializer(Configurer configurer,
+                                                 List<Lifecycle> lifecycleBeans) {
+        return () -> configurer.onInitialize(configuration -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(configuration.lifecycleRegistry())));
+    }
+
     @Primary
     @Bean
     public HandlerDefinitionFactoryBean handlerDefinition(List<HandlerDefinition> handlerDefinitions,
@@ -120,6 +131,12 @@ public class InfraConfiguration {
     @Bean
     public ConfigurerModule eventUpcastersConfigurer(List<EventUpcaster> upcasters) {
         return configurer -> upcasters.forEach(u -> configurer.registerEventUpcaster(c -> u));
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public ResourceInjector resourceInjector() {
+        return new SpringResourceInjector();
     }
 }
 

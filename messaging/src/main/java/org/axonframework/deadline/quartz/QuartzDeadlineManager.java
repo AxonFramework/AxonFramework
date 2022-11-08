@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.quartz;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -30,7 +29,6 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -47,7 +45,6 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -55,6 +52,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
+import static java.util.Date.from;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ExceptionUtils.findException;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
@@ -70,6 +68,7 @@ import static org.quartz.JobKey.jobKey;
 public class QuartzDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
+    private static final String CANCEL_ERROR_MESSAGE = "An error occurred while cancelling a timer for a deadline manager";
 
     private static final String JOB_NAME_PREFIX = "deadline-";
 
@@ -132,6 +131,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public String schedule(@Nonnull Instant triggerDateTime,
                            @Nonnull String deadlineName,
                            Object messageOrPayload,
@@ -178,7 +178,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
                 scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
                          .forEach(this::cancelSchedule);
             } catch (SchedulerException e) {
-                throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+                throw new DeadlineException(CANCEL_ERROR_MESSAGE, e);
             }
         }));
     }
@@ -199,8 +199,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
                             }
                         }
                     } catch (SchedulerException e) {
-                        throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager",
-                                                    e);
+                        throw new DeadlineException(CANCEL_ERROR_MESSAGE, e);
                     }
                 });
     }
@@ -211,23 +210,25 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
                 logger.warn("The job belonging to this token could not be deleted.");
             }
         } catch (SchedulerException e) {
-            throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+            throw new DeadlineException(CANCEL_ERROR_MESSAGE, e);
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
         JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
                          .withDescription(deadlineMessage.getPayloadType().getName())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
+                         .requestRecovery(true)
                          .build();
     }
 
     private static Trigger buildTrigger(Instant triggerDateTime, JobKey key) {
         return TriggerBuilder.newTrigger()
                              .forJob(key)
-                             .startAt(Date.from(triggerDateTime))
+                             .startAt(from(triggerDateTime))
                              .build();
     }
 
@@ -261,7 +262,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private Supplier<Serializer> serializer;
         private Predicate<Throwable> refireImmediatelyPolicy =
-                throwable -> !findException(throwable, t -> t instanceof AxonNonTransientException).isPresent();
+                throwable -> !findException(throwable, AxonNonTransientException.class::isInstance).isPresent();
         private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
         /**
@@ -365,16 +366,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager implements Li
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                + " the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used, without specifying the security context"
-                        )
-                );
-                serializer = () -> XStreamSerializer.builder()
-                                                    .xStream(new XStream(new CompactDriver()))
-                                                    .build();
+                serializer = XStreamSerializer::defaultSerializer;
             }
         }
     }

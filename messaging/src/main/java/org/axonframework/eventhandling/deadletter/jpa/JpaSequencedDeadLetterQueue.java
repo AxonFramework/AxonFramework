@@ -205,7 +205,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
             throws NoSuchDeadLetterException {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(String.format(
-                    "Evict should be called with a JpaDeadLetter instance. Instead got: [%s]",
+                    "Requeue should be called with a JpaDeadLetter instance. Instead got: [%s]",
                     letter.getClass().getName()));
         }
         EntityManager entityManager = entityManager();
@@ -306,11 +306,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     public boolean isFull(@Nonnull Object sequenceIdentifier) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
         long numberInSequence = sequenceSize(stringSequenceIdentifier);
-        if (numberInSequence > 0) {
-            // Is already in queue, cannot cause overflow any longer.
-            return numberInSequence >= maxSequenceSize;
-        }
-        return amountOfSequences() >= maxSequences;
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
     }
 
     @Override

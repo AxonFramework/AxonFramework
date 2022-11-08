@@ -28,15 +28,18 @@ import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.axonframework.spring.saga.SpringResourceInjector;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -44,7 +47,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
@@ -84,6 +89,9 @@ class AxonServerAutoConfigurationTest {
     @Autowired
     private QueryUpdateEmitter updateEmitter;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Test
     void axonServerQueryBusConfiguration() {
         assertTrue(queryBus instanceof AxonServerQueryBus);
@@ -94,6 +102,12 @@ class AxonServerAutoConfigurationTest {
     void axonServerCommandBusBeanTypesConfiguration() {
         assertTrue(commandBus instanceof AxonServerCommandBus);
         assertTrue(localSegment instanceof SimpleCommandBus);
+    }
+
+    @Test
+    void springResourceInjectorConfigured() {
+        assertFalse(applicationContext.getBeansOfType(ResourceInjector.class).isEmpty(), "Expected an autoconfigured ResourceInjector");
+        assertTrue(applicationContext.getBean(ResourceInjector.class) instanceof SpringResourceInjector);
     }
 
     @Test

@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import com.thoughtworks.xstream.XStream;
 import io.axoniq.axonserver.connector.event.AggregateEventStream;
 import io.axoniq.axonserver.connector.event.AppendEventsTransaction;
 import io.axoniq.axonserver.connector.event.EventChannel;
@@ -55,7 +54,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
@@ -354,30 +352,10 @@ public class AxonServerEventStore extends AbstractEventStore {
 
         private void buildStorageEngine() {
             if (snapshotSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for events, whereas it is strongly recommended to"
-                                + " configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for events,"
-                                        + " without specifying the security context"
-                        )
-                );
-                snapshotSerializer = () -> XStreamSerializer.builder()
-                                                            .xStream(new XStream(new CompactDriver()))
-                                                            .build();
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
             }
             if (eventSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for snapshots, whereas it is strongly recommended to "
-                                + "configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for snapshots,"
-                                        + " without specifying the security context"
-                        )
-                );
-                eventSerializer = () -> XStreamSerializer.builder()
-                                                         .xStream(new XStream(new CompactDriver()))
-                                                         .build();
+                eventSerializer = XStreamSerializer::defaultSerializer;
             }
 
             assertNonNull(configuration, "The AxonServerConfiguration is a hard requirement and should be provided");

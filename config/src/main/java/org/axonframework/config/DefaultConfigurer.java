@@ -513,15 +513,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default EventUpcasterChain implementation. Subclasses may override this method to provide their own
-     * default.
+     * Provides the default {@link EventUpcasterChain} implementation, looping through all
+     * {@link #registerEventUpcaster(Function) registered} {@link EventUpcaster EventUpcasters} to collect them for a
+     * fresh {@code EventUpcasterChain}. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
      * @return The default EventUpcasterChain to use.
      */
     protected EventUpcasterChain defaultUpcasterChain(Configuration config) {
-        return defaultComponent(EventUpcasterChain.class, config)
-                .orElseGet(() -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList())));
+        return new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()));
     }
 
     /**
