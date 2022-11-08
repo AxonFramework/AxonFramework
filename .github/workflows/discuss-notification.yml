@@ -33,7 +33,7 @@ jobs:
         id: read_release_notes
         uses: juliangruber/read-file-action@v1
         with:
-          path: ${{ release_notes_file }}
+          path: ${{ inputs.release_notes_file }}
 
       - name: Create Discuss topic
         run: |
@@ -52,6 +52,6 @@ jobs:
           }
           EOF
         with:
-          release_name: ${{ release_name }}
-          release_date: ${{ release_date }}
+          release_name: ${{ inputs.release_name }}
+          release_date: ${{ inputs.release_date }}
           release_notes: ${{ steps.read_release_notes.outputs.content }}
