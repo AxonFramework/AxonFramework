@@ -38,7 +38,7 @@ jobs:
   trigger-discuss-notification:
     uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
     with:
-      release_name: Axon Framework - Release ${{ env.VERSION }}
-      release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
+      release_name: Axon Framework - Release ${{ jobs.create-release-notes.env.VERSION }}
+      release_notes_file: ${{ jobs.create-release-notes.env.RELEASE_NOTES_FILE }}
       release_date: ${{ github.event.milestone.closedAt }}
 
