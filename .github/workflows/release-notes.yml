@@ -6,6 +6,10 @@ name: Milestone Closure
 jobs:
   create-release-notes:
     runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.extract-version-and-notes.outputs.RELEASE_NOTES_FILE }}
+      version: ${{ steps.extract-version-and-notes.outputs.VERSION }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -18,11 +22,14 @@ jobs:
         USE_MILESTONE_TITLE: "true"
 
     - name: Get the name of the created Release Notes file and extract Version
+      id: extract-version-and-notes
       run: |
         RELEASE_NOTES_FILE=$(ls temp_release_notes/*.md | head -n 1)
         echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_ENV
+        echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_OUTPUT
         VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Create a Draft Release Notes on GitHub
       id: create_release
@@ -37,8 +44,13 @@ jobs:
 
   trigger-discuss-notification:
     uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
+    needs:
+      create-release-notes:
+        outputs:
+          - version
+          - notes
     with:
-      release_name: Axon Framework - Release ${{ jobs.create-release-notes.env.VERSION }}
-      release_notes_file: ${{ jobs.create-release-notes.env.RELEASE_NOTES_FILE }}
+      release_name: Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}
+      release_notes_file: ${{ needs.create-release-notes.outputs.notes }}
       release_date: ${{ github.event.milestone.closedAt }}
 
