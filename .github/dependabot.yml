@@ -10,7 +10,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 59
+  milestone: 78
   reviewers:
     - "gklijs"
     - "Morlack"
@@ -29,7 +29,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 59
+  milestone: 78
   reviewers:
     - "gklijs"
     - "Morlack"
@@ -47,11 +47,11 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 71
+  milestone: 80
   open-pull-requests-limit: 5
   reviewers:
     - "gklijs"
     - "Morlack"
     - "smcvb" # Main
     - "YvonneCeelie"
-  target-branch: "axon-4.5.x"
+  target-branch: "axon-4.6.x"
