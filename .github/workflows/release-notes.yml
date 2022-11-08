@@ -44,11 +44,7 @@ jobs:
 
   trigger-discuss-notification:
     uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
-    needs:
-      create-release-notes:
-        outputs:
-          - version
-          - notes
+    needs: create-release-notes
     with:
       release_name: Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}
       release_notes_file: ${{ needs.create-release-notes.outputs.notes }}
