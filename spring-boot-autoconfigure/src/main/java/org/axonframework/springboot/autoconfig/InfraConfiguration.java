@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -33,6 +34,7 @@ import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.spring.config.annotation.SpringParameterResolverFactoryBean;
 import org.axonframework.spring.saga.SpringResourceInjector;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -94,6 +96,12 @@ public class InfraConfiguration {
         moduleConfigurations.forEach(configurer::registerModule);
         configurerModules.forEach(c -> c.configureModule(configurer));
         return configurer;
+    }
+
+    @Bean
+    public InitializingBean lifecycleInitializer(Configurer configurer,
+                                                 List<Lifecycle> lifecycleBeans) {
+        return () -> configurer.onInitialize(configuration -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(configuration.lifecycleRegistry())));
     }
 
     @Primary

@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -43,10 +44,10 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.tracing.SpanFactory;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -69,6 +70,25 @@ public interface Configuration extends LifecycleOperations {
         return getComponent(EventBus.class);
     }
 
+    /**
+     * Returns the lifecycle registry for this configuration. Typically, this is just an adapter around the
+     * configuration itself to register individual handler methods.
+     *
+     * @return the lifecycle registry for this configuration
+     */
+    default Lifecycle.LifecycleRegistry lifecycleRegistry() {
+        return new Lifecycle.LifecycleRegistry() {
+            @Override
+            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
+                Configuration.this.onStart(phase, action::run);
+            }
+
+            @Override
+            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
+                Configuration.this.onShutdown(phase, action::run);
+            }
+        };
+    }
     /**
      * Returns the Event Store in this Configuration, if it is defined. If no Event Store is defined (but an Event Bus
      * instead), this method throws an {@link AxonConfigurationException}.

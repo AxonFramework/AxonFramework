@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -52,7 +53,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.tracing.SpanFactory;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -71,7 +72,11 @@ import java.util.List;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AxonAutoConfigurationTest {
 
@@ -136,6 +141,18 @@ class AxonAutoConfigurationTest {
         assertTrue(actual.getMessage().contains("gatewayOne"));
         assertTrue(actual.getMessage().contains("gatewayTwo"));
 
+    }
+
+    @Test
+    void beansImplementingLifecycleHaveTheirHandlersRegistered() {
+        ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean("lifecycletest", CustomLifecycleBean.class, CustomLifecycleBean::new)
+                .withPropertyValues("axon.axonserver.enabled=false");
+
+        applicationContextRunner.run(context -> {
+            assertTrue(context.getBean("lifecycletest", CustomLifecycleBean.class).isInvoked());
+        });
     }
 
     @Test
@@ -285,5 +302,18 @@ class AxonAutoConfigurationTest {
 
     public static class CustomResource {
 
+    }
+
+    private class CustomLifecycleBean implements Lifecycle {
+        private boolean invoked;
+
+        @Override
+        public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+            this.invoked = true;
+        }
+
+        public boolean isInvoked() {
+            return invoked;
+        }
     }
 }
