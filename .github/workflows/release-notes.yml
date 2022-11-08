@@ -36,12 +36,9 @@ jobs:
         draft: true
 
   trigger-discuss-notification:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Create a Discuss notification for the Release
-      id: create-discuss-notification
-      uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
-      with:
-        release_name: Axon Framework - Release ${{ env.VERSION }}
-        release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
-        release_date: ${{ github.event.milestone.closedAt }}
+    uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
+    with:
+      release_name: Axon Framework - Release ${{ env.VERSION }}
+      release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
+      release_date: ${{ github.event.milestone.closedAt }}
+
