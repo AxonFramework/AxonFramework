@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       release_date:
-        type: number
+        type: string
         required: true
 
 jobs:
