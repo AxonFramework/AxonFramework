@@ -50,29 +50,30 @@ jobs:
 
   announce-on-discuss:
     runs-on: ubuntu-latest
+    needs: create-release-notes
     steps:
-      - name: Get authorities certificates
-        run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
+    - name: Get authorities certificates
+      run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
 
-      - name: Read release notes file
-        id: read_release_notes
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: ${{ env.RELEASE_NOTES_FILE }}
+    - name: Read release notes file
+      id: read_release_notes
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: ${{ needs.create-release-notes.outputs.notes }}
 
-      - name: Create Discuss topic
-        run: |
-          echo $json | curl --cacert $CA_FILE -X POST "$URL" \
-          -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
-          -H "Api-Username: axonbot" \
-          -H 'Content-Type: application/json' \
-          --data-binary @- << EOF
-          {
-            "title": "Axon Framework - Release ${{ env.VERSION }}",
-            "raw": "I’m glad to announce that we’ve released 
-          Axon Framework version ${{ env.VERSION }} on ${{ github.event.milestone.closedAt }}.<br\>
-          This release contains: <br/> ${{ steps.read_release_notes.outputs.content }}",
-            "category": $CATEGORY,
-            "tags": ["release"]
-          }
-          EOF
+    - name: Create Discuss topic
+      run: |
+        echo $json | curl --cacert $CA_FILE -X POST "$URL" \
+        -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
+        -H "Api-Username: axonbot" \
+        -H 'Content-Type: application/json' \
+        --data-binary @- << EOF
+        {
+          "title": "Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}",
+          "raw": "I’m glad to announce that we’ve released 
+        Axon Framework version ${{ needs.create-release-notes.outputs.version }} on ${{ github.event.milestone.closedAt }}.<br\>
+        This release contains: <br/> ${{ steps.read_release_notes.outputs.content }}",
+          "category": $CATEGORY,
+          "tags": ["release"]
+        }
+        EOF
