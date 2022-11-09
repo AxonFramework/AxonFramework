@@ -42,11 +42,31 @@ jobs:
         body_path: ${{ env.RELEASE_NOTES_FILE }}
         draft: true
 
-  trigger-discuss-notification:
-    uses: AxonFramework/AxonFramework/.github/workflows/discuss-notification.yml@master
-    needs: create-release-notes
-    with:
-      release_name: Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}
-      release_notes_file: ${{ needs.create-release-notes.outputs.notes }}
-      release_date: ${{ github.event.milestone.closedAt }}
+  announce-on-discuss:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get authorities certificates
+        run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
 
+      - name: Read release notes file
+        id: read_release_notes
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ${{ env.RELEASE_NOTES_FILE }}
+
+      - name: Create Discuss topic
+        run: |
+          echo $json | curl --cacert $CA_FILE -X POST "$URL" \
+          -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
+          -H "Api-Username: axonbot" \
+          -H 'Content-Type: application/json' \
+          --data-binary @- << EOF
+          {
+            "title": "Axon Framework - Release ${{ env.VERSION }}",
+            "raw": "I’m glad to announce that we’ve released 
+          Axon Framework version ${{ env.VERSION }} on ${{ github.event.milestone.closedAt }}.<br\>
+          This release contains: <br/> ${{ steps.read_release_notes.outputs.content }}",
+            "category": $CATEGORY,
+            "tags": ["release"]
+          }
+          EOF
