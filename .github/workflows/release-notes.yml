@@ -1,8 +1,14 @@
-# Trigger the workflow on milestone events
+name: Milestone Closure
+
 on: 
   milestone:
     types: [closed]
-name: Milestone Closure
+
+env:
+  CA_FILE: /tmp/ca.pem
+  URL: https://discuss.axoniq.io/posts.json
+  CATEGORY: 6 # id of `Announcements` category in Discuss
+
 jobs:
   create-release-notes:
     runs-on: ubuntu-latest
