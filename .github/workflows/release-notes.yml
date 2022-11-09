@@ -27,7 +27,7 @@ jobs:
         OUTPUT_FOLDER: temp_release_notes
         USE_MILESTONE_TITLE: "true"
 
-    - name: Get the name of the created Release Notes file and extract Version
+    - name: Set Release environment- and output-variables
       id: extract-version-and-notes
       run: |
         RELEASE_NOTES_FILE=$(ls temp_release_notes/*.md | head -n 1)
@@ -36,6 +36,13 @@ jobs:
         VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Add Release Notes to cache
+      id: cache-notes
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.RELEASE_NOTES_FILE }}
+        key: notes
 
     - name: Create a Draft Release Notes on GitHub
       id: create_release
@@ -54,6 +61,13 @@ jobs:
     steps:
     - name: Get authorities certificates
       run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
+
+    - name: Retrieve Release Notes from cache
+      id: cache-notes
+      uses: actions/cache@v3
+      with:
+        path: ${{ needs.create-release-notes.outputs.notes }}
+        key: notes
 
     - name: Read release notes file
       id: read_release_notes
