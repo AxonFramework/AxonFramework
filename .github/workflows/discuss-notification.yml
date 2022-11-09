@@ -25,7 +25,6 @@ jobs:
   announce:
     runs-on: ubuntu-latest
     steps:
-
       - name: Get authorities certificates
         run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
 
@@ -36,22 +35,17 @@ jobs:
           path: ${{ inputs.release_notes_file }}
 
       - name: Create Discuss topic
-        run: |
-          
+        run: |          
           echo $json | curl --cacert $CA_FILE -X POST "$URL" \
           -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
           -H "Api-Username: axonbot" \
           -H 'Content-Type: application/json' \
           --data-binary @- << EOF
           {
-            "title": "${{ release_name }}",
-            "raw": "I’m glad to announce that we’ve released ${{ release_name }} on ${{ release_date }}.<br\>
-          This release contains: <br/> ${{ release_notes}}",
+            "title": "${{ inputs.release_name }}",
+            "raw": "I’m glad to announce that we’ve released ${{ inputs.release_name }} on ${{ inputs.release_date }}.<br\>
+          This release contains: <br/> ${{ steps.read_release_notes.outputs.content }}",
             "category": $CATEGORY,
             "tags": ["release"]
           }
           EOF
-        with:
-          release_name: ${{ inputs.release_name }}
-          release_date: ${{ inputs.release_date }}
-          release_notes: ${{ steps.read_release_notes.outputs.content }}
