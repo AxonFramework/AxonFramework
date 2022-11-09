@@ -15,6 +15,7 @@ jobs:
     outputs:
       notes: ${{ steps.extract-version-and-notes.outputs.RELEASE_NOTES_FILE }}
       version: ${{ steps.extract-version-and-notes.outputs.VERSION }}
+      date: ${{ steps.extract-version-and-notes.outputs.RELEASE_DATE }}
 
     steps:
     - name: Checkout code
@@ -36,6 +37,7 @@ jobs:
         VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "RELEASE_DATE=$(date +'%b %d, %Y')" >> $GITHUB_OUTPUT
 
     - name: Add Release Notes to cache
       id: cache-notes
@@ -84,9 +86,12 @@ jobs:
         --data-binary @- << EOF
         {
           "title": "Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}",
-          "raw": "I’m glad to announce that we’ve released 
-        Axon Framework version ${{ needs.create-release-notes.outputs.version }} on ${{ github.event.milestone.closedAt }}.<br\>
-        This release contains: <br/> ${{ steps.read_release_notes.outputs.content }}",
+          "raw": "
+        I’m glad to announce that we’ve released Axon Framework version ${{ needs.create-release-notes.outputs.version }} on ${{ needs.create-release-notes.outputs.date }}.
+        This release contains: 
+        
+        ${{ steps.read_release_notes.outputs.content }}
+        ",
           "category": $CATEGORY,
           "tags": ["release"]
         }
