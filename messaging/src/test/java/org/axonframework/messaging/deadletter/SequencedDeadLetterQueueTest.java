@@ -951,10 +951,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      * @return A {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
      * that's requeued.
      */
-    protected abstract DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
+    protected DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
                                                             Instant lastTouched,
                                                             Throwable requeueCause,
-                                                            MetaData diagnostics);
+                                                            MetaData diagnostics) {
+        setAndGetTime(lastTouched);
+        return original.withCause(requeueCause)
+                       .withDiagnostics(diagnostics)
+                       .markTouched();
+    }
 
     /**
      * Set the current time for testing to {@link Instant#now()} and return this {@code Instant}.
