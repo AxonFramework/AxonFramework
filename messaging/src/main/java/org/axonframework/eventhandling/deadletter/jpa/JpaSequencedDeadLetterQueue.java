@@ -712,7 +712,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> addConverter(DeadLetterJpaConverter<EventMessage<?>> converter) {
-            assertNonNull(claimDuration, "Can not add a null DeadLetterJpaConverter.");
+            assertNonNull(converter, "Can not add a null DeadLetterJpaConverter.");
             this.converters.add(converter);
             return this;
         }
