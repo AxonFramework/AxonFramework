@@ -19,7 +19,10 @@ package org.axonframework.config;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -38,6 +41,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.3
  */
 public class MessageHandlerRegistrar implements Lifecycle {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Supplier<Configuration> configurationSupplier;
     private final Function<Configuration, Object> messageHandlerBuilder;
@@ -90,6 +95,10 @@ public class MessageHandlerRegistrar implements Lifecycle {
      * through the {@link #start()} method.
      */
     public void shutdown() {
+        if (handlerRegistration == null) {
+            logger.info("Shutting down a message handler registrar before it was started.");
+            return;
+        }
         handlerRegistration.cancel();
     }
 }

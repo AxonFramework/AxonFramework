@@ -97,6 +97,23 @@ class MessageHandlerRegistrarTest {
         assertTrue(isCanceled.get());
     }
 
+    @Test
+    void shutdownDoesNotThrowExceptionsIfWhenTheRegistrarHasNotStartedYet(@Mock Configuration config) {
+        AtomicBoolean isCanceled = new AtomicBoolean(false);
+
+        MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
+                () -> config,
+                c -> new SomeMessageHandler(),
+                (c, msgHandler) -> () -> {
+                    isCanceled.set(true);
+                    return false;
+                }
+        );
+
+        assertDoesNotThrow(testSubject::shutdown);
+        assertFalse(isCanceled.get());
+    }
+
     private static class SomeMessageHandler {
 
         private SomeMessageHandler() {
