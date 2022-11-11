@@ -65,20 +65,6 @@ class MessageHandlerRegistrarTest {
         assertTrue(isRegistered.get());
     }
 
-    /**
-     * The thrown {@link NullPointerException} will always be wrapped in a {@link org.axonframework.lifecycle.LifecycleHandlerInvocationException}
-     * since the {@link MessageHandlerRegistrar#shutdown()} will be wrapped in a {@link LifecycleHandler}.
-     */
-    @Test
-    void shutdownThrowsNullPointerExceptionIfRegistrationDidNotHappen(@Mock Configuration config) {
-        MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
-                () -> config, c -> new SomeMessageHandler(),
-                (c, msgHandler) -> TEST_REGISTRATION_IMPLEMENTATION
-        );
-
-        assertThrows(NullPointerException.class, testSubject::shutdown);
-    }
-
     @Test
     void shutdownCancelsMessageHandlerRegistration(@Mock Configuration config) {
         AtomicBoolean isCanceled = new AtomicBoolean(false);
