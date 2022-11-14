@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.ReversedOrder;
+
 import java.lang.reflect.Executable;
 import java.util.Comparator;
 import java.util.function.Function;
@@ -31,6 +33,7 @@ import java.util.function.ToIntFunction;
  * <li>The parameter count on the actual message handling function, favoring the highest number as the most specific handler.</li>
  * <li>As a final tie breaker, the {@link Executable#toGenericString()} of the actual message handling function</li>
  * </ol>
+ * If the given {@code MessageHandlingMembers} both implement {@link ReversedOrder}, steps 2 through 4 are reversed.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -40,21 +43,20 @@ public final class HandlerComparator {
     private static final Comparator<MessageHandlingMember<?>> INSTANCE =
             Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
                       .reversed()
-                      .thenComparing(
-                              (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                              HandlerComparator::compareHierarchy
-                      )
-                      .thenComparing(Comparator.comparingInt(
-                              (ToIntFunction<MessageHandlingMember<?>>) m -> m.unwrap(Executable.class)
-                                                                              .map(Executable::getParameterCount)
-                                                                              .orElse(1)
-                                     ).reversed()
-                      )
-                      .thenComparing(
-                              m -> m.unwrap(Executable.class)
-                                    .map(Executable::toGenericString)
-                                    .orElse(m.toString())
-                      );
+                      .thenComparing((memberOne, memberTwo) -> {
+                          Comparator<MessageHandlingMember<?>> handlerComparator =
+                                  Comparator.comparing(
+                                                    (Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                                                    HandlerComparator::compareHierarchy
+                                            )
+                                            .thenComparing(Comparator.comparingInt(HandlerComparator::parameterCount)
+                                                                     .reversed())
+                                            .thenComparing(HandlerComparator::executableName);
+
+                          return memberOne instanceof ReversedOrder && memberTwo instanceof ReversedOrder
+                                  ? handlerComparator.reversed().compare(memberOne, memberTwo)
+                                  : handlerComparator.compare(memberOne, memberTwo);
+                      });
 
     private HandlerComparator() {
         // Utility class
@@ -96,5 +98,17 @@ public final class HandlerComparator {
             depth += 1000;
         }
         return depth;
+    }
+
+    private static Integer parameterCount(MessageHandlingMember<?> handler) {
+        return handler.unwrap(Executable.class)
+                      .map(Executable::getParameterCount)
+                      .orElse(1);
+    }
+
+    private static String executableName(MessageHandlingMember<?> handler) {
+        return handler.unwrap(Executable.class)
+                      .map(Executable::toGenericString)
+                      .orElse(handler.toString());
     }
 }

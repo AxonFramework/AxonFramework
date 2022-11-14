@@ -17,6 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReversedOrder;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
@@ -56,7 +57,9 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         return original;
     }
 
-    private static class ResultHandlingInterceptorMember<T> extends WrappedMessageHandlingMember<T> implements MessageInterceptingMember<T> {
+    private static class ResultHandlingInterceptorMember<T>
+            extends WrappedMessageHandlingMember<T>
+            implements MessageInterceptingMember<T>, ReversedOrder {
 
         private final Class<?> expectedResultType;
 
