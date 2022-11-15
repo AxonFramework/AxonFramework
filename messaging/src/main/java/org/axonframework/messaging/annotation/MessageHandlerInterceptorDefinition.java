@@ -76,6 +76,11 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
+        public int priority() {
+            return Integer.MIN_VALUE;
+        }
+
+        @Override
         public boolean canHandle(@Nonnull Message<?> message) {
             return ResultParameterResolverFactory.ignoringResultParameters(() -> super.canHandle(message));
         }
