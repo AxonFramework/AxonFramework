@@ -139,7 +139,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
-                .serializer(TestSerializer.JACKSON.getSerializer())
+                .eventSerializer(TestSerializer.JACKSON.getSerializer())
+                .genericSerializer(TestSerializer.XSTREAM.getSerializer())
                 .build();
     }
 
