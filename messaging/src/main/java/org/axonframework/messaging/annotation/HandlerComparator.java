@@ -51,7 +51,7 @@ public final class HandlerComparator {
                                             )
                                             .thenComparing(Comparator.comparingInt(HandlerComparator::parameterCount)
                                                                      .reversed())
-                                            .thenComparing(HandlerComparator::executableName);
+                                            .thenComparing(HandlerComparator::executableSignature);
 
                           return memberOne instanceof ReversedOrder && memberTwo instanceof ReversedOrder
                                   ? handlerComparator.reversed().compare(memberOne, memberTwo)
@@ -106,7 +106,7 @@ public final class HandlerComparator {
                       .orElse(1);
     }
 
-    private static String executableName(MessageHandlingMember<?> handler) {
+    private static String executableSignature(MessageHandlingMember<?> handler) {
         return handler.unwrap(Executable.class)
                       .map(Executable::toGenericString)
                       .orElse(handler.toString());
