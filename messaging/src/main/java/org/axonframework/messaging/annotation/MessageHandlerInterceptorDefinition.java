@@ -77,7 +77,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
 
         @Override
         public int priority() {
-            return Integer.MIN_VALUE;
+            return Integer.MAX_VALUE;
         }
 
         @Override
