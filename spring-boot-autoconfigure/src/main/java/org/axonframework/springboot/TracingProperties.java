@@ -18,6 +18,8 @@ package org.axonframework.springboot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * Properties describing the settings for tracing.
  *
@@ -32,6 +34,17 @@ public class TracingProperties {
      * loaded without a snapshot in place. Use with care.
      */
     private boolean showEventSourcingHandlers = false;
+
+    /**
+     * Whether to nest spans of subsequent in the same trace. This setting is disabled by default.
+     */
+    private boolean nestedHandlers = false;
+
+    /**
+     * How old an event is allowed to be when nesting a span inside the dispatching trace. Will link spans together when
+     * this time expires.
+     */
+    private Duration nestedTimeLimit = Duration.ofMinutes(2);
 
     /**
      * Defines which {@link org.axonframework.tracing.SpanAttributesProvider SpanAttributesProviders}, provided by
@@ -55,6 +68,43 @@ public class TracingProperties {
      */
     public void setShowEventSourcingHandlers(boolean showEventSourcingHandlers) {
         this.showEventSourcingHandlers = showEventSourcingHandlers;
+    }
+
+    /**
+     * Getting value for nesting handlers in dispatching traces.
+     *
+     * @return Whether handlers should be nested in dispatching traces
+     */
+    public boolean isNestedHandlers() {
+        return nestedHandlers;
+    }
+
+    /**
+     * Setting value for nesting handlers in dispatching traces.
+     *
+     * @param nestedHandlers The new value for nesting handlers in dispatching trace.
+     */
+    public void setNestedHandlers(boolean nestedHandlers) {
+        this.nestedHandlers = nestedHandlers;
+    }
+
+
+    /**
+     * Getting value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
+     * and queries are always nested.
+     *
+     * @return For how long event messages should be nested in their dispatching trace.
+     */
+    public Duration getNestedTimeLimit() {
+        return nestedTimeLimit;
+    }
+
+    /**
+     * Sets the value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
+     * and queries are always nested.
+     */
+    public void setNestedTimeLimit(Duration nestedTimeLimit) {
+        this.nestedTimeLimit = nestedTimeLimit;
     }
 
     /**
