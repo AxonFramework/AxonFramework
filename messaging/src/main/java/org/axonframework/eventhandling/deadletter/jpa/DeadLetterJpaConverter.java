@@ -33,7 +33,7 @@ public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
      *
      * @param message    The message to convert.
      * @param eventSerializer The {@link Serializer} for serialization of payload and metadata.
-     * @param genericSerializer The {@link Serializer} for serialization of the token.
+     * @param genericSerializer The {@link Serializer} for serialization of the token, if present.
      * @return The created {@link DeadLetterEventEntry}
      */
     DeadLetterEventEntry convert(M message, Serializer eventSerializer, Serializer genericSerializer);
@@ -43,7 +43,7 @@ public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
      *
      * @param entry      The database entry to convert to a {@link EventMessage}
      * @param eventSerializer The {@link Serializer} for deserialization of payload and metadata.
-     * @param genericSerializer The {@link Serializer} for deserialization of the token.
+     * @param genericSerializer The {@link Serializer} for deserialization of the token, if present.
      * @return The created {@link DeadLetterEventEntry}
      */
     M convert(DeadLetterEventEntry entry, Serializer eventSerializer, Serializer genericSerializer);
