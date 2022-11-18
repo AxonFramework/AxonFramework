@@ -16,6 +16,7 @@
 
 package org.axonframework.tracing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
@@ -27,16 +28,15 @@ import java.util.function.Supplier;
 
 /**
  * Implementation of {@link SpanFactory} that wraps another factory and creates nested spans when handling messages
- * instead of starting a new trace.
+ * instead of starting a new trace. This is true for all messages, such as events, commands, deadlines and queries.
  * <p>
- * This factory includes a time limit (by default 2 minutes, but is configurable on the builder) that handling an event
- * will become part of the dispatching trace. After this time limit it is considered its own trace. The time limit
- * prevents replays of events from being added to the original trace, even after a longer period of time.
- * The time limit only applies for events and does not affect commands and queries. These will always be part of the
- * same trace.
+ * For events and deadlines specifically, this factory includes a time limit (by default 2 minutes, but is configurable
+ * on the builder). After that time limit, handling these message types will become a separate trace. The time limit
+ * prevents handling of events from being added to the original trace after a longer period of time, such as when
+ * replaying an event processor.
  *
  * @author Mitchell Herrijgers
- * @since 4.6.3
+ * @since 4.7.0
  */
 public class NestingSpanFactory implements SpanFactory {
 
@@ -46,9 +46,11 @@ public class NestingSpanFactory implements SpanFactory {
 
     /**
      * Creates the {@link NestingSpanFactory} based on the {@link Builder} provided.
+     *
      * @param builder The {@link Builder} to use during construction.
      */
     protected NestingSpanFactory(Builder builder) {
+        builder.validate();
         this.delegateSpanFactory = builder.delegateSpanFactory;
         this.timeLimit = builder.timeLimit;
         this.clock = builder.clock;
@@ -56,6 +58,11 @@ public class NestingSpanFactory implements SpanFactory {
 
     /**
      * Creates a new {@link Builder} that can build a {@link NestingSpanFactory}.
+     * <p>
+     * Requires the delegate {@link SpanFactory} to be configured.
+     * <p>
+     * The {@link Clock} defaults to the system utc time and the timeLimit {@link Duration} defaults to two minutes.
+     *
      * @return The {@link Builder} in charge of creating a {@link NestingSpanFactory}.
      */
     public static Builder builder() {
@@ -70,18 +77,20 @@ public class NestingSpanFactory implements SpanFactory {
     @Override
     public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
                                   boolean isChildTrace, Message<?>... linkedParents) {
-        if (!isChildTrace && messageIsWithinTimeLimit(parentMessage)) {
+        boolean isLinkedTrace = !isChildTrace;
+        if (isLinkedTrace && messageShouldBeForcedToNest(parentMessage)) {
             return delegateSpanFactory.createHandlerSpan(operationNameSupplier, parentMessage, true, linkedParents);
         }
         return delegateSpanFactory.createHandlerSpan(operationNameSupplier, parentMessage, isChildTrace, linkedParents);
     }
 
-    private boolean messageIsWithinTimeLimit(Message<?> parentMessage) {
-        if (!(parentMessage instanceof EventMessage)) {
-            return true;
+    private boolean messageShouldBeForcedToNest(Message<?> parentMessage) {
+        if (parentMessage instanceof EventMessage) {
+            Instant timestamp = ((EventMessage<?>) parentMessage).getTimestamp();
+            return clock.instant().isBefore(timestamp.plus(timeLimit));
         }
-        Instant timestamp = ((EventMessage<?>) parentMessage).getTimestamp();
-        return clock.instant().isBefore(timestamp.plus(timeLimit));
+
+        return true;
     }
 
     @Override
@@ -125,7 +134,8 @@ public class NestingSpanFactory implements SpanFactory {
         private Clock clock = Clock.systemUTC();
 
         /**
-         * Defines the delegate {@link SpanFactory} to use, which actually provides the spans.
+         * Defines the delegate {@link SpanFactory} to use, which actually provides the spans. This delegate is required
+         * for the builder to be built correctly.
          *
          * @param spanFactory The {@link SpanFactory} to configure for use.
          * @return The current Builder instance, for fluent interfacing.
@@ -137,8 +147,10 @@ public class NestingSpanFactory implements SpanFactory {
         }
 
         /**
-         * Configures the {@link Duration} since original publishing of an event during which it should be considered a
-         * nested span. After that duration, it will become its own separate trace.
+         * Configures the {@link Duration} since original publishing of an event or deadline during which it should be
+         * considered a nested span. After that duration, it will become its own separate trace.
+         * <p>
+         * The time limit defaults to two minutes if not configured otherwise.
          *
          * @param timeLimit The amount of time before handling of an event should be considered a separate trace.
          * @return The current Builder instance, for fluent interfacing.
@@ -152,6 +164,9 @@ public class NestingSpanFactory implements SpanFactory {
         /**
          * Configures the {@link Clock} to use when determining the time passed since publication of an event and the
          * current time.
+         *
+         * <p>
+         * The clock defaults to system utc time if not configured otherwise.
          *
          * @param clock The {@link Clock} to use when determining the time passed since publication of an event and the
          *              current time.
@@ -169,8 +184,17 @@ public class NestingSpanFactory implements SpanFactory {
          * @return The span factory.
          */
         public NestingSpanFactory build() {
-            BuilderUtils.assertNonNull(delegateSpanFactory, "The delegateSpanFactory should be configured");
             return new NestingSpanFactory(this);
+        }
+
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect, according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
+            BuilderUtils.assertNonNull(delegateSpanFactory, "The delegateSpanFactory should be configured");
         }
     }
 }
