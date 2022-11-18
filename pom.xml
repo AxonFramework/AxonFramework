@@ -101,6 +101,7 @@
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
+        <jobrunr.version>5.3.1</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
         <hibernate-core.version>5.6.12.Final</hibernate-core.version>
@@ -136,9 +137,6 @@
         <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
 
         <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
-
-        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
-        <jobrunr.version>5.0.0</jobrunr.version>
     </properties>
 
     <dependencies>
