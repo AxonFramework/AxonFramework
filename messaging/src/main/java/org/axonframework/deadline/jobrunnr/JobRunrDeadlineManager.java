@@ -84,17 +84,29 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     @Override
     public void cancelSchedule(String deadlineName, String scheduleId) {
-        runOnPrepareCommitOrNow(() -> jobScheduler.delete(scheduleId));
+        runOnPrepareCommitOrNow(() -> jobScheduler.delete(toUuid(scheduleId), "Deleted via DeadlineManager API"));
     }
 
     @Override
     public void cancelAll(String deadlineName) {
-        throw new UnsupportedOperationException();
+        throw new DeadlineException(
+                "The 'cancelAll' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
+                        + "This requires keeping track of the return value from 'schedule'.");
+    }
+
+    private UUID toUuid(String scheduleId) {
+        try {
+            return UUID.fromString(scheduleId);
+        } catch (IllegalArgumentException e) {
+            throw new DeadlineException("For jobrunr the scheduleId should be an UUID representation.", e);
+        }
     }
 
     @Override
     public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
-        throw new UnsupportedOperationException();
+        throw new DeadlineException(
+                "The 'cancelAllWithinScope' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
+                        + "This requires keeping track of the return value from 'schedule'.");
     }
 
     public void execute(DeadlineDetails deadlineDetails) {

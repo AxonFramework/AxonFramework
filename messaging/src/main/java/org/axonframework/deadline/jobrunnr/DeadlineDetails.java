@@ -34,6 +34,8 @@ public class DeadlineDetails {
 
     public DeadlineDetails(String deadlineName, UUID deadlineId, ScopeDescriptor scopeDescription, Object payload,
                            String[] keys, Object[] values) {
+        //needed to optionally initialize the aggregate identifier
+        scopeDescription.scopeDescription();
         this.deadlineName = deadlineName;
         this.deadlineId = deadlineId;
         this.scopeDescription = scopeDescription;
