@@ -35,9 +35,9 @@ import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -64,8 +64,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(Instant triggerDateTime, String deadlineName, Object messageOrPayload,
-                           ScopeDescriptor deadlineScope) {
+    public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
+                           @Nullable Object messageOrPayload,
+                           @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.fromString(deadlineMessage.getIdentifier());
         runOnPrepareCommitOrNow(() -> {
@@ -75,26 +76,25 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                         deadlineId,
                                         deadlineScope,
                                         interceptedDeadlineMessage.getPayload(),
-                                        interceptedDeadlineMessage.getMetaData().keySet().toArray(new String[0]),
-                                        interceptedDeadlineMessage.getMetaData().values().toArray());
+                                        interceptedDeadlineMessage.getMetaData());
             jobScheduler.<JobRunrDeadlineManager>schedule(deadlineId, triggerDateTime, x -> x.execute(deadlineDetails));
         });
         return deadlineId.toString();
     }
 
     @Override
-    public void cancelSchedule(String deadlineName, String scheduleId) {
+    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         runOnPrepareCommitOrNow(() -> jobScheduler.delete(toUuid(scheduleId), "Deleted via DeadlineManager API"));
     }
 
     @Override
-    public void cancelAll(String deadlineName) {
+    public void cancelAll(@Nonnull String deadlineName) {
         throw new DeadlineException(
                 "The 'cancelAll' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
                         + "This requires keeping track of the return value from 'schedule'.");
     }
 
-    private UUID toUuid(String scheduleId) {
+    private UUID toUuid(@Nonnull String scheduleId) {
         try {
             return UUID.fromString(scheduleId);
         } catch (IllegalArgumentException e) {
@@ -103,43 +103,36 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
         throw new DeadlineException(
                 "The 'cancelAllWithinScope' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
                         + "This requires keeping track of the return value from 'schedule'.");
     }
 
-    public void execute(DeadlineDetails deadlineDetails) {
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void execute(@Nonnull DeadlineDetails deadlineDetails) {
         Instant triggerInstant = GenericEventMessage.clock.instant();
-        Map<String, Object> metaData = new HashMap<>();
-        for (int i = 0; i < deadlineDetails.getKeys().length; i++) {
-            metaData.put(deadlineDetails.getKeys()[i], deadlineDetails.getValues()[i]);
-        }
-        GenericDeadlineMessage rebuiltDeadlineMessage = new GenericDeadlineMessage<>(deadlineDetails.getDeadlineName(),
-                                                                                     deadlineDetails.getDeadlineId()
-                                                                                                    .toString(),
-                                                                                     deadlineDetails.getPayload(),
-                                                                                     metaData,
-                                                                                     triggerInstant);
+        GenericDeadlineMessage rebuiltDeadlineMessage = deadlineDetails.asDeadLineMessage(triggerInstant);
         UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(rebuiltDeadlineMessage);
         unitOfWork.attachTransaction(transactionManager);
-        InterceptorChain chain =
-                new DefaultInterceptorChain<>(unitOfWork,
-                                              handlerInterceptors(),
-                                              deadlineMessage -> {
-                                                  executeScheduledDeadline(deadlineMessage,
-                                                                           deadlineDetails.getScopeDescription());
-                                                  return null;
-                                              });
+        InterceptorChain chain = new DefaultInterceptorChain<>(
+                unitOfWork,
+                handlerInterceptors(),
+                deadlineMessage -> {
+                    executeScheduledDeadline(deadlineMessage, deadlineDetails.getScopeDescription());
+                    return null;
+                });
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
-            LOGGER.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
-                         deadlineDetails.getDeadlineName(), deadlineDetails.getDeadlineId(), e);
-            throw new DeadlineException("Failed to process", e.getCause());
+            LOGGER.warn("An error occurred while triggering the deadline [{}] with identifier [{}]",
+                        deadlineDetails.getDeadlineName(), deadlineDetails.getDeadlineId());
+            throw new DeadlineException("Failed to process", e);
         }
     }
 
+    @SuppressWarnings("Duplicates")
     private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
@@ -154,6 +147,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                   throw new ExecutionException(exceptionMessage, e);
                               }
                           });
+    }
+
+    @Override
+    public void shutdown() {
+        jobScheduler.shutdown();
     }
 
     public static class Builder {

@@ -23,6 +23,8 @@ import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
 import org.junit.jupiter.api.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,17 +35,21 @@ class DeadlineDetailsSerializationTest {
     private final String expectedIdentifier = "identifier";
 
     private DeadlineDetails testSubject;
-    private static JacksonJsonMapper jacksonJsonMapper = new JacksonJsonMapper();
+    private static JacksonJsonMapper jacksonJsonMapper;
+    private static Map<String, Object> metaData;
 
     @BeforeAll
     static void setUp() {
         jacksonJsonMapper = new JacksonJsonMapper();
+        metaData = new HashMap<>();
+        metaData.put("someStringValue", "foo");
+        metaData.put("someIntValue", 2);
     }
 
     @Test
     void jacksonJsonMapperWorksAsExpectedWithAggregateScopeDescriptor() {
         ScopeDescriptor scopeDescription = new AggregateScopeDescriptor(expectedType, () -> expectedIdentifier);
-        testSubject = new DeadlineDetails("deadlineName", UUID.randomUUID(), scopeDescription, "test", null, null);
+        testSubject = new DeadlineDetails("deadlineName", UUID.randomUUID(), scopeDescription, "test", metaData);
 
         String serializedObject = jacksonJsonMapper.serialize(testSubject);
         DeadlineDetails result = jacksonJsonMapper.deserialize(serializedObject, DeadlineDetails.class);
@@ -57,7 +63,7 @@ class DeadlineDetailsSerializationTest {
     @Test
     void jacksonJsonMapperWorksAsExpectedWithSagaScopeDescriptor() {
         ScopeDescriptor scopeDescription = new SagaScopeDescriptor(expectedType, expectedIdentifier);
-        testSubject = new DeadlineDetails("deadlineName", UUID.randomUUID(), scopeDescription, "test", null, null);
+        testSubject = new DeadlineDetails("deadlineName", UUID.randomUUID(), scopeDescription, "test", metaData);
 
         String serializedObject = jacksonJsonMapper.serialize(testSubject);
         DeadlineDetails result = jacksonJsonMapper.deserialize(serializedObject, DeadlineDetails.class);

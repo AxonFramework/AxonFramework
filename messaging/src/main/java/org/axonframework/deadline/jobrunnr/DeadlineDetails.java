@@ -16,38 +16,39 @@
 
 package org.axonframework.deadline.jobrunnr;
 
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 
+import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public class DeadlineDetails {
-    
+
     private String deadlineName;
     private UUID deadlineId;
     private ScopeDescriptor scopeDescription;
     private Object payload;
-    private String[] keys;
-    private Object[] values;
-    
+    private Map<String, Object> metaData;
+
     private DeadlineDetails() {
     }
 
     public DeadlineDetails(String deadlineName, UUID deadlineId, ScopeDescriptor scopeDescription, Object payload,
-                           String[] keys, Object[] values) {
+                           Map<String, Object> metaData) {
         //needed to optionally initialize the aggregate identifier
         scopeDescription.scopeDescription();
         this.deadlineName = deadlineName;
         this.deadlineId = deadlineId;
         this.scopeDescription = scopeDescription;
         this.payload = payload;
-        this.keys = keys;
-        this.values = values;
+        this.metaData = metaData;
     }
-    
+
     public String getDeadlineName() {
         return deadlineName;
     }
-    
+
     public UUID getDeadlineId() {
         return deadlineId;
     }
@@ -55,16 +56,22 @@ public class DeadlineDetails {
     public ScopeDescriptor getScopeDescription() {
         return scopeDescription;
     }
-    
+
     public Object getPayload() {
         return payload;
     }
-    
-    public String[] getKeys() {
-        return keys;
+
+    public Map<String, Object> getMetaData() {
+        return metaData;
     }
-    
-    public Object[] getValues() {
-        return values;
+
+    @SuppressWarnings("rawtypes")
+    public GenericDeadlineMessage asDeadLineMessage(Instant triggerInstant) {
+        return new GenericDeadlineMessage<>(
+                deadlineName,
+                deadlineId.toString(),
+                payload,
+                metaData,
+                triggerInstant);
     }
 }

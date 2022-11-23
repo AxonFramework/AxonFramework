@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package org.axonframework.deadline.quartz;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.JavaSerializer;
@@ -174,58 +173,5 @@ class DeadlineJobDataBinderTest {
                 serializedObject.getContentType().equals(byte[].class) &&
                 type.getName().equals(testDeadlineScope.getClass().getName()) &&
                 type.getRevision() == null;
-    }
-
-    private static class TestScopeDescriptor implements ScopeDescriptor {
-
-        private static final long serialVersionUID = 3584695571254668002L;
-
-        private final String type;
-        private Object identifier;
-
-        @JsonCreator
-        public TestScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
-            this.type = type;
-            this.identifier = identifier;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public Object getIdentifier() {
-            return identifier;
-        }
-
-        @Override
-        public String scopeDescription() {
-            return String.format("TestScopeDescriptor for type [%s] and identifier [%s]", type, identifier);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, identifier);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-            final TestScopeDescriptor other = (TestScopeDescriptor) obj;
-            return Objects.equals(this.type, other.type)
-                    && Objects.equals(this.identifier, other.identifier);
-        }
-
-        @Override
-        public String toString() {
-            return "TestScopeDescriptor{" +
-                    "type=" + type +
-                    ", identifier='" + identifier + '\'' +
-                    '}';
-        }
     }
 }
