@@ -117,6 +117,7 @@
         <axonserver-connector-java.version>4.6.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.17.5</testcontainers.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <xstream.version>1.4.19</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- plugin versions -->
@@ -289,6 +290,11 @@
                 <artifactId>reactor-test</artifactId>
                 <version>${projectreactor.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.axonframework</groupId>

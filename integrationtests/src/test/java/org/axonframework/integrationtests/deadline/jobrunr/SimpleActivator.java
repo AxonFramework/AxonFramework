@@ -16,9 +16,13 @@
 
 package org.axonframework.integrationtests.deadline.jobrunr;
 
-import org.axonframework.deadline.jobrunnr.JobRunrDeadlineManager;
+import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.jobrunr.server.JobActivator;
 
+/**
+ * When using Spring it will use the context to get the bean, this is a simple activator, just to return the manager
+ * instance. This keeps the tests light.
+ */
 public class SimpleActivator implements JobActivator {
 
     private JobRunrDeadlineManager manager;

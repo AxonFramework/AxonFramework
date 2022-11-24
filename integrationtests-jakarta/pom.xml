@@ -113,6 +113,11 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Explicitly set the junit-jupiter-api version to override any alternative version pulled in by the testcontainers junit 5 extension -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

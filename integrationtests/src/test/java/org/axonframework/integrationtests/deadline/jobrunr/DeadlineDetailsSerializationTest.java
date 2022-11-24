@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.deadline.jobrunr;
 
-import org.axonframework.deadline.jobrunnr.DeadlineDetails;
+import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;

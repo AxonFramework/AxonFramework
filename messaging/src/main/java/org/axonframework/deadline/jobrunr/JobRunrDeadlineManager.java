@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.jobrunnr;
+package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
@@ -31,10 +33,14 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,6 +50,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.slf4j.LoggerFactory.getLogger;
 
+/**
+ * Implementation of {@link DeadlineManager} that delegates scheduling and triggering to a Jobrunr
+ * {@link JobScheduler}.
+ *
+ * @author Tom de Backer
+ * @author Gerard Klijs
+ * @since 4.7.0
+ */
 public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger LOGGER = getLogger(JobRunrDeadlineManager.class);
@@ -51,16 +65,40 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     private final ScopeAwareProvider scopeAwareProvider;
     private final JobScheduler jobScheduler;
     private final TransactionManager transactionManager;
+    private final SpanFactory spanFactory;
 
+    /**
+     * Instantiate a Builder to be able to create a {@link JobRunrDeadlineManager}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}.
+     * <p>
+     * The {@link SpanFactory} is defaulted to a {@link NoOpSpanFactory}.
+     * <p>
+     * The {@link JobScheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and as such should be
+     * provided.
+     *
+     * @return a Builder to be able to create a {@link JobRunrDeadlineManager}
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Instantiate a {@link JobRunrDeadlineManager} based on the fields contained in the
+     * {@link JobRunrDeadlineManager.Builder}.
+     * <p>
+     * Will assert that the {@link ScopeAwareProvider} and {@link JobScheduler} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
+     *
+     * @param builder the {@link QuartzDeadlineManager.Builder} used to instantiate a {@link QuartzDeadlineManager}
+     *                instance
+     */
     protected JobRunrDeadlineManager(Builder builder) {
         builder.validate();
         this.scopeAwareProvider = builder.scopeAwareProvider;
         this.jobScheduler = builder.jobScheduler;
         this.transactionManager = builder.transactionManager;
+        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -69,22 +107,27 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.fromString(deadlineMessage.getIdentifier());
-        runOnPrepareCommitOrNow(() -> {
+        Span span = spanFactory.createDispatchSpan(() -> "JobRunrDeadlineManager.schedule(" + deadlineName + ")",
+                                                   deadlineMessage);
+        runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineDetails deadlineDetails =
                     new DeadlineDetails(deadlineName,
                                         deadlineId,
                                         deadlineScope,
                                         interceptedDeadlineMessage.getPayload(),
-                                        interceptedDeadlineMessage.getMetaData());
+                                        new HashMap<>(interceptedDeadlineMessage.getMetaData()));
             jobScheduler.<JobRunrDeadlineManager>schedule(deadlineId, triggerDateTime, x -> x.execute(deadlineDetails));
-        });
+        }));
         return deadlineId.toString();
     }
 
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
-        runOnPrepareCommitOrNow(() -> jobScheduler.delete(toUuid(scheduleId), "Deleted via DeadlineManager API"));
+        Span span = spanFactory.createInternalSpan(
+                () -> "JobRunrDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        runOnPrepareCommitOrNow(span.wrapRunnable(() -> jobScheduler.delete(toUuid(scheduleId),
+                                                                            "Deleted via DeadlineManager API")));
     }
 
     @Override
@@ -110,17 +153,26 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
 
+    /**
+     * This function should only be called via Jobrunr when a deadline was triggered. It will try to execute the
+     * scheduled deadline on the set scope. It will throw a {@link DeadlineException} in case of errors such that they
+     * will be optionally retried by Jobrunr.
+     *
+     * @param deadlineDetails the {@link DeadlineDetails} object with all the needed details to execute
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void execute(@Nonnull DeadlineDetails deadlineDetails) {
-        Instant triggerInstant = GenericEventMessage.clock.instant();
-        GenericDeadlineMessage rebuiltDeadlineMessage = deadlineDetails.asDeadLineMessage(triggerInstant);
-        UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(rebuiltDeadlineMessage);
+        GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage();
+        Span span = spanFactory.createLinkedHandlerSpan(() -> "DeadlineJob.execute", deadlineMessage).start();
+        UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
         unitOfWork.attachTransaction(transactionManager);
+        unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
+        unitOfWork.onCleanup(uow -> span.end());
         InterceptorChain chain = new DefaultInterceptorChain<>(
                 unitOfWork,
                 handlerInterceptors(),
-                deadlineMessage -> {
-                    executeScheduledDeadline(deadlineMessage, deadlineDetails.getScopeDescription());
+                interceptedDeadlineMessage -> {
+                    executeScheduledDeadline(interceptedDeadlineMessage, deadlineDetails.getScopeDescription());
                     return null;
                 });
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
@@ -154,38 +206,93 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         jobScheduler.shutdown();
     }
 
+    /**
+     * Builder class to instantiate a {@link JobRunrDeadlineManager}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager} and the {@link SpanFactory}
+     * defaults to a {@link NoOpSpanFactory}.
+     * <p>
+     * The {@link JobScheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and as such should be
+     * provided.
+     */
     public static class Builder {
 
         private JobScheduler jobScheduler;
         private ScopeAwareProvider scopeAwareProvider;
-        private TransactionManager transactionManager;
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private SpanFactory spanFactory = NoOpSpanFactory.INSTANCE;
 
+        /**
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
+         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * right Scope to trigger a deadline in.
+         *
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
+         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
             assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
             this.scopeAwareProvider = scopeAwareProvider;
             return this;
         }
 
+        /**
+         * Sets the {@link JobScheduler} used for scheduling and triggering purposes of the deadlines.
+         *
+         * @param jobScheduler a {@link JobScheduler} used for scheduling and triggering purposes of the deadlines
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder jobScheduler(JobScheduler jobScheduler) {
             assertNonNull(jobScheduler, "JobScheduler may not be null");
             this.jobScheduler = jobScheduler;
             return this;
         }
 
+        /**
+         * Sets the {@link TransactionManager} used to build transactions and ties them to deadline. Defaults to a
+         * {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
+         * @return the current Builder instance, for fluent interfacing
+         */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
         }
 
+        /**
+         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
+         * {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         *
+         * @param spanFactory The {@link SpanFactory} implementation
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder spanFactory(@Nonnull SpanFactory spanFactory) {
+            assertNonNull(spanFactory, "SpanFactory may not be null");
+            this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JobRunrDeadlineManager} as specified through this Builder.
+         *
+         * @return a {@link JobRunrDeadlineManager} as specified through this Builder
+         */
         public JobRunrDeadlineManager build() {
             return new JobRunrDeadlineManager(this);
         }
 
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
-            assertNonNull(jobScheduler, "The JobScheduler is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided.");
+            assertNonNull(jobScheduler, "The JobScheduler is a hard requirement and should be provided.");
         }
     }
 }

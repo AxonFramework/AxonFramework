@@ -92,7 +92,7 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     /**
-     * Verifies that a span was created, started and ended.
+     * Verifies that a span was created, started, and ended.
      *
      * @param name Name of the span to verify.
      */
@@ -102,7 +102,17 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     /**
-     * Verifies that a span was created, started and ended.
+     * Check whether a span was created, started, and ended.
+     *
+     * @param name Name of the span to verify.
+     * @return {@code true} if the span was created, started and ended, {@code false} otherwise.
+     */
+    public boolean spanCompleted(String name) {
+        return findSpan(name).started && findSpan(name).ended;
+    }
+
+    /**
+     * Verifies that a span was created, started, and ended.
      *
      * @param name    Name of the span to verify.
      * @param message The exact message the span should have been created for.

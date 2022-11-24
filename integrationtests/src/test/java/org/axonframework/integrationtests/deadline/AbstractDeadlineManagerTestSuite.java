@@ -50,11 +50,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -69,7 +68,7 @@ import static org.mockito.Mockito.*;
  */
 public abstract class AbstractDeadlineManagerTestSuite {
 
-    private static final int DEADLINE_TIMEOUT = 500;
+    private static final int DEADLINE_TIMEOUT = 100;
     private static final int DEADLINE_WAIT_THRESHOLD = 10 * DEADLINE_TIMEOUT;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 250;
     private static final String IDENTIFIER = "id";
@@ -129,6 +128,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
      */
     public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
+
     @Test
     void deadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
@@ -144,9 +144,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
         spanFactory.verifySpanCompleted(managerName + ".schedule(deadlineName)");
-
-        Thread.sleep(100); // Takes time to complete
-        spanFactory.verifySpanCompleted("DeadlineJob.execute");
+        await().pollDelay(Duration.ofMillis(50)).atMost(Duration.ofMillis(100))
+               .until(() -> spanFactory.spanCompleted("DeadlineJob.execute"));
     }
 
 
@@ -267,21 +266,19 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void scheduleInPastTriggersDeadline() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
-        assertPublishedEventsWithin(100,
+        assertPublishedEventsWithin(1000,
                                     new MyAggregateCreatedEvent(IDENTIFIER),
                                     new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
-    void failedExecution() throws InterruptedException {
+    void failedExecution() {
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
             interceptorChain.proceed();
             throw new AxonNonTransientException("Simulating handling error") {
             };
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
-
-        Thread.sleep(200); // this would have triggered the deadline
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
@@ -425,14 +422,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     private void assertPublishedEventsWithin(int millis, Object... expectedEvents) {
-        try {
-            Thread.sleep(DEADLINE_TIMEOUT);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        assertWithin(millis,
-                     TimeUnit.MILLISECONDS,
-                     () -> assertEquals(asList(expectedEvents), published));
+        await().atMost(Duration.ofMillis(DEADLINE_TIMEOUT + millis)).until(() -> sameElements(asList(expectedEvents)));
+    }
+
+    private boolean sameElements(List<Object> expected) {
+        return expected.size() == published.size() && expected.containsAll(published)
+                && published.containsAll(expected);
     }
 
     private void assertSagaIs(boolean live) {
@@ -863,7 +858,6 @@ public abstract class AbstractDeadlineManagerTestSuite {
             eventStore.publish(asEventMessage(new DeadlineOccurredEvent(new DeadlinePayload(SAGA_ENDED))));
         }
 
-        @SuppressWarnings("SpringJavaAutowiredMembersInspection")
         @Autowired
         public void setEventStore(EventStore eventStore) {
             this.eventStore = eventStore;

@@ -17,7 +17,6 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.deadline.TestScopeDescriptor;
-import org.axonframework.deadline.jobrunnr.DeadlineDetails;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
 import org.junit.jupiter.api.*;
