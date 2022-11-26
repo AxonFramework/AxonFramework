@@ -16,6 +16,7 @@
 
 package org.axonframework.tracing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -111,5 +113,39 @@ class NestingSpanFactoryTest {
 
         Message result = spanFactory.propagateContext(original);
         assertSame(result, modified);
+    }
+
+    @Test
+    void builderThrowsExceptionWhenNoDelegateIsDefined() {
+        NestingSpanFactory.Builder builder = NestingSpanFactory.builder()
+                                                               .clock(clock)
+                                                               .timeLimit(Duration.ZERO);
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.build();
+        });
+    }
+
+    @Test
+    void builderThrowsExceptionWhenNullDelegateIsSet() {
+        NestingSpanFactory.Builder builder = NestingSpanFactory.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.delegate(null);
+        });
+    }
+
+    @Test
+    void builderThrowsExceptionWhenNullTimeLimitIsSet() {
+        NestingSpanFactory.Builder builder = NestingSpanFactory.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.timeLimit(null);
+        });
+    }
+
+    @Test
+    void builderThrowsExceptionWhenNullClockIsSet() {
+        NestingSpanFactory.Builder builder = NestingSpanFactory.builder();
+        assertThrows(AxonConfigurationException.class, () -> {
+            builder.clock(null);
+        });
     }
 }

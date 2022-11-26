@@ -41,8 +41,9 @@ public class TracingProperties {
     private boolean nestedHandlers = false;
 
     /**
-     * How old an event is allowed to be when nesting a span inside the dispatching trace. Will link spans together when
-     * this time expires.
+     * How old a message is allowed to be when nesting a span inside the dispatching trace.
+     * Only affects events and deadlines.
+     * After the time limit, the handling spans become their own root trace, per default behavior.
      */
     private Duration nestedTimeLimit = Duration.ofMinutes(2);
 
@@ -88,10 +89,9 @@ public class TracingProperties {
         this.nestedHandlers = nestedHandlers;
     }
 
-
     /**
-     * Getting value for the time limit set on nested handlers inside dispatching trace. Only affects events. Commands
-     * and queries are always nested.
+     * The time limit set on nested handlers inside dispatching trace.
+     * Only affects events and deadlines, other messages are always nested.
      *
      * @return For how long event messages should be nested in their dispatching trace.
      */

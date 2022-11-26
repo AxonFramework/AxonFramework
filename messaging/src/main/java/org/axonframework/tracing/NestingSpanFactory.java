@@ -25,6 +25,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Implementation of {@link SpanFactory} that wraps another factory and creates nested spans when handling messages
@@ -140,7 +141,7 @@ public class NestingSpanFactory implements SpanFactory {
          * @param spanFactory The {@link SpanFactory} to configure for use.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder delegate(SpanFactory spanFactory) {
+        public Builder delegate(@Nonnull SpanFactory spanFactory) {
             BuilderUtils.assertNonNull(spanFactory, "The spanFactory should not be null");
             this.delegateSpanFactory = spanFactory;
             return this;
@@ -155,7 +156,7 @@ public class NestingSpanFactory implements SpanFactory {
          * @param timeLimit The amount of time before handling of an event should be considered a separate trace.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder timeLimit(Duration timeLimit) {
+        public Builder timeLimit(@Nonnull Duration timeLimit) {
             BuilderUtils.assertNonNull(timeLimit, "The timeLimit should not be null");
             this.timeLimit = timeLimit;
             return this;
@@ -172,7 +173,7 @@ public class NestingSpanFactory implements SpanFactory {
          *              current time.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder clock(Clock clock) {
+        public Builder clock(@Nonnull Clock clock) {
             BuilderUtils.assertNonNull(clock, "The clock should not be null");
             this.clock = clock;
             return this;
