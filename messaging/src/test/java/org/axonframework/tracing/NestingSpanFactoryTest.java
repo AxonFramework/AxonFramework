@@ -41,7 +41,7 @@ class NestingSpanFactoryTest {
                                                                      .delegate(delegate)
                                                                      .build();
     private final Supplier<String> nameSupplier = () -> "spanName";
-    EventMessage<Object> message = GenericEventMessage.asEventMessage("payload");
+    private final EventMessage<Object> message = GenericEventMessage.asEventMessage("payload");
 
     @BeforeEach
     void setUp() {
@@ -50,7 +50,6 @@ class NestingSpanFactoryTest {
 
     @Test
     void createsNestedSpanIfRecentMessage() {
-
         spanFactory.createLinkedHandlerSpan(nameSupplier, message);
 
         verify(delegate).createHandlerSpan(nameSupplier, message, true);
