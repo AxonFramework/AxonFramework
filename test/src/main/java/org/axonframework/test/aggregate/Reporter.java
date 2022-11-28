@@ -73,21 +73,21 @@ public class Reporter {
     public void reportWrongEvent(Collection<?> actualEvents, StringDescription expectation, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
-        sb.append("Expected :");
-        sb.append(NEWLINE);
-        sb.append(expectation);
-        sb.append(NEWLINE);
-        sb.append("But got");
+        sb.append("Expected :")
+          .append(NEWLINE)
+          .append(expectation)
+          .append(NEWLINE)
+          .append("But got");
         if (actualEvents.isEmpty()) {
             sb.append(" none");
         } else {
             sb.append(":");
         }
         for (Object publishedEvent : actualEvents) {
-            sb.append(NEWLINE);
-            sb.append(publishedEvent.getClass().getSimpleName());
-            sb.append(": ");
-            sb.append(publishedEvent.toString());
+            sb.append(NEWLINE)
+              .append(publishedEvent.getClass().getSimpleName())
+              .append(": ")
+              .append(publishedEvent);
         }
         appendProbableCause(probableCause, sb);
 
@@ -155,7 +155,7 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a an exception of an unexpected type.
+     * Report an error due to an exception of an unexpected type.
      *
      * @param actualException The actual exception
      * @param description     A description describing the expected value
@@ -197,8 +197,8 @@ public class Reporter {
     /**
      * Report an error due to a difference in exception details.
      *
-     * @param details       The actual details
-     * @param description   A description describing the expected value
+     * @param details     The actual details
+     * @param description A description describing the expected value
      */
     public void reportWrongExceptionDetails(Object details, Description description) {
         throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
@@ -284,22 +284,30 @@ public class Reporter {
           .append(messageType.getSimpleName())
           .append("], ");
         if (!additionalEntries.isEmpty()) {
-            sb.append("metadata entries" + NEWLINE).append("[");
+            sb.append("metadata entries")
+              .append(NEWLINE)
+              .append("[");
             for (Map.Entry<String, Object> entry : additionalEntries.entrySet()) {
-                sb.append(entryAsString(entry) + ", ");
+                sb.append(entryAsString(entry))
+                  .append(", ");
             }
             sb.delete(sb.lastIndexOf(", "), sb.lastIndexOf(",") + 2);
-            sb.append("] " + NEWLINE);
-            sb.append("were not expected. ");
+            sb.append("] ")
+              .append(NEWLINE)
+              .append("were not expected. ");
         }
         if (!missingEntries.isEmpty()) {
-            sb.append("metadata entries " + NEWLINE).append("[");
+            sb.append("metadata entries ")
+              .append(NEWLINE)
+              .append("[");
             for (Map.Entry<String, Object> entry : missingEntries.entrySet()) {
-                sb.append(entryAsString(entry) + ", ");
+                sb.append(entryAsString(entry))
+                  .append(", ");
             }
             sb.delete(sb.lastIndexOf(","), sb.lastIndexOf(",") + 2);
-            sb.append("] " + NEWLINE);
-            sb.append("were expected but not seen.");
+            sb.append("] ")
+              .append(NEWLINE)
+              .append("were expected but not seen.");
         }
         throw new AxonAssertionError(sb.toString());
     }
@@ -349,7 +357,7 @@ public class Reporter {
         if (value == null) {
             sb.append("null");
         } else {
-            sb.append(value.toString());
+            sb.append(value);
         }
     }
 
@@ -419,8 +427,8 @@ public class Reporter {
 
     private String payloadContentType(Object event) {
         String simpleName;
-        if (EventMessage.class.isInstance(event)) {
-            simpleName = ((EventMessage) event).getPayload().getClass().getName();
+        if (event instanceof EventMessage) {
+            simpleName = ((EventMessage<?>) event).getPayload().getClass().getName();
         } else {
             simpleName = event.getClass().getName();
         }
