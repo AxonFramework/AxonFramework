@@ -19,6 +19,7 @@
 - Make the notion of 'namespaces' to all messages explicit. 
   This is already present at the moment, but it's part of the payloadType. 
   Exposes this directly allows a (cleaner) mapping from messages-to-namespace, and namespaces-to-context.
+- Usage of the namespaces may also allow an easier integration of multi tenancy within the core of the Framework.
 - A Message Handler should be capable of defining the business name of the message it handles,
    and the type it wants to receive it in.
 
@@ -71,3 +72,5 @@
 - No Thread#sleep!
 - No Exception throwing in the functional-coding style!
 - No Schema maintenance!
+
+## Guidelines
