@@ -19,6 +19,7 @@ package org.axonframework.deadline.jobrunr;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.serialization.TestSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;
 
@@ -42,6 +43,7 @@ class JobRunrDeadlineManagerBuilderTest {
         JobRunrDeadlineManager manager = builder.scopeAwareProvider(scopeAwareProvider)
                                                 .transactionManager(transactionManager)
                                                 .jobScheduler(jobScheduler)
+                                                .serializer(TestSerializer.JACKSON.getSerializer())
                                                 .build();
 
         assertNotNull(manager);

@@ -69,7 +69,7 @@ import static org.mockito.Mockito.*;
 public abstract class AbstractDeadlineManagerTestSuite {
 
     private static final int DEADLINE_TIMEOUT = 100;
-    private static final int DEADLINE_WAIT_THRESHOLD = 10 * DEADLINE_TIMEOUT;
+    private static final int DEADLINE_WAIT_THRESHOLD = 15 * DEADLINE_TIMEOUT;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 250;
     private static final String IDENTIFIER = "id";
     private static final boolean CANCEL_BEFORE_DEADLINE = true;

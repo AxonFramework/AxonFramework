@@ -23,6 +23,7 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.serialization.TestSerializer;
 import org.jobrunr.configuration.JobRunr;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.BackgroundJobServer;
@@ -61,6 +62,7 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                 .builder()
                 .jobScheduler(scheduler)
                 .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .transactionManager(NoTransactionManager.INSTANCE)
                 .spanFactory(configuration.spanFactory())
                 .build();
@@ -79,6 +81,7 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         JobRunrDeadlineManager testSubject = JobRunrDeadlineManager.builder()
                                                                    .jobScheduler(scheduler)
                                                                    .scopeAwareProvider(scopeAwareProvider)
+                                                                   .serializer(TestSerializer.JACKSON.getSerializer())
                                                                    .transactionManager(NoTransactionManager.INSTANCE)
                                                                    .build();
 

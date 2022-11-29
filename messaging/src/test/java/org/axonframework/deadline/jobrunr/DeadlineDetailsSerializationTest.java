@@ -16,11 +16,17 @@
 
 package org.axonframework.deadline.jobrunr;
 
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -29,32 +35,56 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DeadlineDetailsSerializationTest {
 
-    private static JacksonJsonMapper jacksonJsonMapper;
-    private static Map<String, Object> metaData;
+    private static final String TEST_DEADLINE_NAME = "deadline-name";
+    private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
+    private static MetaData metaData;
+    private static UUID scheduleId;
+    @SuppressWarnings("rawtypes")
+    private static DeadlineMessage message;
 
     @BeforeAll
     static void setUp() {
-        jacksonJsonMapper = new JacksonJsonMapper();
-        metaData = new HashMap<>();
-        metaData.put("someStringValue", "foo");
-        metaData.put("someIntValue", 2);
+        Map<String, Object> map = new HashMap<>();
+        map.put("someStringValue", "foo");
+        map.put("someIntValue", 2);
+        metaData = new MetaData(map);
+        scheduleId = UUID.randomUUID();
+        message = GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD, Instant.now())
+                                        .withMetaData(metaData);
     }
 
     @Test
-    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSame() {
+    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingXStream() {
+        Serializer serializer = TestSerializer.XSTREAM.getSerializer();
+        testSerialisationWithSpecicSerializer(serializer);
+    }
+
+    @Test
+    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingJackson() {
+        Serializer serializer = TestSerializer.JACKSON.getSerializer();
+        testSerialisationWithSpecicSerializer(serializer);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void testSerialisationWithSpecicSerializer(Serializer serializer) {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
-        ScopeDescriptor scopeDescription = new TestScopeDescriptor(expectedType, expectedIdentifier);
-        UUID id = UUID.randomUUID();
-        DeadlineDetails testSubject = new DeadlineDetails("deadlineName", id, scopeDescription, "test", metaData);
+        ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
+        byte[] serializedDeadlineDetails = DeadlineDetails.serialized(
+                TEST_DEADLINE_NAME, scheduleId, descriptor, message, serializer);
+        SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+                serializedDeadlineDetails, byte[].class, DeadlineDetails.class.getName(), null
+        );
+        DeadlineDetails result = serializer.deserialize(serializedDeadlineMetaData);
 
-        String serializedObject = jacksonJsonMapper.serialize(testSubject);
-        DeadlineDetails result = jacksonJsonMapper.deserialize(serializedObject, DeadlineDetails.class);
+        assertEquals(TEST_DEADLINE_NAME, result.getDeadlineName());
+        assertEquals(scheduleId, result.getDeadlineId());
+        assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
+        DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
 
-        assertEquals(scopeDescription, result.getScopeDescription());
-        assertEquals("deadlineName", result.getDeadlineName());
-        assertEquals(id, result.getDeadlineId());
-        assertEquals("test", result.getPayload());
-        assertEquals(metaData, result.getMetaData());
+        assertNotNull(resultMessage);
+        assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.getPayload());
+        assertEquals(metaData, resultMessage.getMetaData());
+        assertEquals(message.getTimestamp(), resultMessage.getTimestamp());
     }
 }
