@@ -27,3 +27,4 @@ org.axonframework.messaging.annotation.MessageIdentifierParameterResolverFactory
 org.axonframework.messaging.annotation.SourceIdParameterResolverFactory
 org.axonframework.messaging.annotation.ResultParameterResolverFactory
 org.axonframework.messaging.annotation.ScopeDescriptorParameterResolverFactory
+org.axonframework.messaging.annotation.AggregateTypeParameterResolverFactory
