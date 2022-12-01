@@ -41,12 +41,12 @@ public class DeadlineDetails {
 
     private String deadlineName;
     private UUID deadlineId;
-    private byte[] scopeDescriptor;
+    private String scopeDescriptor;
     private String scopeDescriptorClass;
-    private byte[] payload;
+    private String payload;
     private String payloadClass;
     private String payloadRevision;
-    private byte[] metaData;
+    private String metaData;
     private Instant timestamp;
 
     private DeadlineDetails() {
@@ -59,19 +59,19 @@ public class DeadlineDetails {
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
      * @param deadlineId           The {@link UUID} with the deadline id.
-     * @param scopeDescriptor      The {@code byte[]} which tells what the scope is of the deadline.
+     * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
-     * @param payload              The {@link Object} with the payload. This can be null.
+     * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@code byte[]} containing the metadata about the deadline.
+     * @param metaData             The {@link String} containing the metadata about the deadline.
      * @param timestamp            The {@link Instant} containing the timestamp of the deadline message.
      */
     @SuppressWarnings("squid:S107")
     public DeadlineDetails(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
-                           @Nonnull byte[] scopeDescriptor, @Nonnull String scopeDescriptorClass,
-                           @Nullable byte[] payload, @Nullable String payloadClass, @Nullable String payloadRevision,
-                           @Nonnull byte[] metaData, @Nonnull Instant timestamp) {
+                           @Nonnull String scopeDescriptor, @Nonnull String scopeDescriptorClass,
+                           @Nullable String payload, @Nullable String payloadClass, @Nullable String payloadRevision,
+                           @Nonnull String metaData, @Nonnull Instant timestamp) {
         this.deadlineName = deadlineName;
         this.deadlineId = deadlineId;
         this.scopeDescriptor = scopeDescriptor;
@@ -94,12 +94,12 @@ public class DeadlineDetails {
      * @return The serialized {@code byte[]} representation of the details.
      */
     @SuppressWarnings("rawtypes")
-    static byte[] serialized(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
+    static String serialized(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
                              @Nonnull ScopeDescriptor descriptor, @Nonnull DeadlineMessage message,
                              @Nonnull Serializer serializer) {
-        SerializedObject<byte[]> serializedDescriptor = serializer.serialize(descriptor, byte[].class);
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(message.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serialize(message.getMetaData(), byte[].class);
+        SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
+        SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
+        SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
         DeadlineDetails deadlineDetails = new DeadlineDetails(
                 deadlineName,
                 deadlineId,
@@ -111,7 +111,7 @@ public class DeadlineDetails {
                 serializedMetaData.getData(),
                 message.getTimestamp()
         );
-        SerializedObject<byte[]> serializedDeadlineDetails = serializer.serialize(deadlineDetails, byte[].class);
+        SerializedObject<String> serializedDeadlineDetails = serializer.serialize(deadlineDetails, String.class);
         return serializedDeadlineDetails.getData();
     }
 
@@ -134,11 +134,11 @@ public class DeadlineDetails {
     }
 
     /**
-     * Returns the serialized {@code byte[]} which tells what the scope is of the deadline.
+     * Returns the serialized {@link String} which tells what the scope is of the deadline.
      *
-     * @return The serialized {@code byte[]} which tells what the scope is of the deadline.
+     * @return The serialized {@link String} which tells what the scope is of the deadline.
      */
-    public byte[] getScopeDescriptor() {
+    public String getScopeDescriptor() {
         return scopeDescriptor;
     }
 
@@ -152,11 +152,11 @@ public class DeadlineDetails {
     }
 
     /**
-     * Returns the serialized {@code byte[]} of the payload. This can be null.
+     * Returns the serialized {@link String} of the payload. This can be null.
      *
-     * @return The serialized {@code byte[]} of the payload. This can be null.
+     * @return The serialized {@link String} of the payload. This can be null.
      */
-    public byte[] getPayload() {
+    public String getPayload() {
         return payload;
     }
 
@@ -179,11 +179,11 @@ public class DeadlineDetails {
     }
 
     /**
-     * Returns the {@code byte[]} containing the metadata about the deadline.
+     * Returns the {@link String} containing the metadata about the deadline.
      *
-     * @return The {@code byte[]} containing the metadata about the deadline.
+     * @return The {@link String} containing the metadata about the deadline.
      */
-    public byte[] getMetaData() {
+    public String getMetaData() {
         return metaData;
     }
 
@@ -213,9 +213,9 @@ public class DeadlineDetails {
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
-        SimpleSerializedObject<byte[]> serializedDeadlinePayload = new SimpleSerializedObject<>(
+        SimpleSerializedObject<String> serializedDeadlinePayload = new SimpleSerializedObject<>(
                 payload,
-                byte[].class,
+                String.class,
                 payloadClass,
                 payloadRevision
         );
@@ -224,15 +224,15 @@ public class DeadlineDetails {
 
     private MetaData getDeserializedMetaData(Serializer serializer) {
 
-        SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                metaData, byte[].class, MetaData.class.getName(), null
+        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+                metaData, String.class, MetaData.class.getName(), null
         );
         return serializer.deserialize(serializedDeadlineMetaData);
     }
 
     public ScopeDescriptor getDeserializedScopeDescriptor(Serializer serializer) {
-        SimpleSerializedObject<byte[]> serializedDeadlineScope = new SimpleSerializedObject<>(
-                scopeDescriptor, byte[].class, scopeDescriptorClass, null
+        SimpleSerializedObject<String> serializedDeadlineScope = new SimpleSerializedObject<>(
+                scopeDescriptor, String.class, scopeDescriptorClass, null
         );
         return serializer.deserialize(serializedDeadlineScope);
     }

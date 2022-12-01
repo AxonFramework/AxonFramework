@@ -114,7 +114,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
-            byte[] deadlineDetails = DeadlineDetails.serialized(deadlineName,
+            String deadlineDetails = DeadlineDetails.serialized(deadlineName,
                                                                 deadlineId,
                                                                 deadlineScope,
                                                                 interceptedDeadlineMessage,
@@ -164,9 +164,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
      *                                  the needed details to execute.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void execute(@Nonnull byte[] serializedDeadlineDetails) {
-        SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                serializedDeadlineDetails, byte[].class, DeadlineDetails.class.getName(), null
+    public void execute(@Nonnull String serializedDeadlineDetails) {
+        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+                serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
         DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);

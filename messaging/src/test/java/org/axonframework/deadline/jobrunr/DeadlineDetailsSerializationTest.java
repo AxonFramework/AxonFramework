@@ -70,10 +70,10 @@ class DeadlineDetailsSerializationTest {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
-        byte[] serializedDeadlineDetails = DeadlineDetails.serialized(
+        String serializedDeadlineDetails = DeadlineDetails.serialized(
                 TEST_DEADLINE_NAME, scheduleId, descriptor, message, serializer);
-        SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                serializedDeadlineDetails, byte[].class, DeadlineDetails.class.getName(), null
+        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+                serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
         DeadlineDetails result = serializer.deserialize(serializedDeadlineMetaData);
 
