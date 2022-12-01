@@ -28,20 +28,22 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class validating the {@link ExceptionHandler} for message handling components.
@@ -55,8 +57,7 @@ class ExceptionHandlerTest {
     private static final String QUERY_HANDLER_INVOKED = "query";
 
     private AtomicReference<String> invokedHandler;
-    private AtomicBoolean handleAllInvoked;
-    private Set<String> invokedExceptionHandlers;
+    private List<String> invokedExceptionHandlers;
 
     private ExceptionHandlingComponent messageHandlingComponent;
     private AnnotatedHandlerInspector<ExceptionHandlingComponent> inspector;
@@ -64,11 +65,10 @@ class ExceptionHandlerTest {
     @BeforeEach
     void setUp() {
         invokedHandler = new AtomicReference<>();
-        handleAllInvoked = new AtomicBoolean();
-        invokedExceptionHandlers = spy(new HashSet<>());
+        invokedExceptionHandlers = new ArrayList<>();
 
         messageHandlingComponent =
-                new ExceptionHandlingComponent(invokedHandler, handleAllInvoked, invokedExceptionHandlers);
+                new ExceptionHandlingComponent(invokedHandler, invokedExceptionHandlers);
         inspector = AnnotatedHandlerInspector.inspectType(ExceptionHandlingComponent.class);
     }
 
@@ -85,7 +85,6 @@ class ExceptionHandlerTest {
         }
 
         assertEquals(COMMAND_HANDLER_INVOKED, invokedHandler.get());
-        assertTrue(handleAllInvoked.get());
         assertTrue(invokedExceptionHandlers.contains("leastSpecificExceptionHandler"));
     }
 
@@ -102,7 +101,6 @@ class ExceptionHandlerTest {
         }
 
         assertEquals(EVENT_HANDLER_INVOKED, invokedHandler.get());
-        assertTrue(handleAllInvoked.get());
         assertTrue(invokedExceptionHandlers.contains("leastSpecificExceptionHandler"));
     }
 
@@ -121,7 +119,6 @@ class ExceptionHandlerTest {
         }
 
         assertEquals(QUERY_HANDLER_INVOKED, invokedHandler.get());
-        assertTrue(handleAllInvoked.get());
         assertTrue(invokedExceptionHandlers.contains("leastSpecificExceptionHandler"));
     }
 
@@ -130,31 +127,18 @@ class ExceptionHandlerTest {
         CommandMessage<SomeCommand> command =
                 asCommandMessage(new SomeCommand(() -> new IllegalStateException("some-exception")));
 
-        try {
-            Object result = handle(command);
-            assertNull(result);
-        } catch (Exception e) {
-            assertTrue(e instanceof IllegalStateException);
-        }
+        assertThrows(IllegalStateException.class, () -> handle(command));
 
         assertEquals(COMMAND_HANDLER_INVOKED, invokedHandler.get());
-        assertTrue(handleAllInvoked.get());
 
-        InOrder exceptionHandlerOrder = inOrder(invokedExceptionHandlers);
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleIllegalStateExceptionForSomeCommand");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleExceptionForSomeCommand");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleExceptionForSomeCommandThroughAnnotation");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleIllegalStateExceptionForSomeCommandThroughAnnotation");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleIllegalStateException");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("handleIllegalStateExceptionThroughAnnotation");
-        exceptionHandlerOrder.verify(invokedExceptionHandlers)
-                             .add("leastSpecificExceptionHandler");
+        assertEquals(Arrays.asList("handleIllegalStateExceptionForSomeCommand",
+                                   "handleExceptionForSomeCommand",
+                                   "handleExceptionForSomeCommandThroughAnnotation",
+                                   "handleIllegalStateExceptionForSomeCommandThroughAnnotation",
+                                   "handleIllegalStateException",
+                                   "handleIllegalStateExceptionThroughAnnotation",
+                                   "leastSpecificExceptionHandler"),
+                     invokedExceptionHandlers);
     }
 
     /**
@@ -179,20 +163,16 @@ class ExceptionHandlerTest {
     private static class ExceptionHandlingComponent {
 
         private final AtomicReference<String> invokedHandler;
-        private final AtomicBoolean handleAllInvoked;
-        private final Set<String> invokedExceptionHandlers;
+        private final List<String> invokedExceptionHandlers;
 
         private ExceptionHandlingComponent(AtomicReference<String> invokedHandler,
-                                           AtomicBoolean handleAllInvoked,
-                                           Set<String> invokedExceptionHandlers) {
+                                           List<String> invokedExceptionHandlers) {
             this.invokedHandler = invokedHandler;
-            this.handleAllInvoked = handleAllInvoked;
             this.invokedExceptionHandlers = invokedExceptionHandlers;
         }
 
         @ExceptionHandler
         public void leastSpecificExceptionHandler() {
-            handleAllInvoked.set(true);
             invokedExceptionHandlers.add("leastSpecificExceptionHandler");
             throw new IllegalStateException("leastSpecificExceptionHandler");
         }

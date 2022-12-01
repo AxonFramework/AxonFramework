@@ -17,18 +17,17 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReversedOrder;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
@@ -59,7 +58,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
 
     private static class ResultHandlingInterceptorMember<T>
             extends WrappedMessageHandlingMember<T>
-            implements MessageInterceptingMember<T>, ReversedOrder {
+            implements MessageInterceptingMember<T> {
 
         private final Class<?> expectedResultType;
 

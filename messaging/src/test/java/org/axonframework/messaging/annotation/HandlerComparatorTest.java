@@ -16,20 +16,25 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.ReversedOrder;
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
+import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class validating the {@link HandlerComparator}.
@@ -57,6 +62,23 @@ class HandlerComparatorTest {
         objectHandlerReversedOrder = new ReversedOrderMessageHandlingMember(Object.class, 0);
 
         testSubject = HandlerComparator.instance();
+    }
+
+    @RepeatedTest(10)
+    void handlerOrderIsDeterministic() {
+        List<MessageHandlingMember<?>> handlers = new ArrayList<>(Arrays.asList(stringHandler, objectHandler, longHandler, numberHandler, priorityHandler, stringHandlerReversedOrder, objectHandlerReversedOrder));
+        ArrayList<MessageHandlingMember<?>> handlers1 = new ArrayList<>(handlers);
+        ArrayList<MessageHandlingMember<?>> handlers2 = new ArrayList<>(handlers);
+
+        Collections.shuffle(handlers1, ThreadLocalRandom.current());
+        Collections.shuffle(handlers2, ThreadLocalRandom.current());
+
+        handlers1.sort(testSubject);
+        handlers2.sort(testSubject);
+
+        assertEquals(handlers1, handlers2);
+
+        System.out.println(handlers1);
     }
 
     @Test
@@ -112,11 +134,10 @@ class HandlerComparatorTest {
                    "Reversed-order-String handler should appear before Object handler");
         assertTrue(testSubject.compare(objectHandler, stringHandlerReversedOrder) > 0,
                    "Reversed-order-String handler should appear before Object handler");
-        assertTrue(testSubject.compare(objectHandlerReversedOrder, stringHandler) > 0,
-                   "String handler should appear before reversed-order-Object handler");
-        assertTrue(testSubject.compare(stringHandler, objectHandlerReversedOrder) < 0,
-                   "String handler should appear before reversed-order-Object handler");
-
+        assertTrue(testSubject.compare(objectHandlerReversedOrder, stringHandler) < 0,
+                   "Reversed-order-Object handler should appear before String handler ");
+        assertTrue(testSubject.compare(stringHandler, objectHandlerReversedOrder) > 0,
+                   "Reversed-order-Object handler should appear before String handler ");
         assertTrue(testSubject.compare(stringHandlerReversedOrder, objectHandlerReversedOrder) > 0,
                    "Reversed-order-Object handler should appear before reversed-order-String handler");
         assertTrue(testSubject.compare(objectHandlerReversedOrder, stringHandlerReversedOrder) < 0,
@@ -178,9 +199,17 @@ class HandlerComparatorTest {
         public <R> Optional<R> attribute(String attributeKey) {
             return Optional.empty();
         }
+
+        @Override
+        public String toString() {
+            return "Handler {" +
+                    payloadType +
+                    ", p=" + priority +
+                    '}';
+        }
     }
 
-    private static class ReversedOrderMessageHandlingMember implements MessageHandlingMember<Object>, ReversedOrder {
+    private static class ReversedOrderMessageHandlingMember implements MessageHandlingMember<Object> {
 
         private final Class<?> payloadType;
         private final int priority;
@@ -233,7 +262,16 @@ class HandlerComparatorTest {
 
         @Override
         public <R> Optional<R> attribute(String attributeKey) {
-            return Optional.empty();
+            return "ResultHandler.resultType".equals(attributeKey) ? Optional.of((R) Object.class) : Optional.empty();
         }
+
+        @Override
+        public String toString() {
+            return "ResultHandler {" +
+                    payloadType +
+                    ", p=" + priority +
+                    '}';
+        }
+
     }
 }
