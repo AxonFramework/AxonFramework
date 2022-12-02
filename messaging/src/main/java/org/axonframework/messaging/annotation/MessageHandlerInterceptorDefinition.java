@@ -22,12 +22,12 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.ResultHandler;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * {@link HandlerEnhancerDefinition} that marks methods (meta-)annotated with {@link MessageHandlerInterceptor}
@@ -56,7 +56,9 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         return original;
     }
 
-    private static class ResultHandlingInterceptorMember<T> extends WrappedMessageHandlingMember<T> implements MessageInterceptingMember<T> {
+    private static class ResultHandlingInterceptorMember<T>
+            extends WrappedMessageHandlingMember<T>
+            implements MessageInterceptingMember<T> {
 
         private final Class<?> expectedResultType;
 
@@ -70,6 +72,11 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
             if (declaredInterceptorChain) {
                 throw new AxonConfigurationException("A MessageHandlerInterceptor acting on the invocation result must not declare a parameter of type InterceptorChain. Violating handler: " + original.signature());
             }
+        }
+
+        @Override
+        public int priority() {
+            return Integer.MAX_VALUE;
         }
 
         @Override
