@@ -17,11 +17,8 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,10 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import javax.annotation.Nonnull;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link HandlerComparator}.
@@ -66,7 +62,10 @@ class HandlerComparatorTest {
 
     @RepeatedTest(10)
     void handlerOrderIsDeterministic() {
-        List<MessageHandlingMember<?>> handlers = new ArrayList<>(Arrays.asList(stringHandler, objectHandler, longHandler, numberHandler, priorityHandler, stringHandlerReversedOrder, objectHandlerReversedOrder));
+        List<MessageHandlingMember<?>> handlers = new ArrayList<>(Arrays.asList(
+                stringHandler, objectHandler, longHandler, numberHandler, priorityHandler, stringHandlerReversedOrder,
+                objectHandlerReversedOrder
+        ));
         ArrayList<MessageHandlingMember<?>> handlers1 = new ArrayList<>(handlers);
         ArrayList<MessageHandlingMember<?>> handlers2 = new ArrayList<>(handlers);
 
@@ -77,8 +76,6 @@ class HandlerComparatorTest {
         handlers2.sort(testSubject);
 
         assertEquals(handlers1, handlers2);
-
-        System.out.println(handlers1);
     }
 
     @Test
@@ -115,7 +112,10 @@ class HandlerComparatorTest {
 
     @Test
     void handlersSortedCorrectly() {
-        List<MessageHandlingMember<?>> members = new ArrayList<>(Arrays.asList(objectHandler, numberHandler, stringHandler, longHandler));
+        List<MessageHandlingMember<?>> members = new ArrayList<>(Arrays.asList(objectHandler,
+                                                                               numberHandler,
+                                                                               stringHandler,
+                                                                               longHandler));
 
         members.sort(this.testSubject);
         assertTrue(members.indexOf(longHandler) < members.indexOf(numberHandler));
@@ -124,8 +124,10 @@ class HandlerComparatorTest {
 
     @Test
     void notInSameHierarchyUsesPriorityBasedEvaluation() {
-        assertTrue(testSubject.compare(priorityHandler, stringHandler) < 0, "priorityHandler should appear before String based on priority");
-        assertTrue(testSubject.compare(stringHandler, priorityHandler) > 0, "priorityHandler should appear before String based on priority");
+        assertTrue(testSubject.compare(priorityHandler, stringHandler) < 0,
+                   "priorityHandler should appear before String based on priority");
+        assertTrue(testSubject.compare(stringHandler, priorityHandler) > 0,
+                   "priorityHandler should appear before String based on priority");
     }
 
     @Test
@@ -272,6 +274,5 @@ class HandlerComparatorTest {
                     ", p=" + priority +
                     '}';
         }
-
     }
 }
