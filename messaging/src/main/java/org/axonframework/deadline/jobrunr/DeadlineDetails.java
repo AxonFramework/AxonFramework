@@ -84,6 +84,10 @@ public class DeadlineDetails {
     }
 
     /**
+     * Created a new {@link DeadlineDetails} object, and returns that serialized as a {@link String}. The reason
+     * {@link String} was chosen over a byte array is that optionally the JubRunr dashboard is used, and as
+     * {@link String} its easy to read the details there.
+     *
      * @param deadlineName The {@link String} with the name of the deadline.
      * @param deadlineId   The {@link UUID} with the deadline id.
      * @param descriptor   The {@link ScopeDescriptor} which tells what the scope is of the deadline.
@@ -91,7 +95,7 @@ public class DeadlineDetails {
      *                     serialized.
      * @param serializer   The {@link Serializer} used to serialize the {@code descriptor}, {@code payload},
      *                     {@code metadata}, as well as the whole {@link DeadlineDetails}.
-     * @return The serialized {@code byte[]} representation of the details.
+     * @return The serialized {@link String} representation of the details.
      */
     @SuppressWarnings("rawtypes")
     static String serialized(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
@@ -230,6 +234,12 @@ public class DeadlineDetails {
         return serializer.deserialize(serializedDeadlineMetaData);
     }
 
+    /**
+     * Returns the serialized {@link ScopeDescriptor} using the supplied {@link Serializer}. This will be an instance of
+     * the {@code scopeDescriptorClass} property.
+     *
+     * @return the {@link ScopeDescriptor} that is serialized using the supplied {@link Serializer}.
+     */
     public ScopeDescriptor getDeserializedScopeDescriptor(Serializer serializer) {
         SimpleSerializedObject<String> serializedDeadlineScope = new SimpleSerializedObject<>(
                 scopeDescriptor, String.class, scopeDescriptorClass, null

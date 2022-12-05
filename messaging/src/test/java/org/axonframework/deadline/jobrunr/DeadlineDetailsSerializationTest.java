@@ -56,17 +56,17 @@ class DeadlineDetailsSerializationTest {
     @Test
     void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingXStream() {
         Serializer serializer = TestSerializer.XSTREAM.getSerializer();
-        testSerialisationWithSpecicSerializer(serializer);
+        testSerialisationWithSpecificSerializer(serializer);
     }
 
     @Test
     void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingJackson() {
         Serializer serializer = TestSerializer.JACKSON.getSerializer();
-        testSerialisationWithSpecicSerializer(serializer);
+        testSerialisationWithSpecificSerializer(serializer);
     }
 
     @SuppressWarnings("rawtypes")
-    private void testSerialisationWithSpecicSerializer(Serializer serializer) {
+    private void testSerialisationWithSpecificSerializer(Serializer serializer) {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);

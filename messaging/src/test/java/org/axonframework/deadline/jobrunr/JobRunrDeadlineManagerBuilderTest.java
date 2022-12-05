@@ -18,7 +18,9 @@ package org.axonframework.deadline.jobrunr;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.TestSerializer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.junit.jupiter.api.*;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.*;
 
 class JobRunrDeadlineManagerBuilderTest {
 
+    private static final String TEST_DEADLINE_NAME = "deadline-name";
     private JobRunrDeadlineManager.Builder builder;
     private final JobScheduler jobScheduler = mock(JobScheduler.class);
     private final TransactionManager transactionManager = mock(TransactionManager.class);
@@ -69,5 +72,28 @@ class JobRunrDeadlineManagerBuilderTest {
     @Test
     void whenSettingScopeAwareProviderWithNullThrowError() {
         assertThrows(AxonConfigurationException.class, () -> builder.scopeAwareProvider(null));
+    }
+
+    @Test
+    void cancelAllNotImplemented() {
+        JobRunrDeadlineManager manager = builder.scopeAwareProvider(scopeAwareProvider)
+                                                .transactionManager(transactionManager)
+                                                .jobScheduler(jobScheduler)
+                                                .serializer(TestSerializer.JACKSON.getSerializer())
+                                                .build();
+        assertThrows(UnsupportedOperationException.class,
+                     () -> manager.cancelAll(TEST_DEADLINE_NAME));
+    }
+
+    @Test
+    void cancelAllWithinScopeNotImplemented() {
+        JobRunrDeadlineManager manager = builder.scopeAwareProvider(scopeAwareProvider)
+                                                .transactionManager(transactionManager)
+                                                .jobScheduler(jobScheduler)
+                                                .serializer(TestSerializer.JACKSON.getSerializer())
+                                                .build();
+        ScopeDescriptor descriptor = new TestScopeDescriptor("aggregate-type", "aggregate-identifier");
+        assertThrows(UnsupportedOperationException.class,
+                     () -> manager.cancelAllWithinScope(TEST_DEADLINE_NAME, descriptor));
     }
 }

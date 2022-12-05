@@ -61,7 +61,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
-    private static final Logger LOGGER = getLogger(JobRunrDeadlineManager.class);
+    private static final Logger logger = getLogger(JobRunrDeadlineManager.class);
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final JobScheduler jobScheduler;
@@ -134,7 +134,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        throw new DeadlineException(
+        throw new UnsupportedOperationException(
                 "The 'cancelAll' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
                         + "This requires keeping track of the return value from 'schedule'.");
     }
@@ -149,7 +149,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        throw new DeadlineException(
+        throw new UnsupportedOperationException(
                 "The 'cancelAllWithinScope' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
                         + "This requires keeping track of the return value from 'schedule'.");
     }
@@ -186,7 +186,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
-            LOGGER.warn("An error occurred while triggering the deadline [{}] with identifier [{}]",
+            logger.warn("An error occurred while triggering the deadline [{}] with identifier [{}]",
                         deadlineDetails.getDeadlineName(), deadlineDetails.getDeadlineId());
             throw new DeadlineException("Failed to process", e);
         }
