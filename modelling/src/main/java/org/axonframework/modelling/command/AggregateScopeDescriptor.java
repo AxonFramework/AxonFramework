@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
 
     @Override
     public String scopeDescription() {
-        return String.format("AggregateScopeDescriptor for type [%s] and identifier [%s]", type, identifier);
+        return String.format("AggregateScopeDescriptor for type [%s] and identifier [%s]", type, getIdentifier());
     }
 
     /**

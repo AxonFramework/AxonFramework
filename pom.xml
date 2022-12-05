@@ -101,6 +101,7 @@
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
+        <jobrunr.version>5.3.1</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
         <hibernate-core.version>5.6.12.Final</hibernate-core.version>
@@ -116,6 +117,7 @@
         <axonserver-connector-java.version>4.6.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.17.5</testcontainers.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <xstream.version>1.4.19</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- plugin versions -->
@@ -136,7 +138,6 @@
         <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
 
         <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
-
     </properties>
 
     <dependencies>
@@ -291,6 +292,11 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.axonframework</groupId>
                 <artifactId>axon-server-connector</artifactId>
                 <version>${project.version}</version>
@@ -344,6 +350,11 @@
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
                 <version>${quartz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jobrunr</groupId>
+                <artifactId>jobrunr</artifactId>
+                <version>${jobrunr.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
