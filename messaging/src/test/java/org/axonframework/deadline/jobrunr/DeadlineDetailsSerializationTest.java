@@ -29,7 +29,6 @@ import org.junit.jupiter.api.*;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,7 +37,6 @@ class DeadlineDetailsSerializationTest {
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
     private static MetaData metaData;
-    private static UUID scheduleId;
     @SuppressWarnings("rawtypes")
     private static DeadlineMessage message;
 
@@ -48,7 +46,6 @@ class DeadlineDetailsSerializationTest {
         map.put("someStringValue", "foo");
         map.put("someIntValue", 2);
         metaData = new MetaData(map);
-        scheduleId = UUID.randomUUID();
         message = GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD, Instant.now())
                                         .withMetaData(metaData);
     }
@@ -71,20 +68,18 @@ class DeadlineDetailsSerializationTest {
         String expectedIdentifier = "identifier";
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
         String serializedDeadlineDetails = DeadlineDetails.serialized(
-                TEST_DEADLINE_NAME, scheduleId, descriptor, message, serializer);
+                TEST_DEADLINE_NAME, descriptor, message, serializer);
         SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
         DeadlineDetails result = serializer.deserialize(serializedDeadlineMetaData);
 
         assertEquals(TEST_DEADLINE_NAME, result.getDeadlineName());
-        assertEquals(scheduleId, result.getDeadlineId());
         assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
         DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
 
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.getPayload());
         assertEquals(metaData, resultMessage.getMetaData());
-        assertEquals(message.getTimestamp(), resultMessage.getTimestamp());
     }
 }

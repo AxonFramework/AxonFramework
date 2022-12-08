@@ -109,13 +109,12 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        UUID deadlineId = UUID.fromString(deadlineMessage.getIdentifier());
+        UUID deadlineId = UUID.randomUUID();
         Span span = spanFactory.createDispatchSpan(() -> "JobRunrDeadlineManager.schedule(" + deadlineName + ")",
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             String deadlineDetails = DeadlineDetails.serialized(deadlineName,
-                                                                deadlineId,
                                                                 deadlineScope,
                                                                 interceptedDeadlineMessage,
                                                                 serializer);
@@ -186,8 +185,8 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceed);
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
-            logger.warn("An error occurred while triggering the deadline [{}] with identifier [{}]",
-                        deadlineDetails.getDeadlineName(), deadlineDetails.getDeadlineId());
+            logger.warn("An error occurred while triggering deadline with name [{}].",
+                        deadlineDetails.getDeadlineName());
             throw new DeadlineException("Failed to process", e);
         }
     }
