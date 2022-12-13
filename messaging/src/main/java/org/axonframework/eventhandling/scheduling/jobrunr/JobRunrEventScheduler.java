@@ -30,6 +30,7 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.jobrunr.scheduling.JobScheduler;
@@ -41,7 +42,9 @@ import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 
+import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.eventhandling.GenericEventMessage.clock;
 
 /**
  * EventScheduler implementation that delegates scheduling and triggering to a JobRunr JobScheduler.
@@ -99,36 +102,59 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
                 schedulePayload(jobIdentifier, triggerDateTime, event);
             }
         } catch (Exception e) {
-            throw new SchedulingException("An error occurred while setting a timer.", e);
+            throw new SchedulingException("An error occurred while scheduling an event.", e);
         }
         return new JobRunrScheduleToken(jobIdentifier);
     }
 
     private void schedulePayload(UUID jobIdentifier, Instant triggerDateTime, Object event) {
-        String serializedPayload = serializer.serialize(event, String.class).getData();
-        String payloadClass = event.getClass().getName();
-        jobScheduler.<JobRunrEventScheduler>schedule(
-                jobIdentifier,
-                triggerDateTime,
-                x -> x.publish(serializedPayload, payloadClass)
-        );
+        SerializedObject<String> serialized = serializer.serialize(event, String.class);
+        String serializedPayload = serialized.getData();
+        String payloadClass = serialized.getType().getName();
+        String revision = serialized.getType().getRevision();
+        if (isNull(revision)) {
+            jobScheduler.<JobRunrEventScheduler>schedule(
+                    jobIdentifier,
+                    triggerDateTime,
+                    eventScheduler -> eventScheduler.publish(serializedPayload, payloadClass)
+            );
+        } else {
+            jobScheduler.<JobRunrEventScheduler>schedule(
+                    jobIdentifier,
+                    triggerDateTime,
+                    eventScheduler -> eventScheduler.publishWithRevision(serializedPayload, payloadClass, revision)
+            );
+        }
     }
 
     @SuppressWarnings("rawtypes")
     private void schedulePayloadAndMetadata(UUID jobIdentifier, Instant triggerDateTime, EventMessage eventMessage) {
-        String serializedPayload = serializer.serialize(eventMessage.getPayload(), String.class).getData();
-        String payloadClass = eventMessage.getPayloadType().getName();
+        SerializedObject<String> serialized = serializer.serialize(eventMessage.getPayload(), String.class);
+        String serializedPayload = serialized.getData();
+        String payloadClass = serialized.getType().getName();
+        String revision = serialized.getType().getRevision();
         String serializedMetadata = serializer.serialize(eventMessage.getMetaData(), String.class).getData();
-        jobScheduler.<JobRunrEventScheduler>schedule(
-                jobIdentifier,
-                triggerDateTime,
-                x -> x.publish(serializedPayload, payloadClass, serializedMetadata)
-        );
+        if (isNull(revision)) {
+            jobScheduler.<JobRunrEventScheduler>schedule(
+                    jobIdentifier,
+                    triggerDateTime,
+                    eventScheduler -> eventScheduler.publish(serializedPayload, payloadClass, serializedMetadata)
+            );
+        } else {
+            jobScheduler.<JobRunrEventScheduler>schedule(
+                    jobIdentifier,
+                    triggerDateTime,
+                    eventScheduler -> eventScheduler.publishWithRevision(serializedPayload,
+                                                                         payloadClass,
+                                                                         revision,
+                                                                         serializedMetadata)
+            );
+        }
     }
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        return schedule(Instant.now().plus(triggerDuration), event);
+        return schedule(clock.instant().plus(triggerDuration), event);
     }
 
     @Override
@@ -157,10 +183,9 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
      * @param serializedPayload The {@link String} with the serialized payload.
      * @param payloadClass      The {@link String} with the name of the class ot the payload.
      */
-    @SuppressWarnings("rawtypes")
     public void publish(String serializedPayload, String payloadClass) {
         logger.debug("Invoked by JobRunr to publish a scheduled event without metadata.");
-        EventMessage eventMessage = createMessage(serializedPayload, payloadClass);
+        EventMessage<?> eventMessage = createMessage(serializedPayload, payloadClass, null);
         publishEventMessage(eventMessage);
     }
 
@@ -169,28 +194,62 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
      * {@link EventMessage} and publish it using the {@link EventBus}.
      *
      * @param serializedPayload  The {@link String} with the serialized payload.
-     * @param payloadClass       The {@link String} with the name of the class ot the payload.
+     * @param payloadClass       The {@link String} with the name of the class of the payload.
      * @param serializedMetadata The {@link String} with the serialized metadata.
      */
-    @SuppressWarnings("rawtypes")
     public void publish(String serializedPayload, String payloadClass, String serializedMetadata) {
         logger.debug("Invoked by JobRunr to publish a scheduled event with metadata");
-        EventMessage eventMessage = createMessage(serializedPayload, payloadClass, serializedMetadata);
+        EventMessage<?> eventMessage = createMessage(serializedPayload, payloadClass, null, serializedMetadata);
         publishEventMessage(eventMessage);
     }
 
-    @SuppressWarnings("rawtypes")
-    private EventMessage createMessage(String serializedPayload, String payloadClass) {
+    /**
+     * This function should only be called via Jobrunr when a scheduled event was triggered. It will create an
+     * {@link EventMessage} and publish it using the {@link EventBus}.
+     *
+     * @param serializedPayload The {@link String} with the serialized payload.
+     * @param payloadClass      The {@link String} with the name of the class ot the payload.
+     * @param revision          The {@link String} with the revision of the class of the payload. Might be null.
+     */
+    public void publishWithRevision(String serializedPayload, String payloadClass, String revision) {
+        logger.debug("Invoked by JobRunr to publish a scheduled event without metadata.");
+        EventMessage<?> eventMessage = createMessage(serializedPayload, payloadClass, revision);
+        publishEventMessage(eventMessage);
+    }
+
+    /**
+     * This function should only be called via Jobrunr when a scheduled event was triggered. It will create an
+     * {@link EventMessage} and publish it using the {@link EventBus}.
+     *
+     * @param serializedPayload  The {@link String} with the serialized payload.
+     * @param payloadClass       The {@link String} with the name of the class of the payload.
+     * @param revision           The {@link String} with the revision of the class of the payload. Might be null.
+     * @param serializedMetadata The {@link String} with the serialized metadata.
+     */
+    public void publishWithRevision(String serializedPayload, String payloadClass, String revision,
+                                    String serializedMetadata) {
+        logger.debug("Invoked by JobRunr to publish a scheduled event with metadata");
+        EventMessage<?> eventMessage = createMessage(serializedPayload, payloadClass, revision, serializedMetadata);
+        publishEventMessage(eventMessage);
+    }
+
+    private EventMessage<?> createMessage(
+            String serializedPayload,
+            String payloadClass,
+            String revision) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
-                serializedPayload, String.class, payloadClass, null
+                serializedPayload, String.class, payloadClass, revision
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
         return GenericEventMessage.asEventMessage(deserializedPayload);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private EventMessage createMessage(String serializedPayload, String payloadClass, String serializedMetadata) {
-        EventMessage eventMessage = createMessage(serializedPayload, payloadClass);
+    private EventMessage<?> createMessage(
+            String serializedPayload,
+            String payloadClass,
+            String revision,
+            String serializedMetadata) {
+        EventMessage<?> eventMessage = createMessage(serializedPayload, payloadClass, revision);
         SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                 serializedMetadata, String.class, MetaData.class.getName(), null
         );

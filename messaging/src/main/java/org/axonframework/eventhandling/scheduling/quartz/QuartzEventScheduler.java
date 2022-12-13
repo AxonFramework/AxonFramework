@@ -52,6 +52,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.eventhandling.GenericEventMessage.clock;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
 import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
@@ -135,7 +136,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             JobDetail jobDetail = buildJobDetail(eventMessage, new JobKey(jobIdentifier, groupIdentifier));
             scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
         } catch (SchedulerException e) {
-            throw new SchedulingException("An error occurred while setting a timer for a saga", e);
+            throw new SchedulingException("An error occurred while scheduling an event.", e);
         }
         return tr;
     }
@@ -179,7 +180,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        return schedule(Instant.now().plus(triggerDuration), event);
+        return schedule(clock.instant().plus(triggerDuration), event);
     }
 
     @Override

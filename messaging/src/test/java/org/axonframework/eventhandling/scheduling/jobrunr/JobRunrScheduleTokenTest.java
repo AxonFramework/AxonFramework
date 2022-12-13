@@ -17,8 +17,12 @@
 package org.axonframework.eventhandling.scheduling.jobrunr;
 
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
+import java.util.Collection;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,5 +48,16 @@ class JobRunrScheduleTokenTest {
         assertNotEquals(one, other);
         assertNotEquals(one.toString(), other.toString());
         assertNotEquals(one.hashCode(), other.hashCode());
+    }
+
+    @MethodSource("serializers")
+    @ParameterizedTest
+    void tokenShouldBeSerializable(TestSerializer serializer) {
+        ScheduleToken tokenToTest = new JobRunrScheduleToken(UUID.randomUUID());
+        assertEquals(tokenToTest, serializer.serializeDeserialize(tokenToTest));
+    }
+
+    public static Collection<TestSerializer> serializers() {
+        return TestSerializer.all();
     }
 }

@@ -119,7 +119,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                                                 deadlineScope,
                                                                 interceptedDeadlineMessage,
                                                                 serializer);
-            jobScheduler.<JobRunrDeadlineManager>schedule(deadlineId, triggerDateTime, x -> x.execute(deadlineDetails));
+            jobScheduler.<JobRunrDeadlineManager>schedule(deadlineId,
+                                                          triggerDateTime,
+                                                          deadlineManager -> deadlineManager.execute(deadlineDetails));
         }));
         return deadlineId.toString();
     }
