@@ -24,8 +24,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.time.Instant;
-import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -40,14 +38,12 @@ import javax.annotation.Nullable;
 public class DeadlineDetails {
 
     private String deadlineName;
-    private UUID deadlineId;
     private String scopeDescriptor;
     private String scopeDescriptorClass;
     private String payload;
     private String payloadClass;
     private String payloadRevision;
     private String metaData;
-    private Instant timestamp;
 
     private DeadlineDetails() {
         //private no-args constructor needed for deserialization
@@ -58,29 +54,24 @@ public class DeadlineDetails {
      * {@link org.axonframework.deadline.DeadlineMessage}.
      *
      * @param deadlineName         The {@link String} with the name of the deadline.
-     * @param deadlineId           The {@link UUID} with the deadline id.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
      * @param metaData             The {@link String} containing the metadata about the deadline.
-     * @param timestamp            The {@link Instant} containing the timestamp of the deadline message.
      */
     @SuppressWarnings("squid:S107")
-    public DeadlineDetails(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
-                           @Nonnull String scopeDescriptor, @Nonnull String scopeDescriptorClass,
-                           @Nullable String payload, @Nullable String payloadClass, @Nullable String payloadRevision,
-                           @Nonnull String metaData, @Nonnull Instant timestamp) {
+    public DeadlineDetails(@Nonnull String deadlineName, @Nonnull String scopeDescriptor,
+                           @Nonnull String scopeDescriptorClass, @Nullable String payload,
+                           @Nullable String payloadClass, @Nullable String payloadRevision, @Nonnull String metaData) {
         this.deadlineName = deadlineName;
-        this.deadlineId = deadlineId;
         this.scopeDescriptor = scopeDescriptor;
         this.scopeDescriptorClass = scopeDescriptorClass;
         this.payload = payload;
         this.payloadClass = payloadClass;
         this.payloadRevision = payloadRevision;
         this.metaData = metaData;
-        this.timestamp = timestamp;
     }
 
     /**
@@ -89,7 +80,6 @@ public class DeadlineDetails {
      * {@link String} its easy to read the details there.
      *
      * @param deadlineName The {@link String} with the name of the deadline.
-     * @param deadlineId   The {@link UUID} with the deadline id.
      * @param descriptor   The {@link ScopeDescriptor} which tells what the scope is of the deadline.
      * @param message      The {@link DeadlineMessage} containing the payload and metadata which needs to be
      *                     serialized.
@@ -98,22 +88,20 @@ public class DeadlineDetails {
      * @return The serialized {@link String} representation of the details.
      */
     @SuppressWarnings("rawtypes")
-    static String serialized(@Nonnull String deadlineName, @Nonnull UUID deadlineId,
-                             @Nonnull ScopeDescriptor descriptor, @Nonnull DeadlineMessage message,
+    static String serialized(@Nonnull String deadlineName, @Nonnull ScopeDescriptor descriptor,
+                             @Nonnull DeadlineMessage message,
                              @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
         SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
         DeadlineDetails deadlineDetails = new DeadlineDetails(
                 deadlineName,
-                deadlineId,
                 serializedDescriptor.getData(),
                 serializedDescriptor.getType().getName(),
                 serializedPayload.getData(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
-                serializedMetaData.getData(),
-                message.getTimestamp()
+                serializedMetaData.getData()
         );
         SerializedObject<String> serializedDeadlineDetails = serializer.serialize(deadlineDetails, String.class);
         return serializedDeadlineDetails.getData();
@@ -126,15 +114,6 @@ public class DeadlineDetails {
      */
     public String getDeadlineName() {
         return deadlineName;
-    }
-
-    /**
-     * Returns The {@link UUID} with the deadline id.
-     *
-     * @return The {@link UUID} with the deadline id.
-     */
-    public UUID getDeadlineId() {
-        return deadlineId;
     }
 
     /**
@@ -192,15 +171,6 @@ public class DeadlineDetails {
     }
 
     /**
-     * Returns the {@link Instant} containing the timestamp of the deadline.
-     *
-     * @return The {@link Instant} containing the timestamp of the deadline.
-     */
-    public Instant getTimestamp() {
-        return timestamp;
-    }
-
-    /**
      * Returns the {@link DeadlineDetails} as an {@link GenericDeadlineMessage}, with the {@code} timestamp set using
      * the {@code GenericEventMessage.clock} to set to the current time.
      *
@@ -210,10 +180,8 @@ public class DeadlineDetails {
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
         return new GenericDeadlineMessage<>(
                 deadlineName,
-                deadlineId.toString(),
                 getDeserializedPayload(serializer),
-                getDeserializedMetaData(serializer),
-                timestamp);
+                getDeserializedMetaData(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {

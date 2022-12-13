@@ -25,11 +25,13 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.EntityId;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
@@ -83,7 +86,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     protected Configuration configuration;
     protected TestSpanFactory spanFactory;
-    private List<Object> published;
+    private List<Message<?>> publishedMessages;
     private DeadlineManager deadlineManager;
     private String managerName;
 
@@ -104,8 +107,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
                                   .configureSpanFactory(c -> spanFactory)
                                   .start();
 
-        published = new CopyOnWriteArrayList<>();
-        configuration.eventBus().subscribe(events -> events.forEach(msg -> published.add(msg.getPayload())));
+        publishedMessages = new CopyOnWriteArrayList<>();
+        configuration.eventBus().subscribe(events -> publishedMessages.addAll(events));
     }
 
     private DeadlineManager buildAndSpyDeadlineManager(Configuration configuration) {
@@ -132,9 +135,17 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void deadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
+        Instant afterDeadlineWasScheduled = Instant.now();
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+
+        Message<?> aggregateCreatedEvent = publishedMessages.get(0);
+        assertTrue(aggregateCreatedEvent instanceof GenericEventMessage);
+        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).getTimestamp()));
+        Message<?> deadLineEvent = publishedMessages.get(1);
+        assertTrue(deadLineEvent instanceof GenericEventMessage);
+        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).getTimestamp()));
     }
 
     @Test
@@ -426,8 +437,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     private boolean sameElements(List<Object> expected) {
-        return expected.size() == published.size() && expected.containsAll(published)
-                && published.containsAll(expected);
+        if (expected.size() != publishedMessages.size()) {
+            return false;
+        }
+        List<Object> published = publishedMessages.stream().map(Message::getPayload).collect(Collectors.toList());
+        return expected.containsAll(published) && published.containsAll(expected);
     }
 
     private void assertSagaIs(boolean live) {
