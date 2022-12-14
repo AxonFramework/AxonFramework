@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.Segment;
@@ -42,8 +44,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;

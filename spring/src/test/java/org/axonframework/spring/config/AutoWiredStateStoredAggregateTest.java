@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.javax.common.jpa.EntityManagerProvider;
+import org.axonframework.javax.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration
-public class AutoWiredStateStoredAggregateTest {
+class AutoWiredStateStoredAggregateTest {
 
     @Autowired
     private Repository<Context.MyAggregate> myAggregateRepository;

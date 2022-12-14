@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import jakarta.persistence.Id;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -28,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.persistence.Id;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;

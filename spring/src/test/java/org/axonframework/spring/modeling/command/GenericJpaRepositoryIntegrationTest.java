@@ -16,19 +16,19 @@
 
 package org.axonframework.spring.modeling.command;
 
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.javax.common.jpa.EntityManagerProvider;
+import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.javax.modelling.command.GenericJpaRepository;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;

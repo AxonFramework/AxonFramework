@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.javax.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 

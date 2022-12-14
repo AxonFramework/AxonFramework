@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.PagingJpaQueryIterable;
@@ -46,8 +48,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 
 import static org.axonframework.common.BuilderUtils.*;
 

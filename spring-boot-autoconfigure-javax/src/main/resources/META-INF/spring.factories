@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.axonframework.javax.springboot.autoconfig.JpaJavaxAutoConfiguration,\
+  org.axonframework.javax.springboot.autoconfig.JpaJavaxEventStoreAutoConfiguration

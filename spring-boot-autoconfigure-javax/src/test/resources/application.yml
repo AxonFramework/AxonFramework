@@ -1,0 +1,4 @@
+debug: true
+logging:
+  level:
+    root: DEBUG

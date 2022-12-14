@@ -35,11 +35,11 @@ import org.axonframework.modelling.saga.repository.jdbc.SagaSqlSchema;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 
@@ -49,7 +49,7 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 3.1
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnBean(DataSource.class)
 @AutoConfigureAfter(value = {JpaAutoConfiguration.class, JpaEventStoreAutoConfiguration.class})
 public class JdbcAutoConfiguration {
@@ -108,7 +108,7 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean({SagaStore.class, SagaSqlSchema.class})
-    public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer) {
+    public JdbcSagaStore sagaStoreNoSchema(ConnectionProvider connectionProvider, Serializer serializer) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(new GenericSagaSqlSchema())
@@ -119,7 +119,8 @@ public class JdbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SagaStore.class)
     @ConditionalOnBean(SagaSqlSchema.class)
-    public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer, SagaSqlSchema schema) {
+    public JdbcSagaStore sagaStoreWithSchema(ConnectionProvider connectionProvider, Serializer serializer,
+                                             SagaSqlSchema schema) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(schema)

@@ -37,11 +37,11 @@ import org.axonframework.spring.saga.SpringResourceInjector;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Role;
 
@@ -54,6 +54,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 3.0.4
  */
+@AutoConfiguration
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
         AxonAutoConfiguration.class,
@@ -62,7 +63,6 @@ import java.util.List;
         NoOpTransactionAutoConfiguration.class,
         TransactionAutoConfiguration.class
 })
-@Configuration
 public class InfraConfiguration {
 
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

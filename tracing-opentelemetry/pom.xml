@@ -52,6 +52,10 @@
             <artifactId>opentelemetry-api</artifactId>
             <version>${opentelemetry-api.version}</version>
         </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.google.code.findbugs</groupId>

@@ -17,15 +17,15 @@
 package org.axonframework.spring.eventsourcing.benchmark;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
+import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.javax.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.javax.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;

@@ -16,6 +16,14 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
@@ -26,14 +34,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Lob;
-import javax.persistence.Table;
 
 /**
  * Default DeadLetter JPA entity implementation of dead letters. Used by the {@link JpaSequencedDeadLetterQueue} to

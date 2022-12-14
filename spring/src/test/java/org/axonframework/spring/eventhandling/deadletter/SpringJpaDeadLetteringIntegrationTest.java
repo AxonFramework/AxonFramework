@@ -16,13 +16,13 @@
 
 package org.axonframework.spring.eventhandling.deadletter;
 
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.javax.common.jpa.EntityManagerProvider;
+import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.javax.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;

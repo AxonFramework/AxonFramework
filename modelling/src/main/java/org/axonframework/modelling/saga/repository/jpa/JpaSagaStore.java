@@ -16,6 +16,9 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityNotFoundException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
@@ -34,19 +37,16 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * JPA implementation of the {@link SagaStore}. It uses an {@link javax.persistence.EntityManager} to persist the actual
- * saga in a backing store in serialized form.
+ * JPA implementation of the {@link SagaStore}. It uses an {@link jakarta.persistence.EntityManager} to persist the
+ * actual saga in a backing store in serialized form.
  * <p/>
- * After each operation that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
- * ensure the store contains the last modifications. To override this behavior, see {@link
- * #setUseExplicitFlush(boolean)}
+ * After each operation that modified the backing store, {@link jakarta.persistence.EntityManager#flush()} is invoked to
+ * ensure the store contains the last modifications. To override this behavior, see
+ * {@link #setUseExplicitFlush(boolean)}
  *
  * @author Allard Buijze
  * @since 3.0
@@ -309,7 +309,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Sets whether or not to do an explicit {@link javax.persistence.EntityManager#flush()} after each data modifying
+     * Sets whether or not to do an explicit {@link jakarta.persistence.EntityManager#flush()} after each data modifying
      * operation on the backing storage. Default to {@code true}
      *
      * @param useExplicitFlush {@code true} to force flush, {@code false} otherwise.

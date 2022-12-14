@@ -16,6 +16,10 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Lob;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -24,10 +28,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.util.Arrays;
 import java.util.Objects;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Lob;
 
 import static java.util.Objects.requireNonNull;
 

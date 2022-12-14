@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.eventhandling.tokenstore.jpa;
 
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
-import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
+import org.axonframework.javax.common.jpa.EntityManagerProvider;
+import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.javax.eventhandling.tokenstore.jpa.JpaTokenStore;
+import org.axonframework.javax.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.serialization.TestSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;

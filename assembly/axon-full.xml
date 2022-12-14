@@ -30,8 +30,9 @@
             <excludes>
                 <exclude>*:axon-integrationtests</exclude>
                 <exclude>*:axon-integrationtests-jakarta</exclude>
+                <exclude>*:axon-spring-boot-3-integrationtests</exclude>
                 <exclude>*:axon-spring-boot-starter</exclude>
-                <exclude>*:axon-spring-boot-starter-jgroups</exclude>
+                <exclude>*:axon-spring-boot-starter-javax</exclude>
                 <exclude>*:axon-reactorless-test</exclude>
             </excludes>
             <binaries>

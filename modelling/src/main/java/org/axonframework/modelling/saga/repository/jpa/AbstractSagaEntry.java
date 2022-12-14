@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.MappedSuperclass;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-
-import javax.persistence.*;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database.

@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import jakarta.inject.Inject;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -36,7 +37,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.*;
 

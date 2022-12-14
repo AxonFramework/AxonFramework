@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
 import org.axonframework.springboot.MetricsProperties;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -27,7 +28,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Auto configuration to set up Metrics for the infrastructure components.
@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Steven van Beelen
  * @since 3.2
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnMissingBean(MicrometerMetricsAutoConfiguration.class)
 @ConditionalOnClass(name = {

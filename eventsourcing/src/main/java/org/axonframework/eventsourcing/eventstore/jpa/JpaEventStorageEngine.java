@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
@@ -53,8 +55,6 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;

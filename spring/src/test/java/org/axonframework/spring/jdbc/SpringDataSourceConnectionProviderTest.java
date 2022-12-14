@@ -79,14 +79,13 @@ class SpringDataSourceConnectionProviderTest {
 
         uow.commit();
     }
-
     @Test
     void connectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;
             return spy;
-        }).when(dataSource).getConnection("sa", "");
+        }).when(dataSource).getConnection();
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Transaction transaction = springTransactionManager.startTransaction();

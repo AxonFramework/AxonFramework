@@ -43,6 +43,10 @@
             <artifactId>reactor-core</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
 
         <!-- Optional dependency on Spring -->
         <dependency>

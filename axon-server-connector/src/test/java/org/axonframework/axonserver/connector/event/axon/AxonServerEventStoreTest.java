@@ -257,7 +257,6 @@ class AxonServerEventStoreTest {
         assertFalse(eventStore.getEventsRequests().get(0).getForceReadFromLeader());
     }
 
-    @Disabled("No supported in new connector, yet.")
     @Test
     void usingLocalEventStoreOnQueryingEvents() {
         testSubject.publish(new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1"));
