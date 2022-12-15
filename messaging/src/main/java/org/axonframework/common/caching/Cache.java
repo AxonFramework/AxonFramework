@@ -61,15 +61,15 @@ public interface Cache {
     boolean putIfAbsent(Object key, Object value);
 
     /**
-     * Stores the value given by the {@code valueSupplier} in the cache, under given {@code key}, if no element is yet
-     * available under that key. This operation is performed atomically.
+     * Returns the value under the given {@code key} in the cache. If there is no value present, will invoke the given
+     * {@code valueSupplier}, put the value in the cache and return the produced value.
      *
      * @param key           The key under which to store the item
      * @param valueSupplier A supplier that lazily supplies the value when necessary
      * @return The value that is in the cache after the operation. This can be the original value or the one supplied by
      * the {@code valueSupplier}.
      */
-    <T> T getOrCompute(Object key, Supplier<T> valueSupplier);
+    <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier);
 
     /**
      * Removes the entry stored under given {@code key}. If no such entry exists, nothing happens.

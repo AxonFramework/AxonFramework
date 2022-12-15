@@ -62,7 +62,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
-    public <T> T getOrCompute(Object key, Supplier<T> valueSupplier) {
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
         Element current = ehCache.get(key);
         if(current != null) {
             return (T) current.getObjectValue();

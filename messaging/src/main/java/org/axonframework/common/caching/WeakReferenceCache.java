@@ -108,7 +108,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    public <T> T getOrCompute(Object key, Supplier<T> valueSupplier) {
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
         purgeItems();
         Entry entry = cache.computeIfAbsent(key, o -> {
             T value = valueSupplier.get();

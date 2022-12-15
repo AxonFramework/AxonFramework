@@ -76,7 +76,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     @Override
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
         final String key = cacheKey(associationValue, sagaType);
-        return associationsCache.getOrCompute(key, () -> delegate.findSagas(sagaType, associationValue));
+        return associationsCache.computeIfAbsent(key, () -> delegate.findSagas(sagaType, associationValue));
     }
 
     @Override

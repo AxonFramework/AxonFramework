@@ -53,7 +53,7 @@ public final class NoCache implements Cache {
     }
 
     @Override
-    public <T> T getOrCompute(Object key, Supplier<T> valueSupplier) {
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
         return valueSupplier.get();
     }
 

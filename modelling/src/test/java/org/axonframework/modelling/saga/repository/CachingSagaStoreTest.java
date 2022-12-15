@@ -97,7 +97,7 @@ public abstract class CachingSagaStoreTest {
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(singleton("id"), actual);
-        verify(associationsCache, atLeast(1)).getOrCompute(eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"), any());
+        verify(associationsCache, atLeast(1)).computeIfAbsent(eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"), any());
     }
 
     @Test
