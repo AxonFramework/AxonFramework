@@ -43,11 +43,12 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -307,6 +308,11 @@ class AggregateStereotypeAutoConfigurationTest {
                 @Override
                 public boolean putIfAbsent(Object key, Object value) {
                     return false;
+                }
+
+                @Override
+                public <T> T getOrCompute(Object key, Supplier<T> valueSupplier) {
+                    return valueSupplier.get();
                 }
 
                 @Override

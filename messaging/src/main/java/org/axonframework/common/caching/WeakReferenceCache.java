@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -104,6 +105,19 @@ public class WeakReferenceCache implements Cache {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public <T> T getOrCompute(Object key, Supplier<T> valueSupplier) {
+        purgeItems();
+        Entry entry = cache.computeIfAbsent(key, o -> {
+            T value = valueSupplier.get();
+            for (EntryListener adapter : adapters) {
+                adapter.onEntryCreated(key, value);
+            }
+            return new Entry(o, value);
+        });
+        return (T) entry.get();
     }
 
     @Override

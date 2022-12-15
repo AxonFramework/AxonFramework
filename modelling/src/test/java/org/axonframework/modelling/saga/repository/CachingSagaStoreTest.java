@@ -22,7 +22,6 @@ import org.axonframework.modelling.saga.AssociationValuesImpl;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -98,9 +97,7 @@ public abstract class CachingSagaStoreTest {
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(singleton("id"), actual);
-        verify(associationsCache, atLeast(1)).get("org.axonframework.modelling.saga.repository.StubSaga/key=value");
-        verify(associationsCache).putIfAbsent("org.axonframework.modelling.saga.repository.StubSaga/key=value",
-                                              Collections.singleton("id"));
+        verify(associationsCache, atLeast(1)).getOrCompute(eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"), any());
     }
 
     @Test

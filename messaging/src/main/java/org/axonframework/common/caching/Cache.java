@@ -18,6 +18,7 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -58,6 +59,17 @@ public interface Cache {
      * @return {@code true} if no value was previously assigned to the key, {@code false} otherwise.
      */
     boolean putIfAbsent(Object key, Object value);
+
+    /**
+     * Stores the value given by the {@code valueSupplier} in the cache, under given {@code key}, if no element is yet
+     * available under that key. This operation is performed atomically.
+     *
+     * @param key           The key under which to store the item
+     * @param valueSupplier A supplier that lazily supplies the value when necessary
+     * @return The value that is in the cache after the operation. This can be the original value or the one supplied by
+     * the {@code valueSupplier}.
+     */
+    <T> T getOrCompute(Object key, Supplier<T> valueSupplier);
 
     /**
      * Removes the entry stored under given {@code key}. If no such entry exists, nothing happens.
