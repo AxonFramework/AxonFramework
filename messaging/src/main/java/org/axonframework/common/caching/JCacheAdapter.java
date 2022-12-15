@@ -69,9 +69,10 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
 
     @Override
     public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
-        Object o = jCache.get(key);
-        if(o != null) {
-            return (T) o;
+        Object currentValue = jCache.get(key);
+        if (currentValue != null) {
+            //noinspection unchecked
+            return (T) currentValue;
         }
         T newValue = valueSupplier.get();
         jCache.put(key, newValue);

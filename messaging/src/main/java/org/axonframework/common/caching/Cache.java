@@ -64,12 +64,15 @@ public interface Cache {
      * Returns the value under the given {@code key} in the cache. If there is no value present, will invoke the given
      * {@code valueSupplier}, put the value in the cache and return the produced value.
      *
-     * @param key           The key under which to store the item
-     * @param valueSupplier A supplier that lazily supplies the value when necessary
+     * @param key           The key under which the item was cached. If not present, this key is used to cache the
+     *                      outcome of the {@code valueSupplier}.
+     * @param valueSupplier A supplier that lazily supplies the value if there's no {@code key} present.
      * @return The value that is in the cache after the operation. This can be the original value or the one supplied by
      * the {@code valueSupplier}.
      */
-    <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier);
+    default <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
+        throw new UnsupportedOperationException("Cache#computeIfAbsent is currently unsupported by this version");
+    }
 
     /**
      * Removes the entry stored under given {@code key}. If no such entry exists, nothing happens.

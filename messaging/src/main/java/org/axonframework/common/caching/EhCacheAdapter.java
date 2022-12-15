@@ -63,9 +63,10 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
     @Override
     public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
-        Element current = ehCache.get(key);
-        if(current != null) {
-            return (T) current.getObjectValue();
+        Element currentElement = ehCache.get(key);
+        if (currentElement != null) {
+            //noinspection unchecked
+            return (T) currentElement.getObjectValue();
         }
         T newValue = valueSupplier.get();
         ehCache.put(new Element(key, newValue));

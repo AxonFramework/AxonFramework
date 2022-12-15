@@ -100,10 +100,13 @@ public abstract class CachingSagaStoreTest {
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, associationValue);
         assertEquals(singleton("id"), actual);
-        ArgumentCaptor<Supplier> captor = ArgumentCaptor.forClass(Supplier.class);
-        verify(associationsCache, atLeast(1)).computeIfAbsent(eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"), captor.capture());
+        //noinspection unchecked
+        ArgumentCaptor<Supplier<?>> captor = ArgumentCaptor.forClass(Supplier.class);
+        verify(associationsCache, atLeast(1)).computeIfAbsent(
+                eq("org.axonframework.modelling.saga.repository.StubSaga/key=value"),
+                captor.capture()
+        );
         assertEquals(Collections.singleton("id"), captor.getValue().get());
-
     }
 
     @Test
