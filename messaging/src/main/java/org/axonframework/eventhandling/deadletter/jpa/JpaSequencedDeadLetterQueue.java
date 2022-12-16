@@ -353,7 +353,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * processing ends, and deletes would throw the ordering off.
      *
      * @param firstDeadLetter The dead letter to start processing.
-     * @param processingTask  The task to use to process the dead letter, providing a dicision afterwards.
+     * @param processingTask  The task to use to process the dead letter, providing a decision afterwards.
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processLetterAndFollowing(JpaDeadLetter<M> firstDeadLetter,
