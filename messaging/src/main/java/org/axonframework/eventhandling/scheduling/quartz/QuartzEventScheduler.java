@@ -135,7 +135,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             JobDetail jobDetail = buildJobDetail(eventMessage, new JobKey(jobIdentifier, groupIdentifier));
             scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
         } catch (SchedulerException e) {
-            throw new SchedulingException("An error occurred while setting a timer for a saga", e);
+            throw new SchedulingException("An error occurred while scheduling an event.", e);
         }
         return tr;
     }
