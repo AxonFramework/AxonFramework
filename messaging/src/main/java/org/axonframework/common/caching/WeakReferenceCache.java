@@ -110,15 +110,20 @@ public class WeakReferenceCache implements Cache {
     @Override
     public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
         purgeItems();
-        Entry entry = cache.computeIfAbsent(key, k -> {
-            T value = valueSupplier.get();
-            for (EntryListener adapter : adapters) {
-                adapter.onEntryCreated(key, value);
-            }
-            return new Entry(k, value);
-        });
-        //noinspection unchecked
-        return (T) entry.get();
+        Entry currentEntry = cache.get(key);
+        Object existingValue = currentEntry != null ? currentEntry.get() : null;
+        if (existingValue != null) {
+            return (T) currentEntry.get();
+        }
+        T value = valueSupplier.get();
+        if (value == null) {
+            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
+        }
+        cache.put(key, new Entry(key, value));
+        for (EntryListener adapter : adapters) {
+            adapter.onEntryCreated(key, value);
+        }
+        return value;
     }
 
     @Override

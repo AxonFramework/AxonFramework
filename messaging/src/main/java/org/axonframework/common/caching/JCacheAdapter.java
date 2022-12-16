@@ -75,6 +75,9 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
             return (T) currentValue;
         }
         T newValue = valueSupplier.get();
+        if (newValue == null) {
+            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
+        }
         jCache.put(key, newValue);
         return newValue;
     }
