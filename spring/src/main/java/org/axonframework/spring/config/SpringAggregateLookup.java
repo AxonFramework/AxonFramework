@@ -103,7 +103,8 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
         } else {
             if (beanNamesForType.length != 1) {
-                logger.debug("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
+                logger.debug("There are {} beans defined for '{}', making this a polymorphic aggregate.",
+                             beanNamesForType.length, type.getName());
             }
             return beanNamesForType[0];
         }
