@@ -360,7 +360,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                               Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
-            logger.info("Processing dead letter with id [{}]", deadLetter.getId());
+            logger.info("Processing dead letter with id [{}] at index [{}]", deadLetter.getId(), deadLetter.getIndex());
             EnqueueDecision<M> decision = processingTask.apply(deadLetter);
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
