@@ -179,7 +179,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        return schedule(Instant.now().plus(triggerDuration), event);
+        return schedule(GenericEventMessage.clock.instant().plus(triggerDuration), event);
     }
 
     @Override
