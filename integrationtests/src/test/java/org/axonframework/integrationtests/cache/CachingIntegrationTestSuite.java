@@ -16,7 +16,9 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +42,9 @@ public abstract class CachingIntegrationTestSuite {
 
     // This ensures we do not wire Axon Server components
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
+    private static final int NUMBER_OF_UPDATES = 4096;
+    private static final int NUMBER_OF_CONCURRENT_PUBLISHERS = 8;
+    private static final String[] SAGA_NAMES = new String[]{"foo", "bar", "baz", "and", "some", "more"};
 
     protected Configuration config;
 
@@ -64,11 +69,8 @@ public abstract class CachingIntegrationTestSuite {
         config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                   .configureEventStore(c -> eventStore)
                                   .eventProcessing(
-                                          procConfigurer -> procConfigurer.usingSubscribingEventProcessors()
-                                                                          .registerSaga(
-                                                                                  CachedSaga.class,
-                                                                                  sagaConfigurer
-                                                                          )
+                                          procConfig -> procConfig.usingSubscribingEventProcessors()
+                                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
                                   .start();
     }
@@ -83,42 +85,35 @@ public abstract class CachingIntegrationTestSuite {
 
     @Test
     void publishingBigEventTransactionTowardsCachedSagaWorksWithoutException() {
-        String sagaName = "foo";
+        String sagaName = SAGA_NAMES[0];
         String associationValue = sagaName + "-id";
         String associationCacheKey = sagaAssociationCacheKey(associationValue);
-        int numberOfUpdates = 4096;
 
         // Construct the saga...
         publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
         // Validate initial cache
         assertTrue(associationsCache.containsKey(associationCacheKey));
-        //noinspection unchecked
-        String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+        Set<String> associations = associationsCache.get(associationCacheKey);
+
+        String sagaIdentifier = associations.iterator().next();
         assertTrue(sagaCache.containsKey(sagaIdentifier));
         //noinspection unchecked
         CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
         assertEquals(sagaName, cachedSaga.getName());
         assertTrue(cachedSaga.getState().isEmpty());
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Bulk update the saga...
-        publishBulkUpdatesTo(associationValue, numberOfUpdates);
+        publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES);
         // Validate cache again
         assertTrue(associationsCache.containsKey(associationCacheKey));
-        //noinspection unchecked
-        sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+        associations = associationsCache.get(associationCacheKey);
+
+        sagaIdentifier = associations.iterator().next();
         assertTrue(sagaCache.containsKey(sagaIdentifier));
         //noinspection unchecked
         cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
         assertEquals(sagaName, cachedSaga.getName());
-        assertEquals(numberOfUpdates, cachedSaga.getState().size());
-
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
+        assertEquals(NUMBER_OF_UPDATES, cachedSaga.getState().size());
 
         // Destruct the saga...
         publish(new CachedSaga.SagaEndsEvent(associationValue, true));
@@ -130,33 +125,28 @@ public abstract class CachingIntegrationTestSuite {
     @Test
     void publishingBigEventTransactionsConcurrentlyTowardsCachedSagaWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
-        String sagaName = "yeet";
+        String sagaName = SAGA_NAMES[0];
         String associationValue = "some-id";
         String associationCacheKey = sagaAssociationCacheKey(associationValue);
-        int numberOfUpdates = 4096;
-        int numberOfConcurrentPublishers = 8;
-        ExecutorService executor = Executors.newFixedThreadPool(numberOfConcurrentPublishers);
+        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the saga...
         publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
         // Validate initial cache
         assertTrue(associationsCache.containsKey(associationCacheKey));
-        //noinspection unchecked
-        String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+        Set<String> associations = associationsCache.get(associationCacheKey);
+
+        String sagaIdentifier = associations.iterator().next();
         assertTrue(sagaCache.containsKey(sagaIdentifier));
         //noinspection unchecked
         CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
         assertEquals(sagaName, cachedSaga.getName());
         assertTrue(cachedSaga.getState().isEmpty());
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Concurrent bulk update the saga...
-        IntStream.range(0, numberOfConcurrentPublishers)
+        IntStream.range(0, NUMBER_OF_CONCURRENT_PUBLISHERS)
                  .mapToObj(i -> CompletableFuture.runAsync(
-                         () -> publishBulkUpdatesTo(associationValue, numberOfUpdates), executor
+                         () -> publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES), executor
                  ))
                  .reduce(CompletableFuture::allOf)
                  .orElse(CompletableFuture.completedFuture(null))
@@ -164,17 +154,14 @@ public abstract class CachingIntegrationTestSuite {
 
         // Validate cache again
         assertTrue(associationsCache.containsKey(associationCacheKey));
-        //noinspection unchecked
-        sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+        associations = associationsCache.get(associationCacheKey);
+
+        sagaIdentifier = associations.iterator().next();
         assertTrue(sagaCache.containsKey(sagaIdentifier));
         //noinspection unchecked
         cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
         assertEquals(sagaName, cachedSaga.getName());
-        assertEquals(numberOfUpdates * numberOfConcurrentPublishers, cachedSaga.getState().size());
-
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
+        assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS, cachedSaga.getState().size());
 
         // Destruct the saga...
         publish(new CachedSaga.SagaEndsEvent(associationValue, true));
@@ -186,60 +173,57 @@ public abstract class CachingIntegrationTestSuite {
     @Test
     void publishingBigEventTransactionTowardsSeveralCachedSagasWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
-        String[] sagaNames = new String[]{"foo", "bar", "baz", "and", "some", "more"};
-        int numberOfUpdates = 4096;
-        ExecutorService executor = Executors.newFixedThreadPool(sagaNames.length);
+        Map<String, Set<String>> associationReferences = new HashMap<>();
+        ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length);
 
         // Construct the sagas...
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
             publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
             // Validate initial cache
             assertTrue(associationsCache.containsKey(associationCacheKey));
-            //noinspection unchecked
-            String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+            associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
+
+            String sagaIdentifier = (associationReferences.get(associationCacheKey)).iterator().next();
             assertTrue(sagaCache.containsKey(sagaIdentifier));
-            //noinspection unchecked
-            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+
+            SagaStore.Entry<CachedSaga> sagaEntry = sagaCache.get(sagaIdentifier);
+            CachedSaga cachedSaga = sagaEntry.saga();
             assertEquals(sagaName, cachedSaga.getName());
             assertTrue(cachedSaga.getState().isEmpty());
         }
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Bulk update the sagas...
-        Arrays.stream(sagaNames)
+        Arrays.stream(SAGA_NAMES)
               .map(name -> CompletableFuture.runAsync(
-                      () -> publishBulkUpdatesTo(name + "-id", numberOfUpdates), executor
+                      () -> publishBulkUpdatesTo(name + "-id", NUMBER_OF_UPDATES), executor
               ))
               .reduce(CompletableFuture::allOf)
               .orElse(CompletableFuture.completedFuture(null))
               .get(5, TimeUnit.SECONDS);
         // Validate caches again
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
             assertTrue(associationsCache.containsKey(associationCacheKey));
-            //noinspection unchecked
-            String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
-            assertTrue(sagaCache.containsKey(sagaIdentifier));
-            //noinspection unchecked
-            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-            assertEquals(sagaName, cachedSaga.getName());
-            assertEquals(numberOfUpdates, cachedSaga.getState().size(), sagaName);
+            associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
+
+            String sagaIdentifier = (associationReferences.get(associationCacheKey)).iterator().next();
+            SagaStore.Entry<CachedSaga> sagaEntry = sagaCache.get(sagaIdentifier);
+            // The saga cache may have been cleared already when doing bulk updates, which is a fair scenario.
+            // Hence, only validate the entry if it's still present in the Cache.
+            if (sagaEntry != null) {
+                CachedSaga cachedSaga = sagaEntry.saga();
+                assertEquals(sagaName, cachedSaga.getName());
+                assertEquals(NUMBER_OF_UPDATES, cachedSaga.getState().size(), sagaName);
+            }
         }
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Destruct the sagas...
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
@@ -252,61 +236,60 @@ public abstract class CachingIntegrationTestSuite {
     @Test
     void publishingBigEventTransactionsConcurrentlyTowardsSeveralCachedSagasWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
-        String[] sagaNames = new String[]{"foo", "bar", "baz", "and", "some", "more"};
-        int numberOfUpdates = 4096;
-        int numberOfConcurrentPublishers = 8;
-        ExecutorService executor = Executors.newFixedThreadPool(sagaNames.length * numberOfConcurrentPublishers);
+        Map<String, Set<String>> associationReferences = new HashMap<>();
+        ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the sagas...
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
             publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
             // Validate initial cache
             assertTrue(associationsCache.containsKey(associationCacheKey));
-            //noinspection unchecked
-            String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
+            associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
+
+            String sagaIdentifier = (associationReferences.get(associationCacheKey)).iterator().next();
             assertTrue(sagaCache.containsKey(sagaIdentifier));
-            //noinspection unchecked
-            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+
+            SagaStore.Entry<CachedSaga> sagaEntry = sagaCache.get(sagaIdentifier);
+            CachedSaga cachedSaga = sagaEntry.saga();
             assertEquals(sagaName, cachedSaga.getName());
             assertTrue(cachedSaga.getState().isEmpty());
         }
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Bulk update the sagas...
-        IntStream.range(0, sagaNames.length * numberOfConcurrentPublishers)
+        IntStream.range(0, SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS)
                  .mapToObj(i -> CompletableFuture.runAsync(
-                         () -> publishBulkUpdatesTo(sagaNames[i % sagaNames.length] + "-id", numberOfUpdates), executor
+                         () -> publishBulkUpdatesTo(SAGA_NAMES[i % SAGA_NAMES.length] + "-id", NUMBER_OF_UPDATES),
+                         executor
                  ))
                  .reduce(CompletableFuture::allOf)
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(5, TimeUnit.SECONDS);
         // Validate caches again
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
             assertTrue(associationsCache.containsKey(associationCacheKey));
-            //noinspection unchecked
-            String sagaIdentifier = ((Set<String>) associationsCache.get(associationCacheKey)).iterator().next();
-            assertTrue(sagaCache.containsKey(sagaIdentifier));
-            //noinspection unchecked
-            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-            assertEquals(sagaName, cachedSaga.getName());
-            assertEquals(numberOfUpdates * numberOfConcurrentPublishers, cachedSaga.getState().size(), sagaName);
+            associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
+
+            String sagaIdentifier = (associationReferences.get(associationCacheKey)).iterator().next();
+            SagaStore.Entry<CachedSaga> sagaEntry = sagaCache.get(sagaIdentifier);
+            // The saga cache may have been cleared already when doing bulk updates, which is a fair scenario.
+            // Hence, only validate the entry if it's still present in the Cache.
+            if (sagaEntry != null) {
+                CachedSaga cachedSaga = sagaEntry.saga();
+                assertEquals(sagaName, cachedSaga.getName());
+                assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS,
+                             cachedSaga.getState().size(),
+                             sagaName);
+            }
         }
 
-        // Clear out the cache
-        associationsCache.removeAll();
-        sagaCache.removeAll();
-
         // Destruct the sagas...
-        for (String sagaName : sagaNames) {
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
@@ -316,7 +299,8 @@ public abstract class CachingIntegrationTestSuite {
         }
     }
 
-    private void publishBulkUpdatesTo(String sagaId, int amount) {
+    private void publishBulkUpdatesTo(String sagaId,
+                                      @SuppressWarnings("SameParameterValue") int amount) {
         Object[] updateEvents = new Object[amount];
         for (int i = 0; i < amount; i++) {
             updateEvents[i] = new CachedSaga.VeryImportantEvent(sagaId, i);
