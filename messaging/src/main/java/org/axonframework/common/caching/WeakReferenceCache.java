@@ -17,6 +17,7 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 
 import java.lang.ref.Reference;
@@ -111,10 +112,10 @@ public class WeakReferenceCache implements Cache {
     public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
         purgeItems();
         Entry currentEntry = cache.get(key);
-        Object existingValue = currentEntry != null ? currentEntry.get() : null;
+        Object existingValue = ObjectUtils.getOrDefault(currentEntry, Entry::get, null);
         if (existingValue != null) {
             //noinspection unchecked
-            return (T) currentEntry.get();
+            return (T) existingValue;
         }
         T newValue = valueSupplier.get();
         if (newValue == null) {
