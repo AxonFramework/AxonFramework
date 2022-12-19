@@ -68,12 +68,12 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
             //noinspection unchecked
             return (T) currentElement.getObjectValue();
         }
-        T value = valueSupplier.get();
-        if (value == null) {
+        T newValue = valueSupplier.get();
+        if (newValue == null) {
             throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
         }
-        ehCache.put(new Element(key, value));
-        return value;
+        ehCache.put(new Element(key, newValue));
+        return newValue;
     }
 
     @Override

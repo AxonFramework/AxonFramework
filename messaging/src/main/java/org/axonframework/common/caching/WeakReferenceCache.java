@@ -113,17 +113,18 @@ public class WeakReferenceCache implements Cache {
         Entry currentEntry = cache.get(key);
         Object existingValue = currentEntry != null ? currentEntry.get() : null;
         if (existingValue != null) {
+            //noinspection unchecked
             return (T) currentEntry.get();
         }
-        T value = valueSupplier.get();
-        if (value == null) {
+        T newValue = valueSupplier.get();
+        if (newValue == null) {
             throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
         }
-        cache.put(key, new Entry(key, value));
+        cache.put(key, new Entry(key, newValue));
         for (EntryListener adapter : adapters) {
-            adapter.onEntryCreated(key, value);
+            adapter.onEntryCreated(key, newValue);
         }
-        return value;
+        return newValue;
     }
 
     @Override
