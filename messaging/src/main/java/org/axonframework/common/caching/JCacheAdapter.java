@@ -19,7 +19,6 @@ package org.axonframework.common.caching;
 import org.axonframework.common.Registration;
 
 import java.io.Serializable;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -65,21 +64,6 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     @Override
     public boolean putIfAbsent(Object key, Object value) {
         return jCache.putIfAbsent(key, value);
-    }
-
-    @Override
-    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
-        Object currentValue = jCache.get(key);
-        if (currentValue != null) {
-            //noinspection unchecked
-            return (T) currentValue;
-        }
-        T newValue = valueSupplier.get();
-        if (newValue == null) {
-            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
-        }
-        jCache.put(key, newValue);
-        return newValue;
     }
 
     @Override

@@ -22,7 +22,6 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 import org.axonframework.common.Registration;
 
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -59,21 +58,6 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     @Override
     public boolean putIfAbsent(Object key, Object value) {
         return ehCache.putIfAbsent(new Element(key, value)) == null;
-    }
-
-    @Override
-    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
-        Element currentElement = ehCache.get(key);
-        if (currentElement != null) {
-            //noinspection unchecked
-            return (T) currentElement.getObjectValue();
-        }
-        T newValue = valueSupplier.get();
-        if (newValue == null) {
-            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
-        }
-        ehCache.put(new Element(key, newValue));
-        return newValue;
     }
 
     @Override
