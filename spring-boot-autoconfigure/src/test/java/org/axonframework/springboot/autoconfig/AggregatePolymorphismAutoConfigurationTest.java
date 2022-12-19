@@ -105,14 +105,22 @@ class AggregatePolymorphismAutoConfigurationTest {
 
     @Test
     void polymorphicAggregateWiringConstructsSingleRepository() {
+        String animalRepositoryBeanName = repositoryBeanName(PolymorphicAggregateContext.Animal.class);
+
         testApplicationContext.withUserConfiguration(PolymorphicAggregateContext.class)
                               .run(context -> {
                                   assertThat(context).hasSingleBean(Repository.class);
                                   assertThat(context).getBean(Repository.class)
                                                      .isInstanceOf(EventSourcingRepository.class);
-                                  assertThat(context).getBean("animalRepository", Repository.class)
-                                                     .isNotNull();
+                                  String[] namesForRepositoryBeans = context.getBeanNamesForType(Repository.class);
+                                  assertThat(namesForRepositoryBeans.length).isEqualTo(1);
+
+                                  assertThat(namesForRepositoryBeans[0]).isEqualTo(animalRepositoryBeanName);
                               });
+    }
+
+    private static String repositoryBeanName(@SuppressWarnings("SameParameterValue") Class<?> aggregateClass) {
+        return lowerCaseFirstCharacterOf(aggregateClass.getSimpleName()) + "Repository";
     }
 
     @ContextConfiguration
