@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 
+import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,7 +62,7 @@ import static org.mockito.Mockito.*;
  */
 class AggregateStereotypeAutoConfigurationTest {
 
-    private static final String AGGREGATE_IDENTIFIER = "aggregateIdentifier";
+    private static final Object AGGREGATE_IDENTIFIER = "aggregateIdentifier";
 
     private static AtomicBoolean snapshotFilterInvoked;
     private static AtomicBoolean commandTargetResolverInvoked;
@@ -152,18 +153,22 @@ class AggregateStereotypeAutoConfigurationTest {
 
     @Test
     void aggregateWithEntityManagerAnnotationIsAutoconfiguredWitDefaultJpaRepository() {
+        String expectedRepositoryBeanName = repositoryBeanName(TestContext.SimpleStateStoredAggregate.class);
         testApplicationContext.run(context -> {
-            String beanName = context.getBeanNamesForType(TestContext.SimpleStateStoredAggregate.class)[0];
-            assertTrue(context.containsBean(beanName + "Repository"));
-            Object actual = context.getBean(beanName + "Repository");
+            assertTrue(context.containsBean(expectedRepositoryBeanName));
+            Object actual = context.getBean(expectedRepositoryBeanName);
             assertTrue(actual instanceof GenericJpaRepository, "Expected Jpa repository to have been configured");
         });
+    }
+
+    private static String repositoryBeanName(@SuppressWarnings("SameParameterValue") Class<?> aggregateClass) {
+        return lowerCaseFirstCharacterOf(aggregateClass.getSimpleName()) + "Repository";
     }
 
     @Test
     void aggregateWithEntityManagerAnnotationIsAutoconfiguredWitExistingJpaRepository() {
         String beanName = "org.axonframework.springboot.autoconfig.AggregateStereotypeAutoConfigurationTest$TestContext$SimpleStateStoredAggregate";
-        Repository mockRepo = mock(Repository.class);
+        Repository<?> mockRepo = mock(Repository.class);
         testApplicationContext.withBean(beanName + "Repository", Repository.class, () -> mockRepo)
                               .run(context -> {
                                   assertTrue(context.containsBean(beanName + "Repository"));
@@ -253,6 +258,7 @@ class AggregateStereotypeAutoConfigurationTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @Entity(name = "simpleAggregate")
         @Aggregate
         private static class SimpleStateStoredAggregate {
@@ -380,7 +386,7 @@ class AggregateStereotypeAutoConfigurationTest {
         private final String aggregateId;
 
         CreateTestAggregate() {
-            this(AGGREGATE_IDENTIFIER);
+            this(AGGREGATE_IDENTIFIER.toString());
         }
 
         CreateTestAggregate(String aggregateId) {
@@ -412,7 +418,7 @@ class AggregateStereotypeAutoConfigurationTest {
         private final String aggregateId;
 
         UpdateTestAggregate() {
-            this(AGGREGATE_IDENTIFIER);
+            this(AGGREGATE_IDENTIFIER.toString());
         }
 
         UpdateTestAggregate(String aggregateId) {
@@ -443,7 +449,7 @@ class AggregateStereotypeAutoConfigurationTest {
         private final String aggregateId;
 
         CreateCustomRepoTestAggregate() {
-            this(AGGREGATE_IDENTIFIER);
+            this(AGGREGATE_IDENTIFIER.toString());
         }
 
         CreateCustomRepoTestAggregate(String aggregateId) {
@@ -475,7 +481,7 @@ class AggregateStereotypeAutoConfigurationTest {
         private final String aggregateId;
 
         UpdateCustomRepoTestAggregate() {
-            this(AGGREGATE_IDENTIFIER);
+            this(AGGREGATE_IDENTIFIER.toString());
         }
 
         UpdateCustomRepoTestAggregate(String aggregateId) {
