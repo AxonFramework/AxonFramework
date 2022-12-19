@@ -18,6 +18,7 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -49,6 +50,11 @@ public final class NoCache implements Cache {
     @Override
     public boolean putIfAbsent(Object key, Object value) {
         return true;
+    }
+
+    @Override
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
+        return valueSupplier.get();
     }
 
     @Override
