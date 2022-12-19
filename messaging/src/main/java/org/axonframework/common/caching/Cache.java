@@ -71,7 +71,17 @@ public interface Cache {
      * the {@code valueSupplier}.
      */
     default <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
-        throw new UnsupportedOperationException("Cache#computeIfAbsent is currently unsupported by this version");
+        Object currentValue = get(key);
+        if (currentValue != null) {
+            //noinspection unchecked
+            return (T) currentValue;
+        }
+        T newValue = valueSupplier.get();
+        if (newValue == null) {
+            throw new IllegalArgumentException("Value Supplier of Cache produced a null value for key [" + key + "]!");
+        }
+        put(key, newValue);
+        return newValue;
     }
 
     /**
