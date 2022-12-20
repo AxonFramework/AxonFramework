@@ -135,7 +135,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void deadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
-        Instant afterDeadlineWasScheduled = Instant.now();
+        // Set time a bit over the current time, as the CommandBus' process may just stall the deadline scheduling.
+        Instant afterDeadlineWasScheduled = Instant.now().plusMillis(50);
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
