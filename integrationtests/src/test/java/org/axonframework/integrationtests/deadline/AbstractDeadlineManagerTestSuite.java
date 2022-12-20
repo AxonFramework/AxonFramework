@@ -108,6 +108,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                                   .start();
 
         publishedMessages = new CopyOnWriteArrayList<>();
+        //noinspection resource
         configuration.eventBus().subscribe(events -> publishedMessages.addAll(events));
     }
 
@@ -131,7 +132,6 @@ public abstract class AbstractDeadlineManagerTestSuite {
      */
     public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
-
     @Test
     void deadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
@@ -149,7 +149,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    void deadlineScheduleAndExecutionIsTraced() throws InterruptedException {
+    void deadlineScheduleAndExecutionIsTraced() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
@@ -248,6 +248,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void handlerInterceptorOnAggregate() {
+        //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(),
@@ -263,6 +264,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void dispatchInterceptorOnAggregate() {
+        //noinspection resource
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload("fakeId"),
@@ -277,13 +279,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void scheduleInPastTriggersDeadline() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, -10000));
 
-        assertPublishedEventsWithin(1000,
-                                    new MyAggregateCreatedEvent(IDENTIFIER),
-                                    new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
     void failedExecution() {
+        //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, interceptorChain) -> {
             interceptorChain.proceed();
             throw new AxonNonTransientException("Simulating handling error") {
@@ -400,6 +402,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void handlerInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
+        //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
                     .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId"),
@@ -417,6 +420,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void dispatchInterceptorOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
+        //noinspection resource
         configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
                 GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload("fakeId"),
@@ -429,11 +433,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {
-        assertPublishedEventsWithin(DEADLINE_WAIT_THRESHOLD, expectedEvents);
-    }
-
-    private void assertPublishedEventsWithin(int millis, Object... expectedEvents) {
-        await().atMost(Duration.ofMillis(DEADLINE_TIMEOUT + millis)).until(() -> sameElements(asList(expectedEvents)));
+        await().atMost(Duration.ofMillis(DEADLINE_TIMEOUT + DEADLINE_WAIT_THRESHOLD))
+               .until(() -> sameElements(asList(expectedEvents)));
     }
 
     private boolean sameElements(List<Object> expected) {
