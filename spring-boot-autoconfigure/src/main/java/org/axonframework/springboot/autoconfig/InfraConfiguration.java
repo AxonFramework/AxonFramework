@@ -84,11 +84,13 @@ public class InfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public SpringAxonConfiguration springAxonConfiguration(Configurer configurer) {
         return new SpringAxonConfiguration(configurer);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public SpringConfigurer springAxonConfigurer(ConfigurableListableBeanFactory beanFactory,
                                                  List<ConfigurerModule> configurerModules,
                                                  List<ModuleConfiguration> moduleConfigurations) {
@@ -101,7 +103,9 @@ public class InfraConfiguration {
     @Bean
     public InitializingBean lifecycleInitializer(Configurer configurer,
                                                  List<Lifecycle> lifecycleBeans) {
-        return () -> configurer.onInitialize(configuration -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(configuration.lifecycleRegistry())));
+        return () -> configurer.onInitialize(
+                config -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(config.lifecycleRegistry()))
+        );
     }
 
     @Primary
@@ -139,4 +143,3 @@ public class InfraConfiguration {
         return new SpringResourceInjector();
     }
 }
-
