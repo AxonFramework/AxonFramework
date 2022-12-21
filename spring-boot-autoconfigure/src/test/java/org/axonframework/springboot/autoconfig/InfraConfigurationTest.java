@@ -18,6 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
@@ -32,6 +33,7 @@ import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -153,6 +155,26 @@ class InfraConfigurationTest {
         });
     }
 
+    @Test
+    void customSpringAxonConfigurationOvertakesDefaultSpringAxonConfiguration() {
+        testApplicationContext.withUserConfiguration(CustomizedConfigurerContext.class).run(context -> {
+            assertThat(context).hasSingleBean(SpringAxonConfiguration.class);
+
+            SpringAxonConfiguration result = context.getBean(SpringAxonConfiguration.class);
+            assertThat(result).isInstanceOf(CustomizedConfigurerContext.CustomSpringAxonConfiguration.class);
+        });
+    }
+
+    @Test
+    void customSpringConfigurerOvertakesDefaultSpringConfigurer() {
+        testApplicationContext.withUserConfiguration(CustomizedConfigurerContext.class).run(context -> {
+            assertThat(context).hasSingleBean(SpringConfigurer.class);
+
+            SpringConfigurer result = context.getBean(SpringConfigurer.class);
+            assertThat(result).isInstanceOf(CustomizedConfigurerContext.CustomSpringConfigurer.class);
+        });
+    }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -165,7 +187,7 @@ class InfraConfigurationTest {
     }
 
     // We're not returning the result of invoking the stream operations as a simplification for adjusting the mock.
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "DataFlowIssue"})
     static class UpcasterContext {
 
         @Order(1)
@@ -271,6 +293,33 @@ class InfraConfigurationTest {
                 handlingOutcome.add("late-[" + event + "]");
                 invocation.countDown();
             }
+        }
+    }
+
+    static class CustomizedConfigurerContext {
+
+        static class CustomSpringAxonConfiguration extends SpringAxonConfiguration {
+
+            public CustomSpringAxonConfiguration(Configurer configurer) {
+                super(configurer);
+            }
+        }
+
+        @Bean
+        public CustomSpringAxonConfiguration customSpringAxonConfiguration(Configurer configurer) {
+            return new CustomSpringAxonConfiguration(configurer);
+        }
+
+        static class CustomSpringConfigurer extends SpringConfigurer {
+
+            public CustomSpringConfigurer(ConfigurableListableBeanFactory beanFactory) {
+                super(beanFactory);
+            }
+        }
+
+        @Bean
+        public CustomSpringConfigurer customSpringConfigurer(ConfigurableListableBeanFactory beanFactory) {
+            return new CustomSpringConfigurer(beanFactory);
         }
     }
 }
