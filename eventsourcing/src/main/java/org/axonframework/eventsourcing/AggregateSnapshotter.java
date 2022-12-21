@@ -31,10 +31,12 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -123,8 +125,19 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregate.isDeleted()) {
             return null;
         }
-        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
-                                               aggregate.getAggregateRoot());
+        GenericDomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
+                aggregate.getAggregateRoot());
+
+        if (shouldAddCorrelationIds(aggregateType)) {
+            Map<String, Object> additionalMetaData = new HashMap<>();
+            additionalMetaData.put(AnnotatedAggregate.getDefaultCorrelationIdsKey(), aggregate.getCorrelationIds());
+            snapshot = snapshot.withMetaData(additionalMetaData);
+        }
+        return snapshot;
+    }
+
+    protected boolean shouldAddCorrelationIds(Class<?> aggregateType) {
+        return false;
     }
 
     /**

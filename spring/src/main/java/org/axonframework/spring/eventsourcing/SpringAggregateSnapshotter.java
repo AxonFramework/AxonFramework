@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -86,6 +87,13 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public boolean shouldAddCorrelationIds(Class<?> aggregateType) {
+        Aggregate aggregateAnnotation = aggregateType.getAnnotation(Aggregate.class);
+
+        return aggregateAnnotation != null && aggregateAnnotation.idempotent();
     }
 
     @Override

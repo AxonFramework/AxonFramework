@@ -41,6 +41,7 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,16 @@ import static java.lang.String.format;
  * @since 3.0
  */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
+    private static final String DEFAULT_CORRELATION_IDS_KEY = "correlationIds";
+
+    /**
+     * Returns the default metadata key for the correlation ids of a message.
+     *
+     * @return the default metadata key for the correlation ids
+     */
+    public static String getDefaultCorrelationIdsKey() {
+        return DEFAULT_CORRELATION_IDS_KEY;
+    }
 
     private final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
@@ -404,17 +415,19 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             lastKnownSequence = ((DomainEventMessage<?>) msg).getSequenceNumber();
         }
         if (idempotent) {
-            correlationIds.add(getCorrelationId(msg));
+            correlationIds.addAll(getCorrelationIds(msg));
         }
         inspector.publish(msg, aggregateRoot);
         publishOnEventBus(msg);
     }
 
     @SuppressWarnings("unchecked")
-    private static String getCorrelationId(EventMessage<?> msg) {
+    private static List<String> getCorrelationIds(EventMessage<?> msg) {
         MetaData metaData = msg.getMetaData();
 
-        return (String) metaData.get(MessageOriginProvider.getDefaultCorrelationKey());
+        return metaData.containsKey(DEFAULT_CORRELATION_IDS_KEY)
+                ? (List<String>) metaData.get(DEFAULT_CORRELATION_IDS_KEY)
+                : Collections.singletonList((String) metaData.get(MessageOriginProvider.getDefaultCorrelationKey()));
     }
 
     /**
