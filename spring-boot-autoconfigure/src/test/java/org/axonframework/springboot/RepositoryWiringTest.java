@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -129,7 +130,7 @@ class RepositoryWiringTest {
     }
 
     private static String repositoryBeanName(Class<?> aggregateClass) {
-        return aggregateClass.getName() + "Repository";
+        return lowerCaseFirstCharacterOf(aggregateClass.getSimpleName()) + "Repository";
     }
 
     @Configuration
@@ -232,9 +233,9 @@ class RepositoryWiringTest {
             private final Repository<?> repositoryThree;
 
             ExternalCommandHandlerWiringThroughBeanNames(
-                    @Qualifier("org.axonframework.springboot.RepositoryWiringTest$SeveralAggregatesContext$AggregateOneRepository") Repository<?> repositoryOne,
-                    @Qualifier("org.axonframework.springboot.RepositoryWiringTest$SeveralAggregatesContext$AggregateTwoRepository") Repository<?> repositoryTwo,
-                    @Qualifier("org.axonframework.springboot.RepositoryWiringTest$SeveralAggregatesContext$AggregateThreeRepository") Repository<?> repositoryThree
+                    @Qualifier("aggregateOneRepository") Repository<?> repositoryOne,
+                    @Qualifier("aggregateTwoRepository") Repository<?> repositoryTwo,
+                    @Qualifier("aggregateThreeRepository") Repository<?> repositoryThree
             ) {
                 this.repositoryOne = repositoryOne;
                 this.repositoryTwo = repositoryTwo;
