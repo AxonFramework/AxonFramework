@@ -86,7 +86,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     private final int maxSequences;
     private final int maxSequenceSize;
     private final int queryPageSize;
-    private final Serializer serializer;
+    private final Serializer eventSerializer;
+    private final Serializer genericSerializer;
     private final Duration claimDuration;
 
     /**
@@ -101,7 +102,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         this.maxSequenceSize = builder.maxSequenceSize;
         this.entityManagerProvider = builder.entityManagerProvider;
         this.transactionManager = builder.transactionManager;
-        this.serializer = builder.serializer;
+        this.eventSerializer = builder.eventSerializer;
+        this.genericSerializer = builder.genericSerializer;
         this.converters = builder.converters;
         this.claimDuration = builder.claimDuration;
         this.queryPageSize = builder.queryPageSize;
@@ -143,7 +145,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 .stream()
                 .filter(c -> c.canConvert(letter.message()))
                 .findFirst()
-                .map(c -> c.convert(letter.message(), serializer))
+                .map(c -> c.convert(letter.message(), eventSerializer, genericSerializer))
                 .orElseThrow(() -> new NoJpaConverterFoundException(
                         String.format("No converter found for message of type: [%s]",
                                       letter.message().getClass().getName()))
@@ -159,7 +161,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                                              letter.lastTouched(),
                                                              letter.cause().orElse(null),
                                                              letter.diagnostics(),
-                                                             serializer);
+                                                             eventSerializer);
             logger.info("Storing DeadLetter (id: [{}]) for sequence [{}] with index [{}] in processing group [{}].",
                         deadLetter.getDeadLetterId(),
                         stringSequenceIdentifier,
@@ -215,7 +217,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         if (letterEntity == null) {
             throw new NoSuchDeadLetterException(String.format("Can not find dead letter with id [%s] to requeue.", id));
         }
-        letterEntity.setDiagnostics(updatedLetter.diagnostics(), serializer);
+        letterEntity.setDiagnostics(updatedLetter.diagnostics(), eventSerializer);
         letterEntity.setLastTouched(updatedLetter.lastTouched());
         letterEntity.setCause(updatedLetter.cause().orElse(null));
         letterEntity.clearProcessingStarted();
@@ -296,10 +298,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 .orElseThrow(() -> new NoJpaConverterFoundException(String.format(
                         "No converter found to convert message of class [%s].",
                         entry.getMessage().getMessageType())));
-        MetaData deserializedDiagnostics = serializer.deserialize(entry.getDiagnostics());
+        MetaData deserializedDiagnostics = eventSerializer.deserialize(entry.getDiagnostics());
         return new JpaDeadLetter<>(entry,
                                    deserializedDiagnostics,
-                                   converter.convert(entry.getMessage(), serializer));
+                                   converter.convert(entry.getMessage(), eventSerializer, genericSerializer));
     }
 
     @Override
@@ -351,14 +353,14 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * processing ends, and deletes would throw the ordering off.
      *
      * @param firstDeadLetter The dead letter to start processing.
-     * @param processingTask  The task to use to process the dead letter, providing a dicision afterwards.
+     * @param processingTask  The task to use to process the dead letter, providing a decision afterwards.
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processLetterAndFollowing(JpaDeadLetter<M> firstDeadLetter,
                                               Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
-            logger.info("Processing dead letter with id [{}]", deadLetter.getId());
+            logger.info("Processing dead letter with id [{}] at index [{}]", deadLetter.getId(), deadLetter.getIndex());
             EnqueueDecision<M> decision = processingTask.apply(deadLetter);
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
@@ -600,7 +602,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         private int queryPageSize = 100;
         private EntityManagerProvider entityManagerProvider;
         private TransactionManager transactionManager;
-        private Serializer serializer;
+        private Serializer eventSerializer;
+        private Serializer genericSerializer;
         private Duration claimDuration = Duration.ofSeconds(30);
 
         public Builder() {
@@ -682,15 +685,42 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
         }
 
         /**
-         * Sets the {@link Serializer} to deserialize the events, metadata and diagnostics of the {@link DeadLetter}
-         * when storing it to a database.
+         * Sets the {@link Serializer} to (de)serialize the event payload,
+         * event metadata, tracking token, and diagnostics of the {@link DeadLetter} when storing it to the database.
          *
          * @param serializer The serializer to use
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> serializer(Serializer serializer) {
             assertNonNull(serializer, "The serializer may not be null");
-            this.serializer = serializer;
+            this.eventSerializer = serializer;
+            this.genericSerializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} to (de)serialize the event payload,
+         * event metadata, and diagnostics of the {@link DeadLetter} when storing it to the database.
+         *
+         * @param serializer The serializer to use
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> eventSerializer(Serializer serializer) {
+            assertNonNull(serializer, "The eventSerializer may not be null");
+            this.eventSerializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} to (de)serialize the tracking token of the event in
+         * the {@link DeadLetter} when storing it to the database.
+         *
+         * @param serializer The serializer to use
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> genericSerializer(Serializer serializer) {
+            assertNonNull(serializer, "The genericSerializer may not be null");
+            this.genericSerializer = serializer;
             return this;
         }
 
@@ -712,7 +742,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> addConverter(DeadLetterJpaConverter<EventMessage<?>> converter) {
-            assertNonNull(claimDuration, "Can not add a null DeadLetterJpaConverter.");
+            assertNonNull(converter, "Can not add a null DeadLetterJpaConverter.");
             this.converters.add(converter);
             return this;
         }
@@ -769,8 +799,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                           "Must supply a TransactionManager when constructing a JpaSequencedDeadLetterQueue");
             assertNonNull(entityManagerProvider,
                           "Must supply a EntityManagerProvider when constructing a JpaSequencedDeadLetterQueue");
-            assertNonNull(serializer,
-                          "Must supply a Serializer when constructing a JpaSequencedDeadLetterQueue");
+            assertNonNull(eventSerializer,
+                          "Must supply an eventSerializer when constructing a JpaSequencedDeadLetterQueue");
+            assertNonNull(genericSerializer,
+                          "Must supply an genericSerializer when constructing a JpaSequencedDeadLetterQueue");
         }
     }
 }

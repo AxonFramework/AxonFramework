@@ -44,7 +44,8 @@ class EventMessageDeadLetterJpaConverterTest {
 
     private static final String PAYLOAD_REVISION = "23.0";
     private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
-    private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
+    private final Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
+    private final Serializer genericSerializer = TestSerializer.XSTREAM.getSerializer();
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
     private final MetaData metaData = MetaData.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
@@ -95,12 +96,12 @@ class EventMessageDeadLetterJpaConverterTest {
 
     private void testConversion(EventMessage<?> message) {
         assertTrue(converter.canConvert(message));
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, serializer);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, eventSerializer, genericSerializer);
 
         assertCorrectlyMapped(message, deadLetterEventEntry);
         assertTrue(converter.canConvert(deadLetterEventEntry));
 
-        EventMessage<?> restoredEventMessage = converter.convert(deadLetterEventEntry, serializer);
+        EventMessage<?> restoredEventMessage = converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
         assertCorrectlyRestored(message, restoredEventMessage);
     }
 
@@ -134,10 +135,10 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(eventMessage.getPayload().getClass().getName(),
                      deadLetterEventEntry.getPayload().getType().getName());
         assertEquals(PAYLOAD_REVISION, deadLetterEventEntry.getPayload().getType().getRevision());
-        assertEquals(serializer.serialize(event, String.class).getData(),
+        assertEquals(eventSerializer.serialize(event, String.class).getData(),
                      new String(deadLetterEventEntry.getPayload().getData()));
         assertEquals(MetaData.class.getName(), deadLetterEventEntry.getMetaData().getType().getName());
-        assertEquals(serializer.serialize(metaData, String.class).getData(),
+        assertEquals(eventSerializer.serialize(metaData, String.class).getData(),
                      new String(deadLetterEventEntry.getMetaData().getData()));
 
         if (eventMessage instanceof DomainEventMessage) {
@@ -154,7 +155,7 @@ class EventMessageDeadLetterJpaConverterTest {
             TrackedEventMessage<?> trackedEventMessage = (TrackedEventMessage<?>) eventMessage;
             assertEquals(trackedEventMessage.trackingToken().getClass().getName(),
                          deadLetterEventEntry.getTrackingToken().getType().getName());
-            assertEquals(serializer.serialize(trackedEventMessage.trackingToken(), String.class).getData(),
+            assertEquals(genericSerializer.serialize(trackedEventMessage.trackingToken(), String.class).getData(),
                          new String(deadLetterEventEntry.getTrackingToken().getData()));
         } else {
             assertNull(deadLetterEventEntry.getTrackingToken());
