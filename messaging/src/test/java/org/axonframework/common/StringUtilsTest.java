@@ -18,6 +18,7 @@ package org.axonframework.common;
 
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -55,5 +56,18 @@ class StringUtilsTest {
     @Test
     void emptyOrNullReturnsFalseForNonEmptyString() {
         assertFalse(StringUtils.emptyOrNull("some-string"));
+    }
+
+    @Test
+    void lowerCaseFirstCharacterOfAdjustsFirstCharacterToLowerCase() {
+        String fullUppercase = "FOO";
+        String lowerCasedOutputOfFullUppercase = "fOO";
+        assertEquals(lowerCasedOutputOfFullUppercase, lowerCaseFirstCharacterOf(fullUppercase));
+        assertEquals(lowerCasedOutputOfFullUppercase, lowerCaseFirstCharacterOf(lowerCasedOutputOfFullUppercase));
+
+        String partialUppercase = "FOo";
+        String partialLowercase = "fOo";
+        assertEquals(partialLowercase, lowerCaseFirstCharacterOf(partialUppercase));
+        assertEquals(partialLowercase, lowerCaseFirstCharacterOf(partialLowercase));
     }
 }

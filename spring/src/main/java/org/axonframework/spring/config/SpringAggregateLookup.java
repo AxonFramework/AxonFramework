@@ -40,6 +40,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
+import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
 import static org.springframework.core.ResolvableType.forClassWithGenerics;
 
@@ -106,7 +107,8 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
         } else {
             if (beanNamesForType.length != 1) {
-                logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
+                logger.debug("There are {} beans defined for '{}', making this a polymorphic aggregate.",
+                             beanNamesForType.length, type.getName());
             }
             return beanNamesForType[0];
         }
@@ -189,15 +191,15 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         if (nonEmptyOrNull((String) props.get(REPOSITORY))) {
             beanDefinitionBuilder.addPropertyValue(REPOSITORY, props.get(REPOSITORY));
         } else {
-            String repositoryBeanName = aggregateBeanName + REPOSITORY_BEAN;
-            if (registry.containsBean(repositoryBeanName)) {
-                Class<?> type = registry.getType(repositoryBeanName);
+            String repositoryName = lowerCaseFirstCharacterOf(aggregateType.getSimpleName()) + REPOSITORY_BEAN;
+            if (registry.containsBean(repositoryName)) {
+                Class<?> type = registry.getType(repositoryName);
                 if (type == null || Repository.class.isAssignableFrom(type)) {
-                    beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryBeanName);
+                    beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryName);
                 }
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
-                        repositoryBeanName,
+                        repositoryName,
                         BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
                                              .addConstructorArgValue(aggregateType)
                                              .addAutowiredProperty("configuration")
@@ -210,7 +212,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                 );
             }
         }
-        String aggregateFactory = aggregateBeanName + "AggregateFactory";
+        String aggregateFactory = lowerCaseFirstCharacterOf(aggregateType.getSimpleName()) + "AggregateFactory";
         if (!registry.containsBeanDefinition(aggregateFactory)) {
             ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                     aggregateFactory,

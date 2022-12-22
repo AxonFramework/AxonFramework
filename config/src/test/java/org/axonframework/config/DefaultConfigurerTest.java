@@ -705,6 +705,17 @@ class DefaultConfigurerTest {
         verifyNoInteractions(testUpcasterChain);
     }
 
+    @Test
+    void shuttingDownTheConfigurationBeforeItStartedWithConfiguredMessageHandlersDoesNotCauseAnyExceptions() {
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .registerCommandHandler(c -> new Object())
+                                                       .registerEventHandler(c -> new Object())
+                                                       .registerQueryHandler(c -> new Object())
+                                                       .registerMessageHandler(c -> new Object())
+                                                       .buildConfiguration();
+        assertDoesNotThrow(configuration::shutdown);
+    }
+
     @SuppressWarnings("unused")
     @Entity(name = "StubAggregate")
     private static class StubAggregate {
