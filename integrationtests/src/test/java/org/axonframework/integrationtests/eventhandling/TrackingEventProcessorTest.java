@@ -87,6 +87,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
@@ -1538,14 +1539,14 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    @Timeout(value = 10)
     void replayDuringIncompleteMerge() throws Exception {
-        int segmentIdZero = 0;
-        int segmentIdOne = 1;
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> initialEvents = IntStream.range(0, 10)
                                                        .mapToObj(i -> createEvent(UUID.randomUUID().toString(), 0))
                                                        .collect(toList());
+        Duration pollDelay = Duration.ofMillis(25);
+        int segmentIdZero = 0;
+        int segmentIdOne = 1;
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
@@ -1558,39 +1559,44 @@ class TrackingEventProcessorTest {
             return handledEvents.add(message);
         });
 
+        // Publish first 10 events and start TEP.
         eventBus.publish(initialEvents);
         testSubject.start();
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().size() >= 2);
 
-        while (testSubject.processingStatus().size() < 2
-                || !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
-            Thread.sleep(10);
-        }
-
+        // Release segment, publish 10 more events and merge the segments of the TEP.
         testSubject.releaseSegment(segmentIdOne);
         while (testSubject.processingStatus().containsKey(segmentIdOne)) {
             Thread.yield();
         }
-
         publishEvents(10);
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentIdZero);
         assertTrue(mergeResult.join(), "Expected merge to succeed");
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(500))
+               .until(() -> testSubject.processingStatus().size() == 1);
 
+        // Initiate the reset, with 10 more events published in the middle.
         testSubject.shutDown();
         testSubject.resetTokens();
+
         publishEvents(10);
         testSubject.start();
-
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().size() >= 1);
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(segmentIdZero);
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
 
-        assertWithin(
-                1, TimeUnit.SECONDS,
-                () -> assertTrue(testSubject.processingStatus().get(segmentIdZero).isCaughtUp())
-        );
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
         assertEquals(30, handledEvents.size());
