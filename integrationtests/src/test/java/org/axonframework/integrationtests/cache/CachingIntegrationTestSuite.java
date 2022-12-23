@@ -22,14 +22,16 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,7 +48,7 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Abstract integration test suite to validate the provided {@link org.axonframework.common.caching.Cache}
@@ -61,17 +63,23 @@ public abstract class CachingIntegrationTestSuite {
     private static final int NUMBER_OF_UPDATES = 4096;
     private static final int NUMBER_OF_CONCURRENT_PUBLISHERS = 8;
     private static final String[] SAGA_NAMES = new String[]{"foo", "bar", "baz", "and", "some", "more"};
+    private static final int NUMBER_OF_ASSOCIATIONS = 42;
+
+    private static final Duration SHORT_DELAY = Duration.ofMillis(5);
+    private static final Duration DEFAULT_DELAY = Duration.ofMillis(25);
+    private static final Duration ONE_SECOND = Duration.ofSeconds(1);
+    private static final Duration TWO_SECONDS = Duration.ofSeconds(2);
+    private static final Duration FOUR_SECONDS = Duration.ofSeconds(4);
+    private static final Duration EIGHT_SECONDS = Duration.ofSeconds(8);
 
     protected Configuration config;
+    private StreamingEventProcessor sagaProcessor;
 
     private Cache sagaCache;
     private Cache associationsCache;
 
     @BeforeEach
     void setUp() {
-        EventStore eventStore = spy(EmbeddedEventStore.builder()
-                                                      .storageEngine(new InMemoryEventStorageEngine())
-                                                      .build());
         sagaCache = buildCache("saga");
         associationsCache = buildCache("associations");
 
@@ -82,13 +90,20 @@ public abstract class CachingIntegrationTestSuite {
                                                                          .associationsCache(associationsCache)
                                                                          .build());
 
+        TrackingEventProcessorConfiguration tepConfig =
+                TrackingEventProcessorConfiguration.forParallelProcessing(4)
+                                                   .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS);
         config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                  .configureEventStore(c -> eventStore)
+                                  .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                   .eventProcessing(
-                                          procConfig -> procConfig.usingSubscribingEventProcessors()
+                                          procConfig -> procConfig.usingTrackingEventProcessors()
+                                                                  .registerTrackingEventProcessorConfiguration(c -> tepConfig)
                                                                   .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
                                   .start();
+        sagaProcessor = config.eventProcessingConfiguration()
+                              .eventProcessor("CachedSagaProcessor", TrackingEventProcessor.class)
+                              .orElseThrow(() -> new IllegalStateException("CachedSagaProcessor is not present"));
     }
 
     /**
@@ -101,63 +116,94 @@ public abstract class CachingIntegrationTestSuite {
 
     @Test
     void publishingBigEventTransactionTowardsCachedSagaWorksWithoutException() {
+        int createEvents = 1;
+        int deleteEvents = 1;
         String sagaName = SAGA_NAMES[0];
         String associationValue = sagaName + "-id";
         String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
         // Construct the saga...
-        publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
-        // Validate initial cache
-        assertTrue(associationsCache.containsKey(associationCacheKey));
-        Set<String> associations = associationsCache.get(associationCacheKey);
+        publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName, NUMBER_OF_ASSOCIATIONS));
+        await().pollDelay(SHORT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents));
 
-        String sagaIdentifier = associations.iterator().next();
-        assertTrue(sagaCache.containsKey(sagaIdentifier));
-        //noinspection unchecked
-        CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-        assertEquals(sagaName, cachedSaga.getName());
-        assertTrue(cachedSaga.getState().isEmpty());
+        // Validate initial cache
+        String sagaIdentifier = null;
+        Set<String> associations = associationsCache.get(associationCacheKey);
+        if (associations != null) {
+            // The associations cache may have been cleared, which is a fair scenario.
+            // Hence, only validate if we've found any associations.
+            sagaIdentifier = associations.iterator().next();
+            assertTrue(sagaCache.containsKey(sagaIdentifier));
+            //noinspection unchecked
+            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+            assertEquals(sagaName, cachedSaga.getName());
+            assertTrue(cachedSaga.getState().isEmpty());
+        }
 
         // Bulk update the saga...
         publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES);
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents + NUMBER_OF_UPDATES));
+
         // Validate cache again
         assertTrue(associationsCache.containsKey(associationCacheKey));
         associations = associationsCache.get(associationCacheKey);
-
-        sagaIdentifier = associations.iterator().next();
-        assertTrue(sagaCache.containsKey(sagaIdentifier));
-        //noinspection unchecked
-        cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-        assertEquals(sagaName, cachedSaga.getName());
-        assertEquals(NUMBER_OF_UPDATES, cachedSaga.getState().size());
+        if (associations.iterator().hasNext()) {
+            // The associations cache may have been cleared, which is a fair scenario.
+            // Hence, only validate if we've found any associations.
+            sagaIdentifier = associations.iterator().next();
+            if (sagaCache.containsKey(sagaIdentifier)) {
+                //noinspection unchecked
+                CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+                assertEquals(sagaName, cachedSaga.getName());
+                assertEquals(NUMBER_OF_UPDATES, cachedSaga.getState().size());
+            }
+        }
 
         // Destruct the saga...
         publish(new CachedSaga.SagaEndsEvent(associationValue, true));
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(ONE_SECOND)
+               .until(() -> handledEventsUpTo(createEvents + NUMBER_OF_UPDATES + deleteEvents));
+
         // Validate cache is empty
-        assertFalse(associationsCache.containsKey(associationCacheKey));
-        assertFalse(sagaCache.containsKey(sagaIdentifier));
+        await().pollDelay(SHORT_DELAY)
+               .atMost(ONE_SECOND)
+               .until(() -> !associationsCache.containsKey(associationCacheKey));
     }
 
     @Test
     void publishingBigEventTransactionsConcurrentlyTowardsCachedSagaWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
+        int createEvents = 1;
+        int deleteEvents = 1;
         String sagaName = SAGA_NAMES[0];
         String associationValue = "some-id";
         String associationCacheKey = sagaAssociationCacheKey(associationValue);
         ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the saga...
-        publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
-        // Validate initial cache
-        assertTrue(associationsCache.containsKey(associationCacheKey));
-        Set<String> associations = associationsCache.get(associationCacheKey);
+        publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName, NUMBER_OF_ASSOCIATIONS));
+        await().pollDelay(SHORT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents));
 
-        String sagaIdentifier = associations.iterator().next();
-        assertTrue(sagaCache.containsKey(sagaIdentifier));
-        //noinspection unchecked
-        CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-        assertEquals(sagaName, cachedSaga.getName());
-        assertTrue(cachedSaga.getState().isEmpty());
+        // Validate initial cache
+        String sagaIdentifier = null;
+        Set<String> associations = associationsCache.get(associationCacheKey);
+        if (associations != null) {
+            // The associations cache may have been cleared, which is a fair scenario.
+            // Hence, only validate if we've found any associations.
+            sagaIdentifier = associations.iterator().next();
+            assertTrue(sagaCache.containsKey(sagaIdentifier));
+            //noinspection unchecked
+            CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+            assertEquals(sagaName, cachedSaga.getName());
+            assertTrue(cachedSaga.getState().isEmpty());
+        }
 
         // Concurrent bulk update the saga...
         IntStream.range(0, NUMBER_OF_CONCURRENT_PUBLISHERS)
@@ -167,38 +213,60 @@ public abstract class CachingIntegrationTestSuite {
                  .reduce(CompletableFuture::allOf)
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(15, TimeUnit.SECONDS);
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(EIGHT_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS)));
 
         // Validate cache again
         assertTrue(associationsCache.containsKey(associationCacheKey));
         associations = associationsCache.get(associationCacheKey);
-
-        sagaIdentifier = associations.iterator().next();
-        assertTrue(sagaCache.containsKey(sagaIdentifier));
-        //noinspection unchecked
-        cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
-        assertEquals(sagaName, cachedSaga.getName());
-        assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS, cachedSaga.getState().size());
+        if (associations.iterator().hasNext()) {
+            // The associations cache may have been cleared, which is a fair scenario.
+            // Hence, only validate if we've found any associations.
+            sagaIdentifier = associations.iterator().next();
+            if (sagaCache.containsKey(sagaIdentifier)) {
+                //noinspection unchecked
+                CachedSaga cachedSaga = ((SagaStore.Entry<CachedSaga>) sagaCache.get(sagaIdentifier)).saga();
+                assertEquals(sagaName, cachedSaga.getName());
+                assertEquals(NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS, cachedSaga.getState().size());
+            }
+        }
 
         // Destruct the saga...
         publish(new CachedSaga.SagaEndsEvent(associationValue, true));
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(
+                       createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS) + deleteEvents
+               ));
+
         // Validate cache is empty
-        assertFalse(associationsCache.containsKey(associationCacheKey));
-        assertFalse(sagaCache.containsKey(sagaIdentifier));
+        await().pollDelay(SHORT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> !associationsCache.containsKey(associationCacheKey));
     }
 
     @Test
     void publishingBigEventTransactionTowardsSeveralCachedSagasWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
+        int createEvents = SAGA_NAMES.length;
+        int deleteEvents = SAGA_NAMES.length;
         Map<String, Set<String>> associationReferences = new HashMap<>();
         ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length);
 
         // Construct the sagas...
         for (String sagaName : SAGA_NAMES) {
+            publish(new CachedSaga.SagaCreatedEvent(sagaName + "-id", sagaName, NUMBER_OF_ASSOCIATIONS));
+        }
+        await().pollDelay(SHORT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents));
+
+        // Validate initial cache
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
-            publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
-            // Validate initial cache
             assertTrue(associationsCache.containsKey(associationCacheKey));
             associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
 
@@ -219,6 +287,10 @@ public abstract class CachingIntegrationTestSuite {
               .reduce(CompletableFuture::allOf)
               .orElse(CompletableFuture.completedFuture(null))
               .get(15, TimeUnit.SECONDS);
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(EIGHT_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * SAGA_NAMES.length)));
+
         // Validate caches again
         for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
@@ -240,28 +312,41 @@ public abstract class CachingIntegrationTestSuite {
 
         // Destruct the sagas...
         for (String sagaName : SAGA_NAMES) {
-            String associationValue = sagaName + "-id";
-            String associationCacheKey = sagaAssociationCacheKey(associationValue);
+            publish(new CachedSaga.SagaEndsEvent(sagaName + "-id", true));
+        }
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(
+                       createEvents + (NUMBER_OF_UPDATES * SAGA_NAMES.length) + deleteEvents
+               ));
 
-            publish(new CachedSaga.SagaEndsEvent(associationValue, true));
-            // Validate cache is empty
-            assertFalse(associationsCache.containsKey(associationCacheKey));
+        // Validate cache is empty
+        for (String sagaName : SAGA_NAMES) {
+            assertFalse(associationsCache.containsKey(sagaAssociationCacheKey(sagaName + "-id")));
         }
     }
 
     @Test
     void publishingBigEventTransactionsConcurrentlyTowardsSeveralCachedSagasWorksWithoutException()
             throws ExecutionException, InterruptedException, TimeoutException {
+        int createEvents = SAGA_NAMES.length;
+        int deleteEvents = SAGA_NAMES.length;
         Map<String, Set<String>> associationReferences = new HashMap<>();
         ExecutorService executor = Executors.newFixedThreadPool(SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS);
 
         // Construct the sagas...
         for (String sagaName : SAGA_NAMES) {
+            publish(new CachedSaga.SagaCreatedEvent(sagaName + "-id", sagaName, NUMBER_OF_ASSOCIATIONS));
+        }
+        await().pollDelay(SHORT_DELAY)
+               .atMost(TWO_SECONDS)
+               .until(() -> handledEventsUpTo(createEvents));
+
+        // Validate initial cache
+        for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
             String associationCacheKey = sagaAssociationCacheKey(associationValue);
 
-            publish(new CachedSaga.SagaCreatedEvent(associationValue, sagaName));
-            // Validate initial cache
             assertTrue(associationsCache.containsKey(associationCacheKey));
             associationReferences.put(associationCacheKey, associationsCache.get(associationCacheKey));
 
@@ -283,6 +368,12 @@ public abstract class CachingIntegrationTestSuite {
                  .reduce(CompletableFuture::allOf)
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(15, TimeUnit.SECONDS);
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(Duration.ofSeconds(20))
+               .until(() -> handledEventsUpTo(
+                       createEvents + (NUMBER_OF_UPDATES * (SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS))
+               ));
+
         // Validate caches again
         for (String sagaName : SAGA_NAMES) {
             String associationValue = sagaName + "-id";
@@ -306,12 +397,19 @@ public abstract class CachingIntegrationTestSuite {
 
         // Destruct the sagas...
         for (String sagaName : SAGA_NAMES) {
-            String associationValue = sagaName + "-id";
-            String associationCacheKey = sagaAssociationCacheKey(associationValue);
+            publish(new CachedSaga.SagaEndsEvent(sagaName + "-id", true));
+        }
+        await().pollDelay(DEFAULT_DELAY)
+               .atMost(FOUR_SECONDS)
+               .until(() -> handledEventsUpTo(
+                       createEvents + (NUMBER_OF_UPDATES * SAGA_NAMES.length) + deleteEvents
+               ));
 
-            publish(new CachedSaga.SagaEndsEvent(associationValue, true));
-            // Validate cache is empty
-            assertFalse(associationsCache.containsKey(associationCacheKey));
+        // Validate cache is empty
+        for (String sagaName : SAGA_NAMES) {
+            await().pollDelay(DEFAULT_DELAY)
+                   .atMost(FOUR_SECONDS)
+                   .until(() -> !associationsCache.containsKey(sagaAssociationCacheKey(sagaName + "-id")));
         }
     }
 
@@ -329,7 +427,16 @@ public abstract class CachingIntegrationTestSuite {
         for (Object event : events) {
             eventMessages.add(GenericEventMessage.asEventMessage(event));
         }
-        config.eventStore().publish(eventMessages);
+        config.eventBus().publish(eventMessages);
+    }
+
+    private Boolean handledEventsUpTo(int handledEvents) {
+        return sagaProcessor.processingStatus()
+                            .values()
+                            .stream()
+                            .map(status -> status.getCurrentPosition().orElse(-1L) >= handledEvents - 1)
+                            .reduce(Boolean::logicalAnd)
+                            .orElse(false);
     }
 
     /**

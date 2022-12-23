@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,9 @@ public class CachedSaga {
     public void on(SagaCreatedEvent event) {
         this.name = event.name;
         this.state = new ArrayList<>();
+        for (int i = 0; i < event.numberOfAssociations; i++) {
+            SagaLifecycle.associateWith(event.id + i, i);
+        }
     }
 
     @SagaEventHandler(associationProperty = "id")
@@ -65,10 +68,12 @@ public class CachedSaga {
 
         private final String id;
         private final String name;
+        private final int numberOfAssociations;
 
-        public SagaCreatedEvent(String id, String name) {
+        public SagaCreatedEvent(String id, String name, int numberOfAssociations) {
             this.id = id;
             this.name = name;
+            this.numberOfAssociations = numberOfAssociations;
         }
 
         public String getId() {
