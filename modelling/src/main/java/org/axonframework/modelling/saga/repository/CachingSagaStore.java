@@ -23,6 +23,7 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.SagaRepository;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -76,7 +77,9 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     @Override
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
         final String key = cacheKey(associationValue, sagaType);
-        return associationsCache.computeIfAbsent(key, () -> delegate.findSagas(sagaType, associationValue));
+        return new HashSet<>(associationsCache.computeIfAbsent(
+                key, () -> delegate.findSagas(sagaType, associationValue))
+        );
     }
 
     @Override
