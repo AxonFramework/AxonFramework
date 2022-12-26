@@ -29,6 +29,7 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -39,6 +40,7 @@ import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +75,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;
     private final boolean idempotent;
+    private final List<String> correlationIds = new ArrayList<>();
     private T aggregateRoot;
     private boolean applying = false;
     private boolean executingDelayedTasks = false;
@@ -377,6 +380,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return (Class<? extends T>) aggregateRoot.getClass();
     }
 
+    public List<String> getCorrelationIds() {
+        return correlationIds;
+    }
+
     public boolean isIdempotent() {
         return idempotent;
     }
@@ -396,8 +403,18 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (msg instanceof DomainEventMessage) {
             lastKnownSequence = ((DomainEventMessage<?>) msg).getSequenceNumber();
         }
+        if (idempotent) {
+            correlationIds.add(getCorrelationId(msg));
+        }
         inspector.publish(msg, aggregateRoot);
         publishOnEventBus(msg);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String getCorrelationId(EventMessage<?> msg) {
+        MetaData metaData = msg.getMetaData();
+
+        return (String) metaData.get(MessageOriginProvider.getDefaultCorrelationKey());
     }
 
     /**
