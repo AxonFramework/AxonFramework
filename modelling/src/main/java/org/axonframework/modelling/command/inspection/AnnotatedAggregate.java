@@ -39,7 +39,10 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -70,6 +73,7 @@ import static java.lang.String.format;
  * @since 3.0
  */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final String DEFAULT_CORRELATION_IDS_KEY = "correlationIds";
 
     /**
@@ -488,6 +492,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private Object findHandlerAndHandleCommand(List<MessageHandlingMember<? super T>> handlers,
                                                CommandMessage<?> command) throws Exception {
+        if (idempotent && this.correlationIds.contains(command.getIdentifier())) {
+            logger.debug("Ignoring command with identifier {}.", command.getIdentifier());
+            return null;
+        }
         //noinspection unchecked
         return handlers.stream()
                        .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
