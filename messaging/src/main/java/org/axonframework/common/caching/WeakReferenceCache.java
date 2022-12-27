@@ -172,8 +172,21 @@ public class WeakReferenceCache implements Cache {
 
     @Override
     public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
-        //noinspection unchecked
-        cache.computeIfPresent(key, (k, v) -> new Entry(k, update.apply((V) v.get())));
+        purgeItems();
+        cache.computeIfPresent(key, (k, v) -> {
+            //noinspection unchecked
+            V value = update.apply((V) v.get());
+            if (value != null) {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryUpdated(key, value);
+                }
+            } else {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryRemoved(key);
+                }
+            }
+            return new Entry(k, value);
+        });
     }
 
     private class Entry extends WeakReference<Object> {
