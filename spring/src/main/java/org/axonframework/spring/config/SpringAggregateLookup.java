@@ -31,6 +31,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.core.ResolvableType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +42,7 @@ import javax.annotation.Nonnull;
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
+import static org.springframework.core.ResolvableType.forClassWithGenerics;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a
@@ -197,9 +200,14 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             } else {
                 ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                         repositoryName,
-                        BeanDefinitionBuilder.genericBeanDefinition(SpringRepositoryFactoryBean.class)
+                        BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
                                              .addConstructorArgValue(aggregateType)
                                              .addAutowiredProperty("configuration")
+                                             .applyCustomizers(bd -> {
+                                                 ResolvableType resolvableRepositoryType =
+                                                         forClassWithGenerics(Repository.class, aggregateType);
+                                                 ((RootBeanDefinition) bd).setTargetType(resolvableRepositoryType);
+                                             })
                                              .getBeanDefinition()
                 );
             }
