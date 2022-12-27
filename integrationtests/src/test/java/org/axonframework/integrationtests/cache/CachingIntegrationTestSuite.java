@@ -156,7 +156,7 @@ public abstract class CachingIntegrationTestSuite {
         // Bulk update the saga...
         publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES);
         await().pollDelay(DEFAULT_DELAY)
-               .atMost(EIGHT_SECONDS)
+               .atMost(TWO_SECONDS)
                .until(() -> handledEventsUpTo(createEvents + NUMBER_OF_UPDATES));
 
         // Validate caches again
@@ -215,7 +215,7 @@ public abstract class CachingIntegrationTestSuite {
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
-               .atMost(Duration.ofSeconds(20))
+               .atMost(EIGHT_SECONDS)
                .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS)));
 
         // Validate caches again
