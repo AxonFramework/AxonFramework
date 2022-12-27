@@ -76,10 +76,13 @@ public class CachingSagaStore<T> implements SagaStore<T> {
 
     @Override
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
+
         final String key = cacheKey(associationValue, sagaType);
-        return new HashSet<>(associationsCache.computeIfAbsent(
-                key, () -> delegate.findSagas(sagaType, associationValue))
-        );
+        synchronized (associationsCache) {
+            return new HashSet<>(associationsCache.computeIfAbsent(
+                    key, () -> delegate.findSagas(sagaType, associationValue))
+            );
+        }
     }
 
     @Override
@@ -114,12 +117,14 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                                                  String sagaIdentifier,
                                                  AssociationValue associationValue) {
         String key = cacheKey(associationValue, sagaType);
-        associationsCache.computeIfPresent(key, associations -> {
-            //noinspection unchecked
-            ((Set<String>) associations).remove(sagaIdentifier);
-            //noinspection unchecked
-            return ((Set<String>) associations).isEmpty() ? null : associations;
-        });
+        synchronized (associationsCache) {
+            associationsCache.computeIfPresent(key, associations -> {
+                //noinspection unchecked
+                ((Set<String>) associations).remove(sagaIdentifier);
+                //noinspection unchecked
+                return ((Set<String>) associations).isEmpty() ? null : associations;
+            });
+        }
     }
 
     /**
@@ -133,13 +138,15 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     protected void addCachedAssociations(Iterable<AssociationValue> associationValues,
                                          String sagaIdentifier,
                                          Class<?> sagaType) {
-        for (AssociationValue associationValue : associationValues) {
-            String key = cacheKey(associationValue, sagaType);
-            associationsCache.computeIfPresent(key, identifiers -> {
-                //noinspection unchecked
-                ((Set<String>) identifiers).add(sagaIdentifier);
-                return identifiers;
-            });
+        synchronized (associationsCache) {
+            for (AssociationValue associationValue : associationValues) {
+                String key = cacheKey(associationValue, sagaType);
+                associationsCache.computeIfPresent(key, identifiers -> {
+                    //noinspection unchecked
+                    ((Set<String>) identifiers).add(sagaIdentifier);
+                    return identifiers;
+                });
+            }
         }
     }
 
@@ -148,7 +155,8 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                            String sagaIdentifier,
                            T saga,
                            AssociationValues associationValues) {
-        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
+            sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
+
         delegate.updateSaga(sagaType, sagaIdentifier, saga, associationValues);
         associationValues.removedAssociations()
                          .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
