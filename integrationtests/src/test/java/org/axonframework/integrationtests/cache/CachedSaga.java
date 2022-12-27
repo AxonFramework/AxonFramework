@@ -22,6 +22,7 @@ import org.axonframework.modelling.saga.StartSaga;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Test saga used by the {@link CachingIntegrationTestSuite}.
@@ -32,13 +33,19 @@ public class CachedSaga {
 
     private String name;
     private List<Object> state;
+    private int numberOfAssociations;
+    private Random random;
+    private Integer associationToRemove;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "id")
     public void on(SagaCreatedEvent event) {
         this.name = event.name;
         this.state = new ArrayList<>();
-        for (int i = 0; i < event.numberOfAssociations; i++) {
+        this.numberOfAssociations = event.numberOfAssociations;
+        this.random = new Random();
+
+        for (int i = 0; i < numberOfAssociations; i++) {
             SagaLifecycle.associateWith(event.id + i, i);
         }
     }
@@ -46,6 +53,13 @@ public class CachedSaga {
     @SagaEventHandler(associationProperty = "id")
     public void on(VeryImportantEvent event) {
         state.add(event.stateEntry);
+        if (associationToRemove == null) {
+            associationToRemove = random.nextInt(numberOfAssociations);
+            SagaLifecycle.removeAssociationWith(event.id + associationToRemove, associationToRemove);
+        } else {
+            SagaLifecycle.associateWith(event.id + associationToRemove, associationToRemove);
+            associationToRemove = null;
+        }
     }
 
     @SagaEventHandler(associationProperty = "id")
