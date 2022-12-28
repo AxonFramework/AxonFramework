@@ -23,7 +23,7 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.SagaRepository;
 
 import java.io.Serializable;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -78,11 +78,13 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
 
         final String key = cacheKey(associationValue, sagaType);
-        synchronized (associationsCache) {
-            return new HashSet<>(associationsCache.computeIfAbsent(
-                    key, () -> delegate.findSagas(sagaType, associationValue))
-            );
-        }
+        return associationsCache.computeIfAbsent(
+                key,
+                () -> {
+                    // Wrap the original collection in a synchronized implementation, since it might be changed while
+                    // the SagaManager is reading it using the insertSaga/deleteSaga methods.
+                    return Collections.synchronizedSet(delegate.findSagas(sagaType, associationValue));
+                });
     }
 
     @Override
@@ -117,14 +119,12 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                                                  String sagaIdentifier,
                                                  AssociationValue associationValue) {
         String key = cacheKey(associationValue, sagaType);
-        synchronized (associationsCache) {
-            associationsCache.computeIfPresent(key, associations -> {
-                //noinspection unchecked
-                ((Set<String>) associations).remove(sagaIdentifier);
-                //noinspection unchecked
-                return ((Set<String>) associations).isEmpty() ? null : associations;
-            });
-        }
+        associationsCache.computeIfPresent(key, associations -> {
+            //noinspection unchecked
+            ((Set<String>) associations).remove(sagaIdentifier);
+            //noinspection unchecked
+            return ((Set<String>) associations).isEmpty() ? null : associations;
+        });
     }
 
     /**
@@ -138,15 +138,13 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     protected void addCachedAssociations(Iterable<AssociationValue> associationValues,
                                          String sagaIdentifier,
                                          Class<?> sagaType) {
-        synchronized (associationsCache) {
-            for (AssociationValue associationValue : associationValues) {
-                String key = cacheKey(associationValue, sagaType);
-                associationsCache.computeIfPresent(key, identifiers -> {
-                    //noinspection unchecked
-                    ((Set<String>) identifiers).add(sagaIdentifier);
-                    return identifiers;
-                });
-            }
+        for (AssociationValue associationValue : associationValues) {
+            String key = cacheKey(associationValue, sagaType);
+            associationsCache.computeIfPresent(key, identifiers -> {
+                //noinspection unchecked
+                ((Set<String>) identifiers).add(sagaIdentifier);
+                return identifiers;
+            });
         }
     }
 
@@ -155,7 +153,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                            String sagaIdentifier,
                            T saga,
                            AssociationValues associationValues) {
-            sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
+        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
 
         delegate.updateSaga(sagaType, sagaIdentifier, saga, associationValues);
         associationValues.removedAssociations()
