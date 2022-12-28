@@ -23,7 +23,6 @@ import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
@@ -108,13 +107,16 @@ public abstract class CachingIntegrationTestSuite {
         config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                   .eventProcessing(
-                                          procConfig -> procConfig.usingTrackingEventProcessors()
-                                                                  .registerTrackingEventProcessorConfiguration(c -> tepConfig)
-                                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
+                                          procConfig -> procConfig
+                                                  .usingTrackingEventProcessors()
+                                                  .registerTrackingEventProcessorConfiguration(
+                                                          "CachedSagaProcessor", c -> tepConfig
+                                                  )
+                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
                                   .start();
         sagaProcessor = config.eventProcessingConfiguration()
-                              .eventProcessor("CachedSagaProcessor", TrackingEventProcessor.class)
+                              .eventProcessor("CachedSagaProcessor", StreamingEventProcessor.class)
                               .orElseThrow(() -> new IllegalStateException("CachedSagaProcessor is not present"));
     }
 
