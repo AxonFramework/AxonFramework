@@ -76,7 +76,6 @@ public class CachingSagaStore<T> implements SagaStore<T> {
 
     @Override
     public Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue) {
-
         final String key = cacheKey(associationValue, sagaType);
         return associationsCache.computeIfAbsent(
                 key,
@@ -154,7 +153,6 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                            T saga,
                            AssociationValues associationValues) {
         sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
-
         delegate.updateSaga(sagaType, sagaIdentifier, saga, associationValues);
         associationValues.removedAssociations()
                          .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
