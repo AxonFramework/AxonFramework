@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.cache;
 
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
@@ -27,7 +26,6 @@ import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -36,7 +34,6 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -128,45 +125,6 @@ public abstract class CachingIntegrationTestSuite {
      * @return The constructed {@link Cache} instance.
      */
     public abstract Cache buildCache(String name);
-
-    @Test
-    void canHandleConcurrentReadsAndWrites() throws ExecutionException, InterruptedException, TimeoutException {
-        String sagaName = SAGA_NAMES[0];
-        AssociationValue associationValue = new AssociationValue(sagaName + "-id", "value");
-
-        ExecutorService executor = Executors.newFixedThreadPool(32);
-
-        SagaStore store = CachingSagaStore.builder()
-                                          .delegateSagaStore(new InMemorySagaStore())
-                                          .sagaCache(buildCache("saga2"))
-                                          .associationsCache(buildCache("associations2"))
-                                          .build();
-
-        IntStream.range(0, 256)
-                 .mapToObj(i -> CompletableFuture.runAsync(
-                         () -> {
-                             try {
-                                 String id = IdentifierFactory.getInstance()
-                                                              .generateIdentifier();
-                                 store.insertSaga(CachedSaga.class,
-                                                  id,
-                                                  id,
-                                                  Collections.singleton(
-                                                          associationValue));
-                                 store.findSagas(CachedSaga.class, associationValue);
-                                 store.deleteSaga(CachedSaga.class,
-                                                  id,
-                                                  Collections.singleton(
-                                                          associationValue));
-                             } catch (Exception e) {
-                                 throw new RuntimeException(e);
-                             }
-                         }, executor
-                 )).reduce(CompletableFuture::allOf)
-                 .orElse(CompletableFuture.completedFuture(null))
-                 .get(30, TimeUnit.SECONDS);
-
-    }
 
     @Test
     void publishingBigEventTransactionTowardsCachedSagaWorksWithoutException() {
