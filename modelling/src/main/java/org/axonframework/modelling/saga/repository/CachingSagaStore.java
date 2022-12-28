@@ -83,7 +83,8 @@ public class CachingSagaStore<T> implements SagaStore<T> {
                     // Wrap the original collection in a synchronized implementation, since it might be changed while
                     // the SagaManager is reading it using the insertSaga/deleteSaga methods.
                     return Collections.synchronizedSet(delegate.findSagas(sagaType, associationValue));
-                });
+                }
+        );
     }
 
     @Override
