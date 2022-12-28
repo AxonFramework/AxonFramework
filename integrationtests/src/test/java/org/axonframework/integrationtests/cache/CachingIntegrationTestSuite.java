@@ -451,23 +451,23 @@ public abstract class CachingIntegrationTestSuite {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
         private final ListenerType type;
+        @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
         private final Set<String> created = new ConcurrentSkipListSet<>();
-        private final Set<String> removed = new ConcurrentSkipListSet<>();
-        private final Set<String> expired = new ConcurrentSkipListSet<>();
         private final Map<String, V> updates = new ConcurrentHashMap<>();
+        private final Set<String> removed = new ConcurrentSkipListSet<>();
+        @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+        private final Set<String> expired = new ConcurrentSkipListSet<>();
 
         private EntryListenerValidator(ListenerType type) {
             this.type = type;
         }
 
         @Override
-        public void onEntryExpired(Object key) {
-            expired.add(key.toString());
-        }
-
-        @Override
-        public void onEntryRemoved(Object key) {
-            removed.add(key.toString());
+        public void onEntryCreated(Object key, Object value) {
+            String keyAsString = key.toString();
+            created.add(keyAsString);
+            //noinspection unchecked
+            updates.put(keyAsString, (V) value);
         }
 
         @Override
@@ -477,15 +477,13 @@ public abstract class CachingIntegrationTestSuite {
         }
 
         @Override
-        public void onEntryCreated(Object key, Object value) {
-            String keyAsString = key.toString();
-            //noinspection unchecked
-            updates.put(keyAsString, (V) value);
-            boolean added = created.add(keyAsString);
-            if (!added) {
-                removed.remove(keyAsString);
-                expired.remove(keyAsString);
-            }
+        public void onEntryRemoved(Object key) {
+            removed.add(key.toString());
+        }
+
+        @Override
+        public void onEntryExpired(Object key) {
+            expired.add(key.toString());
         }
 
         @Override
