@@ -75,6 +75,8 @@ public abstract class CachingIntegrationTestSuite {
     private static final Duration TWO_SECONDS = Duration.ofSeconds(2);
     private static final Duration FOUR_SECONDS = Duration.ofSeconds(4);
     private static final Duration EIGHT_SECONDS = Duration.ofSeconds(8);
+    private static final Duration SIXTEEN_SECONDS = Duration.ofSeconds(16);
+    private static final Duration THIRTY_TWO_SECONDS = Duration.ofSeconds(32);
 
     protected Configuration config;
     private StreamingEventProcessor sagaProcessor;
@@ -158,7 +160,7 @@ public abstract class CachingIntegrationTestSuite {
         // Bulk update the saga...
         publishBulkUpdatesTo(associationValue, NUMBER_OF_UPDATES);
         await().pollDelay(DEFAULT_DELAY)
-               .atMost(TWO_SECONDS)
+               .atMost(FOUR_SECONDS)
                .until(() -> handledEventsUpTo(createEvents + NUMBER_OF_UPDATES));
 
         // Validate caches again
@@ -217,7 +219,7 @@ public abstract class CachingIntegrationTestSuite {
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
-               .atMost(EIGHT_SECONDS)
+               .atMost(SIXTEEN_SECONDS)
                .until(() -> handledEventsUpTo(createEvents + (NUMBER_OF_UPDATES * NUMBER_OF_CONCURRENT_PUBLISHERS)));
 
         // Validate caches again
@@ -363,7 +365,7 @@ public abstract class CachingIntegrationTestSuite {
                  .orElse(CompletableFuture.completedFuture(null))
                  .get(15, TimeUnit.SECONDS);
         await().pollDelay(DEFAULT_DELAY)
-               .atMost(Duration.ofSeconds(20))
+               .atMost(THIRTY_TWO_SECONDS)
                .until(() -> handledEventsUpTo(
                        createEvents + (NUMBER_OF_UPDATES * (SAGA_NAMES.length * NUMBER_OF_CONCURRENT_PUBLISHERS))
                ));
