@@ -400,9 +400,7 @@ public abstract class CachingIntegrationTestSuite {
 
         // Validate association cache is empty
         for (String sagaName : SAGA_NAMES) {
-            await().pollDelay(DEFAULT_DELAY)
-                   .atMost(FOUR_SECONDS)
-                   .until(() -> associationsCacheListener.isRemoved(sagaAssociationCacheKey(sagaName + "-id")));
+            assertTrue(associationsCacheListener.isRemoved(sagaAssociationCacheKey(sagaName + "-id")));
         }
     }
 
