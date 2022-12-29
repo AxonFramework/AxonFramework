@@ -266,6 +266,15 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void queryCloseConnectionOnCompletableFutureCancel() {
+        ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
+        when(mockQueryChannel.query(any())).thenReturn(resultStream);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        testSubject.query(testQuery).cancel(true);
+        verify(resultStream).close();
+    }
+
+    @Test
     void subscribeHandler() {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
                 .thenReturn(() -> CompletableFuture.completedFuture(null));

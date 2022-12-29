@@ -262,7 +262,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             int priority = priorityCalculator.determinePriority(interceptedQuery);
             QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
             ResultStream<QueryResponse> result = sendRequest(interceptedQuery, queryRequest);
-
+            queryTransaction.whenComplete((r, e) -> result.close());
             Span responseTaskSpan = spanFactory.createInternalSpan(() -> "AxonServerQueryBus.ResponseProcessingTask");
             Runnable responseProcessingTask = responseTaskSpan.wrapRunnable(new ResponseProcessingTask<>(
                     result, serializer, queryTransaction, queryMessage.getResponseType()
@@ -278,7 +278,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             span.recordException(e).end();
         }
 
-        return queryTransaction.whenComplete((r, e) -> {
+        queryTransaction.whenComplete((r, e) -> {
             queryInTransit.end();
             if (e != null) {
                 span.recordException(e);
@@ -288,6 +288,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             }
             span.end();
         });
+        return queryTransaction;
     }
 
     private QueryRequest serializeStreaming(QueryMessage<?, ?> query, int priority) {

@@ -150,6 +150,20 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
+    void pointToPointQueryWhenClientCancelQuery() {
+        CompletableFuture<QueryResponseMessage<String>> queryBusFutureResult = new CompletableFuture<>();
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(queryBusFutureResult);
+
+        CompletableFuture<String> result = testSubject.query("query", String.class);
+        assertFalse(queryBusFutureResult.isDone());
+        result.cancel(true);
+
+        assertTrue(queryBusFutureResult.isDone());
+        assertTrue(queryBusFutureResult.isCancelled());
+    }
+
+    @Test
     void pointToPointQueryWhenQueryBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
         CompletableFuture<QueryResponseMessage<String>> queryResponseCompletableFuture = new CompletableFuture<>();
