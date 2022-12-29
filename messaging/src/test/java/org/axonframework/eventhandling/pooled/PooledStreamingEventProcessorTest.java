@@ -33,6 +33,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -86,8 +87,8 @@ class PooledStreamingEventProcessorTest {
         stubMessageSource = new InMemoryStreamableEventSource();
         stubEventHandler = mock(EventHandlerInvoker.class);
         tokenStore = spy(new InMemoryTokenStore());
-        coordinatorExecutor = Executors.newScheduledThreadPool(2);
-        workerExecutor = Executors.newScheduledThreadPool(8);
+        coordinatorExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2));
+        workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
         spanFactory = new TestSpanFactory();
 
         setTestSubject(createTestSubject());
