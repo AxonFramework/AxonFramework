@@ -26,7 +26,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-starter</artifactId>
-    <version>4.6.3-SNAPSHOT</version>
+    <version>4.6.3</version>
 
     <name>Spring Boot Starter module for Axon Framework</name>
 
@@ -182,7 +182,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>HEAD</tag>
+        <tag>axon-4.6.3</tag>
     </scm>
 
 </project>
