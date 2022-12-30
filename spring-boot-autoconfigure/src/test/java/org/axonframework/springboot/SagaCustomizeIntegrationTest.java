@@ -157,12 +157,9 @@ public class SagaCustomizeIntegrationTest {
     @SuppressWarnings("unused")
     public static class SimpleSaga {
 
-        @Autowired
-        private AtomicInteger eventsReceived;
-
         @SagaEventHandler(associationProperty = "id")
         @StartSaga
-        public void on(EchoEvent echoEvent) {
+        public void on(EchoEvent echoEvent, AtomicInteger eventsReceived) {
             eventsReceived.getAndIncrement();
         }
     }
