@@ -42,8 +42,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -144,14 +144,14 @@ class InfraConfigurationTest {
             // Wait for all the event handlers to had their chance.
             assertThat(eventHandlerInvocations.await(1, TimeUnit.SECONDS)).isTrue();
 
-            assertThat(context).getBean("handlingOutcome", Set.class)
+            assertThat(context).getBean("handlingOutcome", Queue.class)
                                .isNotNull();
             //noinspection unchecked
-            Set<String> handlingOrder = context.getBean("handlingOutcome", Set.class);
-            InOrder order = inOrder(handlingOrder);
-            order.verify(handlingOrder).add("early-[" + testEvent + "]");
-            order.verify(handlingOrder).add("late-[" + testEvent + "]");
-            order.verify(handlingOrder).add("unordered-[" + testEvent + "]");
+            Queue<String> handlingOrder = context.getBean("handlingOutcome", Queue.class);
+
+            assertThat(handlingOrder.poll()).isEqualTo("early-[" + testEvent + "]");
+            assertThat(handlingOrder.poll()).isEqualTo("late-[" + testEvent + "]");
+            assertThat(handlingOrder.poll()).isEqualTo("unordered-[" + testEvent + "]");
         });
     }
 
@@ -218,25 +218,26 @@ class InfraConfigurationTest {
         }
 
         @Bean
-        public Set<String> handlingOutcome() {
-            return spy(new HashSet<>());
+        public Queue<String> handlingOutcome() {
+            return new PriorityQueue<>();
         }
 
         @Bean
         @Order(100)
-        public LateEventHandler lateEventHandler(CountDownLatch eventHandlerInvocations, Set<String> handlingOutcome) {
+        public LateEventHandler lateEventHandler(CountDownLatch eventHandlerInvocations,
+                                                 Queue<String> handlingOutcome) {
             return new LateEventHandler(eventHandlerInvocations, handlingOutcome);
         }
 
         @Bean
         public EarlyEventHandler earlyEventHandler(CountDownLatch eventHandlerInvocations,
-                                                   Set<String> handlingOutcome) {
+                                                   Queue<String> handlingOutcome) {
             return new EarlyEventHandler(eventHandlerInvocations, handlingOutcome);
         }
 
         @Bean
         public UnorderedEventHandler unorderedEventHandler(CountDownLatch eventHandlerInvocations,
-                                                           Set<String> handlingOutcome) {
+                                                           Queue<String> handlingOutcome) {
             return new UnorderedEventHandler(eventHandlerInvocations, handlingOutcome);
         }
 
@@ -244,9 +245,9 @@ class InfraConfigurationTest {
         static class UnorderedEventHandler {
 
             private final CountDownLatch invocation;
-            private final Set<String> handlingOutcome;
+            private final Queue<String> handlingOutcome;
 
-            public UnorderedEventHandler(CountDownLatch invocation, Set<String> handlingOutcome) {
+            public UnorderedEventHandler(CountDownLatch invocation, Queue<String> handlingOutcome) {
                 this.invocation = invocation;
                 this.handlingOutcome = handlingOutcome;
             }
@@ -263,9 +264,9 @@ class InfraConfigurationTest {
         static class EarlyEventHandler {
 
             private final CountDownLatch invocation;
-            private final Set<String> handlingOutcome;
+            private final Queue<String> handlingOutcome;
 
-            public EarlyEventHandler(CountDownLatch invocation, Set<String> handlingOutcome) {
+            public EarlyEventHandler(CountDownLatch invocation, Queue<String> handlingOutcome) {
                 this.invocation = invocation;
                 this.handlingOutcome = handlingOutcome;
             }
@@ -281,9 +282,9 @@ class InfraConfigurationTest {
         static class LateEventHandler {
 
             private final CountDownLatch invocation;
-            private final Set<String> handlingOutcome;
+            private final Queue<String> handlingOutcome;
 
-            public LateEventHandler(CountDownLatch invocation, Set<String> handlingOutcome) {
+            public LateEventHandler(CountDownLatch invocation, Queue<String> handlingOutcome) {
                 this.invocation = invocation;
                 this.handlingOutcome = handlingOutcome;
             }
