@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -77,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.*;
         AxonServerActuatorAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class SagaCustomizeIntegrationTest {
+class SagaCustomizeIntegrationTest {
 
     @Autowired
     private EventBus eventBus;
@@ -89,7 +90,7 @@ public class SagaCustomizeIntegrationTest {
     private EventProcessingModule eventProcessingModule;
 
     @Test
-    public void publishSomeEvents() throws InterruptedException {
+    void publishSomeEvents() {
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertTrue(ep.isRunning()));
@@ -97,11 +98,9 @@ public class SagaCustomizeIntegrationTest {
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertFalse(ep.isError(), "Processor ended with error"));
 
-        Thread.sleep(Duration.ofSeconds(1).toMillis());
-        assertEquals(1, eventsReceived.get());
+        await().atMost(Duration.ofSeconds(1)).until(() -> eventsReceived.get() == 1);
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
-        Thread.sleep(Duration.ofSeconds(1).toMillis());
-        assertEquals(2, eventsReceived.get());
+        await().atMost(Duration.ofSeconds(1)).until(() -> eventsReceived.get() == 2);
     }
 
     private void publishEvent(EchoEvent... events) {

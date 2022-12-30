@@ -78,8 +78,10 @@
         <slf4j.version>2.0.6</slf4j.version>
         <log4j.version>2.19.0</log4j.version>
         <spring.version>5.3.25</spring.version>
+        <spring.6.version>6.0.1</spring.6.version>
         <spring-security.version>5.7.3</spring-security.version>
         <spring.boot.version>2.7.7</spring.boot.version>
+        <spring.boot.3.version>3.0.1</spring.boot.3.version>
         <mockito.version>4.11.0</mockito.version>
         <projectreactor.version>3.5.2</projectreactor.version>
         <micrometer.version>1.10.3</micrometer.version>
@@ -844,6 +846,15 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>java17-modules</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>spring-boot-3-integrationtests</module>
+            </modules>
         </profile>
     </profiles>
 

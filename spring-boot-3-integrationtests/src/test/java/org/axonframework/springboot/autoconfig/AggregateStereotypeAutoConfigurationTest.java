@@ -49,8 +49,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
