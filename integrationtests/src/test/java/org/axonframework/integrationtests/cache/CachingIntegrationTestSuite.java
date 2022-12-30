@@ -48,8 +48,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Abstract integration test suite to validate the provided {@link org.axonframework.common.caching.Cache}
