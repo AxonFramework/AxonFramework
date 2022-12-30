@@ -212,6 +212,23 @@ public interface Configurer extends LifecycleOperations {
     <C> Configurer registerComponent(@Nonnull Class<C> componentType,
                                      @Nonnull Function<Configuration, ? extends C> componentBuilder);
 
+
+    /**
+     * Registers a decorator for a component type. For any component that is created by the configuration that matches
+     * the {@code componentType}, the {@code decorator} will be called. It's up to the decorator to decide to return the
+     * original component, a wrapped version of it or something else entirely.
+     *
+     * @param componentType The declared type of the component, typically an interface
+     * @param decorator     The decorator function for this component
+     * @param <C>           The type of component
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default <C> Configurer registerComponentDecorator(@Nonnull Class<C> componentType,
+                                              @Nonnull ComponentDecorator<C> decorator) {
+        // Default implementation for backwards compatibility
+        return this;
+    }
+
     /**
      * Registers a command handler bean with this {@link Configurer}. The bean may be of any type. The actual command
      * handler methods will be detected based on the annotations present on the bean's methods. Message handling

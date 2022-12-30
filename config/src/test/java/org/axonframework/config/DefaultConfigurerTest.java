@@ -620,11 +620,29 @@ class DefaultConfigurerTest {
         SpanFactory custom = mock(SpanFactory.class);
 
         SpanFactory result = DefaultConfigurer.defaultConfiguration()
-                        .configureSpanFactory((config) -> custom)
-                                 .buildConfiguration()
-                                 .spanFactory();
+                                              .configureSpanFactory((config) -> custom)
+                                              .buildConfiguration()
+                                              .spanFactory();
 
         assertSame(custom, result);
+    }
+
+    @Test
+    void canDecorateComponentsSuchAsSpanFactory() {
+        SpanFactory custom = mock(SpanFactory.class);
+        SpanFactory decorated = mock(SpanFactory.class);
+
+        SpanFactory result = DefaultConfigurer.defaultConfiguration()
+                                              .configureSpanFactory((config) -> custom)
+                                              .registerComponentDecorator(SpanFactory.class,
+                                                                          (configuration, component) -> {
+                                                                              assertSame(custom, component);
+                                                                              return decorated;
+                                                                          })
+                                              .buildConfiguration()
+                                              .spanFactory();
+
+        assertSame(decorated, result);
     }
 
     @Test
@@ -637,8 +655,8 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
-        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+    void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
+        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubAggregate());
 
         verify(configurer, times(1)).registerCommandHandler(any());
@@ -647,8 +665,8 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled(){
-        Configurer configurer =  spy(DefaultConfigurer.defaultConfiguration());
+    void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
+        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubQueryHandler());
 
         verify(configurer, never()).registerCommandHandler(any());

@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -25,15 +26,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the workings of the lifecycle operations registered and invoked on the {@link Configurer},
- * {@link Configuration} and the {@link DefaultConfigurer} implementation. As such, operations like the {@link
- * Configuration#onStart(int, LifecycleHandler)}, {@link Configuration#onShutdown(int, LifecycleHandler)}, {@link
- * Configurer#start()}, {@link Configuration#start()} and {@link Configuration#shutdown()} will be tested.
+ * {@link Configuration} and the {@link DefaultConfigurer} implementation. As such, operations like the
+ * {@link Configuration#onStart(int, LifecycleHandler)}, {@link Configuration#onShutdown(int, LifecycleHandler)},
+ * {@link Configurer#start()}, {@link Configuration#start()} and {@link Configuration#shutdown()} will be tested.
  *
  * @author Steven van Beelen
  */
@@ -468,6 +470,40 @@ class DefaultConfigurerLifecycleOperationsTest {
         );
     }
 
+    @Test
+    void decoratedComponentsHaveLifeCycleHandlersRegistered() {
+
+        LifeCycleComponent original = spy(new LifeCycleComponent());
+        LifeCycleComponent decorator1 = spy(new LifeCycleComponent());
+        LifeCycleComponent decorator2 = spy(new LifeCycleComponent());
+        LifeCycleComponent decorator3 = spy(new LifeCycleComponent());
+
+        Configuration testSubject = DefaultConfigurer
+                .defaultConfiguration()
+                .registerComponent(LifeCycleComponent.class, config -> original)
+                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator1)
+                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator2)
+                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator3)
+                .buildConfiguration();
+
+        testSubject.getComponent(LifeCycleComponent.class);
+
+        testSubject.start();
+
+        InOrder lifecycleOrder =
+                inOrder(original, decorator1, decorator2, decorator3);
+        lifecycleOrder.verify(original).registerLifecycleHandlers(any());
+        lifecycleOrder.verify(decorator1).registerLifecycleHandlers(any());
+        lifecycleOrder.verify(decorator2).registerLifecycleHandlers(any());
+        lifecycleOrder.verify(decorator3).registerLifecycleHandlers(any());
+
+        assertTrue(original.isInvoked());
+        assertTrue(decorator1.isInvoked());
+        assertTrue(decorator2.isInvoked());
+        assertTrue(decorator3.isInvoked());
+    }
+
+
     private static class LifecycleManagedInstance {
 
         private final ReentrantLock lock;
@@ -531,6 +567,21 @@ class DefaultConfigurerLifecycleOperationsTest {
 
         public void failingStart() {
             throw new RuntimeException(START_FAILURE_EXCEPTION_MESSAGE);
+        }
+    }
+
+    static class LifeCycleComponent implements Lifecycle {
+        private AtomicBoolean invoked = new AtomicBoolean(false);
+
+        @Override
+        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+            lifecycle.onStart(0, () -> {
+                invoked.set(true);
+            });
+        }
+
+        public boolean isInvoked() {
+            return invoked.get();
         }
     }
 

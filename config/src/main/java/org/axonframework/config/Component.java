@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
@@ -98,6 +99,16 @@ public class Component<B> {
     public void update(@Nonnull Function<Configuration, ? extends B> builderFunction) {
         Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         this.builderFunction = builderFunction;
+    }
+
+    public void decorate(@Nonnull BiFunction<Configuration, B, ? extends B> decoratingFunction) {
+        Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
+        Function<Configuration, ? extends B> previous = builderFunction;
+        this.update((configuration) -> {
+            B wrappedComponent = previous.apply(configuration);
+            LifecycleHandlerInspector.registerLifecycleHandlers(configuration, wrappedComponent);
+            return decoratingFunction.apply(configuration, wrappedComponent);
+        });
     }
 
     /**

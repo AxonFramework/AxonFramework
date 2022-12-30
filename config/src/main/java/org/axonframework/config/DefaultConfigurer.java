@@ -159,6 +159,7 @@ public class DefaultConfigurer implements Configurer {
     );
 
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final List<Runnable> decoratorHandlers = new ArrayList<>();
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
@@ -643,6 +644,20 @@ public class DefaultConfigurer implements Configurer {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <C> Configurer registerComponentDecorator(@Nonnull Class<C> componentType,
+                                                     @Nonnull ComponentDecorator<C> decorator) {
+        logger.debug("Registering decorator for component [{}]", componentType.getSimpleName());
+        decoratorHandlers.add(() -> {
+            Component<C> component = (Component<C>) components.getOrDefault(componentType, null);
+            if (component != null) {
+                component.decorate(decorator::decorate);
+            }
+        });
+        return this;
+    }
+
     @Override
     public Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
@@ -683,13 +698,13 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
         Class<?> handlerClass = messageHandler.get().getClass();
-        if (isCommandHandler(handlerClass)){
+        if (isCommandHandler(handlerClass)) {
             registerCommandHandler(c -> messageHandler.get());
         }
-        if (isEventHandler(handlerClass)){
+        if (isEventHandler(handlerClass)) {
             eventProcessing().registerEventHandler(c -> messageHandler.get());
         }
-        if (isQueryHandler(handlerClass)){
+        if (isQueryHandler(handlerClass)) {
             registerQueryHandler(c -> messageHandler.get());
         }
         return this;
@@ -749,6 +764,7 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
+            invokeDecoratorHandlers();
             prepareMessageHandlerRegistrars();
             invokeInitHandlers();
         }
@@ -790,6 +806,10 @@ public class DefaultConfigurer implements Configurer {
     protected void invokeInitHandlers() {
         initialized = true;
         initHandlers.forEach(h -> h.accept(config));
+    }
+
+    protected void invokeDecoratorHandlers() {
+        decoratorHandlers.forEach(h -> h.run());
     }
 
     /**
@@ -865,7 +885,8 @@ public class DefaultConfigurer implements Configurer {
                         lifecycleState.description, currentLifecyclePhase
                 ));
             } catch (TimeoutException e) {
-            	final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
+                final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout,
+                                                                                     lifecyclePhaseTimeunit);
                 logger.warn(String.format(
                         "Timed out during %s phase [%d] after %d second(s). Proceeding to following phase",
                         lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds
