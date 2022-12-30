@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.modelling.saga.StartSaga;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Test saga used by the {@link CachingIntegrationTestSuite}.
@@ -32,17 +33,33 @@ public class CachedSaga {
 
     private String name;
     private List<Object> state;
+    private int numberOfAssociations;
+    private Random random;
+    private Integer associationToRemove;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "id")
     public void on(SagaCreatedEvent event) {
         this.name = event.name;
         this.state = new ArrayList<>();
+        this.numberOfAssociations = event.numberOfAssociations;
+        this.random = new Random();
+
+        for (int i = 0; i < numberOfAssociations; i++) {
+            SagaLifecycle.associateWith(event.id + i, i);
+        }
     }
 
     @SagaEventHandler(associationProperty = "id")
     public void on(VeryImportantEvent event) {
         state.add(event.stateEntry);
+        if (associationToRemove == null) {
+            associationToRemove = random.nextInt(numberOfAssociations);
+            SagaLifecycle.removeAssociationWith(event.id + associationToRemove, associationToRemove);
+        } else {
+            SagaLifecycle.associateWith(event.id + associationToRemove, associationToRemove);
+            associationToRemove = null;
+        }
     }
 
     @SagaEventHandler(associationProperty = "id")
@@ -65,10 +82,12 @@ public class CachedSaga {
 
         private final String id;
         private final String name;
+        private final int numberOfAssociations;
 
-        public SagaCreatedEvent(String id, String name) {
+        public SagaCreatedEvent(String id, String name, int numberOfAssociations) {
             this.id = id;
             this.name = name;
+            this.numberOfAssociations = numberOfAssociations;
         }
 
         public String getId() {

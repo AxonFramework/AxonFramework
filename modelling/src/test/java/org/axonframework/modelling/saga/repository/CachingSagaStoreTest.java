@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.saga.repository;
 
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValuesImpl;
@@ -25,7 +26,12 @@ import org.mockito.*;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
@@ -176,5 +182,41 @@ public abstract class CachingSagaStoreTest {
         testSubject.deleteSaga(StubSaga.class, testSagaId, singleton(testAssociationValue));
         assertFalse(sagaCache.containsKey(testSagaId));
         assertFalse(associationsCache.containsKey(expectedAssociationKey));
+    }
+
+    @Test
+    void canHandleConcurrentReadsAndWrites() {
+        int concurrentOperations = 64;
+
+        AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
+        Set<AssociationValue> associationValues = singleton(associationValue);
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+
+        try {
+            IntStream.range(0, concurrentOperations)
+                     .mapToObj(i -> CompletableFuture.runAsync(
+                             () -> {
+                                 try {
+                                     String sagaId = IdentifierFactory.getInstance().generateIdentifier();
+
+                                     testSubject.insertSaga(
+                                             StubSaga.class, sagaId, mock(StubSaga.class), associationValues
+                                     );
+                                     testSubject.findSagas(StubSaga.class, associationValue);
+                                     testSubject.deleteSaga(
+                                             StubSaga.class, sagaId, associationValues
+                                     );
+                                 } catch (Exception e) {
+                                     throw new RuntimeException(e);
+                                 }
+                             },
+                             executor
+                     ))
+                     .reduce(CompletableFuture::allOf)
+                     .orElse(CompletableFuture.completedFuture(null))
+                     .get(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        }
     }
 }

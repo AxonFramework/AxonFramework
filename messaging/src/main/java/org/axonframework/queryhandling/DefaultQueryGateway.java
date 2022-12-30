@@ -83,6 +83,11 @@ public class DefaultQueryGateway implements QueryGateway {
         CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
                 .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
         CompletableFuture<R> result = new CompletableFuture<>();
+        result.whenComplete((r, e) -> {
+            if (!queryResponse.isDone()) {
+                queryResponse.cancel(true);
+            }
+        });
         queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
                      .thenAccept(queryResponseMessage -> {
                          try {
