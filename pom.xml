@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <xstream.version>1.4.19</xstream.version>
+        <xstream.version>1.4.20</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.8</felix.maven-bundle-plugin.version>
