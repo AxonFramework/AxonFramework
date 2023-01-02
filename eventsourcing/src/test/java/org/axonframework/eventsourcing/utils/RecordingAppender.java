@@ -34,22 +34,28 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Custom {@link Appender} used for validating log statements.
+ * Recording {@link Appender} used for validating log statements.
+ * <p>
+ * Users should invoke {@link RecordingAppender#record()} at, for example, the start of a test case. When validation is
+ * needed the logs can be retrieved through {@link RecordingAppender#stopRecording()}.
  *
  * @author Steven van Beelen
  */
 @Plugin(
-        name = "InMemoryAppender",
+        name = "RecordingAppender",
         category = Core.CATEGORY_NAME,
         elementType = Appender.ELEMENT_TYPE
 )
-public class InMemoryAppender extends AbstractAppender {
+public class RecordingAppender extends AbstractAppender {
 
-    public static final boolean DO_NOT_USE_CURRENT_CONTEXT = false;
+    private static final boolean DO_NOT_USE_CURRENT_CONTEXT = false;
+
     private final List<LogEvent> logEvents;
 
+    private boolean recording;
+
     /**
-     * Constructs a {@link InMemoryAppender} based on the given {@code name} and {@code filter}.
+     * Constructs a {@link RecordingAppender} based on the given {@code name} and {@code filter}.
      * <p>
      * Will default the {@link org.apache.logging.log4j.core.Layout} to {@code null}, it sets {@code ignoreExceptions}
      * to {@code false}, and it defines the {@link Property Property array} as {@code null}.
@@ -57,21 +63,24 @@ public class InMemoryAppender extends AbstractAppender {
      * @param name   The name of this {@link Appender}.
      * @param filter The filter used by this {@link Appender}.
      */
-    protected InMemoryAppender(String name, Filter filter) {
+    protected RecordingAppender(String name, Filter filter) {
         super(name, filter, null, DO_NOT_USE_CURRENT_CONTEXT, null);
         logEvents = new CopyOnWriteArrayList<>();
+        recording = false;
     }
 
     @SuppressWarnings("unused") // Suppressed since used by Log4J.
     @PluginFactory
-    public static InMemoryAppender createAppender(@PluginAttribute("name") String name,
-                                                  @PluginElement("Filter") Filter filter) {
-        return new InMemoryAppender(name, filter);
+    public static RecordingAppender createAppender(@PluginAttribute("name") String name,
+                                                   @PluginElement("Filter") Filter filter) {
+        return new RecordingAppender(name, filter);
     }
 
     @Override
     public void append(LogEvent event) {
-        logEvents.add(event);
+        if (recording) {
+            logEvents.add(event);
+        }
     }
 
     /**
@@ -84,28 +93,47 @@ public class InMemoryAppender extends AbstractAppender {
     }
 
     /**
-     * Clear the {@link #getLogEvents() logs} of the {@link InMemoryAppender}.
-     * <p>
-     * Use this to ensure a test starts with a clean log.
+     * Start recording {@link LogEvent LogEvents} by this {@link Appender}.
      */
-    public static void clearLogs() {
-        LoggerContext context = LoggerContext.getContext(DO_NOT_USE_CURRENT_CONTEXT);
-        Configuration configuration = context.getConfiguration();
-        InMemoryAppender inMemoryAppender = configuration.getAppender("InMemoryAppender");
-        inMemoryAppender.getLogEvents().clear();
+    public void startRecording() {
+        recording = true;
     }
 
     /**
-     * Return the {@link LogEvent LogEvents} the {@link InMemoryAppender} has
-     * {@link Appender#append(LogEvent) appended}.
-     *
-     * @return The {@link LogEvent LogEvents} the {@link InMemoryAppender} has
-     * {@link Appender#append(LogEvent) appended}.
+     * Clear the logs and stop recording of {@link LogEvent LogEvents} by this {@link Appender}.
      */
-    public static List<LogEvent> logEvents() {
+    public void clear() {
+        recording = false;
+        logEvents.clear();
+    }
+
+    /**
+     * Clear the {@link #getLogEvents() logs} of the {@link RecordingAppender}.
+     * <p>
+     * Use this to ensure a test starts with a clean log.
+     */
+    public static void record() {
         LoggerContext context = LoggerContext.getContext(DO_NOT_USE_CURRENT_CONTEXT);
         Configuration configuration = context.getConfiguration();
-        InMemoryAppender inMemoryAppender = configuration.getAppender("InMemoryAppender");
-        return new ArrayList<>(inMemoryAppender.getLogEvents());
+        RecordingAppender recordingAppender = configuration.getAppender("RecordingAppender");
+        recordingAppender.startRecording();
+    }
+
+    /**
+     * Stop the recording by the {@link RecordingAppender}.
+     * <p>
+     * Returns the {@link LogEvent LogEvents} recorded through {@link Appender#append(LogEvent) appending}. May only
+     * contain logs if {@link RecordingAppender#record()} was invoked first.
+     *
+     * @return The {@link LogEvent LogEvents} the {@link RecordingAppender} has
+     * {@link Appender#append(LogEvent) appended}.
+     */
+    public static List<LogEvent> stopRecording() {
+        LoggerContext context = LoggerContext.getContext(DO_NOT_USE_CURRENT_CONTEXT);
+        Configuration configuration = context.getConfiguration();
+        RecordingAppender recordingAppender = configuration.getAppender("RecordingAppender");
+        List<LogEvent> logs = new ArrayList<>(recordingAppender.getLogEvents());
+        recordingAppender.clear();
+        return logs;
     }
 }

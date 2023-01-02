@@ -16,13 +16,14 @@
 
 package org.axonframework.eventsourcing;
 
+import org.apache.logging.log4j.core.LogEvent;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.utils.InMemoryAppender;
+import org.axonframework.eventsourcing.utils.RecordingAppender;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
@@ -55,7 +57,6 @@ class AbstractSnapshotterTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        InMemoryAppender.clearLogs();
         mockEventStore = mock(EventStore.class);
         spanFactory = new TestSpanFactory();
         testSubject = TestSnapshotter.builder()
@@ -129,6 +130,8 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
+        RecordingAppender.record();
+
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing().doThrow(new ConcurrencyException("Mock"))
                    .when(mockEventStore).storeSnapshot(isA(DomainEventMessage.class));
@@ -139,7 +142,8 @@ class AbstractSnapshotterTest {
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, times(2)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
 
-        assertTrue(InMemoryAppender.logEvents().isEmpty());
+        List<LogEvent> logEvents = RecordingAppender.stopRecording();
+        assertTrue(logEvents.isEmpty());
     }
 
     @Test
