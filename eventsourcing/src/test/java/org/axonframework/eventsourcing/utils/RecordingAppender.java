@@ -32,11 +32,13 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 /**
  * Recording {@link Appender} used for validating log statements.
  * <p>
- * Users should invoke {@link RecordingAppender#record()} at, for example, the start of a test case. When validation is
+ * Users should invoke {@link RecordingAppender#startRecording(Predicate)} at, for example, the start of a test case.
+ * When validation is
  * needed the logs can be retrieved through {@link RecordingAppender#stopRecording()}.
  *
  * @author Steven van Beelen
@@ -48,11 +50,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 )
 public class RecordingAppender extends AbstractAppender {
 
-    private static final boolean DO_NOT_USE_CURRENT_CONTEXT = false;
+    private static final Predicate<LogEvent> RECORDING_OFF = e -> false;
 
-    private final List<LogEvent> logEvents;
+    private final List<LogEvent> logEvents = new CopyOnWriteArrayList<>();
 
-    private boolean recording;
+    private volatile Predicate<LogEvent> recordingFilter;
 
     /**
      * Constructs a {@link RecordingAppender} based on the given {@code name} and {@code filter}.
@@ -64,9 +66,8 @@ public class RecordingAppender extends AbstractAppender {
      * @param filter The filter used by this {@link Appender}.
      */
     protected RecordingAppender(String name, Filter filter) {
-        super(name, filter, null, DO_NOT_USE_CURRENT_CONTEXT, null);
-        logEvents = new CopyOnWriteArrayList<>();
-        recording = false;
+        super(name, filter, null, false, null);
+        recordingFilter = RECORDING_OFF;
     }
 
     @SuppressWarnings("unused") // Suppressed since used by Log4J.
@@ -76,64 +77,50 @@ public class RecordingAppender extends AbstractAppender {
         return new RecordingAppender(name, filter);
     }
 
-    @Override
-    public void append(LogEvent event) {
-        if (recording) {
-            logEvents.add(event);
-        }
+    /**
+     * Retrieves the RecordingAppender from the log4j configuration, if present.
+     * <p>
+     * Note that the appender should be named {@code RECORD}.
+     *
+     * @return The RecordingAppender in the log4j configuration, or {@code null} if not present.
+     */
+    public static RecordingAppender getInstance() {
+        LoggerContext context = LoggerContext.getContext(false);
+        Configuration configuration = context.getConfiguration();
+        return configuration.getAppender("RECORD");
     }
 
-    /**
-     * Return the {@link LogEvent LogEvents} this {@link Appender} has {@link Appender#append(LogEvent) added}.
-     *
-     * @return The {@link LogEvent LogEvents} this {@link Appender} has {@link Appender#append(LogEvent) added}.
-     */
-    public List<LogEvent> getLogEvents() {
-        return logEvents;
+    @Override
+    public void append(LogEvent event) {
+        if (recordingFilter.test(event)) {
+            logEvents.add(event.toImmutable());
+        }
     }
 
     /**
      * Start recording {@link LogEvent LogEvents} by this {@link Appender}.
      */
-    public void startRecording() {
-        recording = true;
-    }
-
-    /**
-     * Clear the logs and stop recording of {@link LogEvent LogEvents} by this {@link Appender}.
-     */
-    public void clear() {
-        recording = false;
+    public void startRecording(Predicate<LogEvent> filter) {
+        if (recordingFilter != RECORDING_OFF) {
+            throw new IllegalStateException("Recording already started");
+        }
         logEvents.clear();
-    }
-
-    /**
-     * Clear the {@link #getLogEvents() logs} of the {@link RecordingAppender}.
-     * <p>
-     * Use this to ensure a test starts with a clean log.
-     */
-    public static void record() {
-        LoggerContext context = LoggerContext.getContext(DO_NOT_USE_CURRENT_CONTEXT);
-        Configuration configuration = context.getConfiguration();
-        RecordingAppender recordingAppender = configuration.getAppender("RecordingAppender");
-        recordingAppender.startRecording();
+        this.recordingFilter = filter;
     }
 
     /**
      * Stop the recording by the {@link RecordingAppender}.
      * <p>
-     * Returns the {@link LogEvent LogEvents} recorded through {@link Appender#append(LogEvent) appending}. May only
-     * contain logs if {@link RecordingAppender#record()} was invoked first.
+     * Returns the {@link LogEvent LogEvents} recorded through {@link Appender#append(LogEvent) appending}.
      *
      * @return The {@link LogEvent LogEvents} the {@link RecordingAppender} has
      * {@link Appender#append(LogEvent) appended}.
      */
-    public static List<LogEvent> stopRecording() {
-        LoggerContext context = LoggerContext.getContext(DO_NOT_USE_CURRENT_CONTEXT);
-        Configuration configuration = context.getConfiguration();
-        RecordingAppender recordingAppender = configuration.getAppender("RecordingAppender");
-        List<LogEvent> logs = new ArrayList<>(recordingAppender.getLogEvents());
-        recordingAppender.clear();
+    public List<LogEvent> stopRecording() {
+        recordingFilter = RECORDING_OFF;
+        List<LogEvent> logs = new ArrayList<>(logEvents);
+        logEvents.clear();
         return logs;
     }
+
 }

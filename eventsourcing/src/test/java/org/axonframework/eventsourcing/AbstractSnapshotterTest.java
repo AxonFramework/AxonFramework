@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -31,19 +32,34 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 
+import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
 
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link AbstractSnapshotter}.
@@ -130,7 +146,8 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
-        RecordingAppender.record();
+        RecordingAppender recordingAppender = RecordingAppender.getInstance();
+        recordingAppender.startRecording(e -> e.getLevel().isMoreSpecificThan(Level.WARN));
 
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing().doThrow(new ConcurrencyException("Mock"))
@@ -142,8 +159,8 @@ class AbstractSnapshotterTest {
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, times(2)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
 
-        List<LogEvent> logEvents = RecordingAppender.stopRecording();
-        assertTrue(logEvents.isEmpty());
+        List<LogEvent> logEvents = recordingAppender.stopRecording();
+        assertEquals(Collections.emptyList(), logEvents);
     }
 
     @Test
