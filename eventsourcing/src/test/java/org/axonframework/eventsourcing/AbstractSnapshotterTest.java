@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.utils.InMemoryAppender;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -47,12 +48,14 @@ import static org.mockito.Mockito.*;
  */
 class AbstractSnapshotterTest {
 
-    private AbstractSnapshotter testSubject;
     private EventStore mockEventStore;
     private TestSpanFactory spanFactory;
 
+    private AbstractSnapshotter testSubject;
+
     @BeforeEach
     void setUp() throws Exception {
+        InMemoryAppender.clearLogs();
         mockEventStore = mock(EventStore.class);
         spanFactory = new TestSpanFactory();
         testSubject = TestSnapshotter.builder()
@@ -135,6 +138,8 @@ class AbstractSnapshotterTest {
 
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, times(2)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
+
+        assertTrue(InMemoryAppender.logEvents().isEmpty());
     }
 
     @Test
