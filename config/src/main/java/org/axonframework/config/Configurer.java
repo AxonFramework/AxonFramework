@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
@@ -475,6 +476,24 @@ public interface Configurer extends LifecycleOperations {
      */
     Configurer registerHandlerDefinition(
             @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
+
+    /**
+     * Registers a builder function for a {@link HandlerEnhancerDefinition} used during constructing of the default
+     * {@link HandlerDefinition}.
+     * <p>
+     * Any number of handler enhancer builder functions can be registered through this method. Note that any
+     * {@code HandlerEnhancerDefinitions} registered through this method are <b>ignored</b> for handlers matching the
+     * type used in the {@link #registerHandlerDefinition(BiFunction)} method's lambda.
+     *
+     * @param handlerEnhancerBuilder A lambda constructing a {@link HandlerEnhancerDefinition} based on the
+     *                               {@link Configuration}.
+     * @return The current instance of the {@link Configurer}, for chaining purposes.
+     */
+    default Configurer registerHandlerEnhancerDefinition(
+            Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
+    ) {
+        return this;
+    }
 
     /**
      * Registers a {@link Snapshotter} instance with this {@link Configurer}. Defaults to a {@link
