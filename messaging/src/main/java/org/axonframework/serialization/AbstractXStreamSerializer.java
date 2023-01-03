@@ -86,6 +86,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.alias("deadline", GenericDeadlineMessage.class);
         xStream.alias("meta-data", MetaData.class);
         xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
+        xStream.registerConverter(new GapAwareTrackingTokenConverter(xStream.getMapper()));
 
         xStream.addImmutableType(UUID.class, true);
         // For backward compatibility
