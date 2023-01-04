@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.clock;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
@@ -222,7 +223,7 @@ public class JpaTokenStore implements TokenStore {
                                    .setParameter("processorName", processorName)
                                    .setParameter("segment", segment)
                                    .setParameter("owner", nodeId)
-                                   .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
+                                   .setParameter("timestamp", formatInstant(clock.instant()))
                                    .executeUpdate();
 
         if (updates == 0) {
