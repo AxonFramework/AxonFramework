@@ -489,11 +489,9 @@ public interface Configurer extends LifecycleOperations {
      *                               {@link Configuration}.
      * @return The current instance of the {@link Configurer}, for chaining purposes.
      */
-    default Configurer registerHandlerEnhancerDefinition(
+    Configurer registerHandlerEnhancerDefinition(
             Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
-    ) {
-        return this;
-    }
+    );
 
     /**
      * Registers a {@link Snapshotter} instance with this {@link Configurer}. Defaults to a {@link
