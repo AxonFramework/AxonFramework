@@ -58,6 +58,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
     private static final String COMMAND_TARGET_RESOLVER = "commandTargetResolver";
     private static final String CACHE = "cache";
     private static final String LOCK_FACTORY = "lockFactory";
+    private static final String IDEMPOTENT = "idempotent";
 
     /**
      * Builds a hierarchy model from the given {@code aggregatePrototypes} found in the given {@code beanFactory}.
@@ -213,6 +214,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             );
         }
         beanDefinitionBuilder.addPropertyValue("aggregateFactory", aggregateFactory);
+        beanDefinitionBuilder.addPropertyValue(IDEMPOTENT, props.get(IDEMPOTENT));
         return beanDefinitionBuilder.getBeanDefinition();
     }
 

@@ -85,6 +85,8 @@ public @interface Aggregate {
      */
     boolean filterEventsByType() default false;
 
+    boolean idempotent() default false;
+
     /**
      * Sets the name of the bean providing the {@link org.axonframework.common.caching.Cache caching}. If none is
      * provided, no cache is created, unless explicitly configured on the referenced repository.

@@ -72,6 +72,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private final RepositoryProvider repositoryProvider;
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;
+    private final boolean idempotent;
     private T aggregateRoot;
     private boolean applying = false;
     private boolean executingDelayedTasks = false;
@@ -107,6 +108,14 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         this.aggregateRoot = aggregateRoot;
     }
 
+    protected AnnotatedAggregate(T aggregateRoot,
+                                 AggregateModel<T> model,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider, boolean idempotent) {
+        this(model, eventBus, repositoryProvider, idempotent);
+        this.aggregateRoot = aggregateRoot;
+    }
+
     /**
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given {@code
      * aggregateModel} that will publish events to the given {@code eventBus}.
@@ -129,9 +138,17 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     protected AnnotatedAggregate(AggregateModel<T> inspector,
                                  EventBus eventBus,
                                  RepositoryProvider repositoryProvider) {
+        this(inspector, eventBus, repositoryProvider, false);
+    }
+
+    protected AnnotatedAggregate(AggregateModel<T> inspector,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider,
+                                 boolean idempotent) {
         this.inspector = inspector;
         this.eventBus = eventBus;
         this.repositoryProvider = repositoryProvider;
+        this.idempotent = idempotent;
     }
 
     /**
@@ -358,6 +375,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public Class<? extends T> rootType() {
         return (Class<? extends T>) aggregateRoot.getClass();
+    }
+
+    public boolean isIdempotent() {
+        return idempotent;
     }
 
     @Override
