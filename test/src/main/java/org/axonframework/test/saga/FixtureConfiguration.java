@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -187,6 +188,23 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerDeadlineHandlerInterceptor(
             MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor
     );
+
+    /**
+     * Registers a {@link MessageHandlerInterceptor} for {@link EventMessage EventMessages}.
+     * <p>
+     * Will always be invoked before an event is handled to perform a task specified in the interceptor. Interceptors
+     * are invoked in the order they have been registered in.
+     *
+     * @param eventHandlerInterceptor the interceptor for handling {@link EventMessage EventMessages}
+     * @return The current {@link FixtureConfiguration}, for fluent interfacing.
+     */
+    default FixtureConfiguration registerEventHandlerInterceptor(
+            MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptor
+    ) {
+        throw new UnsupportedOperationException(
+                "The FixtureConfiguration implementation does not support this operation"
+        );
+    }
 
     /**
      * Registers a callback to be invoked when the fixture execution starts recording. This happens right before
