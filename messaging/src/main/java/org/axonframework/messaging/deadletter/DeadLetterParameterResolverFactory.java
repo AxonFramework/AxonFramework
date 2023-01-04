@@ -41,6 +41,9 @@ import java.lang.reflect.Parameter;
  */
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
 
+    /**
+     * Constant referring to the current {@link DeadLetter} within the {@link UnitOfWork#resources()}.
+     */
     public static final String CURRENT_DEAD_LETTER = "___Axon_Current_Dead_Letter";
 
     @Override
