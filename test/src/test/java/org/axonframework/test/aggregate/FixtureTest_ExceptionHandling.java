@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,6 +148,26 @@ class FixtureTest_ExceptionHandling {
         );
     }
 
+    @Test
+    void expectUncheckedExceptionsDuringAggregateConstructorCommandHandler() {
+        boolean throwUncheckedException = true;
+        boolean doNotThrowCheckedException = false;
+
+        fixture.givenCommands()
+               .when(new CreateMyAggregateCommand("14", doNotThrowCheckedException, throwUncheckedException))
+               .expectException(RuntimeException.class);
+    }
+
+    @Test
+    void expectCheckedExceptionsDuringAggregateConstructorCommandHandler() {
+        boolean doNoThrowUncheckedException = false;
+        boolean throwCheckedException = true;
+
+        fixture.givenCommands()
+               .when(new CreateMyAggregateCommand("14", throwCheckedException, doNoThrowUncheckedException))
+               .expectException(CheckedException.class);
+    }
+
     private static abstract class AbstractMyAggregateCommand {
 
         @TargetAggregateIdentifier
@@ -160,8 +180,19 @@ class FixtureTest_ExceptionHandling {
 
     private static class CreateMyAggregateCommand extends AbstractMyAggregateCommand {
 
+        private final boolean shouldThrowCheckedException;
+        private final boolean shouldThrowUncheckedException;
+
         protected CreateMyAggregateCommand(String id) {
+            this(id, false, false);
+        }
+
+        protected CreateMyAggregateCommand(String id,
+                                           boolean shouldThrowCheckedException,
+                                           boolean shouldThrowUncheckedException) {
             super(id);
+            this.shouldThrowCheckedException = shouldThrowCheckedException;
+            this.shouldThrowUncheckedException = shouldThrowUncheckedException;
         }
     }
 
@@ -212,7 +243,13 @@ class FixtureTest_ExceptionHandling {
         }
 
         @CommandHandler
-        public MyAggregate(CreateMyAggregateCommand cmd) {
+        public MyAggregate(CreateMyAggregateCommand cmd) throws CheckedException {
+            if (cmd.shouldThrowCheckedException) {
+                throw new CheckedException();
+            }
+            if (cmd.shouldThrowUncheckedException) {
+                throw new RuntimeException();
+            }
             apply(new MyAggregateCreatedEvent(cmd.id));
         }
 
@@ -235,5 +272,9 @@ class FixtureTest_ExceptionHandling {
         private void on(MyAggregateCreatedEvent event) {
             this.id = event.id;
         }
+    }
+
+    private static class CheckedException extends Exception {
+
     }
 }
