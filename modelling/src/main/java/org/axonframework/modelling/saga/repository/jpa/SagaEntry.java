@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 /**
@@ -26,18 +31,33 @@ import org.axonframework.serialization.Serializer;
  * @since 0.7
  */
 @Entity
-public class SagaEntry<T> extends AbstractSagaEntry<byte[]> {
+public class SagaEntry<T> {
+
+    @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
+    @Id
+    protected String sagaId; // NOSONAR
+    @Basic
+    protected String sagaType;
+    @Basic
+    protected String revision;
+    @Lob
+    @Column(length = 10000)
+    protected byte[] serializedSaga;
 
     /**
-     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
-     * saga is not modified by this operation.
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided saga is
+     * not modified by this operation.
      *
      * @param saga           The saga to store
      * @param sagaIdentifier The saga identifier
      * @param serializer     The serialization mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
-        super(saga, sagaIdentifier, serializer, byte[].class);
+        this.sagaId = sagaIdentifier;
+        SerializedObject<byte[]> serialized = serializer.serialize(saga, byte[].class);
+        this.serializedSaga = serialized.getData();
+        this.sagaType = serialized.getType().getName();
+        this.revision = serialized.getType().getRevision();
     }
 
     /**
@@ -49,4 +69,39 @@ public class SagaEntry<T> extends AbstractSagaEntry<byte[]> {
         // required by JPA
     }
 
+    /**
+     * Returns the serialized form of the Saga.
+     *
+     * @return the serialized form of the Saga
+     */
+    public byte[] getSerializedSaga() {
+        return serializedSaga; //NOSONAR
+    }
+
+    /**
+     * Returns the identifier of the saga contained in this entry
+     *
+     * @return the identifier of the saga contained in this entry
+     */
+    public String getSagaId() {
+        return sagaId;
+    }
+
+    /**
+     * Returns the revision of the serialized saga
+     *
+     * @return the revision of the serialized saga
+     */
+    public String getRevision() {
+        return revision;
+    }
+
+    /**
+     * Returns the type identifier of the serialized saga
+     *
+     * @return the type identifier of the serialized saga
+     */
+    public String getSagaType() {
+        return sagaType;
+    }
 }
