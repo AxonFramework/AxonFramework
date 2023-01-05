@@ -510,7 +510,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     /**
      * Makes sure the execution phase has finishes without any Errors ir FixtureExecutionExceptions. If an error was
-     * recorded, it will be thrown immediately. This allow one to distinguish between failed tests, and tests in error.
+     * recorded, it will be thrown immediately. This allows one to distinguish between failed tests, and tests in error.
      */
     public void assertValidRecording() {
         if (actualException instanceof Error) {

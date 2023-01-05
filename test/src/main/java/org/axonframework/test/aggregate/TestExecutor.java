@@ -47,14 +47,14 @@ public interface TestExecutor<T> {
     ResultValidator<T> when(Object command);
 
     /**
-     * Dispatches the given command and meta data to the appropriate command handler and records all
+     * Dispatches the given command and meta-data to the appropriate command handler and records all
      * activity in the fixture for result validation. If the given {@code command} is a {@link
      * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is, with given
      * additional {@code metaData}. Any other object will cause the given {@code command} to be wrapped in a
      * {@code CommandMessage} as its payload.
      *
      * @param command  The command to execute
-     * @param metaData The meta data to attach to the
+     * @param metaData The meta-data to attach to the
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution
      */
     ResultValidator<T> when(Object command, Map<String, ?> metaData);
@@ -64,8 +64,8 @@ public interface TestExecutor<T> {
      * store when an aggregate is loaded.
      * <p/>
      * If an item in the given {@code domainEvents} implements {@link Message}, the
-     * payload and meta data from that message are copied into a newly created Domain Event Message. Otherwise, a
-     * Domain Event Message with the item as payload and empty meta data is created.
+     * payload and meta-data from that message are copied into a newly created Domain Event Message. Otherwise, a
+     * Domain Event Message with the item as payload and empty meta-data is created.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
@@ -76,9 +76,9 @@ public interface TestExecutor<T> {
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
-     * If an item in the list implements {@link Message}, the payload and meta data from that
+     * If an item in the list implements {@link Message}, the payload and meta-data from that
      * message are copied into a newly created Domain Event Message. Otherwise, a Domain Event Message with the item
-     * as payload and empty meta data is created.
+     * as payload and empty meta-data is created.
      *
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
@@ -153,7 +153,7 @@ public interface TestExecutor<T> {
      * Simulates the time elapsing in the current given state using a {@link Duration} as the unit of time. This can be
      * useful when the time between given events is of importance, for example when leveraging the
      * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     *
+     * <p>
      * Note: As this method is added to the interface as a replacement for the deprecated
      * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
      * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
@@ -200,7 +200,7 @@ public interface TestExecutor<T> {
      * Simulates the time advancing in the current given state using an {@link Instant} as the unit of time. This can be
      * useful when the time between given events is of importance, for example when leveraging the
      * {@link org.axonframework.deadline.DeadlineManager} to schedule deadlines in the context of a given Aggregate.
-     *
+     * <p>
      * Note: As this method is added to the interface as a replacement for the deprecated
      * {@link #whenThenTimeAdvancesTo(Instant)} method, and in case there are other implementations by 3rd party
      * libraries, this method is changed to a default method that rely on the deprecated method so that there is no
