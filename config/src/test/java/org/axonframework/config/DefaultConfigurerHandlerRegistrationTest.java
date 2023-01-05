@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.queryhandling.QueryHandler;
 import org.junit.jupiter.api.*;
 
@@ -26,13 +28,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the correct registration of command, query and overall message handling beans, through the
- * {@link Configurer#registerCommandHandler(Function)}, {@link Configurer#registerQueryHandler(Function)} and {@link
- * Configurer#registerMessageHandler(Function)} methods.
+ * {@link Configurer#registerCommandHandler(Function)}, {@link Configurer#registerQueryHandler(Function)} and
+ * {@link Configurer#registerMessageHandler(Function)} methods.
  *
  * @author Steven van Beelen
  */
@@ -99,6 +102,40 @@ class DefaultConfigurerHandlerRegistrationTest {
 
         assertSame(queryHandled.get(), eventHandled.get());
         assertSame(queryHandled.get(), commandHandled.get());
+    }
+
+    @Test
+    void registeredHandlerEnhancerDefinitionsAreInvoked() {
+        AtomicBoolean handled = new AtomicBoolean(false);
+        AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
+        AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
+        Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
+                                             .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
+                                                 @Override
+                                                 public <T> MessageHandlingMember<T> wrapHandler(
+                                                         @Nonnull MessageHandlingMember<T> original
+                                                 ) {
+                                                     firstEnhancerInvoked.set(true);
+                                                     return original;
+                                                 }
+                                             })
+                                             .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
+                                                 @Override
+                                                 public <T> MessageHandlingMember<T> wrapHandler(
+                                                         @Nonnull MessageHandlingMember<T> original
+                                                 ) {
+                                                     secondEnhancerInvoked.set(true);
+                                                     return original;
+                                                 }
+                                             })
+                                             .start();
+
+        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand());
+
+        assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
+        assertTrue(handled.get());
+        assertTrue(firstEnhancerInvoked.get());
+        assertTrue(secondEnhancerInvoked.get());
     }
 
     private static class SomeCommand {

@@ -17,12 +17,17 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.config.MessageHandlerLookup;
@@ -46,7 +51,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -172,6 +179,27 @@ class InfraConfigurationTest {
 
             SpringConfigurer result = context.getBean(SpringConfigurer.class);
             assertThat(result).isInstanceOf(CustomizedConfigurerContext.CustomSpringConfigurer.class);
+        });
+    }
+
+    @Test
+    void configurerModuleRegisteredHandlerEnhancersAreIncluded() {
+        testApplicationContext.withUserConfiguration(HandlerEnhancerConfigurerModuleContext.class).run(context -> {
+            assertThat(context).hasBean("handlerInvoked")
+                               .isNotNull();
+            AtomicBoolean handlerInvoked = context.getBean("handlerInvoked", AtomicBoolean.class);
+
+            assertThat(context).hasBean("enhancerInvoked")
+                               .isNotNull();
+            AtomicBoolean enhancerInvoked = context.getBean("enhancerInvoked", AtomicBoolean.class);
+
+            assertThat(context).hasSingleBean(HandlerEnhancerConfigurerModuleContext.CommandHandlingComponent.class);
+            assertThat(handlerInvoked).isFalse();
+            assertThat(enhancerInvoked).isTrue();
+
+            context.getBean("commandGateway", CommandGateway.class).send(new Object());
+            assertThat(handlerInvoked).isTrue();
+            assertThat(enhancerInvoked).isTrue();
         });
     }
 
@@ -321,6 +349,49 @@ class InfraConfigurationTest {
         @Bean
         public CustomSpringConfigurer customSpringConfigurer(ConfigurableListableBeanFactory beanFactory) {
             return new CustomSpringConfigurer(beanFactory);
+        }
+    }
+
+    static class HandlerEnhancerConfigurerModuleContext {
+
+        @Bean
+        public AtomicBoolean handlerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        public CommandHandlingComponent commandHandlingComponent(AtomicBoolean handlerInvoked) {
+            return new CommandHandlingComponent(handlerInvoked);
+        }
+
+        @Bean
+        public AtomicBoolean enhancerInvoked() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        public ConfigurerModule handlerEnhancerConfigurerModule(AtomicBoolean enhancerInvoked) {
+            return configurer -> configurer.registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
+                @Override
+                public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+                    enhancerInvoked.set(true);
+                    return original;
+                }
+            });
+        }
+
+        static class CommandHandlingComponent {
+
+            private final AtomicBoolean handlerInvoked;
+
+            public CommandHandlingComponent(AtomicBoolean handlerInvoked) {
+                this.handlerInvoked = handlerInvoked;
+            }
+
+            @CommandHandler
+            public void handle(Object command) {
+                handlerInvoked.set(true);
+            }
         }
     }
 }
