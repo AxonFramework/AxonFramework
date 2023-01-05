@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,6 +463,39 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
+        return when(resultValidator -> {
+            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
+                                                                         .andMetaData(metaData);
+            commandBus.dispatch(commandMessage, resultValidator);
+        });
+    }
+
+    @Override
+    public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.newInstance(aggregateFactory);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    @Override
+    public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.load(aggregateId)
+                          .execute(aggregateSupplier);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    private ResultValidator<T> when(Consumer<ResultValidatorImpl<T>> whenPhase) {
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
@@ -470,8 +503,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                            () -> repository.getAggregate(),
                                                                            deadlineManager);
 
-        CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command).andMetaData(metaData);
-        executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, resultValidator));
+        executeAtSimulatedTime(() -> whenPhase.accept(resultValidator));
 
         if (!repository.rolledBack) {
             Aggregate<T> workingAggregate = repository.aggregate;

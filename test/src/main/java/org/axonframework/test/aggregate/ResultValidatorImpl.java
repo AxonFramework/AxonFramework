@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -493,10 +493,19 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public void onResult(@Nonnull CommandMessage<?> commandMessage,
                          @Nonnull CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
-            actualException = commandResultMessage.exceptionResult();
+            recordException(commandResultMessage.exceptionResult());
         } else {
             actualReturnValue = commandResultMessage;
         }
+    }
+
+    /**
+     * Record the given {@code exception} as a result of this validator.
+     *
+     * @param exception The exception to record as a result of this validator.
+     */
+    public void recordException(Throwable exception) {
+        this.actualException = exception;
     }
 
     /**

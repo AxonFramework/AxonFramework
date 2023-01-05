@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on a test fixture in the execution stage. In this stage, there is only
@@ -212,4 +214,41 @@ public interface TestExecutor<T> {
         return whenThenTimeAdvancesTo(newPointInTime);
     }
 
+    /**
+     * Invokes the given {@code aggregateFactory} expecting an aggregate instance of type {@code T} to be returned.
+     * <p>
+     * All activity is recorded in the fixture for result validation. The {@code aggregateFactory} typically refers to
+     * one of the aggregate's constructors.
+     * <p>
+     * You should use this when-phase operation whenever you do not use the
+     * {@link org.axonframework.commandhandling.CommandHandler} annotation on the aggregate's methods, nor have
+     * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
+     * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @param aggregateFactory A callable operation expecting an aggregate instance of type {@code T} to be returned.
+     *                         This typically is an aggregate constructor invocation.
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of executing the given
+     * {@code aggregateFactory}.
+     */
+    ResultValidator<T> whenConstructing(Callable<T> aggregateFactory);
+
+    /**
+     * Invokes the given {@code aggregateConsumer} after loading an aggregate of type {@code T} based on the given
+     * {@code aggregateIdentifier}.
+     * <p>
+     * All activity is recorded in the fixture for result validation.
+     * <p>
+     * You should use this when-phase operation whenever you do not use the
+     * {@link org.axonframework.commandhandling.CommandHandler} annotation on the aggregate's methods, nor have
+     * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
+     * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to
+     *                            {@link org.axonframework.modelling.command.Repository#load(String)}.
+     * @param aggregateConsumer   A lambda providing an aggregate instance of type {@code T} based on the given
+     *                            {@code aggregateIdentifier}.
+     * @return a {@link ResultValidator} that can be used to validate the resulting actions of executing the given
+     * {@code aggregateConsumer}.
+     */
+    ResultValidator<T> whenInvoking(String aggregateIdentifier, Consumer<T> aggregateConsumer);
 }
