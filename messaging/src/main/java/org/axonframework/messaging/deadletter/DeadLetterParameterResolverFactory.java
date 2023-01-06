@@ -29,10 +29,10 @@ import java.lang.reflect.Parameter;
  * A {@link ParameterResolverFactory} constructing a {@link ParameterResolver} resolving the {@link DeadLetter} that is
  * being processed.
  * <p>
- * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} under the key
- * {@link DeadLetterParameterResolverFactory#CURRENT_DEAD_LETTER}. Hence, the {@code DeadLetter} processor is required
- * to add it to the resources before invoking the message handlers. If no {@link UnitOfWork} is active or there is no
- * {@code DeadLetter} is present, the resolver will return {@code null}.
+ * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} using the class
+ * {@link Class#getName() name} of the {@code DeadLetter} as the key. Hence, the {@code DeadLetter} processor is
+ * required to add it to the resources before invoking the message handlers. If no {@link UnitOfWork} is active or there
+ * is no {@code DeadLetter} is present, the resolver will return {@code null}.
  * <p>
  * The parameter resolver matches for any type of {@link Message}.
  *
@@ -40,11 +40,6 @@ import java.lang.reflect.Parameter;
  * @since 4.7.0
  */
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
-
-    /**
-     * Constant referring to the current {@link DeadLetter} within the {@link UnitOfWork#resources()}.
-     */
-    public static final String CURRENT_DEAD_LETTER = "___Axon_Current_Dead_Letter";
 
     @Override
     public ParameterResolver<DeadLetter<?>> createInstance(Executable executable,
@@ -56,16 +51,17 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     /**
      * A {@link ParameterResolver} implementation resolving the current {@link DeadLetter}.
      * <p>
-     * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} under the key
-     * {@link DeadLetterParameterResolverFactory#CURRENT_DEAD_LETTER}. Furthermore, this resolver matches for any type
-     * of {@link Message}.
+     * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} using the class
+     * {@link Class#getName() name} of the {@code DeadLetter} as the key. Furthermore, this resolver matches for any
+     * type of {@link Message}.
      */
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
         @Override
         public DeadLetter<?> resolveParameterValue(Message<?> message) {
             return CurrentUnitOfWork.isStarted()
-                    ? CurrentUnitOfWork.get().getOrDefaultResource(CURRENT_DEAD_LETTER, null)
+                    ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
+                                                       .orElse(null)
                     : null;
         }
 

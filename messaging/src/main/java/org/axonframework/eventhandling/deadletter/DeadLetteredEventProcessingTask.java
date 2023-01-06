@@ -87,7 +87,7 @@ class DeadLetteredEventProcessingTask
 
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.resources()
-                  .put(DeadLetterParameterResolverFactory.CURRENT_DEAD_LETTER, letter);
+                  .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
         unitOfWork.executeWithResult(() -> handle(letter));

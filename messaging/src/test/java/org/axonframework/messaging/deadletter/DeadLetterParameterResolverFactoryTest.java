@@ -99,7 +99,7 @@ class DeadLetterParameterResolverFactoryTest {
                 "sequenceId", testMessage, new RuntimeException("some-cause")
         );
         UnitOfWork<EventMessage<String>> uow = DefaultUnitOfWork.startAndGet(testMessage);
-        uow.resources().put(DeadLetterParameterResolverFactory.CURRENT_DEAD_LETTER, expected);
+        uow.resources().put(DeadLetter.class.getName(), expected);
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
