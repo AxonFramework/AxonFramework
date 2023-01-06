@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -378,7 +377,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public TestExecutor<T> andGiven(List<?> domainEvents) {
         if (this.useStateStorage) {
-            throw new AxonConfigurationException(
+            throw new FixtureExecutionException(
                     "Given events not supported, because the fixture is configured to use state storage");
         }
 
@@ -575,8 +574,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             AggregateModel<T> aggregateModel = aggregateModel();
             this.registerRepository(EventSourcingRepository.builder(aggregateType)
                                                            .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(new GenericAggregateFactory<>(
-                                                                   aggregateModel))
+                                                           .aggregateFactory(
+                                                                   new GenericAggregateFactory<>(aggregateModel)
+                                                           )
                                                            .eventStore(eventStore)
                                                            .parameterResolverFactory(getParameterResolverFactory())
                                                            .handlerDefinition(getHandlerDefinition())
