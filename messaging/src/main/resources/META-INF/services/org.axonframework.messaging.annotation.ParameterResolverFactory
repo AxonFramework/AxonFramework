@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010-2020. Axon Framework
+# Copyright (c) 2010-2023. Axon Framework
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,3 +28,4 @@ org.axonframework.messaging.annotation.SourceIdParameterResolverFactory
 org.axonframework.messaging.annotation.ResultParameterResolverFactory
 org.axonframework.messaging.annotation.ScopeDescriptorParameterResolverFactory
 org.axonframework.messaging.annotation.AggregateTypeParameterResolverFactory
+org.axonframework.messaging.deadletter.DeadLetterParameterResolverFactory
