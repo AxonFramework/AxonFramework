@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,11 +176,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
         this.repository = new IdentifierValidatingRepository<>(repository);
+        resources.add(repository);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register a RepositoryProvider since the Repository is already defined in this fixture."
+                            + " It is recommended to first a RepositoryProvider"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.repositoryProvider = repositoryProvider;
         return this;
     }
@@ -237,6 +245,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more ParameterResolverFactories since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register ParameterResolverFactories"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
@@ -284,13 +299,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerDefinitions since the Repository is already defined in this fixture."
+                            + " It is recommended to first register HandlerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerDefinitions.addFirst(handlerDefinition);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
-            HandlerEnhancerDefinition handlerEnhancerDefinition) {
+            HandlerEnhancerDefinition handlerEnhancerDefinition
+    ) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerEnhancerDefinitions since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register HandlerEnhancerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
