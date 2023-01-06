@@ -21,7 +21,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.DeadLetterParameterResolverFactory;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
@@ -106,7 +105,8 @@ class DeadLetteredEventProcessingTask
 
     private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead letter with message id [{}] was successful.", letter.message().getIdentifier());
+            logger.info("Processing dead letter with message id [{}] was successful.",
+                        letter.message().getIdentifier());
         }
         return Decisions.evict();
     }
