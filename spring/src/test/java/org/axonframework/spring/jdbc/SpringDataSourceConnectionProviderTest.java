@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,13 +79,14 @@ class SpringDataSourceConnectionProviderTest {
 
         uow.commit();
     }
+
     @Test
     void connectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
             final Object spy = spy(invocation.callRealMethod());
             mockConnection = (Connection) spy;
             return spy;
-        }).when(dataSource).getConnection();
+        }).when(dataSource).getConnection("sa", "");
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Transaction transaction = springTransactionManager.startTransaction();

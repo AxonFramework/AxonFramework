@@ -22,11 +22,8 @@
     <version>4.7.0-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
-        <module>messaging-javax</module>
         <module>modelling</module>
-        <module>modelling-javax</module>
         <module>eventsourcing</module>
-        <module>eventsourcing-javax</module>
         <module>config</module>
         <module>test</module>
         <module>axon-server-connector</module>
@@ -36,9 +33,7 @@
         <module>tracing-opentelemetry</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
-        <module>spring-boot-autoconfigure-javax</module>
         <module>spring-boot-starter</module>
-        <module>spring-boot-starter-javax</module>
         <module>integrationtests</module>
         <module>legacy</module>
         <module>reactorless-test</module>

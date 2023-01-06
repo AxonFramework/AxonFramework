@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.javax.common.jpa.EntityManagerProvider;
+import org.axonframework.javax.modelling.command.GenericJpaRepository;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
@@ -51,7 +53,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.queryhandling.QueryBus;
@@ -84,7 +85,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -384,7 +384,21 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
 
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
-                        aggregateConfigurer.configureRepository(c -> createGenericJpaRepository(aggregateType, c));
+                        aggregateConfigurer.configureRepository(
+                                c -> GenericJpaRepository.builder(aggregateType)
+                                                         .parameterResolverFactory(c.parameterResolverFactory())
+                                                         .handlerDefinition(c.handlerDefinition(aggregateType))
+                                                         .lockFactory(c.getComponent(
+                                                                 LockFactory.class, () -> NullLockFactory.INSTANCE
+                                                         ))
+                                                         .entityManagerProvider(c.getComponent(
+                                                                 EntityManagerProvider.class,
+                                                                 () -> beanFactory.getBean(EntityManagerProvider.class)
+                                                         ))
+                                                         .eventBus(c.eventBus())
+                                                         .repositoryProvider(c::repository)
+                                                         .build()
+                        );
                     }
                 }
             } else {
@@ -414,43 +428,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             aggregateConfigurer.configureFilterEventsByType(c -> aggregateAnnotation.filterEventsByType());
 
             configurer.configureAggregate(aggregateConfigurer);
-        }
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked", "JavaReflectionInvocation"})
-    private <A> Repository createGenericJpaRepository(Class<A> aggregateType, Configuration c) {
-        try {
-            Class javaxEntityProviderClass = Class.forName("org.axonframework.javax.common.jpa.EntityManagerProvider");
-            Class jpaRepositoryClass = Class.forName("org.axonframework.javax.modelling.command.GenericJpaRepository");
-            Method builderMethod = jpaRepositoryClass.getMethod("builder", Class.class);
-            Object builder = builderMethod.invoke(null, aggregateType);
-            Method parameterResolverFactoryMethod = builder.getClass().getMethod("parameterResolverFactory",
-                                                                                 ParameterResolverFactory.class);
-            parameterResolverFactoryMethod.invoke(builder, c.parameterResolverFactory());
-            Method handlerDefinitionMethod = builder.getClass().getMethod("handlerDefinition", HandlerDefinition.class);
-            handlerDefinitionMethod.invoke(builder, c.handlerDefinition(aggregateType));
-            Method lockFactoryMethod = builder.getClass().getMethod("lockFactory", LockFactory.class);
-            lockFactoryMethod.invoke(builder, c.getComponent(
-                    LockFactory.class, () -> NullLockFactory.INSTANCE
-            ));
-            Method entityManagerProviderMethod = builder.getClass().getMethod("entityManagerProvider",
-                                                                              javaxEntityProviderClass);
-            entityManagerProviderMethod.invoke(builder, c.getComponent(
-                    javaxEntityProviderClass,
-                    () -> beanFactory.getBean(javaxEntityProviderClass)
-            ));
-            Method eventBusMethod = builder.getClass().getMethod("eventBus", EventBus.class);
-            eventBusMethod.invoke(builder, c.eventBus());
-            Method repositoryProviderMethod = builder.getClass().getMethod("repositoryProvider",
-                                                                           RepositoryProvider.class);
-            RepositoryProvider provider = c::repository;
-            repositoryProviderMethod.invoke(builder, provider);
-            Method buildMethod = builder.getClass().getMethod("build");
-            return (Repository) buildMethod.invoke(builder);
-        } catch (Exception e) {
-            logger.warn("Error creating generic jpa repository using reflection.", e);
-            throw new AxonConfigurationException(
-                    "Error creating generic jpa repository, make sure the axon javax classes are available.");
         }
     }
 

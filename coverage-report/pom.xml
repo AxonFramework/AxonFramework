@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -55,12 +55,6 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-eventsourcing-javax</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-integrationtests</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -74,12 +68,6 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-messaging-javax</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -103,12 +91,6 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-modelling-javax</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
@@ -116,12 +98,6 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-spring-boot-autoconfigure-javax</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import jakarta.inject.Inject;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import javax.inject.Inject;
 
 /**
  * Test class validating the event scheduler operations of the {@link SagaTestFixture}.
