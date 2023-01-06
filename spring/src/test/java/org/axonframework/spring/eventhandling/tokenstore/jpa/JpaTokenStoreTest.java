@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package org.axonframework.spring.eventhandling.tokenstore.jpa;
 
+import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.javax.common.jpa.EntityManagerProvider;
-import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.javax.eventhandling.tokenstore.jpa.JpaTokenStore;
-import org.axonframework.javax.eventhandling.tokenstore.jpa.TokenEntry;
+import org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore;
+import org.axonframework.eventhandling.tokenstore.legacyjpa.TokenEntry;
 import org.axonframework.serialization.TestSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -43,16 +43,11 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.time.Duration;
-import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -6,8 +6,8 @@ org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration
 org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration
 org.axonframework.springboot.autoconfig.InfraConfiguration
 org.axonframework.springboot.autoconfig.JdbcAutoConfiguration
-org.axonframework.javax.springboot.autoconfig.JpaJavaxAutoConfiguration
-org.axonframework.javax.springboot.autoconfig.JpaJavaxEventStoreAutoConfiguration
+org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration
+org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration
 org.axonframework.springboot.autoconfig.JpaAutoConfiguration
 org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
 org.axonframework.springboot.autoconfig.MetricsAutoConfiguration

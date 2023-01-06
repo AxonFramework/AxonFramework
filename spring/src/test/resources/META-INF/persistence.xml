@@ -17,12 +17,12 @@
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="integrationtest" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
-        <class>org.axonframework.javax.eventsourcing.eventstore.jpa.DomainEventEntry</class>
-        <class>org.axonframework.javax.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
-        <class>org.axonframework.javax.modelling.saga.repository.jpa.AssociationValueEntry</class>
-        <class>org.axonframework.javax.modelling.saga.repository.jpa.SagaEntry</class>
-        <class>org.axonframework.javax.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.javax.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.legacyjpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.legacyjpa.SnapshotEventEntry</class>
+        <class>org.axonframework.modelling.saga.repository.legacyjpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.legacyjpa.SagaEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEventEntry</class>
         <properties>
             <property name="hibernate.archive.autodetection" value="class"/>
         </properties>

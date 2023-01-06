@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 package org.axonframework.integrationtests.polymorphic;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.javax.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.legacyjpa.GenericJpaRepository;
 
+import javax.annotation.Nonnull;
+import javax.persistence.EntityManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests JPA aggregate polymorphism.

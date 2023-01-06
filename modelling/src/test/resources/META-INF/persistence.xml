@@ -17,8 +17,8 @@
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <class>org.axonframework.javax.modelling.saga.repository.jpa.AssociationValueEntry</class>
-        <class>org.axonframework.javax.modelling.saga.repository.jpa.SagaEntry</class>
+        <class>org.axonframework.modelling.saga.repository.legacyjpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.legacyjpa.SagaEntry</class>
         <properties>
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.HSQLDialect"/>

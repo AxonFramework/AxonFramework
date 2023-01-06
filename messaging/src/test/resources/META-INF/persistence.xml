@@ -17,7 +17,7 @@
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
     <persistence-unit name="tokenstore" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <class>org.axonframework.javax.eventhandling.tokenstore.jpa.TokenEntry</class>
+        <class>org.axonframework.eventhandling.tokenstore.legacyjpa.TokenEntry</class>
         <properties>
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.HSQLDialect"/>
@@ -31,8 +31,8 @@
         </properties>
     </persistence-unit>
     <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.javax.eventhandling.deadletter.jpa.DeadLetterEntry</class>
-        <class>org.axonframework.javax.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEventEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.dialect"
@@ -48,7 +48,7 @@
         </properties>
     </persistence-unit>
     <persistence-unit name="jpatest" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.javax.common.jpa.TestJpaEntry</class>
+        <class>org.axonframework.common.legacyjpa.TestJpaEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.dialect"

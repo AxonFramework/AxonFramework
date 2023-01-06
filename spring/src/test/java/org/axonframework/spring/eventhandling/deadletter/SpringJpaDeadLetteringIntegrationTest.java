@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package org.axonframework.spring.eventhandling.deadletter;
 
+import org.axonframework.common.legacyjpa.EntityManagerProvider;
+import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
-import org.axonframework.javax.common.jpa.EntityManagerProvider;
-import org.axonframework.javax.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.javax.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.spring.utils.MysqlTestContainerExtension;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
