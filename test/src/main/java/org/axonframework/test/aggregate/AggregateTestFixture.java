@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,6 +203,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
         );
+        //noinspection resource
         adapter.subscribe(commandBus);
         return this;
     }
@@ -218,6 +219,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
+        //noinspection resource
         commandBus.subscribe(commandName, commandHandler);
         return this;
     }
@@ -245,6 +247,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
     ) {
+        //noinspection resource
         this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
         return this;
     }
@@ -253,6 +256,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
             MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
     ) {
+        //noinspection resource
         this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
         return this;
     }
@@ -260,6 +264,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
             MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor) {
+        //noinspection resource
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
@@ -267,6 +272,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
             MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor) {
+        //noinspection resource
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -463,6 +469,39 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
+        return when(resultValidator -> {
+            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
+                                                                         .andMetaData(metaData);
+            commandBus.dispatch(commandMessage, resultValidator);
+        });
+    }
+
+    @Override
+    public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.newInstance(aggregateFactory);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    @Override
+    public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.load(aggregateId)
+                          .execute(aggregateSupplier);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    private ResultValidator<T> when(Consumer<ResultValidatorImpl<T>> whenPhase) {
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
@@ -470,8 +509,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                            () -> repository.getAggregate(),
                                                                            deadlineManager);
 
-        CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command).andMetaData(metaData);
-        executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, resultValidator));
+        executeAtSimulatedTime(() -> whenPhase.accept(resultValidator));
 
         if (!repository.rolledBack) {
             Aggregate<T> workingAggregate = repository.aggregate;
@@ -524,6 +562,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             }
 
             AggregateAnnotationCommandHandler<T> handler = builder.build();
+            //noinspection resource
             handler.subscribe(commandBus);
         }
     }
@@ -783,7 +822,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than " +
                                 "the one used to load it. Loaded [%s], but actual identifier is [%s].\n" +
-                                "Make sure the identifier passed in the Command matches that of the given Events.",
+                                "Make sure the identifier passed during construction matches that of the when-phase.",
                         aggregateIdentifier, aggregate.identifierAsString()));
             }
         }
