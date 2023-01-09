@@ -808,8 +808,15 @@ public class DefaultConfigurer implements Configurer {
         initHandlers.forEach(h -> h.accept(config));
     }
 
+    /**
+     * Calls all registered decorators of this configuration and updates the components where appropriate. Decorating
+     * components is postponed until building to make sure all {@link Component} definitions are present and can be
+     * decorated.
+     * <p>
+     * Registration of decorates are ignore after initialization.
+     */
     protected void invokeDecoratorHandlers() {
-        decoratorHandlers.forEach(h -> h.run());
+        decoratorHandlers.forEach(Runnable::run);
     }
 
     /**

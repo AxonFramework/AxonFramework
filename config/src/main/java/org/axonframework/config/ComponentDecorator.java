@@ -17,10 +17,11 @@
 package org.axonframework.config;
 
 /**
- * Functional interface that is able to decorate a component.
+ * Functional interface that is able to decorate a {@link Component}, wrapping the original component.
  *
  * @author Mitchell Herrijgers
  * @since 4.7.0
+ * @param <T> The Component's type
  */
 @FunctionalInterface
 public interface ComponentDecorator<T> {

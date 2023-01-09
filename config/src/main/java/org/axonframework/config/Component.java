@@ -75,8 +75,9 @@ public class Component<B> {
 
     /**
      * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet. Upon initiation of the instance the {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration,
-     * Object)} methods will be called to resolve and register lifecycle methods.
+     * built yet. Upon initiation of the instance the
+     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration, Object)} methods will be called to
+     * resolve and register lifecycle methods.
      *
      * @return the initialized component contained in this instance
      */
@@ -101,6 +102,16 @@ public class Component<B> {
         this.builderFunction = builderFunction;
     }
 
+    /**
+     * Updates the builder function for this component by creating a new builderFunction that uses the
+     * {@code decoratingFunction} to change the original component. This can wrap the original component.
+     * <p>
+     * Lifecycle handlers are scanned for both the original component and the one created by the @code
+     * decoratingFunction}.
+     *
+     * @param decoratingFunction Function that takes the original component and can wrap or change it depending on
+     *                           requirements.
+     */
     public void decorate(@Nonnull BiFunction<Configuration, B, ? extends B> decoratingFunction) {
         Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         Function<Configuration, ? extends B> previous = builderFunction;

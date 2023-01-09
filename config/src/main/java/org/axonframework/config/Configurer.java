@@ -214,9 +214,9 @@ public interface Configurer extends LifecycleOperations {
 
 
     /**
-     * Registers a decorator for a component type. For any component that is created by the configuration that matches
-     * the {@code componentType}, the {@code decorator} will be called. It's up to the decorator to decide to return the
-     * original component, a wrapped version of it or something else entirely.
+     * Registers a {@link ComponentDecorator decorator} for a component type. For any component that is created by the
+     * configuration that matches the {@code componentType}, the {@code decorator} will be called. It's up to the
+     * decorator to decide to return the original component or a wrapped version of it.
      *
      * @param componentType The declared type of the component, typically an interface
      * @param decorator     The decorator function for this component
