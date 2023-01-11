@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.jobrunr.jobs.JobId;
+import org.jobrunr.scheduling.JobBuilder;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 
@@ -49,6 +51,8 @@ import javax.annotation.Nullable;
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+import static org.axonframework.deadline.jobrunr.LabelUtils.getCombinedLabel;
+import static org.axonframework.deadline.jobrunr.LabelUtils.getLabel;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -62,6 +66,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = getLogger(JobRunrDeadlineManager.class);
+    protected static final String DELETE_REASON = "Deleted via Axon DeadlineManager API";
+    private static final String NOT_SUPPORTED_MSG =
+            "The '%s' method is not supported without using JobRunrPro with the JobRunrProDeadlineManager.\n"
+                    + "Move to the pro version and the extension or use 'cancelSchedule' method instead.\n"
+                    + "Using 'cancelSchedule' requires keeping track of the return value from 'schedule'.";
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final JobScheduler jobScheduler;
@@ -104,23 +113,40 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
         this.spanFactory = builder.spanFactory;
     }
 
+    /**
+     * Provides the class to use in spans,
+     *
+     * @return the class name
+     */
+    @SuppressWarnings("squid:S3400")
+    protected String getSpanClassName() {
+        return "JobRunrDeadlineManager";
+    }
+
     @Override
     public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.randomUUID();
-        Span span = spanFactory.createDispatchSpan(() -> "JobRunrDeadlineManager.schedule(" + deadlineName + ")",
+        Span span = spanFactory.createDispatchSpan(() -> getSpanClassName() + ".schedule(" + deadlineName + ")",
                                                    deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
-            String deadlineDetails = DeadlineDetails.serialized(deadlineName,
-                                                                deadlineScope,
-                                                                interceptedDeadlineMessage,
-                                                                serializer);
-            jobScheduler.<JobRunrDeadlineManager>schedule(deadlineId,
-                                                          triggerDateTime,
-                                                          deadlineManager -> deadlineManager.execute(deadlineDetails));
+            String serializedDeadlineDetails = DeadlineDetails.serialized(
+                    deadlineName,
+                    deadlineScope,
+                    interceptedDeadlineMessage,
+                    serializer);
+            String combinedLabel = getCombinedLabel(serializer, deadlineName, deadlineScope);
+            JobBuilder job = JobBuilder.aJob()
+                                       .withId(deadlineId)
+                                       .withName(deadlineName)
+                                       .withLabels(getLabel(deadlineName), combinedLabel)
+                                       .withDetails(() -> this.execute(serializedDeadlineDetails))
+                                       .scheduleAt(triggerDateTime);
+            JobId id = jobScheduler.create(job);
+            logger.debug("Job with id: [{}] was successfully created.", id);
         }));
         return deadlineId.toString();
     }
@@ -128,38 +154,33 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         Span span = spanFactory.createInternalSpan(
-                () -> "JobRunrDeadlineManager.cancelSchedule(" + deadlineName + "," + scheduleId + ")");
-        runOnPrepareCommitOrNow(span.wrapRunnable(() -> jobScheduler.delete(toUuid(scheduleId),
-                                                                            "Deleted via DeadlineManager API")));
+                () -> getSpanClassName() + ".cancelSchedule(" + deadlineName + "," + scheduleId + ")");
+        runOnPrepareCommitOrNow(span.wrapRunnable(() -> jobScheduler.delete(toUuid(scheduleId), DELETE_REASON)));
     }
 
     @Override
     public void cancelAll(@Nonnull String deadlineName) {
-        throw new UnsupportedOperationException(
-                "The 'cancelAll' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
-                        + "This requires keeping track of the return value from 'schedule'.");
+        throw new UnsupportedOperationException(String.format(NOT_SUPPORTED_MSG, "cancelAll"));
     }
 
     private UUID toUuid(@Nonnull String scheduleId) {
         try {
             return UUID.fromString(scheduleId);
         } catch (IllegalArgumentException e) {
-            throw new DeadlineException("For jobrunr the scheduleId should be an UUID representation.", e);
+            throw new DeadlineException("For JobRunr the scheduleId should be an UUID representation.", e);
         }
     }
 
     @Override
     public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
-        throw new UnsupportedOperationException(
-                "The 'cancelAllWithinScope' method is not implemented for JobRunrDeadlineManager, use 'cancelSchedule' instead.\n"
-                        + "This requires keeping track of the return value from 'schedule'.");
+        throw new UnsupportedOperationException(String.format(NOT_SUPPORTED_MSG, "cancelAllWithinScope"));
     }
 
 
     /**
-     * This function should only be called via Jobrunr when a deadline was triggered. It will try to execute the
+     * This function should only be called via JobRunr when a deadline was triggered. It will try to execute the
      * scheduled deadline on the set scope. It will throw a {@link DeadlineException} in case of errors such that they
-     * will be optionally retried by Jobrunr.
+     * will be optionally retried by JobRunr.
      *
      * @param serializedDeadlineDetails {@code byte[]} containing the serialized {@link DeadlineDetails} object with all
      *                                  the needed details to execute.
