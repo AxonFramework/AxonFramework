@@ -54,6 +54,7 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <!-- Optional dependencies -->

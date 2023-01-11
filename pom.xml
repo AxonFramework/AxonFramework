@@ -118,13 +118,10 @@
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
-        <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
-        <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
 
         <javax.el-impl.version>2.2</javax.el-impl.version>
         <javax.el-api.version>3.0.1-b06</javax.el-api.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <javax.el.implementation.version>3.0.0</javax.el.implementation.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <javax.inject.version>1</javax.inject.version>
@@ -409,17 +406,6 @@
                 <version>${javax.el-impl.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>javax.el</artifactId>
-                <version>${javax.el.implementation.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>${jakarta.el.implementation.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>${hibernate-validator.version}</version>
@@ -444,12 +430,6 @@
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${javax.jaxb-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

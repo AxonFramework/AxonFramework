@@ -36,10 +36,6 @@
             <artifactId>axon-eventsourcing</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.hamcrest</groupId>
