@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command.inspection;
+package org.axonframework.modelling.command.inspection.legacyvalidation;
 
-import jakarta.persistence.Id;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
@@ -29,9 +28,13 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AggregateModellingException;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
+import javax.persistence.Id;
 import java.lang.annotation.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -234,11 +237,11 @@ class AnnotatedAggregateMetaModelFactoryTest {
     @Test
     void methodIdentifierWithMethodParameters() {
         assertThrows(AggregateModellingException.class,
-                     () -> AnnotatedAggregateMetaModelFactory
-                             .inspectAggregate(SomeIllegalAnnotatedIdMethodClass.class));
+                () -> AnnotatedAggregateMetaModelFactory
+                        .inspectAggregate(SomeIllegalAnnotatedIdMethodClass.class));
         assertThrows(AggregateModellingException.class,
-                     () -> AnnotatedAggregateMetaModelFactory
-                             .inspectAggregate(SomeIllegalAnnotatedPersistenceIdMethodClass.class));
+                () -> AnnotatedAggregateMetaModelFactory
+                        .inspectAggregate(SomeIllegalAnnotatedPersistenceIdMethodClass.class));
     }
 
     @Test
@@ -283,28 +286,28 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
     @Test
     void findJavaxPersistenceIdentifier() {
-        AggregateModel<JakartaPersistenceAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceAnnotatedHandlers.class);
+        AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
     }
 
     @Test
-    void findJakartaPersistenceGetterIdentifier() {
-        AggregateModel<JakartaPersistenceGetterAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceGetterAnnotatedHandlers.class);
+    void findJavaxPersistenceGetterIdentifier() {
+        AggregateModel<JavaxPersistenceGetterAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceGetterAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceGetterAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceGetterAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
     }
 
     @Test
-    void findJakartaPersistenceMethodIdentifier() {
-        AggregateModel<JakartaPersistenceMethodIdAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceMethodIdAnnotatedHandlers.class);
+    void findJavaxPersistenceMethodIdentifier() {
+        AggregateModel<JavaxPersistenceMethodIdAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceMethodIdAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceMethodIdAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceMethodIdAnnotatedHandlers()));
         assertEquals("calculatedId", inspector.routingKey());
     }
 
@@ -338,9 +341,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
             AtomicLong counter = new AtomicLong();
 
             ForkJoinTask<?> task1 = ForkJoinPool.commonPool()
-                                                .submit(() -> inspector.publish(asEventMessage(counter), instance1));
+                    .submit(() -> inspector.publish(asEventMessage(counter), instance1));
             ForkJoinTask<?> task2 = ForkJoinPool.commonPool()
-                                                .submit(() -> inspector.publish(asEventMessage(counter), instance2));
+                    .submit(() -> inspector.publish(asEventMessage(counter), instance2));
 
             task1.join();
             task2.join();
@@ -419,12 +422,12 @@ class AnnotatedAggregateMetaModelFactoryTest {
     @SuppressWarnings("unchecked")
     private <T> MessageHandlingMember<T> getHandler(AggregateModel<?> members, CommandMessage<?> message) {
         return (MessageHandlingMember<T>) members.commandHandlers()
-                                                 .stream()
-                                                 .filter(ch -> ch.canHandle(message))
-                                                 .findFirst()
-                                                 .orElseThrow(() -> new AssertionError(
-                                                         "Expected handler for this message"
-                                                 ));
+                .stream()
+                .filter(ch -> ch.canHandle(message))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "Expected handler for this message"
+                ));
     }
 
     @Documented
@@ -459,7 +462,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
 
     @SuppressWarnings("unused")
-    private static class JakartaPersistenceAnnotatedHandlers {
+    private static class JavaxPersistenceAnnotatedHandlers {
 
         @Id
         private String id = "id";
@@ -476,7 +479,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private static class JakartaPersistenceGetterAnnotatedHandlers {
+    private static class JavaxPersistenceGetterAnnotatedHandlers {
 
         private String id = "id";
 
@@ -497,7 +500,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private static class JakartaPersistenceMethodIdAnnotatedHandlers {
+    private static class JavaxPersistenceMethodIdAnnotatedHandlers {
 
         private String id = "id";
 

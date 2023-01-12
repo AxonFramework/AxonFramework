@@ -418,16 +418,15 @@
                 <version>${javax.el-impl.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.validator</groupId>
+                <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validato.8.version}</version>
+                <version>${hibernate-validator.8.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
