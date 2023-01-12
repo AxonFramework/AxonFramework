@@ -125,7 +125,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

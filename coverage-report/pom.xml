@@ -61,6 +61,12 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-hibernate-6-integrationtests</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-legacy</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
