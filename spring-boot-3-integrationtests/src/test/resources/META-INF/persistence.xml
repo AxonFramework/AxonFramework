@@ -31,4 +31,15 @@
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
         </properties>
     </persistence-unit>
+    <persistence-unit name="integrationtest" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <properties>
+            <property name="hibernate.archive.autodetection" value="class"/>
+        </properties>
+    </persistence-unit>
 </persistence>
