@@ -222,7 +222,7 @@ public interface Configurer extends LifecycleOperations {
      * @param decoratorFunction                 The decorator function for this component
      * @param registerOriginalLifeCycleHandlers Whether the original component's lifecycle handlers should be
      *                                          registered.
-     * @param <C>                               The deckared type of component
+     * @param <C>                               The declared type of component
      * @return the current instance of the Configurer, for chaining purposes
      */
     default <C> Configurer registerComponentDecorator(@Nonnull Class<C> componentType,
@@ -242,7 +242,7 @@ public interface Configurer extends LifecycleOperations {
      *
      * @param componentType     The declared type of the component, typically an interface
      * @param decoratorFunction The decorator function for this component
-     * @param <C>               The deckared type of component
+     * @param <C>               The declared type of component
      * @return the current instance of the Configurer, for chaining purposes
      */
     default <C> Configurer registerComponentDecorator(@Nonnull Class<C> componentType,
