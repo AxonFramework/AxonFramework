@@ -159,10 +159,10 @@ public class DefaultConfigurer implements Configurer {
     );
 
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
-    private final List<Runnable> decoratorHandlers = new ArrayList<>();
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
+    private final List<ComponentDecorator> decorators = new ArrayList<>();
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
 
@@ -644,17 +644,16 @@ public class DefaultConfigurer implements Configurer {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <C> Configurer registerComponentDecorator(@Nonnull Class<C> componentType,
-                                                     @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator for component [{}]", componentType.getSimpleName());
-        decoratorHandlers.add(() -> {
-            Component<C> component = (Component<C>) components.getOrDefault(componentType, null);
-            if (component != null) {
-                component.decorate(decorator::decorate);
-            }
-        });
+    public <C> Configurer registerComponentDecorator(
+            @Nonnull Class<C> componentType,
+            @Nonnull BiFunction<Configuration, C, C> decoratorFunction,
+            boolean registerOriginalLifeCycleHandlers
+    ) {
+        if(initialized) {
+            throw new AxonConfigurationException("Can not register decorators after configuration has been initialized.");
+        }
+        decorators.add(new ComponentTypeSafeDecorator<>(componentType, registerOriginalLifeCycleHandlers, decoratorFunction));
         return this;
     }
 
@@ -764,7 +763,6 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
-            invokeDecoratorHandlers();
             prepareMessageHandlerRegistrars();
             invokeInitHandlers();
         }
@@ -806,17 +804,6 @@ public class DefaultConfigurer implements Configurer {
     protected void invokeInitHandlers() {
         initialized = true;
         initHandlers.forEach(h -> h.accept(config));
-    }
-
-    /**
-     * Calls all registered decorators of this configuration and updates the components where appropriate. Decorating
-     * components is postponed until building to make sure all {@link Component} definitions are present and can be
-     * decorated.
-     * <p>
-     * Registration of decorates are ignore after initialization.
-     */
-    protected void invokeDecoratorHandlers() {
-        decoratorHandlers.forEach(Runnable::run);
     }
 
     /**
@@ -1052,6 +1039,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
             return handlerDefinition.get().apply(inspectedType);
+        }
+
+        @Override
+        public List<ComponentDecorator> getDecorators() {
+            return decorators;
         }
     }
 }

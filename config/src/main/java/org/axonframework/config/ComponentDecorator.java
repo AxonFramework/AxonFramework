@@ -21,10 +21,16 @@ package org.axonframework.config;
  *
  * @author Mitchell Herrijgers
  * @since 4.7.0
- * @param <T> The Component's type
  */
-@FunctionalInterface
-public interface ComponentDecorator<T> {
+public interface ComponentDecorator {
 
-    T decorate(Configuration configuration, T component);
+    /**
+     * Can decorate the given component, returning a decorated component or the original if there is no intention
+     * of decorating it.
+     *
+     * @param configuration The Axon Configuration
+     * @param component The component to be decorated
+     * @return The decorated component
+     */
+    Object decorate(Configuration configuration, Object component);
 }

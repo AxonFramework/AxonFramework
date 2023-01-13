@@ -482,8 +482,8 @@ class DefaultConfigurerLifecycleOperationsTest {
                 .defaultConfiguration()
                 .registerComponent(LifeCycleComponent.class, config -> original)
                 .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator1)
-                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator2)
-                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator3)
+                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator2 )
+                .registerComponentDecorator(LifeCycleComponent.class, (config, o) -> decorator3, false)
                 .buildConfiguration();
 
         testSubject.getComponent(LifeCycleComponent.class);
@@ -494,12 +494,12 @@ class DefaultConfigurerLifecycleOperationsTest {
                 inOrder(original, decorator1, decorator2, decorator3);
         lifecycleOrder.verify(original).registerLifecycleHandlers(any());
         lifecycleOrder.verify(decorator1).registerLifecycleHandlers(any());
-        lifecycleOrder.verify(decorator2).registerLifecycleHandlers(any());
+        lifecycleOrder.verify(decorator2, never()).registerLifecycleHandlers(any());
         lifecycleOrder.verify(decorator3).registerLifecycleHandlers(any());
 
         assertTrue(original.isInvoked());
         assertTrue(decorator1.isInvoked());
-        assertTrue(decorator2.isInvoked());
+        assertFalse(decorator2.isInvoked());
         assertTrue(decorator3.isInvoked());
     }
 

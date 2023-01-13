@@ -638,7 +638,7 @@ class DefaultConfigurerTest {
                                                                           (configuration, component) -> {
                                                                               assertSame(custom, component);
                                                                               return decorated;
-                                                                          })
+                                                                          }, false)
                                               .buildConfiguration()
                                               .spanFactory();
 
