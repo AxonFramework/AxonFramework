@@ -156,7 +156,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                 aggregateModel(),
                 eventBus,
                 repositoryProvider,
-                eventBus instanceof DomainEventSequenceAware);
+                shouldGenerateSequences());
     }
 
     private boolean shouldGenerateSequences() {
