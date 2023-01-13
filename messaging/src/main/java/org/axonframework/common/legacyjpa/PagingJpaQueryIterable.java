@@ -42,6 +42,7 @@ import java.util.function.Supplier;
  * @since 4.6.0
  * @deprecated in favor of using {@link org.axonframework.common.jpa.PagingJpaQueryIterable} which moved to jakarta.
  */
+@Deprecated
 public class PagingJpaQueryIterable<T, R> implements Iterable<R> {
 
     private final int pageSize;

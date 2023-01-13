@@ -16,19 +16,10 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Lob;
+import jakarta.persistence.*;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.*;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -194,6 +185,13 @@ public class TokenEntry {
         return DateTimeUtils.parseInstant(timestamp);
     }
 
+    /**
+     * Updates a token, using the provided token and serializer to update the serialized token and token type.
+     * It will also update the timestamp to the current time, using the inhirited static {@link java.time.Clock}.
+     *
+     * @param token      The new token that needs to be persisted
+     * @param serializer The serializer that will be used to serialize the token
+     */
     public void updateToken(TrackingToken token, Serializer serializer) {
         SerializedObject<byte[]> serializedToken = serializer.serialize(token, byte[].class);
         this.token = serializedToken.getData();

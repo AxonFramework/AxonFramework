@@ -29,6 +29,7 @@ import javax.persistence.EntityManager;
  * @deprecated in favor of using {@link org.axonframework.common.jpa.SimpleEntityManagerProvider} which moved to
  * jakarta.
  */
+@Deprecated
 public class SimpleEntityManagerProvider implements EntityManagerProvider {
 
     private final EntityManager entityManager;

@@ -30,6 +30,7 @@ import javax.persistence.EntityManager;
  * @since 1.3
  * @deprecated in favor of using {@link org.axonframework.common.jpa.EntityManagerProvider} which moved to jakarta.
  */
+@Deprecated
 public interface EntityManagerProvider {
 
     /**

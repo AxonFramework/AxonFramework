@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.integrationtests.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,7 +81,7 @@ class JpaEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Override
     public EventStorageEngine createStorageEngine() {
-        Serializer testSerializer = JacksonSerializer.defaultSerializer();
+        Serializer testSerializer = TestSerializer.JACKSON.getSerializer();
         return JpaEventStorageEngine.builder()
                 .eventSerializer(testSerializer)
                 .snapshotSerializer(testSerializer)

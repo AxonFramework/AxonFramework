@@ -30,15 +30,11 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.axonframework.springboot.autoconfig.*;
-import org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration;
-import org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,16 +63,8 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     @Test
     void snapshotterAndSnapshotTriggerDefinitionAreInvoked() {
         new ApplicationContextRunner()
-                .withUserConfiguration(DataSourceAutoConfiguration.class)
-                .withUserConfiguration(JpaAutoConfiguration.class)
-                .withUserConfiguration(HibernateJpaAutoConfiguration.class)
-                .withUserConfiguration(TransactionAutoConfiguration.class)
-                .withUserConfiguration(InfraConfiguration.class)
-                .withUserConfiguration(EventProcessingAutoConfiguration.class)
-                .withUserConfiguration(JpaJavaxAutoConfiguration.class)
-                .withUserConfiguration(JpaJavaxEventStoreAutoConfiguration.class)
+                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(TestContext.class)
-                .withUserConfiguration(AxonAutoConfiguration.class)
                 .run(context -> {
                     SnapshotTriggerDefinition snapshotTriggerDefinition =
                             context.getBean(SnapshotTriggerDefinition.class);
@@ -97,16 +85,8 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     @Test
     void snapshotFilterIsInvoked() {
         new ApplicationContextRunner()
-                .withUserConfiguration(DataSourceAutoConfiguration.class)
-                .withUserConfiguration(JpaAutoConfiguration.class)
-                .withUserConfiguration(HibernateJpaAutoConfiguration.class)
-                .withUserConfiguration(TransactionAutoConfiguration.class)
-                .withUserConfiguration(InfraConfiguration.class)
-                .withUserConfiguration(EventProcessingAutoConfiguration.class)
-                .withUserConfiguration(JpaJavaxAutoConfiguration.class)
-                .withUserConfiguration(JpaJavaxEventStoreAutoConfiguration.class)
+                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(TestContext.class)
-                .withUserConfiguration(AxonAutoConfiguration.class)
                 .run(context -> {
                     SnapshotFilter snapshotFilter = context.getBean(SnapshotFilter.class);
                     assertNotNull(snapshotFilter);
@@ -124,6 +104,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
     }
 
     @Configuration
+    @EnableAutoConfiguration
     protected static class TestContext {
 
         protected static final AtomicBoolean SNAPSHOT_FILTER_INVOKED = new AtomicBoolean(false);
