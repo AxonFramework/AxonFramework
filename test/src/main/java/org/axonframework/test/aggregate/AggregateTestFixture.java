@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -176,11 +175,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
         this.repository = new IdentifierValidatingRepository<>(repository);
+        resources.add(repository);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register a RepositoryProvider since the Repository is already defined in this fixture."
+                            + " It is recommended to first a RepositoryProvider"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.repositoryProvider = repositoryProvider;
         return this;
     }
@@ -239,6 +246,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more ParameterResolverFactories since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register ParameterResolverFactories"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
@@ -290,13 +304,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerDefinitions since the Repository is already defined in this fixture."
+                            + " It is recommended to first register HandlerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerDefinitions.addFirst(handlerDefinition);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
-            HandlerEnhancerDefinition handlerEnhancerDefinition) {
+            HandlerEnhancerDefinition handlerEnhancerDefinition
+    ) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerEnhancerDefinitions since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register HandlerEnhancerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
@@ -354,7 +383,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public TestExecutor<T> andGiven(List<?> domainEvents) {
         if (this.useStateStorage) {
-            throw new AxonConfigurationException(
+            throw new FixtureExecutionException(
                     "Given events not supported, because the fixture is configured to use state storage");
         }
 
@@ -584,8 +613,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             AggregateModel<T> aggregateModel = aggregateModel();
             this.registerRepository(EventSourcingRepository.builder(aggregateType)
                                                            .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(new GenericAggregateFactory<>(
-                                                                   aggregateModel))
+                                                           .aggregateFactory(
+                                                                   new GenericAggregateFactory<>(aggregateModel)
+                                                           )
                                                            .eventStore(eventStore)
                                                            .parameterResolverFactory(getParameterResolverFactory())
                                                            .handlerDefinition(getHandlerDefinition())
