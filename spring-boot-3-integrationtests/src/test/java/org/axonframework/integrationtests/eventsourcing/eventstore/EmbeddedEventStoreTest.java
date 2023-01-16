@@ -22,12 +22,12 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +47,8 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.integrationtests.utils.EventStoreTestUtils.createEvent;
-import static org.axonframework.integrationtests.utils.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

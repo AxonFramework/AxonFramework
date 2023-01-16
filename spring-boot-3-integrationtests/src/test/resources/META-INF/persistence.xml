@@ -18,7 +18,7 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
-    <persistence-unit name="eventStore" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="sb3eventStore" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
@@ -31,7 +31,7 @@
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
         </properties>
     </persistence-unit>
-    <persistence-unit name="integrationtest" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="sb3integrationtest" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>

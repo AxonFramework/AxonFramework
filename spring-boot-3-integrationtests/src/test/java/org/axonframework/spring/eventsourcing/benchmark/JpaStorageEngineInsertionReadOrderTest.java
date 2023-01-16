@@ -254,7 +254,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         @Bean
         public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactory.setPersistenceUnitName("eventStore");
+            entityManagerFactory.setPersistenceUnitName("sb3eventStore");
 
             HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
             vendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");

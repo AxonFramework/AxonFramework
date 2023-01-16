@@ -200,7 +200,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
                 DataSource dataSource) {
             LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
                     new LocalContainerEntityManagerFactoryBean();
-            entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
+            entityManagerFactoryBean.setPersistenceUnitName("sb3integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
             jpaVendorAdapter.setDatabasePlatform(dialect);

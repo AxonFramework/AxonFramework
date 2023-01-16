@@ -19,25 +19,18 @@ package org.axonframework.springboot.autoconfig;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.ProcessingGroup;
+import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.axonframework.spring.config.MessageHandlerLookup;
-import org.axonframework.spring.config.SpringAggregateLookup;
-import org.axonframework.spring.config.SpringAxonConfiguration;
-import org.axonframework.spring.config.SpringConfigurer;
-import org.axonframework.spring.config.SpringSagaLookup;
-import org.axonframework.springboot.utils.TestSerializer;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.axonframework.spring.config.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -47,17 +40,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 
 /**

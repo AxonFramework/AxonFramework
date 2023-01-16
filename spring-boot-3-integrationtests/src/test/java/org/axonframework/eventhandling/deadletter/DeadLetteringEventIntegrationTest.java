@@ -45,7 +45,7 @@ import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.springboot.utils.AssertUtils.assertWithin;
+import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,11 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.Snapshotter;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
@@ -36,9 +33,9 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
-import org.axonframework.springboot.utils.TestSerializer;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ApplicationContext;
@@ -52,7 +49,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
