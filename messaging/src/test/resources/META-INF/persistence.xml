@@ -31,8 +31,8 @@
         </properties>
     </persistence-unit>
     <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
-        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEntry</class>
-        <class>org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterEventEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.dialect"

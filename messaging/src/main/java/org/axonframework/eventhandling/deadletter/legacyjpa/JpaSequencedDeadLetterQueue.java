@@ -21,6 +21,8 @@ import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.common.legacyjpa.PagingJpaQueryIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry;
+import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry;
 import org.axonframework.eventhandling.deadletter.jpa.NoJpaConverterFoundException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;

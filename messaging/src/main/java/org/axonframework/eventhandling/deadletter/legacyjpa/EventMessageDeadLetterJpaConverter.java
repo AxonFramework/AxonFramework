@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter.legacyjpa;
 
 import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;

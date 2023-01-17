@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,48 +40,67 @@ import static java.util.Objects.requireNonNull;
  * @since 4.6.0
  */
 @Embeddable
+@javax.persistence.Embeddable
 public class DeadLetterEventEntry {
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String messageType;
 
     @Column(nullable = false)
+    @javax.persistence.Basic(optional = false)
     private String eventIdentifier;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String timeStamp;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String payloadType;
 
     @Basic
+    @javax.persistence.Basic
     private String payloadRevision;
 
     @Basic(optional = false)
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic(optional = false)
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private byte[] payload;
 
     @Basic
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private byte[] metaData;
 
     @Basic
+    @javax.persistence.Basic
     private String type;
 
     @Basic
+    @javax.persistence.Basic
     private String aggregateIdentifier;
 
     @Basic
+    @javax.persistence.Basic
     private Long sequenceNumber;
 
     @Basic
+    @javax.persistence.Basic
     private String tokenType;
 
     @Basic
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private byte[] token;
 
     protected DeadLetterEventEntry() {
