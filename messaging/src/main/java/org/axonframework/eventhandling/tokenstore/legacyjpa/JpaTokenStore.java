@@ -43,7 +43,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.clock;
+import static org.axonframework.eventhandling.tokenstore.jpa.TokenEntry.clock;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}

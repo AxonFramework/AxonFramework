@@ -22,12 +22,12 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.*;
 
 import java.io.Serializable;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Objects;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.clock;
 
 /**
  * Implementation of a token entry compatible with JPA that stores its serialized token as a byte array.
@@ -40,6 +40,11 @@ import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.cloc
 @javax.persistence.Entity
 @javax.persistence.IdClass(TokenEntry.PK.class)
 public class TokenEntry {
+
+    /**
+     * The clock used to persist timestamps in this entry. Defaults to UTC system time.
+     */
+    public static Clock clock = Clock.systemUTC();
 
     @Lob
     @Column(length = 10000)
