@@ -368,12 +368,8 @@ class JpaTokenStoreTest {
         jpaTokenStore.fetchToken("stealing", 0);
         stealingJpaTokenStore.fetchToken("stealing", 0);
 
-        try {
-            jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(0), "stealing", 0);
-            fail("Expected UnableToClaimTokenException");
-        } catch (UnableToClaimTokenException e) {
-            // expected
-        }
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(0), "stealing", 0));
         jpaTokenStore.releaseClaim("stealing", 0);
         // claim should still be on stealingJpaTokenStore:
         stealingJpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "stealing", 0);

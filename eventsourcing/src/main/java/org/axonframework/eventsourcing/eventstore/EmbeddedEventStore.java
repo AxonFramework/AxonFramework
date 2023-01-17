@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import javax.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
  * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
@@ -201,7 +202,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
         private final int cachedEvents;
-        private volatile boolean shouldFetch, closed;
+        private volatile boolean shouldFetch;
+        private volatile boolean closed;
         private Stream<? extends TrackedEventMessage<?>> eventStream;
         private Node newest;
 
@@ -531,7 +533,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder cachedEvents(int cachedEvents) {
-            assertNonNull(cachedEvents, "{} may not be null");
+            assertPositive(cachedEvents, "The cached events count should be a positive number");
             this.cachedEvents = cachedEvents;
             return this;
         }
@@ -550,7 +552,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder fetchDelay(long fetchDelay) {
-            assertNonNull(fetchDelay, "{} may not be null");
+            assertPositive(fetchDelay, "The fetch delay should be a positive number");
             this.fetchDelay = fetchDelay;
             return this;
         }
@@ -569,7 +571,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder cleanupDelay(long cleanupDelay) {
-            assertNonNull(cleanupDelay, "{} may not be null");
+            assertPositive(cleanupDelay, "The clean-up delay should be a positive number");
             this.cleanupDelay = cleanupDelay;
             return this;
         }

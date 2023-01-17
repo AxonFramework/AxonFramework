@@ -62,8 +62,13 @@ import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.cloc
 public class JpaTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaTokenStore.class);
+
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final int CONFIG_SEGMENT = 0;
+
+    private static final String OWNER_PARAM = "owner";
+    private static final String PROCESSOR_NAME_PARAM = "processorName";
+    private static final String SEGMENT_PARAM = "segment";
 
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
@@ -140,9 +145,9 @@ public class JpaTokenStore implements TokenStore {
                                          .setParameter("token", tokenDataToStore)
                                          .setParameter("tokenType", tokenTypeToStore)
                                          .setParameter("timestamp", tokenToStore.timestampAsString())
-                                         .setParameter("owner", nodeId)
-                                         .setParameter("processorName", processorName)
-                                         .setParameter("segment", segment)
+                                         .setParameter(OWNER_PARAM, nodeId)
+                                         .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                         .setParameter(SEGMENT_PARAM, segment)
                                          .executeUpdate();
 
         if (updatedTokens == 0) {
@@ -162,8 +167,8 @@ public class JpaTokenStore implements TokenStore {
                              "UPDATE TokenEntry te SET te.owner = null " +
                                      "WHERE te.owner = :owner AND te.processorName = :processorName " +
                                      "AND te.segment = :segment")
-                     .setParameter("processorName", processorName).setParameter("segment", segment)
-                     .setParameter("owner", nodeId)
+                     .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
+                     .setParameter(OWNER_PARAM, nodeId)
                      .executeUpdate();
     }
 
@@ -190,9 +195,9 @@ public class JpaTokenStore implements TokenStore {
                                            "DELETE FROM TokenEntry te " +
                                                    "WHERE te.owner = :owner AND te.processorName = :processorName " +
                                                    "AND te.segment = :segment")
-                                   .setParameter("processorName", processorName)
-                                   .setParameter("segment", segment)
-                                   .setParameter("owner", nodeId)
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
                                    .executeUpdate();
 
         if (updates == 0) {
@@ -220,9 +225,9 @@ public class JpaTokenStore implements TokenStore {
                                                         "WHERE te.processorName = :processorName " +
                                                         "AND te.segment = :segment " +
                                                         "AND te.owner = :owner")
-                                   .setParameter("processorName", processorName)
-                                   .setParameter("segment", segment)
-                                   .setParameter("owner", nodeId)
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
                                    .setParameter("timestamp", formatInstant(clock.instant()))
                                    .executeUpdate();
 
@@ -241,7 +246,7 @@ public class JpaTokenStore implements TokenStore {
                 "SELECT te.segment FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
                 Integer.class
-        ).setParameter("processorName", processorName).getResultList();
+        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
 
         return resultList.stream().mapToInt(i -> i).toArray();
     }
@@ -254,7 +259,7 @@ public class JpaTokenStore implements TokenStore {
                 "SELECT te FROM TokenEntry te "
                         + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
                 TokenEntry.class
-        ).setParameter("processorName", processorName).getResultList();
+        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
         int[] allSegments = resultList.stream()
                                       .mapToInt(TokenEntry::getSegment)
                                       .toArray();

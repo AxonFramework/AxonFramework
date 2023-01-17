@@ -30,7 +30,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,6 +59,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class JpaSagaStore implements SagaStore<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaSagaStore.class);
+
+    private static final String SAGA_ID_PARAM = "sagaId";
+    private static final String SAGA_TYPE_PARAM = "sagaType";
 
     // Saga Queries, non-final to inject the return type and table name.
     private final String LOAD_SAGA_QUERY =
@@ -155,7 +158,7 @@ public class JpaSagaStore implements SagaStore<Object> {
 
         List<? extends SimpleSerializedObject<?>> serializedSagaList =
                 entityManager.createNamedQuery(LOAD_SAGA_NAMED_QUERY, serializedObjectType)
-                             .setParameter("sagaId", sagaIdentifier)
+                             .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                              .setMaxResults(1)
                              .getResultList();
         if (serializedSagaList == null || serializedSagaList.isEmpty()) {
@@ -185,8 +188,8 @@ public class JpaSagaStore implements SagaStore<Object> {
         List<AssociationValueEntry> associationValueEntries =
                 entityManager.createNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY,
                                                AssociationValueEntry.class)
-                             .setParameter("sagaType", getSagaTypeName(sagaType))
-                             .setParameter("sagaId", sagaIdentifier)
+                             .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType))
+                             .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                              .getResultList();
 
         return associationValueEntries.stream()
@@ -207,8 +210,8 @@ public class JpaSagaStore implements SagaStore<Object> {
         int updateCount = entityManager.createNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY)
                                        .setParameter("associationKey", associationValue.getKey())
                                        .setParameter("associationValue", associationValue.getValue())
-                                       .setParameter("sagaType", getSagaTypeName(sagaType))
-                                       .setParameter("sagaId", sagaIdentifier)
+                                       .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType))
+                                       .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                                        .executeUpdate();
         if (updateCount == 0 && logger.isWarnEnabled()) {
             logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
@@ -242,7 +245,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         List<String> entries = entityManager.createNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, String.class)
                                             .setParameter("associationKey", associationValue.getKey())
                                             .setParameter("associationValue", associationValue.getValue())
-                                            .setParameter("sagaType", getSagaTypeName(sagaType)).getResultList();
+                                            .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType)).getResultList();
         return new TreeSet<>(entries);
     }
 
@@ -251,7 +254,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         try {
             entityManager.createNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY)
-                         .setParameter("sagaId", sagaIdentifier)
+                         .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                          .executeUpdate();
             entityManager.createNamedQuery(DELETE_SAGA_NAMED_QUERY)
                          .setParameter("id", sagaIdentifier)
@@ -277,7 +280,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         int updateCount = entityManager.createNamedQuery(UPDATE_SAGA_NAMED_QUERY)
                                        .setParameter("serializedSaga", entry.getSerializedSaga())
                                        .setParameter("revision", entry.getRevision())
-                                       .setParameter("sagaId", entry.getSagaId())
+                                       .setParameter(SAGA_ID_PARAM, entry.getSagaId())
                                        .executeUpdate();
         for (AssociationValue associationValue : associationValues.addedAssociations()) {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
@@ -293,10 +296,9 @@ public class JpaSagaStore implements SagaStore<Object> {
         }
     }
 
-    private String serializedSagaAsString(
-            SagaEntry<?> entry) {
-        if (entry instanceof SagaEntry) {
-            return new String( entry.getSerializedSaga(), Charset.forName("UTF-8"));
+    private String serializedSagaAsString(SagaEntry<?> entry) {
+        if (entry != null) {
+            return new String(entry.getSerializedSaga(), StandardCharsets.UTF_8);
         } else {
             return "[Custom serialization format (not visible)]";
         }

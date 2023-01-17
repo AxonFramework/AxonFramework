@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) {
-        String key = databaseProductName.replaceAll(" ", "_") + KEY_CODE_SUFFIX;
+        String key = databaseProductName.replace(" ", "_") + KEY_CODE_SUFFIX;
         String property = properties.getProperty(key);
 
         List<Integer> keyCodes = new ArrayList<>();

@@ -196,7 +196,7 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) {
-        String key = databaseProductName.replaceAll(" ", "_") + KEY_CODE_SUFFIX;
+        String key = databaseProductName.replace(" ", "_") + KEY_CODE_SUFFIX;
         String property = properties.getProperty(key);
 
         List<Integer> keyCodes = new ArrayList<>();

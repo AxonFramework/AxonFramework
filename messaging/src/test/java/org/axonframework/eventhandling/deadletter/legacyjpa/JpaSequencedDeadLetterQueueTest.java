@@ -255,6 +255,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Test
     void canNotAddNullConverterWhileBuilding() {
-        assertThrows(AxonConfigurationException.class, () -> JpaSequencedDeadLetterQueue.builder().addConverter(null));
+        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
+        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.addConverter(null));
     }
 }

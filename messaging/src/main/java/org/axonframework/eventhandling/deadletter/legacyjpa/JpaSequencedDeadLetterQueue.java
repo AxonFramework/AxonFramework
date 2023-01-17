@@ -78,6 +78,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+    private static final String PROCESSING_GROUP_PARAM = "processingGroup";
+    private static final String SEQUENCE_ID_PARAM = "sequenceIdentifier";
+
     private final String processingGroup;
     private final EntityManagerProvider entityManagerProvider;
     private final List<DeadLetterJpaConverter<EventMessage<?>>> converters;
@@ -250,7 +253,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                                     .createQuery(
                                                             "select dl from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:identifier",
                                                             DeadLetterEntry.class)
-                                                    .setParameter("processingGroup", processingGroup)
+                                                    .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                                     .setParameter("identifier", stringSequenceIdentifier),
                                             this::toLetter
         );
@@ -266,7 +269,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                 + "and dl.sequenceIndex = (select min(dl2.sequenceIndex) from DeadLetterEntry dl2 where dl2.processingGroup=dl.processingGroup and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
                                 + "order by dl.lastTouched asc ",
                         String.class)
-                .setParameter("processingGroup", processingGroup)
+                .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                 .getResultList();
 
 
@@ -413,7 +416,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                         + "order by dl.lastTouched asc ",
                                 DeadLetterEntry.class
                         )
-                        .setParameter("processingGroup", processingGroup)
+                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                         .setParameter("processingStartedLimit", getProcessingStartedLimit()),
                 this::toLetter)
                 .iterator();
@@ -438,8 +441,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                         + "order by dl.sequenceIndex asc ",
                                 DeadLetterEntry.class
                         )
-                        .setParameter("processingGroup", processingGroup)
-                        .setParameter("sequenceIdentifier", oldLetter.getSequenceIdentifier())
+                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
+                        .setParameter(SEQUENCE_ID_PARAM, oldLetter.getSequenceIdentifier())
                         .setParameter("previousIndex", oldLetter.getIndex())
                         .setMaxResults(1)
                         .getSingleResult();
@@ -488,7 +491,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                 () -> entityManagerProvider.getEntityManager()
                                            .createQuery(
                                                    "delete from DeadLetterEntry dl where dl.processingGroup=:processingGroup")
-                                           .setParameter("processingGroup", processingGroup)
+                                           .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                            .executeUpdate());
     }
 
@@ -501,8 +504,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                                            + "and dl.sequenceIdentifier=:sequenceIdentifier",
                                                    Long.class
                                            )
-                                           .setParameter("processingGroup", processingGroup)
-                                           .setParameter("sequenceIdentifier", sequenceIdentifier)
+                                           .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
+                                           .setParameter(SEQUENCE_ID_PARAM, sequenceIdentifier)
                                            .getSingleResult());
     }
 
@@ -514,7 +517,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                                            + "where dl.processingGroup=:processingGroup",
                                                    Long.class
                                            )
-                                           .setParameter("processingGroup", processingGroup)
+                                           .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                            .getSingleResult());
     }
 
@@ -526,7 +529,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                                            + "where dl.processingGroup=:processingGroup",
                                                    Long.class
                                            )
-                                           .setParameter("processingGroup", processingGroup)
+                                           .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                            .getSingleResult());
     }
 
@@ -559,8 +562,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
                                               "select max(dl.sequenceIndex) from DeadLetterEntry dl where dl.processingGroup=:processingGroup and dl.sequenceIdentifier=:sequenceIdentifier",
                                               Long.class
                                       )
-                                      .setParameter("sequenceIdentifier", sequenceIdentifier)
-                                      .setParameter("processingGroup", processingGroup)
+                                      .setParameter(SEQUENCE_ID_PARAM, sequenceIdentifier)
+                                      .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
                                       .getSingleResult();
             } catch (NoResultException e) {
                 // Expected, queue is empty. Return null.
