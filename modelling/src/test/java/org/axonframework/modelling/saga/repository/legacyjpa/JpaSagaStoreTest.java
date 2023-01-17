@@ -27,18 +27,15 @@ import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.StubSaga;
+import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
 import org.axonframework.modelling.utils.TestSerializer;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -197,47 +194,5 @@ class JpaSagaStoreTest {
         assertNull(entityManager.find(SagaEntry.class, identifier));
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                                 .setParameter("id", identifier).getResultList().isEmpty());
-    }
-
-    @Test
-    void storeSagaWithCustomEntity() {
-        JpaSagaStore sagaStore = new JpaSagaStore(
-                JpaSagaStore.builder()
-                            .serializer(TestSerializer.xStreamSerializer())
-                            .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-        ) {
-            @Override
-            protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
-                return new CustomSagaEntry(saga, sagaIdentifier, serializer);
-            }
-
-            @Override
-            protected String sagaEntryEntityName() {
-                return CustomSagaEntry.class.getSimpleName();
-            }
-
-            @Override
-            protected Class<? extends SimpleSerializedObject<?>> serializedObjectType() {
-                return CustomSerializedSaga.class;
-            }
-        };
-
-        repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
-
-        String identifier = unitOfWork.executeWithResult(
-                () -> repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new)
-                                .getSagaIdentifier()
-        ).getPayload();
-
-        assertFalse(entityManager.createQuery("SELECT e FROM CustomSagaEntry e").getResultList().isEmpty());
-
-        entityManager.clear();
-
-        startUnitOfWork();
-        unitOfWork.execute(() -> {
-            Saga<StubSaga> loaded = repository.load(identifier);
-            loaded.execute(StubSaga::end);
-            assertNotNull(entityManager.find(CustomSagaEntry.class, identifier));
-        });
     }
 }

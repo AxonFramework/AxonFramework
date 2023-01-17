@@ -21,6 +21,8 @@ import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry;
+import org.axonframework.modelling.saga.repository.jpa.SagaEntry;
 import org.axonframework.modelling.saga.repository.jpa.SerializedSaga;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -28,9 +30,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +37,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -267,9 +269,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     @Override
     public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        AbstractSagaEntry<?> entry = createSagaEntry(saga,
-                                                     sagaIdentifier,
-                                                     serializer);
+        SagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Updating saga id {} as {}", sagaIdentifier, serializedSagaAsString(entry));
@@ -294,9 +294,9 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     private String serializedSagaAsString(
-            AbstractSagaEntry<?> entry) {
+            SagaEntry<?> entry) {
         if (entry instanceof SagaEntry) {
-            return new String((byte[]) entry.getSerializedSaga(), Charset.forName("UTF-8"));
+            return new String(entry.getSerializedSaga(), Charset.forName("UTF-8"));
         } else {
             return "[Custom serialization format (not visible)]";
         }
@@ -306,7 +306,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga,
                            Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        AbstractSagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
+        SagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
         entityManager.persist(entry);
         for (AssociationValue associationValue : associationValues) {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
@@ -337,7 +337,7 @@ public class JpaSagaStore implements SagaStore<Object> {
      * @param serializer     The serializer to serialize to the {@link SagaEntry#getSerializedSaga()}
      * @return An instanceof @{@link SagaEntry}
      */
-    protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
+    protected SagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
         return new SagaEntry<>(saga, sagaIdentifier, serializer);
     }
 

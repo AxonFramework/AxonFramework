@@ -37,9 +37,9 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 
+import java.sql.SQLException;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
-import java.sql.SQLException;
 
 /**
  * Auto configuration class for Axon's JPA specific infrastructure components.
@@ -56,7 +56,7 @@ import java.sql.SQLException;
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore.jpa",
         "org.axonframework.eventhandling.deadletter.jpa",
-        "org.axonframework.modelling.saga.repository.legacyjpa",
+        "org.axonframework.modelling.saga.repository.jpa",
 })
 public class JpaJavaxAutoConfiguration {
 
