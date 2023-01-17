@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,23 +39,34 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * @author Rene de Waele
  */
 @MappedSuperclass
+@javax.persistence.MappedSuperclass
 public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Column(nullable = false, unique = true)
+    @javax.persistence.Column(nullable = false, unique = true)
     private String eventIdentifier;
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String timeStamp;
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String payloadType;
     @Basic
+    @javax.persistence.Basic
     private String payloadRevision;
     @Basic(optional = false)
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic(optional = false)
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private T payload;
     @Basic
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private T metaData;
 
     /**

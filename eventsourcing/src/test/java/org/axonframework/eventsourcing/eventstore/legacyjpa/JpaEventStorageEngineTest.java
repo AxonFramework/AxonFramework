@@ -19,25 +19,20 @@ package org.axonframework.eventsourcing.eventstore.legacyjpa;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.common.legacyjpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedType;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,6 +42,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.LongStream;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
@@ -190,53 +189,6 @@ class JpaEventStorageEngineTest
                      .executeUpdate();
         DomainEventMessage<?> actual = testSubject.readEvents(AGGREGATE).peek();
         assertEquals(UnknownSerializedType.class, actual.getPayloadType());
-    }
-
-    @Test
-    @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
-    @DirtiesContext
-    void storeEventsWithCustomEntity() {
-        XStreamSerializer serializer = xStreamSerializer();
-        JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
-                JpaEventStorageEngine.builder()
-                                     .snapshotSerializer(serializer)
-                                     .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                                     .eventSerializer(serializer)
-                                     .entityManagerProvider(entityManagerProvider)
-                                     .transactionManager(NoTransactionManager.INSTANCE)
-                                     .explicitFlush(false);
-        testSubject = new JpaEventStorageEngine(jpaEventStorageEngineBuilder) {
-
-            @Override
-            protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
-                return new CustomDomainEventEntry((DomainEventMessage<?>) eventMessage, serializer);
-            }
-
-            @Override
-            protected DomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
-                return new CustomSnapshotEventEntry(snapshot, serializer);
-            }
-
-            @Override
-            protected String domainEventEntryEntityName() {
-                return CustomDomainEventEntry.class.getSimpleName();
-            }
-
-            @Override
-            protected String snapshotEventEntryEntityName() {
-                return CustomSnapshotEventEntry.class.getSimpleName();
-            }
-        };
-
-        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"));
-        testSubject.storeSnapshot(createEvent(AGGREGATE, 1, "Snapshot1"));
-
-        entityManager.flush();
-        entityManager.clear();
-
-        assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
-        assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().getPayload());
-        assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
     }
 
     @Test

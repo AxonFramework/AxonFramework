@@ -50,7 +50,7 @@ import javax.persistence.EntityManagerFactory;
 @AutoConfigureBefore({JpaEventStoreAutoConfiguration.class, JdbcAutoConfiguration.class})
 @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
 @RegisterDefaultEntities(packages = {
-        "org.axonframework.eventsourcing.eventstore.legacyjpa"
+        "org.axonframework.eventsourcing.eventstore.jpa"
 })
 @AutoConfigureAfter({AxonServerAutoConfiguration.class, JpaJavaxAutoConfiguration.class})
 public class JpaJavaxEventStoreAutoConfiguration {
