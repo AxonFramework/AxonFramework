@@ -89,6 +89,8 @@ class WorkPackage {
     private TrackingToken lastConsumedToken;
     private TrackingToken lastStoredToken;
     private long lastClaimExtension;
+    private final String segmentIdResourceKey;
+    private final String lastTokenResourceKey;
 
     private final Queue<ProcessingEntry> processingQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean scheduled = new AtomicBoolean();
@@ -118,6 +120,8 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
+        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
+        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
 
         this.lastConsumedToken = builder.initialToken;
         this.lastClaimExtension = System.currentTimeMillis();
@@ -298,6 +302,8 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
             unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
+            unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
             unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
             unitOfWork.afterCommit(
                     u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))

@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.DelegateScheduledExecutorService;
@@ -38,11 +39,14 @@ import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -71,6 +75,8 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  */
 class PooledStreamingEventProcessorTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(PooledStreamingEventProcessorTest.class);
 
     private static final String PROCESSOR_NAME = "test";
 
@@ -237,6 +243,36 @@ class PooledStreamingEventProcessorTest {
                         () -> spanFactory.verifySpanCompleted("PooledStreamingEventProcessor[test].process", e)
                 )
         );
+    }
+
+    @Test
+    void handlingEventsHaveSegmentAndTokenInUnitOfWork() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(8);
+        mockEventHandlerInvoker();
+        doAnswer(
+                answer -> {
+                    Map<String, Object> resources = CurrentUnitOfWork.get().resources();
+                    boolean containsSegment = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/SegmentId");
+                    boolean containsToken = resources.containsKey("Processor[" + PROCESSOR_NAME + "]/Token");
+                    if (!containsSegment) {
+                        logger.error("UoW didn't contain the segment!");
+                        return null;
+                    }
+                    if (!containsToken) {
+                        logger.error("UoW didn't contain the token!");
+                        return null;
+                    }
+                    countDownLatch.countDown();
+                    return null;
+                }
+        ).when(stubEventHandler).handle(any(), any());
+
+        List<EventMessage<Integer>> events = IntStream.range(0, 8)
+                                                      .mapToObj(GenericEventMessage::new)
+                                                      .collect(Collectors.toList());
+        events.forEach(stubMessageSource::publishMessage);
+        testSubject.start();
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
