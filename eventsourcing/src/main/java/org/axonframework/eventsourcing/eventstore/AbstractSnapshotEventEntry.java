@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,13 +35,18 @@ import java.util.Objects;
  */
 @MappedSuperclass
 @IdClass(AbstractSnapshotEventEntry.PK.class)
+@javax.persistence.MappedSuperclass
+@javax.persistence.IdClass(AbstractSnapshotEventEntry.PK.class)
 public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
     @Id
+    @javax.persistence.Id
     private String aggregateIdentifier;
     @Id
+    @javax.persistence.Id
     private long sequenceNumber;
     @Id
+    @javax.persistence.Id
     private String type;
 
     /**
