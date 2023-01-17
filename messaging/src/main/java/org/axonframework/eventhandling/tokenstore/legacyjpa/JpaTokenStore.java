@@ -21,6 +21,7 @@ import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.*;
+import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -42,6 +43,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.clock;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
@@ -217,7 +219,7 @@ public class JpaTokenStore implements TokenStore {
                                    .setParameter("processorName", processorName)
                                    .setParameter("segment", segment)
                                    .setParameter("owner", nodeId)
-                                   .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
+                                   .setParameter("timestamp", formatInstant(clock.instant()))
                                    .executeUpdate();
 
         if (updates == 0) {

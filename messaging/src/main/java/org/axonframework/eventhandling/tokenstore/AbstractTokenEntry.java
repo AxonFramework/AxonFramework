@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.MappedSuperclass;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.*;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -42,6 +38,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * @author Rene de Waele
  */
 @MappedSuperclass
+@javax.persistence.MappedSuperclass
 public abstract class AbstractTokenEntry<T> {
 
     /**
@@ -51,14 +48,19 @@ public abstract class AbstractTokenEntry<T> {
 
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private T token;
     @Basic
+    @javax.persistence.Basic
     private String tokenType;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String timestamp;
 
     @Basic
+    @javax.persistence.Basic
     private String owner;
 
     /**

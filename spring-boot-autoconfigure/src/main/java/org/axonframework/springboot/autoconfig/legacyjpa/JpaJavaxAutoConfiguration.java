@@ -54,7 +54,7 @@ import java.sql.SQLException;
 @AutoConfigureAfter(HibernateJpaAutoConfiguration.class)
 @AutoConfigureBefore({JpaAutoConfiguration.class, JdbcAutoConfiguration.class})
 @RegisterDefaultEntities(packages = {
-        "org.axonframework.eventhandling.tokenstore.legacyjpa",
+        "org.axonframework.eventhandling.tokenstore.jpa",
         "org.axonframework.eventhandling.deadletter.jpa",
         "org.axonframework.modelling.saga.repository.legacyjpa",
 })
