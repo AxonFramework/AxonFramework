@@ -355,7 +355,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                                             + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
                                             .setParameter("aggregateId", aggregateIdentifier)
                                             .getResultList();
-        if (results.size() == 0) {
+        if (results.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(results.get(0));

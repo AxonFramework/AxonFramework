@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -350,7 +350,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                                             + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
                                             .setParameter("aggregateId", aggregateIdentifier)
                                             .getResultList();
-        if (results.size() == 0) {
+        if (results.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(results.get(0));

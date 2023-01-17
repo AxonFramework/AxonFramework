@@ -166,8 +166,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Loads the {@link AssociationValue association values} of the saga with given {@code sagaIdentifier} and {@code
-     * sagaType}.
+     * Loads the {@link AssociationValue association values} of the saga with given {@code sagaIdentifier} and
+     * {@code sagaType}.
      *
      * @param entityManager  the entity manager instance to use for the query
      * @param sagaType       the saga instance class
@@ -308,8 +308,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Sets whether or not to do an explicit {@link EntityManager#flush()} after each data modifying
-     * operation on the backing storage. Default to {@code true}
+     * Sets whether or not to do an explicit {@link EntityManager#flush()} after each data modifying operation on the
+     * backing storage. Default to {@code true}
      *
      * @param useExplicitFlush {@code true} to force flush, {@code false} otherwise.
      */
@@ -359,8 +359,8 @@ public class JpaSagaStore implements SagaStore<Object> {
         private Supplier<Serializer> serializer;
 
         /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
-         * underlying database.
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
+         * database.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
          *                              access the underlying database
