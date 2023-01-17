@@ -284,7 +284,7 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private String serializedSagaAsString(SagaEntry<?> entry) {
         if (entry != null) {
-            return new String(entry.getSerializedSaga(), StandardCharsets.UTF_8);
+            return new String((byte[]) entry.getSerializedSaga(), StandardCharsets.UTF_8);
         } else {
             return "[Custom serialization format (not visible)]";
         }
