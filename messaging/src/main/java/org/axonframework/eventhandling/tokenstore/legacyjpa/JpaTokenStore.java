@@ -20,7 +20,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.legacyjpa.EntityManagerProvider;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.*;
+import org.axonframework.eventhandling.tokenstore.ConfigToken;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToInitializeTokenException;
+import org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException;
 import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -28,22 +32,26 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
+import java.time.Duration;
+import java.time.temporal.TemporalAmount;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import java.lang.management.ManagementFactory;
-import java.time.Duration;
-import java.time.temporal.TemporalAmount;
-import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.eventhandling.tokenstore.jpa.TokenEntry.clock;
+import static org.axonframework.eventhandling.tokenstore.AbstractTokenEntry.clock;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
