@@ -363,13 +363,14 @@ class JpaTokenStoreTest {
 
     @Test
     void stealToken() {
+        TrackingToken testToken = new GlobalSequenceTrackingToken(0);
+
         jpaTokenStore.initializeTokenSegments("stealing", 1);
 
         jpaTokenStore.fetchToken("stealing", 0);
         stealingJpaTokenStore.fetchToken("stealing", 0);
 
-        assertThrows(UnableToClaimTokenException.class,
-                     () -> jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(0), "stealing", 0));
+        assertThrows(UnableToClaimTokenException.class, () -> jpaTokenStore.storeToken(testToken, "stealing", 0));
         jpaTokenStore.releaseClaim("stealing", 0);
         // claim should still be on stealingJpaTokenStore:
         stealingJpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "stealing", 0);
