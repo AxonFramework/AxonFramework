@@ -16,29 +16,33 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Lob;
-import jakarta.persistence.MappedSuperclass;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Objects;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Lob;
+import javax.persistence.MappedSuperclass;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
  * Abstract base class of a JPA entry containing a serialized tracking token belonging to a given process.
+ * For use with Jakarta/Hibernate 6 use {@link org.axonframework.eventhandling.tokenstore.jpa.TokenEntry} instead.
  *
  * @param <T> The serialized data type of the token
  * @author Rene de Waele
  */
 @MappedSuperclass
-@javax.persistence.MappedSuperclass
 public abstract class AbstractTokenEntry<T> {
 
     /**
@@ -48,19 +52,14 @@ public abstract class AbstractTokenEntry<T> {
 
     @Lob
     @Column(length = 10000)
-    @javax.persistence.Lob
-    @javax.persistence.Column(length = 10000)
     private T token;
     @Basic
-    @javax.persistence.Basic
     private String tokenType;
 
     @Basic(optional = false)
-    @javax.persistence.Basic(optional = false)
     private String timestamp;
 
     @Basic
-    @javax.persistence.Basic
     private String owner;
 
     /**
