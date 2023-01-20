@@ -130,7 +130,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private Deque<DomainEventMessage<?>> givenEvents;
     private Deque<DomainEventMessage<?>> storedEvents;
     private List<EventMessage<?>> publishedEvents;
-    private long sequenceNumber = 0;
+    private long sequenceNumber;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
@@ -150,8 +150,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         resources.add(commandBus);
         resources.add(eventStore);
         resources.add(deadlineManager);
+
         this.aggregateType = aggregateType;
-        clearGivenWhenState();
+        this.storedEvents = new LinkedList<>();
+        this.publishedEvents = new ArrayList<>();
+        this.givenEvents = new LinkedList<>();
+        this.sequenceNumber = 0;
 
         registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(resources));
         registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(aggregateType));
@@ -458,6 +462,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
+        clearGivenWhenState();
         deadlineManager.initializeAt(currentTime);
         return this;
     }
@@ -469,6 +474,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
+        logger.debug("Starting WHEN-phase");
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
@@ -481,6 +487,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
+        logger.debug("Starting WHEN-phase");
         deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
     }
@@ -531,6 +538,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private ResultValidator<T> when(Consumer<ResultValidatorImpl<T>> whenPhase) {
+        logger.debug("Starting WHEN-phase");
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
@@ -545,6 +553,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             detectIllegalStateChanges(fieldFilter, workingAggregate);
         }
         resultValidator.assertValidRecording();
+        logger.debug("Starting EXPECT-phase");
         return resultValidator;
     }
 
@@ -569,6 +578,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                            () -> repository.getAggregate(),
                                                                            deadlineManager);
         resultValidator.assertValidRecording();
+        logger.debug("Starting EXPECT-phase");
         return resultValidator;
     }
 
@@ -745,6 +755,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void clearGivenWhenState() {
+        logger.debug("Starting GIVEN-phase");
         storedEvents = new LinkedList<>();
         publishedEvents = new ArrayList<>();
         givenEvents = new LinkedList<>();
