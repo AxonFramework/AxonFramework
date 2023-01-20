@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,42 +24,33 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.*;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.TestTargetContextResolver.BOUNDED_CONTEXT;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -155,8 +146,12 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch", commandMessage);
-        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage);
+        await().atMost(Duration.ofSeconds(3l))
+                .until(() ->
+                        spanFactory.spanCompleted("AxonServerCommandBus.dispatch"));
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage));
     }
 
     @Test
@@ -415,8 +410,8 @@ class AxonServerCommandBusTest {
 
         testSubject.disconnect().join();
 
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
+        await().atMost(Duration.ofSeconds(3l)).until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
+        await().atMost(Duration.ofSeconds(3l)).until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
     }
 
     @Test

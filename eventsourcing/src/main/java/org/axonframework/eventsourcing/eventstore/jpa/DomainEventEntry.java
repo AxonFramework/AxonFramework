@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import org.axonframework.eventhandling.AbstractSequencedDomainEventEntry;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
-
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.Table;
 
 /**
  * Default implementation of a tracked domain event entry. This implementation is used by the {@link
@@ -32,6 +31,8 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
+@javax.persistence.Entity
+@javax.persistence.Table(indexes = @javax.persistence.Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
 public class DomainEventEntry extends AbstractSequencedDomainEventEntry<byte[]> {
 
     /**

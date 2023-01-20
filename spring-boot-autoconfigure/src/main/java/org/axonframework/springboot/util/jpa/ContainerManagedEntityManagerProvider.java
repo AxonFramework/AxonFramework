@@ -16,11 +16,11 @@
 
 package org.axonframework.springboot.util.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 /**
  * EntityManagerProvider implementation that expects the container to inject the default container managed

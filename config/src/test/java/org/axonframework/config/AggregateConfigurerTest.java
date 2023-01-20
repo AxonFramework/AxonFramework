@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import com.thoughtworks.xstream.XStream;
+import jakarta.persistence.EntityManager;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -60,7 +61,6 @@ import org.mockito.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.persistence.EntityManager;
 
 import static org.axonframework.config.utils.TestSerializer.xStreamSerializer;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;

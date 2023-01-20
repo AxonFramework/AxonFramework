@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import jakarta.persistence.Id;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlingMember;
@@ -28,21 +29,12 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AggregateVersion;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import javax.annotation.Nonnull;
+import java.lang.annotation.*;
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
@@ -50,8 +42,6 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.persistence.Id;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -293,28 +283,28 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
     @Test
     void findJavaxPersistenceIdentifier() {
-        AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
+        AggregateModel<JakartaPersistenceAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
     }
 
     @Test
-    void findJavaxPersistenceGetterIdentifier() {
-        AggregateModel<JavaxPersistenceGetterAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceGetterAnnotatedHandlers.class);
+    void findJakartaPersistenceGetterIdentifier() {
+        AggregateModel<JakartaPersistenceGetterAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceGetterAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceGetterAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceGetterAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
     }
 
     @Test
-    void findJavaxPersistenceMethodIdentifier() {
-        AggregateModel<JavaxPersistenceMethodIdAnnotatedHandlers> inspector =
-                AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceMethodIdAnnotatedHandlers.class);
+    void findJakartaPersistenceMethodIdentifier() {
+        AggregateModel<JakartaPersistenceMethodIdAnnotatedHandlers> inspector =
+                AnnotatedAggregateMetaModelFactory.inspectAggregate(JakartaPersistenceMethodIdAnnotatedHandlers.class);
 
-        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceMethodIdAnnotatedHandlers()));
+        assertEquals("id", inspector.getIdentifier(new JakartaPersistenceMethodIdAnnotatedHandlers()));
         assertEquals("calculatedId", inspector.routingKey());
     }
 
@@ -469,7 +459,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
 
     @SuppressWarnings("unused")
-    private static class JavaxPersistenceAnnotatedHandlers {
+    private static class JakartaPersistenceAnnotatedHandlers {
 
         @Id
         private String id = "id";
@@ -486,7 +476,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private static class JavaxPersistenceGetterAnnotatedHandlers {
+    private static class JakartaPersistenceGetterAnnotatedHandlers {
 
         private String id = "id";
 
@@ -507,7 +497,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unused")
-    private static class JavaxPersistenceMethodIdAnnotatedHandlers {
+    private static class JakartaPersistenceMethodIdAnnotatedHandlers {
 
         private String id = "id";
 

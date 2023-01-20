@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,7 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.EventTrackerStatus;
-import org.axonframework.eventhandling.EventTrackerStatusChangeListener;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -52,24 +35,15 @@ import org.axonframework.serialization.SerializationException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -1591,15 +1565,17 @@ class TrackingEventProcessorTest {
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
         await().pollDelay(pollDelay)
-               .atMost(Duration.ofMillis(250))
-               .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
+                .atMost(Duration.ofMillis(250))
+                .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
 
         await().pollDelay(pollDelay)
-               .atMost(Duration.ofSeconds(1))
-               .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
+                .atMost(Duration.ofSeconds(1))
+                .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
-        assertEquals(30, handledEvents.size());
+        await().pollDelay(pollDelay)
+                .atMost(Duration.ofSeconds(1))
+                .until(() -> handledEvents.size() == 30);
     }
 
     @Test

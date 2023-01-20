@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
@@ -32,8 +34,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -184,7 +184,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * optimistic locks will be identified in an early stage.
      *
      * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to {@code true}.
-     * @see javax.persistence.EntityManager#flush()
+     * @see jakarta.persistence.EntityManager#flush()
      */
     public void setForceFlushOnSave(boolean forceFlushOnSave) {
         this.forceFlushOnSave = forceFlushOnSave;

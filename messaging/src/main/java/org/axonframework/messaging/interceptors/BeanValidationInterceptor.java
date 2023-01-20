@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -26,10 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a

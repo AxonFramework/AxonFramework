@@ -1,0 +1,45 @@
+<!--
+  ~ Copyright (c) 2010-2023. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+    <persistence-unit name="sb3eventStore" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:tokens"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+        </properties>
+    </persistence-unit>
+    <persistence-unit name="sb3integrationtest" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
+        <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEntry</class>
+        <class>org.axonframework.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>
+        <properties>
+            <property name="hibernate.archive.autodetection" value="class"/>
+        </properties>
+    </persistence-unit>
+</persistence>

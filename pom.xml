@@ -22,13 +22,9 @@
     <version>4.7.0-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
-        <module>messaging-jakarta</module>
         <module>modelling</module>
-        <module>modelling-jakarta</module>
         <module>eventsourcing</module>
-        <module>eventsourcing-jakarta</module>
         <module>config</module>
-        <module>config-jakarta</module>
         <module>test</module>
         <module>axon-server-connector</module>
         <module>disruptor</module>
@@ -39,7 +35,6 @@
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
         <module>integrationtests</module>
-        <module>integrationtests-jakarta</module>
         <module>legacy</module>
         <module>reactorless-test</module>
     </modules>
@@ -85,18 +80,8 @@
         <micrometer.version>1.10.3</micrometer.version>
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
         <jackson.version>2.13.4</jackson.version>
-
-        <!-- Validation -->
-        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
-        <el-impl.version>2.2</el-impl.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-
-        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <javax.cache-api.version>1.1.1</javax.cache-api.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
+        <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
         <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
@@ -105,6 +90,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
         <hibernate-core.version>5.6.14.Final</hibernate-core.version>
+        <hibernate-core.6.version>6.1.6.Final</hibernate-core.6.version>
         <byte-buddy.version>1.12.22</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
@@ -133,11 +119,16 @@
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
+        <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
 
-        <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
-        <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
-
-        <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
+        <javax.el-impl.version>2.2</javax.el-impl.version>
+        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
+        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+        <javax.cache-api.version>1.1.1</javax.cache-api.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.persistence-api.version>2.2</javax.persistence-api.version>
+        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
     </properties>
 
     <dependencies>
@@ -198,13 +189,6 @@
                     <artifactId>jms</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <!-- Not part of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -337,6 +321,11 @@
                 <version>${hibernate-core.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${hibernate-core.6.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>c3p0</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
@@ -419,21 +408,25 @@
                 <version>${jakarta.el.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.web</groupId>
-                <artifactId>el-impl</artifactId>
-                <version>${el-impl.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.el</artifactId>
-                <version>${jakarta.el.implementation.version}</version>
+                <version>${jakarta.el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>el-impl</artifactId>
+                <version>${javax.el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
+                <version>${hibernate-validator.8.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
@@ -453,12 +446,6 @@
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${javax.jaxb-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -849,6 +836,24 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>java11-modules</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <modules>
+                <module>hibernate-6-integrationtests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>java17-modules</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>spring-boot-3-integrationtests</module>
+            </modules>
         </profile>
     </profiles>
 

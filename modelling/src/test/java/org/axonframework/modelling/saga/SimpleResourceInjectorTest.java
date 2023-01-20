@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 package org.axonframework.modelling.saga;
 
-import org.axonframework.modelling.utils.MockException;
 import org.axonframework.eventhandling.EventMessage;
-import org.junit.jupiter.api.Test;
+import org.axonframework.modelling.utils.MockException;
+import org.junit.jupiter.api.*;
 
-import javax.inject.Inject;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Allard Buijze
