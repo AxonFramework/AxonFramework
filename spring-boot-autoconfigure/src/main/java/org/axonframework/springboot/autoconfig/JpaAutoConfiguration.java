@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -26,14 +27,13 @@ import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 import java.sql.SQLException;
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 /**
@@ -42,7 +42,7 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 3.0.3
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventhandling.tokenstore",

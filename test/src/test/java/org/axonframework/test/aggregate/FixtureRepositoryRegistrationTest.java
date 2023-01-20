@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import jakarta.persistence.EntityManager;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -30,13 +31,12 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
-
-import javax.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the following behavior around the fixture's {@link Repository}:

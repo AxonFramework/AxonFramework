@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.MappedSuperclass;
 import org.axonframework.eventhandling.AbstractEventEntry;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -23,9 +26,6 @@ import org.axonframework.serialization.Serializer;
 
 import java.io.Serializable;
 import java.util.Objects;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Abstract base class of a serialized snapshot event storing the state of an aggregate. If JPA is used these entries
@@ -35,13 +35,18 @@ import javax.persistence.MappedSuperclass;
  */
 @MappedSuperclass
 @IdClass(AbstractSnapshotEventEntry.PK.class)
+@javax.persistence.MappedSuperclass
+@javax.persistence.IdClass(AbstractSnapshotEventEntry.PK.class)
 public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
     @Id
+    @javax.persistence.Id
     private String aggregateIdentifier;
     @Id
+    @javax.persistence.Id
     private long sequenceNumber;
     @Id
+    @javax.persistence.Id
     private String type;
 
     /**

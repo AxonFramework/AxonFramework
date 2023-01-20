@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
@@ -53,8 +55,6 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -350,7 +350,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                                             + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
                                             .setParameter("aggregateId", aggregateIdentifier)
                                             .getResultList();
-        if (results.size() == 0) {
+        if (results.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(results.get(0));

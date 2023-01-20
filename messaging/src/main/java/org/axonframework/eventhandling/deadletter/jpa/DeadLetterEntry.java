@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.*;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
@@ -26,14 +27,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Lob;
-import javax.persistence.Table;
 
 /**
  * Default DeadLetter JPA entity implementation of dead letters. Used by the {@link JpaSequencedDeadLetterQueue} to
@@ -51,24 +44,36 @@ import javax.persistence.Table;
         @Index(columnList = "processingGroup,sequenceIdentifier"),
         @Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
 })
+@javax.persistence.Entity
+@javax.persistence.Table(indexes = {
+        @javax.persistence.Index(columnList = "processingGroup"),
+        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier"),
+        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
+})
 public class DeadLetterEntry {
 
     @Id
+    @javax.persistence.Id
     private String deadLetterId;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String processingGroup;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String sequenceIdentifier;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private long sequenceIndex;
 
     @Embedded
+    @javax.persistence.Embedded
     private DeadLetterEventEntry message;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private Instant enqueuedAt;
 
     private Instant lastTouched;
@@ -81,6 +86,9 @@ public class DeadLetterEntry {
     @Basic
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private byte[] diagnostics;
 
 

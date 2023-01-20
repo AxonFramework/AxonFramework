@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.springboot.SerializerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -30,7 +31,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
 
 import java.lang.invoke.MethodHandles;
 
@@ -45,7 +45,7 @@ import static org.axonframework.springboot.util.XStreamSecurityTypeUtility.autoC
  * @author Steven van Beelen
  * @since 4.5.4
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = "com.thoughtworks.xstream.XStream")
 @EnableConfigurationProperties(value = SerializerProperties.class)

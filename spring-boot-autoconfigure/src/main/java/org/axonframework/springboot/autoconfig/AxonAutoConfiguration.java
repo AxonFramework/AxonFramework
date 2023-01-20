@@ -76,6 +76,7 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -94,7 +95,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @author Josh Long
  */
-@org.springframework.context.annotation.Configuration
+@AutoConfiguration
 @AutoConfigureAfter(EventProcessingAutoConfiguration.class)
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
