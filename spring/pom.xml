@@ -25,7 +25,7 @@
 
     <artifactId>axon-spring</artifactId>
 
-    <name>Axon Framework Spring Support</name>
+    <name>Axon Framework - Spring Support</name>
     <description>
         Module providing Spring specific helper functionality to ease configuration / set-up of an Axon application, as
         well as some Spring specific infrastructure components.

@@ -25,9 +25,9 @@
 
     <artifactId>axon-spring-boot-autoconfigure</artifactId>
 
-    <name>Axon Framework Spring Boot Support</name>
+    <name>Axon Framework - Spring Boot Support</name>
     <description>
-        Module providing support for auto configuration of the framework through Spring Boot.
+        Module providing support for auto-configuration of Axon Framework through Spring Boot.
     </description>
 
     <dependencies>

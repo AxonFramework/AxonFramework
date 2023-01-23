@@ -25,7 +25,7 @@
 
     <artifactId>axon-eventsourcing</artifactId>
 
-    <name>Axon Event Sourcing</name>
+    <name>Axon Framework - Event Sourcing</name>
     <description>
         Module containing all necessary infrastructure components to support Event Sourcing Command and Query models.
     </description>

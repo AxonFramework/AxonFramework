@@ -25,7 +25,7 @@
 
     <artifactId>axon-server-connector</artifactId>
 
-    <name>Axon Framework Connector for AxonServer</name>
+    <name>Axon Framework - Axon Server Connector</name>
     <description>
         Connector module providing infrastructure components that connect to AxonServer.
     </description>

@@ -26,11 +26,9 @@
 
     <artifactId>axon-hibernate-6-integrationtests</artifactId>
 
-    <name>Axon Integration tests using hibernate 6</name>
+    <name>Axon Framework - Hibernate 6 Integration Tests</name>
     <description>
-        Module containing integration tests using hibernate 6 to run during the build of Axon Framework. Does not
-        contain any production
-        code.
+        Module containing integration tests using Hibernate 6. Does not contain any production code.
     </description>
 
     <dependencies>

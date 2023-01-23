@@ -25,9 +25,9 @@
 
     <artifactId>axon-micrometer</artifactId>
 
-    <name>Axon Framework Micrometer Metrics</name>
+    <name>Axon Framework - Micrometer Metrics</name>
     <description>
-        This module contains components that provide metrics for standard Axon components using the micrometer library.
+        This module contains components that provide metrics for standard Axon components using the Micrometer library.
     </description>
 
     <packaging>bundle</packaging>

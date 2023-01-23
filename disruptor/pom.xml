@@ -25,7 +25,7 @@
 
     <artifactId>axon-disruptor</artifactId>
 
-    <name>Axon Disruptor</name>
+    <name>Axon Framework - Disruptor</name>
     <description>
         Module containing a Command Bus and Command Handling solution based on the Disruptor paradigm.
     </description>

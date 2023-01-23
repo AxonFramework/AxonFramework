@@ -25,7 +25,7 @@
 
     <artifactId>axon-messaging</artifactId>
 
-    <name>Axon Framework Messaging</name>
+    <name>Axon Framework - Messaging</name>
     <description>
         Module containing all the necessary components and building blocks to support command, event and query
         messaging.

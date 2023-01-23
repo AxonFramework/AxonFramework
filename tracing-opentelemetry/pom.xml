@@ -25,7 +25,7 @@
 
     <artifactId>axon-tracing-opentelemetry</artifactId>
 
-    <name>Axon Framework Tracing OpenTelemetry support</name>
+    <name>Axon Framework - OpenTelemetry Tracing</name>
     <description>
         This module contains components that provide tracing support specifically for OpenTelemetry.
     </description>

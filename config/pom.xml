@@ -25,7 +25,7 @@
 
     <artifactId>axon-configuration</artifactId>
 
-    <name>Axon Configuration</name>
+    <name>Axon Framework - Configuration</name>
     <description>
         Contains all the necessary components to configure an Axon application.
     </description>

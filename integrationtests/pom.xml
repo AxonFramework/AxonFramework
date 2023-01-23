@@ -25,7 +25,7 @@
 
     <artifactId>axon-integrationtests</artifactId>
 
-    <name>Axon Integration tests</name>
+    <name>Axon Framework - Integration Tests</name>
     <description>
         Module containing integration tests to run during the build of Axon Framework. Does not contain any production
         code.

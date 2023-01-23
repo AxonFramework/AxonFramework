@@ -25,7 +25,7 @@
 
     <artifactId>axon-modelling</artifactId>
 
-    <name>Axon Framework Modelling</name>
+    <name>Axon Framework - Modelling</name>
     <description>
         Module containing the necessary components to create domain models, like Aggregates and Sagas.
     </description>
