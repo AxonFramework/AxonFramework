@@ -51,10 +51,10 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
         final String sql = "CREATE TABLE IF NOT EXISTS " + sagaSchema().associationValueEntryTable() + " (\n" +
                 "        id bigserial NOT NULL,\n" +
-                "        associationKey VARCHAR(255),\n" +
-                "        associationValue VARCHAR(255),\n" +
-                "        sagaId VARCHAR(255),\n" +
-                "        sagaType VARCHAR(255),\n" +
+                "        " + sagaSchema.associationKeyColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.associationValueColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.sagaIdColumn() + " VARCHAR(255),\n" +
+                "        " + sagaSchema.sagaTypeColumn() + " VARCHAR(255),\n" +
                 "        PRIMARY KEY (id)\n" +
                 "    );\n";
         return conn.prepareStatement(sql);
@@ -63,11 +63,11 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
     @Override
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
         return conn.prepareStatement("CREATE TABLE IF NOT EXISTS " + sagaSchema().sagaEntryTable() + " (\n" +
-                                             "        sagaId VARCHAR(255) NOT NULL,\n" +
+                                             "        " + sagaSchema.sagaIdColumn() + " VARCHAR(255) NOT NULL,\n" +
                                              "        revision VARCHAR(255),\n" +
-                                             "        sagaType VARCHAR(255),\n" +
-                                             "        serializedSaga bytea,\n" +
-                                             "        PRIMARY KEY (sagaId)\n" +
+                                             "        " + sagaSchema.sagaTypeColumn() + " VARCHAR(255),\n" +
+                                             "        " + sagaSchema.serializedSagaColumn() + " bytea,\n" +
+                                             "        PRIMARY KEY (" + sagaSchema.sagaIdColumn() + ")\n" +
                                              "    );");
     }
 
@@ -76,9 +76,9 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
         if (!exclusiveLoad) {
             return super.sql_loadSaga(connection, sagaId);
         }
-        final String sql = "SELECT serializedSaga, sagaType, revision" +
+        final String sql = "SELECT " + sagaSchema.serializedSagaColumn() + ", " + sagaSchema.sagaTypeColumn() + ", revision" +
                 " FROM " + sagaSchema().sagaEntryTable() +
-                " WHERE sagaId = ?" +
+                " WHERE " + sagaSchema.sagaIdColumn() + " = ?" +
                 " FOR UPDATE";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, sagaId);
