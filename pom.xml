@@ -106,11 +106,13 @@
         <awaitility.version>4.2.0</awaitility.version>
         <xstream.version>1.4.20</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
+
         <!-- plugin versions -->
         <felix.maven-bundle-plugin.version>5.1.8</felix.maven-bundle-plugin.version>
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
         <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
@@ -530,7 +532,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
