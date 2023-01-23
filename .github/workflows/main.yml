@@ -20,10 +20,10 @@ jobs:
             sonar-enabled: false
             deploy-enabled: true
           - java-version: 11
-            sonar-enabled: true
+            sonar-enabled: false
             deploy-enabled: false
           - java-version: 17
-            sonar-enabled: false
+            sonar-enabled: true
             deploy-enabled: false
 
     steps:
