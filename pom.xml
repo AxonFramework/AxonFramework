@@ -80,7 +80,7 @@
         <micrometer.version>1.10.3</micrometer.version>
         <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
         <jackson.version>2.13.4</jackson.version>
-        <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
+        <hibernate-validator.version>7.0.5.Final</hibernate-validator.version>
         <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
         <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
