@@ -33,6 +33,8 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.core.ResolvableType;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -42,6 +44,7 @@ import java.util.Objects;
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
+import static org.springframework.core.ResolvableType.forClassWithGenerics;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a
@@ -204,6 +207,11 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                                              .addPropertyValue(
                                                      "configuration", new RuntimeBeanReference(Configuration.class)
                                              )
+                                             .applyCustomizers(bd -> {
+                                                 ResolvableType resolvableRepositoryType =
+                                                         forClassWithGenerics(Repository.class, aggregateType);
+                                                 ((RootBeanDefinition) bd).setTargetType(resolvableRepositoryType);
+                                             })
                                              .getBeanDefinition()
                 );
             }
