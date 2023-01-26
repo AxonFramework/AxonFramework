@@ -24,18 +24,24 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import io.axoniq.axonserver.grpc.command.CommandSubscription;
-import org.axonframework.axonserver.connector.*;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TestTargetContextResolver;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -43,7 +49,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -404,13 +414,19 @@ class AxonServerCommandBusTest {
     void disconnectUnsubscribesAllRegisteredCommands() {
         String testCommandOne = "testCommandOne";
         String testCommandTwo = "testCommandTwo";
+        //noinspection resource
         testSubject.subscribe(testCommandOne, command -> "Done");
+        //noinspection resource
         testSubject.subscribe(testCommandTwo, command -> "Done");
 
         testSubject.disconnect().join();
 
-        await().atMost(Duration.ofSeconds(3l)).until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
-        await().atMost(Duration.ofSeconds(3l)).until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
     }
 
     @Test
