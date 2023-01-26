@@ -32,8 +32,7 @@ import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.ContextAwareEventMultiUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -45,7 +44,13 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.beans.ConstructorProperties;
-import java.util.*;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
@@ -53,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static org.axonframework.utils.AssertUtils.assertWithin;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -86,16 +91,17 @@ class PooledStreamingEventProcessorIntegrationTest {
             EventGateway eventGateway = context.getBean(EventGateway.class);
             eventGateway.publish(new OriginalEvent("my-text"));
             processor.start();
-            assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processor.processingStatus().size()));
+            await().atMost(Duration.ofMillis(500))
+                   .until(() -> processor.processingStatus().size() == 1);
 
             UpcasterTestEventHandlingComponent eventHandlingComponent =
                     context.getBean(UpcasterTestEventHandlingComponent.class);
 
             assertNotNull(eventHandlingComponent);
-            assertWithin(500, TimeUnit.MILLISECONDS,
-                         () -> assertEquals(0, eventHandlingComponent.getOriginalEventCounter().get()));
-            assertWithin(500, TimeUnit.MILLISECONDS,
-                         () -> assertEquals(2, eventHandlingComponent.getUpcastedEventCounter().get()));
+            await().atMost(Duration.ofMillis(500))
+                   .until(() -> eventHandlingComponent.getOriginalEventCounter().get() == 0);
+            await().atMost(Duration.ofMillis(500))
+                   .until(() -> eventHandlingComponent.getUpcastedEventCounter().get() == 2);
         });
     }
 
@@ -121,17 +127,18 @@ class PooledStreamingEventProcessorIntegrationTest {
 
             // Validating for 15 or more status', as the failing segment might already have failed at this point,
             //  resulting in 15 instead of 16 entries.
-            assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(processor.processingStatus().size() >= 15));
-            assertWithin(500, TimeUnit.MILLISECONDS,
-                         () -> assertTrue(processor.processingStatus()
-                                                   .values()
-                                                   .stream()
-                                                   .map(EventTrackerStatus::getTrackingToken)
-                                                   .filter(Objects::nonNull)
-                                                   .map(TrackingToken::position)
-                                                   .filter(OptionalLong::isPresent)
-                                                   .map(OptionalLong::getAsLong)
-                                                   .anyMatch(position -> position >= numberOfEvents)));
+            await().atMost(Duration.ofMillis(500))
+                   .until(() -> processor.processingStatus().size() >= 15);
+            await().atMost(Duration.ofMillis(500))
+                   .until(() -> processor.processingStatus()
+                                         .values()
+                                         .stream()
+                                         .map(EventTrackerStatus::getTrackingToken)
+                                         .filter(Objects::nonNull)
+                                         .map(TrackingToken::position)
+                                         .filter(OptionalLong::isPresent)
+                                         .map(OptionalLong::getAsLong)
+                                         .anyMatch(position -> position >= numberOfEvents));
 
             HandlingOnceEventHandlingComponent eventHandlingComponent =
                     context.getBean(HandlingOnceEventHandlingComponent.class);
