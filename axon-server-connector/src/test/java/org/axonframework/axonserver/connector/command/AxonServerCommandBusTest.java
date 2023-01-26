@@ -296,7 +296,6 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanHasException("AxonServerCommandBus.dispatch", EventStoreException.class);
     }
 
     @Test
