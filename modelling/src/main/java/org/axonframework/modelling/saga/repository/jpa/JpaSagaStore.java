@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.modelling.saga.repository.jpa;
 
-import com.thoughtworks.xstream.XStream;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityNotFoundException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.AssociationValue;
@@ -24,31 +26,26 @@ import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * JPA implementation of the {@link SagaStore}. It uses an {@link javax.persistence.EntityManager} to persist the actual
- * saga in a backing store in serialized form.
+ * JPA implementation of the {@link SagaStore}. It uses an {@link EntityManager} to persist the actual saga in a backing
+ * store in serialized form.
  * <p/>
- * After each operation that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
- * ensure the store contains the last modifications. To override this behavior, see {@link
- * #setUseExplicitFlush(boolean)}
+ * After each operation that modified the backing store, {@link EntityManager#flush()} is invoked to ensure the store
+ * contains the last modifications. To override this behavior, see {@link #setUseExplicitFlush(boolean)}
  *
  * @author Allard Buijze
  * @since 3.0
@@ -57,6 +54,8 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaSagaStore.class);
 
+    private static final String SAGA_ID_PARAM = "sagaId";
+    private static final String SAGA_TYPE_PARAM = "sagaType";
 
     // Saga Queries, non-final to inject the return type and table name.
     private final String LOAD_SAGA_QUERY =
@@ -153,7 +152,7 @@ public class JpaSagaStore implements SagaStore<Object> {
 
         List<? extends SimpleSerializedObject<?>> serializedSagaList =
                 entityManager.createNamedQuery(LOAD_SAGA_NAMED_QUERY, serializedObjectType)
-                             .setParameter("sagaId", sagaIdentifier)
+                             .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                              .setMaxResults(1)
                              .getResultList();
         if (serializedSagaList == null || serializedSagaList.isEmpty()) {
@@ -170,8 +169,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Loads the {@link AssociationValue association values} of the saga with given {@code sagaIdentifier} and {@code
-     * sagaType}.
+     * Loads the {@link AssociationValue association values} of the saga with given {@code sagaIdentifier} and
+     * {@code sagaType}.
      *
      * @param entityManager  the entity manager instance to use for the query
      * @param sagaType       the saga instance class
@@ -182,8 +181,8 @@ public class JpaSagaStore implements SagaStore<Object> {
                                                           String sagaIdentifier) {
         List<AssociationValueEntry> associationValueEntries =
                 entityManager.createNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, AssociationValueEntry.class)
-                             .setParameter("sagaType", getSagaTypeName(sagaType))
-                             .setParameter("sagaId", sagaIdentifier)
+                             .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType))
+                             .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                              .getResultList();
 
         return associationValueEntries.stream().map(AssociationValueEntry::getAssociationValue)
@@ -203,8 +202,8 @@ public class JpaSagaStore implements SagaStore<Object> {
         int updateCount = entityManager.createNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY)
                                        .setParameter("associationKey", associationValue.getKey())
                                        .setParameter("associationValue", associationValue.getValue())
-                                       .setParameter("sagaType", getSagaTypeName(sagaType))
-                                       .setParameter("sagaId", sagaIdentifier)
+                                       .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType))
+                                       .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                                        .executeUpdate();
         if (updateCount == 0 && logger.isWarnEnabled()) {
             logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
@@ -235,7 +234,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         List<String> entries = entityManager.createNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, String.class)
                                             .setParameter("associationKey", associationValue.getKey())
                                             .setParameter("associationValue", associationValue.getValue())
-                                            .setParameter("sagaType", getSagaTypeName(sagaType)).getResultList();
+                                            .setParameter(SAGA_TYPE_PARAM, getSagaTypeName(sagaType)).getResultList();
         return new TreeSet<>(entries);
     }
 
@@ -244,7 +243,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         try {
             entityManager.createNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY)
-                         .setParameter("sagaId", sagaIdentifier)
+                         .setParameter(SAGA_ID_PARAM, sagaIdentifier)
                          .executeUpdate();
             entityManager.createNamedQuery(DELETE_SAGA_NAMED_QUERY)
                          .setParameter("id", sagaIdentifier)
@@ -262,7 +261,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     @Override
     public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        AbstractSagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
+        SagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Updating saga id {} as {}", sagaIdentifier, serializedSagaAsString(entry));
@@ -270,7 +269,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         int updateCount = entityManager.createNamedQuery(UPDATE_SAGA_NAMED_QUERY)
                                        .setParameter("serializedSaga", entry.getSerializedSaga())
                                        .setParameter("revision", entry.getRevision())
-                                       .setParameter("sagaId", entry.getSagaId())
+                                       .setParameter(SAGA_ID_PARAM, entry.getSagaId())
                                        .executeUpdate();
         for (AssociationValue associationValue : associationValues.addedAssociations()) {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
@@ -286,9 +285,9 @@ public class JpaSagaStore implements SagaStore<Object> {
         }
     }
 
-    private String serializedSagaAsString(AbstractSagaEntry<?> entry) {
-        if (entry instanceof SagaEntry) {
-            return new String((byte[]) entry.getSerializedSaga(), Charset.forName("UTF-8"));
+    private String serializedSagaAsString(SagaEntry<?> entry) {
+        if (entry != null) {
+            return new String(entry.getSerializedSaga(), StandardCharsets.UTF_8);
         } else {
             return "[Custom serialization format (not visible)]";
         }
@@ -298,7 +297,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga,
                            Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        AbstractSagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
+        SagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
         entityManager.persist(entry);
         for (AssociationValue associationValue : associationValues) {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
@@ -312,8 +311,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Sets whether or not to do an explicit {@link javax.persistence.EntityManager#flush()} after each data modifying
-     * operation on the backing storage. Default to {@code true}
+     * Sets whether or not to do an explicit {@link EntityManager#flush()} after each data modifying operation on the
+     * backing storage. Default to {@code true}
      *
      * @param useExplicitFlush {@code true} to force flush, {@code false} otherwise.
      */
@@ -329,7 +328,7 @@ public class JpaSagaStore implements SagaStore<Object> {
      * @param serializer     The serializer to serialize to the {@link SagaEntry#getSerializedSaga()}
      * @return An instanceof @{@link SagaEntry}
      */
-    protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
+    protected SagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
         return new SagaEntry<>(saga, sagaIdentifier, serializer);
     }
 
@@ -363,8 +362,8 @@ public class JpaSagaStore implements SagaStore<Object> {
         private Supplier<Serializer> serializer;
 
         /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
-         * underlying database.
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
+         * database.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
          *                              access the underlying database
@@ -407,16 +406,7 @@ public class JpaSagaStore implements SagaStore<Object> {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
             if (serializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used, whereas it is strongly recommended to configure"
-                                + " the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used, without specifying the security context"
-                        )
-                );
-                serializer = () -> XStreamSerializer.builder()
-                                                    .xStream(new XStream(new CompactDriver()))
-                                                    .build();
+                serializer = XStreamSerializer::defaultSerializer;
             }
         }
     }

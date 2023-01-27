@@ -69,31 +69,74 @@ public class Reporter {
      * @param actualEvents  The events that were found
      * @param expectation   A Description of what was expected
      * @param probableCause An optional exception that might be the reason for wrong events
+     * @deprecated This method has been previously used to report non-matching {@link org.hamcrest.Matcher} results.
+     *             Has been replaced by {@link #reportWrongEvent(Collection, Description, Description, Throwable)}.
+     *             The method is kept for api backwards compatibility only and my be removed in a future release.
      */
+    @Deprecated
     public void reportWrongEvent(Collection<?> actualEvents, StringDescription expectation, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events.");
-        sb.append("Expected :");
-        sb.append(NEWLINE);
-        sb.append(expectation);
-        sb.append(NEWLINE);
-        sb.append("But got");
+        sb.append("Expected :")
+          .append(NEWLINE)
+          .append(expectation)
+          .append(NEWLINE)
+          .append("But got");
         if (actualEvents.isEmpty()) {
             sb.append(" none");
         } else {
             sb.append(":");
         }
         for (Object publishedEvent : actualEvents) {
-            sb.append(NEWLINE);
-            sb.append(publishedEvent.getClass().getSimpleName());
-            sb.append(": ");
-            sb.append(publishedEvent.toString());
+            sb.append(NEWLINE)
+              .append(publishedEvent.getClass().getSimpleName())
+              .append(": ")
+              .append(publishedEvent);
         }
         appendProbableCause(probableCause, sb);
 
         throw new AxonAssertionError(sb.toString());
     }
 
+    /**
+     * Report an error of events not matching expectations defined by {@link org.hamcrest.Matcher}s. This method will
+     * receive two different {@link Description}s:
+     * <ul>
+     *   <li><code>expectation</code>: textual description of the complete matcher (chain) that has been used</li>
+     *   <li><code>mismatch</code>: detailed description of the mismatch.</li>
+     * </ul>
+     *
+     * @param actualEvents  The events that were found
+     * @param expectation   A Description of what was expected
+     * @param mismatch      detailed description of the actual mismatch.
+     * @param probableCause An optional exception that might be the reason for wrong events
+     */
+    public void reportWrongEvent(Collection<?> actualEvents, Description expectation, Description mismatch, Throwable probableCause) {
+        StringBuilder sb = new StringBuilder("The published events do not match the expected events.");
+        sb.append("Expected :");
+        sb.append(NEWLINE);
+        sb.append(expectation);
+        sb.append(NEWLINE);
+        sb.append("Did not match:");
+        sb.append(NEWLINE);
+        sb.append(mismatch);
+        sb.append(NEWLINE);
+        sb.append("Actual Sequence of events:");
+        if (actualEvents.isEmpty()) { 
+            sb.append(" no events emitted");
+        }
+        for (Object publishedEvent : actualEvents) {
+            sb.append(NEWLINE);
+            sb.append(publishedEvent.getClass().getSimpleName());
+            sb.append(": ");
+            sb.append(publishedEvent);
+        }
+        appendProbableCause(probableCause, sb);
+
+        throw new AxonAssertionError(sb.toString());
+
+    }
+        
     /**
      * Reports an error due to an unexpected exception. This means a return value was expected, but an exception was
      * thrown by the command handler
@@ -155,7 +198,7 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a an exception of an unexpected type.
+     * Report an error due to an exception of an unexpected type.
      *
      * @param actualException The actual exception
      * @param description     A description describing the expected value
@@ -197,8 +240,8 @@ public class Reporter {
     /**
      * Report an error due to a difference in exception details.
      *
-     * @param details       The actual details
-     * @param description   A description describing the expected value
+     * @param details     The actual details
+     * @param description A description describing the expected value
      */
     public void reportWrongExceptionDetails(Object details, Description description) {
         throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
@@ -284,22 +327,30 @@ public class Reporter {
           .append(messageType.getSimpleName())
           .append("], ");
         if (!additionalEntries.isEmpty()) {
-            sb.append("metadata entries" + NEWLINE).append("[");
+            sb.append("metadata entries")
+              .append(NEWLINE)
+              .append("[");
             for (Map.Entry<String, Object> entry : additionalEntries.entrySet()) {
-                sb.append(entryAsString(entry) + ", ");
+                sb.append(entryAsString(entry))
+                  .append(", ");
             }
             sb.delete(sb.lastIndexOf(", "), sb.lastIndexOf(",") + 2);
-            sb.append("] " + NEWLINE);
-            sb.append("were not expected. ");
+            sb.append("] ")
+              .append(NEWLINE)
+              .append("were not expected. ");
         }
         if (!missingEntries.isEmpty()) {
-            sb.append("metadata entries " + NEWLINE).append("[");
+            sb.append("metadata entries ")
+              .append(NEWLINE)
+              .append("[");
             for (Map.Entry<String, Object> entry : missingEntries.entrySet()) {
-                sb.append(entryAsString(entry) + ", ");
+                sb.append(entryAsString(entry))
+                  .append(", ");
             }
             sb.delete(sb.lastIndexOf(","), sb.lastIndexOf(",") + 2);
-            sb.append("] " + NEWLINE);
-            sb.append("were expected but not seen.");
+            sb.append("] ")
+              .append(NEWLINE)
+              .append("were expected but not seen.");
         }
         throw new AxonAssertionError(sb.toString());
     }
@@ -349,7 +400,7 @@ public class Reporter {
         if (value == null) {
             sb.append("null");
         } else {
-            sb.append(value.toString());
+            sb.append(value);
         }
     }
 
@@ -419,8 +470,8 @@ public class Reporter {
 
     private String payloadContentType(Object event) {
         String simpleName;
-        if (EventMessage.class.isInstance(event)) {
-            simpleName = ((EventMessage) event).getPayload().getClass().getName();
+        if (event instanceof EventMessage) {
+            simpleName = ((EventMessage<?>) event).getPayload().getClass().getName();
         } else {
             simpleName = event.getClass().getName();
         }

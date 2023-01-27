@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
  * <p/>
  * Before processing begins a Unit of Work is bound to the active thread by registering it with the {@link
- * CurrentUnitOfWork}. After processing, the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+ * CurrentUnitOfWork}. After processing, the Unit of Work is deregistered from the {@link CurrentUnitOfWork}.
  * <p/>
  * Handlers can be notified about the state of the processing of the Message by registering with this Unit of Work.
  *
@@ -53,7 +53,7 @@ public interface UnitOfWork<T extends Message<?>> {
      * registered to the Unit of Work will be notified.
      * <p/>
      * After the commit (successful or not), any registered clean-up handlers ({@link #onCleanup(Consumer)}}) will be
-     * invoked and the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+     * invoked and the Unit of Work is deregistered from the {@link CurrentUnitOfWork}.
      * <p/>
      * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of Work
      * is rolled back.
@@ -65,7 +65,7 @@ public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
-     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered from the
+     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is deregistered from the
      * {@link CurrentUnitOfWork}.
      * <p/>
      * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
@@ -78,7 +78,7 @@ public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
-     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered from the
+     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is deregistered from the
      * {@link CurrentUnitOfWork}.
      *
      * @param cause The cause of the rollback. May be {@code null}.
@@ -467,7 +467,7 @@ public interface UnitOfWork<T extends Message<?>> {
          * case for phases where cleanup or post-error processing is done. Exceptions in those phases should not trigger
          * exceptions, but to a best-effort attempt to clean up.
          *
-         * @return {@code true} when errors should be suppressed, otherise {@code false}
+         * @return {@code true} when errors should be suppressed, otherwise {@code false}
          */
         public boolean isSuppressHandlerErrors() {
             return suppressHandlerErrors;

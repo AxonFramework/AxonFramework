@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.*;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.deadletter.Cause;
@@ -26,14 +27,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Lob;
-import javax.persistence.Table;
 
 /**
  * Default DeadLetter JPA entity implementation of dead letters. Used by the {@link JpaSequencedDeadLetterQueue} to
@@ -49,26 +42,38 @@ import javax.persistence.Table;
 @Table(indexes = {
         @Index(columnList = "processingGroup"),
         @Index(columnList = "processingGroup,sequenceIdentifier"),
-        @Index(columnList = "processingGroup,sequenceIdentifier,index", unique = true),
+        @Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
+})
+@javax.persistence.Entity
+@javax.persistence.Table(indexes = {
+        @javax.persistence.Index(columnList = "processingGroup"),
+        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier"),
+        @javax.persistence.Index(columnList = "processingGroup,sequenceIdentifier,sequenceIndex", unique = true),
 })
 public class DeadLetterEntry {
 
     @Id
+    @javax.persistence.Id
     private String deadLetterId;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String processingGroup;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private String sequenceIdentifier;
 
     @Basic(optional = false)
-    private long index;
+    @javax.persistence.Basic(optional = false)
+    private long sequenceIndex;
 
     @Embedded
+    @javax.persistence.Embedded
     private DeadLetterEventEntry message;
 
     @Basic(optional = false)
+    @javax.persistence.Basic(optional = false)
     private Instant enqueuedAt;
 
     private Instant lastTouched;
@@ -81,6 +86,9 @@ public class DeadLetterEntry {
     @Basic
     @Lob
     @Column(length = 10000)
+    @javax.persistence.Basic
+    @javax.persistence.Lob
+    @javax.persistence.Column(length = 10000)
     private byte[] diagnostics;
 
 
@@ -96,7 +104,7 @@ public class DeadLetterEntry {
      *
      * @param processingGroup    The processing group this message belongs to.
      * @param sequenceIdentifier The sequence identifier this message belongs to.
-     * @param index              The index of this message within the sequence.
+     * @param sequenceIndex              The index of this message within the sequence.
      * @param message            An embedded {@link DeadLetterEventEntry} containing all information about the message
      *                           itself.
      * @param enqueuedAt         The time the message was enqueued.
@@ -107,7 +115,7 @@ public class DeadLetterEntry {
      */
     public DeadLetterEntry(String processingGroup,
                            String sequenceIdentifier,
-                           long index,
+                           long sequenceIndex,
                            DeadLetterEventEntry message,
                            Instant enqueuedAt,
                            Instant lastTouched,
@@ -117,7 +125,7 @@ public class DeadLetterEntry {
         this.deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
         this.processingGroup = processingGroup;
         this.sequenceIdentifier = sequenceIdentifier;
-        this.index = index;
+        this.sequenceIndex = sequenceIndex;
         this.message = message;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
@@ -161,8 +169,8 @@ public class DeadLetterEntry {
      *
      * @return The index.
      */
-    public long getIndex() {
-        return index;
+    public long getSequenceIndex() {
+        return sequenceIndex;
     }
 
     /**
@@ -297,7 +305,7 @@ public class DeadLetterEntry {
                 "deadLetterId='" + deadLetterId + '\'' +
                 ", processingGroup='" + processingGroup + '\'' +
                 ", sequenceIdentifier='" + sequenceIdentifier + '\'' +
-                ", index=" + index +
+                ", index=" + sequenceIndex +
                 ", message=" + message +
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +

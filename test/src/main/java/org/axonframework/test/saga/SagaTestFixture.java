@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -92,6 +94,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
+    private final LinkedList<MessageHandlerInterceptor<? super EventMessage<?>>> eventHandlerInterceptors = new LinkedList<>();
     private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -144,10 +147,16 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
-        ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-            sagaManager.handle(event, Segment.ROOT_SEGMENT);
-            return null;
-        });
+        DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
+                unitOfWork,
+                eventHandlerInterceptors,
+                (MessageHandler<EventMessage<?>>) message -> {
+                    sagaManager.handle(message, Segment.ROOT_SEGMENT);
+                    return null;
+                }).proceed()
+        );
+
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
             if (Error.class.isAssignableFrom(e.getClass())) {
@@ -389,15 +398,25 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor
+    ) {
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor
+    ) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerEventHandlerInterceptor(
+            MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptor
+    ) {
+        this.eventHandlerInterceptors.add(eventHandlerInterceptor);
         return this;
     }
 

@@ -1,26 +1,51 @@
-# Trigger the workflow on milestone events
+name: Milestone Closure
+
 on: 
   milestone:
     types: [closed]
-name: Milestone Closure
+
+env:
+  CA_FILE: /tmp/ca.pem
+  URL: https://discuss.axoniq.io/posts.json
+  CATEGORY: 6 # id of `Announcements` category in Discuss
+
 jobs:
   create-release-notes:
     runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.extract-version-and-notes.outputs.RELEASE_NOTES_FILE }}
+      version: ${{ steps.extract-version-and-notes.outputs.VERSION }}
+      date: ${{ steps.extract-version-and-notes.outputs.RELEASE_DATE }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
     - name: Create Release Notes Markdown
       uses: docker://decathlon/release-notes-generator-action:3.1.5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         OUTPUT_FOLDER: temp_release_notes
         USE_MILESTONE_TITLE: "true"
-    - name: Get the name of the created Release Notes file and extract Version
+
+    - name: Set Release environment- and output-variables
+      id: extract-version-and-notes
       run: |
         RELEASE_NOTES_FILE=$(ls temp_release_notes/*.md | head -n 1)
         echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_ENV
+        echo "RELEASE_NOTES_FILE=$RELEASE_NOTES_FILE" >> $GITHUB_OUTPUT
         VERSION=$(echo ${{ github.event.milestone.title }} | cut -d' ' -f2)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "RELEASE_DATE=$(date +'%b %d, %Y')" >> $GITHUB_OUTPUT
+
+    - name: Add Release Notes to cache
+      id: cache-notes
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.RELEASE_NOTES_FILE }}
+        key: notes
+
     - name: Create a Draft Release Notes on GitHub
       id: create_release
       uses: actions/create-release@v1
@@ -31,10 +56,43 @@ jobs:
         release_name:  Axon Framework v${{ env.VERSION }}
         body_path: ${{ env.RELEASE_NOTES_FILE }}
         draft: true
-    - name: Create a Discuss notification for the Release
-      id: create-discuss-notification
-      uses: ./.github/workflows/discuss-notification.yml
+
+  announce-on-discuss:
+    runs-on: ubuntu-latest
+    needs: create-release-notes
+    steps:
+    - name: Get authorities certificates
+      run: openssl s_client -showcerts -connect discuss.axoniq.io:443 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > $CA_FILE
+
+    - name: Retrieve Release Notes from cache
+      id: cache-notes
+      uses: actions/cache@v3
       with:
-        release_name: Axon Framework - Release ${{ env.VERSION }}
-        release_notes_file: ${{ env.RELEASE_NOTES_FILE }}
-        release_date: ${{ github.event.milestone.closedAt }}
+        path: ${{ needs.create-release-notes.outputs.notes }}
+        key: notes
+
+    - name: Read release notes file
+      id: read_release_notes
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: ${{ needs.create-release-notes.outputs.notes }}
+
+    - name: Create Discuss topic
+      run: |
+        echo $json | curl --cacert $CA_FILE -X POST "$URL" \
+        -H "Api-Key: ${{ secrets.DISCUSS_KEY }}" \
+        -H "Api-Username: axonbot" \
+        -H 'Content-Type: application/json' \
+        --data-binary @- << EOF
+        {
+          "title": "Axon Framework - Release ${{ needs.create-release-notes.outputs.version }}",
+          "raw": "
+        I’m glad to announce that we’ve released Axon Framework version ${{ needs.create-release-notes.outputs.version }} on ${{ needs.create-release-notes.outputs.date }}.
+        This release contains: 
+        
+        ${{ steps.read_release_notes.outputs.content }}
+        ",
+          "category": $CATEGORY,
+          "tags": ["release"]
+        }
+        EOF

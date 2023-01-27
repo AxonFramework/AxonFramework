@@ -20,6 +20,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamDriver;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.io.xml.XomReader;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.serialization.AbstractXStreamSerializer;
 import org.axonframework.serialization.AnnotationRevisionResolver;
@@ -104,7 +105,11 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     @Deprecated
     public static XStreamSerializer defaultSerializer() {
         logger.warn("An unsecured XStream instance allowing all types is used. "
-                            + "It is strongly recommended to set the security context yourself instead!");
+                            + "It is strongly recommended to set the security context yourself instead!",
+                    new AxonConfigurationException(
+                            "An unsecured XStream instance allowing all types is used. "
+                                    + "It is strongly recommended to set the security context yourself instead!"
+                    ));
         XStream xStream = new XStream(new CompactDriver());
         xStream.allowTypeHierarchy(Object.class);
         return builder().xStream(xStream)
@@ -223,6 +228,12 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
          */
         public XStreamSerializer build() {
             if (xStream == null) {
+                logger.warn("An unsecured XStream instance allowing all types is used. "
+                                    + "It is strongly recommended to set the security context yourself instead!",
+                            new AxonConfigurationException(
+                                    "An unsecured XStream instance allowing all types is used. "
+                                            + "It is strongly recommended to set the security context yourself instead!"
+                            ));
                 xStream = new XStream(new CompactDriver());
             }
             return new XStreamSerializer(this);

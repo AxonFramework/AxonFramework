@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@
 
     <artifactId>axon-micrometer</artifactId>
 
-    <name>Axon Framework Micrometer Metrics</name>
+    <name>Axon Framework - Micrometer Metrics</name>
     <description>
-        This module contains components that provide metrics for standard Axon components using the micrometer library.
+        This module contains components that provide metrics for standard Axon components using the Micrometer library.
     </description>
 
     <packaging>bundle</packaging>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 
     <artifactId>axon-tracing-opentelemetry</artifactId>
 
-    <name>Axon Framework Tracing OpenTelemetry support</name>
+    <name>Axon Framework - OpenTelemetry Tracing</name>
     <description>
         This module contains components that provide tracing support specifically for OpenTelemetry.
     </description>
@@ -33,7 +33,7 @@
     <packaging>bundle</packaging>
 
     <properties>
-        <opentelemetry-api.version>1.18.0</opentelemetry-api.version>
+        <opentelemetry-api.version>1.19.0</opentelemetry-api.version>
     </properties>
 
     <dependencies>

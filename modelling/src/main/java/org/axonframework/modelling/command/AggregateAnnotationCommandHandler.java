@@ -505,10 +505,17 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
     private VersionedAggregateIdentifier resolveNullableAggregateId(CommandMessage<?> command) {
         try {
             return commandTargetResolver.resolveTarget(command);
-        } catch (IdentifierMissingException exception) {
+        } catch (IdentifierMissingException e) {
             // Couldn't find identifier in given command, so defaulting to null.
             // Assuming it will be set in the command handler.
             return null;
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("It does not identify the target aggregate.")) {
+                // Couldn't find identifier in given command, so defaulting to null.
+                // Assuming it will be set in the command handler.
+                return null;
+            }
+            throw e;
         }
     }
 

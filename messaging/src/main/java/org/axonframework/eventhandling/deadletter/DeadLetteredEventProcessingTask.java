@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,13 +78,15 @@ class DeadLetteredEventProcessingTask
      */
     public EnqueueDecision<EventMessage<?>> process(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Start evaluation of dead letter [{}].", letter);
+            logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().getIdentifier());
         }
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
         UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
 
         unitOfWork.attachTransaction(transactionManager);
+        unitOfWork.resources()
+                  .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
         unitOfWork.executeWithResult(() -> handle(letter));
@@ -103,14 +105,15 @@ class DeadLetteredEventProcessingTask
 
     private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
         if (logger.isInfoEnabled()) {
-            logger.info("Processing dead letter [{}] was successful.", letter);
+            logger.info("Processing dead letter with message id [{}] was successful.",
+                        letter.message().getIdentifier());
         }
         return Decisions.evict();
     }
 
     private EnqueueDecision<EventMessage<?>> onRollback(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
         if (logger.isWarnEnabled()) {
-            logger.warn("Processing dead letter [{}] failed.", letter, cause);
+            logger.warn("Processing dead letter with message id [{}] failed.", letter.message().getIdentifier(), cause);
         }
         return enqueuePolicy.decide(letter, cause);
     }

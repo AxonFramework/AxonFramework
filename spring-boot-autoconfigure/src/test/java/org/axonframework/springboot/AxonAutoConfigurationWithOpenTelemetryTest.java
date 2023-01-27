@@ -16,6 +16,8 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.tracing.NestingSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.opentelemetry.OpenTelemetrySpanFactory;
 import org.junit.jupiter.api.*;
@@ -41,8 +43,27 @@ class AxonAutoConfigurationWithOpenTelemetryTest {
                     assertNotNull(context);
 
                     assertTrue(context.containsBean("spanFactory"));
-                    assertNotNull(context.getBean(OpenTelemetrySpanFactory.class));
+                    assertNotNull(context.getBean(SpanFactory.class));
                     assertEquals(OpenTelemetrySpanFactory.class, context.getBean(SpanFactory.class).getClass());
+                });
+    }
+
+
+    @Test
+    void spanFactoryIsNestingSpanFactoryWhenPropertyIsSet() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withPropertyValues("axon.tracing.nested-handlers=true")
+                .run(context -> {
+                    assertNotNull(context);
+
+                    assertTrue(context.containsBean("spanFactory"));
+                    assertNotNull(context.getBean(SpanFactory.class));
+                    SpanFactory bean = context.getBean(SpanFactory.class);
+                    assertEquals(NestingSpanFactory.class, bean.getClass());
+                    Object delegateSpanFactory = ReflectionUtils.getFieldValue(NestingSpanFactory.class.getDeclaredField(
+                            "delegateSpanFactory"), bean);
+                    assertEquals(OpenTelemetrySpanFactory.class, delegateSpanFactory.getClass());
                 });
     }
 

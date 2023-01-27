@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.command;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
@@ -32,8 +34,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -48,6 +48,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * <p/>
  * When this repository is requested to persist changes to an aggregate, it will also flush the EntityManager, to
  * enforce checking of database constraints and optimistic locks.
+ * <p>
+ * By default, this repository implementation will generate sequences for the events published by the aggregate. In
+ * doing so, the user is capable of querying the events based on the aggregate identifier and order them based on the
+ * aforementioned sequence number. The downside of this, is that even if the stored aggregate is removed, the aggregate
+ * identifier cannot be reused. This follows from the uniqueness constraint on the Event Store defining that the
+ * combination of aggregate identifier to sequence number should be unique. However, sequence number generation can be
+ * disabled, through {@link Builder#disableSequenceNumberGeneration()}. When disabled, published events will <b>no
+ * longer</b> hold the sequence number nor the aggregate identifier. As such, the aggregate identifier can be reused
+ * (after removal of the previous aggregate referring to that identifier). The obvious downside of this is that the
+ * events in the store can no longer be queried based on the aggregate identifier.
  *
  * @param <T> The type of aggregate the repository provides access to
  * @author Allard Buijze
@@ -59,15 +69,17 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     private final EventBus eventBus;
     private final RepositoryProvider repositoryProvider;
     private final Function<String, ?> identifierConverter;
+    private final boolean generateSequenceNumbers;
 
     private boolean forceFlushOnSave = true;
 
     /**
      * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
-     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
+     * {@code identifierConverter} to {@link Function#identity()}, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
+     * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
      * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
@@ -107,6 +119,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this.eventBus = builder.eventBus;
         this.identifierConverter = builder.identifierConverter;
         this.repositoryProvider = builder.repositoryProvider;
+        this.generateSequenceNumbers = builder.generateSequenceNumbers;
     }
 
     @Override
@@ -123,7 +136,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                                                         aggregateModel(),
                                                                         eventBus,
                                                                         repositoryProvider);
-        if (eventBus instanceof DomainEventSequenceAware) {
+        if (shouldGenerateSequences()) {
             Optional<Long> sequenceNumber =
                     ((DomainEventSequenceAware) eventBus).lastSequenceNumberFor(aggregateIdentifier);
             sequenceNumber.ifPresent(aggregate::initSequence);
@@ -138,7 +151,11 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                              aggregateModel(),
                                              eventBus,
                                              repositoryProvider,
-                                             eventBus instanceof DomainEventSequenceAware);
+                                             shouldGenerateSequences());
+    }
+
+    private boolean shouldGenerateSequences() {
+        return eventBus instanceof DomainEventSequenceAware && generateSequenceNumbers;
     }
 
     @Override
@@ -167,7 +184,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * optimistic locks will be identified in an early stage.
      *
      * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to {@code true}.
-     * @see javax.persistence.EntityManager#flush()
+     * @see jakarta.persistence.EntityManager#flush()
      */
     public void setForceFlushOnSave(boolean forceFlushOnSave) {
         this.forceFlushOnSave = forceFlushOnSave;
@@ -176,9 +193,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     /**
      * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
-     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
-     * the {@code identifierConverter} to {@link Function#identity()}. The {@link SpanFactory} is defaulted to a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}.
+     * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
+     * {@code identifierConverter} to {@link Function#identity()}, the {@link SpanFactory} defaults to a
+     * {@link org.axonframework.tracing.NoOpSpanFactory}, and sequence number generation is <b>enabled</b>.
      * <p>
      * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
      * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
@@ -197,6 +214,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         private EventBus eventBus;
         private RepositoryProvider repositoryProvider;
         private Function<String, ?> identifierConverter = Function.identity();
+        private boolean generateSequenceNumbers = true;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -299,6 +317,29 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         public Builder<T> identifierConverter(Function<String, ?> identifierConverter) {
             assertNonNull(identifierConverter, "The identifierConverter may not be null");
             this.identifierConverter = identifierConverter;
+            return this;
+        }
+
+        /**
+         * Disables sequence number generation within this {@link Repository} implementation.
+         * <p>
+         * Disabling this feature allows reuse of Aggregate identifiers <b>after</b> removal of the Aggregate instance
+         * referred to with said identifier. This opportunity arises from the fact that events published within an
+         * Aggregate require a sequence number to change into so-called domain events. These domain events are
+         * constrained in the Event Store to have a unique combination of Aggregate identifier to sequence number. Thus,
+         * when reusing an Aggregate identifier for which sequences were enabled, will have the Event Store complain
+         * with this uniqueness constraint.
+         * <p>
+         * So disabling sequence number generation will resolve the uniqueness complaints from the Event Store. And, in
+         * doing so, allows reuse of an Aggregate identifier.
+         * <p>
+         * Disabling sequence number generation comes with another cost, though. The events published within a
+         * state-stored Aggregate will no longer refer to the Aggregate they originate from.
+         *
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<T> disableSequenceNumberGeneration() {
+            generateSequenceNumbers = false;
             return this;
         }
 

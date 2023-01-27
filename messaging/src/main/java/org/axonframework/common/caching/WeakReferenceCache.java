@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,19 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Cache implementation that keeps values in the cache until the garbage collector has removed them. Unlike the
@@ -56,12 +60,12 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <K, V> V get(K key) {
         Assert.nonNull(key, () -> "Key may not be null");
         purgeItems();
         final Reference<Object> entry = cache.get(key);
 
+        //noinspection unchecked
         final V returnValue = entry == null ? null : (V) entry.get();
         if (returnValue != null) {
             for (EntryListener adapter : adapters) {
@@ -105,6 +109,26 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
+    public <T> T computeIfAbsent(Object key, Supplier<T> valueSupplier) {
+        purgeItems();
+        Entry currentEntry = cache.get(key);
+        Object existingValue = ObjectUtils.getOrDefault(currentEntry, Entry::get, null);
+        if (existingValue != null) {
+            //noinspection unchecked
+            return (T) existingValue;
+        }
+        T newValue = valueSupplier.get();
+        if (newValue == null) {
+            throw new IllegalStateException("Value Supplier of Cache produced a null value for key [" + key + "]!");
+        }
+        cache.put(key, new Entry(key, newValue));
+        for (EntryListener adapter : adapters) {
+            adapter.onEntryCreated(key, newValue);
+        }
+        return newValue;
+    }
+
+    @Override
     public boolean remove(Object key) {
         if (cache.remove(key) != null) {
             for (EntryListener adapter : adapters) {
@@ -113,6 +137,17 @@ public class WeakReferenceCache implements Cache {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void removeAll() {
+        Set<Object> keys = new HashSet<>(cache.keySet());
+        keys.forEach(key -> {
+            cache.remove(key);
+            for (EntryListener adapter : adapters) {
+                adapter.onEntryRemoved(key);
+            }
+        });
     }
 
     @Override
@@ -133,6 +168,30 @@ public class WeakReferenceCache implements Cache {
                 }
             }
         }
+    }
+
+    @Override
+    public <V> void computeIfPresent(Object key, UnaryOperator<V> update) {
+        purgeItems();
+        cache.computeIfPresent(key, (k, v) -> {
+            Object currentValue = v.get();
+            if (currentValue == null) {
+                return null;
+            }
+            //noinspection unchecked
+            V value = update.apply((V) currentValue);
+            if (value != null) {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryUpdated(key, value);
+                }
+                return new Entry(k, value);
+            } else {
+                for (EntryListener adapter : adapters) {
+                    adapter.onEntryRemoved(key);
+                }
+                return null;
+            }
+        });
     }
 
     private class Entry extends WeakReference<Object> {

@@ -46,8 +46,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
- * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside
- * an event should capture all necessary information.
+ * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside an
+ * event should capture all necessary information.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -59,7 +59,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
 
-    private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
+    private final Map<Class<?>, AggregateModel<?>> aggregateModels = new ConcurrentHashMap<>();
 
     /**
      * Instantiate a {@link AggregateSnapshotter} based on the fields contained in the {@link Builder}.
@@ -85,14 +85,12 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * {@link TransactionManager} defaults to a {@link org.axonframework.common.transaction.NoTransactionManager}.
      * Additionally, this Builder has convenience functions to default the {@link ParameterResolverFactory} and
      * {@link HandlerDefinition} based on instances of these available on the classpath in case these are not provided
-     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}).
-     * Upon instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those
-     * fields.
+     * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon
+     * instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
      * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AggregateSnapshotter}
-     *
      * @see ClasspathParameterResolverFactory
      * @see ClasspathHandlerDefinition
      */
@@ -100,12 +98,11 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new Builder();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                 String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
-        DomainEventMessage firstEvent = eventStream.peek();
+        DomainEventMessage<?> firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
             throw new IllegalArgumentException(
@@ -116,6 +113,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
                                         k -> AnnotatedAggregateMetaModelFactory
                                                 .inspectAggregate(k, parameterResolverFactory, handlerDefinition));
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
+        //noinspection rawtypes,unchecked
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot,
                                                                     aggregateModels.get(aggregateType),
                                                                     repositoryProvider);
@@ -131,7 +129,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * Returns the AggregateFactory registered for the given {@code aggregateType}, or {@code null} if no such
      * AggregateFactory is known.
      * <p>
-     * Sublasses may override this method to enhance how AggregateFactories are retrieved. They may choose to
+     * Subclasses may override this method to enhance how AggregateFactories are retrieved. They may choose to
      * {@link #registerAggregateFactory(AggregateFactory)} if it hasn't been found using this implementation.
      *
      * @param aggregateType The type to get the AggregateFactory for
@@ -169,7 +167,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      */
     public static class Builder extends AbstractSnapshotter.Builder {
 
-        private Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
+        private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
         private RepositoryProvider repositoryProvider;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
@@ -280,7 +278,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          * {@link AggregateSnapshotter} type or the first {@link AggregateFactory} it's class as input.
          * <p>
          * <b>Note:</b> it is recommended to use this function when retrieving the  ParameterResolverFactory as it
-         * ensure it is non null.
+         * ensure it is non-null.
          *
          * @return the set or instantiated {@link ParameterResolverFactory}
          */
@@ -296,13 +294,13 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         /**
-         * Return the set {@link HandlerDefinition}, or create and return it if it is {@code null}. In case it
-         * has not been set yet, a HandlerDefinition is created by calling the
+         * Return the set {@link HandlerDefinition}, or create and return it if it is {@code null}. In case it has not
+         * been set yet, a HandlerDefinition is created by calling the
          * {@link ClasspathHandlerDefinition#forClass(Class)} function, either providing the
          * {@link AggregateSnapshotter} type or the first {@link AggregateFactory} it's class as input.
          * <p>
          * <b>Note:</b> it is recommended to use this function when retrieving the  HandlerDefinition as it
-         * ensure it is non null.
+         * ensure it is non-null.
          *
          * @return the set or instantiated {@link ParameterResolverFactory}
          */

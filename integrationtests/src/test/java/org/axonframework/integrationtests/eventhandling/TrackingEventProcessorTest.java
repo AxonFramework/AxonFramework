@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,7 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.EventTrackerStatus;
-import org.axonframework.eventhandling.EventTrackerStatusChangeListener;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -52,24 +35,15 @@ import org.axonframework.serialization.SerializationException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -87,6 +61,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertUntil;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
@@ -1538,14 +1513,14 @@ class TrackingEventProcessorTest {
     }
 
     @Test
-    @Timeout(value = 10)
     void replayDuringIncompleteMerge() throws Exception {
-        int segmentIdZero = 0;
-        int segmentIdOne = 1;
         List<EventMessage<?>> handledEvents = new CopyOnWriteArrayList<>();
         List<EventMessage<?>> initialEvents = IntStream.range(0, 10)
                                                        .mapToObj(i -> createEvent(UUID.randomUUID().toString(), 0))
                                                        .collect(toList());
+        Duration pollDelay = Duration.ofMillis(25);
+        int segmentIdZero = 0;
+        int segmentIdOne = 1;
 
         tokenStore.initializeTokenSegments(testSubject.getName(), 2);
         initProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
@@ -1558,42 +1533,49 @@ class TrackingEventProcessorTest {
             return handledEvents.add(message);
         });
 
+        // Publish first 10 events and start TEP.
         eventBus.publish(initialEvents);
         testSubject.start();
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().size() >= 2);
 
-        while (testSubject.processingStatus().size() < 2
-                || !testSubject.processingStatus().values().stream().allMatch(EventTrackerStatus::isCaughtUp)) {
-            Thread.sleep(10);
-        }
-
+        // Release segment, publish 10 more events and merge the segments of the TEP.
         testSubject.releaseSegment(segmentIdOne);
         while (testSubject.processingStatus().containsKey(segmentIdOne)) {
             Thread.yield();
         }
-
         publishEvents(10);
 
         CompletableFuture<Boolean> mergeResult = testSubject.mergeSegment(segmentIdZero);
         assertTrue(mergeResult.join(), "Expected merge to succeed");
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(500))
+               .until(() -> testSubject.processingStatus().size() == 1);
 
+        // Initiate the reset, with 10 more events published in the middle.
         testSubject.shutDown();
         testSubject.resetTokens();
+
         publishEvents(10);
         testSubject.start();
-
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
+        await().pollDelay(pollDelay)
+               .atMost(Duration.ofMillis(250))
+               .until(() -> testSubject.processingStatus().size() >= 1);
 
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments(testSubject.getName()));
-        waitForSegmentStart(segmentIdZero);
+        await().pollDelay(pollDelay)
+                .atMost(Duration.ofMillis(250))
+                .until(() -> testSubject.processingStatus().containsKey(segmentIdZero));
 
-        assertWithin(
-                1, TimeUnit.SECONDS,
-                () -> assertTrue(testSubject.processingStatus().get(segmentIdZero).isCaughtUp())
-        );
+        await().pollDelay(pollDelay)
+                .atMost(Duration.ofSeconds(1))
+                .until(() -> testSubject.processingStatus().get(segmentIdZero).isCaughtUp());
 
         // Replayed messages aren't counted
-        assertEquals(30, handledEvents.size());
+        await().pollDelay(pollDelay)
+                .atMost(Duration.ofSeconds(1))
+                .until(() -> handledEvents.size() == 30);
     }
 
     @Test

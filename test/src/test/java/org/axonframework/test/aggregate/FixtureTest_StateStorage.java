@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -131,7 +132,7 @@ class FixtureTest_StateStorage {
         fixture.useStateStorage();
 
         assertThrows(
-                AxonConfigurationException.class,
+                FixtureExecutionException.class,
                 () -> fixture.given(new StubDomainEvent())
         );
     }
@@ -141,7 +142,7 @@ class FixtureTest_StateStorage {
         fixture.useStateStorage();
 
         assertThrows(
-                AxonConfigurationException.class,
+                FixtureExecutionException.class,
                 () -> fixture.given(Collections.singletonList(new StubDomainEvent()))
         );
     }

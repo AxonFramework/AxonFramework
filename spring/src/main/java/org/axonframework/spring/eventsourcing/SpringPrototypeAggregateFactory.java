@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,19 +43,19 @@ import static java.lang.String.format;
  * @since 1.2
  */
 public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, InitializingBean,
-                                                           ApplicationContextAware, BeanNameAware {
+        ApplicationContextAware, BeanNameAware {
 
     private final String prototypeBeanName;
+    private final Map<Class<? extends T>, String> subtypes;
     private ApplicationContext applicationContext;
     private String beanName;
     private Class<T> aggregateType;
-    private final Map<Class<? extends T>, String> subtypes;
     private AggregateFactory<T> delegate;
 
     /**
      * Initializes the factory to create beans instances for the bean with given {@code prototypeBeanName}.
      * <p>
-     * Note that the the bean should have the prototype scope.
+     * Note that the bean should have the prototype scope.
      *
      * @param prototypeBeanName the name of the prototype bean this repository serves.
      */
@@ -67,7 +67,7 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
      * Initializes the factory to create beans instances for the bean with given {@code prototypeBeanName} and its
      * {@code subtypes}.
      * <p>
-     * Note that the the bean should have the prototype scope.
+     * Note that the bean should have the prototype scope.
      *
      * @param prototypeBeanName the name of the prototype bean this repository serves.
      * @param subtypes          the map of subtype of this aggregate to its spring prototype name
@@ -75,6 +75,27 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
     public SpringPrototypeAggregateFactory(String prototypeBeanName, Map<Class<? extends T>, String> subtypes) {
         this.prototypeBeanName = prototypeBeanName;
         this.subtypes = subtypes;
+    }
+
+    /**
+     * Initializes the factory to create bean instances for the bean with given {@code prototypeBeanName} and its
+     * {@code subtypes}.
+     * <p>
+     * Note that the bean should have the prototype scope.
+     * <p>
+     * This static factory method is provided as an alternative to avoid warnings and errors on ambiguous constructor
+     * resolution when using Spring AOT.
+     *
+     * @param prototypeBeanName The name of the prototype bean this repository serves.
+     * @param subtypes          The map of subtype of this aggregate to its spring prototype name.
+     * @return An initialized instance of this factory.
+     */
+    @SuppressWarnings("unused")
+    public static <T> SpringPrototypeAggregateFactory<T> withSubtypeSupport(
+            String prototypeBeanName,
+            Map<Class<? extends T>, String> subtypes
+    ) {
+        return new SpringPrototypeAggregateFactory<>(prototypeBeanName, subtypes);
     }
 
     @Override
@@ -125,7 +146,9 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
         }
         this.delegate = new AbstractAggregateFactory<T>(model) {
             @Override
-            protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
+            protected T doCreateAggregate(String aggregateIdentifier,
+                                          // Suppress warning as the abstract doCreateAggregate does so too.
+                                          @SuppressWarnings("rawtypes") DomainEventMessage firstEvent) {
                 return (T) applicationContext.getBean(prototype(firstEvent.getType()));
             }
 

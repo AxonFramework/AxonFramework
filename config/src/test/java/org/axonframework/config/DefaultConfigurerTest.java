@@ -16,6 +16,12 @@
 
 package org.axonframework.config;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Id;
+import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
@@ -61,6 +67,9 @@ import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
@@ -75,12 +84,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
@@ -651,6 +654,66 @@ class DefaultConfigurerTest {
         verify(configurer, never()).registerCommandHandler(any());
         verify(configurer, never()).eventProcessing();
         verify(configurer, times(1)).registerQueryHandler(any());
+    }
+
+    @Test
+    void registeringNoUpcastersAndNoUpcasterChainComponentReturnsEmptyUpcasterChain() {
+        //noinspection unchecked
+        Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
+
+        EventUpcasterChain result = DefaultConfigurer.defaultConfiguration()
+                                                     .buildConfiguration()
+                                                     .upcasterChain();
+
+        result.upcast(mockStream);
+        // Since the upcaster chain is empty, the Stream is not interacted with.
+        verifyNoInteractions(mockStream);
+    }
+
+    @Test
+    void registeringUpcastersReturnsUpcasterChainOverRulingRegisteredUpcasterChainComponent() {
+        //noinspection unchecked
+        Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
+
+        AtomicBoolean firstUpcasterInvocation = new AtomicBoolean(false);
+        EventUpcaster firstUpcaster = mock(EventUpcaster.class);
+        when(firstUpcaster.upcast(any())).thenAnswer(it -> {
+            firstUpcasterInvocation.set(true);
+            return it.getArgument(0);
+        });
+        AtomicBoolean secondUpcasterInvocation = new AtomicBoolean(false);
+        EventUpcaster secondUpcaster = mock(EventUpcaster.class);
+        when(secondUpcaster.upcast(any())).thenAnswer(it -> {
+            secondUpcasterInvocation.set(true);
+            return it.getArgument(0);
+        });
+        EventUpcasterChain testUpcasterChain = mock(EventUpcasterChain.class);
+
+        EventUpcasterChain result = DefaultConfigurer.defaultConfiguration()
+                                                     .registerEventUpcaster(c -> firstUpcaster)
+                                                     .registerEventUpcaster(c -> secondUpcaster)
+                                                     .registerComponent(
+                                                             EventUpcasterChain.class, c -> testUpcasterChain
+                                                     )
+                                                     .buildConfiguration()
+                                                     .upcasterChain();
+
+        result.upcast(mockStream);
+
+        assertTrue(firstUpcasterInvocation.get());
+        assertTrue(secondUpcasterInvocation.get());
+        verifyNoInteractions(testUpcasterChain);
+    }
+
+    @Test
+    void shuttingDownTheConfigurationBeforeItStartedWithConfiguredMessageHandlersDoesNotCauseAnyExceptions() {
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .registerCommandHandler(c -> new Object())
+                                                       .registerEventHandler(c -> new Object())
+                                                       .registerQueryHandler(c -> new Object())
+                                                       .registerMessageHandler(c -> new Object())
+                                                       .buildConfiguration();
+        assertDoesNotThrow(configuration::shutdown);
     }
 
     @SuppressWarnings("unused")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -157,6 +160,7 @@ public class DefaultConfigurer implements Configurer {
             config, "handlerDefinition",
             c -> this::defaultHandlerDefinition
     );
+    private final List<Component<HandlerEnhancerDefinition>> handlerEnhancerDefinitions = new ArrayList<>();
 
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
@@ -390,8 +394,21 @@ public class DefaultConfigurer implements Configurer {
      * @return The default HandlerDefinition to use
      */
     protected HandlerDefinition defaultHandlerDefinition(Class<?> inspectedClass) {
-        return defaultComponent(HandlerDefinition.class, config)
+        HandlerDefinition definition = defaultComponent(HandlerDefinition.class, config)
                 .orElseGet(() -> ClasspathHandlerDefinition.forClass(inspectedClass));
+
+        List<HandlerEnhancerDefinition> registeredEnhancerDefinitions =
+                handlerEnhancerDefinitions.stream()
+                                          .map(Component::get)
+                                          .collect(toList());
+        if (definition instanceof MultiHandlerDefinition) {
+            registeredEnhancerDefinitions.add(((MultiHandlerDefinition) definition).getHandlerEnhancerDefinition());
+        }
+
+        return MultiHandlerDefinition.ordered(
+                Collections.singletonList(definition),
+                MultiHandlerEnhancerDefinition.ordered(registeredEnhancerDefinitions)
+        );
     }
 
     /**
@@ -513,15 +530,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default EventUpcasterChain implementation. Subclasses may override this method to provide their own
-     * default.
+     * Provides the default {@link EventUpcasterChain} implementation, looping through all
+     * {@link #registerEventUpcaster(Function) registered} {@link EventUpcaster EventUpcasters} to collect them for a
+     * fresh {@code EventUpcasterChain}. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
      * @return The default EventUpcasterChain to use.
      */
     protected EventUpcasterChain defaultUpcasterChain(Configuration config) {
-        return defaultComponent(EventUpcasterChain.class, config)
-                .orElseGet(() -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList())));
+        return new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()));
     }
 
     /**
@@ -732,6 +749,16 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerHandlerDefinition(
             @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
+        return this;
+    }
+
+    @Override
+    public Configurer registerHandlerEnhancerDefinition(
+            Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
+    ) {
+        this.handlerEnhancerDefinitions.add(
+                new Component<>(config, "HandlerEnhancerDefinition", handlerEnhancerBuilder)
+        );
         return this;
     }
 

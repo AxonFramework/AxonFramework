@@ -335,9 +335,12 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
 
         result = testSubject.deadLetters().iterator();
 
+        int count = 0;
         while (result.hasNext()) {
-            Iterator<DeadLetter<? extends M>> resultLetters = result.next().iterator();
+            Iterable<DeadLetter<? extends M>> sequenceIterator = result.next();
+            Iterator<DeadLetter<? extends M>> resultLetters = sequenceIterator.iterator();
             while (resultLetters.hasNext()) {
+                count += 1;
                 DeadLetter<? extends M> resultLetter = resultLetters.next();
                 if (equals(thisFirstExpected).test(resultLetter)) {
                     assertLetter(thisFirstExpected, resultLetter);
@@ -352,6 +355,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
                 }
             }
         }
+        // Two sequences
+        assertEquals(2, count);
     }
 
     @Test

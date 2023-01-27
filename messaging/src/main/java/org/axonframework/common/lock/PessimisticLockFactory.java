@@ -210,7 +210,7 @@ public class PessimisticLockFactory implements LockFactory {
          * <p>
          * Defaults to 10ms.
          *
-         * @param lockAttemptTimeout The duration of a single aqcuisition attempt of the internal lock, in milliseconds
+         * @param lockAttemptTimeout The duration of a single acquisition attempt of the internal lock, in milliseconds
          *
          * @return this Builder, for further configuration
          */

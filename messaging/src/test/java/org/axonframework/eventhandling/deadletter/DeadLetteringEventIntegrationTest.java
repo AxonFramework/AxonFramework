@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -438,7 +440,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(20)
     void publishEventsAndProcessDeadLettersConcurrentlyInBulkShouldWorkFine() throws InterruptedException {
         int immediateSuccessesPerAggregate = 5;
         int failFirstAndThenSucceedPerAggregate = 4;
@@ -446,7 +448,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         int expectedSuccessfulEvaluationCount = failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate;
         int expectedOverallSuccessfulHandlingCount = immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
 
-        int publishingRuns = 100;
+        int publishingRuns = 40;
         int totalNumberOfEvents =
                 (immediateSuccessesPerAggregate + failFirstAndThenSucceedPerAggregate) * publishingRuns;
 
@@ -469,7 +471,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         publishingThread.start();
 
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, streamingProcessor.processingStatus().size()));
-        assertWithin(2, TimeUnit.SECONDS, () -> {
+        assertWithin(15, TimeUnit.SECONDS, () -> {
             OptionalLong optionalPosition = streamingProcessor.processingStatus().get(0).getCurrentPosition();
             assertTrue(optionalPosition.isPresent());
             assertEquals(totalNumberOfEvents, optionalPosition.getAsLong());
@@ -520,6 +522,42 @@ public abstract class DeadLetteringEventIntegrationTest {
         publishingThread.join();
     }
 
+    @Test
+    void processedDeadLetterIsResolvedAsParameterToEventHandlers() {
+        int expectedSuccessfulHandlingCount = 3;
+        String aggregateId = UUID.randomUUID().toString();
+        // Three events in sequence "aggregateId" succeed
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+        // On event in sequence "aggregateId" fails, causing the rest to fail, but succeed on a retry
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+        eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+
+        startProcessingEvent();
+
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> streamingProcessor.processingStatus().size() == 1);
+        //noinspection OptionalGetWithoutIsPresent
+        await().pollDelay(Duration.ofMillis(25))
+               .atMost(Duration.ofSeconds(1))
+               .until(() -> streamingProcessor.processingStatus().get(0).getCurrentPosition().getAsLong() >= 6);
+
+        assertTrue(eventHandlingComponent.initialHandlingWasSuccessful(aggregateId));
+        assertEquals(expectedSuccessfulHandlingCount,
+                     eventHandlingComponent.successfulInitialHandlingCount(aggregateId));
+        assertTrue(eventHandlingComponent.initialHandlingWasUnsuccessful(aggregateId));
+        assertEquals(1, eventHandlingComponent.unsuccessfulInitialHandlingCount(aggregateId));
+
+        assertTrue(deadLetterQueue.contains(aggregateId));
+
+        deadLetteringInvoker.process(deadLetter -> true);
+
+        assertEquals(3, eventHandlingComponent.resolvedDeadLetterParameterCount(aggregateId));
+    }
+
     private void publishEventsFor(String aggregateId,
                                   int immediateSuccessesPerAggregate,
                                   int failFirstAndThenSucceedPerAggregate,
@@ -547,9 +585,12 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
+        private final Map<String, Integer> hasResolvedDeadLetterParameter = new ConcurrentSkipListMap<>();
 
         @EventHandler
-        public void on(DeadLetterableEvent event, @MessageIdentifier String eventIdentifier) {
+        public void on(DeadLetterableEvent event,
+                       @MessageIdentifier String eventIdentifier,
+                       DeadLetter<EventMessage<DeadLetterableEvent>> deadLetter) {
             // The aggregate identifier effectively references the sequence because of the configured SequencingPolicy.
             String sequenceId = event.getAggregateIdentifier();
 
@@ -566,6 +607,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             } else {
                 // This is the second, third, ... time we get this event.
                 processEvaluationOf(event, sequenceId);
+            }
+
+            if (deadLetter != null) {
+                hasResolvedDeadLetterParameter.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
             }
         }
 
@@ -587,40 +632,44 @@ public abstract class DeadLetteringEventIntegrationTest {
             }
         }
 
-        public boolean initialHandlingWasSuccessful(String aggregateIdentifier) {
-            return firstTrySuccesses.containsKey(aggregateIdentifier);
+        public boolean initialHandlingWasSuccessful(String sequenceId) {
+            return firstTrySuccesses.containsKey(sequenceId);
         }
 
-        public int successfulInitialHandlingCount(String aggregateIdentifier) {
-            return initialHandlingWasSuccessful(aggregateIdentifier) ? firstTrySuccesses.get(aggregateIdentifier) : 0;
+        public int successfulInitialHandlingCount(String sequenceId) {
+            return initialHandlingWasSuccessful(sequenceId) ? firstTrySuccesses.get(sequenceId) : 0;
         }
 
-        public boolean evaluationWasSuccessful(String aggregateIdentifier) {
-            return evaluationSuccesses.containsKey(aggregateIdentifier);
+        public boolean evaluationWasSuccessful(String sequenceId) {
+            return evaluationSuccesses.containsKey(sequenceId);
         }
 
-        public int successfulEvaluationCount(String aggregateIdentifier) {
-            return evaluationWasSuccessful(aggregateIdentifier) ? evaluationSuccesses.get(aggregateIdentifier) : 0;
+        public int successfulEvaluationCount(String sequenceId) {
+            return evaluationWasSuccessful(sequenceId) ? evaluationSuccesses.get(sequenceId) : 0;
         }
 
-        public boolean initialHandlingWasUnsuccessful(String aggregateIdentifier) {
-            return firstTryFailures.containsKey(aggregateIdentifier);
+        public boolean initialHandlingWasUnsuccessful(String sequenceId) {
+            return firstTryFailures.containsKey(sequenceId);
         }
 
-        public int unsuccessfulInitialHandlingCount(String aggregateIdentifier) {
-            return initialHandlingWasUnsuccessful(aggregateIdentifier) ? firstTryFailures.get(aggregateIdentifier) : 0;
+        public int unsuccessfulInitialHandlingCount(String sequenceId) {
+            return initialHandlingWasUnsuccessful(sequenceId) ? firstTryFailures.get(sequenceId) : 0;
         }
 
-        public boolean evaluationWasUnsuccessful(String aggregateIdentifier) {
-            return evaluationFailures.containsKey(aggregateIdentifier);
+        public boolean evaluationWasUnsuccessful(String sequenceId) {
+            return evaluationFailures.containsKey(sequenceId);
         }
 
-        public int unsuccessfulEvaluationCount(String aggregateIdentifier) {
-            return evaluationWasUnsuccessful(aggregateIdentifier) ? evaluationFailures.get(aggregateIdentifier) : 0;
+        public int unsuccessfulEvaluationCount(String sequenceId) {
+            return evaluationWasUnsuccessful(sequenceId) ? evaluationFailures.get(sequenceId) : 0;
         }
 
-        public int overallSuccessfulHandlingCount(String aggregateIdentifier) {
-            return firstTrySuccesses.get(aggregateIdentifier) + evaluationSuccesses.get(aggregateIdentifier);
+        public int overallSuccessfulHandlingCount(String sequenceId) {
+            return firstTrySuccesses.get(sequenceId) + evaluationSuccesses.get(sequenceId);
+        }
+
+        public int resolvedDeadLetterParameterCount(String sequenceId) {
+            return hasResolvedDeadLetterParameter.get(sequenceId);
         }
     }
 

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.*;
 /**
  * Implementation of {@link StubAggregateLifecycle} that can be used as an {@link org.junit.jupiter.api.extension.RegisterExtension}
  * annotated method or field in a test class. In that case, the JUnit lifecycle will automatically register and
- * unregister the {@code StubAggregateLifecycle}.
+ * deregister the {@code StubAggregateLifecycle}.
  * <p>
  * Usage example:
  * <pre>

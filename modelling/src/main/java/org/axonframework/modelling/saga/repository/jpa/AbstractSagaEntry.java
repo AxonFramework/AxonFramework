@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,26 @@ package org.axonframework.modelling.saga.repository.jpa;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import javax.persistence.*;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.Lob;
+import javax.persistence.MappedSuperclass;
 
 /**
- * Java Persistence Entity allowing sagas to be stored in a relational database.
- * The serialized type of the @{@link SagaEntry} is declared in the concrete implementation of this class.
- *
- * @author Christophe Bouhier
- * @since 3.0.3
+ * Java Persistence Entity allowing sagas to be stored in a relational database. The serialized type of the
  *
  * @param <T> the serialized content-type of the saga.
+ * @author Christophe Bouhier
+ * @{@link SagaEntry} is declared in the concrete implementation of this class.
+ * @since 3.0.3
+ * @deprecated since moving to jakarta, as the generic {@code serializedSaga} was not handled well. There is a
+ * {@link SagaEntry} not extending from this abstract class anymore, you might be able to use instead.
  */
+@Deprecated
 @MappedSuperclass
 public abstract class AbstractSagaEntry<T> {
+
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
     protected String sagaId; // NOSONAR
@@ -45,8 +52,8 @@ public abstract class AbstractSagaEntry<T> {
 
 
     /**
-     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
-     * saga is not modified by this operation.
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided saga is
+     * not modified by this operation.
      *
      * @param saga           The saga to store
      * @param sagaIdentifier The saga identifier

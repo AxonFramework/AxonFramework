@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -131,7 +130,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private Deque<DomainEventMessage<?>> givenEvents;
     private Deque<DomainEventMessage<?>> storedEvents;
     private List<EventMessage<?>> publishedEvents;
-    private long sequenceNumber = 0;
+    private long sequenceNumber;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
@@ -151,8 +150,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         resources.add(commandBus);
         resources.add(eventStore);
         resources.add(deadlineManager);
+
         this.aggregateType = aggregateType;
-        clearGivenWhenState();
+        this.storedEvents = new LinkedList<>();
+        this.publishedEvents = new ArrayList<>();
+        this.givenEvents = new LinkedList<>();
+        this.sequenceNumber = 0;
 
         registeredParameterResolverFactories.add(new SimpleResourceParameterResolverFactory(resources));
         registeredParameterResolverFactories.add(ClasspathParameterResolverFactory.forClass(aggregateType));
@@ -176,11 +179,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
         this.repository = new IdentifierValidatingRepository<>(repository);
+        resources.add(repository);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register a RepositoryProvider since the Repository is already defined in this fixture."
+                            + " It is recommended to first a RepositoryProvider"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.repositoryProvider = repositoryProvider;
         return this;
     }
@@ -203,6 +214,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
         );
+        //noinspection resource
         adapter.subscribe(commandBus);
         return this;
     }
@@ -218,6 +230,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
+        //noinspection resource
         commandBus.subscribe(commandName, commandHandler);
         return this;
     }
@@ -237,6 +250,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more ParameterResolverFactories since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register ParameterResolverFactories"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredParameterResolverFactories.addFirst(parameterResolverFactory);
         return this;
     }
@@ -245,6 +265,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
             MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
     ) {
+        //noinspection resource
         this.commandBus.registerDispatchInterceptor(commandDispatchInterceptor);
         return this;
     }
@@ -253,6 +274,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
             MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
     ) {
+        //noinspection resource
         this.commandBus.registerHandlerInterceptor(commandHandlerInterceptor);
         return this;
     }
@@ -260,6 +282,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
             MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor) {
+        //noinspection resource
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
@@ -267,6 +290,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
             MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor) {
+        //noinspection resource
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -284,13 +308,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerDefinitions since the Repository is already defined in this fixture."
+                            + " It is recommended to first register HandlerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerDefinitions.addFirst(handlerDefinition);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
-            HandlerEnhancerDefinition handlerEnhancerDefinition) {
+            HandlerEnhancerDefinition handlerEnhancerDefinition
+    ) {
+        if (repository != null) {
+            throw new FixtureExecutionException(
+                    "Cannot register more HandlerEnhancerDefinitions since the Repository is already defined"
+                            + " in this fixture. It is recommended to first register HandlerEnhancerDefinitions"
+                            + " and then register or retrieve the Repository."
+            );
+        }
         this.registeredHandlerEnhancerDefinitions.addFirst(handlerEnhancerDefinition);
         return this;
     }
@@ -348,7 +387,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public TestExecutor<T> andGiven(List<?> domainEvents) {
         if (this.useStateStorage) {
-            throw new AxonConfigurationException(
+            throw new FixtureExecutionException(
                     "Given events not supported, because the fixture is configured to use state storage");
         }
 
@@ -423,6 +462,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
+        clearGivenWhenState();
         deadlineManager.initializeAt(currentTime);
         return this;
     }
@@ -434,6 +474,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
+        logger.debug("Starting WHEN-phase");
         deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
@@ -446,6 +487,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
+        logger.debug("Starting WHEN-phase");
         deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
     }
@@ -463,6 +505,40 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
+        return when(resultValidator -> {
+            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
+                                                                         .andMetaData(metaData);
+            commandBus.dispatch(commandMessage, resultValidator);
+        });
+    }
+
+    @Override
+    public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.newInstance(aggregateFactory);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    @Override
+    public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
+        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            try {
+                repository.load(aggregateId)
+                          .execute(aggregateSupplier);
+            } catch (Exception | AssertionError e) {
+                // Catching AssertionErrors as the Repository of the Fixture may throw them.
+                validator.recordException(e);
+            }
+        }));
+    }
+
+    private ResultValidator<T> when(Consumer<ResultValidatorImpl<T>> whenPhase) {
+        logger.debug("Starting WHEN-phase");
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
@@ -470,14 +546,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                            () -> repository.getAggregate(),
                                                                            deadlineManager);
 
-        CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command).andMetaData(metaData);
-        executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, resultValidator));
+        executeAtSimulatedTime(() -> whenPhase.accept(resultValidator));
 
         if (!repository.rolledBack) {
             Aggregate<T> workingAggregate = repository.aggregate;
             detectIllegalStateChanges(fieldFilter, workingAggregate);
         }
         resultValidator.assertValidRecording();
+        logger.debug("Starting EXPECT-phase");
         return resultValidator;
     }
 
@@ -502,6 +578,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                            () -> repository.getAggregate(),
                                                                            deadlineManager);
         resultValidator.assertValidRecording();
+        logger.debug("Starting EXPECT-phase");
         return resultValidator;
     }
 
@@ -524,6 +601,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             }
 
             AggregateAnnotationCommandHandler<T> handler = builder.build();
+            //noinspection resource
             handler.subscribe(commandBus);
         }
     }
@@ -545,8 +623,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             AggregateModel<T> aggregateModel = aggregateModel();
             this.registerRepository(EventSourcingRepository.builder(aggregateType)
                                                            .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(new GenericAggregateFactory<>(
-                                                                   aggregateModel))
+                                                           .aggregateFactory(
+                                                                   new GenericAggregateFactory<>(aggregateModel)
+                                                           )
                                                            .eventStore(eventStore)
                                                            .parameterResolverFactory(getParameterResolverFactory())
                                                            .handlerDefinition(getHandlerDefinition())
@@ -676,6 +755,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void clearGivenWhenState() {
+        logger.debug("Starting GIVEN-phase");
         storedEvents = new LinkedList<>();
         publishedEvents = new ArrayList<>();
         givenEvents = new LinkedList<>();
@@ -783,7 +863,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than " +
                                 "the one used to load it. Loaded [%s], but actual identifier is [%s].\n" +
-                                "Make sure the identifier passed in the Command matches that of the given Events.",
+                                "Make sure the identifier passed during construction matches that of the when-phase.",
                         aggregateIdentifier, aggregate.identifierAsString()));
             }
         }

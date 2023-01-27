@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2022. Axon Framework
+  ~ Copyright (c) 2010-2023. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,13 +22,9 @@
     <version>5.0.0-SNAPSHOT</version>
     <modules>
         <module>messaging</module>
-        <module>messaging-jakarta</module>
         <module>modelling</module>
-        <module>modelling-jakarta</module>
         <module>eventsourcing</module>
-        <module>eventsourcing-jakarta</module>
         <module>config</module>
-        <module>config-jakarta</module>
         <module>test</module>
         <module>axon-server-connector</module>
         <module>disruptor</module>
@@ -39,7 +35,6 @@
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
         <module>integrationtests</module>
-        <module>integrationtests-jakarta</module>
         <module>legacy</module>
         <module>reactorless-test</module>
     </modules>
@@ -75,54 +70,49 @@
 
         <!-- dependency versions -->
 
-        <slf4j.version>2.0.0</slf4j.version>
-        <log4j.version>2.18.0</log4j.version>
-        <spring.version>5.3.23</spring.version>
+        <slf4j.version>2.0.6</slf4j.version>
+        <log4j.version>2.19.0</log4j.version>
+        <spring.version>5.3.25</spring.version>
         <spring-security.version>5.7.3</spring-security.version>
-        <spring.boot.version>2.7.2</spring.boot.version>
-        <mockito.version>4.8.0</mockito.version>
-        <projectreactor.version>3.4.23</projectreactor.version>
-        <micrometer.version>1.9.3</micrometer.version>
-        <dropwizard.metrics.version>4.2.9</dropwizard.metrics.version>
-        <jackson.version>2.13.3</jackson.version>
-
-        <!-- Validation -->
-        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
-        <el-impl.version>2.2</el-impl.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+        <spring.boot.version>2.7.8</spring.boot.version>
+        <mockito.version>4.11.0</mockito.version>
+        <projectreactor.version>3.5.2</projectreactor.version>
+        <micrometer.version>1.10.3</micrometer.version>
+        <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
+        <jackson.version>2.13.4</jackson.version>
         <hibernate-validator.version>6.2.5.Final</hibernate-validator.version>
-
-        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <javax.cache-api.version>1.1.1</javax.cache-api.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.persistence-api.version>2.2</javax.persistence-api.version>
-        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
+        <hibernate-validator.8.version>8.0.0.Final</hibernate-validator.8.version>
         <disruptor.version>3.4.4</disruptor.version>
         <mysql-connector-java.version>8.0.30</mysql-connector-java.version>
         <ehcache.version>2.10.9.2</ehcache.version>
         <quartz.version>2.3.2</quartz.version>
+        <jobrunr.version>5.3.3</jobrunr.version>
         <c3p0.version>0.9.1.2</c3p0.version>
         <hsqldb.version>2.5.2</hsqldb.version>
-        <hibernate-core.version>5.6.10.Final</hibernate-core.version>
-        <byte-buddy.version>1.12.13</byte-buddy.version>
+        <hibernate-core.version>5.6.14.Final</hibernate-core.version>
+        <hibernate-core.6.version>6.1.6.Final</hibernate-core.6.version>
+        <byte-buddy.version>1.12.22</byte-buddy.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <javassist.version>3.29.0-GA</javassist.version>
+        <javassist.version>3.29.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <dom4j.version>2.1.3</dom4j.version>
-        <postgresql.version>42.5.0</postgresql.version>
+        <dom4j.version>2.1.4</dom4j.version>
+        <postgresql.version>42.5.1</postgresql.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.9.0</junit.jupiter.version>
-        <axonserver-connector-java.version>4.6.1</axonserver-connector-java.version>
+        <junit.jupiter.version>5.9.1</junit.jupiter.version>
+        <axonserver-connector-java.version>4.6.3</axonserver-connector-java.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <testcontainers.version>1.17.3</testcontainers.version>
-        <xstream.version>1.4.19</xstream.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
+        <awaitility.version>4.2.0</awaitility.version>
+        <xstream.version>1.4.20</xstream.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
+
         <!-- plugin versions -->
-        <felix.maven-bundle-plugin.version>5.1.4</felix.maven-bundle-plugin.version>
+        <felix.maven-bundle-plugin.version>5.1.8</felix.maven-bundle-plugin.version>
         <eclipse.transformer-maven-plugin.version>0.5.0</eclipse.transformer-maven-plugin.version>
-        <maven-assembly-plugin.version>3.4.0</maven-assembly-plugin.version>
+        <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
         <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
 
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
@@ -131,12 +121,16 @@
         <jakarta.inject.version>2.0.1</jakarta.inject.version>
         <jakarta.persistence.version>3.0.0</jakarta.persistence.version>
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
+        <jakarta.el-impl.version>4.0.2</jakarta.el-impl.version>
 
-        <jakarta.validation.legacy.version>2.0.2</jakarta.validation.legacy.version>
-        <jakarta.persistence.legacy.version>2.2.3</jakarta.persistence.legacy.version>
-
-        <jakarta.el.implementation.version>4.0.2</jakarta.el.implementation.version>
-
+        <javax.el-impl.version>2.2</javax.el-impl.version>
+        <javax.el-api.version>3.0.1-b06</javax.el-api.version>
+        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+        <javax.cache-api.version>1.1.1</javax.cache-api.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.persistence-api.version>2.2</javax.persistence-api.version>
+        <javax.jaxb-api.version>2.3.1</javax.jaxb-api.version>
     </properties>
 
     <dependencies>
@@ -164,7 +158,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j18-impl</artifactId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
             <version>${log4j.version}</version>
             <scope>test</scope>
         </dependency>
@@ -197,13 +191,6 @@
                     <artifactId>jms</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <!-- Not part of Java 9 by default. Adding it as a dependency makes it compatible with Java 8 -->
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -291,6 +278,11 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.axonframework</groupId>
                 <artifactId>axon-server-connector</artifactId>
                 <version>${project.version}</version>
@@ -331,6 +323,11 @@
                 <version>${hibernate-core.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${hibernate-core.6.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>c3p0</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
@@ -344,6 +341,11 @@
                 <groupId>org.quartz-scheduler</groupId>
                 <artifactId>quartz</artifactId>
                 <version>${quartz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jobrunr</groupId>
+                <artifactId>jobrunr</artifactId>
+                <version>${jobrunr.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -408,21 +410,25 @@
                 <version>${jakarta.el.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.web</groupId>
-                <artifactId>el-impl</artifactId>
-                <version>${el-impl.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.el</artifactId>
-                <version>${jakarta.el.implementation.version}</version>
+                <version>${jakarta.el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>el-impl</artifactId>
+                <version>${javax.el-impl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
+                <version>${hibernate-validator.8.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
@@ -442,12 +448,6 @@
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${javax.jaxb-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -479,7 +479,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -532,7 +532,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -582,41 +582,6 @@
                         <exclude>**/*IntegrationTest_*.java</exclude>
                         <exclude>**/*IntegrationTests_*.java</exclude>
                     </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.4.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadoc</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doclint>none</doclint>
-                    <!-- These parameters are in preparation for resolution of this issue: -->
-                    <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
-                    <tags>
-                        <tag>
-                            <name>apiNote</name>
-                            <placement>a</placement>
-                            <head>API Note:</head>
-                        </tag>
-                        <tag>
-                            <name>implSpec</name>
-                            <placement>a</placement>
-                            <head>Implementation Requirements:</head>
-                        </tag>
-                        <tag>
-                            <name>implNote</name>
-                            <placement>a</placement>
-                            <head>Implementation Note:</head>
-                        </tag>
-                    </tags>
                 </configuration>
             </plugin>
             <plugin>
@@ -823,6 +788,74 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>javadoc</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadoc</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <doclint>none</doclint>
+                            <!-- These parameters are in preparation for resolution of this issue: -->
+                            <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
+                            <tags>
+                                <tag>
+                                    <name>apiNote</name>
+                                    <placement>a</placement>
+                                    <head>API Note:</head>
+                                </tag>
+                                <tag>
+                                    <name>implSpec</name>
+                                    <placement>a</placement>
+                                    <head>Implementation Requirements:</head>
+                                </tag>
+                                <tag>
+                                    <name>implNote</name>
+                                    <placement>a</placement>
+                                    <head>Implementation Note:</head>
+                                </tag>
+                            </tags>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>java11-modules</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <modules>
+                <module>hibernate-6-integrationtests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>java17-modules</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>spring-boot-3-integrationtests</module>
+            </modules>
         </profile>
     </profiles>
 

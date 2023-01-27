@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@ import org.springframework.context.ApplicationContextAware;
  * ResourceInjector implementation that injects Saga instances with resources available from the Spring Application
  * context the injector is registered in.
  * <p/>
- * Resources need to be annotated with a Spring-compatible auto-wiring annotation, such as {@link
- * org.springframework.beans.factory.annotation.Autowired @Autowired} or JSR-250's {@link javax.annotation.Resource}.
+ * Resources need to be annotated with a Spring-compatible auto-wiring annotation, such as
+ * {@link org.springframework.beans.factory.annotation.Autowired @Autowired} or JSR-250's
+ * {@link jakarta.annotation.Resource}.
  * <p/>
  * Note: make sure that the Spring context also declares {@code &lt;context:annotation-config /&gt;} or an
  * {@code AutowiredAnnotationBeanPostProcessor}. See the Spring documentation for more information.

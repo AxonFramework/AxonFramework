@@ -647,7 +647,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorsDefaultsToSagaTrackingEventProcessorConfigIfNoCustomizationIsPresent(
+    void sagaTrackingProcessorConstructionUsesDefaultSagaProcessorConfigIfNoCustomizationIsPresent(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -661,8 +661,7 @@ class EventProcessingModuleTest {
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
         assertTrue(resultTep.isPresent());
         TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
         assertEquals(1, tepSegmentsSize);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
@@ -674,7 +673,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessingGroup(
+    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessingGroup(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -689,8 +688,7 @@ class EventProcessingModuleTest {
         );
         assertTrue(resultTep.isPresent());
         TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
         assertEquals(1, tepSegmentsSize);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
@@ -702,7 +700,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomProcessor(
+    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomProcessor(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -717,8 +715,7 @@ class EventProcessingModuleTest {
         );
         assertTrue(resultTep.isPresent());
         TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
         assertEquals(1, tepSegmentsSize);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
@@ -730,7 +727,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomTrackingProcessorBuilder(
+    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomTrackingProcessorBuilder(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -745,8 +742,7 @@ class EventProcessingModuleTest {
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
         assertTrue(resultTep.isPresent());
         TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
         assertEquals(3, tepSegmentsSize);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
@@ -758,7 +754,7 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void sagaTrackingProcessorsDoesNotPickDefaultsSagaTrackingEventProcessorConfigForCustomConfigInstance(
+    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomConfigInstance(
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
             @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
     ) throws NoSuchFieldException {
@@ -775,8 +771,36 @@ class EventProcessingModuleTest {
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
         assertTrue(resultTep.isPresent());
         TrackingEventProcessor tep = resultTep.get();
-        int tepSegmentsSize =
-                getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
+        assertEquals(4, tepSegmentsSize);
+
+        Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
+                getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
+        tepInitialTokenBuilder.apply(mockedSourceForVerification);
+        // In absence of the default Saga Config, the stream starts at the tail
+        verify(mockedSourceForVerification).createTailToken();
+        verify(mockedSourceForVerification, times(0)).createHeadToken();
+    }
+
+    @Test
+    void sagaTrackingProcessorConstructionDoesNotPickDefaultSagaProcessorConfigForCustomDefaultConfig(
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSource,
+            @Mock StreamableMessageSource<TrackedEventMessage<?>> mockedSourceForVerification
+    ) throws NoSuchFieldException {
+        TrackingEventProcessorConfiguration testTepConfig =
+                TrackingEventProcessorConfiguration.forParallelProcessing(4);
+        configurer.eventProcessing()
+                  .usingTrackingEventProcessors()
+                  .configureDefaultStreamableMessageSource(config -> mockedSource)
+                  .registerSaga(Object.class)
+                  .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
+        Configuration config = configurer.start();
+
+        Optional<TrackingEventProcessor> resultTep =
+                config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
+        assertTrue(resultTep.isPresent());
+        TrackingEventProcessor tep = resultTep.get();
+        int tepSegmentsSize = getFieldValue(TrackingEventProcessor.class.getDeclaredField("segmentsSize"), tep);
         assertEquals(4, tepSegmentsSize);
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =

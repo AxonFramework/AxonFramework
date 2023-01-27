@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
@@ -84,6 +87,9 @@ class AxonServerAutoConfigurationTest {
     @Autowired
     private QueryUpdateEmitter updateEmitter;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Test
     void axonServerQueryBusConfiguration() {
         assertTrue(queryBus instanceof AxonServerQueryBus);
@@ -94,6 +100,12 @@ class AxonServerAutoConfigurationTest {
     void axonServerCommandBusBeanTypesConfiguration() {
         assertTrue(commandBus instanceof AxonServerCommandBus);
         assertTrue(localSegment instanceof SimpleCommandBus);
+    }
+
+    @Test
+    void springResourceInjectorConfigured() {
+        assertFalse(applicationContext.getBeansOfType(ResourceInjector.class).isEmpty(), "Expected an autoconfigured ResourceInjector");
+        assertTrue(applicationContext.getBean(ResourceInjector.class) instanceof SpringResourceInjector);
     }
 
     @Test

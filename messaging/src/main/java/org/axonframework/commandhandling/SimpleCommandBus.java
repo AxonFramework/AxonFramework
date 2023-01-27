@@ -226,7 +226,7 @@ public class SimpleCommandBus implements CommandBus {
      * interceptors at the given order before the command is passed to the handler for processing.
      *
      * @param handlerInterceptor The interceptor to invoke when commands are handled
-     * @return handle to unregister the interceptor
+     * @return handle to deregister the interceptor
      */
     @Override
     public Registration registerHandlerInterceptor(
@@ -241,7 +241,7 @@ public class SimpleCommandBus implements CommandBus {
      * interceptors at the given order before the command is dispatched toward the command handler.
      *
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
-     * @return handle to unregister the interceptor
+     * @return handle to deregister the interceptor
      */
     @Override
     public Registration registerDispatchInterceptor(

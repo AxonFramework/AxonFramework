@@ -74,7 +74,7 @@ public interface EventProcessingConfigurer {
      *
      * @param <T>            The type of Saga to configure
      * @param sagaType       The type of Saga to configure
-     * @param sagaConfigurer a function providing modifications on top of the defaul configuration
+     * @param sagaConfigurer a function providing modifications on top of the default configuration
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     <T> EventProcessingConfigurer registerSaga(Class<T> sagaType, Consumer<SagaConfigurer<T>> sagaConfigurer);

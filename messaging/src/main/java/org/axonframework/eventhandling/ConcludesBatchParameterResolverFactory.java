@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 /**
- * Paramater resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event
+ * Parameter resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event
  * is processed in the context of a {@link BatchingUnitOfWork} and is the last of the batch the resolver injects a
  * value of {@code true}. If the event is processed in another unit of work it is always assumed to be the last of a
  * batch.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,15 @@ import org.axonframework.common.AxonTransientException;
 public class DeadlineException extends AxonTransientException {
 
     private static final long serialVersionUID = 6419272092915164035L;
+
+    /**
+     * Initializes deadline exception with message and no cause.
+     *
+     * @param message message describing what went wrong
+     */
+    public DeadlineException(String message) {
+        super(message);
+    }
 
     /**
      * Initializes deadline exception with message and actual cause.

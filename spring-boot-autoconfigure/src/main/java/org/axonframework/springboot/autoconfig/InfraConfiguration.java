@@ -19,10 +19,12 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.MessageHandlerLookup;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -31,12 +33,15 @@ import org.axonframework.spring.config.SpringConfigurer;
 import org.axonframework.spring.config.SpringSagaLookup;
 import org.axonframework.spring.config.annotation.HandlerDefinitionFactoryBean;
 import org.axonframework.spring.config.annotation.SpringParameterResolverFactoryBean;
+import org.axonframework.spring.saga.SpringResourceInjector;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Role;
 
@@ -49,6 +54,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 3.0.4
  */
+@AutoConfiguration
 @ConditionalOnClass(SpringConfigurer.class)
 @AutoConfigureAfter({
         AxonAutoConfiguration.class,
@@ -57,7 +63,6 @@ import java.util.List;
         NoOpTransactionAutoConfiguration.class,
         TransactionAutoConfiguration.class
 })
-@Configuration
 public class InfraConfiguration {
 
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -79,11 +84,13 @@ public class InfraConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public SpringAxonConfiguration springAxonConfiguration(Configurer configurer) {
         return new SpringAxonConfiguration(configurer);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public SpringConfigurer springAxonConfigurer(ConfigurableListableBeanFactory beanFactory,
                                                  List<ConfigurerModule> configurerModules,
                                                  List<ModuleConfiguration> moduleConfigurations) {
@@ -91,6 +98,14 @@ public class InfraConfiguration {
         moduleConfigurations.forEach(configurer::registerModule);
         configurerModules.forEach(c -> c.configureModule(configurer));
         return configurer;
+    }
+
+    @Bean
+    public InitializingBean lifecycleInitializer(Configurer configurer,
+                                                 List<Lifecycle> lifecycleBeans) {
+        return () -> configurer.onInitialize(
+                config -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(config.lifecycleRegistry()))
+        );
     }
 
     @Primary
@@ -121,5 +136,10 @@ public class InfraConfiguration {
     public ConfigurerModule eventUpcastersConfigurer(List<EventUpcaster> upcasters) {
         return configurer -> upcasters.forEach(u -> configurer.registerEventUpcaster(c -> u));
     }
-}
 
+    @ConditionalOnMissingBean
+    @Bean
+    public ResourceInjector resourceInjector() {
+        return new SpringResourceInjector();
+    }
+}

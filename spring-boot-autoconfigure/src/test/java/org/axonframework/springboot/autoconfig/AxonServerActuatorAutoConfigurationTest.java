@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import org.axonframework.actuator.axonserver.AxonServerHealthIndicator;
 import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.junit.jupiter.api.*;
+import org.springframework.boot.actuate.health.SimpleStatusAggregator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
@@ -73,10 +75,65 @@ class AxonServerActuatorAutoConfigurationTest {
                               });
     }
 
+    @Test
+    void axonServerHealthIndicatorCanBeExchangedForOwnBeans() {
+
+        // Test autoconfig adds beans if we don't specify any
+        testApplicationContext.withUserConfiguration(TestContext.class)
+                              .withPropertyValues("axon.axonserver.enabled:true")
+                              .run(context -> {
+                                  assertThat(context).hasSingleBean(SimpleStatusAggregator.class);
+                                  assertThat(context).getBean(SimpleStatusAggregator.class)
+                                                     .isNotOfAnyClassIn(CustomSimpleStatusAggregator.class);
+
+                                  assertThat(context).hasSingleBean(AxonServerHealthIndicator.class);
+                                  assertThat(context).getBeanNames(AxonServerHealthIndicator.class)
+                                                     .isNotOfAnyClassIn(CustomAxonServerServerHealthIndicator.class);
+                              });
+
+        // Test Autoconfig does not add beans if we specify them
+        testApplicationContext.withUserConfiguration(TestContextWithCustomBean.class)
+                              .withPropertyValues("axon.axonserver.enabled:true")
+                              .run(context -> {
+                                  //existence
+                                  assertThat(context).hasSingleBean(CustomSimpleStatusAggregator.class);
+                                  assertThat(context).hasSingleBean(CustomAxonServerServerHealthIndicator.class);
+
+                                  // access over supertype
+                                  assertThat(context).getBean(SimpleStatusAggregator.class)
+                                                     .isOfAnyClassIn(CustomSimpleStatusAggregator.class);
+                                  assertThat(context).getBean(AxonServerHealthIndicator.class)
+                                                     .isOfAnyClassIn(CustomAxonServerServerHealthIndicator.class);
+                              });
+    }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class TestContext {
 
+    }
+
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    private static class TestContextWithCustomBean {
+        @Bean
+        public CustomSimpleStatusAggregator customAxonServerStatusAggregator(){
+            return new CustomSimpleStatusAggregator();
+        }
+        @Bean
+        public CustomAxonServerServerHealthIndicator customAxonServerServerHealthIndicator(AxonServerConnectionManager connectionManager){
+            return new CustomAxonServerServerHealthIndicator(connectionManager);
+        }
+    }
+
+}
+class CustomSimpleStatusAggregator extends SimpleStatusAggregator {
+
+}
+class CustomAxonServerServerHealthIndicator extends AxonServerHealthIndicator {
+    public CustomAxonServerServerHealthIndicator(AxonServerConnectionManager connectionManager) {
+        super(connectionManager);
     }
 }

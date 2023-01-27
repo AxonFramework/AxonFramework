@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfigurati
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.utils.TestSerializer;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.SpringBootConfiguration;
@@ -42,11 +42,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -57,8 +53,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests customization of the event handlers on a Saga, updating the configuration through an autowired method. Ensures
@@ -77,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.*;
         AxonServerActuatorAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-public class SagaCustomizeIntegrationTest {
+class SagaCustomizeIntegrationTest {
 
     @Autowired
     private EventBus eventBus;
@@ -89,7 +87,7 @@ public class SagaCustomizeIntegrationTest {
     private EventProcessingModule eventProcessingModule;
 
     @Test
-    public void publishSomeEvents() throws InterruptedException {
+    void publishSomeEvents() {
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertTrue(ep.isRunning()));
@@ -97,11 +95,9 @@ public class SagaCustomizeIntegrationTest {
         eventProcessingModule.eventProcessors()
                              .forEach((name, ep) -> assertFalse(ep.isError(), "Processor ended with error"));
 
-        Thread.sleep(Duration.ofSeconds(1).toMillis());
-        assertEquals(1, eventsReceived.get());
+        await().atMost(Duration.ofSeconds(1)).until(() -> eventsReceived.get() == 1);
         publishEvent(new EchoEvent(UUID.randomUUID().toString()));
-        Thread.sleep(Duration.ofSeconds(1).toMillis());
-        assertEquals(2, eventsReceived.get());
+        await().atMost(Duration.ofSeconds(1)).until(() -> eventsReceived.get() == 2);
     }
 
     private void publishEvent(EchoEvent... events) {
@@ -157,12 +153,9 @@ public class SagaCustomizeIntegrationTest {
     @SuppressWarnings("unused")
     public static class SimpleSaga {
 
-        @Autowired
-        private AtomicInteger eventsReceived;
-
         @SagaEventHandler(associationProperty = "id")
         @StartSaga
-        public void on(EchoEvent echoEvent) {
+        public void on(EchoEvent echoEvent, AtomicInteger eventsReceived) {
             eventsReceived.getAndIncrement();
         }
     }

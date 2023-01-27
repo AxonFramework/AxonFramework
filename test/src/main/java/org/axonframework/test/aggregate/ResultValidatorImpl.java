@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -117,15 +118,15 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     @Override
     public ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
         if (!matcher.matches(publishedEvents)) {
-            reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
+            final Description expectation = new StringDescription();
+            matcher.describeTo(expectation);
+            
+            final Description mismatch = new StringDescription();
+            matcher.describeMismatch(publishedEvents, mismatch);
+            
+            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
         }
         return this;
-    }
-
-    private StringDescription descriptionOf(Matcher<?> matcher) {
-        StringDescription description = new StringDescription();
-        matcher.describeTo(description);
-        return description;
     }
 
     @Override
@@ -276,7 +277,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
-        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(equalTo(deadline, fieldFilter)));
+        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
     }
 
     @Override
@@ -492,15 +493,24 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     public void onResult(@Nonnull CommandMessage<?> commandMessage,
                          @Nonnull CommandResultMessage<?> commandResultMessage) {
         if (commandResultMessage.isExceptional()) {
-            actualException = commandResultMessage.exceptionResult();
+            recordException(commandResultMessage.exceptionResult());
         } else {
             actualReturnValue = commandResultMessage;
         }
     }
 
     /**
+     * Record the given {@code exception} as a result of this validator.
+     *
+     * @param exception The exception to record as a result of this validator.
+     */
+    public void recordException(Throwable exception) {
+        this.actualException = exception;
+    }
+
+    /**
      * Makes sure the execution phase has finishes without any Errors ir FixtureExecutionExceptions. If an error was
-     * recorded, it will be thrown immediately. This allow one to distinguish between failed tests, and tests in error.
+     * recorded, it will be thrown immediately. This allows one to distinguish between failed tests, and tests in error.
      */
     public void assertValidRecording() {
         if (actualException instanceof Error) {

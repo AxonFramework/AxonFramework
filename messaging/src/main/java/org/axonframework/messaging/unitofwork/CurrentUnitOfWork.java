@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public abstract class CurrentUnitOfWork {
      * @throws NullPointerException when a Unit of Work is present and the function returns null
      */
     public static <T> Optional<T> map(Function<UnitOfWork<?>, T> function) {
-        return isStarted() ? Optional.of(function.apply(get())) : Optional.empty();
+        return isStarted() ? Optional.ofNullable(function.apply(get())) : Optional.empty();
     }
 
     /**

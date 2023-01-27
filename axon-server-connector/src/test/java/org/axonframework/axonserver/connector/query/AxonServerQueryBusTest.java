@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,7 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.TestTargetContextResolver;
+import org.axonframework.axonserver.connector.*;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.Registration;
@@ -43,39 +39,20 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericStreamingQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.axonframework.queryhandling.StreamingQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,6 +60,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
@@ -266,6 +244,15 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void queryCloseConnectionOnCompletableFutureCancel() {
+        ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
+        when(mockQueryChannel.query(any())).thenReturn(resultStream);
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        testSubject.query(testQuery).cancel(true);
+        verify(resultStream).close();
+    }
+
+    @Test
     void subscribeHandler() {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
                 .thenReturn(() -> CompletableFuture.completedFuture(null));
@@ -330,8 +317,12 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery);
-        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery);
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery", testQuery));
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanPropagated("AxonServerQueryBus.streamingQuery", testQuery));
     }
 
     @Test
@@ -350,8 +341,12 @@ class AxonServerQueryBusTest {
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
                         && 1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        spanFactory.verifySpanCompleted("AxonServerQueryBus.streamingQuery");
-        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class);
+        await().atMost(Duration.ofSeconds(3l))
+                .until(() ->
+                        spanFactory.spanCompleted("AxonServerQueryBus.streamingQuery"));
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanHasException("AxonServerQueryBus.streamingQuery", RuntimeException.class));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2022. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package org.axonframework.modelling.saga.repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSaga;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.ResourceInjector;
@@ -26,10 +30,6 @@ import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -187,15 +187,17 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     }
 
     /**
-     * Remove the given saga as well as all known association values pointing to it from the repository. If no such
-     * saga exists, nothing happens.
+     * Remove the given saga as well as all known association values pointing to it from the repository. If no such saga
+     * exists, nothing happens.
      *
      * @param saga The saga instance to remove from the repository
      */
     protected void deleteSaga(AnnotatedSaga<T> saga) {
-        Set<AssociationValue> associationValues = CollectionUtils
-                .merge(saga.getAssociationValues().asSet(), saga.getAssociationValues().removedAssociations(),
-                       HashSet::new);
+        Set<AssociationValue> associationValues = CollectionUtils.merge(
+                saga.getAssociationValues().asSet(),
+                saga.getAssociationValues().removedAssociations(),
+                HashSet::new
+        );
         sagaStore.deleteSaga(sagaType, saga.getSagaIdentifier(), associationValues);
     }
 

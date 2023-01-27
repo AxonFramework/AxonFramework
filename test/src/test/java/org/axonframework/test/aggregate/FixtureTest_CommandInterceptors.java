@@ -28,7 +28,11 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
+import org.axonframework.modelling.command.AggregateMember;
+import org.axonframework.modelling.command.CommandHandlerInterceptor;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -240,21 +244,42 @@ class FixtureTest_CommandInterceptors {
         assertEquals(2, invocations.get());
     }
 
-    @SuppressWarnings("unused")
+    @Test
+    void interceptorChainIsInvokedWhenInterceptorForEntityWiresInterceptorChainWithoutExistingEntity() {
+        fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
+               .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
+               .expectSuccessfulHandlerExecution()
+               .expectNoEvents()
+               .expectResultMessagePayload("invoked-without-entity");
+    }
+
+    @Test
+    void interceptorChainIsNotInvokedWhenInterceptorForEntityDoesNotWireInterceptorChainWithoutExistingEntity() {
+        fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
+               .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
+               .expectNoEvents()
+               .expectException(AggregateEntityNotFoundException.class);
+    }
+
     public static class InterceptorAggregate {
 
         public static final String AGGREGATE_IDENTIFIER = "id1";
 
         @SuppressWarnings("UnusedDeclaration")
         private transient int counter;
+        @SuppressWarnings("unused")
         private Integer lastNumber;
         @AggregateIdentifier
         private String identifier;
-        private MyEntity entity;
+        @SuppressWarnings("unused")
+        @AggregateMember
+        private InterceptorEntity entity;
 
+        @SuppressWarnings("unused")
         public InterceptorAggregate() {
         }
 
+        @SuppressWarnings("unused")
         public InterceptorAggregate(Object aggregateIdentifier) {
             identifier = aggregateIdentifier.toString();
         }
@@ -262,6 +287,19 @@ class FixtureTest_CommandInterceptors {
         @CommandHandler
         public InterceptorAggregate(CreateStandardAggregateCommand cmd) {
             apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
+        }
+
+        @CommandHandlerInterceptor
+        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain) throws Exception {
+            if (this.entity == null) {
+                return "invoked-without-entity";
+            }
+            return (String) interceptorChain.proceed();
+        }
+
+        @CommandHandlerInterceptor
+        public void intercept(DoWithEntityWithoutInterceptorCommand command) {
+            // Do nothing, as it's here to break!
         }
 
         @SuppressWarnings("UnusedParameters")
@@ -289,11 +327,52 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
+    private static class InterceptorEntity {
+
+        @CommandHandler
+        public void handle(DoWithEntityCommand command) {
+            // Nothing to do here
+        }
+
+        @CommandHandler
+        public void handle(DoWithEntityWithoutInterceptorCommand command) {
+            // Nothing to do here
+        }
+    }
+
     private static class StandardAggregateCreatedEvent {
 
         private final Object aggregateIdentifier;
 
         public StandardAggregateCreatedEvent(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        public Object getAggregateIdentifier() {
+            return aggregateIdentifier;
+        }
+    }
+
+    private static class DoWithEntityCommand {
+
+        @TargetAggregateIdentifier
+        private final Object aggregateIdentifier;
+
+        public DoWithEntityCommand(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        public Object getAggregateIdentifier() {
+            return aggregateIdentifier;
+        }
+    }
+
+    private static class DoWithEntityWithoutInterceptorCommand {
+
+        @TargetAggregateIdentifier
+        private final Object aggregateIdentifier;
+
+        public DoWithEntityWithoutInterceptorCommand(Object aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
@@ -319,6 +398,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+
         @Override
         public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {

@@ -31,10 +31,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -54,8 +51,6 @@ import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserial
  * @since 3.0
  */
 public abstract class AbstractEventStorageEngine implements EventStorageEngine {
-
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Serializer snapshotSerializer;
     protected final EventUpcaster upcasterChain;
@@ -356,26 +351,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         protected void validate() throws AxonConfigurationException {
             if (snapshotSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for events, whereas it is strongly recommended to"
-                                + " configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for events,"
-                                        + " without specifying the security context"
-                        )
-                );
-                snapshotSerializer = () -> XStreamSerializer.builder().build();
+                snapshotSerializer = XStreamSerializer::defaultSerializer;
             }
             if (eventSerializer == null) {
-                logger.warn(
-                        "The default XStreamSerializer is used for snapshots, whereas it is strongly recommended to "
-                                + "configure the security context of the XStream instance.",
-                        new AxonConfigurationException(
-                                "A default XStreamSerializer is used for snapshots,"
-                                        + " without specifying the security context"
-                        )
-                );
-                eventSerializer = () -> XStreamSerializer.builder().build();
+                eventSerializer = XStreamSerializer::defaultSerializer;
             }
         }
     }

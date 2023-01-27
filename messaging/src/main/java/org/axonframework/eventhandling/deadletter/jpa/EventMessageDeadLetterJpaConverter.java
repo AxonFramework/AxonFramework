@@ -49,16 +49,16 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @SuppressWarnings("rawtypes")
     @Override
-    public DeadLetterEventEntry convert(EventMessage<?> message, Serializer serializer) {
+    public DeadLetterEventEntry convert(EventMessage<?> message, Serializer eventSerializer, Serializer genericSerializer) {
         GenericEventMessage<?> eventMessage = (GenericEventMessage<?>) message;
         Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
                 TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
         Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
                 DomainEventMessage.class::isInstance).map(DomainEventMessage.class::cast);
 
-        SerializedObject<byte[]> serializedPayload = serializer.serialize(message.getPayload(), byte[].class);
-        SerializedObject<byte[]> serializedMetadata = serializer.serialize(message.getMetaData(), byte[].class);
-        Optional<SerializedObject<byte[]>> serializedToken = trackedEventMessage.map(m -> serializer.serialize(m.trackingToken(),
+        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.getPayload(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
+        Optional<SerializedObject<byte[]>> serializedToken = trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(),
                                                                                                                byte[].class));
 
 
@@ -79,14 +79,14 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public EventMessage<?> convert(DeadLetterEventEntry entry, Serializer serializer) {
+    public EventMessage<?> convert(DeadLetterEventEntry entry, Serializer eventSerializer, Serializer genericSerializer) {
         SerializedMessage<?> serializedMessage = new SerializedMessage<>(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
                                                                          entry.getMetaData(),
-                                                                         serializer);
+                                                                         eventSerializer);
         Supplier<Instant> timestampSupplier = () -> Instant.parse(entry.getTimeStamp());
         if (entry.getTrackingToken() != null) {
-            TrackingToken trackingToken = serializer.deserialize(entry.getTrackingToken());
+            TrackingToken trackingToken = genericSerializer.deserialize(entry.getTrackingToken());
             if (entry.getAggregateIdentifier() != null) {
                 return new GenericTrackedDomainEventMessage<>(trackingToken,
                                                               entry.getType(),

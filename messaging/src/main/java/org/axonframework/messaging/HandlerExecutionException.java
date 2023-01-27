@@ -24,6 +24,9 @@ import java.util.Optional;
  * Base exception for exceptions raised by Handler methods. Besides standard exception information (such as message and
  * cause), these exception may optionally carry an object with additional application-specific details about the
  * exception.
+ * <p/>
+ * By default, a stack trace is not generated for this exception. However, the stack trace creation can be enforced
+ * explicitly via the constructor accepting the {@code writableStackTrace} parameter.
  *
  * @author Allard Buize
  * @since 4.2
@@ -34,8 +37,8 @@ public abstract class HandlerExecutionException extends AxonException {
     private final Object details;
 
     /**
-     * Initializes an execution exception with given {@code message}. The cause and application-specific details are
-     * set to {@code null}.
+     * Initializes an execution exception with given {@code message}. The cause and application-specific details are set
+     * to {@code null}.
      *
      * @param message A message describing the exception
      */
@@ -63,13 +66,26 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param details An object providing application-specific details of the exception
      */
     public HandlerExecutionException(String message, Throwable cause, Object details) {
-        super(message, cause);
+        this(message, cause, details, false);
+    }
+
+    /**
+     * Initializes an execution exception with given {@code message}, {@code cause}, application-specific
+     * {@code details}, and {@code writableStackTrace}
+     *
+     * @param message            A message describing the exception
+     * @param cause              The cause of the execution exception
+     * @param details            An object providing application-specific details of the exception
+     * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
+     */
+    public HandlerExecutionException(String message, Throwable cause, Object details, boolean writableStackTrace) {
+        super(message, cause, writableStackTrace);
         this.details = details;
     }
 
     /**
-     * Resolve details from the given {@code throwable}, taking into account that the details may be available in any
-     * of the {@code HandlerExecutionException}s is the "cause" chain.
+     * Resolve details from the given {@code throwable}, taking into account that the details may be available in any of
+     * the {@code HandlerExecutionException}s is the "cause" chain.
      *
      * @param throwable The exception to resolve the details from
      * @param <R>       The type of details expected
@@ -85,9 +101,9 @@ public abstract class HandlerExecutionException extends AxonException {
     }
 
     /**
-     * Returns an Optional containing application-specific details of the exception, if any were provided. These
-     * details are implicitly cast to the expected type. A mismatch in type may lead to a {@link ClassCastException}
-     * further downstream, when accessing the Optional's enclosed value.
+     * Returns an Optional containing application-specific details of the exception, if any were provided. These details
+     * are implicitly cast to the expected type. A mismatch in type may lead to a {@link ClassCastException} further
+     * downstream, when accessing the Optional's enclosed value.
      *
      * @param <R> The type of details expected
      * @return an Optional containing the details, if provided

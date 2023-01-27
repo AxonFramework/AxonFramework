@@ -140,6 +140,42 @@ class FixtureTest_CreationPolicy {
                .expectSuccessfulHandlerExecution();
     }
 
+    @Test
+    void whenPrivateConstructorCombinedWithCreateIfMissingPolicyThenAggregateWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateWithPrivateNoArgConstructor.class)
+                .givenNoPriorActivity()
+                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void whenPrivateConstructorCombinedWithAlwaysPolicyThenAggregateWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateWithPrivateNoArgConstructor.class)
+                .givenNoPriorActivity()
+                .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void whenProtectedConstructorCombinedWithCreateIfMissingPolicyThenAggregateWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateWithProtectedNoArgConstructor.class)
+                .givenNoPriorActivity()
+                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new CreatedOrUpdatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void whenProtectedConstructorCombinedWithAlwaysPolicyThenAggregateWorksAsExpected() {
+        new AggregateTestFixture<>(TestAggregateWithProtectedNoArgConstructor.class)
+                .givenNoPriorActivity()
+                .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+                .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
+                .expectSuccessfulHandlerExecution();
+    }
+
     private static class CreateCommand {
 
         @TargetAggregateIdentifier
@@ -444,8 +480,81 @@ class FixtureTest_CreationPolicy {
         }
     }
 
+    public static class TestAggregateWithPrivateNoArgConstructor {
+
+        @AggregateIdentifier
+        private ComplexAggregateId id;
+
+        private TestAggregateWithPrivateNoArgConstructor() {
+            // Constructor made private on purpose for testing.
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        public void handle(CreateOrUpdateCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new CreatedOrUpdatedEvent(command.getId()));
+            }
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(AlwaysCreateWithoutResultCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new AlwaysCreatedEvent(command.getId()));
+            }
+        }
+
+        @EventSourcingHandler
+        private void on(CreatedOrUpdatedEvent event) {
+            this.id = event.getId();
+        }
+
+        @EventSourcingHandler
+        public void on(AlwaysCreatedEvent event) {
+            this.id = event.getId();
+        }
+    }
+
+    public static class TestAggregateWithProtectedNoArgConstructor {
+
+        @AggregateIdentifier
+        private ComplexAggregateId id;
+
+        protected TestAggregateWithProtectedNoArgConstructor() {
+            // Constructor made protected on purpose for testing.
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        public void handle(CreateOrUpdateCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new CreatedOrUpdatedEvent(command.getId()));
+            }
+        }
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(AlwaysCreateWithoutResultCommand command) {
+            if (command.shouldPublishEvent()) {
+                apply(new AlwaysCreatedEvent(command.getId()));
+            }
+        }
+
+        @EventSourcingHandler
+        private void on(CreatedOrUpdatedEvent event) {
+            this.id = event.getId();
+        }
+
+        @EventSourcingHandler
+        public void on(AlwaysCreatedEvent event) {
+            this.id = event.getId();
+        }
+    }
+
     /**
-     * Test id introduces due too https://github.com/AxonFramework/AxonFramework/pull/1356
+     * Test identifier introduced for issue <a
+     * href="https://github.com/AxonFramework/AxonFramework/pull/1356">#1356</a>.
      */
     private static class ComplexAggregateId {
 

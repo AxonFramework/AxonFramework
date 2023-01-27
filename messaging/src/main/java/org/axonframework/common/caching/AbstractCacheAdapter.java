@@ -63,7 +63,7 @@ public abstract class AbstractCacheAdapter<L> implements Cache {
      * Registers the given listener with the cache implementation
      *
      * @param listenerAdapter the listener to register
-     * @return a handle to unregister the listener
+     * @return a handle to deregister the listener
      */
     protected abstract Registration doRegisterListener(L listenerAdapter);
 }

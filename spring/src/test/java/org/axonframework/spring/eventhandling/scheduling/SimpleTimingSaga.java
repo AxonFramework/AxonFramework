@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.eventhandling.scheduling;
 
+import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
 
-import javax.inject.Inject;
 import java.time.Duration;
+import javax.inject.Inject;
 
 /**
  * @author Allard Buijze

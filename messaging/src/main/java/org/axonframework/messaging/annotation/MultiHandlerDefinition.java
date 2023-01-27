@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class MultiHandlerDefinition implements HandlerDefinition {
      */
     public static MultiHandlerDefinition ordered(List<HandlerDefinition> delegates,
                                                  HandlerEnhancerDefinition handlerEnhancerDefinition) {
-        return new MultiHandlerDefinition(delegates, handlerEnhancerDefinition);
+        return new MultiHandlerDefinition(delegates, MultiHandlerEnhancerDefinition.ordered(handlerEnhancerDefinition));
     }
 
     /**

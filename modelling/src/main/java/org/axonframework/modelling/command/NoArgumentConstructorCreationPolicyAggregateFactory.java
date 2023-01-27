@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.common.ReflectionUtils;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -51,7 +53,7 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
     @Override
     public A create(@Nullable Object identifier) {
         try {
-            return aggregateClass.getDeclaredConstructor().newInstance();
+            return ReflectionUtils.ensureAccessible(aggregateClass.getDeclaredConstructor()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

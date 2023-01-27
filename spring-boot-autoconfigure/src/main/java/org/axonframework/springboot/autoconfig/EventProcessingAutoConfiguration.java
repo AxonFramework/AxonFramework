@@ -18,10 +18,10 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingModule;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Auto configuration for {@link EventProcessingModule}.
@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Milan Savic
  * @since 4.0
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.axonframework.springboot.autoconfig.JpaAutoConfiguration",

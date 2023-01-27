@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,8 @@ class WorkPackage {
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
     private final Clock clock;
+    private final String segmentIdResourceKey;
+    private final String lastTokenResourceKey;
 
     private TrackingToken lastDeliveredToken; // For use only by event delivery threads, like Coordinator
     private TrackingToken lastConsumedToken;
@@ -118,6 +120,8 @@ class WorkPackage {
         this.claimExtensionThreshold = builder.claimExtensionThreshold;
         this.segmentStatusUpdater = builder.segmentStatusUpdater;
         this.clock = builder.clock;
+        this.segmentIdResourceKey = "Processor[" + builder.name + "]/SegmentId";
+        this.lastTokenResourceKey = "Processor[" + builder.name + "]/Token";
 
         this.lastConsumedToken = builder.initialToken;
         this.lastClaimExtension = System.currentTimeMillis();
@@ -298,6 +302,8 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
             unitOfWork.attachTransaction(transactionManager);
+            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
+            unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
             unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
             unitOfWork.afterCommit(
                     u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))

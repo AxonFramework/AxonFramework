@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
+import org.axonframework.spring.modelling.SpringRepositoryFactoryBean;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,22 +29,26 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.core.ResolvableType;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
+import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 import static org.axonframework.common.StringUtils.nonEmptyOrNull;
+import static org.springframework.core.ResolvableType.forClassWithGenerics;
 
 /**
- * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a {@link
- * SpringAggregateConfigurer configurer} for each Aggregate found.
+ * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a
+ * {@link SpringAggregateConfigurer configurer} for each Aggregate found.
  *
  * @author Allard Buijze
  * @since 4.6.0
@@ -103,7 +109,8 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             throw new AxonConfigurationException(format("There are no spring beans for '%s' defined.", type.getName()));
         } else {
             if (beanNamesForType.length != 1) {
-                logger.warn("There are {} beans defined for '{}'.", beanNamesForType.length, type.getName());
+                logger.debug("There are {} beans defined for '{}', making this a polymorphic aggregate.",
+                             beanNamesForType.length, type.getName());
             }
             return beanNamesForType[0];
         }
@@ -138,19 +145,18 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         for (Map.Entry<SpringAggregate<? super Object>, Map<Class<? extends Object>, String>> aggregate : hierarchy.entrySet()) {
             Class<?> aggregateType = aggregate.getKey().getClassType();
             String aggregatePrototype = aggregate.getKey().getBeanName();
-            //noinspection TypeParameterExplicitlyExtendsObject
-            Set<Class<? extends Object>> subTypes = aggregate.getValue().keySet();
 
             String registrarBeanName = aggregatePrototype + "$$Registrar";
             if (beanFactory.containsBeanDefinition(registrarBeanName)) {
                 logger.info("Registrar for {} already available. Skipping configuration", aggregatePrototype);
                 break;
             }
+
             BeanDefinition beanDefinition = beanFactory.getBeanDefinition(aggregatePrototype);
             if (beanDefinition.isPrototype() && aggregateType != null) {
                 AnnotationUtils.findAnnotationAttributes(aggregateType, Aggregate.class)
                                .map(props -> buildAggregateBeanDefinition(
-                                       beanFactory, aggregateType, aggregatePrototype, subTypes, props
+                                       beanFactory, aggregateType, aggregatePrototype, aggregate.getValue(), props
                                ))
                                .ifPresent(registrarBeanDefinition -> bdRegistry.registerBeanDefinition(
                                        registrarBeanName, registrarBeanDefinition
@@ -162,13 +168,13 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
     private BeanDefinition buildAggregateBeanDefinition(ConfigurableListableBeanFactory registry,
                                                         Class<?> aggregateType,
                                                         String aggregateBeanName,
-                                                        Set<Class<?>> subTypes,
+                                                        Map<Class<?>, String> subTypes,
                                                         Map<String, Object> props) {
         BeanDefinitionBuilder beanDefinitionBuilder =
                 BeanDefinitionBuilder.genericBeanDefinition(SpringAggregateConfigurer.class)
                                      .setRole(BeanDefinition.ROLE_APPLICATION)
                                      .addConstructorArgValue(aggregateType)
-                                     .addConstructorArgValue(subTypes);
+                                     .addConstructorArgValue(subTypes.keySet());
         if (nonEmptyOrNull((String) props.get(SNAPSHOT_FILTER))) {
             beanDefinitionBuilder.addPropertyValue(SNAPSHOT_FILTER, props.get(SNAPSHOT_FILTER));
         }
@@ -186,18 +192,39 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
         }
         if (nonEmptyOrNull((String) props.get(REPOSITORY))) {
             beanDefinitionBuilder.addPropertyValue(REPOSITORY, props.get(REPOSITORY));
-        } else if (registry.containsBean(aggregateBeanName + REPOSITORY_BEAN)) {
-            Class<?> type = registry.getType(aggregateBeanName + REPOSITORY_BEAN);
-            if (type == null || Repository.class.isAssignableFrom(type)) {
-                beanDefinitionBuilder.addPropertyReference(REPOSITORY, aggregateBeanName + REPOSITORY_BEAN);
+        } else {
+            String repositoryName = lowerCaseFirstCharacterOf(aggregateType.getSimpleName()) + REPOSITORY_BEAN;
+            if (registry.containsBean(repositoryName)) {
+                Class<?> type = registry.getType(repositoryName);
+                if (type == null || Repository.class.isAssignableFrom(type)) {
+                    beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryName);
+                }
+            } else {
+                ((BeanDefinitionRegistry) registry).registerBeanDefinition(
+                        repositoryName,
+                        BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
+                                             .addConstructorArgValue(aggregateType)
+                                             .addPropertyValue(
+                                                     "configuration", new RuntimeBeanReference(Configuration.class)
+                                             )
+                                             .applyCustomizers(bd -> {
+                                                 ResolvableType resolvableRepositoryType =
+                                                         forClassWithGenerics(Repository.class, aggregateType);
+                                                 ((RootBeanDefinition) bd).setTargetType(resolvableRepositoryType);
+                                             })
+                                             .getBeanDefinition()
+                );
             }
         }
-        String aggregateFactory = aggregateBeanName + "AggregateFactory";
+        String aggregateFactory = lowerCaseFirstCharacterOf(aggregateType.getSimpleName()) + "AggregateFactory";
         if (!registry.containsBeanDefinition(aggregateFactory)) {
             ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                     aggregateFactory,
                     BeanDefinitionBuilder.genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                         // using static method to avoid ambiguous constructor resolution in Spring AOT
+                                         .setFactoryMethod("withSubtypeSupport")
                                          .addConstructorArgValue(aggregateBeanName)
+                                         .addConstructorArgValue(subTypes)
                                          .getBeanDefinition()
             );
         }

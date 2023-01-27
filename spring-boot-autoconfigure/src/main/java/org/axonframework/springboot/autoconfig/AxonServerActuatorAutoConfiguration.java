@@ -19,11 +19,13 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.actuator.axonserver.AxonServerHealthIndicator;
 import org.axonframework.actuator.axonserver.AxonServerStatusAggregator;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.springframework.boot.actuate.health.SimpleStatusAggregator;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Autoconfiguration class for Spring Boot Actuator monitoring tools around Axon Server.
@@ -31,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-@Configuration
+@AutoConfiguration
 @AutoConfigureAfter(AxonServerAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "org.springframework.boot.actuate.health.AbstractHealthIndicator",
@@ -40,11 +42,12 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
 public class AxonServerActuatorAutoConfiguration {
 
+    @ConditionalOnMissingBean(AxonServerHealthIndicator.class)
     @Bean
     public AxonServerHealthIndicator axonServerHealthIndicator(AxonServerConnectionManager connectionManager) {
         return new AxonServerHealthIndicator(connectionManager);
     }
-
+    @ConditionalOnMissingBean(SimpleStatusAggregator.class)
     @Bean
     public AxonServerStatusAggregator axonServerStatusAggregator() {
         return new AxonServerStatusAggregator();

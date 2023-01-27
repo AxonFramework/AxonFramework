@@ -111,7 +111,7 @@ public abstract class CollectionUtils {
      * @param collection1       The first collection
      * @param collection2       The second collection
      * @param collectionBuilder The factory for the returned collection instance
-     * @param <T>               The type of element contained in the resuling collection
+     * @param <T>               The type of element contained in the resulting collection
      * @param <C>               The type of collection to return
      * @return a collection containing the elements that were found in both given collections
      */
