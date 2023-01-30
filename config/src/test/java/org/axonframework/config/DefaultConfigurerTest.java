@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void defaultConfigurationWithTrackingProcessorAutoStartDisabledDoesNotComplainAtShutdown() throws Exception {
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabledDoesNotComplainAtShutdown() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing()
@@ -219,7 +219,7 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void defaultConfigurationWithTrackingProcessorAutoStartDisabled() throws Exception {
+    void defaultConfigurationWithTrackingProcessorAutoStartDisabled() {
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing()
@@ -266,7 +266,7 @@ class DefaultConfigurerTest {
                                  ).configureAggregate(
                                          defaultConfiguration(StubAggregate.class).configureCommandTargetResolver(
                                                  c -> command -> new VersionedAggregateIdentifier(
-                                                         command.getPayload().toString(), null
+                                                         command.getPayload(), null
                                                  )
                                          )
                                  ).registerEventUpcaster(c -> events -> {
@@ -290,6 +290,7 @@ class DefaultConfigurerTest {
         Configuration config = DefaultConfigurer.jpaConfiguration(
                 () -> em, transactionManager).configureCommandBus(c -> {
             AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+            //noinspection resource
             commandBus.registerHandlerInterceptor(
                     new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))
             );
@@ -324,6 +325,7 @@ class DefaultConfigurerTest {
                                  .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                  .configureCommandBus(c -> {
                                      AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+                                     //noinspection resource
                                      commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(
                                              c.getComponent(TransactionManager.class)
                                      ));
@@ -347,8 +349,8 @@ class DefaultConfigurerTest {
         Configuration config =
                 DefaultConfigurer.defaultConfiguration()
                                  .configureCommandBus(c -> {
-                                     AsynchronousCommandBus commandBus =
-                                             AsynchronousCommandBus.builder().build();
+                                     AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+                                     //noinspection resource
                                      commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(
                                              c.getComponent(TransactionManager.class)
                                      ));
@@ -357,12 +359,7 @@ class DefaultConfigurerTest {
                                  .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
                                  .buildConfiguration();
 
-        try {
-            config.start();
-            fail("Expected LifecycleHandlerInvocationException");
-        } catch (LifecycleHandlerInvocationException e) {
-            // expected
-        }
+        assertThrows(LifecycleHandlerInvocationException.class, config::start);
     }
 
     @Test
@@ -372,6 +369,7 @@ class DefaultConfigurerTest {
                 TransactionManager.class, c -> transactionManager
         ).configureCommandBus(c -> {
             AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+            //noinspection resource
             commandBus.registerHandlerInterceptor(
                     new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))
             );
