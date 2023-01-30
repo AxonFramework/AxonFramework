@@ -598,6 +598,7 @@ class DefaultConfigurerTest {
                                          config -> QuartzDeadlineManager.builder()
                                                                         .scheduler(mockScheduler)
                                                                         .scopeAwareProvider(config.scopeAwareProvider())
+                                                                        .serializer(TestSerializer.xStreamSerializer())
                                                                         .build()
                                  )
                                  .buildConfiguration()
