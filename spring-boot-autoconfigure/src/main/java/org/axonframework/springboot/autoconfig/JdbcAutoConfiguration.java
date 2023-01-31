@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -55,13 +56,20 @@ import javax.sql.DataSource;
 public class JdbcAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class})
+    public EventSchema eventSchema() {
+        return new EventSchema();
+    }
+
+    @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
                                                  org.axonframework.config.Configuration configuration,
                                                  ConnectionProvider connectionProvider,
-                                                 TransactionManager transactionManager) {
+                                                 TransactionManager transactionManager,
+                                                 EventSchema eventSchema) {
         return JdbcEventStorageEngine.builder()
                                      .snapshotSerializer(defaultSerializer)
                                      .upcasterChain(configuration.upcasterChain())
@@ -70,6 +78,7 @@ public class JdbcAutoConfiguration {
                                      .snapshotFilter(configuration.snapshotFilter())
                                      .connectionProvider(connectionProvider)
                                      .transactionManager(transactionManager)
+                                     .schema(eventSchema)
                                      .build();
     }
 

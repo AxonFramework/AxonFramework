@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -86,6 +87,18 @@ public class JdbcAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(TokenStore.class);
                     assertThat(context).getBean(TokenStore.class).extracting("schema").isSameAs(tokenSchema);
+                });
+    }
+
+    @Test
+    void customEventSchema() {
+        EventSchema eventSchema = EventSchema.builder().eventTable("TEST123").build();
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventSchema.class, () -> eventSchema)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventStorageEngine.class);
+                    assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
                 });
     }
 
