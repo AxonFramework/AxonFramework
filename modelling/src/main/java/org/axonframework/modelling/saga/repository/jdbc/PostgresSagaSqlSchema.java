@@ -64,7 +64,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
         return conn.prepareStatement("CREATE TABLE IF NOT EXISTS " + sagaSchema().sagaEntryTable() + " (\n" +
                                              "        " + sagaSchema.sagaIdColumn() + " VARCHAR(255) NOT NULL,\n" +
-                                             "        revision VARCHAR(255),\n" +
+                                             "        " + sagaSchema.revisionColumn() + " VARCHAR(255),\n" +
                                              "        " + sagaSchema.sagaTypeColumn() + " VARCHAR(255),\n" +
                                              "        " + sagaSchema.serializedSagaColumn() + " bytea,\n" +
                                              "        PRIMARY KEY (" + sagaSchema.sagaIdColumn() + ")\n" +
@@ -76,7 +76,8 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
         if (!exclusiveLoad) {
             return super.sql_loadSaga(connection, sagaId);
         }
-        final String sql = "SELECT " + sagaSchema.serializedSagaColumn() + ", " + sagaSchema.sagaTypeColumn() + ", revision" +
+        final String sql = "SELECT " + sagaSchema.serializedSagaColumn() + ", " + sagaSchema.sagaTypeColumn() + ", " +
+                sagaSchema.revisionColumn() +
                 " FROM " + sagaSchema().sagaEntryTable() +
                 " WHERE " + sagaSchema.sagaIdColumn() + " = ?" +
                 " FOR UPDATE";

@@ -27,6 +27,7 @@ package org.axonframework.modelling.saga.repository.jdbc;
 public class SagaSchema {
 
     private final String sagaEntryTable;
+    private final String revisionColumn;
     private final String serializedSagaColumn;
     private final String associationValueEntryTable;
     private final String associationKeyColumn;
@@ -56,8 +57,9 @@ public class SagaSchema {
         );
     }
 
-    private SagaSchema(Builder builder) {
+    protected SagaSchema(Builder builder) {
         this.sagaEntryTable = builder.sagaEntryTable;
+        this.revisionColumn = builder.revisionColumn;
         this.serializedSagaColumn = builder.serializedSagaColumn;
         this.associationValueEntryTable = builder.associationValueEntryTable;
         this.associationKeyColumn = builder.associationKeyColumn;
@@ -82,6 +84,15 @@ public class SagaSchema {
      */
     public String sagaEntryTable() {
         return sagaEntryTable;
+    }
+
+    /**
+     * Returns the name of the revision column
+     *
+     * @return the name of the revision column
+     */
+    public String revisionColumn() {
+        return revisionColumn;
     }
 
     /**
@@ -144,6 +155,7 @@ public class SagaSchema {
     public static class Builder {
 
         private String sagaEntryTable = "SagaEntry";
+        private String revisionColumn = "revision";
         private String serializedSagaColumn = "serializedSaga";
         private String associationValueEntryTable = "AssociationValueEntry";
         private String associationKeyColumn = "associationKey";
@@ -159,6 +171,17 @@ public class SagaSchema {
          */
         public Builder sagaEntryTable(String sagaEntryTable) {
             this.sagaEntryTable = sagaEntryTable;
+            return this;
+        }
+
+        /**
+         * Sets the name of the revision column. Defaults to 'revision'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder revisionColumn(String columnName) {
+            this.revisionColumn = columnName;
             return this;
         }
 

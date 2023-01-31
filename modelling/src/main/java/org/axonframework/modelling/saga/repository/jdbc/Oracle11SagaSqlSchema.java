@@ -60,7 +60,7 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
     public PreparedStatement sql_createTableSagaEntry(final Connection conn) throws SQLException {
         return conn.prepareStatement("create table " + sagaSchema().sagaEntryTable() + " (\n" +
                 "        " + sagaSchema.sagaIdColumn() + " varchar(255) not null,\n" +
-                "        revision varchar(255),\n" +
+                "        " + sagaSchema.revisionColumn() + " varchar(255),\n" +
                 "        " + sagaSchema.sagaTypeColumn() + " varchar(255),\n" +
                 "        " + sagaSchema.serializedSagaColumn() + " blob,\n" +
                 "        primary key (" + sagaSchema.sagaIdColumn() + ")\n" +

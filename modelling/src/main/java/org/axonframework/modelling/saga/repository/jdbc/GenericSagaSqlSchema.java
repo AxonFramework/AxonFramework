@@ -59,7 +59,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_loadSaga(Connection connection, String sagaId) throws SQLException {
         final String sql = "SELECT " +
-                String.join(", ", sagaSchema.serializedSagaColumn(), sagaSchema.sagaTypeColumn(), "revision")
+                String.join(", ", sagaSchema.serializedSagaColumn(), sagaSchema.sagaTypeColumn(), sagaSchema.revisionColumn())
                 + " FROM " + sagaSchema.sagaEntryTable() +
                 " WHERE " + sagaSchema.sagaIdColumn() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -157,7 +157,8 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     public PreparedStatement sql_updateSaga(Connection connection, String sagaIdentifier, byte[] serializedSaga,
                                             String sagaType, String revision) throws SQLException {
         final String sql = "UPDATE " + sagaSchema.sagaEntryTable()
-                + " SET " + sagaSchema.serializedSagaColumn() + " = ?, revision = ? WHERE " + sagaSchema.sagaIdColumn() + " = ?";
+                + " SET " + sagaSchema.serializedSagaColumn() + " = ?, " + sagaSchema.revisionColumn() + " = ? WHERE "
+                + sagaSchema.sagaIdColumn() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setBytes(1, serializedSaga);
         preparedStatement.setString(2, revision);
@@ -170,7 +171,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
                                            String sagaType,
                                            byte[] serializedSaga) throws SQLException {
         final String sql = "INSERT INTO " + sagaSchema.sagaEntryTable() + "(" +
-                String.join(", ", sagaSchema.sagaIdColumn(), "revision", sagaSchema.sagaTypeColumn(),
+                String.join(", ", sagaSchema.sagaIdColumn(), sagaSchema.revisionColumn(), sagaSchema.sagaTypeColumn(),
                         sagaSchema.serializedSagaColumn()) + ") VALUES(?,?,?,?)";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, sagaIdentifier);
@@ -197,7 +198,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
         return conn.prepareStatement("create table " + sagaSchema.sagaEntryTable() + " (\n" +
                 "        " + sagaSchema.sagaIdColumn() + " varchar(255) not null,\n" +
-                "        revision varchar(255),\n" +
+                "        " + sagaSchema.revisionColumn() + " varchar(255),\n" +
                 "        " + sagaSchema.sagaTypeColumn() + " varchar(255),\n" +
                 "        " + sagaSchema.serializedSagaColumn() + " blob,\n" +
                 "        primary key (" + sagaSchema.sagaIdColumn() + ")\n" +
