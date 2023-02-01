@@ -13,6 +13,8 @@ jobs:
           - java-version: 8
             sonar-enabled: false
           - java-version: 11
+            sonar-enabled: false
+          - java-version: 17
             sonar-enabled: true
       fail-fast: false
 
