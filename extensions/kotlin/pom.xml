@@ -31,8 +31,13 @@
   </modules>
 
   <properties>
-    <axon.version>4.7.0</axon.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <sonar.coverage.jacoco.xmlReportPaths>
+      ${project.basedir}/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
+      ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
+    </sonar.coverage.jacoco.xmlReportPaths>
+
+    <axon.version>4.7.0</axon.version>
     <kotlin.version>1.7.20</kotlin.version>
     <jackson-kotlin.version>2.14.1</jackson-kotlin.version>
     <kotlin-logging.version>3.0.4</kotlin-logging.version>
@@ -202,24 +207,38 @@
 
     <profile>
       <id>coverage</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>coverage</name>
+        </property>
+      </activation>
+      <modules>
+        <module>coverage-report</module>
+      </modules>
       <build>
         <plugins>
           <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!--suppress MavenModelInspection -->
+              <argLine>-Djava.awt.headless=true ${surefireArgLine}</argLine>
+            </configuration>
+          </plugin>
+          <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.8</version>
             <executions>
               <execution>
+                <id>prepare-agent-for-unit-tests</id>
+                <phase>initialize</phase>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>report</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
+                <configuration>
+                  <propertyName>surefireArgLine</propertyName>
+                  <destFile>${project.build.directory}/jacoco-ut.exec</destFile>
+                </configuration>
               </execution>
             </executions>
           </plugin>
