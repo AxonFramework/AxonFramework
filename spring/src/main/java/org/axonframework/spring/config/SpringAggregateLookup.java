@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.config.Configuration;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.modelling.SpringRepositoryFactoryBean;
@@ -28,16 +29,17 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.ResolvableType;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
@@ -202,7 +204,9 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                         repositoryName,
                         BeanDefinitionBuilder.rootBeanDefinition(SpringRepositoryFactoryBean.class)
                                              .addConstructorArgValue(aggregateType)
-                                             .addAutowiredProperty("configuration")
+                                             .addPropertyValue(
+                                                     "configuration", new RuntimeBeanReference(Configuration.class)
+                                             )
                                              .applyCustomizers(bd -> {
                                                  ResolvableType resolvableRepositoryType =
                                                          forClassWithGenerics(Repository.class, aggregateType);
@@ -217,6 +221,8 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             ((BeanDefinitionRegistry) registry).registerBeanDefinition(
                     aggregateFactory,
                     BeanDefinitionBuilder.genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                         // using static method to avoid ambiguous constructor resolution in Spring AOT
+                                         .setFactoryMethod("withSubtypeSupport")
                                          .addConstructorArgValue(aggregateBeanName)
                                          .addConstructorArgValue(subTypes)
                                          .getBeanDefinition()

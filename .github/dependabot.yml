@@ -9,7 +9,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 78
+  milestone: 82
   reviewers:
     - "gklijs"
     - "Morlack"
@@ -23,7 +23,7 @@ updates:
     - "Type: Dependency Upgrade"
     - "Priority 1: Must"
     - "Status: In Progress"
-  milestone: 78
+  milestone: 82
   reviewers:
     - "gklijs"
     - "Morlack"

@@ -19,9 +19,9 @@ package org.axonframework.springboot;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -65,7 +65,6 @@ class RepositoryWiringTest {
         });
     }
 
-    @Disabled
     @Test
     void aggregateRepositoriesAreWiredToExternalCommandHandlerBasedOnGenerics() {
         testApplicationContext.withUserConfiguration(SeveralAggregatesContext.class).run(context -> {
@@ -99,7 +98,6 @@ class RepositoryWiringTest {
         });
     }
 
-    @Disabled
     @Test
     void aggregateRepositoriesAreWiredToExternalCommandHandlerBasedOnBeanName() {
         testApplicationContext.withUserConfiguration(SeveralAggregatesContext.class).run(context -> {
