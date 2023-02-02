@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -74,6 +75,18 @@ public class JdbcAutoConfigurationTest {
                     assertThat(context).getBean(TokenStore.class).isEqualTo(context.getBean(EventProcessingConfiguration.class).tokenStore("test"));
                     assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(JdbcSQLErrorCodesResolver.class);
                     assertThat(context).getBean(ConnectionProvider.class).isInstanceOf(UnitOfWorkAwareConnectionProviderWrapper.class);
+                });
+    }
+
+    @Test
+    void defaultTokenSchemaDefinedWhenNoneAvailable() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(TokenSchema.class);
+                    TokenSchema tokenSchema = context.getBean(TokenSchema.class);
+                    assertThat(context).hasSingleBean(TokenStore.class);
+                    assertThat(context).getBean(TokenStore.class).extracting("schema").isSameAs(tokenSchema);
                 });
     }
 
