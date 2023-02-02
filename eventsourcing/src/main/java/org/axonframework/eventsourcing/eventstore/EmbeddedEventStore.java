@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.PreDestroy;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
@@ -24,6 +23,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.lifecycle.Lifecycle;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.SpanFactory;
@@ -72,7 +73,7 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @author Rene de Waele
  * @since 3.0
  */
-public class EmbeddedEventStore extends AbstractEventStore {
+public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
 
@@ -134,7 +135,6 @@ public class EmbeddedEventStore extends AbstractEventStore {
     /**
      * Method to invoke when the application shuts down. This closes all event streams used for event store tracking.
      */
-    @PreDestroy
     public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
@@ -180,6 +180,11 @@ public class EmbeddedEventStore extends AbstractEventStore {
             node = node.next;
         }
         return node;
+    }
+
+    @Override
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+        handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS - 10, this::shutDown);
     }
 
     private static class Node {
