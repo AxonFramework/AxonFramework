@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.event.EventStoreImpl;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -341,49 +342,19 @@ class AxonServerEventStoreTest {
     }
 
     @Test
-    void readEventsWithMagicSequenceNumberAndNoSnapshotFilterIncludesSnapshots() {
+    void eventStoreConfigurationThrowsAxonConfigurationExceptionIfNoSnapshotFilterIsProvided() {
         JacksonSerializer eventSerializer = JacksonSerializer.defaultSerializer();
-        AxonServerEventStore testSubjectWithoutSnapshotFilter =
-                AxonServerEventStore.builder()
-                                    .configuration(config)
-                                    .platformConnectionManager(axonServerConnectionManager)
-                                    .upcasterChain(upcasterChain)
-                                    .eventSerializer(eventSerializer)
-                                    .snapshotSerializer(eventSerializer)
-                                    .build();
-
-        Map<String, String> testMetaData = Collections.singletonMap("key", "value");
-        testSubjectWithoutSnapshotFilter.storeSnapshot(
-                new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Snapshot1", testMetaData)
-        );
-        testSubjectWithoutSnapshotFilter.publish(
-                new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 0, "Test1", testMetaData),
-                new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 1, "Test2", testMetaData),
-                new GenericDomainEventMessage<>(AGGREGATE_TYPE, AGGREGATE_ID, 2, "Test3", testMetaData)
-        );
-
-        // Snapshot storage is async, so we need to make sure the first event through "readEvents" is the snapshot
-        assertWithin(2, TimeUnit.SECONDS, () -> {
-            DomainEventStream snapshotValidationStream = testSubjectWithoutSnapshotFilter.readEvents(AGGREGATE_ID);
-            assertTrue(snapshotValidationStream.hasNext());
-            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
-        });
-
-        DomainEventStream resultStream = testSubjectWithoutSnapshotFilter.readEvents(AGGREGATE_ID, -42);
-
-        assertTrue(resultStream.hasNext());
-        DomainEventMessage<?> firstResultEvent = resultStream.next();
-        assertEquals("Snapshot1", firstResultEvent.getPayload());
-        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
-        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
-
-        assertTrue(resultStream.hasNext());
-        DomainEventMessage<?> thirdResultEvent = resultStream.next();
-        assertEquals("Test3", thirdResultEvent.getPayload());
-        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
-        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
-
-        assertFalse(resultStream.hasNext());
+        AxonServerEventStore.Builder testSubjectWithoutSnapshotFilterBuilder = AxonServerEventStore.builder()
+                                                                                                   .configuration(config)
+                                                                                                   .platformConnectionManager(
+                                                                                                           axonServerConnectionManager)
+                                                                                                   .upcasterChain(
+                                                                                                           upcasterChain)
+                                                                                                   .eventSerializer(
+                                                                                                           eventSerializer)
+                                                                                                   .snapshotSerializer(
+                                                                                                           eventSerializer);
+        assertThrows(AxonConfigurationException.class, testSubjectWithoutSnapshotFilterBuilder::build);
     }
 
     @Test
