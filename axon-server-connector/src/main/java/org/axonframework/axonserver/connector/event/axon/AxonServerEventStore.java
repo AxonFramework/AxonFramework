@@ -28,6 +28,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.stream.BlockingStream;
@@ -382,6 +383,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
+            BuilderUtils.assertNonNull(snapshotFilter, "The SnapshotFilter is a hard requirement and should be provided");
             super.validate();
         }
     }
