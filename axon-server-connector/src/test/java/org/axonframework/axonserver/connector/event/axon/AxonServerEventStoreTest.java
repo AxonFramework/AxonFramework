@@ -344,16 +344,13 @@ class AxonServerEventStoreTest {
     @Test
     void eventStoreConfigurationThrowsAxonConfigurationExceptionIfNoSnapshotFilterIsProvided() {
         JacksonSerializer eventSerializer = JacksonSerializer.defaultSerializer();
-        AxonServerEventStore.Builder testSubjectWithoutSnapshotFilterBuilder = AxonServerEventStore.builder()
-                                                                                                   .configuration(config)
-                                                                                                   .platformConnectionManager(
-                                                                                                           axonServerConnectionManager)
-                                                                                                   .upcasterChain(
-                                                                                                           upcasterChain)
-                                                                                                   .eventSerializer(
-                                                                                                           eventSerializer)
-                                                                                                   .snapshotSerializer(
-                                                                                                           eventSerializer);
+        AxonServerEventStore.Builder testSubjectWithoutSnapshotFilterBuilder =
+                AxonServerEventStore.builder()
+                                    .configuration(config)
+                                    .platformConnectionManager(axonServerConnectionManager)
+                                    .upcasterChain(upcasterChain)
+                                    .eventSerializer(eventSerializer)
+                                    .snapshotSerializer(eventSerializer);
         assertThrows(AxonConfigurationException.class, testSubjectWithoutSnapshotFilterBuilder::build);
     }
 
