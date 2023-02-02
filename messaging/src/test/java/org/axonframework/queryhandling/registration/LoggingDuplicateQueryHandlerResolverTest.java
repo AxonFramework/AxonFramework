@@ -29,11 +29,11 @@ class LoggingDuplicateQueryHandlerResolverTest {
 
     private final LoggingDuplicateQueryHandlerResolver resolver = LoggingDuplicateQueryHandlerResolver.instance();
 
-    private final class MyQuery {
+    private static final class MyQuery {
 
     }
 
-    private final class MyResponse {
+    private static final class MyResponse {
     }
 
     @Test
@@ -44,10 +44,9 @@ class LoggingDuplicateQueryHandlerResolverTest {
         CopyOnWriteArrayList<QuerySubscription<?>> existingHandlers = new CopyOnWriteArrayList<>();
         existingHandlers.add(existingHandler);
 
-        List<QuerySubscription<?>> resolvedList = resolver.resolve("org.axon.MyQuery",
-                                                           MyQuery.class,
-                                                           existingHandlers,
-                                                           addedHandler);
+        List<QuerySubscription<?>> resolvedList =
+                resolver.resolve("org.axon.MyQuery", MyQuery.class, existingHandlers, addedHandler);
+
         assertEquals(2, resolvedList.size());
         assertTrue(resolvedList.contains(existingHandler));
         assertTrue(resolvedList.contains(addedHandler));

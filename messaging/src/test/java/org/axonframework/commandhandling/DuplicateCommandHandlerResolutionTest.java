@@ -34,7 +34,7 @@ class DuplicateCommandHandlerResolutionTest {
     private MessageHandler<? super CommandMessage<?>> duplicateHandler;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         //noinspection unchecked
         initialHandler = mock(MessageHandler.class);
         doReturn(DuplicateCommandHandlerResolutionTest.Handler1.class).when(initialHandler).getTargetType();
@@ -63,8 +63,7 @@ class DuplicateCommandHandlerResolutionTest {
 
     @Test
     void duplicateHandlersRejected() {
-        DuplicateCommandHandlerResolver testSubject =
-                DuplicateCommandHandlerResolution.rejectDuplicates();
+        DuplicateCommandHandlerResolver testSubject = DuplicateCommandHandlerResolution.rejectDuplicates();
 
         try {
             testSubject.resolve("testCommand", initialHandler, duplicateHandler);
