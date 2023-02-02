@@ -18,7 +18,6 @@ package org.axonframework.config;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -48,6 +47,8 @@ import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvok
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
@@ -95,26 +96,21 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class EventProcessingModuleTest {
 
+    private EventStore eventStoreOne;
+    private EventStore eventStoreTwo;
+
     private Configurer configurer;
-    private StreamableMessageSource<TrackedEventMessage<?>> sourceOne;
-    private StreamableMessageSource<TrackedEventMessage<?>> sourceTwo;
 
     @BeforeEach
     void setUp() {
         configurer = DefaultConfigurer.defaultConfiguration();
 
-        // Mocking the BlockingStream is consciously made lenient, as sometimes the tests reach the open stream
-        // invocation and sometimes they do not.
-        //noinspection unchecked
-        sourceOne = mock(StreamableMessageSource.class);
-        //noinspection unchecked
-        lenient().when(sourceOne.openStream(any()))
-                 .thenReturn(mock(BlockingStream.class));
-        //noinspection unchecked
-        sourceTwo = mock(StreamableMessageSource.class);
-        //noinspection unchecked
-        lenient().when(sourceTwo.openStream(any()))
-                 .thenReturn(mock(BlockingStream.class));
+        eventStoreOne = spy(EmbeddedEventStore.builder()
+                                              .storageEngine(new InMemoryEventStorageEngine())
+                                              .build());
+        eventStoreTwo = spy(EmbeddedEventStore.builder()
+                                              .storageEngine(new InMemoryEventStorageEngine())
+                                              .build());
     }
 
     @Test
@@ -406,9 +402,8 @@ class EventProcessingModuleTest {
             config.eventBus().publish(message);
 
             spanFactory.verifySpanCompleted("SubscribingEventProcessor[subscribing].process");
-            assertWithin(2, TimeUnit.SECONDS, () -> {
-                spanFactory.verifySpanCompleted("TrackingEventProcessor[tracking].process");
-            });
+            assertWithin(2, TimeUnit.SECONDS,
+                         () -> spanFactory.verifySpanCompleted("TrackingEventProcessor[tracking].process"));
         } finally {
             config.shutdown();
         }
@@ -499,7 +494,7 @@ class EventProcessingModuleTest {
 
     @Test
     void trackingProcessorsUsesConfiguredDefaultStreamableMessageSource() {
-        configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> sourceOne);
+        configurer.eventProcessing().configureDefaultStreamableMessageSource(c -> eventStoreOne);
         configurer.eventProcessing().usingTrackingEventProcessors();
         configurer.registerEventHandler(c -> new TrackingEventHandler());
 
@@ -507,21 +502,21 @@ class EventProcessingModuleTest {
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
-        assertEquals(sourceOne, processor.get().getMessageSource());
+        assertEquals(eventStoreOne, processor.get().getMessageSource());
     }
 
     @Test
     void trackingProcessorsUsesSpecificSource() {
         configurer.eventProcessing()
-                  .configureDefaultStreamableMessageSource(c -> sourceOne)
-                  .registerTrackingEventProcessor("tracking", c -> sourceTwo)
+                  .configureDefaultStreamableMessageSource(c -> eventStoreOne)
+                  .registerTrackingEventProcessor("tracking", c -> eventStoreTwo)
                   .registerEventHandler(c -> new TrackingEventHandler());
 
         Configuration config = configurer.start();
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
-        assertEquals(sourceTwo, processor.get().getMessageSource());
+        assertEquals(eventStoreTwo, processor.get().getMessageSource());
     }
 
     @Test
@@ -601,7 +596,7 @@ class EventProcessingModuleTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(4);
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new TrackingEventHandler())
@@ -633,7 +628,7 @@ class EventProcessingModuleTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(4);
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new TrackingEventHandler())
@@ -662,7 +657,7 @@ class EventProcessingModuleTest {
             throws NoSuchFieldException {
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class);
         Configuration config = configurer.start();
 
@@ -675,10 +670,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
-        verify(sourceTwo, times(0)).createTailToken();
+        tepInitialTokenBuilder.apply(eventStoreTwo);
+        verify(eventStoreTwo, times(0)).createTailToken();
         // The default Saga Config starts the stream at the head
-        verify(sourceTwo).createHeadToken();
+        verify(eventStoreTwo).createHeadToken();
     }
 
     @Test
@@ -686,7 +681,7 @@ class EventProcessingModuleTest {
             throws NoSuchFieldException {
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(CustomSaga.class);
         Configuration config = configurer.start();
 
@@ -700,10 +695,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
+        tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(sourceTwo).createTailToken();
-        verify(sourceTwo, times(0)).createHeadToken();
+        verify(eventStoreTwo).createTailToken();
+        verify(eventStoreTwo, times(0)).createHeadToken();
     }
 
     @Test
@@ -711,7 +706,7 @@ class EventProcessingModuleTest {
             throws NoSuchFieldException {
         configurer.eventProcessing()
                   .assignProcessingGroup(someGroup -> "custom-processor")
-                  .registerTrackingEventProcessor("custom-processor", config -> sourceOne)
+                  .registerTrackingEventProcessor("custom-processor", config -> eventStoreOne)
                   .registerSaga(CustomSaga.class);
         Configuration config = configurer.start();
 
@@ -725,10 +720,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
+        tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(sourceTwo).createTailToken();
-        verify(sourceTwo, times(0)).createHeadToken();
+        verify(eventStoreTwo).createTailToken();
+        verify(eventStoreTwo, times(0)).createHeadToken();
     }
 
     @Test
@@ -737,7 +732,7 @@ class EventProcessingModuleTest {
         TrackingEventProcessorConfiguration testTepConfig =
                 TrackingEventProcessorConfiguration.forParallelProcessing(3);
         configurer.eventProcessing()
-                  .registerTrackingEventProcessor("ObjectProcessor", config -> sourceOne, config -> testTepConfig)
+                  .registerTrackingEventProcessor("ObjectProcessor", config -> eventStoreOne, config -> testTepConfig)
                   .registerSaga(Object.class);
         Configuration config = configurer.start();
 
@@ -750,10 +745,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
+        tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(sourceTwo).createTailToken();
-        verify(sourceTwo, times(0)).createHeadToken();
+        verify(eventStoreTwo).createTailToken();
+        verify(eventStoreTwo, times(0)).createHeadToken();
     }
 
     @Test
@@ -763,7 +758,7 @@ class EventProcessingModuleTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(4);
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class)
                   .registerTrackingEventProcessorConfiguration("ObjectProcessor", config -> testTepConfig);
         Configuration config = configurer.start();
@@ -777,10 +772,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
+        tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(sourceTwo).createTailToken();
-        verify(sourceTwo, times(0)).createHeadToken();
+        verify(eventStoreTwo).createTailToken();
+        verify(eventStoreTwo, times(0)).createHeadToken();
     }
 
     @Test
@@ -790,7 +785,7 @@ class EventProcessingModuleTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(4);
         configurer.eventProcessing()
                   .usingTrackingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class)
                   .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
         Configuration config = configurer.start();
@@ -804,10 +799,10 @@ class EventProcessingModuleTest {
 
         Function<StreamableMessageSource<TrackedEventMessage<?>>, TrackingToken> tepInitialTokenBuilder =
                 getFieldValue(TrackingEventProcessor.class.getDeclaredField("initialTrackingTokenBuilder"), tep);
-        tepInitialTokenBuilder.apply(sourceTwo);
+        tepInitialTokenBuilder.apply(eventStoreTwo);
         // In absence of the default Saga Config, the stream starts at the tail
-        verify(sourceTwo).createTailToken();
-        verify(sourceTwo, times(0)).createHeadToken();
+        verify(eventStoreTwo).createTailToken();
+        verify(eventStoreTwo, times(0)).createHeadToken();
     }
 
     @Test
@@ -815,7 +810,7 @@ class EventProcessingModuleTest {
         Object someHandler = new Object();
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
@@ -881,7 +876,7 @@ class EventProcessingModuleTest {
         TokenStore testTokenStore = new InMemoryTokenStore();
 
         configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName, config -> sourceOne)
+                  .registerPooledStreamingEventProcessor(testName, config -> eventStoreOne)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerRollbackConfiguration(testName, config -> RollbackConfigurationType.ANY_THROWABLE)
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
@@ -901,7 +896,7 @@ class EventProcessingModuleTest {
                 getField(AbstractEventProcessor.class, "rollbackConfiguration", result)
         );
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
     }
@@ -914,7 +909,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(
                           testName,
-                          config -> sourceOne,
+                          config -> eventStoreOne,
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
@@ -927,7 +922,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
     }
 
     @Test
@@ -942,7 +937,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessorConfiguration(
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
@@ -955,7 +950,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
 
         optionalResult = config.eventProcessingConfiguration()
                                .eventProcessor("default", PooledStreamingEventProcessor.class);
@@ -963,7 +958,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
     }
 
     @Test
@@ -975,7 +970,7 @@ class EventProcessingModuleTest {
 
         configurer.eventProcessing()
                   .usingPooledStreamingEventProcessors((config, builder) -> builder.maxClaimedSegments(testCapacity))
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
@@ -988,7 +983,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
 
         optionalResult = config.eventProcessingConfiguration()
                                .eventProcessor("default", PooledStreamingEventProcessor.class);
@@ -996,7 +991,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
     }
 
     @Test
@@ -1011,7 +1006,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessorConfiguration(
                           "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
-                  .configureDefaultStreamableMessageSource(config -> sourceOne)
+                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
@@ -1024,7 +1019,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
 
         optionalResult = config.eventProcessingConfiguration()
                                .eventProcessor("default", PooledStreamingEventProcessor.class);
@@ -1032,7 +1027,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         result = optionalResult.get();
         assertEquals(Short.MAX_VALUE, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
     }
 
     @Test
@@ -1048,7 +1043,7 @@ class EventProcessingModuleTest {
                   )
                   .registerPooledStreamingEventProcessor(
                           testName,
-                          config -> sourceOne,
+                          config -> eventStoreOne,
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
@@ -1061,7 +1056,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
     }
 
     @Test
@@ -1081,7 +1076,7 @@ class EventProcessingModuleTest {
                   )
                   .registerPooledStreamingEventProcessor(
                           testName,
-                          config -> sourceOne,
+                          config -> eventStoreOne,
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
@@ -1094,7 +1089,7 @@ class EventProcessingModuleTest {
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
         assertEquals(testCapacity, result.maxCapacity());
-        assertEquals(sourceOne, getField("messageSource", result));
+        assertEquals(eventStoreOne, getField("messageSource", result));
         assertEquals(100, (int) getField("batchSize", result));
     }
 
