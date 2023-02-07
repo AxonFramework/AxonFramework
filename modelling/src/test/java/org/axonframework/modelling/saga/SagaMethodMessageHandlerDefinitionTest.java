@@ -26,7 +26,7 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.axonframework.modelling.utils.ConcurencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SagaMethodMessageHandlerDefinitionTest {
+class SagaMethodMessageHandlerDefinitionTest {
 
     private SagaMethodMessageHandlerDefinition testSubject;
     private SagaModel<StubAnnotatedSaga> sagaModel;

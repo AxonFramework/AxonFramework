@@ -48,24 +48,24 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     }
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        Optional<Map<String, Object>> annotationAttributes = original.annotationAttributes(SagaEventHandler.class);
-        SagaCreationPolicy creationPolicy =
-                original.annotationAttributes(StartSaga.class)
-                        .map(
-                                attr -> ((boolean) attr.getOrDefault("forceNew", false))
-                                        ? SagaCreationPolicy.ALWAYS
-                                        : SagaCreationPolicy.IF_NONE_FOUND
-                        )
-                        .orElse(SagaCreationPolicy.NONE);
-
-        //noinspection unchecked
-        return annotationAttributes
-                .map(attr -> doWrapHandler(original, creationPolicy, (String) attr.get("keyName"),
-                                           (String) attr.get("associationProperty"),
-                                           (Class<? extends AssociationResolver>) attr.get("associationResolver")))
-                .orElse(original);
+    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        Optional<String> keyName = original.attribute("SagaEventHandler.keyName");
+        if (keyName.isPresent()) {
+            Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
+            Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(
+                    "SagaEventHandler.associationResolver");
+            Optional<Boolean> optionalCreationPolicy = original.attribute("StartSaga.forceNew");
+            SagaCreationPolicy creationPolicy = optionalCreationPolicy
+                    .map(forceNew -> forceNew ? SagaCreationPolicy.ALWAYS : SagaCreationPolicy.IF_NONE_FOUND)
+                    .orElse(SagaCreationPolicy.NONE);
+            return doWrapHandler(original,
+                                 creationPolicy,
+                                 keyName.get(),
+                                 associationProperty.get(),
+                                 associationResolver.get());
+        } else {
+            return original;
+        }
     }
 
     private <T> MessageHandlingMember<T> doWrapHandler(MessageHandlingMember<T> original,
@@ -95,7 +95,8 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     ) {
         try {
             return associationResolverClass.getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                 InvocationTargetException e) {
             throw new AxonConfigurationException(format(
                     "`AssociationResolver` %s must define an accessible no-args constructor.",
                     associationResolverClass.getName()
