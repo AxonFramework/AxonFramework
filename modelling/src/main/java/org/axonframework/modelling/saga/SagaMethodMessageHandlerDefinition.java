@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -44,7 +44,7 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
      * Constructs a default {@link SagaMethodMessageHandlerDefinition}.
      */
     public SagaMethodMessageHandlerDefinition() {
-        this.associationResolverMap = new HashMap<>();
+        this.associationResolverMap = new ConcurrentHashMap<>();
     }
 
     @Override

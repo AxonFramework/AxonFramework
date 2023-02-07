@@ -21,18 +21,13 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.modelling.utils.ConcurencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayLoadAssociationResolverTest {
@@ -56,30 +51,6 @@ class PayLoadAssociationResolverTest {
     @Test
     void resolveWorksThreadSafe() {
         testConcurrent(4, this::testResolveOnce);
-    }
-
-    private void testConcurrent(int threadCount, Runnable runnable) {
-        ExecutorService service = Executors.newFixedThreadPool(threadCount);
-        List<Exception> exceptions = new ArrayList<>();
-        try {
-            CountDownLatch latch = new CountDownLatch(threadCount);
-            for (int i = 0; i < threadCount; i++) {
-                service.submit(() -> {
-                    try {
-                        runnable.run();
-                    } catch (Exception e) {
-                        exceptions.add(e);
-                    }
-                    latch.countDown();
-                });
-            }
-            latch.await();
-        } catch (Exception e) {
-            exceptions.add(e);
-        } finally {
-            service.shutdown();
-        }
-        assertEquals(Collections.emptyList(), exceptions);
     }
 
     private void testResolveOnce() {
