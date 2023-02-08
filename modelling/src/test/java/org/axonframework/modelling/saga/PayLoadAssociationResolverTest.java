@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.modelling.utils.ConcurencyUtils.testConcurrent;
+import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PayLoadAssociationResolverTest {

@@ -19,47 +19,50 @@ package org.axonframework.modelling.utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Utility methods related to testing concurency
  */
-public class ConcurencyUtils {
+public class ConcurrencyUtils {
 
     /**
-     * Will exucute the runnable as much times as the given {@code threadCount} and assest none caused exceptions.
-     * @param threadCount the number of times of envocations at the 'same' time
-     * @param runnable something that is expected to be run concurrently
+     * Will execute the runnable as many times as the given {@code threadCount} and assert none caused exceptions. The
+     * used runnable should finish fast, not longer than a few seconds.
+     *
+     * @param threadCount the number of times of invocations at the 'same' time
+     * @param runnable    something that is expected to be run concurrently
      */
     public static void testConcurrent(int threadCount, Runnable runnable) {
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
+        AtomicInteger successCounter = new AtomicInteger();
         List<Exception> exceptions = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+            service.submit(() -> {
+                try {
+                    runnable.run();
+                    successCounter.incrementAndGet();
+                } catch (Exception e) {
+                    exceptions.add(e);
+                }
+            });
+        }
+        service.shutdown();
         try {
-            CountDownLatch latch = new CountDownLatch(threadCount);
-            for (int i = 0; i < threadCount; i++) {
-                service.submit(() -> {
-                    try {
-                        runnable.run();
-                    } catch (Exception e) {
-                        exceptions.add(e);
-                    }
-                    latch.countDown();
-                });
-            }
-            latch.await();
-        } catch (Exception e) {
+            service.awaitTermination(5L, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
             exceptions.add(e);
-        } finally {
-            service.shutdown();
         }
         assertEquals(Collections.emptyList(), exceptions);
+        assertEquals(threadCount, successCounter.get(), "Not all threads have completed successfully");
     }
 
-    private ConcurencyUtils(){
+    private ConcurrencyUtils() {
 
     }
 }

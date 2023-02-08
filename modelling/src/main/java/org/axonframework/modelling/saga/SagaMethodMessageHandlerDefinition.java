@@ -50,12 +50,12 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         Optional<String> keyName = original.attribute("SagaEventHandler.keyName");
-        if (keyName.isPresent()) {
-            Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
-            Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(
-                    "SagaEventHandler.associationResolver");
-            Optional<Boolean> optionalCreationPolicy = original.attribute("StartSaga.forceNew");
-            SagaCreationPolicy creationPolicy = optionalCreationPolicy
+        Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
+        Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(
+                "SagaEventHandler.associationResolver");
+        if (keyName.isPresent() && associationProperty.isPresent() && associationResolver.isPresent()) {
+            Optional<Boolean> optionalForceNew = original.attribute("StartSaga.forceNew");
+            SagaCreationPolicy creationPolicy = optionalForceNew
                     .map(forceNew -> forceNew ? SagaCreationPolicy.ALWAYS : SagaCreationPolicy.IF_NONE_FOUND)
                     .orElse(SagaCreationPolicy.NONE);
             return doWrapHandler(original,
