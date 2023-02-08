@@ -30,7 +30,7 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.axonframework.modelling.utils.ConcurrencyUtils.testConcurrent;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PayLoadAssociationResolverTest {
+class PayloadAssociationResolverTest {
 
     private PayloadAssociationResolver testSubject;
     private MessageHandlingMember<Object> handlingMember;
