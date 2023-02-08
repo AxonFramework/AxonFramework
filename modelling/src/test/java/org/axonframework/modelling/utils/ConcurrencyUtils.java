@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Utility methods related to testing concurency
  */
-public class ConcurrencyUtils {
+public abstract class ConcurrencyUtils {
 
     /**
      * Will execute the runnable as many times as the given {@code threadCount} and assert none caused exceptions. The
