@@ -103,6 +103,30 @@ public class JdbcAutoConfigurationTest {
     }
 
     @Test
+    void defaultEventSchemaDefinedWhenNoneAvailable() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventSchema.class);
+                    EventSchema eventSchema = context.getBean(EventSchema.class);
+                    assertThat(context).hasSingleBean(EventStorageEngine.class);
+                    assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
+                });
+    }
+
+    @Test
+    void customEventSchema() {
+        EventSchema eventSchema = EventSchema.builder().eventTable("TEST123").build();
+        new ApplicationContextRunner()
+                .withUserConfiguration(Context.class)
+                .withBean(EventSchema.class, () -> eventSchema)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(EventStorageEngine.class);
+                    assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
+                });
+    }
+
+    @Test
     void configurationOfEventBusPreventsEventStoreDefinition() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class, ExplicitEventBusContext.class)
