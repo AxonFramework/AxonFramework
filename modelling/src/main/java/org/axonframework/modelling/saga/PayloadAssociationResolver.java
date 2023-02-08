@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.lang.reflect.Executable;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
@@ -36,7 +36,7 @@ import static java.lang.String.format;
  */
 public class PayloadAssociationResolver implements AssociationResolver {
 
-    private Map<String, Property<?>> propertyMap = new HashMap<>();
+    private Map<String, Property<?>> propertyMap = new ConcurrentHashMap<>();
 
     /**
      * Validates that the association property name exists as checked with the payload type. This is done by attempting
