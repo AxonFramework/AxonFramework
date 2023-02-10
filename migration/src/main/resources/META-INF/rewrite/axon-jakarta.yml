@@ -10,18 +10,22 @@ recipeList:
       oldGroupId: org.axonframework
       oldArtifactId: axon-config-jakarta
       newArtifactId: axon-config
+      newVersion: 4.7.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-eventsourcing-jakarta
       newArtifactId: axon-eventsourcing
+      newVersion: 4.7.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-messaging-jakarta
       newArtifactId: axon-messaging
+      newVersion: 4.7.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
       oldArtifactId: axon-modelling-jakarta
       newArtifactId: axon-modelling
+      newVersion: 4.7.x
   # Convert legacy JPA packages to Jakarta JPA packages
   - org.openrewrite.java.ChangeType:
       newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter
@@ -36,8 +40,8 @@ recipeList:
       newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue
       oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue
   - org.openrewrite.java.ChangeType:
-    newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
-    oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
   - org.openrewrite.java.ChangeType:
       newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
       oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.EmbeddedEventStore

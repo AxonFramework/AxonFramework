@@ -21,8 +21,8 @@ recipeList:
       oldFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue
       newFullyQualifiedTypeName: org.axonframework.eventhandling.deadletter.legacyjpa.JpaSequencedDeadLetterQueue
   - org.openrewrite.java.ChangeType:
-    oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
-    newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
+      oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
+      newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
       newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.EmbeddedEventStore

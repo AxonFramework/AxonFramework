@@ -46,34 +46,34 @@ public class AxonJakartaTest implements RewriteTest {
                 pomXml(
 
                         "    <project>\n" +
-                        "        <modelVersion>4.0.0</modelVersion>\n" +
-                        "        <groupId>com.example</groupId>\n" +
-                        "        <artifactId>axon</artifactId>\n" +
-                        "        <version>1.0.0</version>\n" +
-                        "        <build>\n" +
-                        "            <plugins>\n" +
-                        "                <plugin>\n" +
-                        "                    <groupId>org.axonframework</groupId>\n" +
-                        "                    <artifactId>axon-config-jakarta</artifactId>\n" +
-                        "                    <version>4.6.0</version>\n" +
-                        "                </plugin>\n" +
-                        "            </plugins>\n" +
-                        "        </build>\n" +
-                        "    </project>\n",
+                                "        <modelVersion>4.0.0</modelVersion>\n" +
+                                "        <groupId>com.example</groupId>\n" +
+                                "        <artifactId>axon</artifactId>\n" +
+                                "        <version>1.0.0</version>\n" +
+                                "        <build>\n" +
+                                "            <plugins>\n" +
+                                "                <plugin>\n" +
+                                "                    <groupId>org.axonframework</groupId>\n" +
+                                "                    <artifactId>axon-config-jakarta</artifactId>\n" +
+                                "                    <version>4.6.0</version>\n" +
+                                "                </plugin>\n" +
+                                "            </plugins>\n" +
+                                "        </build>\n" +
+                                "    </project>\n",
                         "    <project>\n" +
-                        "        <modelVersion>4.0.0</modelVersion>\n" +
-                        "        <groupId>com.example</groupId>\n" +
-                        "        <artifactId>axon</artifactId>\n" +
-                        "        <version>1.0.0</version>\n" +
-                        "        <build>\n" +
-                        "            <plugins>\n" +
-                        "                    <groupId>org.axonframework</groupId>\n" +
-                        "                    <artifactId>axon-config-jakarta</artifactId>\n" +
-                        "                    <version>4.7.1</version>\n" +
-                        "                </plugin>\n" +
-                        "            </plugins>\n" +
-                        "        </build>\n" +
-                        "    </project>\n"
+                                "        <modelVersion>4.0.0</modelVersion>\n" +
+                                "        <groupId>com.example</groupId>\n" +
+                                "        <artifactId>axon</artifactId>\n" +
+                                "        <version>1.0.0</version>\n" +
+                                "        <build>\n" +
+                                "            <plugins>\n" +
+                                "                    <groupId>org.axonframework</groupId>\n" +
+                                "                    <artifactId>axon-config</artifactId>\n" +
+                                "                    <version>4.7.1</version>\n" +
+                                "                </plugin>\n" +
+                                "            </plugins>\n" +
+                                "        </build>\n" +
+                                "    </project>\n"
                 ));
     }
 
