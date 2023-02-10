@@ -8,8 +8,8 @@ recipeList:
   # Swap 4.6 dependencies for 4.7 dependencies
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
-      oldArtifactId: axon-config-jakarta
-      newArtifactId: axon-config
+      oldArtifactId: axon-configuration-jakarta
+      newArtifactId: axon-configuration
       newVersion: 4.7.x
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework

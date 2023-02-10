@@ -7,6 +7,7 @@ import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
 import static org.openrewrite.java.Assertions.java;
+import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.maven.Assertions.pomXml;
 
 public class AxonJakartaTest implements RewriteTest {
@@ -43,38 +44,36 @@ public class AxonJakartaTest implements RewriteTest {
     void migrateDependencies() {
         //language=xml
         rewriteRun(
-                pomXml(
+                mavenProject("any-project",
+                        pomXml(
 
-                        "    <project>\n" +
-                                "        <modelVersion>4.0.0</modelVersion>\n" +
-                                "        <groupId>com.example</groupId>\n" +
-                                "        <artifactId>axon</artifactId>\n" +
-                                "        <version>1.0.0</version>\n" +
-                                "        <build>\n" +
-                                "            <plugins>\n" +
-                                "                <plugin>\n" +
-                                "                    <groupId>org.axonframework</groupId>\n" +
-                                "                    <artifactId>axon-config-jakarta</artifactId>\n" +
-                                "                    <version>4.6.0</version>\n" +
-                                "                </plugin>\n" +
-                                "            </plugins>\n" +
-                                "        </build>\n" +
-                                "    </project>\n",
-                        "    <project>\n" +
-                                "        <modelVersion>4.0.0</modelVersion>\n" +
-                                "        <groupId>com.example</groupId>\n" +
-                                "        <artifactId>axon</artifactId>\n" +
-                                "        <version>1.0.0</version>\n" +
-                                "        <build>\n" +
-                                "            <plugins>\n" +
-                                "                    <groupId>org.axonframework</groupId>\n" +
-                                "                    <artifactId>axon-config</artifactId>\n" +
-                                "                    <version>4.7.1</version>\n" +
-                                "                </plugin>\n" +
-                                "            </plugins>\n" +
-                                "        </build>\n" +
-                                "    </project>\n"
-                ));
+                                "    <project>\n" +
+                                        "        <modelVersion>4.0.0</modelVersion>\n" +
+                                        "        <groupId>com.example</groupId>\n" +
+                                        "        <artifactId>axon</artifactId>\n" +
+                                        "        <version>1.0.0</version>\n" +
+                                        "        <dependencies>\n" +
+                                        "            <dependency>\n" +
+                                        "                <groupId>org.axonframework</groupId>\n" +
+                                        "                <artifactId>axon-configuration-jakarta</artifactId>\n" +
+                                        "                <version>4.6.3</version>\n" +
+                                        "            </dependency>\n" +
+                                        "        </dependencies>\n" +
+                                        "    </project>\n",
+                                "    <project>\n" +
+                                        "        <modelVersion>4.0.0</modelVersion>\n" +
+                                        "        <groupId>com.example</groupId>\n" +
+                                        "        <artifactId>axon</artifactId>\n" +
+                                        "        <version>1.0.0</version>\n" +
+                                        "        <dependencies>\n" +
+                                        "            <dependency>\n" +
+                                        "                <groupId>org.axonframework</groupId>\n" +
+                                        "                <artifactId>axon-configuration</artifactId>\n" +
+                                        "                <version>4.7.1</version>\n" +
+                                        "            </dependency>\n" +
+                                        "        </dependencies>\n" +
+                                        "    </project>\n"
+                        )));
     }
 
 }
