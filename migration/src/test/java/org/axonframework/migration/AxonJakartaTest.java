@@ -16,7 +16,7 @@ public class AxonJakartaTest implements RewriteTest {
         spec
                 .parser(JavaParser.fromJavaVersion()
                         .logCompilationWarningsAndErrors(true)
-                        .classpath("axon-messaging"))
+                        .classpath("axon-messaging", "rewrite-spring"))
                 .recipe("/META-INF/rewrite/axon-jakarta.yml", "org.axonframework.axon.UpgradeAxonFramework_4_7_Jakarta");
     }
 
@@ -26,15 +26,15 @@ public class AxonJakartaTest implements RewriteTest {
         rewriteRun(
                 java(
                         "package sample.axon;\n" +
-                                "import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;\n" +
-                                "class ATest {\n" +
-                                "DeadLetterJpaConverter converter;\n" +
-                                "}",
-
-                        "package sample.axon;\n" +
                                 "import org.axonframework.eventhandling.deadletter.legacyjpa.DeadLetterJpaConverter;\n" +
                                 "class ATest {\n" +
-                                "DeadLetterJpaConverter converter;\n" +
+                                "   DeadLetterJpaConverter converter;\n" +
+                                "}",
+
+                        "package sample.axon;\n\n" +
+                                "import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;\n\n" +
+                                "class ATest {\n" +
+                                "   DeadLetterJpaConverter converter;\n" +
                                 "}"
                 ));
     }

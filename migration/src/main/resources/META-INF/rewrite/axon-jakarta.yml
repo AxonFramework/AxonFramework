@@ -4,7 +4,7 @@ displayName: Upgrade to Axonframework 4.7 Jakarta
 description: This is what you will want if you also upgrade to Spring 6, Spring Boot 3, or another framework that depends on jakarta packages.
 recipeList:
   # Convert to Spring Boot 3, Spring FrameWork 6, Jakarta packages, JUnit 5, Java 17, etc.
-  #- org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0
+  #TODO - org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_0
   # Swap 4.6 dependencies for 4.7 dependencies
   - org.openrewrite.maven.ChangeDependencyGroupIdAndArtifactId:
       oldGroupId: org.axonframework
