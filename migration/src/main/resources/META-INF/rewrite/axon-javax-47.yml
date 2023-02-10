@@ -1,7 +1,7 @@
 type: specs.openrewrite.org/v1beta/recipe
-name: org.axonframework.axon.UpgradeAxonFramework_4_7_Javax
+name: org.axonframework.migration.UpgradeAxonFramework_4_7_Javax
 displayName: Upgrade to Axonframework 4.7 Javax
-description: This is what you may want if you don’t want Spring 6 and Spring Boot 3 support and expect things to stay the same.
+description: Migration file to upgrade an Axon Framework Javax-specific project and remain on Javax.
 recipeList:
   # Move all classes from org.axonframework.common.jpa to org.axonframework.common.legacyjpa
   - org.openrewrite.java.ChangePackage:
@@ -23,9 +23,6 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
       newFullyQualifiedTypeName: org.axonframework.eventhandling.tokenstore.legacyjpa.JpaTokenStore
-  - org.openrewrite.java.ChangeType:
-      oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
-      newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.EmbeddedEventStore
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
       newFullyQualifiedTypeName: org.axonframework.eventsourcing.eventstore.legacyjpa.JpaEventStorageEngine
