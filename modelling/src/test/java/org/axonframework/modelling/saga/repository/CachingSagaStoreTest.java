@@ -222,6 +222,8 @@ public abstract class CachingSagaStoreTest {
                      .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -261,6 +263,8 @@ public abstract class CachingSagaStoreTest {
                      .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
         }
     }
 }
