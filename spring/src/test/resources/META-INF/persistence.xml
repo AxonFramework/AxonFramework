@@ -15,8 +15,8 @@
   -->
 
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
-    <persistence-unit name="integrationtest" transaction-type="RESOURCE_LOCAL">
-        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+    <persistence-unit name="AxonSpringTest" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
