@@ -9,7 +9,7 @@ import org.openrewrite.test.RewriteTest;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.maven.Assertions.pomXml;
 
-public class AxonJavaxTest implements RewriteTest {
+class AxonJavaxTest implements RewriteTest {
 
     @Override
     public void defaults(RecipeSpec spec) {

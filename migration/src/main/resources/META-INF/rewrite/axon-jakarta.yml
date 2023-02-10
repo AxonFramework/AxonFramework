@@ -65,10 +65,10 @@ recipeList:
       oldFullyQualifiedTypeName: org.axonframework.modelling.saga.repository.legacyjpa.JpaSagaStore
   - org.openrewrite.java.ChangeType:
       newFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.JpaAutoConfiguration
-      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaAutoConfiguration
+      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration
   - org.openrewrite.java.ChangeType:
       newFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
-      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaEventStoreAutoConfiguration
+      oldFullyQualifiedTypeName: org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxEventStoreAutoConfiguration
   - org.openrewrite.java.ChangeType:
       newFullyQualifiedTypeName: org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider
       oldFullyQualifiedTypeName: org.axonframework.springboot.util.legacyjpa.ContainerManagedEntityManagerProvider
