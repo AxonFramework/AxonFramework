@@ -365,10 +365,12 @@ class AnnotatedSagaTest {
     void exceptionThrownInHandlerMethod() {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.registerListenerInvocationErrorHandler((exception, event, eventHandler) -> {/* No-op */});
 
-        FixtureExecutionResult fixtureExecutionResult = fixture.givenAPublished(new TriggerSagaStartEvent(identifier)).whenAggregate(identifier)
-                                                               .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
+        FixtureExecutionResult fixtureExecutionResult =
+                fixture.givenAPublished(new TriggerSagaStartEvent(identifier))
+                       .whenAggregate(identifier)
+                       .publishes(new TriggerExceptionWhileHandlingEvent(identifier));
         assertThrows(AxonAssertionError.class, fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
-
 }

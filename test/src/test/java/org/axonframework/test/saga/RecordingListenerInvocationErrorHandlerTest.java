@@ -16,10 +16,11 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -34,10 +35,8 @@ import static org.mockito.Mockito.*;
  */
 class RecordingListenerInvocationErrorHandlerTest {
 
-    private static final GenericEventMessage<String> TEST_EVENT = new GenericEventMessage<>("test");
-    public static final IllegalArgumentException TEST_EXCEPTION = new IllegalArgumentException(
-            "This argument is illegal");
-
+    private static final EventMessage<String> TEST_EVENT = new GenericEventMessage<>("test");
+    private static final Exception TEST_EXCEPTION = new IllegalArgumentException("This argument is illegal");
 
     private ListenerInvocationErrorHandler wrappedErrorHandler;
     private EventMessageHandler eventHandler;
@@ -50,7 +49,7 @@ class RecordingListenerInvocationErrorHandlerTest {
         doReturn(StubSaga.class).when(eventHandler)
                                 .getTargetType();
 
-        wrappedErrorHandler = spy(new LoggingErrorHandler());
+        wrappedErrorHandler = spy(new NoOpListenerInvocationErrorHandler());
         testSubject = new RecordingListenerInvocationErrorHandler(wrappedErrorHandler);
     }
 
@@ -108,5 +107,14 @@ class RecordingListenerInvocationErrorHandlerTest {
         assertTrue(result.isPresent());
         assertEquals(TEST_EXCEPTION, result.get());
         verify(wrappedErrorHandler).onError(TEST_EXCEPTION, TEST_EVENT, eventHandler);
+    }
+
+    private static class NoOpListenerInvocationErrorHandler implements ListenerInvocationErrorHandler {
+
+        @Override
+        public void onError(@NotNull Exception exception, @NotNull EventMessage<?> event,
+                            @NotNull EventMessageHandler eventHandler) throws Exception {
+            // No-op
+        }
     }
 }
