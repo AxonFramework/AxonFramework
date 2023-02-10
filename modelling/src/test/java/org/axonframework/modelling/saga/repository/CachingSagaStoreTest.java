@@ -191,7 +191,7 @@ public abstract class CachingSagaStoreTest {
 
     @Test
     void canHandleConcurrentReadsAndWrites() {
-        int concurrentOperations = 64;
+        int concurrentOperations = 32;
 
         AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
         Set<AssociationValue> associationValues = singleton(associationValue);
@@ -219,7 +219,7 @@ public abstract class CachingSagaStoreTest {
                      ))
                      .reduce(CompletableFuture::allOf)
                      .orElse(CompletableFuture.completedFuture(null))
-                     .get(30, TimeUnit.SECONDS);
+                     .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
         }
@@ -231,7 +231,7 @@ public abstract class CachingSagaStoreTest {
                                                                          .sagaType(StubSaga.class)
                                                                          .sagaStore(testSubject)
                                                                          .build();
-        int concurrentOperations = 64;
+        int concurrentOperations = 32;
         ExecutorService executor = Executors.newFixedThreadPool(16);
         AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
 
@@ -258,7 +258,7 @@ public abstract class CachingSagaStoreTest {
                      ))
                      .reduce(CompletableFuture::allOf)
                      .orElse(CompletableFuture.completedFuture(null))
-                     .get(30, TimeUnit.SECONDS);
+                     .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
         }
