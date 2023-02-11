@@ -17,6 +17,7 @@
 package org.axonframework.migration;
 
 import org.junit.jupiter.api.Test;
+import org.openrewrite.config.Environment;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
@@ -33,7 +34,10 @@ class AxonJakartaTest implements RewriteTest {
                 .parser(JavaParser.fromJavaVersion()
                         .logCompilationWarningsAndErrors(true)
                         .classpath("axon-messaging", "rewrite-migrate-java"))
-                .recipe("/META-INF/rewrite/axon-jakarta-47.yml", "org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta");
+                .recipe(Environment.builder()
+                        .scanRuntimeClasspath()
+                        .build()
+                        .activateRecipes("org.axonframework.migration.UpgradeAxonFramework_4_7_Jakarta"));
     }
 
     @Test
