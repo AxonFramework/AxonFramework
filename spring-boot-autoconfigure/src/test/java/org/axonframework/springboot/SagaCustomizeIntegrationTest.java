@@ -64,15 +64,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author Marc Gathier
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.main.banner-mode=off")
 @ExtendWith(SpringExtension.class)
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {
-        JmxAutoConfiguration.class,
-        WebClientAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
         AxonServerAutoConfiguration.class,
-        AxonServerActuatorAutoConfiguration.class
+        AxonServerBusAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class,
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class SagaCustomizeIntegrationTest {

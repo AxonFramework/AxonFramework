@@ -17,6 +17,9 @@
 package org.axonframework.springboot;
 
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
@@ -235,11 +238,14 @@ class AxonAutoConfigurationWithTracingTest {
     }
 
     @EnableAutoConfiguration(exclude = {
-            JmxAutoConfiguration.class,
-            WebClientAutoConfiguration.class,
-            HibernateJpaAutoConfiguration.class,
+            AxonServerAutoConfiguration.class,
+            AxonServerBusAutoConfiguration.class,
+            AxonServerActuatorAutoConfiguration.class,
             DataSourceAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            JmxAutoConfiguration.class,
             OpenTelemetryAutoConfiguration.class,
+            WebClientAutoConfiguration.class,
     })
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     @Configuration
