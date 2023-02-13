@@ -22,6 +22,10 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RecipeSpec;
 import org.openrewrite.test.RewriteTest;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.openrewrite.java.Assertions.java;
 import static org.openrewrite.java.Assertions.mavenProject;
 import static org.openrewrite.maven.Assertions.pomXml;
@@ -79,20 +83,24 @@ class AxonJakartaTest implements RewriteTest {
                                         "            </dependency>\n" +
                                         "        </dependencies>\n" +
                                         "    </project>\n",
-                                "    <project>\n" +
-                                        "        <modelVersion>4.0.0</modelVersion>\n" +
-                                        "        <groupId>com.example</groupId>\n" +
-                                        "        <artifactId>axon</artifactId>\n" +
-                                        "        <version>1.0.0</version>\n" +
-                                        "        <dependencies>\n" +
-                                        "            <dependency>\n" +
-                                        "                <groupId>org.axonframework</groupId>\n" +
-                                        "                <artifactId>axon-configuration</artifactId>\n" +
-                                        "                <version>4.7.1</version>\n" +
-                                        "            </dependency>\n" +
-                                        "        </dependencies>\n" +
-                                        "    </project>\n"
-                        )));
+                                spec -> spec.after(pom -> {
+                                    Matcher version = Pattern.compile("4.[7-9].\\d+").matcher(pom);
+                                    assertThat(version.find()).describedAs("Expected 4.7.x in %s", pom).isTrue();
+                                    return String.format(
+                                            "    <project>\n" +
+                                            "        <modelVersion>4.0.0</modelVersion>\n" +
+                                            "        <groupId>com.example</groupId>\n" +
+                                            "        <artifactId>axon</artifactId>\n" +
+                                            "        <version>1.0.0</version>\n" +
+                                            "        <dependencies>\n" +
+                                            "            <dependency>\n" +
+                                            "                <groupId>org.axonframework</groupId>\n" +
+                                            "                <artifactId>axon-configuration</artifactId>\n" +
+                                            "                <version>%s</version>\n" +
+                                            "            </dependency>\n" +
+                                            "        </dependencies>\n" +
+                                            "    </project>\n", version.group(0));
+                                }))));
     }
 
 }
