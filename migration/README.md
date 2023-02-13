@@ -8,7 +8,7 @@ Module containing [OpenRewrite](https://docs.openrewrite.org/) recipes for migra
 
 ```bash
 mvn -U org.openrewrite.maven:rewrite-maven-plugin:run \
-  -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:4.7.2-SNAPSHOT \
+  -Drewrite.recipeArtifactCoordinates=org.axonframework:axon-migration:LATEST \
   -DactiveRecipes=org.axonframework.axon.UpgradeAxonFramework_4_7_Javax
 ```
 
