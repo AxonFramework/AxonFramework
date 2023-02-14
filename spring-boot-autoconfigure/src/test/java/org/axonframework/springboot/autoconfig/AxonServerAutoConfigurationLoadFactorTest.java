@@ -17,9 +17,13 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
+import org.axonframework.springboot.utils.GrpcServerStub;
+import org.axonframework.springboot.utils.TcpUtils;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +42,16 @@ class AxonServerAutoConfigurationLoadFactorTest {
         testContext = new ApplicationContextRunner();
     }
 
+    @BeforeAll
+    static void beforeAll() {
+        System.setProperty("axon.axonserver.servers", GrpcServerStub.DEFAULT_HOST + ":" + TcpUtils.findFreePort());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        System.clearProperty("axon.axonserver.servers");
+    }
+
     @Test
     void loadFactor() {
         testContext.withUserConfiguration(TestContext.class)
@@ -52,7 +66,11 @@ class AxonServerAutoConfigurationLoadFactorTest {
 
     @ContextConfiguration
     @EnableAutoConfiguration
-    static class TestContext {
+    private static class TestContext {
 
+        @Bean(initMethod = "start", destroyMethod = "shutdown")
+        public GrpcServerStub grpcServerStub(@Value("${axon.axonserver.servers}") String servers) {
+            return new GrpcServerStub(Integer.parseInt(servers.split(":")[1]));
+        }
     }
 }
