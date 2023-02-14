@@ -37,6 +37,7 @@
         <module>integrationtests</module>
         <module>legacy</module>
         <module>reactorless-test</module>
+        <module>migration</module>
     </modules>
     <packaging>pom</packaging>
 
