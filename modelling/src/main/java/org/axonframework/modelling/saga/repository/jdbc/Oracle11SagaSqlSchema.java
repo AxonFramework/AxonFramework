@@ -42,10 +42,10 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
         try (PreparedStatement pst = conn.prepareStatement("create table " + sagaSchema().associationValueEntryTable() + " (\n" +
                 "        id number(38) not null,\n" +
-                "        associationKey varchar(255),\n" +
-                "        associationValue varchar(255),\n" +
-                "        sagaId varchar(255),\n" +
-                "        sagaType varchar(255),\n" +
+                "        " + sagaSchema.associationKeyColumn() + " varchar(255),\n" +
+                "        " + sagaSchema.associationValueColumn() + " varchar(255),\n" +
+                "        " + sagaSchema.sagaIdColumn() + " varchar(255),\n" +
+                "        " + sagaSchema.sagaTypeColumn() + " varchar(255),\n" +
                 "        primary key (id)\n" +
                 "    )")) {
             pst.executeUpdate();
@@ -59,11 +59,11 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
     @Override
     public PreparedStatement sql_createTableSagaEntry(final Connection conn) throws SQLException {
         return conn.prepareStatement("create table " + sagaSchema().sagaEntryTable() + " (\n" +
-                "        sagaId varchar(255) not null,\n" +
-                "        revision varchar(255),\n" +
-                "        sagaType varchar(255),\n" +
-                "        serializedSaga blob,\n" +
-                "        primary key (sagaId)\n" +
+                "        " + sagaSchema.sagaIdColumn() + " varchar(255) not null,\n" +
+                "        " + sagaSchema.revisionColumn() + " varchar(255),\n" +
+                "        " + sagaSchema.sagaTypeColumn() + " varchar(255),\n" +
+                "        " + sagaSchema.serializedSagaColumn() + " blob,\n" +
+                "        primary key (" + sagaSchema.sagaIdColumn() + ")\n" +
                 "    )");
     }
 }
