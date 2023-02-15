@@ -21,6 +21,9 @@ import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.junit.jupiter.*;
@@ -37,24 +40,28 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests JPA auto-configuration lazy initializes the provided {@link SagaStore} bean by verifying that the mocked {@link
- * EntityManager} is not used until the {@code SagaStore} is retrieved from the {@link ApplicationContext}.
+ * Tests JPA auto-configuration lazy initializes the provided {@link SagaStore} bean by verifying that the mocked
+ * {@link EntityManager} is not used until the {@code SagaStore} is retrieved from the {@link ApplicationContext}.
  *
  * @author Steven van Beelen
  */
+@EnableAutoConfiguration(exclude = {
+        AxonServerAutoConfiguration.class,
+        AxonServerBusAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
+})
 @ExtendWith({SpringExtension.class, MockitoExtension.class})
-@ContextConfiguration(classes = JpaAutoConfigurationLazySagaStoreTest.TestContext.class)
-@EnableAutoConfiguration
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@ContextConfiguration(classes = JpaAutoConfigurationLazySagaStoreTest.TestContext.class)
 class JpaAutoConfigurationLazySagaStoreTest {
 
     @Autowired
     private ApplicationContext applicationContext;
 
     /**
-     * The last {@link org.mockito.Mockito#verify(Object)} operation checks whether the {@code
-     * JpaSagaStore#addNamedQueriesTo(EntityManager)} operation is called, signaling that the {@code JpaSagaStore} is
-     * being initialized.
+     * The last {@link org.mockito.Mockito#verify(Object)} operation checks whether the
+     * {@code JpaSagaStore#addNamedQueriesTo(EntityManager)} operation is called, signaling that the
+     * {@code JpaSagaStore} is being initialized.
      */
     @Test
     void contextInitialization() {
