@@ -28,7 +28,7 @@
             <property name="hibernate.connection.username" value="sa"/>
             <property name="hibernate.connection.password" value=""/>
             <property name="hibernate.connection.url"
-                      value="jdbc:hsqldb:mem:addressbook"/>
+                      value="jdbc:hsqldb:mem:axontest"/>
         </properties>
     </persistence-unit>
 </persistence>
