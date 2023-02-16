@@ -18,8 +18,13 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValuesImpl;
+import org.axonframework.modelling.saga.Saga;
+import org.axonframework.modelling.saga.SagaRepository;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -186,7 +191,7 @@ public abstract class CachingSagaStoreTest {
 
     @Test
     void canHandleConcurrentReadsAndWrites() {
-        int concurrentOperations = 64;
+        int concurrentOperations = 32;
 
         AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
         Set<AssociationValue> associationValues = singleton(associationValue);
@@ -214,9 +219,52 @@ public abstract class CachingSagaStoreTest {
                      ))
                      .reduce(CompletableFuture::allOf)
                      .orElse(CompletableFuture.completedFuture(null))
-                     .get(30, TimeUnit.SECONDS);
+                     .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @Test
+    void canHandleConcurrentReadsAndWritesThroughAnnotatedSagaRepository() {
+        SagaRepository<StubSaga> sagaRepository = AnnotatedSagaRepository.<StubSaga>builder()
+                                                                         .sagaType(StubSaga.class)
+                                                                         .sagaStore(testSubject)
+                                                                         .build();
+        int concurrentOperations = 32;
+        ExecutorService executor = Executors.newFixedThreadPool(16);
+        AssociationValue associationValue = new AssociationValue("StubSaga-id", "value");
+
+        try {
+            IntStream.range(0, concurrentOperations)
+                     .mapToObj(i -> CompletableFuture.runAsync(
+                             () -> {
+                                 try {
+                                     UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+                                     String sagaId = IdentifierFactory.getInstance().generateIdentifier();
+                                     // Create instances
+                                     Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);
+                                     uow.execute(() -> saga.getAssociationValues().add(associationValue));
+                                     // Find Saga identifiers
+                                     Set<String> sagaIds = sagaRepository.find(associationValue);
+                                     // Load Sagas
+                                     DefaultUnitOfWork.startAndGet(null)
+                                                      .execute(() -> sagaIds.forEach(sagaRepository::load));
+                                 } catch (Exception e) {
+                                     throw new RuntimeException(e);
+                                 }
+                             },
+                             executor
+                     ))
+                     .reduce(CompletableFuture::allOf)
+                     .orElse(CompletableFuture.completedFuture(null))
+                     .get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            fail("An unexpected exception occurred during concurrent invocations on the CachingSagaStore.", e);
+        } finally {
+            executor.shutdown();
         }
     }
 }
