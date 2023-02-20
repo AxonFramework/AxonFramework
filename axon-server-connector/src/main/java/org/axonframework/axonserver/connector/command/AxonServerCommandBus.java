@@ -47,6 +47,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,8 +164,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     private <C, R> void doDispatch(CommandMessage<C> commandMessage,
                                    CommandCallback<? super C, ? super R> commandCallback) {
-        Span span = spanFactory.createDispatchSpan(() -> "AxonServerCommandBus.dispatch", commandMessage)
-                               .start();
+        Span span = spanFactory.createDispatchSpan(() -> "AxonServerCommandBus.dispatch", commandMessage).start();
+        SpanScope spanScope = span.makeCurrent();
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         //noinspection resource
         ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity();
@@ -181,7 +182,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
             result.thenApply(commandResponse -> (CommandResultMessage<R>) serializer.deserialize(commandResponse))
                   .exceptionally(GenericCommandResultMessage::asCommandResultMessage)
                   .thenAccept(r -> {
-                      if(r.isExceptional()) {
+                      if (r.isExceptional()) {
                           span.recordException(r.exceptionResult());
                       }
                       commandCallback.onResult(commandMessage, r);
@@ -201,6 +202,7 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
                     commandMessage, GenericCommandResultMessage.asCommandResultMessage(dispatchException)
             );
         }
+        spanScope.close();
     }
 
     @Override
@@ -263,8 +265,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
     /**
      * Shutdown the command bus asynchronously for dispatching commands to Axon Server. This process will wait for
-     * dispatched commands which have not received a response yet. This shutdown operation is performed in the {@link
-     * Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
+     * dispatched commands which have not received a response yet. This shutdown operation is performed in the
+     * {@link Phase#OUTBOUND_COMMAND_CONNECTORS} phase.
      *
      * @return a completable future which is resolved once all command dispatching activities are completed
      */
@@ -302,26 +304,26 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         @Override
         public void run() {
             CommandMessage<?> deserializedCommand = serializer.deserialize(command);
-            Span span = spanFactory.createChildHandlerSpan(() -> "AxonServerCommandBus.handle", deserializedCommand)
-                                   .start();
-            try {
-                localSegment.dispatch(
-                        deserializedCommand,
-                        (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
-                            if (commandResultMessage.isExceptional()) {
-                                span.recordException(commandResultMessage.exceptionResult());
+            Span span = spanFactory.createChildHandlerSpan(() -> "AxonServerCommandBus.handle", deserializedCommand);
+            span.run(() -> {
+                try {
+                    localSegment.dispatch(
+                            deserializedCommand,
+                            (CommandCallback<Object, Object>) (commandMessage, commandResultMessage) -> {
+                                if (commandResultMessage.isExceptional()) {
+                                    span.recordException(commandResultMessage.exceptionResult());
+                                }
+                                result.complete(
+                                        serializer.serialize(commandResultMessage,
+                                                             command.getMessageIdentifier())
+                                );
                             }
-                            span.end();
-                            result.complete(
-                                    serializer.serialize(commandResultMessage,
-                                                         command.getMessageIdentifier())
-                            );
-                        }
-                );
-            } catch (Exception e) {
-                span.recordException(e).end();
-                result.completeExceptionally(e);
-            }
+                    );
+                } catch (Exception e) {
+                    span.recordException(e);
+                    result.completeExceptionally(e);
+                }
+            });
         }
     }
 
@@ -421,9 +423,9 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as {@link
-         * #dispatch(CommandMessage)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result in a {@link
-         * NoOpCallback} being used.
+         * Sets the callback to use when commands are dispatched in a "fire and forget" method, such as
+         * {@link #dispatch(CommandMessage)}. Defaults to a {@link NoOpCallback}. Passing {@code null} will result in a
+         * {@link NoOpCallback} being used.
          *
          * @param defaultCommandCallback the callback to invoke when no explicit callback is provided for a command
          * @return the current Builder instance, for fluent interfacing
@@ -435,8 +437,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
 
         /**
          * Sets the {@link CommandPriorityCalculator} used to deduce the priority of an incoming command among other
-         * commands, to give precedence over high(er) valued queries for example. Defaults to a {@link
-         * CommandPriorityCalculator#defaultCommandPriorityCalculator()}.
+         * commands, to give precedence over high(er) valued queries for example. Defaults to a
+         * {@link CommandPriorityCalculator#defaultCommandPriorityCalculator()}.
          *
          * @param priorityCalculator a {@link CommandPriorityCalculator} used to deduce the priority of an incoming
          *                           command among other commands
@@ -449,8 +451,8 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link TargetContextResolver} used to resolve the target (bounded) context of an ingested {@link
-         * CommandMessage}. Defaults to returning the {@link AxonServerConfiguration#getContext()} on any type of
+         * Sets the {@link TargetContextResolver} used to resolve the target (bounded) context of an ingested
+         * {@link CommandMessage}. Defaults to returning the {@link AxonServerConfiguration#getContext()} on any type of
          * command message being ingested.
          *
          * @param targetContextResolver a {@link TargetContextResolver} used to resolve the target (bounded) context of
@@ -464,15 +466,15 @@ public class AxonServerCommandBus implements CommandBus, Distributed<CommandBus>
         }
 
         /**
-         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given {@link
-         * AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used to
-         * process incoming commands with. Defaults to a {@link ThreadPoolExecutor}, using the {@link
-         * AxonServerConfiguration#getCommandThreads()} for the pool size, a keep-alive-time of {@code 100ms}, the given
-         * BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
+         * to process incoming commands with. Defaults to a {@link ThreadPoolExecutor}, using the
+         * {@link AxonServerConfiguration#getCommandThreads()} for the pool size, a keep-alive-time of {@code 100ms},
+         * the given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
          * <p/>
-         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own {@code
-         * executorServiceBuilder}, as it ensure the command's priority is taken into consideration. Defaults to {@link
-         * ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
+         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
+         * {@code executorServiceBuilder}, as it ensure the command's priority is taken into consideration. Defaults to
+         * {@link ExecutorServiceBuilder#defaultCommandExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}

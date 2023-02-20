@@ -19,8 +19,12 @@ package org.axonframework.axonserver.connector.query.subscription;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.tracing.NoOpSpanFactory;
+import org.axonframework.tracing.Span;
+import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -48,15 +52,31 @@ public class AxonServerSubscriptionQueryResult<I, U>
     /**
      * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
      * the subscription query.
+     *
+     * @deprecated Deprecated in favor of constructor with a {@link SpanFactory}. This constructor defaults to a
+     * {@link NoOpSpanFactory}.
      */
+    @Deprecated
     public AxonServerSubscriptionQueryResult(final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
-                                             SubscriptionMessageSerializer subscriptionSerializer) {
-        updates = Flux.<QueryUpdate>create(fluxSink -> {
+                                             final SubscriptionMessageSerializer subscriptionSerializer) {
+        this(null, result, subscriptionSerializer, NoOpSpanFactory.INSTANCE, new NoOpSpanFactory.NoOpSpan());
+    }
+
+    /**
+     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
+     * the subscription query.
+     */
+    public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
+                                             final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
+                                             final SubscriptionMessageSerializer subscriptionSerializer,
+                                             final SpanFactory spanFactory,
+                                             final Span parentSpan) {
+        updates = Flux.<SubscriptionQueryUpdateMessage<U>>create(fluxSink -> {
             fluxSink.onRequest(count -> {
                 for (int i = 0; i < count; i++) {
                     QueryUpdate next = result.updates().nextIfAvailable();
                     if (next != null) {
-                        fluxSink.next(next);
+                        publishQueryUpdate(queryMessage, subscriptionSerializer, spanFactory, fluxSink, next);
                     } else {
                         if (result.updates().isClosed()) {
                             completeFlux(fluxSink, result.updates().getError().orElse(null));
@@ -75,7 +95,7 @@ public class AxonServerSubscriptionQueryResult<I, U>
                 if (fluxSink.requestedFromDownstream() > 0) {
                     QueryUpdate next = result.updates().nextIfAvailable();
                     if (next != null) {
-                        fluxSink.next(next);
+                        publishQueryUpdate(queryMessage, subscriptionSerializer, spanFactory, fluxSink, next);
                     }
                 } else {
                     logger.trace("Not sending update to Flux Sink. Not enough info requested");
@@ -84,16 +104,25 @@ public class AxonServerSubscriptionQueryResult<I, U>
                     completeFlux(fluxSink, result.updates().getError().orElse(null));
                 }
             });
-        }).doOnError(e -> result.updates().close())
-          .map(subscriptionSerializer::deserialize);
+        }).doOnError(e -> result.updates().close());
 
         this.initialResult = Mono.fromCompletionStage(result::initialResult)
                                  .onErrorMap(GrpcExceptionParser::parse)
+                                 .doOnError(parentSpan::recordException)
+                                 .doOnTerminate(parentSpan::end)
                                  .map(subscriptionSerializer::deserialize);
         this.result = result;
     }
 
-    private void completeFlux(FluxSink<QueryUpdate> fluxSink, Throwable error) {
+    private void publishQueryUpdate(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
+                                    SubscriptionMessageSerializer subscriptionSerializer, SpanFactory spanFactory,
+                                    FluxSink<SubscriptionQueryUpdateMessage<U>> fluxSink, QueryUpdate next) {
+        SubscriptionQueryUpdateMessage<U> message = subscriptionSerializer.deserialize(next);
+        spanFactory.createChildHandlerSpan(() -> "AxonServerSubscriptionQueryResult.queryUpdate", message, queryMessage)
+                   .run(() -> fluxSink.next(message));
+    }
+
+    private void completeFlux(FluxSink<SubscriptionQueryUpdateMessage<U>> fluxSink, Throwable error) {
         if (error != null) {
             fluxSink.error(error);
         } else {

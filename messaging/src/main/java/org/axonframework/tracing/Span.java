@@ -17,6 +17,7 @@
 package org.axonframework.tracing;
 
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -29,6 +30,15 @@ import java.util.function.Supplier;
  * <p>
  * Creating {@link Span spans} is the responsibility of the {@link SpanFactory} which should be implemented by the
  * tracing provider of choice.
+ * <p>
+ * Important! In order to make this span the parent for any new span created during its execution,
+ * {@link #makeCurrent()} should be called. This method will return a {@link SpanScope}, on which
+ * {@link SpanScope#close()} should be invoked during the same code execution on the same thread. If not, this span will
+ * become the unwanted parent of any children. You can make the same span the current for multiple threads at any point
+ * in time, as long as you close them before calling {@link Span#end()}
+ * <p>
+ * Each {@link #start()} should eventually result in an {@link #end()} being called, but this does not have to be done
+ * on the same thread.
  *
  * @author Mitchell Herrijgers
  * @see SpanFactory For more information about creating different kinds of traces.
@@ -37,16 +47,35 @@ import java.util.function.Supplier;
 public interface Span {
 
     /**
-     * Starts the Span. This means setting this span to the current, taking over from any active span currently present
-     * if so.
+     * Starts the Span. However, does not set this span as the span of the current thread. See {@link #makeCurrent()} in
+     * order to do so.
      *
      * @return The span for fluent interfacing.
      */
     Span start();
 
     /**
-     * Ends the span. It restores the original context, often the parent trace, as the current context. No operation on
-     * the span is possible after this method.
+     * Sets the Span as the current for the current thread. The returned {@link SpanScope} must be closed before ending
+     * the Span, on the same thread, or through a try-with-resources statement in the same thread as this method was
+     * called.
+     * <p>
+     * You can make a span current on as many threads as you like, but you have to close every {@link SpanScope}, or
+     * context will leak into the current thread. Note that if this is neglected, the {@link #end()} method should warn
+     * the user in order to report this back to the framework.
+     *
+     * @return The scope of the span that must be closed be
+     */
+    default SpanScope makeCurrent() {
+        return () -> {
+        };
+    }
+
+    /**
+     * Ends the span. All scopes should have been closed at this point. In addition, a span can only be ended once.
+     * <p>
+     * If scopes are still open when this method is called, either an exception should be thrown or an error log should
+     * be produced to warn the user of the leak. This information can then be reported back to the developers of the
+     * framework for a fix.
      */
     void end();
 
@@ -67,8 +96,8 @@ public interface Span {
      * @param runnable The {@link Runnable} to execute.
      */
     default void run(Runnable runnable) {
-        try {
-            this.start();
+        this.start();
+        try (SpanScope unused = this.makeCurrent()) {
             runnable.run();
         } catch (Exception e) {
             this.recordException(e);
@@ -98,8 +127,8 @@ public interface Span {
      * @param callable The {@link Callable} to execute.
      */
     default <T> T runCallable(Callable<T> callable) throws Exception {
-        try {
-            this.start();
+        this.start();
+        try (SpanScope unused = this.makeCurrent()) {
             return callable.call();
         } catch (Exception e) {
             this.recordException(e);
@@ -129,8 +158,8 @@ public interface Span {
      * @param supplier The {@link Supplier} to execute.
      */
     default <T> T runSupplier(Supplier<T> supplier) {
-        try {
-            this.start();
+        this.start();
+        try (SpanScope unused = this.makeCurrent()) {
             return supplier.get();
         } catch (Exception e) {
             this.recordException(e);
@@ -149,5 +178,35 @@ public interface Span {
      */
     default <T> Supplier<T> wrapSupplier(Supplier<T> supplier) {
         return () -> runSupplier(supplier);
+    }
+
+    /**
+     * Runs a piece of code that returns a value and which will be traced. Exceptions will be caught automatically and
+     * added to the span, then rethrown. The span will be started before the execution, and ended after execution. Note
+     * that the {@link Consumer} will be invoked instantly and synchronously.
+     *
+     * @param supplier The {@link Consumer} to execute.
+     */
+    default <T> void runConsumer(Consumer<T> supplier, T consumedObject) {
+        this.start();
+        try (SpanScope unused = this.makeCurrent()) {
+            supplier.accept(consumedObject);
+        } catch (Exception e) {
+            this.recordException(e);
+            throw e;
+        } finally {
+            this.end();
+        }
+    }
+
+    /**
+     * Wraps a {@link Consumer}, tracing the invocation. Exceptions will be caught automatically and added to the span,
+     * then rethrown. The span will be started before the execution, and ended after execution.
+     *
+     * @param supplier The {@link Consumer} to wrap
+     * @return A wrapped Consumer
+     */
+    default <T> Consumer<T> wrapConsumer(Consumer<T> supplier) {
+        return (consumedObject) -> runConsumer(supplier, consumedObject);
     }
 }

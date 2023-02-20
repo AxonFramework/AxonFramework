@@ -45,6 +45,7 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Unit test class to cover all the operations performed by the {@link AxonServerCommandBus}.
@@ -155,8 +157,12 @@ class AxonServerCommandBusTest {
 
         verify(targetContextResolver).resolveContext(commandMessage);
         verify(axonServerConnectionManager).getConnection(BOUNDED_CONTEXT);
-        spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch", commandMessage);
-        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage);
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanCompleted("AxonServerCommandBus.dispatch"));
+        await().atMost(Duration.ofSeconds(3l))
+                .untilAsserted(() ->
+                        spanFactory.verifySpanPropagated("AxonServerCommandBus.dispatch", commandMessage));
     }
 
     @Test
@@ -415,8 +421,12 @@ class AxonServerCommandBusTest {
 
         testSubject.disconnect().join();
 
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
-        assertTrue(dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandOne));
+        await().atMost(Duration.ofSeconds(5))
+               .pollDelay(Duration.ofMillis(250))
+               .until(() -> dummyMessagePlatformServer.isUnsubscribed(testCommandTwo));
     }
 
     @Test

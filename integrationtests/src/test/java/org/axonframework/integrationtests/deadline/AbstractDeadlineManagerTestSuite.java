@@ -53,6 +53,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.integrationtests.utils.AssertUtils.assertWithin;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -144,9 +145,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
         spanFactory.verifySpanCompleted(managerName + ".schedule(deadlineName)");
-
-        Thread.sleep(100); // Takes time to complete
-        spanFactory.verifySpanCompleted("DeadlineJob.execute");
+        await().pollDelay(Duration.ofMillis(50)).atMost(Duration.ofMillis(100))
+               .untilAsserted(() -> spanFactory.verifySpanCompleted("DeadlineJob.execute"));
     }
 
 

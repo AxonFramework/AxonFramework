@@ -29,6 +29,7 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
+import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +100,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         }
         if (snapshotsInProgress.add(typeAndId)) {
             Span span = spanFactory.createRootTrace(() -> traceName(aggregateType)).start();
-            try {
+            try(SpanScope unused = span.makeCurrent()) {
                 Span internalSpan = spanFactory.createInternalSpan(() -> getInnerTraceName(aggregateType,
                                                                                            aggregateIdentifier));
                 executor.execute(silently(internalSpan.wrapRunnable(
