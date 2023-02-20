@@ -70,7 +70,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     private static final String NOT_SUPPORTED_MSG =
             "The '%s' method is not supported without using JobRunrPro with the JobRunrProDeadlineManager.\n"
                     + "Move to the pro version and the extension or use 'cancelSchedule' method instead.\n"
-                    + "Using 'cancelSchedule' requires keeping track of the return value from 'schedule'.";
+                    + "Using 'cancelSchedule' requires keeping track of the returned 'scheduleId' from invoking 'schedule'.";
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final JobScheduler jobScheduler;
