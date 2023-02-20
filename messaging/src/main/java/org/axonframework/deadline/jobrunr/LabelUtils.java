@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  * Utility to create labels for use with JobRunr. As lbels have a maximum length of 44, we need to use a hash if it
  * would go over the maximum length.
  */
-public class LabelUtils {
+public abstract class LabelUtils {
 
     public static final int MAX_LENGTH = 44;
 
