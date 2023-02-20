@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  * exceeds the maximum length.
  *
  * @author Gerard Klijs
- * @since 4.7.0
+ * @since 4.8.0
  */
 public abstract class LabelUtils {
     private static final int MAX_LENGTH = 44;
@@ -50,14 +50,7 @@ public abstract class LabelUtils {
         }
     }
 
-    /**
-     * Creates a label from a scope, by using the serializer.
-     *
-     * @param serializer a {@link Serializer} to serialize the provided {@code scope}
-     * @param scope      a {@link ScopeDescriptor} of which a label is needed
-     * @return a {@link String} which can be used as a label
-     */
-    public static String getScopeLabel(@Nonnull Serializer serializer, @Nonnull ScopeDescriptor scope) {
+    private static String getScopeLabel(@Nonnull Serializer serializer, @Nonnull ScopeDescriptor scope) {
         return getLabel(serializer.serialize(scope, String.class).getData());
     }
 

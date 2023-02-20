@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Bean;
  * Auto configuration class for the deadline manager and event scheduler using JobRunr.
  *
  * @author Gerard Klijs
- * @since 4.8
+ * @since 4.8.0
  */
 @AutoConfiguration
 @ConditionalOnBean(JobScheduler.class)
