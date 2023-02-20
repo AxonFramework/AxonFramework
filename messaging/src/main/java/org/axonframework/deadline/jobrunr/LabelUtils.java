@@ -23,12 +23,14 @@ import org.axonframework.serialization.Serializer;
 import javax.annotation.Nonnull;
 
 /**
- * Utility to create labels for use with JobRunr. As labels have a maximum length of 44, we hash a label 
- * whenever it exceeds the maximum length.
+ * Utility to create labels for use with JobRunr. As labels have a maximum length of 44, we hash a label whenever it
+ * exceeds the maximum length.
+ *
+ * @author Gerard Klijs
+ * @since 4.7.0
  */
 public abstract class LabelUtils {
-
-    public static final int MAX_LENGTH = 44;
+    private static final int MAX_LENGTH = 44;
 
     private LabelUtils() {
         //prevent instantiation

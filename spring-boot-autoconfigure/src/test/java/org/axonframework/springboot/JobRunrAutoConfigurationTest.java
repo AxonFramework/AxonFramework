@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springboot.autoconfig;
+package org.axonframework.springboot;
 
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
 class JobRunrAutoConfigurationTest {
 
     @Test
-    void eventSchedulerAndDeadlineManagerAreCreated() {
+    void eventSchedulerAndDeadlineManagercreated() {
         new ApplicationContextRunner()
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(DefaultContext.class)
