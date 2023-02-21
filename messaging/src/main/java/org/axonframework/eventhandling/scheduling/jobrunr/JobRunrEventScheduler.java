@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.jobrunr.jobs.JobId;
+import org.jobrunr.scheduling.JobBuilder;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,7 @@ import javax.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.deadline.jobrunr.LabelUtils.getLabel;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
 
 /**
@@ -56,6 +59,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(JobRunrEventScheduler.class);
     private final JobScheduler jobScheduler;
+    private final String jobName;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
     private final EventBus eventBus;
@@ -72,6 +76,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     protected JobRunrEventScheduler(Builder builder) {
         builder.validate();
         jobScheduler = builder.jobScheduler;
+        jobName = builder.jobName;
         serializer = builder.serializer;
         transactionManager = builder.transactionManager;
         eventBus = builder.eventBus;
@@ -96,59 +101,50 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         UUID jobIdentifier = UUID.randomUUID();
         try {
+            JobBuilder job = JobBuilder.aJob()
+                                       .withId(jobIdentifier)
+                                       .withName(jobName)
+                                       .withLabels(getLabel(jobName))
+                                       .scheduleAt(triggerDateTime);
             if (event instanceof EventMessage) {
-                schedulePayloadAndMetadata(jobIdentifier, triggerDateTime, (EventMessage) event);
+                addDetailsFromEvent(job, (EventMessage) event);
             } else {
-                schedulePayload(jobIdentifier, triggerDateTime, event);
+                addDetailsFromObject(job, event);
             }
+            JobId id = jobScheduler.create(job);
+            logger.debug("Job with id: [{}] was successfully created.", id);
         } catch (Exception e) {
             throw new SchedulingException("An error occurred while scheduling an event.", e);
         }
         return new JobRunrScheduleToken(jobIdentifier);
     }
 
-    private void schedulePayload(UUID jobIdentifier, Instant triggerDateTime, Object event) {
+    private void addDetailsFromObject(JobBuilder job, Object event) {
         SerializedObject<String> serialized = serializer.serialize(event, String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
         if (isNull(revision)) {
-            jobScheduler.<JobRunrEventScheduler>schedule(
-                    jobIdentifier,
-                    triggerDateTime,
-                    eventScheduler -> eventScheduler.publish(serializedPayload, payloadClass)
-            );
+            job.withDetails(() -> publish(serializedPayload, payloadClass));
         } else {
-            jobScheduler.<JobRunrEventScheduler>schedule(
-                    jobIdentifier,
-                    triggerDateTime,
-                    eventScheduler -> eventScheduler.publishWithRevision(serializedPayload, payloadClass, revision)
-            );
+            job.withDetails(() -> publishWithRevision(serializedPayload, payloadClass, revision));
         }
     }
 
     @SuppressWarnings("rawtypes")
-    private void schedulePayloadAndMetadata(UUID jobIdentifier, Instant triggerDateTime, EventMessage eventMessage) {
+    private void addDetailsFromEvent(JobBuilder job, EventMessage eventMessage) {
         SerializedObject<String> serialized = serializer.serialize(eventMessage.getPayload(), String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
         String serializedMetadata = serializer.serialize(eventMessage.getMetaData(), String.class).getData();
         if (isNull(revision)) {
-            jobScheduler.<JobRunrEventScheduler>schedule(
-                    jobIdentifier,
-                    triggerDateTime,
-                    eventScheduler -> eventScheduler.publish(serializedPayload, payloadClass, serializedMetadata)
-            );
+            job.withDetails(() -> publish(serializedPayload, payloadClass, serializedMetadata));
         } else {
-            jobScheduler.<JobRunrEventScheduler>schedule(
-                    jobIdentifier,
-                    triggerDateTime,
-                    eventScheduler -> eventScheduler.publishWithRevision(serializedPayload,
-                                                                         payloadClass,
-                                                                         revision,
-                                                                         serializedMetadata)
-            );
+            job.withDetails(() -> publishWithRevision(serializedPayload,
+                                                      payloadClass,
+                                                      revision,
+                                                      serializedMetadata));
         }
     }
 
@@ -163,7 +159,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
             throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
         }
         JobRunrScheduleToken reference = (JobRunrScheduleToken) scheduleToken;
-        jobScheduler.delete(reference.getJobIdentifier(), "Deleted via EventScheduler API");
+        jobScheduler.delete(reference.getJobIdentifier(), "Deleted via Axon EventScheduler API");
     }
 
     @Override
@@ -274,6 +270,8 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
     public static class Builder {
 
         private JobScheduler jobScheduler;
+
+        private String jobName = "AxonScheduledEvent";
         private Serializer serializer;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private EventBus eventBus;
@@ -287,6 +285,19 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
         public Builder jobScheduler(JobScheduler jobScheduler) {
             assertNonNull(jobScheduler, "JobScheduler may not be null");
             this.jobScheduler = jobScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link String} used for creating the scheduled jobs in JobRunr. Defaults to
+         * {@code AxonScheduledEvent}.
+         *
+         * @param jobName a {@link JobScheduler} used for naming the job
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder jobName(String jobName) {
+            assertNonNull(jobName, "JobName may not be null");
+            this.jobName = jobName;
             return this;
         }
 

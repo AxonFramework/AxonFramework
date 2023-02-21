@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
                 .spanFactory(configuration.spanFactory())
                 .build();
         JobRunr.configure()
-               .useJobActivator(new SimpleActivator(manager))
+               .useJobActivator(new SimpleActivator(spy(manager)))
                .useStorageProvider(storageProvider)
                .useBackgroundJobServer(usingStandardBackgroundJobServerConfiguration().andPollIntervalInSeconds(5))
                .initialize();
@@ -91,22 +91,22 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Test
-    @Ignore("Currently cancel all within scope is not implemented")
+    @Ignore("Cancel all within scope is not implemented for the non pro version.")
     void deadlineCancellationWithinScopeOnAggregate() {
     }
 
     @Test
-    @Ignore("Currently cancel all is not implemented")
+    @Ignore("Cancel all is not implemented for the non pro version.")
     void deadlineCancelAllOnAggregateIsTracedCorrectly() {
     }
 
     @Test
-    @Ignore("Currently cancel all within scope is not implemented")
+    @Ignore("Cancel all within scope is not implemented for the non pro version.")
     void deadlineCancellationWithinScopeOnSaga() {
     }
 
     @Test
-    @Ignore("Currently cancel all is not implemented")
+    @Ignore("Cancel all is not implemented for the non pro version.")
     void deadlineCancelAllOnSagaIsCorrectlyTraced() {
     }
 }
